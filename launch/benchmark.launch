@@ -1,0 +1,8 @@
+<launch>
+    
+<!--    <include file="$(find drone_moveit_config)/launch/move_group.launch"/>-->
+
+<!--    <node name="spawn_scene" pkg="orchard_planning_scene" respawn="false" />-->
+
+<!--    <node name="new_planners" pkg="new_planners_scene" respawn="false" />-->
+</launch>
