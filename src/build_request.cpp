@@ -17,7 +17,7 @@ makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone,
 
     request.workspace_parameters.min_corner.x = -20.0;
     request.workspace_parameters.min_corner.y = -20.0;
-    request.workspace_parameters.min_corner.z = -20.0;
+    request.workspace_parameters.min_corner.z = 0.0;
     request.workspace_parameters.max_corner.x = 20.0;
     request.workspace_parameters.max_corner.y = 20.0;
     request.workspace_parameters.max_corner.z = 20.0;

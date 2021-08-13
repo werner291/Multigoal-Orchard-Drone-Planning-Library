@@ -10,6 +10,8 @@
 #include <random_numbers/random_numbers.h>
 #include <Eigen/Geometry>
 #include "procedural_tree_generation.h"
+#include "build_request.h"
+#include "EndEffectorConstraintSampler.h"
 
 using namespace robowflex;
 
@@ -42,29 +44,23 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    simple_planner->getInterface()
+    .getConstraintSamplerManager()
+    .registerSamplerAllocator(std::make_shared<EndEffectorPositionConstraintSamplerAllocator>());
+
     Profiler::Options options;
     options.metrics = Profiler::WAYPOINTS | Profiler::CORRECT | Profiler::LENGTH | Profiler::SMOOTHNESS;
-    Experiment experiment("pick_apple", options, 10.0, 100);
+    Experiment experiment("pick_apple", options, 10.0, 5);
 
     ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
     log::showUpToWarning();
 
     for (const auto &config : {"PRM", "RRTConnect", "RRTStar", "TRRT"}) {
-        auto request = std::make_shared<MotionRequestBuilder>(simple_planner, "whole_body");
-
-        request->setConfig(config);
-        request->setWorkspaceBounds(
-                Eigen::Vector3d(-20.0, -20.0, -20.0),
-                Eigen::Vector3d(20.0, 20.0, 20.0)
-        );
-
-        request->setStartConfiguration({-10.0, -10.0, 10.0, 0.0, 0.0, 0.0, 1.0, 0.5});
-
-        moveit_msgs::Constraints goal_constraints = makeReachAppleGoalConstraints(tree_scene);
-
-
-        experiment.addQuery(config, scene, simple_planner, request);
+        for (int i = 0; i < 5; i++) {
+           experiment.addQuery(config, scene, simple_planner,
+                               makeAppleReachRequest(drone, tree_scene.apples, config));
+        }
     }
 
     auto dataset = experiment.benchmark(1);
