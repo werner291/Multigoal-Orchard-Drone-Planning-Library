@@ -9,6 +9,7 @@ static const float BRANCH_ANGULAR_RANGE = 0.7;
 
 static const float BRANCH_RADIUS_REDUCTION_FACTOR = 0.9;
 
+#include <moveit_msgs/PlanningScene.h>
 #include <Eigen/Geometry>
 //#include <fcl/broadphase/broadphase_dynamic_AABB_tree.h>
 #include <random>
@@ -79,7 +80,7 @@ std::vector<Apple> spawn_apples(const std::vector<DetachedTreeNode> &flattened,
 
 /**
  * Returns a transformation that represents a frame affixed to the surface of the tree branch,
- * Y-vector pointing outward, and Z-vector pointing down the branch.
+ * Z-vector pointing outward, and Y-vector pointing down the branch.
  *
  * @param azimuth   The angular position on the branch, in radians.
  * @param treeNode  The DetachedTreeNode representing the tree branch.

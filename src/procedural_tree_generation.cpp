@@ -18,9 +18,9 @@ Eigen::Isometry3d frame_on_branch(double azimuth, double t, const DetachedTreeNo
 
     Eigen::Isometry3d iso;
     iso.setIdentity();
-    iso.rotate(Eigen::AngleAxisd(azimuth, Eigen::Vector3d::UnitZ()));
-    iso.translate(Eigen::Vector3d(0, (float) treeNode.radius, t * treeNode.length));
+    iso.rotate(Eigen::AngleAxisd(azimuth, Eigen::Vector3d::UnitZ())); // TODO this is likely wrong.
     iso.rotate(Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX()));
+    iso.translate(Eigen::Vector3d(0, t * treeNode.length, (float) treeNode.radius));
     iso = treeNode.root_at_absolute * iso;
 
     return iso;
@@ -129,7 +129,7 @@ std::vector<Apple> spawn_apples(const std::vector<DetachedTreeNode> &flattened,
 
         const DetachedTreeNode &node = flattened[branch_index];
 
-        auto apple_xform = frame_on_branch(distr(eng) * (float) M_PI * 2.0f, distr(eng), node) * Eigen::Translation3d(Eigen::Vector3d(0, apple_radius, 0));
+        auto apple_xform = frame_on_branch(distr(eng) * (float) M_PI * 2.0f, distr(eng), node) * Eigen::Translation3d(Eigen::Vector3d(0, 0, apple_radius));
 
 //        const std::shared_ptr<fcl::Sphere> apple_shape = std::make_shared<fcl::Sphere>(apple_radius);
 //
@@ -147,7 +147,7 @@ std::vector<Apple> spawn_apples(const std::vector<DetachedTreeNode> &flattened,
 
             apples.push_back(Apple{
                     .center = apple_xform.translation(),
-                    .branch_normal = (apple_xform.rotation() * Eigen::Vector3d(0.0,1.0,0.0))
+                    .branch_normal = (apple_xform.rotation() * Eigen::Vector3d(0.0,0.0,1.0))
 //                    .collision_object = std::move(apple_collision_object)
             });
 //        }
@@ -217,7 +217,7 @@ PlanningScene establishPlanningScene() {
         moveit_msgs::CollisionObject collision_object;
 
         collision_object.id = "trunk";
-        collision_object.header.frame_id = "map";
+        collision_object.header.frame_id = "world";
 
         for (const auto &tree_node : tree_flattened) {
             shape_msgs::SolidPrimitive primitive;
@@ -267,7 +267,7 @@ PlanningScene establishPlanningScene() {
 
         moveit_msgs::CollisionObject leaves_collision;
         leaves_collision.id = "leaves";
-        leaves_collision.header.frame_id = "map";
+        leaves_collision.header.frame_id = "world";
 
         shape_msgs::Mesh mesh;
         for (const auto &vtx : leaf_vertices) {
@@ -314,7 +314,7 @@ PlanningScene establishPlanningScene() {
 
         moveit_msgs::CollisionObject leaves_collision;
         leaves_collision.id = "apples";
-        leaves_collision.header.frame_id = "map";
+        leaves_collision.header.frame_id = "world";
 
         for (const auto &apple : apples) {
 

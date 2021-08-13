@@ -5,6 +5,7 @@
 #include <robowflex_library/planning.h>
 #include <robowflex_library/scene.h>
 #include <robowflex_library/util.h>
+#include <robowflex_library/log.h>
 #include <ompl/geometric/planners/rrt/TRRT.h>
 #include <random_numbers/random_numbers.h>
 #include <Eigen/Geometry>
@@ -13,8 +14,6 @@
 using namespace robowflex;
 
 int main(int argc, char **argv) {
-
-
 
     // Startup ROS
     ROS ros(argc, argv);
@@ -28,7 +27,8 @@ int main(int argc, char **argv) {
     );
 
     auto scene = std::make_shared<Scene>(drone);
-    //scene->getScene()->setPlanningSceneMsg(establishPlanningScene());
+    auto tree_scene = establishPlanningScene();
+    scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
 
     auto simple_planner = std::make_shared<OMPL::OMPLInterfacePlanner>(drone, "simple");
 
@@ -48,9 +48,10 @@ int main(int argc, char **argv) {
 
     ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
+    log::showUpToWarning();
+
     for (const auto &config : {"PRM", "RRTConnect", "RRTStar", "TRRT"}) {
         auto request = std::make_shared<MotionRequestBuilder>(simple_planner, "whole_body");
-
 
         request->setConfig(config);
         request->setWorkspaceBounds(
@@ -60,7 +61,8 @@ int main(int argc, char **argv) {
 
         request->setStartConfiguration({-10.0, -10.0, 10.0, 0.0, 0.0, 0.0, 1.0, 0.5});
 
-        request->setGoalConfiguration({10.0, 10.0, 10.0, 0.0, 0.0, 0.0, 1.0, 0.5});
+        moveit_msgs::Constraints goal_constraints = makeReachAppleGoalConstraints(tree_scene);
+
 
         experiment.addQuery(config, scene, simple_planner, request);
     }

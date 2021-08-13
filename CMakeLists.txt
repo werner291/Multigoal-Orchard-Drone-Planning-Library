@@ -130,7 +130,7 @@ add_library(${PROJECT_NAME}
         )
 
 ## Benchmark node
-add_executable(${PROJECT_NAME}_node src/run_benchmark.cpp src/procedural_tree_generation.cpp)
+add_executable(${PROJECT_NAME}_node src/run_benchmark.cpp src/procedural_tree_generation.cpp src/EndEffectorConstraintSampler.cpp src/build_request.cpp src/build_request.h)
 set_property(TARGET ${PROJECT_NAME}_node PROPERTY CXX_STANDARD 20)
 
 target_link_libraries(${PROJECT_NAME}_node
@@ -139,7 +139,7 @@ target_link_libraries(${PROJECT_NAME}_node
         )
 
 ## Visualization node
-add_executable(${PROJECT_NAME}_viznode src/run_vizualized.cpp src/procedural_tree_generation.cpp)
+add_executable(${PROJECT_NAME}_viznode src/run_vizualized.cpp src/procedural_tree_generation.cpp src/EndEffectorConstraintSampler.cpp src/build_request.cpp src/build_request.h)
 set_property(TARGET ${PROJECT_NAME}_viznode PROPERTY CXX_STANDARD 20)
 
 target_link_libraries(${PROJECT_NAME}_viznode
