@@ -12,6 +12,7 @@
 #include "procedural_tree_generation.h"
 #include "build_request.h"
 #include "EndEffectorConstraintSampler.h"
+#include "build_planning_scene.h"
 
 using namespace robowflex;
 
@@ -28,9 +29,14 @@ int main(int argc, char **argv) {
             ""
     );
 
-    auto scene = std::make_shared<Scene>(drone);
-    auto tree_scene = establishPlanningScene();
-    scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
+//auto drone = std::make_shared<Robot>("drone_complex");
+//
+//drone->initialize(
+//        "package://drone_complex_moveit_config/urdf/bot_complex.urdf",
+//        "package://drone_complex_moveit_config/config/aerial_manipulator_drone.srdf",
+//        "",
+//        ""
+//        );
 
     auto simple_planner = std::make_shared<OMPL::OMPLInterfacePlanner>(drone, "simple");
 
@@ -50,16 +56,22 @@ int main(int argc, char **argv) {
 
     Profiler::Options options;
     options.metrics = Profiler::WAYPOINTS | Profiler::CORRECT | Profiler::LENGTH | Profiler::SMOOTHNESS;
-    Experiment experiment("pick_apple", options, 10.0, 5);
+    Experiment experiment("pick_apple", options, 0.5, 2);
 
     ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
     log::showUpToWarning();
 
-    for (const auto &config : {"PRM", "RRTConnect", "RRTStar", "TRRT"}) {
-        for (int i = 0; i < 5; i++) {
-           experiment.addQuery(config, scene, simple_planner,
-                               makeAppleReachRequest(drone, tree_scene.apples, config));
+    for (int scene_idx = 0; scene_idx < 10; scene_idx++) {
+        auto scene = std::make_shared<Scene>(drone);
+        auto tree_scene = establishPlanningScene();
+        scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
+
+        for (const auto &config : {"PRM", "RRTConnect", "TRRT", "BiTRRT"}) {
+            for (int i = 0; i < 10; i++) {
+                experiment.addQuery(config, scene, simple_planner,
+                                    makeAppleReachRequest(drone, tree_scene.apples, config));
+            }
         }
     }
 

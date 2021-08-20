@@ -22,12 +22,18 @@ makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone,
     request.workspace_parameters.max_corner.y = 20.0;
     request.workspace_parameters.max_corner.z = 20.0;
 
+    request.allowed_planning_time = 0.5;
+
     request.goal_constraints.push_back(makeReachAppleGoalConstraints(apples));
 
     robot_state::RobotState start_state(drone->getModelConst());
     start_state.setToDefaultValues();
     start_state.setJointGroupPositions(drone->getModelConst()->getJointModelGroup("whole_body"),
-                                       {-10.0, -10.0, 10.0, 0.0, 0.0, 0.0, 1.0, 0.5});
+                                       {
+        -10.0, -10.0, 10.0,
+                                        0.0, 0.0, 0.0, 1.0,
+                                        0.0//, 0.0, 0.0, 0.0
+                                       });
 
     moveit::core::robotStateToRobotStateMsg(start_state, request.start_state);
 

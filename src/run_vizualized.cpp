@@ -9,9 +9,9 @@
 #include <robowflex_library/io/broadcaster.h>
 #include <ompl/geometric/planners/rrt/TRRT.h>
 #include <random_numbers/random_numbers.h>
-#include "procedural_tree_generation.h"
 #include "EndEffectorConstraintSampler.h"
 #include "build_request.h"
+#include "build_planning_scene.h"
 
 using namespace robowflex;
 
@@ -20,6 +20,15 @@ int main(int argc, char **argv) {
     // Startup ROS
     ROS ros(argc, argv);
 
+//    auto drone = std::make_shared<Robot>("drone_complex");
+//
+//    drone->initialize(
+//            "package://drone_complex_moveit_config/urdf/bot_complex.urdf",
+//            "package://drone_complex_moveit_config/config/aerial_manipulator_drone.srdf",
+//            "",
+//            ""
+//            );
+
     auto drone = std::make_shared<Robot>("drone");
 
     drone->initialize(
@@ -27,7 +36,7 @@ int main(int argc, char **argv) {
             "package://drone_moveit_config/config/aerial_manipulator_drone.srdf",
             "",
             ""
-    );
+            );
 
     IO::RVIZHelper rviz(drone);
     IO::RobotBroadcaster bc(drone);
@@ -53,13 +62,13 @@ int main(int argc, char **argv) {
             .getConstraintSamplerManager()
             .registerSamplerAllocator(std::make_shared<EndEffectorPositionConstraintSamplerAllocator>());
 
-    Profiler::Options options;
-    options.metrics = Profiler::WAYPOINTS | Profiler::CORRECT | Profiler::LENGTH | Profiler::SMOOTHNESS | Profiler::CLEARANCE;
-    Experiment experiment("pick_apple", options, 10.0, 10);
+//    Profiler::Options options;
+//    options.metrics = Profiler::WAYPOINTS | Profiler::CORRECT | Profiler::LENGTH | Profiler::SMOOTHNESS | Profiler::CLEARANCE;
+//    Experiment experiment("pick_apple", options, 10.0, 10);
 
     ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
-    moveit_msgs::MotionPlanRequest request = makeAppleReachRequest(drone, tree_scene.apples, "TRRT");
+    moveit_msgs::MotionPlanRequest request = makeAppleReachRequest(drone, tree_scene.apples, "RRTConnect");
 
     rviz.addGoalMarker("goal_request_marker", request);
 

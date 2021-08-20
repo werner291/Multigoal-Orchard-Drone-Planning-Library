@@ -104,10 +104,4 @@ struct PlanningScene {
     std::vector<Apple> apples;
 };
 
-/**
- * Create a PlanningScene message that represents a scene with a tree in it.
- * @return The PlanningScene message.
- */
-PlanningScene establishPlanningScene();
-
 #endif //PLANNING_PROCEDURAL_TREE_GENERATION_H

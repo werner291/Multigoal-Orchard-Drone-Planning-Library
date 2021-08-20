@@ -19,6 +19,8 @@ find_package(catkin
 ## System dependencies are found with CMake's conventions
 find_package(Eigen3 REQUIRED)
 
+find_package(jsoncpp REQUIRED)
+
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -130,21 +132,41 @@ add_library(${PROJECT_NAME}
         )
 
 ## Benchmark node
-add_executable(${PROJECT_NAME}_node src/run_benchmark.cpp src/procedural_tree_generation.cpp src/EndEffectorConstraintSampler.cpp src/build_request.cpp src/build_request.h)
+add_executable(${PROJECT_NAME}_node
+        src/run_benchmark.cpp
+        src/procedural_tree_generation.cpp
+        src/EndEffectorConstraintSampler.cpp
+        src/build_request.cpp
+        src/build_request.h
+        src/load_mapplet.cpp
+        src/load_mapplet.h
+        src/build_planning_scene.cpp
+        src/build_planning_scene.h)
 set_property(TARGET ${PROJECT_NAME}_node PROPERTY CXX_STANDARD 20)
 
 target_link_libraries(${PROJECT_NAME}_node
         ${catkin_LIBRARIES}
         ${EIGEN_LIBRARIES}
+        jsoncpp_lib
         )
 
 ## Visualization node
-add_executable(${PROJECT_NAME}_viznode src/run_vizualized.cpp src/procedural_tree_generation.cpp src/EndEffectorConstraintSampler.cpp src/build_request.cpp src/build_request.h)
+add_executable(${PROJECT_NAME}_viznode
+        src/run_vizualized.cpp
+        src/procedural_tree_generation.cpp
+        src/EndEffectorConstraintSampler.cpp
+        src/build_request.cpp
+        src/build_request.h
+        src/load_mapplet.cpp
+        src/load_mapplet.h
+        src/build_planning_scene.cpp
+        src/build_planning_scene.h)
 set_property(TARGET ${PROJECT_NAME}_viznode PROPERTY CXX_STANDARD 20)
 
 target_link_libraries(${PROJECT_NAME}_viznode
         ${catkin_LIBRARIES}
         ${EIGEN_LIBRARIES}
+        jsoncpp_lib
         )
 
 #############
