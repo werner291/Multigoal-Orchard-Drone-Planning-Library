@@ -20,20 +20,11 @@ int main(int argc, char **argv) {
     // Startup ROS
     ROS ros(argc, argv);
 
-//    auto drone = std::make_shared<Robot>("drone_complex");
-//
-//    drone->initialize(
-//            "package://drone_complex_moveit_config/urdf/bot_complex.urdf",
-//            "package://drone_complex_moveit_config/config/aerial_manipulator_drone.srdf",
-//            "",
-//            ""
-//            );
-
-    auto drone = std::make_shared<Robot>("drone");
+    auto drone = std::make_shared<Robot>("drone_complex");
 
     drone->initialize(
-            "package://drone_moveit_config/urdf/bot.urdf",
-            "package://drone_moveit_config/config/aerial_manipulator_drone.srdf",
+            "package://drone_complex_moveit_config/urdf/bot_complex.urdf",
+            "package://drone_complex_moveit_config/config/aerial_manipulator_drone.srdf",
             "",
             ""
             );
@@ -53,14 +44,14 @@ int main(int argc, char **argv) {
     OMPL::Settings settings;
     settings.simplify_solutions = false;
 
-    if (!simple_planner->initialize("package://drone_moveit_config/config/ompl_planning.yaml", settings)) {
+    if (!simple_planner->initialize("package://drone_complex_moveit_config/config/ompl_planning.yaml", settings)) {
         std::cout << "Planner initialization failed." << std::endl;
         return 1;
     }
 
     simple_planner->getInterface()
             .getConstraintSamplerManager()
-            .registerSamplerAllocator(std::make_shared<EndEffectorPositionConstraintSamplerAllocator>());
+            .registerSamplerAllocator(std::make_shared<DroneStateConstraintSamplerAllocator>());
 
 //    Profiler::Options options;
 //    options.metrics = Profiler::WAYPOINTS | Profiler::CORRECT | Profiler::LENGTH | Profiler::SMOOTHNESS | Profiler::CLEARANCE;

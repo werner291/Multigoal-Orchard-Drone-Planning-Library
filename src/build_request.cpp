@@ -24,15 +24,30 @@ makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone,
 
     request.allowed_planning_time = 0.5;
 
+    moveit_msgs::OrientationConstraint oc;
+    oc.header.frame_id = drone->getModelConst()->getModelFrame();
+    oc.orientation.x = 0.0;
+    oc.orientation.y = 0.0;
+    oc.orientation.z = 0.0;
+    oc.orientation.w = 1.0;
+    oc.link_name = "base_link";
+    oc.absolute_x_axis_tolerance = 1.0e-5;
+    oc.absolute_y_axis_tolerance = 1.0e-5;
+    oc.absolute_z_axis_tolerance = M_PI;
+    oc.weight = 1.0;
+
+    request.path_constraints.orientation_constraints.push_back(oc);
+
     request.goal_constraints.push_back(makeReachAppleGoalConstraints(apples));
+//    request.goal_constraints.back().orientation_constraints.push_back(oc);
 
     robot_state::RobotState start_state(drone->getModelConst());
     start_state.setToDefaultValues();
     start_state.setJointGroupPositions(drone->getModelConst()->getJointModelGroup("whole_body"),
                                        {
-        -10.0, -10.0, 10.0,
+                                        -10.0, -10.0, 10.0,
                                         0.0, 0.0, 0.0, 1.0,
-                                        0.0//, 0.0, 0.0, 0.0
+                                        0.0, 0.0, 0.0, 0.0
                                        });
 
     moveit::core::robotStateToRobotStateMsg(start_state, request.start_state);
@@ -66,5 +81,8 @@ moveit_msgs::Constraints makeReachAppleGoalConstraints(std::vector<Apple> &apple
     moveit_msgs::PositionConstraint positionConstraint = TF::getPositionConstraint(
             "end_effector", "world", iso, Geometry::makeSphere(0.25));
     goal_constraints.position_constraints.push_back(positionConstraint);
+
+    goal_constraints.name = "reach_for_apple";
+
     return goal_constraints;
 }
