@@ -142,7 +142,7 @@ add_executable(${PROJECT_NAME}_node
         src/load_mapplet.h
         src/build_planning_scene.cpp
         src/build_planning_scene.h)
-set_property(TARGET ${PROJECT_NAME}_node PROPERTY CXX_STANDARD 20)
+set_property(TARGET ${PROJECT_NAME}_node PROPERTY CXX_STANDARD 17)
 
 target_link_libraries(${PROJECT_NAME}_node
         ${catkin_LIBRARIES}
@@ -161,7 +161,7 @@ add_executable(${PROJECT_NAME}_viznode
         src/load_mapplet.h
         src/build_planning_scene.cpp
         src/build_planning_scene.h)
-set_property(TARGET ${PROJECT_NAME}_viznode PROPERTY CXX_STANDARD 20)
+set_property(TARGET ${PROJECT_NAME}_viznode PROPERTY CXX_STANDARD 17)
 
 target_link_libraries(${PROJECT_NAME}_viznode
         ${catkin_LIBRARIES}
