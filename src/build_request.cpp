@@ -22,7 +22,7 @@ makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone,
     request.workspace_parameters.max_corner.y = 20.0;
     request.workspace_parameters.max_corner.z = 20.0;
 
-    request.allowed_planning_time = 0.5;
+    request.allowed_planning_time = 10.0;
 
     moveit_msgs::OrientationConstraint oc;
     oc.header.frame_id = drone->getModelConst()->getModelFrame();
@@ -79,7 +79,7 @@ moveit_msgs::Constraints makeReachAppleGoalConstraints(std::vector<Apple> &apple
 
     moveit_msgs::Constraints goal_constraints;
     moveit_msgs::PositionConstraint positionConstraint = TF::getPositionConstraint(
-            "end_effector", "world", iso, Geometry::makeSphere(0.25));
+            "end_effector", "world", iso, Geometry::makeSphere(0.5));
     goal_constraints.position_constraints.push_back(positionConstraint);
 
     goal_constraints.name = "reach_for_apple";

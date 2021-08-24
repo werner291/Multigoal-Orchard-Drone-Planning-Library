@@ -97,7 +97,9 @@ bool DroneStateConstraintSampler::sample(moveit::core::RobotState &state,
 }
 
 bool DroneStateConstraintSampler::project(moveit::core::RobotState &state, unsigned int max_attempts) {
-    return false; //TODO
+
+    // FIXME: see https://github.com/ros-planning/moveit/issues/2811
+    return this->sample(state, state, max_attempts);
 }
 
 const std::string &DroneStateConstraintSampler::getName() const {

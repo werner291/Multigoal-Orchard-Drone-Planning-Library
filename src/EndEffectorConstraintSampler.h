@@ -6,6 +6,8 @@
 #define NEW_PLANNERS_ENDEFFECTORCONSTRAINTSAMPLER_H
 
 #include <random_numbers/random_numbers.h>
+#include <moveit/constraint_samplers/constraint_sampler.h>
+#include <moveit/constraint_samplers/constraint_sampler_allocator.h>
 
 struct SphericalConstraint {
     Eigen::Vector3d target;

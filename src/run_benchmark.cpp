@@ -9,10 +9,13 @@
 #include <ompl/geometric/planners/rrt/TRRT.h>
 #include <random_numbers/random_numbers.h>
 #include <Eigen/Geometry>
+#include <ompl/base/objectives/MaximizeMinClearanceObjective.h>
 #include "procedural_tree_generation.h"
 #include "build_request.h"
 #include "EndEffectorConstraintSampler.h"
 #include "build_planning_scene.h"
+#include "ClearanceDecreaseMinimzationObjective.h"
+#include "make_robot.h"
 
 using namespace robowflex;
 
@@ -21,22 +24,7 @@ int main(int argc, char **argv) {
     // Startup ROS
     ROS ros(argc, argv);
 
-    auto drone = std::make_shared<Robot>("drone");
-    drone->initialize(
-            "package://drone_moveit_config/urdf/bot.urdf",
-            "package://drone_moveit_config/config/aerial_manipulator_drone.srdf",
-            "",
-            ""
-    );
-
-//auto drone = std::make_shared<Robot>("drone_complex");
-//
-//drone->initialize(
-//        "package://drone_complex_moveit_config/urdf/bot_complex.urdf",
-//        "package://drone_complex_moveit_config/config/aerial_manipulator_drone.srdf",
-//        "",
-//        ""
-//        );
+    auto drone = make_robot();
 
     auto simple_planner = std::make_shared<OMPL::OMPLInterfacePlanner>(drone, "simple");
 
@@ -45,17 +33,25 @@ int main(int argc, char **argv) {
     // FIXME: see https://github.com/KavrakiLab/robowflex/issues/239
     // settings.max_goal_samples = 1;
 
-    if (!simple_planner->initialize("package://drone_moveit_config/config/ompl_planning.yaml", settings)) {
+    if (!simple_planner->initialize("test_robots/config/ompl_planning.yaml", settings)) {
         std::cout << "Planner initialization failed." << std::endl;
         return 1;
     }
 
     simple_planner->getInterface()
     .getConstraintSamplerManager()
-    .registerSamplerAllocator(std::make_shared<EndEffectorPositionConstraintSamplerAllocator>());
+    .registerSamplerAllocator(std::make_shared<DroneStateConstraintSamplerAllocator>());
+
+    simple_planner->setPreplanCallback([&](){
+        const ompl::geometric::SimpleSetupPtr &ss = simple_planner->getLastSimpleSetup();
+        ss->setOptimizationObjective(
+                std::make_shared<ClearanceDecreaseMinimzationObjective>(ss->getSpaceInformation())
+        );
+        std::cout << "Objective set." << std::endl;
+    });
 
     Profiler::Options options;
-    options.metrics = Profiler::WAYPOINTS | Profiler::CORRECT | Profiler::LENGTH | Profiler::SMOOTHNESS;
+    options.metrics = Profiler::WAYPOINTS | Profiler::CORRECT | Profiler::LENGTH | Profiler::SMOOTHNESS | Profiler::CLEARANCE;
     Experiment experiment("pick_apple", options, 0.5, 2);
 
     ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
