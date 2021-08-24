@@ -4,10 +4,11 @@
         pname = "ros-noetic-robowflex";
         version = "rev-master";
 
-        src = fetchGit {
-            url = "https://github.com/KavrakiLab/robowflex.git";
-            rev = "ec92fefa75e82e9609076bd3ea96bf71c393c340";
-        };
+#        src = fetchGit {
+#            url = "https://github.com/KavrakiLab/robowflex.git";
+#            rev = "ec92fefa75e82e9609076bd3ea96bf71c393c340";
+#        };
+        src=/home/werner/catkin_ws/src/robowflex;
 
 
         buildType = "catkin";
@@ -16,7 +17,7 @@
             moveit-core
             moveit-ros-planning
             moveit-ros-planning-interface
-            moveit-planners-ompl
+            (import ./moveit_planners_ompl.nix {pkgs=pkgs;})
             assimp
             boost 
             bullet 
