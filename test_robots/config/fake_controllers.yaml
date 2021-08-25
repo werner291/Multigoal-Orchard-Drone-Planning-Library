@@ -1,0 +1,11 @@
+controller_list:
+  - name: fake_whole_body_controller
+    type: $(arg execution_type)
+    joints:
+      - world_joint
+      - arm_hinge
+initial:  # Define initial robot poses.
+#  - group: whole_body
+#    pose: home
+
+  []

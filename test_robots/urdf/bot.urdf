@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<robot name="aerial_manipulator_drone">
+
+    <link name="base_link">
+
+        <visual>
+            <geometry>
+                <box size="0.4 0.4 0.2"/>
+            </geometry>
+<!--            <geometry>-->
+<!--                <mesh filename="test_robots/meshes/drone.dae"/>-->
+<!--            </geometry>-->
+            <origin xyz="0.0 0.0 0.0"/>
+        </visual>
+
+        <collision>
+            <geometry>
+                <box size="0.4 0.4 0.2"/>
+            </geometry>
+        </collision>
+
+    </link>
+
+    <joint name="arm_hinge" type="revolute">
+        <parent link="base_link"/>
+        <child link="arm"/>
+        <origin xyz="0.0 0.1750 0.0"/>
+        <axis xyz="1 0 0"/>
+        <limit effort="1000.0" lower="-0.5" upper="0.5" velocity="0.5"/>
+    </joint>
+
+    <link name="arm">
+        <visual>
+            <geometry>
+                <box size="0.01 0.5 0.01"/>
+            </geometry>
+            <origin xyz="0.0 0.25 0.0"/>
+        </visual>
+
+        <collision>
+            <geometry>
+                <box size="0.01 0.5 0.01"/>
+            </geometry>
+            <origin xyz="0.0 0.25 0.0"/>
+        </collision>
+    </link>
+
+    <joint name="arm2_hinge" type="revolute">
+        <parent link="arm"/>
+        <child link="arm2"/>
+        <origin xyz="0.0 0.5 0.0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000.0" lower="-0.5" upper="0.5" velocity="0.5"/>
+    </joint>
+
+    <link name="arm2">
+        <visual>
+            <geometry>
+                <box size="0.01 0.5 0.01"/>
+            </geometry>
+            <origin xyz="0.0 0.25 0.0"/>
+        </visual>
+
+        <collision>
+            <geometry>
+                <box size="0.01 0.5 0.01"/>
+            </geometry>
+            <origin xyz="0.0 0.25 0.0"/>
+        </collision>
+    </link>
+
+    <joint name="arm3_hinge" type="revolute">
+        <parent link="arm2"/>
+        <child link="arm3"/>
+        <origin xyz="0.0 0.5 0.0"/>
+        <axis xyz="1 0 0"/>
+        <limit effort="1000.0" lower="-0.5" upper="0.5" velocity="0.5"/>
+    </joint>
+
+    <link name="arm3">
+        <visual>
+            <geometry>
+                <box size="0.01 0.5 0.01"/>
+            </geometry>
+            <origin xyz="0.0 0.25 0.0"/>
+        </visual>
+
+        <collision>
+            <geometry>
+                <box size="0.01 0.5 0.01"/>
+            </geometry>
+            <origin xyz="0.0 0.25 0.0"/>
+        </collision>
+    </link>
+
+
+    <joint name="end_effector_joint" type="continuous">
+        <parent link="arm3"/>
+        <child link="end_effector"/>
+        <origin xyz="0.0 0.5 0.0"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+
+    <link name="end_effector">
+        <visual>
+            <geometry>
+                <box size="0.1 0.1 0.1"/>
+            </geometry>
+        </visual>
+
+<!--        <collision>-->
+<!--            <geometry>-->
+<!--                <box size="0.1 0.1 0.1"/>-->
+<!--            </geometry>-->
+<!--        </collision>-->
+    </link>
+
+
+</robot>
