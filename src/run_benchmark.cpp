@@ -16,6 +16,7 @@
 #include "build_planning_scene.h"
 #include "ClearanceDecreaseMinimzationObjective.h"
 #include "make_robot.h"
+#include "init_planner.h"
 
 using namespace robowflex;
 
@@ -26,29 +27,7 @@ int main(int argc, char **argv) {
 
     auto drone = make_robot();
 
-    auto simple_planner = std::make_shared<OMPL::OMPLInterfacePlanner>(drone, "simple");
-
-    OMPL::Settings settings;
-    settings.simplify_solutions = false;
-    // FIXME: see https://github.com/KavrakiLab/robowflex/issues/239
-    // settings.max_goal_samples = 1;
-
-    if (!simple_planner->initialize("test_robots/config/ompl_planning.yaml", settings)) {
-        std::cout << "Planner initialization failed." << std::endl;
-        return 1;
-    }
-
-    simple_planner->getInterface()
-    .getConstraintSamplerManager()
-    .registerSamplerAllocator(std::make_shared<DroneStateConstraintSamplerAllocator>());
-
-    simple_planner->setPreplanCallback([&](){
-        const ompl::geometric::SimpleSetupPtr &ss = simple_planner->getLastSimpleSetup();
-        ss->setOptimizationObjective(
-                std::make_shared<ClearanceDecreaseMinimzationObjective>(ss->getSpaceInformation())
-        );
-        std::cout << "Objective set." << std::endl;
-    });
+    auto simple_planner = init_planner();
 
     Profiler::Options options;
     options.metrics = Profiler::WAYPOINTS | Profiler::CORRECT | Profiler::LENGTH | Profiler::SMOOTHNESS | Profiler::CLEARANCE;
