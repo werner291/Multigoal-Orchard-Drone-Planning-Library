@@ -118,6 +118,22 @@ catkin_package(
 ## Build ##
 ###########
 
+set(SHARED_SRC
+        src/procedural_tree_generation.cpp
+        src/EndEffectorConstraintSampler.cpp
+        src/build_request.cpp
+        src/build_request.h
+        src/build_planning_scene.cpp
+        src/build_planning_scene.h
+        src/ClearanceDecreaseMinimzationObjective.h
+        src/ClearanceDecreaseMinimzationObjective.cpp
+        src/make_robot.h
+        src/make_robot.cpp
+        src/init_planner.h
+        src/init_planner.cpp
+        src/BulletContinuousMotionValidator.h
+        src/BulletContinuousMotionValidator.cpp)
+
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
@@ -134,16 +150,7 @@ add_library(${PROJECT_NAME}
 ## Benchmark node
 add_executable(${PROJECT_NAME}_benchmark
         src/run_benchmark.cpp
-        src/procedural_tree_generation.cpp
-        src/EndEffectorConstraintSampler.cpp
-        src/build_request.cpp
-        src/build_request.h
-        src/build_planning_scene.cpp
-        src/build_planning_scene.h
-        src/ClearanceDecreaseMinimzationObjective.h
-        src/ClearanceDecreaseMinimzationObjective.cpp
-        src/make_robot.h
-        src/make_robot.cpp)
+        ${SHARED_SRC})
 set_property(TARGET ${PROJECT_NAME}_benchmark PROPERTY CXX_STANDARD 17)
 
 target_link_libraries(${PROJECT_NAME}_benchmark
@@ -154,17 +161,7 @@ target_link_libraries(${PROJECT_NAME}_benchmark
 
 ## Visualization node
 add_executable(${PROJECT_NAME}_vizualized
-        src/run_vizualized.cpp
-        src/procedural_tree_generation.cpp
-        src/EndEffectorConstraintSampler.cpp
-        src/build_request.cpp
-        src/build_request.h
-        src/build_planning_scene.cpp
-        src/build_planning_scene.h
-        src/ClearanceDecreaseMinimzationObjective.h
-        src/ClearanceDecreaseMinimzationObjective.cpp
-        src/make_robot.h
-        src/make_robot.cpp)
+        src/run_vizualized.cpp ${SHARED_SRC})
 set_property(TARGET ${PROJECT_NAME}_vizualized PROPERTY CXX_STANDARD 17)
 
 target_link_libraries(${PROJECT_NAME}_vizualized

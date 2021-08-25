@@ -15,43 +15,10 @@
 #include "build_planning_scene.h"
 #include "ClearanceDecreaseMinimzationObjective.h"
 #include "make_robot.h"
+#include "BulletContinuousMotionValidator.h"
+#include "init_planner.h"
 
 using namespace robowflex;
-
-class BulletContinuousMotionValidator : public ompl::base::MotionValidator {
-
-    std::shared_ptr<Scene> rb_scene_;
-    std::shared_ptr<Robot> rb_robot_;
-public:
-    BulletContinuousMotionValidator(ompl::base::SpaceInformation *si,
-                                    const std::shared_ptr<Robot> &rbRobot,
-                                    const std::shared_ptr<Scene> &rbScene)
-            : MotionValidator(si), rb_robot_(rbRobot), rb_scene_(rbScene) {}
-
-    bool checkMotion(const ompl::base::State *s1, const ompl::base::State *s2) const override {
-
-        collision_detection::CollisionResult res;
-        collision_detection::CollisionRequest req;
-
-        auto st1 = rb_robot_->allocState();
-        si_->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToRobotState(*st1, s1);
-
-        auto st2 = rb_robot_->allocState();
-        si_->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToRobotState(*st2, s2);
-
-        rb_scene_->getScene()->getCollisionEnv()->checkRobotCollision(req, res, *st1, *st2, rb_scene_->getACM());
-
-        return ! res.collision;
-    }
-
-    bool checkMotion(const ompl::base::State *s1, const ompl::base::State *s2,
-                     std::pair<ompl::base::State *, double> &lastValid) const override {
-        ROS_ERROR("Not implemented.");
-
-        return false;
-    }
-
-};
 
 int main(int argc, char **argv) {
 
@@ -73,34 +40,6 @@ int main(int argc, char **argv) {
     scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create(),
                                                   true);
 
-    auto simple_planner = std::make_shared<OMPL::OMPLInterfacePlanner>(drone, "simple");
-
-    OMPL::Settings settings;
-    settings.simplify_solutions = false;
-
-    if (!simple_planner->initialize("test_robots/config/ompl_planning.yaml", settings)) {
-        std::cout << "Planner initialization failed." << std::endl;
-        return 1;
-    }
-
-    simple_planner->getInterface()
-            .getConstraintSamplerManager()
-            .registerSamplerAllocator(std::make_shared<DroneStateConstraintSamplerAllocator>());
-
-    simple_planner->setPreplanCallback([&](){
-
-        const ompl::geometric::SimpleSetupPtr &ss = simple_planner->getLastSimpleSetup();
-        ss->setOptimizationObjective(
-                std::make_shared<ClearanceDecreaseMinimzationObjective>(ss->getSpaceInformation())
-                );
-
-        ss->getSpaceInformation()->setMotionValidator(std::make_shared<BulletContinuousMotionValidator>(ss->getSpaceInformation().get(), drone, scene));
-
-        std::cout << "Objective set." << std::endl;
-    });
-
-
-
     ompl::msg::setLogLevel(ompl::msg::LOG_INFO);
 
     moveit_msgs::MotionPlanRequest request = makeAppleReachRequest(drone, tree_scene.apples, "BiTRRT");
@@ -108,6 +47,8 @@ int main(int argc, char **argv) {
     rviz.addGoalMarker("goal_request_marker", request);
 
     rviz.updateMarkers();
+
+    auto simple_planner = init_planner(drone, scene);
 
     auto response = simple_planner->plan(scene, request);
 
