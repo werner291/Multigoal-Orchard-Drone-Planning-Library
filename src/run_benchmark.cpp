@@ -27,7 +27,9 @@ int main(int argc, char **argv) {
 
     auto drone = make_robot();
 
-    auto simple_planner = init_planner();
+    auto simple_planner = init_planner(<#initializer#>, <#initializer#>, [](const ompl::geometric::SimpleSetupPtr &ss) {
+        return std::make_shared<InverseClearanceIntegralObjective>(ss->getSpaceInformation(), false);
+    });
 
     Profiler::Options options;
     options.metrics = Profiler::WAYPOINTS | Profiler::CORRECT | Profiler::LENGTH | Profiler::SMOOTHNESS | Profiler::CLEARANCE;

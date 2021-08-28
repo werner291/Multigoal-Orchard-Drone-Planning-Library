@@ -8,6 +8,7 @@
 #include "make_robot.h"
 #include "init_planner.h"
 #include "MyCollisionDetectorAllocatorBullet.h"
+#include "InverseClearanceIntegralObjective.h"
 
 using namespace robowflex;
 
@@ -49,12 +50,52 @@ int main(int argc, char **argv) {
 
     rviz.updateMarkers();
 
-    auto simple_planner = init_planner(drone, scene);
+    auto optimizationObjectiveAllocator = [](const ompl::geometric::SimpleSetupPtr &ss) {
+        return std::make_shared<InverseClearanceIntegralObjective>(ss->getSpaceInformation(), false);
+    };
+
+    auto simple_planner = init_planner(drone, scene, optimizationObjectiveAllocator);
 
     auto response = simple_planner->plan(scene, request);
 
+
     if (response.error_code_.val == 1) {
+
+//        simple_planner->getLastSimpleSetup()->getPathSimplifier()->smoothBSpline()
+
         rviz.updateTrajectory(response.trajectory_);
+
+        auto opt = optimizationObjectiveAllocator(simple_planner->getLastSimpleSetup());
+        auto mbsp = simple_planner->getLastSimpleSetup()->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>();
+
+        ompl::base::ScopedState st1(simple_planner->getLastSimpleSetup()->getSpaceInformation());
+//        ompl::base::ScopedState st2(simple_planner->getLastSimpleSetup()->getSpaceInformation());
+
+        for (size_t i = 0; i < response.trajectory_->getWayPointCount(); i++) {
+            mbsp->copyToOMPLState(st1.get(), response.trajectory_->getWayPoint(i));
+//            mbsp->copyToOMPLState(st2.get(), response.trajectory_->getWayPoint(i+1));
+
+//              opt->stateCost(st1.get());
+            double clearance = 1.0 / simple_planner->getLastSimpleSetup()->getStateValidityChecker()->clearance(st1.get());
+
+            std::cout << "Clearance: " << i << " - " << clearance << std::endl;
+
+            std::ostringstream out;
+            out.precision(1);
+            out << std::fixed << clearance;
+
+
+            rviz.addTextMarker("clearance_label",
+                               out.str(),
+                               "world",
+                               response.trajectory_->getWayPoint(i).getGlobalLinkTransform("base_link"),
+                               0.5);
+//            opt->state
+//            opt->motionCost(st1.get(), st2.get());
+        }
+
+        rviz.updateMarkers();
+
     }
 
     std::cin.get();

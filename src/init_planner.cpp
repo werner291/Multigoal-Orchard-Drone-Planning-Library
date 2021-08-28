@@ -10,8 +10,9 @@
 #include <robowflex_library/builder.h>
 #include "init_planner.h"
 
-std::shared_ptr<robowflex::OMPL::OMPLInterfacePlanner> init_planner(std::shared_ptr<robowflex::Robot> drone,
-                                                                    std::shared_ptr<robowflex::Scene> scene) {
+std::shared_ptr<robowflex::OMPL::OMPLInterfacePlanner>
+init_planner(const std::shared_ptr<robowflex::Robot> &drone, const std::shared_ptr<robowflex::Scene> &scene,
+             ObjectiveFactory &allocateOptimizationObjective) {
 
     // We use the OMPLInterfacePlannerto be able to access the underlying OMPL planner directly.
     auto simple_planner = std::make_shared<robowflex::OMPL::OMPLInterfacePlanner>(drone, "simple");
@@ -27,12 +28,15 @@ std::shared_ptr<robowflex::OMPL::OMPLInterfacePlanner> init_planner(std::shared_
             .getConstraintSamplerManager()
             .registerSamplerAllocator(std::make_shared<DroneStateConstraintSamplerAllocator>());
 
-    // Not available in standard Robowflex.
-    // See: https://github.com/KavrakiLab/robowflex/pull/255
-    simple_planner->setPreplanCallback([&](){
-        const ompl::geometric::SimpleSetupPtr &ss = simple_planner->getLastSimpleSetup();
+    simple_planner->setPrePlanCallback([drone, allocateOptimizationObjective](const ompl_interface::ModelBasedPlanningContextPtr &context, const robowflex::SceneConstPtr &scene,
+                                           const planning_interface::MotionPlanRequest &request){
+        const ompl::geometric::SimpleSetupPtr &ss = context->getOMPLSimpleSetup();
+
+//        ss->setOptimizationObjective(
+//                std::make_shared<ClearanceDecreaseMinimzationObjective>(ss->getSpaceInformation())
+//        );
         ss->setOptimizationObjective(
-                std::make_shared<ClearanceDecreaseMinimzationObjective>(ss->getSpaceInformation())
+                allocateOptimizationObjective(ss)
         );
 
         ss->getSpaceInformation()->setMotionValidator(std::make_shared<BulletContinuousMotionValidator>(ss->getSpaceInformation().get(), drone, scene));
