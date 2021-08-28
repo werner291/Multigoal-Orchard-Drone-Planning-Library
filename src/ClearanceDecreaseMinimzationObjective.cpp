@@ -16,8 +16,7 @@
 #include <robowflex_library/planning.h>
 #include <robowflex_library/geometry.h>
 #include <robowflex_ompl/ompl_interface.h>
-#include <robowflex_library/benchmarking.h>
-#include <robowflex_library/builder.h>
+#include <moveit/collision_detection_bullet/collision_env_bullet.h>
 #include "ClearanceDecreaseMinimzationObjective.h"
 
 ompl::base::Cost ClearanceDecreaseMinimzationObjective::stateCost(const ompl::base::State *s) const {
