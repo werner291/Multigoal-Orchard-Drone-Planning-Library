@@ -1,22 +1,13 @@
 #include <robowflex_library/builder.h>
 #include <robowflex_library/benchmarking.h>
-#include <robowflex_ompl/ompl_interface.h>
-#include <robowflex_library/geometry.h>
-#include <robowflex_library/planning.h>
-#include <robowflex_library/scene.h>
 #include <robowflex_library/util.h>
 #include <robowflex_library/io/visualization.h>
 #include <robowflex_library/io/broadcaster.h>
-#include <ompl/base/objectives/MechanicalWorkOptimizationObjective.h>
-#include <random_numbers/random_numbers.h>
-#include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
-#include "EndEffectorConstraintSampler.h"
 #include "build_request.h"
 #include "build_planning_scene.h"
-#include "ClearanceDecreaseMinimzationObjective.h"
 #include "make_robot.h"
-#include "BulletContinuousMotionValidator.h"
 #include "init_planner.h"
+#include "MyCollisionDetectorAllocatorBullet.h"
 
 using namespace robowflex;
 
