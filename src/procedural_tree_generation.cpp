@@ -132,26 +132,10 @@ std::vector<Apple> spawn_apples(const std::vector<DetachedTreeNode> &flattened,
 
         auto apple_xform = frame_on_branch(distr(eng) * (float) M_PI * 2.0f, distr(eng), node) * Eigen::Translation3d(Eigen::Vector3d(0, 0, apple_radius));
 
-//        const std::shared_ptr<fcl::Sphere> apple_shape = std::make_shared<fcl::Sphere>(apple_radius);
-//
-//        apple_shape->setUserData((void *) &apple_userdata);
-//
-//        auto apple_collision_object = std::make_unique<fcl::CollisionObject>(apple_shape, fcl::Transform3f(eigenToFCL(apple_xform)));
-//
-//        bool did_collide = false;
-//
-//        tree_model_broadphase.collide(apple_collision_object.get(), &did_collide, broadphase_collision_callback);
-//
-//        if (!did_collide) {
-
-//            tree_model_broadphase.registerObject(apple_collision_object.get());
-
             apples.push_back(Apple{
                     .center = apple_xform.translation(),
                     .branch_normal = (apple_xform.rotation() * Eigen::Vector3d(0.0,0.0,1.0))
-//                    .collision_object = std::move(apple_collision_object)
             });
-//        }
     }
 
     return apples;
