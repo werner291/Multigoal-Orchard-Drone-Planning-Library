@@ -3,27 +3,17 @@
 //
 
 #include "BulletContinuousMotionValidator.h"
-#include "make_robot.h"
 #include "ClearanceDecreaseMinimzationObjective.h"
-#include "build_planning_scene.h"
-#include "build_request.h"
+#include "InverseClearanceIntegralObjective.h"
 #include "EndEffectorConstraintSampler.h"
-#include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
-#include <random_numbers/random_numbers.h>
-#include <ompl/base/objectives/MechanicalWorkOptimizationObjective.h>
-#include <robowflex_library/io/broadcaster.h>
 #include <robowflex_library/io/visualization.h>
-#include <robowflex_library/util.h>
-#include <robowflex_library/scene.h>
-#include <robowflex_library/planning.h>
-#include <robowflex_library/geometry.h>
-#include <robowflex_ompl/ompl_interface.h>
-#include <robowflex_library/benchmarking.h>
 #include <robowflex_library/builder.h>
 #include "init_planner.h"
 
-std::shared_ptr<robowflex::OMPL::OMPLInterfacePlanner> init_planner(std::shared_ptr<robowflex::Robot> drone, std::shared_ptr<robowflex::Scene> scene) {
+std::shared_ptr<robowflex::OMPL::OMPLInterfacePlanner> init_planner(std::shared_ptr<robowflex::Robot> drone,
+                                                                    std::shared_ptr<robowflex::Scene> scene) {
 
+    // We use the OMPLInterfacePlannerto be able to access the underlying OMPL planner directly.
     auto simple_planner = std::make_shared<robowflex::OMPL::OMPLInterfacePlanner>(drone, "simple");
 
     robowflex::OMPL::Settings settings;
