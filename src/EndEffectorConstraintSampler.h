@@ -1,7 +1,3 @@
-//
-// Created by werner on 13-08-21.
-//
-
 #ifndef NEW_PLANNERS_ENDEFFECTORCONSTRAINTSAMPLER_H
 #define NEW_PLANNERS_ENDEFFECTORCONSTRAINTSAMPLER_H
 
@@ -14,6 +10,16 @@ struct SphericalConstraint {
     double radius;
 };
 
+/**
+ *
+ * A constraint sampler that samples states for the drone,
+ * optionally with the end-effector within a sphere for the purpose of goal sampling.
+ *
+ * When the goal sphere is specified, samples are taken by picking a point uniformly within the sphere,
+ * generating a random state for the drone, then translating the drone's base in order to nullify
+ * the distance between the end-effector position (obtained through forward kinematics) and the sample's
+ * position in the sphere.
+ */
 class DroneStateConstraintSampler : public constraint_samplers::ConstraintSampler {
 
     std::string name_;

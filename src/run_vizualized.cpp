@@ -11,12 +11,20 @@
 
 using namespace robowflex;
 
+/**
+ * The "visualized" version of this program, which serves as a scratch state in which to experiment with new,
+ * and potentially useless changes.
+ *
+ * See the benchmark main() method for the more reproducible results.
+ */
 int main(int argc, char **argv) {
 
     // Startup ROS
     ROS ros(argc, argv);
 
     std::shared_ptr<Robot> drone = make_robot();
+
+
 
     IO::RVIZHelper rviz(drone);
     IO::RobotBroadcaster bc(drone);
@@ -28,7 +36,7 @@ int main(int argc, char **argv) {
 
     rviz.updateScene(scene);
 
-    scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create(),
+    scene->getScene()->setActiveCollisionDetector(MyCollisionDetectorAllocatorBullet::create(),
                                                   true);
 
     ompl::msg::setLogLevel(ompl::msg::LOG_INFO);

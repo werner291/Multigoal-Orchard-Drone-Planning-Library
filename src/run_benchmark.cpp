@@ -42,6 +42,9 @@ int main(int argc, char **argv) {
         auto tree_scene = establishPlanningScene(7);
         scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
 
+        scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create(),
+                                                      true);
+
         for (const auto &config : {"PRM", "RRTConnect", "TRRT", "BiTRRT"}) {
             for (int i = 0; i < 10; i++) {
                 experiment.addQuery(config, scene, simple_planner,

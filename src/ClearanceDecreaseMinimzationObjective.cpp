@@ -1,23 +1,21 @@
-//
-// Created by werner on 8/24/21.
-//
-
-#include "build_planning_scene.h"
-#include "build_request.h"
-#include "EndEffectorConstraintSampler.h"
-#include <random_numbers/random_numbers.h>
-#include <ompl/base/objectives/MechanicalWorkOptimizationObjective.h>
-#include <ompl/base/objectives/MaximizeMinClearanceObjective.h>
-#include <ompl/geometric/planners/rrt/TRRT.h>
-#include <robowflex_library/io/broadcaster.h>
-#include <robowflex_library/io/visualization.h>
-#include <robowflex_library/util.h>
-#include <robowflex_library/scene.h>
-#include <robowflex_library/planning.h>
-#include <robowflex_library/geometry.h>
 #include <robowflex_ompl/ompl_interface.h>
 #include <moveit/collision_detection_bullet/collision_env_bullet.h>
 #include "ClearanceDecreaseMinimzationObjective.h"
+#include "MyCollisionDetectorAllocatorBullet.h"
+
+//double fullBodyClearance(moveit::core::RobotState state, const planning_scene::PlanningScene& scene) {
+//    state.update();
+//
+//    auto env = std::dynamic_pointer_cast<const MyCollisionEnvironment>(scene.getCollisionEnv());
+//
+//
+//
+////    env->getWorld()
+//
+////    scene.checkCollision()
+//
+//    return 0.0;
+//}
 
 ompl::base::Cost ClearanceDecreaseMinimzationObjective::stateCost(const ompl::base::State *s) const {
     return ompl::base::Cost(1.0 / si_->getStateValidityChecker()->clearance(s));

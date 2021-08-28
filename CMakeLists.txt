@@ -132,7 +132,7 @@ set(SHARED_SRC
         src/init_planner.h
         src/init_planner.cpp
         src/BulletContinuousMotionValidator.h
-        src/BulletContinuousMotionValidator.cpp)
+        src/BulletContinuousMotionValidator.cpp src/MyCollisionDetectorAllocatorBullet.cpp src/MyCollisionDetectorAllocatorBullet.h src/InverseClearanceIntegralObjective.cpp src/InverseClearanceIntegralObjective.h)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -142,10 +142,10 @@ include_directories(
         ${EIGEN3_INCLUDE_DIRS}
 )
 
-## Declare a C++ library
-add_library(${PROJECT_NAME}
-        src/TreePlanner.cpp
-        )
+### Declare a C++ library
+#add_library(${PROJECT_NAME}
+#        src/TreePlanner.cpp
+#        )
 
 ## Benchmark node
 add_executable(${PROJECT_NAME}_benchmark

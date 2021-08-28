@@ -13,7 +13,7 @@ bool BulletContinuousMotionValidator::checkMotion(const ompl::base::State *s1, c
     auto st2 = rb_robot_->allocState();
     si_->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToRobotState(*st2, s2);
 
-    rb_scene_->getScene()->getCollisionEnv()->checkRobotCollision(req, res, *st1, *st2, rb_scene_->getACM());
+    rb_scene_->getSceneConst()->getCollisionEnv()->checkRobotCollision(req, res, *st1, *st2, rb_scene_->getACMConst());
 
     return ! res.collision;
 }
