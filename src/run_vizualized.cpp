@@ -42,7 +42,9 @@ int main(int argc, char **argv) {
 
     ompl::msg::setLogLevel(ompl::msg::LOG_INFO);
 
-    moveit_msgs::MotionPlanRequest request = makeAppleReachRequest(drone, tree_scene.apples, "BiTRRT");
+    moveit_msgs::MotionPlanRequest request = makeAppleReachRequest(drone, tree_scene.apples, "RRTX", 60.0);
+
+
 
     rviz.addGoalMarker("goal_request_marker", request);
 

@@ -10,7 +10,7 @@
 
 moveit_msgs::Constraints makeReachAppleGoalConstraints(std::vector<Apple> &apples);
 
-moveit_msgs::MotionPlanRequest makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone,
-                                                     std::vector<Apple> &apples,
-                                                     const std::string& planner_id);
+moveit_msgs::MotionPlanRequest
+makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone, std::vector<Apple> &apples,
+                      const std::string &planner_id, double planning_time);
 #endif //NEW_PLANNERS_BUILD_REQUEST_H

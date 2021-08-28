@@ -6,9 +6,8 @@
 using namespace robowflex;
 
 moveit_msgs::MotionPlanRequest
-makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone,
-                      std::vector<Apple> &apples,
-                      const std::string& planner_id) {
+makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone, std::vector<Apple> &apples,
+                      const std::string &planner_id, double planning_time) {
 
     moveit_msgs::MotionPlanRequest request;
 
@@ -22,7 +21,7 @@ makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone,
     request.workspace_parameters.max_corner.y = 20.0;
     request.workspace_parameters.max_corner.z = 20.0;
 
-    request.allowed_planning_time = 10.0;
+    request.allowed_planning_time = planning_time;
 
     moveit_msgs::OrientationConstraint oc;
     oc.header.frame_id = drone->getModelConst()->getModelFrame();
