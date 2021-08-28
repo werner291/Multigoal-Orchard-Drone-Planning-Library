@@ -11,6 +11,6 @@
  * Create a PlanningScene message that represents a scene with a tree in it.
  * @return The PlanningScene message.
  */
-PlanningScene establishPlanningScene();
+PlanningScene establishPlanningScene(int branchingDepth);
 
 #endif //NEW_PLANNERS_BUILD_PLANNING_SCENE_H

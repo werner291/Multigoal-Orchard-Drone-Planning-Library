@@ -4,9 +4,9 @@
 
 #include "build_planning_scene.h"
 
-PlanningScene establishPlanningScene() {
+PlanningScene establishPlanningScene(int branchingDepth) {
 
-    TreeNode tree = make_tree_branches(Eigen::Isometry3d::Identity(), 7, 0.5);
+    TreeNode tree = make_tree_branches(Eigen::Isometry3d::Identity(), branchingDepth, 0.5);
     std::vector<DetachedTreeNode> tree_flattened = flatten_tree(tree);
 
     PlanningScene planning_scene{};
@@ -83,6 +83,7 @@ PlanningScene establishPlanningScene() {
             tri.vertex_indices[2] = i + 2;
             mesh.triangles.push_back(tri);
         }
+
         leaves_collision.meshes.push_back(mesh);
         geometry_msgs::Pose pose;
         pose.position.x = 0;
@@ -100,7 +101,7 @@ PlanningScene establishPlanningScene() {
         leaves_color.id = "leaves";
         leaves_color.color.a = 1.0;
         leaves_color.color.r = 0.0;
-        leaves_color.color.g = 1.0;
+        leaves_color.color.g = 0.8;
         leaves_color.color.b = 0.0;
         //planning_scene.moveit_diff.object_colors.push_back(leaves_color);
     }

@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 
     for (int scene_idx = 0; scene_idx < 10; scene_idx++) {
         auto scene = std::make_shared<Scene>(drone);
-        auto tree_scene = establishPlanningScene();
+        auto tree_scene = establishPlanningScene(7);
         scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
 
         for (const auto &config : {"PRM", "RRTConnect", "TRRT", "BiTRRT"}) {

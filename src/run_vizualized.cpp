@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     bc.start();
 
     auto scene = std::make_shared<Scene>(drone);
-    auto tree_scene = establishPlanningScene();
+    auto tree_scene = establishPlanningScene(8);
     scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
 
     rviz.updateScene(scene);
