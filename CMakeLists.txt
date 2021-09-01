@@ -21,6 +21,8 @@ find_package(Eigen3 REQUIRED)
 
 find_package(jsoncpp REQUIRED)
 
+find_package(fcl REQUIRED)
+
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -125,14 +127,21 @@ set(SHARED_SRC
         src/build_request.h
         src/build_planning_scene.cpp
         src/build_planning_scene.h
-        src/ClearanceDecreaseMinimzationObjective.h
-        src/ClearanceDecreaseMinimzationObjective.cpp
+        src/ClearanceDecreaseMinimizationObjective.h
+        src/ClearanceDecreaseMinimizationObjective.cpp
         src/make_robot.h
         src/make_robot.cpp
         src/init_planner.h
         src/init_planner.cpp
         src/BulletContinuousMotionValidator.h
-        src/BulletContinuousMotionValidator.cpp src/MyCollisionDetectorAllocatorBullet.cpp src/MyCollisionDetectorAllocatorBullet.h src/InverseClearanceIntegralObjective.cpp src/InverseClearanceIntegralObjective.h)
+        src/BulletContinuousMotionValidator.cpp
+        src/MyCollisionDetectorAllocatorBullet.cpp
+        src/MyCollisionDetectorAllocatorBullet.h
+        src/InverseClearanceIntegralObjective.cpp
+        src/InverseClearanceIntegralObjective.h
+        #src/CostBiasedNearestNeighborPlanner.cpp
+        #src/CostBiasedNearestNeighborPlanner.h
+        )
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -140,6 +149,7 @@ include_directories(
         # include
         ${catkin_INCLUDE_DIRS}
         ${EIGEN3_INCLUDE_DIRS}
+        ${FCL_INCLUDE_DIRS}
 )
 
 ### Declare a C++ library
@@ -156,6 +166,7 @@ set_property(TARGET ${PROJECT_NAME}_benchmark PROPERTY CXX_STANDARD 17)
 target_link_libraries(${PROJECT_NAME}_benchmark
         ${catkin_LIBRARIES}
         ${EIGEN_LIBRARIES}
+        ${FCL_LIBRARIES}
         jsoncpp_lib
         )
 
@@ -167,6 +178,7 @@ set_property(TARGET ${PROJECT_NAME}_vizualized PROPERTY CXX_STANDARD 17)
 target_link_libraries(${PROJECT_NAME}_vizualized
         ${catkin_LIBRARIES}
         ${EIGEN_LIBRARIES}
+        ${FCL_LIBRARIES}
         jsoncpp_lib
         )
 

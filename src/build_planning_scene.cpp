@@ -63,6 +63,7 @@ PlanningScene establishPlanningScene(int branchingDepth) {
 
         std::vector<Eigen::Vector3d> leaf_vertices = generateLeafVertices(tree_flattened);
 
+
         moveit_msgs::CollisionObject leaves_collision;
         leaves_collision.id = "leaves";
         leaves_collision.header.frame_id = "world";
@@ -104,6 +105,8 @@ PlanningScene establishPlanningScene(int branchingDepth) {
         leaves_color.color.g = 0.8;
         leaves_color.color.b = 0.0;
         //planning_scene.moveit_diff.object_colors.push_back(leaves_color);
+
+        planning_scene.leaf_vertices = std::move(leaf_vertices);
     }
 
     {

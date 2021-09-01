@@ -2,8 +2,8 @@
 // Created by werner on 8/24/21.
 //
 
-#ifndef NEW_PLANNERS_CLEARANCEDECREASEMINIMZATIONOBJECTIVE_H
-#define NEW_PLANNERS_CLEARANCEDECREASEMINIMZATIONOBJECTIVE_H
+#ifndef NEW_PLANNERS_CLEARANCEDECREASEMINIMIZATIONOBJECTIVE_H
+#define NEW_PLANNERS_CLEARANCEDECREASEMINIMIZATIONOBJECTIVE_H
 
 #include <ompl/base/objectives/MechanicalWorkOptimizationObjective.h>
 
@@ -24,7 +24,7 @@
  * For instance, the planner will be rewarded for moving around a dangerous area without
  * approaching it, rather than attempting to pass through a thin section of it.
  */
-class ClearanceDecreaseMinimzationObjective : public ompl::base::MechanicalWorkOptimizationObjective {
+class ClearanceDecreaseMinimizationObjective : public ompl::base::MechanicalWorkOptimizationObjective {
 
     /**
      * \brief State cost is the inverse of the clearance.
@@ -50,11 +50,11 @@ class ClearanceDecreaseMinimzationObjective : public ompl::base::MechanicalWorkO
     [[nodiscard]] bool isCostBetterThan(ompl::base::Cost c1, ompl::base::Cost c2) const override;
 
 public:
-    explicit ClearanceDecreaseMinimzationObjective(const ompl::base::SpaceInformationPtr &si, double pathLengthWeight = 0.00001)
+    explicit ClearanceDecreaseMinimizationObjective(const ompl::base::SpaceInformationPtr &si, double pathLengthWeight = 0.00001)
             : MechanicalWorkOptimizationObjective(si, pathLengthWeight) {
         description_ = "Minimize reduction of clearance";
     }
 
 };
 
-#endif //NEW_PLANNERS_CLEARANCEDECREASEMINIMZATIONOBJECTIVE_H
+#endif //NEW_PLANNERS_CLEARANCEDECREASEMINIMIZATIONOBJECTIVE_H

@@ -14,7 +14,7 @@
 #include "build_request.h"
 #include "EndEffectorConstraintSampler.h"
 #include "build_planning_scene.h"
-#include "ClearanceDecreaseMinimzationObjective.h"
+#include "ClearanceDecreaseMinimizationObjective.h"
 #include "make_robot.h"
 #include "init_planner.h"
 

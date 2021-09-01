@@ -102,6 +102,7 @@ generateLeafVertices(std::vector<DetachedTreeNode> &flattened);
 struct PlanningScene {
     moveit_msgs::PlanningScene moveit_diff;
     std::vector<Apple> apples;
+    std::vector<Eigen::Vector3d> leaf_vertices;
 };
 
 #endif //PLANNING_PROCEDURAL_TREE_GENERATION_H

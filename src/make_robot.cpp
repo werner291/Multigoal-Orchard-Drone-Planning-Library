@@ -2,7 +2,7 @@
 // Created by werner on 8/24/21.
 //
 
-#include "ClearanceDecreaseMinimzationObjective.h"
+#include "ClearanceDecreaseMinimizationObjective.h"
 #include "build_planning_scene.h"
 #include "build_request.h"
 #include "EndEffectorConstraintSampler.h"
