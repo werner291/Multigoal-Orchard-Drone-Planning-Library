@@ -55,7 +55,7 @@ bool DroneStateConstraintSampler::sample(moveit::core::RobotState &state,
 
         pos[0] = rng.uniformReal(-20.0,20.0);
         pos[1] = rng.uniformReal(-20.0,20.0);
-        pos[1] = rng.uniformReal(0,20.0);
+        pos[2] = rng.uniformReal(0,20.0);
 
         Eigen::Quaterniond q(Eigen::AngleAxisd( rng.uniformReal(-M_PI, M_PI), Eigen::Vector3d::UnitZ() ));
         pos[3] = q.x();

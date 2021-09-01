@@ -39,6 +39,7 @@ TreeNode make_tree_branches(const Eigen::Isometry3d &root_at, unsigned int branc
     std::uniform_real_distribution<double> distr(-BRANCH_ANGULAR_RANGE, BRANCH_ANGULAR_RANGE);
 
     std::bernoulli_distribution split_probabilities(0.9);
+    std::bernoulli_distribution split_double_probabilities(0.5);
     std::uniform_real_distribution<double> area_split_distr(0.3,0.7);
 
     if (branching_depth > 0) {
@@ -62,8 +63,14 @@ TreeNode make_tree_branches(const Eigen::Isometry3d &root_at, unsigned int branc
             // Pre-transform?
             local_root *= Eigen::AngleAxisd(distr(eng), Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(distr(eng), Eigen::Vector3d::UnitY());
 
-            node.children.push_back(make_tree_branches(local_root, branching_depth - 1, child_radii[i] *
-                                                                                        BRANCH_RADIUS_REDUCTION_FACTOR));
+            if (split_double_probabilities(eng) && branching_depth >= 2) {
+                node.children.push_back(make_tree_branches(local_root, branching_depth - 2, child_radii[i] *
+                                                                                            pow(BRANCH_RADIUS_REDUCTION_FACTOR,2)));
+
+            } else {
+                node.children.push_back(make_tree_branches(local_root, branching_depth - 1, child_radii[i] *
+                                                                                            BRANCH_RADIUS_REDUCTION_FACTOR));
+            }
         }
     }
 
@@ -171,7 +178,7 @@ std::vector<Eigen::Vector3d> generateLeafVertices(std::vector<DetachedTreeNode> 
     std::vector<Eigen::Vector3d> vertices;
 
     for (auto & branch_node : flattened) {
-        if (branch_node.radius > 0.5) continue;
+        if (branch_node.radius > 0.25) continue;
 
         for (size_t leaf_idx = 0; leaf_idx < NUM_LEAVES_PER_BRANCH; leaf_idx++) {
 

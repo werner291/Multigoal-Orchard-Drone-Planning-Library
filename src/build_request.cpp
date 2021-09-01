@@ -61,7 +61,21 @@ moveit_msgs::Constraints makeReachAppleGoalConstraints(std::vector<Apple> &apple
     // setup a uniform distribution
     std::uniform_int_distribution<size_t> dis(0, apples.size() - 1);
 
+    Eigen::Vector3d cog(0,0,0);
+    for (Apple& apple: apples) {
+        cog += apple.center;
+    }
+    cog /= (double) apples.size();
+
     Apple apple = apples[dis(rng)];
+
+    for (int i = 0; i < 4; i++) {
+        Apple apple2 = apples[dis(rng)];
+
+        if ((apple2.center-cog).norm() < (apple.center-cog).norm()) {
+            apple = apple2;
+        }
+    }
 
     Eigen::Vector3d ee_pos = apple.center;// + apple.branch_normal * 0.4;
     Eigen::Quaterniond ee_rot;
@@ -78,7 +92,7 @@ moveit_msgs::Constraints makeReachAppleGoalConstraints(std::vector<Apple> &apple
 
     moveit_msgs::Constraints goal_constraints;
     moveit_msgs::PositionConstraint positionConstraint = TF::getPositionConstraint(
-            "end_effector", "world", iso, Geometry::makeSphere(0.5));
+            "end_effector", "world", iso, Geometry::makeSphere(0.2));
     goal_constraints.position_constraints.push_back(positionConstraint);
 
     goal_constraints.name = "reach_for_apple";

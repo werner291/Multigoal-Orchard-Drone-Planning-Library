@@ -9,7 +9,6 @@
 #include <robowflex_library/io/visualization.h>
 #include <robowflex_library/builder.h>
 #include "init_planner.h"
-#include "CostBiasedNearestNeighborPlanner.h"
 
 std::shared_ptr<robowflex::OMPL::OMPLInterfacePlanner>
 init_planner(const std::shared_ptr<robowflex::Robot> &drone, const std::shared_ptr<robowflex::Scene> &scene,
@@ -51,7 +50,7 @@ init_planner(const std::shared_ptr<robowflex::Robot> &drone, const std::shared_p
                 allocateOptimizationObjective(ss)
         );
 
-        ss->getSpaceInformation()->setMotionValidator(std::make_shared<BulletContinuousMotionValidator>(ss->getSpaceInformation().get(), drone, scene));
+//        ss->getSpaceInformation()->setMotionValidator(std::make_shared<BulletContinuousMotionValidator>(ss->getSpaceInformation().get(), drone, scene));
     });
 
     return simple_planner;

@@ -90,109 +90,59 @@ int main(int argc, char **argv) {
     bc.start();
 
     auto scene = std::make_shared<Scene>(drone);
-    auto tree_scene = establishPlanningScene(8);
+    auto tree_scene = establishPlanningScene(10);
     scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
 
     rviz.updateScene(scene);
 
-    scene->getScene()->setActiveCollisionDetector(MyCollisionDetectorAllocatorBullet::create(),
-                                                  true);
-
     ompl::msg::setLogLevel(ompl::msg::LOG_INFO);
-
-//    moveit_msgs::MotionPlanRequest request = makeAppleReachRequest(
-//            drone, tree_scene.apples, "BiCBNN", 0.5
-//            );
-    moveit_msgs::MotionPlanRequest request = makeAppleReachRequest(drone, tree_scene.apples, "BiTRRT", 60.0);
-
-    rviz.addGoalMarker("goal_request_marker", request);
-
-    rviz.updateMarkers();
 
     auto optimizationObjectiveAllocator = [](const ompl::geometric::SimpleSetupPtr &ss) {
         return std::make_shared<ClearanceDecreaseMinimizationObjective>(ss->getSpaceInformation());
     };
 
-//    auto optimizationObjectiveAllocator = [](const ompl::geometric::SimpleSetupPtr &ss) {
-//        return std::make_shared<InverseClearanceIntegralObjective>(ss->getSpaceInformation(), false);
-//    };
-
-    auto simple_planner = init_planner(drone, scene, optimizationObjectiveAllocator);
-
-    auto response = simple_planner->plan(scene, request);
 
 
-    if (response.error_code_.val == 1) {
+        moveit_msgs::MotionPlanRequest request = makeAppleReachRequest(drone, tree_scene.apples, "RRTConnect", 60.0);
+        rviz.addGoalMarker("goal_request_marker", request);
+        rviz.updateMarkers();
+        auto simple_planner = init_planner(drone, scene, optimizationObjectiveAllocator);
+        auto response = simple_planner->plan(scene, request);
+        if (response.error_code_.val == 1) {
 
-        fcl::BVHModel<fcl::OBBRSSd> leaves;
-        leaves.beginModel();
-        for (size_t i = 0; i < tree_scene.leaf_vertices.size(); i += 3) {
-            leaves.addTriangle(
-                    tree_scene.leaf_vertices[i],
-                    tree_scene.leaf_vertices[i+1],
-                    tree_scene.leaf_vertices[i+2]
-                    );
-        }
-        leaves.endModel();
 
-        MyCollisionEnvironmentFCL fclEnv(drone->getModel(), 0.0, 1.0);
+            std::cout << "Planning succeeded." << std::endl;
 
-        collision_detection::FCLObject fclObject;
 
-        for (size_t i; i < 10000; i++) {
 
-            response.trajectory_->getStateAtDurationFromStart(
-                    (double) i / 10000.0 * response.trajectory_->getDuration(), drone->getScratchState());
-            drone->getScratchState()->update();
-            fclEnv.getRobotFCL(*drone->getScratchState(), fclObject);
-
-            fcl::CollisionRequestd req;
-            fcl::CollisionResultd res;
-
-            fcl::collide(&leaves, Eigen::Isometry3d::Identity(),
-                         fclObject.collision_objects_[0]->collisionGeometry().get(),
-                         fclObject.collision_objects_[0]->getTransform(),
-                         req,
-                         res);
-
-            std::cout << "Collision: " << res.isCollision() << std::endl;
-        }
+//        for (size_t i = 0; i < 10000; i++) {
+//
+//            response.trajectory_->getStateAtDurationFromStart(
+//                    (double) i / 100.0 * response.trajectory_->getDuration(), drone->getScratchState());
+//
+//            drone->getScratchState()->update();
+//
+//            auto res = scene->checkCollision(*drone->getScratchState());
+//
+////            std::cout << "res:" << res.collision << std::endl;
+//
+////            fclEnv.getRobotFCL(*drone->getScratchState(), fclObject);
+////
+////            fcl::CollisionRequestd req;
+////            fcl::CollisionResultd res;
+////
+////            fcl::collide(&leaves, Eigen::Isometry3d::Identity(),
+////                         fclObject.collision_objects_[0]->collisionGeometry().get(),
+////                         fclObject.collision_objects_[0]->getTransform(),
+////                         req,
+////                         res);
+////
+////            std::cout << "Collision: " << res.isCollision() << std::endl;
+//        }
 ////        simple_planner->getLastSimpleSetup()->getPathSimplifier()->smoothBSpline()
 //
-        rviz.updateTrajectory(response.trajectory_);
-//
-//        auto opt = optimizationObjectiveAllocator(simple_planner->getLastSimpleSetup());
-//        auto mbsp = simple_planner->getLastSimpleSetup()->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>();
-//
-//        ompl::base::ScopedState st1(simple_planner->getLastSimpleSetup()->getSpaceInformation());
-////        ompl::base::ScopedState st2(simple_planner->getLastSimpleSetup()->getSpaceInformation());
-//
-//        for (size_t i = 0; i < response.trajectory_->getWayPointCount(); i++) {
-//            mbsp->copyToOMPLState(st1.get(), response.trajectory_->getWayPoint(i));
-////            mbsp->copyToOMPLState(st2.get(), response.trajectory_->getWayPoint(i+1));
-//
-////              opt->stateCost(st1.get());
-//            double clearance = 1.0 / simple_planner->getLastSimpleSetup()->getStateValidityChecker()->clearance(st1.get());
-//
-//            std::cout << "Clearance: " << i << " - " << clearance << std::endl;
-//
-//            std::ostringstream out;
-//            out.precision(1);
-//            out << std::fixed << clearance;
-//
-//
-////            rviz.addTextMarker("clearance_label",
-////                               out.str(),
-////                               "world",
-////                               response.trajectory_->getWayPoint(i).getGlobalLinkTransform("base_link"),
-////                               0.2);
-////            opt->state
-////            opt->motionCost(st1.get(), st2.get());
-//        }
-//
-//        rviz.updateMarkers();
-
-    }
+            rviz.updateTrajectory(response);
+        }
 
     std::cin.get();
 
