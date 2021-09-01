@@ -7,12 +7,9 @@
 #include "build_planning_scene.h"
 #include "make_robot.h"
 #include "init_planner.h"
-#include "MyCollisionDetectorAllocatorBullet.h"
 #include "InverseClearanceIntegralObjective.h"
 #include "ClearanceDecreaseMinimizationObjective.h"
 #include <fcl/fcl.h>
-#include <moveit/collision_detection_fcl/collision_env_fcl.h>
-#include <moveit/collision_detection_fcl/collision_common.h>
 
 using namespace robowflex;
 

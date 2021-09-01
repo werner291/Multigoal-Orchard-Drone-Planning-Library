@@ -135,12 +135,8 @@ set(SHARED_SRC
         src/init_planner.cpp
         src/BulletContinuousMotionValidator.h
         src/BulletContinuousMotionValidator.cpp
-        src/MyCollisionDetectorAllocatorBullet.cpp
-        src/MyCollisionDetectorAllocatorBullet.h
         src/InverseClearanceIntegralObjective.cpp
         src/InverseClearanceIntegralObjective.h
-        #src/CostBiasedNearestNeighborPlanner.cpp
-        #src/CostBiasedNearestNeighborPlanner.h
         )
 
 ## Specify additional locations of header files
