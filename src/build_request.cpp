@@ -5,9 +5,61 @@
 
 using namespace robowflex;
 
+
+Apple selectAppleNearCoG(std::vector<Apple> &apples) {// setup a random engine
+    std::default_random_engine rng(std::random_device{}());
+
+    // setup a uniform distribution
+    std::uniform_int_distribution<size_t> dis(0, apples.size() - 1);
+
+    Eigen::Vector3d cog(0, 0, 0);
+    for (Apple &apple: apples) {
+        cog += apple.center;
+    }
+    cog /= (double) apples.size();
+
+    Apple apple = apples[dis(rng)];
+
+    for (int i = 0; i < 4; i++) {
+        Apple apple2 = apples[dis(rng)];
+
+        if ((apple2.center - cog).norm() < (apple.center - cog).norm()) {
+            apple = apple2;
+        }
+    }
+    return apple;
+}
+
+
+moveit_msgs::Constraints makeReachAppleGoalConstraints(const Apple &apple) {
+
+    Eigen::Vector3d ee_pos = apple.center;// + apple.branch_normal * 0.4;
+    Eigen::Quaterniond ee_rot;
+    ee_rot.setFromTwoVectors(Eigen::Vector3d(0.0, 0.0, 1.0),
+                             Eigen::Vector3d(apple.branch_normal.x(),
+                                             apple.branch_normal.z(),
+                                             0.0));
+
+    Eigen::Isometry3d iso;
+    iso.setIdentity();
+    iso.translate(ee_pos);
+    iso.rotate(ee_rot);
+
+    moveit_msgs::Constraints goal_constraints;
+    moveit_msgs::PositionConstraint positionConstraint = TF::getPositionConstraint(
+            "end_effector", "world", iso, Geometry::makeSphere(0.2));
+    goal_constraints.position_constraints.push_back(positionConstraint);
+
+    goal_constraints.name = "reach_for_apple";
+
+    return goal_constraints;
+}
+
 moveit_msgs::MotionPlanRequest
-makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone, std::vector<Apple> &apples,
-                      const std::string &planner_id, double planning_time) {
+makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone,
+                      const std::string &planner_id,
+                      double planning_time,
+                      const Apple &apple) {
 
     moveit_msgs::MotionPlanRequest request;
 
@@ -37,7 +89,7 @@ makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone, std::vecto
 
     request.path_constraints.orientation_constraints.push_back(oc);
 
-    request.goal_constraints.push_back(makeReachAppleGoalConstraints(apples));
+    request.goal_constraints.push_back(makeReachAppleGoalConstraints(apple));
 //    request.goal_constraints.back().orientation_constraints.push_back(oc);
 
     robot_state::RobotState start_state(drone->getModelConst());
@@ -54,48 +106,5 @@ makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone, std::vecto
     return request;
 }
 
-moveit_msgs::Constraints makeReachAppleGoalConstraints(std::vector<Apple> &apples) {
-    // setup a random engine
-    std::default_random_engine rng(std::random_device{}());
-
-    // setup a uniform distribution
-    std::uniform_int_distribution<size_t> dis(0, apples.size() - 1);
-
-    Eigen::Vector3d cog(0,0,0);
-    for (Apple& apple: apples) {
-        cog += apple.center;
-    }
-    cog /= (double) apples.size();
-
-    Apple apple = apples[dis(rng)];
-
-    for (int i = 0; i < 4; i++) {
-        Apple apple2 = apples[dis(rng)];
-
-        if ((apple2.center-cog).norm() < (apple.center-cog).norm()) {
-            apple = apple2;
-        }
-    }
-
-    Eigen::Vector3d ee_pos = apple.center;// + apple.branch_normal * 0.4;
-    Eigen::Quaterniond ee_rot;
-    ee_rot.setFromTwoVectors(Eigen::Vector3d(0.0, 0.0, 1.0),
-                             Eigen::Vector3d(apple.branch_normal.x(),
-                                             apple.branch_normal.z(),
-                                             0.0));
-
-    Eigen::Isometry3d iso;
-    iso.setIdentity();
-    iso.translate(ee_pos);
-    iso.rotate(ee_rot);
 
 
-    moveit_msgs::Constraints goal_constraints;
-    moveit_msgs::PositionConstraint positionConstraint = TF::getPositionConstraint(
-            "end_effector", "world", iso, Geometry::makeSphere(0.2));
-    goal_constraints.position_constraints.push_back(positionConstraint);
-
-    goal_constraints.name = "reach_for_apple";
-
-    return goal_constraints;
-}

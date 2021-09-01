@@ -101,9 +101,8 @@ int main(int argc, char **argv) {
         return std::make_shared<ClearanceDecreaseMinimizationObjective>(ss->getSpaceInformation());
     };
 
-
-
-        moveit_msgs::MotionPlanRequest request = makeAppleReachRequest(drone, tree_scene.apples, "RRTConnect", 60.0);
+        moveit_msgs::MotionPlanRequest request = makeAppleReachRequest(drone, "RRTConnect", 60.0,
+                                                                       selectAppleNearCoG(tree_scene.apples));
         rviz.addGoalMarker("goal_request_marker", request);
         rviz.updateMarkers();
         auto simple_planner = init_planner(drone, scene, optimizationObjectiveAllocator);

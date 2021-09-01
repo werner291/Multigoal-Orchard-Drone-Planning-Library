@@ -50,7 +50,8 @@ int main(int argc, char **argv) {
         for (const auto &config : {"PRM", "RRTConnect", "TRRT", "BiTRRT"}) {
             for (int i = 0; i < 10; i++) {
                 experiment.addQuery(config, scene, simple_planner,
-                                    makeAppleReachRequest(drone, tree_scene.apples, config, 10.0));
+                                    makeAppleReachRequest(drone, config, 10.0,
+                                                          selectAppleNearCoG(apples)));
             }
         }
     }
