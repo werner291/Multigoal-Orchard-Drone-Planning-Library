@@ -2,6 +2,7 @@
 // Created by werner on 18-08-21.
 //
 
+#include <std_msgs/ColorRGBA.h>
 #include "build_planning_scene.h"
 
 PlanningScene establishPlanningScene(int branchingDepth) {
@@ -34,10 +35,7 @@ PlanningScene establishPlanningScene(int branchingDepth) {
             position += quat * Eigen::Vector3d(0, 0, tree_node.length / 2.0);
 
             pose.position.x = position.x();
-            pose.position.x = position.x();
             pose.position.y = position.y();
-            pose.position.y = position.y();
-            pose.position.z = position.z();
             pose.position.z = position.z();
 
             pose.orientation.x = quat.x();
@@ -116,7 +114,7 @@ PlanningScene establishPlanningScene(int branchingDepth) {
     {
         const double APPLE_RADIUS = 0.05;
 
-        std::vector<Apple> apples = spawn_apples(tree_flattened, 50, APPLE_RADIUS);
+        std::vector<Apple> apples = spawn_apples(tree_flattened, 5, APPLE_RADIUS);
 
         moveit_msgs::CollisionObject leaves_collision;
         leaves_collision.id = "apples";

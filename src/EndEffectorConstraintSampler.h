@@ -41,6 +41,10 @@ public:
 
     const std::string &getName() const override;
 
+    static void randomizeUprightWithBase(moveit::core::RobotState &state) ;
+
+    static void moveEndEffectorToGoal(moveit::core::RobotState &state, double tolerance,
+                                      const Eigen::Vector3d &target) ;
 };
 
 class DroneStateConstraintSamplerAllocator : public constraint_samplers::ConstraintSamplerAllocator {

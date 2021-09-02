@@ -55,43 +55,35 @@ moveit_msgs::Constraints makeReachAppleGoalConstraints(const Apple &apple) {
     return goal_constraints;
 }
 
-moveit_msgs::MotionPlanRequest
-makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone,
-                      const std::string &planner_id,
-                      double planning_time,
-                      const Apple &apple) {
+moveit_msgs::WorkspaceParameters makeDefaultWorkspaceParameters() {
+    moveit_msgs::WorkspaceParameters wp;
 
-    moveit_msgs::MotionPlanRequest request;
+    wp.min_corner.x = -20.0;
+    wp.min_corner.y = -20.0;
+    wp.min_corner.z = 0.0;
+    wp.max_corner.x = 20.0;
+    wp.max_corner.y = 20.0;
+    wp.max_corner.z = 20.0;
+    return wp;
+}
 
-    request.planner_id = planner_id;
-    request.group_name = "whole_body";
-
-    request.workspace_parameters.min_corner.x = -20.0;
-    request.workspace_parameters.min_corner.y = -20.0;
-    request.workspace_parameters.min_corner.z = 0.0;
-    request.workspace_parameters.max_corner.x = 20.0;
-    request.workspace_parameters.max_corner.y = 20.0;
-    request.workspace_parameters.max_corner.z = 20.0;
-
-    request.allowed_planning_time = planning_time;
-
+moveit_msgs::OrientationConstraint
+mkUprightLinkConstraint(const std::string &frame_id, const std::string &link_name) {
     moveit_msgs::OrientationConstraint oc;
-    oc.header.frame_id = drone->getModelConst()->getModelFrame();
+    oc.header.frame_id = frame_id;
     oc.orientation.x = 0.0;
     oc.orientation.y = 0.0;
     oc.orientation.z = 0.0;
     oc.orientation.w = 1.0;
-    oc.link_name = "base_link";
+    oc.link_name = link_name;
     oc.absolute_x_axis_tolerance = 1.0e-5;
     oc.absolute_y_axis_tolerance = 1.0e-5;
     oc.absolute_z_axis_tolerance = M_PI;
     oc.weight = 1.0;
+    return oc;
+}
 
-    request.path_constraints.orientation_constraints.push_back(oc);
-
-    request.goal_constraints.push_back(makeReachAppleGoalConstraints(apple));
-//    request.goal_constraints.back().orientation_constraints.push_back(oc);
-
+robot_state::RobotState genStartState(const std::shared_ptr<robowflex::Robot> &drone) {
     robot_state::RobotState start_state(drone->getModelConst());
     start_state.setToDefaultValues();
     start_state.setJointGroupPositions(drone->getModelConst()->getJointModelGroup("whole_body"),
@@ -100,6 +92,27 @@ makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone,
                                         0.0, 0.0, 0.0, 1.0,
                                         0.0, 0.0, 0.0, 0.0
                                        });
+    return start_state;
+}
+
+moveit_msgs::MotionPlanRequest
+makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone,
+                      const std::string &planner_id,
+                      double planning_time,
+                      const Apple &apple,
+                      const robot_state::RobotState &start_state) {
+
+    moveit_msgs::MotionPlanRequest request;
+
+    request.planner_id = planner_id;
+    request.group_name = "whole_body";
+    request.workspace_parameters = makeDefaultWorkspaceParameters();
+    request.allowed_planning_time = planning_time;
+    request.path_constraints.orientation_constraints.push_back(
+            mkUprightLinkConstraint(drone->getModelConst()->getModelFrame(),
+                                    "base_link"));
+
+    request.goal_constraints.push_back(makeReachAppleGoalConstraints(apple));
 
     moveit::core::robotStateToRobotStateMsg(start_state, request.start_state);
 
