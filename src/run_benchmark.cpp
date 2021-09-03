@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
             for (int i = 0; i < 10; i++) {
                 experiment.addQuery(config, scene, simple_planner,
                                     makeAppleReachRequest(drone, config, 10.0,
-                                                          selectAppleNearCoG(apples)));
+                                                          selectAppleNearCoG(apples), genStartState(drone)));
             }
         }
     }

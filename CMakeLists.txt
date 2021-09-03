@@ -137,7 +137,7 @@ set(SHARED_SRC
         src/BulletContinuousMotionValidator.cpp
         src/InverseClearanceIntegralObjective.cpp
         src/InverseClearanceIntegralObjective.h
-        )
+        src/MyOMPLPlanner.cpp src/MyOMPLPlanner.h)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations

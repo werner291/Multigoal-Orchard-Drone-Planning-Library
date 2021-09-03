@@ -48,44 +48,10 @@ bool DroneStateConstraintSampler::sample(moveit::core::RobotState &state,
 
     for (int i = 0; i < max_attempts; i++) {
 
-        state.setToRandomPositions();
-        double* pos = state.getVariablePositions();
-
-        random_numbers::RandomNumberGenerator rng;
-
-        pos[0] = rng.uniformReal(-20.0,20.0);
-        pos[1] = rng.uniformReal(-20.0,20.0);
-        pos[2] = rng.uniformReal(0,20.0);
-
-        Eigen::Quaterniond q(Eigen::AngleAxisd( rng.uniformReal(-M_PI, M_PI), Eigen::Vector3d::UnitZ() ));
-        pos[3] = q.x();
-        pos[4] = q.y();
-        pos[5] = q.z();
-        pos[6] = q.w();
-
-        state.update(true);
+        randomizeUprightWithBase(state);
 
         if (ee_target_) {
-            double sample_radius = ee_target_->radius * (random_numbers::RandomNumberGenerator().uniformReal(0.0, 1.0 - std::numeric_limits<double>::epsilon()));
-
-            Eigen::Vector3d ee_pos = state.getGlobalLinkTransform("end_effector").translation();
-
-            Eigen::Vector3d delta = ee_target_->target - ee_pos;
-
-            double norm = delta.norm();
-
-            if (norm > sample_radius) {
-                delta *= ((norm - sample_radius) / norm);
-
-                double *positions = state.getVariablePositions();
-
-                positions[0] += delta.x();
-                positions[1] += delta.y();
-                positions[2] += delta.z();
-
-                state.update(true);
-            }
-
+            moveEndEffectorToGoal(state, ee_target_->radius, ee_target_->target);
         }
 
         if (scene_->isStateValid(state)) {
@@ -94,6 +60,48 @@ bool DroneStateConstraintSampler::sample(moveit::core::RobotState &state,
     }
 
     return false;
+}
+
+void DroneStateConstraintSampler::moveEndEffectorToGoal(moveit::core::RobotState &state, double tolerance,
+                                                        const Eigen::Vector3d &target) {
+    double sample_radius = tolerance * (random_numbers::RandomNumberGenerator().uniformReal(0.0, 1.0 - std::numeric_limits<double>::epsilon()));
+
+    Eigen::Vector3d ee_pos = state.getGlobalLinkTransform("end_effector").translation();
+
+    Eigen::Vector3d delta = target - ee_pos;
+
+    double norm = delta.norm();
+
+    if (norm > sample_radius) {
+        delta *= ((norm - sample_radius) / norm);
+
+        double *positions = state.getVariablePositions();
+
+        positions[0] += delta.x();
+        positions[1] += delta.y();
+        positions[2] += delta.z();
+
+        state.update(true);
+    }
+}
+
+void DroneStateConstraintSampler::randomizeUprightWithBase(moveit::core::RobotState &state) {
+    state.setToRandomPositions();
+    double* pos = state.getVariablePositions();
+
+    random_numbers::RandomNumberGenerator rng;
+
+    pos[0] = rng.uniformReal(-20.0,20.0);
+    pos[1] = rng.uniformReal(-20.0,20.0);
+    pos[2] = rng.uniformReal(0,20.0);
+
+    Eigen::Quaterniond q(Eigen::AngleAxisd( rng.uniformReal(-M_PI, M_PI), Eigen::Vector3d::UnitZ() ));
+    pos[3] = q.x();
+    pos[4] = q.y();
+    pos[5] = q.z();
+    pos[6] = q.w();
+
+    state.update(true);
 }
 
 bool DroneStateConstraintSampler::project(moveit::core::RobotState &state, unsigned int max_attempts) {
