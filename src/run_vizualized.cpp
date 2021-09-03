@@ -123,16 +123,22 @@ int main(int argc, char **argv) {
 
     ompl::geometric::PRM prm(si);
 
+    std::cout << "Building PRM" << std::endl;
+
+    prm.constructRoadmap(ompl::base::timedPlannerTerminationCondition(1.0));
+
 //    auto simple_planner = init_planner(drone, scene, optimizationObjectiveAllocator);
 
     for (const Apple& apple : tree_scene.apples) {
 
-        ompl::base::ProblemDefinition pdef(si);
-        pdef.addStartState(start);
+        auto pdef = std::make_shared<ompl::base::ProblemDefinition>(si);
+        pdef->addStartState(start);
 
-        pdef.setGoal(std::make_shared<DroneEndEffectorNearTarget>(si, 0.2, apple.center));
+        pdef->setGoal(std::make_shared<DroneEndEffectorNearTarget>(si, 0.2, apple.center));
 
         prm.setProblemDefinition(pdef);
+
+        prm.solve(ompl::base::timedPlannerTerminationCondition(0.1));
 
 //        moveit_msgs::MotionPlanRequest request =
 //                makeAppleReachRequest(drone, "PRMStar", 0.1,
