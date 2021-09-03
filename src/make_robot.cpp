@@ -4,7 +4,7 @@
 
 #include "ClearanceDecreaseMinimizationObjective.h"
 #include "build_planning_scene.h"
-#include "build_request.h"
+#include "msgs_utilities.h"
 #include "EndEffectorConstraintSampler.h"
 #include <random_numbers/random_numbers.h>
 #include <ompl/base/objectives/MechanicalWorkOptimizationObjective.h>
