@@ -1,19 +1,12 @@
 
-#include <random_numbers/random_numbers.h>
 #include <ompl/geometric/planners/rrt/TRRT.h>
 #include <robowflex_library/util.h>
 #include <robowflex_library/scene.h>
-#include <robowflex_library/planning.h>
-#include <robowflex_library/geometry.h>
-#include <robowflex_ompl/ompl_interface.h>
-#include <robowflex_library/benchmarking.h>
 #include <robowflex_library/builder.h>
 #include <Eigen/Geometry>
 #include "procedural_tree_generation.h"
-#include "build_planning_scene.h"
 #include <stack>
 #include <random>
-#include <iostream>
 
 Eigen::Isometry3d frame_on_branch(double azimuth, double t, const DetachedTreeNode &treeNode) {
 

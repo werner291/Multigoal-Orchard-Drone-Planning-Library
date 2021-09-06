@@ -123,8 +123,8 @@ catkin_package(
 set(SHARED_SRC
         src/procedural_tree_generation.cpp
         src/EndEffectorConstraintSampler.cpp
-        src/build_request.cpp
-        src/build_request.h
+        src/msgs_utilities.cpp
+        src/msgs_utilities.h
         src/build_planning_scene.cpp
         src/build_planning_scene.h
         src/ClearanceDecreaseMinimizationObjective.h
@@ -137,7 +137,8 @@ set(SHARED_SRC
         src/BulletContinuousMotionValidator.cpp
         src/InverseClearanceIntegralObjective.cpp
         src/InverseClearanceIntegralObjective.h
-        src/MyOMPLPlanner.cpp src/MyOMPLPlanner.h)
+        src/MyOMPLPlanner.cpp
+        src/MyOMPLPlanner.h)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -156,7 +157,7 @@ include_directories(
 ## Benchmark node
 add_executable(${PROJECT_NAME}_benchmark
         src/run_benchmark.cpp
-        ${SHARED_SRC})
+        ${SHARED_SRC} src/SpaceBreakingRoadmap.cpp)
 set_property(TARGET ${PROJECT_NAME}_benchmark PROPERTY CXX_STANDARD 17)
 
 target_link_libraries(${PROJECT_NAME}_benchmark

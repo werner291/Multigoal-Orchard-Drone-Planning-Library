@@ -112,7 +112,7 @@ Visualization Manager:
     - Class: moveit_rviz_plugin/Trajectory
       Color Enabled: false
       Enabled: true
-      Interrupt Display: false
+      Interrupt Display: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -161,7 +161,7 @@ Visualization Manager:
       Marker Topic: /visualization_marker_array
       Name: MarkerArray
       Namespaces:
-        /robowflex: true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
@@ -208,9 +208,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5152041912078857
+      Pitch: 0.2852041721343994
       Target Frame: <Fixed Frame>
-      Yaw: 1.3184133768081665
+      Yaw: 2.4684133529663086
     Saved: ~
 Window Geometry:
   Displays:

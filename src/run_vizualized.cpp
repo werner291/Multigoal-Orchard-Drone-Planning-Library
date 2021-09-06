@@ -5,7 +5,7 @@
 #include <robowflex_library/io/broadcaster.h>
 #include <robowflex_library/io.h>
 #include <robowflex_library/trajectory.h>
-#include "build_request.h"
+#include "msgs_utilities.h"
 #include "build_planning_scene.h"
 #include "make_robot.h"
 #include "init_planner.h"
@@ -14,9 +14,60 @@
 #include "EndEffectorConstraintSampler.h"
 #include <fcl/fcl.h>
 #include <ompl/geometric/planners/prm/PRM.h>
+#include <ompl/base/DiscreteMotionValidator.h>
 #include <moveit/ompl_interface/parameterization/joint_space/joint_model_state_space.h>
+#include <moveit/ompl_interface/detail/state_validity_checker.h>
 
 using namespace robowflex;
+
+class CustomModelBasedStateSpace : public ompl_interface::ModelBasedStateSpace {
+
+    const std::string param_type_ = "custom";
+public:
+    CustomModelBasedStateSpace(const ompl_interface::ModelBasedStateSpaceSpecification &spec)
+            : ModelBasedStateSpace(spec) {}
+
+    unsigned int validSegmentCount(const ompl::base::State *state1, const ompl::base::State *state2) const override {
+        return this->distance(state1, state2) / 0.2;
+    }
+
+    const std::string &getParameterizationType() const override {
+        return param_type_;
+    }
+
+};
+
+class StateValidityChecker : public ompl::base::StateValidityChecker {
+
+    robowflex::SceneConstPtr scene_;
+
+public:
+    StateValidityChecker(ompl::base::SpaceInformation *si, robowflex::SceneConstPtr scene)
+            : ompl::base::StateValidityChecker(si), scene_(scene) {
+    }
+
+    bool isValid(const ompl::base::State *state) const override {
+
+        auto space = si_->getStateSpace()->as<CustomModelBasedStateSpace>();
+
+        moveit::core::RobotState robot_state(space->getRobotModel());
+        space->copyToRobotState(robot_state, state);
+
+        // We rely on the sampler producing states that are valid in all other aspects, so here we just check collision.
+        return !scene_->checkCollision(robot_state).collision;
+    }
+
+    double clearance(const ompl::base::State *state) const override {
+        auto space = si_->getStateSpace()->as<CustomModelBasedStateSpace>();
+
+        moveit::core::RobotState robot_state(space->getRobotModel());
+        space->copyToRobotState(robot_state, state);
+
+        // We rely on the sampler producing states that are valid in all other aspects, so here we just check collision.
+        return scene_->distanceToCollision(robot_state);
+    }
+
+};
 
 class DroneStateSampler : public ompl::base::StateSampler {
 
@@ -25,9 +76,9 @@ public:
             : StateSampler(space) {}
 
     void sampleUniform(ompl::base::State *state) override {
-        moveit::core::RobotState st(space_->as<ompl_interface::ModelBasedStateSpace>()->getRobotModel());
+        moveit::core::RobotState st(space_->as<CustomModelBasedStateSpace>()->getRobotModel());
         DroneStateConstraintSampler::randomizeUprightWithBase(st);
-        space_->as<ompl_interface::ModelBasedStateSpace>()->copyToOMPLState(state, st);
+        space_->as<CustomModelBasedStateSpace>()->copyToOMPLState(state, st);
     }
 
     void sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, double distance) override {
@@ -37,6 +88,17 @@ public:
     void sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) override {
         ROS_ERROR("Not implemented.");
     }
+};
+
+class InverseClearanceIntegralObjectiveOMPL : public ompl::base::StateCostIntegralObjective {
+public:
+    InverseClearanceIntegralObjectiveOMPL(const ompl::base::SpaceInformationPtr &si, bool enableMotionCostInterpolation)
+            : StateCostIntegralObjective(si, enableMotionCostInterpolation) {}
+
+    ompl::base::Cost stateCost(const ompl::base::State *s) const override {
+        return ompl::base::Cost(1.0 / si_->getStateValidityChecker()->clearance(s));
+    }
+
 };
 
 class DroneEndEffectorNearTarget : public ompl::base::GoalSampleableRegion {
@@ -49,12 +111,12 @@ public:
             : GoalSampleableRegion(si), radius(radius), target(target) {}
 
     void sampleGoal(ompl::base::State *state) const override {
-        auto *state_space = si_->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>();
+        auto *state_space = si_->getStateSpace()->as<CustomModelBasedStateSpace>();
 
         moveit::core::RobotState st(state_space->getRobotModel());
         DroneStateConstraintSampler::randomizeUprightWithBase(st);
         DroneStateConstraintSampler::moveEndEffectorToGoal(st, radius, target);
-        state_space->as<ompl_interface::ModelBasedStateSpace>()->copyToOMPLState(state, st);
+        state_space->as<CustomModelBasedStateSpace>()->copyToOMPLState(state, st);
     }
 
     [[nodiscard]] unsigned int maxSampleCount() const override {
@@ -62,7 +124,7 @@ public:
     }
 
     double distanceGoal(const ompl::base::State *state) const override {
-        auto *state_space = si_->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>();
+        auto *state_space = si_->getStateSpace()->as<CustomModelBasedStateSpace>();
         moveit::core::RobotState st(state_space->getRobotModel());
 
         Eigen::Vector3d ee_pos = st.getGlobalLinkTransform("end_effector").translation();
@@ -99,10 +161,6 @@ int main(int argc, char **argv) {
 
     ompl::msg::setLogLevel(ompl::msg::LOG_INFO);
 
-    auto optimizationObjectiveAllocator = [](const ompl::geometric::SimpleSetupPtr &ss) {
-        return std::make_shared<ClearanceDecreaseMinimizationObjective>(ss->getSpaceInformation());
-    };
-
     std::vector<planning_interface::MotionPlanResponse> responses;
 
     Trajectory full_trajectory(drone, "whole_body");
@@ -110,57 +168,58 @@ int main(int argc, char **argv) {
 
     ompl_interface::ModelBasedStateSpaceSpecification spec(drone->getModel(), "whole_body");
 
-    auto state_space = std::make_shared<ompl_interface::JointModelStateSpace>(spec);
-    state_space->setStateSamplerAllocator([](const ompl::base::StateSpace* space) {
+    auto state_space = std::make_shared<CustomModelBasedStateSpace>(spec);
+    state_space->setStateSamplerAllocator([](const ompl::base::StateSpace *space) {
         return std::make_shared<DroneStateSampler>(space);
     });
 
     auto si = std::make_shared<ompl::base::SpaceInformation>(state_space);
+    si->setStateValidityChecker(std::make_shared<StateValidityChecker>(si.get(), scene));
+
     si->setup();
 
-    ompl::base::ScopedState start(si);
-    state_space->copyToOMPLState(start.get(), genStartState(drone));
+    full_trajectory.addSuffixWaypoint(genStartState(drone));
 
     ompl::geometric::PRM prm(si);
 
+    auto avoid_branches = std::make_shared<InverseClearanceIntegralObjectiveOMPL>(si, false);
+
     std::cout << "Building PRM" << std::endl;
 
-    prm.constructRoadmap(ompl::base::timedPlannerTerminationCondition(1.0));
+    for (const Apple &apple: tree_scene.apples) {
 
-//    auto simple_planner = init_planner(drone, scene, optimizationObjectiveAllocator);
-
-    for (const Apple& apple : tree_scene.apples) {
+        ompl::base::ScopedState start(si);
+        state_space->copyToOMPLState(start.get(), full_trajectory.getTrajectory()->getLastWayPoint());
 
         auto pdef = std::make_shared<ompl::base::ProblemDefinition>(si);
         pdef->addStartState(start);
+//        pdef->setOptimizationObjective(avoid_branches);
 
         pdef->setGoal(std::make_shared<DroneEndEffectorNearTarget>(si, 0.2, apple.center));
 
         prm.setProblemDefinition(pdef);
 
-        prm.solve(ompl::base::timedPlannerTerminationCondition(0.1));
+        ompl::base::PlannerStatus status = prm.solve(ompl::base::timedPlannerTerminationCondition(5.0));
 
-//        moveit_msgs::MotionPlanRequest request =
-//                makeAppleReachRequest(drone, "PRMStar", 0.1,
-//                                      apple,
-//                                      full_trajectory.getTrajectory()->getLastWayPoint());
+        if (status) {
+            auto path = pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+            ompl::base::State *last_state = nullptr;
+            for (auto state: path->getStates()) {
+                state_space->copyToRobotState(*drone->getScratchState(), state);
+                full_trajectory.addSuffixWaypoint(*drone->getScratchState());
+                last_state = state;
+            }
+            std::cout << "Point-to-point solution found." << std::endl;
+        } else {
+            std::cout << "Apple unreachable" << std::endl;
+        }
 
-//        simple_planner->refreshContext(scene, request, true);
-//        auto response = simple_planner->plan(scene, request);
-
-//        if (response.error_code_.val == 1) {
-//
-//            for (size_t wpi = 0; wpi < response.trajectory_->getWayPointCount(); wpi++) {
-//                full_trajectory.addSuffixWaypoint(response.trajectory_->getWayPoint(wpi));
-//            }
-//        } else {
-//            rviz.addGoalMarker("goal_request_marker", request);
-//        }
+        prm.clearQuery();
     }
 
-//    rviz.updateTrajectory(full_trajectory);
+    full_trajectory.interpolate(20 * full_trajectory.getNumWaypoints());
 
-//    std::cin.get();
+    rviz.updateTrajectory(full_trajectory);
 
     return 0;
 }
