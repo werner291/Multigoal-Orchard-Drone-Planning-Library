@@ -12,6 +12,7 @@
 #include "InverseClearanceIntegralObjective.h"
 #include "ClearanceDecreaseMinimizationObjective.h"
 #include "EndEffectorConstraintSampler.h"
+#include "ompl_custom.h"
 #include <fcl/fcl.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/base/DiscreteMotionValidator.h>
@@ -19,122 +20,6 @@
 #include <moveit/ompl_interface/detail/state_validity_checker.h>
 
 using namespace robowflex;
-
-class CustomModelBasedStateSpace : public ompl_interface::ModelBasedStateSpace {
-
-    const std::string param_type_ = "custom";
-public:
-    CustomModelBasedStateSpace(const ompl_interface::ModelBasedStateSpaceSpecification &spec)
-            : ModelBasedStateSpace(spec) {}
-
-    unsigned int validSegmentCount(const ompl::base::State *state1, const ompl::base::State *state2) const override {
-        return this->distance(state1, state2) / 0.2;
-    }
-
-    const std::string &getParameterizationType() const override {
-        return param_type_;
-    }
-
-};
-
-class StateValidityChecker : public ompl::base::StateValidityChecker {
-
-    robowflex::SceneConstPtr scene_;
-
-public:
-    StateValidityChecker(ompl::base::SpaceInformation *si, robowflex::SceneConstPtr scene)
-            : ompl::base::StateValidityChecker(si), scene_(scene) {
-    }
-
-    bool isValid(const ompl::base::State *state) const override {
-
-        auto space = si_->getStateSpace()->as<CustomModelBasedStateSpace>();
-
-        moveit::core::RobotState robot_state(space->getRobotModel());
-        space->copyToRobotState(robot_state, state);
-
-        // We rely on the sampler producing states that are valid in all other aspects, so here we just check collision.
-        return !scene_->checkCollision(robot_state).collision;
-    }
-
-    double clearance(const ompl::base::State *state) const override {
-        auto space = si_->getStateSpace()->as<CustomModelBasedStateSpace>();
-
-        moveit::core::RobotState robot_state(space->getRobotModel());
-        space->copyToRobotState(robot_state, state);
-
-        // We rely on the sampler producing states that are valid in all other aspects, so here we just check collision.
-        return scene_->distanceToCollision(robot_state);
-    }
-
-};
-
-class DroneStateSampler : public ompl::base::StateSampler {
-
-public:
-    DroneStateSampler(const ompl::base::StateSpace *space)
-            : StateSampler(space) {}
-
-    void sampleUniform(ompl::base::State *state) override {
-        moveit::core::RobotState st(space_->as<CustomModelBasedStateSpace>()->getRobotModel());
-        DroneStateConstraintSampler::randomizeUprightWithBase(st);
-        space_->as<CustomModelBasedStateSpace>()->copyToOMPLState(state, st);
-    }
-
-    void sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, double distance) override {
-        ROS_ERROR("Not implemented.");
-    }
-
-    void sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) override {
-        ROS_ERROR("Not implemented.");
-    }
-};
-
-class InverseClearanceIntegralObjectiveOMPL : public ompl::base::StateCostIntegralObjective {
-public:
-    InverseClearanceIntegralObjectiveOMPL(const ompl::base::SpaceInformationPtr &si, bool enableMotionCostInterpolation)
-            : StateCostIntegralObjective(si, enableMotionCostInterpolation) {}
-
-    ompl::base::Cost stateCost(const ompl::base::State *s) const override {
-        return ompl::base::Cost(1.0 / si_->getStateValidityChecker()->clearance(s));
-    }
-
-};
-
-class DroneEndEffectorNearTarget : public ompl::base::GoalSampleableRegion {
-
-    double radius;
-    Eigen::Vector3d target;
-
-public:
-    DroneEndEffectorNearTarget(const ompl::base::SpaceInformationPtr &si, double radius, const Eigen::Vector3d &target)
-            : GoalSampleableRegion(si), radius(radius), target(target) {}
-
-    void sampleGoal(ompl::base::State *state) const override {
-        auto *state_space = si_->getStateSpace()->as<CustomModelBasedStateSpace>();
-
-        moveit::core::RobotState st(state_space->getRobotModel());
-        DroneStateConstraintSampler::randomizeUprightWithBase(st);
-        DroneStateConstraintSampler::moveEndEffectorToGoal(st, radius, target);
-        state_space->as<CustomModelBasedStateSpace>()->copyToOMPLState(state, st);
-    }
-
-    [[nodiscard]] unsigned int maxSampleCount() const override {
-        return INT_MAX;
-    }
-
-    double distanceGoal(const ompl::base::State *state) const override {
-        auto *state_space = si_->getStateSpace()->as<CustomModelBasedStateSpace>();
-        moveit::core::RobotState st(state_space->getRobotModel());
-
-        Eigen::Vector3d ee_pos = st.getGlobalLinkTransform("end_effector").translation();
-
-        Eigen::Vector3d delta = target - ee_pos;
-
-        return delta.norm();
-    }
-
-};
 
 /**
  * The "visualized" version of this program, which serves as a scratch state in which to experiment with new,

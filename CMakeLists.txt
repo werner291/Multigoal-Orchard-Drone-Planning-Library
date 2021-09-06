@@ -138,7 +138,9 @@ set(SHARED_SRC
         src/InverseClearanceIntegralObjective.cpp
         src/InverseClearanceIntegralObjective.h
         src/MyOMPLPlanner.cpp
-        src/MyOMPLPlanner.h)
+        src/MyOMPLPlanner.h
+        src/ompl_custom.cpp
+        src/ompl_custom.h)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
