@@ -7,8 +7,8 @@
 
 PlanningScene establishPlanningScene(int branchingDepth) {
 
-    TreeNode tree = make_tree_branches(Eigen::Isometry3d::Identity(), branchingDepth, 0.5);
-    std::vector<DetachedTreeNode> tree_flattened = flatten_tree(tree);
+    std::vector<DetachedTreeNode> tree_flattened;
+    make_tree_branches(Eigen::Isometry3d::Identity(), branchingDepth, 0.5, tree_flattened);
 
     PlanningScene planning_scene{};
 

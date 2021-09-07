@@ -1,12 +1,7 @@
 
 #include <ompl/geometric/planners/rrt/TRRT.h>
-#include <robowflex_library/util.h>
-#include <robowflex_library/scene.h>
 #include <robowflex_library/builder.h>
-#include <Eigen/Geometry>
 #include "procedural_tree_generation.h"
-#include <stack>
-#include <random>
 
 Eigen::Isometry3d frame_on_branch(double azimuth, double t, const DetachedTreeNode &treeNode) {
 
@@ -20,12 +15,15 @@ Eigen::Isometry3d frame_on_branch(double azimuth, double t, const DetachedTreeNo
     return iso;
 }
 
-TreeNode make_tree_branches(const Eigen::Isometry3d &root_at, unsigned int branching_depth, double root_radius) {
+void make_tree_branches(const Eigen::Isometry3d &root_at, unsigned int branching_depth, double root_radius,
+                        std::vector<DetachedTreeNode> &nodes) {
 
-    TreeNode node;
-    node.root_at_relative = root_at;
+    DetachedTreeNode node;
+    node.root_at_absolute = root_at;
     node.length = 1.0;
     node.radius = root_radius;
+
+    nodes.push_back(node);
 
     std::random_device rd;
     std::default_random_engine eng(rd());
@@ -57,17 +55,19 @@ TreeNode make_tree_branches(const Eigen::Isometry3d &root_at, unsigned int branc
             local_root *= Eigen::AngleAxisd(distr(eng), Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(distr(eng), Eigen::Vector3d::UnitY());
 
             if (split_double_probabilities(eng) && branching_depth >= 2) {
-                node.children.push_back(make_tree_branches(local_root, branching_depth - 2, child_radii[i] *
-                                                                                            pow(BRANCH_RADIUS_REDUCTION_FACTOR,2)));
+                make_tree_branches(root_at * local_root,
+                                   branching_depth - 2,
+                                   child_radii[i] * pow(BRANCH_RADIUS_REDUCTION_FACTOR,2),
+                                   nodes);
 
             } else {
-                node.children.push_back(make_tree_branches(local_root, branching_depth - 1, child_radii[i] *
-                                                                                            BRANCH_RADIUS_REDUCTION_FACTOR));
+                make_tree_branches(root_at * local_root,
+                                   branching_depth - 1,
+                                   child_radii[i] *  BRANCH_RADIUS_REDUCTION_FACTOR,
+                                   nodes);
             }
         }
     }
-
-    return node;
 }
 
 std::vector<DetachedTreeNode> flatten_tree(const TreeNode& root) {
@@ -81,7 +81,7 @@ std::vector<DetachedTreeNode> flatten_tree(const TreeNode& root) {
     std::stack<StackFrame> visit_stack;
     visit_stack.push(StackFrame {
             .node = root,
-            .global_xform = root.root_at_relative
+            .global_xform = root.root_at
     });
 
     while (!visit_stack.empty()) {
@@ -100,7 +100,7 @@ std::vector<DetachedTreeNode> flatten_tree(const TreeNode& root) {
         for (const auto &child : top.node.children) {
             visit_stack.push(StackFrame {
                     .node = child,
-                    .global_xform = top.global_xform * child.root_at_relative
+                    .global_xform = top.global_xform * child.root_at
             });
         }
     }
@@ -111,7 +111,6 @@ std::vector<DetachedTreeNode> flatten_tree(const TreeNode& root) {
 
 
 std::vector<Apple> spawn_apples(const std::vector<DetachedTreeNode> &flattened,
-//                                fcl::DynamicAABBTreeCollisionManager &tree_model_broadphase,
                                 const size_t NUMBER_OF_APPLES,
                                 const double apple_radius) {
 
@@ -121,9 +120,6 @@ std::vector<Apple> spawn_apples(const std::vector<DetachedTreeNode> &flattened,
     std::default_random_engine eng(rd());
     std::uniform_real_distribution<float> distr(0.0,1.0);
     std::uniform_int_distribution<size_t> tree_branch_selection(1 /* No apples on the main trunk */, flattened.size() - 1);
-
-    // Needs to be static because userdata implementation only takes a void pointer.
-//    const auto static apple_userdata = APPLE;
 
     while (apples.size() < NUMBER_OF_APPLES) {
         size_t branch_index = tree_branch_selection(eng);

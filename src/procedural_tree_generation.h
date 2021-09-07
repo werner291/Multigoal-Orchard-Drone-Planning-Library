@@ -18,7 +18,7 @@ static const float BRANCH_RADIUS_REDUCTION_FACTOR = 0.9;
  * Represents a branch of the tree, within a hierarchical context.
  */
 struct TreeNode {
-    Eigen::Isometry3d root_at_relative{};
+    Eigen::Isometry3d root_at{};
     std::vector<TreeNode> children{};
     double length{};
     double radius{};
@@ -53,15 +53,10 @@ struct Apple {
  * @param root_radius       The radius of the trunk at the root of this (sub) tree.
  * @return                  TreeNode representing this (sub)tree.
  */
-TreeNode make_tree_branches(const Eigen::Isometry3d &root_at, unsigned int branching_depth, double root_radius);
-
-/**
- * Flatten a TreeNode into a vector of DetachedTreeNode instances, computing their position in the reference frame of the root's parent reference frame.
- *
- * @param root
- * @return
- */
-std::vector<DetachedTreeNode> flatten_tree(const TreeNode& root);
+void make_tree_branches(const Eigen::Isometry3d &root_at,
+                        unsigned int branching_depth,
+                        double root_radius,
+                        std::vector<DetachedTreeNode> &nodes);
 
 /**
  *
