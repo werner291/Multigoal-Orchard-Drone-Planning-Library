@@ -1,23 +1,16 @@
 #include <robowflex_library/builder.h>
-#include <robowflex_library/benchmarking.h>
 #include <robowflex_library/util.h>
 #include <robowflex_library/io/visualization.h>
 #include <robowflex_library/io/broadcaster.h>
-#include <robowflex_library/io.h>
 #include <robowflex_library/trajectory.h>
 #include "msgs_utilities.h"
 #include "build_planning_scene.h"
 #include "make_robot.h"
 #include "init_planner.h"
 #include "InverseClearanceIntegralObjective.h"
-#include "ClearanceDecreaseMinimizationObjective.h"
-#include "EndEffectorConstraintSampler.h"
 #include "ompl_custom.h"
 #include <fcl/fcl.h>
 #include <ompl/geometric/planners/prm/PRM.h>
-#include <ompl/base/DiscreteMotionValidator.h>
-#include <moveit/ompl_interface/parameterization/joint_space/joint_model_state_space.h>
-#include <moveit/ompl_interface/detail/state_validity_checker.h>
 
 using namespace robowflex;
 
@@ -84,17 +77,17 @@ int main(int argc, char **argv) {
 
         prm.setProblemDefinition(pdef);
 
+        std::chrono::steady_clock::time_point pre_solve = std::chrono::steady_clock::now();
         ompl::base::PlannerStatus status = prm.solve(ompl::base::timedPlannerTerminationCondition(5.0));
+        std::chrono::steady_clock::time_point post_solve = std::chrono::steady_clock::now();
 
         if (status) {
             auto path = pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
-            ompl::base::State *last_state = nullptr;
             for (auto state: path->getStates()) {
                 state_space->copyToRobotState(*drone->getScratchState(), state);
                 full_trajectory.addSuffixWaypoint(*drone->getScratchState());
-                last_state = state;
             }
-            std::cout << "Point-to-point solution found." << std::endl;
+            std::cout << "Point-to-point solution found in " << std::chrono::duration_cast<std::chrono::milliseconds>((post_solve - pre_solve)).count() << "ms" << std::endl;
         } else {
             std::cout << "Apple unreachable" << std::endl;
         }

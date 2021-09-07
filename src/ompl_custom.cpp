@@ -68,9 +68,14 @@ void DroneEndEffectorNearTarget::sampleGoal(ompl::base::State *state) const {
     auto *state_space = si_->getStateSpace()->as<CustomModelBasedStateSpace>();
 
     moveit::core::RobotState st(state_space->getRobotModel());
-    DroneStateConstraintSampler::randomizeUprightWithBase(st);
-    DroneStateConstraintSampler::moveEndEffectorToGoal(st, radius, target);
-    state_space->as<CustomModelBasedStateSpace>()->copyToOMPLState(state, st);
+
+    int tries_left = 5;
+
+    do {
+        DroneStateConstraintSampler::randomizeUprightWithBase(st);
+        DroneStateConstraintSampler::moveEndEffectorToGoal(st, radius, target);
+        state_space->as<CustomModelBasedStateSpace>()->copyToOMPLState(state, st);
+    } while (!si_->isValid(state) && --tries_left > 0);
 }
 
 double DroneEndEffectorNearTarget::distanceGoal(const ompl::base::State *state) const {
