@@ -81,8 +81,14 @@ int main(int argc, char **argv) {
         ompl::base::PlannerStatus status = prm.solve(ompl::base::timedPlannerTerminationCondition(5.0));
         std::chrono::steady_clock::time_point post_solve = std::chrono::steady_clock::now();
 
+        ompl::geometric::PathSimplifier ps(si);
+
         if (status) {
+
             auto path = pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+
+            ps.simplify(*path, 0.1);
+
             for (auto state: path->getStates()) {
                 state_space->copyToRobotState(*drone->getScratchState(), state);
                 full_trajectory.addSuffixWaypoint(*drone->getScratchState());
@@ -95,7 +101,7 @@ int main(int argc, char **argv) {
         prm.clearQuery();
     }
 
-    full_trajectory.interpolate(20 * full_trajectory.getNumWaypoints());
+    full_trajectory.interpolate(5 * full_trajectory.getNumWaypoints());
 
     rviz.updateTrajectory(full_trajectory);
 
