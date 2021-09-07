@@ -18,6 +18,10 @@ Eigen::Isometry3d frame_on_branch(double azimuth, double t, const DetachedTreeNo
 void make_tree_branches(const Eigen::Isometry3d &root_at, unsigned int branching_depth, double root_radius,
                         std::vector<DetachedTreeNode> &nodes) {
 
+    if ((root_at * Eigen::Vector3d(0.0,0.0,1.0)).z() < 0.0) {
+        return;
+    }
+
     DetachedTreeNode node;
     node.root_at_absolute = root_at;
     node.length = 1.0;
