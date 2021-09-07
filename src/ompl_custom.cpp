@@ -92,3 +92,4 @@ double DroneEndEffectorNearTarget::distanceGoal(const ompl::base::State *state) 
 unsigned int DroneEndEffectorNearTarget::maxSampleCount() const {
     return INT_MAX;
 }
+

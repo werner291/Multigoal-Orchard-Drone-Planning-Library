@@ -1,11 +1,10 @@
-#include <utility>
 
-//
-// Created by werner on 06-09-21.
-//
 
 #ifndef NEW_PLANNERS_OMPL_CUSTOM_H
 #define NEW_PLANNERS_OMPL_CUSTOM_H
+
+#include <utility>
+#include <ompl/base/MotionValidator.h>
 
 class CustomModelBasedStateSpace : public ompl_interface::ModelBasedStateSpace {
 

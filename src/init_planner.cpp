@@ -2,11 +2,7 @@
 // Created by werner on 8/25/21.
 //
 
-#include "BulletContinuousMotionValidator.h"
-#include "ClearanceDecreaseMinimizationObjective.h"
-#include "InverseClearanceIntegralObjective.h"
 #include "EndEffectorConstraintSampler.h"
-#include <robowflex_library/io/visualization.h>
 #include <robowflex_library/builder.h>
 #include "init_planner.h"
 

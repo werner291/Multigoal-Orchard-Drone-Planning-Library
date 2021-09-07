@@ -10,6 +10,7 @@
 #include "InverseClearanceIntegralObjective.h"
 #include "ompl_custom.h"
 #include <fcl/fcl.h>
+#include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 
 using namespace robowflex;
@@ -34,6 +35,7 @@ int main(int argc, char **argv) {
     auto scene = std::make_shared<Scene>(drone);
     auto tree_scene = establishPlanningScene(10);
     scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
+    scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
 
     rviz.updateScene(scene);
 
