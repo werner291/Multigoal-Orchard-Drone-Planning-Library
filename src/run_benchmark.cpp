@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 
     for (int scene_idx = 0; scene_idx < 10; scene_idx++) {
         auto scene = std::make_shared<Scene>(drone);
-        auto tree_scene = establishPlanningScene(7);
+        auto tree_scene = establishPlanningScene(7, 5);
         scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
 
         scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create(),

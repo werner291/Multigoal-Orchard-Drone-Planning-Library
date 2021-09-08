@@ -149,6 +149,7 @@ include_directories(
         ${catkin_INCLUDE_DIRS}
         ${EIGEN3_INCLUDE_DIRS}
         ${FCL_INCLUDE_DIRS}
+        ${JSONCPP_INCLUDE_DIRS}
 )
 
 ### Declare a C++ library

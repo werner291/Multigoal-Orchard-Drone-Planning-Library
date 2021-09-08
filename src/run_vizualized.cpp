@@ -12,7 +12,9 @@
 #include <fcl/fcl.h>
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <ompl/geometric/planners/prm/PRM.h>
+#include <jsoncpp/json/json.h>
 
+static const int NUM_APPLES = 50;
 using namespace robowflex;
 
 /**
@@ -33,7 +35,7 @@ int main(int argc, char **argv) {
     bc.start();
 
     auto scene = std::make_shared<Scene>(drone);
-    auto tree_scene = establishPlanningScene(10);
+    auto tree_scene = establishPlanningScene(10, NUM_APPLES);
     scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
     scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
 
@@ -64,7 +66,7 @@ int main(int argc, char **argv) {
 
     auto avoid_branches = std::make_shared<InverseClearanceIntegralObjectiveOMPL>(si, false);
 
-    std::cout << "Building PRM" << std::endl;
+    Json::Value root;
 
     for (const Apple &apple: tree_scene.apples) {
 
@@ -85,7 +87,7 @@ int main(int argc, char **argv) {
 
         ompl::geometric::PathSimplifier ps(si);
 
-        if (status) {
+        if (status == ompl::base::PlannerStatus::EXACT_SOLUTION) {
 
             auto path = pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
@@ -95,13 +97,25 @@ int main(int argc, char **argv) {
                 state_space->copyToRobotState(*drone->getScratchState(), state);
                 full_trajectory.addSuffixWaypoint(*drone->getScratchState());
             }
-            std::cout << "Point-to-point solution found in " << std::chrono::duration_cast<std::chrono::milliseconds>((post_solve - pre_solve)).count() << "ms" << std::endl;
+            long elapsed_millis = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    (post_solve - pre_solve)).count();
+            std::cout << "Point-to-point solution found in " << elapsed_millis << "ms" << std::endl;
+
+            root.append((double) elapsed_millis);
+
         } else {
             std::cout << "Apple unreachable" << std::endl;
         }
 
         prm.clearQuery();
     }
+
+    std::cout << "Writing results" << std::endl;
+
+    std::ofstream myfile;
+    myfile.open("example.json");
+    myfile << root;
+    myfile.close();
 
     full_trajectory.interpolate(5 * full_trajectory.getNumWaypoints());
 

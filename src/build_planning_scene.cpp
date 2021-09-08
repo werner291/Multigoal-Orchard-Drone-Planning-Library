@@ -5,7 +5,7 @@
 #include <std_msgs/ColorRGBA.h>
 #include "build_planning_scene.h"
 
-PlanningScene establishPlanningScene(int branchingDepth) {
+PlanningScene establishPlanningScene(int branchingDepth, int numberOfApples) {
 
     std::vector<DetachedTreeNode> tree_flattened;
     make_tree_branches(Eigen::Isometry3d::Identity(), branchingDepth, 0.5, tree_flattened);
@@ -114,7 +114,7 @@ PlanningScene establishPlanningScene(int branchingDepth) {
     {
         const double APPLE_RADIUS = 0.05;
 
-        std::vector<Apple> apples = spawn_apples(tree_flattened, 5, APPLE_RADIUS);
+        std::vector<Apple> apples = spawn_apples(tree_flattened, numberOfApples, APPLE_RADIUS);
 
         moveit_msgs::CollisionObject leaves_collision;
         leaves_collision.id = "apples";
