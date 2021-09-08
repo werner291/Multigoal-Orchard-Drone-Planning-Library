@@ -45,11 +45,11 @@ void DroneStateSampler::sampleUniform(ompl::base::State *state) {
 }
 
 void DroneStateSampler::sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, double distance) {
-    ROS_ERROR("Not implemented.");
+    ROS_ERROR("Not implemented DroneStateSampler::sampleUniformNear");
 }
 
 void DroneStateSampler::sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) {
-    ROS_ERROR("Not implemented.");
+    ROS_ERROR("Not implemented DroneStateSampler::sampleGaussian");
 }
 
 InverseClearanceIntegralObjectiveOMPL::InverseClearanceIntegralObjectiveOMPL(const ompl::base::SpaceInformationPtr &si,
@@ -69,13 +69,14 @@ void DroneEndEffectorNearTarget::sampleGoal(ompl::base::State *state) const {
 
     moveit::core::RobotState st(state_space->getRobotModel());
 
-    int tries_left = 5;
-
     do {
         DroneStateConstraintSampler::randomizeUprightWithBase(st);
         DroneStateConstraintSampler::moveEndEffectorToGoal(st, radius, target);
         state_space->as<CustomModelBasedStateSpace>()->copyToOMPLState(state, st);
-    } while (!si_->isValid(state) && --tries_left > 0);
+        samples_tried += 1;
+    } while (!si_->isValid(state));
+
+    samples_yielded += 1;
 }
 
 double DroneEndEffectorNearTarget::distanceGoal(const ompl::base::State *state) const {
@@ -91,5 +92,13 @@ double DroneEndEffectorNearTarget::distanceGoal(const ompl::base::State *state) 
 
 unsigned int DroneEndEffectorNearTarget::maxSampleCount() const {
     return INT_MAX;
+}
+
+size_t DroneEndEffectorNearTarget::getSamplesYielded() const {
+    return samples_yielded;
+}
+
+size_t DroneEndEffectorNearTarget::getSamplesTried() const {
+    return samples_tried;
 }
 

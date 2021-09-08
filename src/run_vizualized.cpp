@@ -9,12 +9,13 @@
 #include "init_planner.h"
 #include "InverseClearanceIntegralObjective.h"
 #include "ompl_custom.h"
+#include "BulletContinuousMotionValidator.h"
 #include <fcl/fcl.h>
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <ompl/geometric/planners/prm/PRM.h>
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 
-static const int NUM_APPLES = 50;
+static const int NUM_APPLES = 20;
 using namespace robowflex;
 
 /**
@@ -57,6 +58,7 @@ int main(int argc, char **argv) {
 
     auto si = std::make_shared<ompl::base::SpaceInformation>(state_space);
     si->setStateValidityChecker(std::make_shared<StateValidityChecker>(si.get(), scene));
+    si->setMotionValidator(std::make_shared<BulletContinuousMotionValidator>(si.get(), drone, scene));
 
     si->setup();
 
@@ -70,6 +72,8 @@ int main(int argc, char **argv) {
 
     for (const Apple &apple: tree_scene.apples) {
 
+        Json::Value apple_statpoint;
+
         ompl::base::ScopedState start(si);
         state_space->copyToOMPLState(start.get(), full_trajectory.getTrajectory()->getLastWayPoint());
 
@@ -77,7 +81,8 @@ int main(int argc, char **argv) {
         pdef->addStartState(start);
 //        pdef->setOptimizationObjective(avoid_branches);
 
-        pdef->setGoal(std::make_shared<DroneEndEffectorNearTarget>(si, 0.2, apple.center));
+        auto goal = std::make_shared<DroneEndEffectorNearTarget>(si, 0.2, apple.center);
+        pdef->setGoal(goal);
 
         prm.setProblemDefinition(pdef);
 
@@ -85,27 +90,45 @@ int main(int argc, char **argv) {
         ompl::base::PlannerStatus status = prm.solve(ompl::base::timedPlannerTerminationCondition(5.0));
         std::chrono::steady_clock::time_point post_solve = std::chrono::steady_clock::now();
 
+        long elapsed_millis = std::chrono::duration_cast<std::chrono::milliseconds>(
+                (post_solve - pre_solve)).count();
+
         ompl::geometric::PathSimplifier ps(si);
 
         if (status == ompl::base::PlannerStatus::EXACT_SOLUTION) {
 
             auto path = pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
-            ps.simplify(*path, 0.1);
+//            ps.simplify(*path, 0.1);
 
             for (auto state: path->getStates()) {
                 state_space->copyToRobotState(*drone->getScratchState(), state);
                 full_trajectory.addSuffixWaypoint(*drone->getScratchState());
+
+                Json::Value traj_pt;
+                for (int i = 0; i < drone->getScratchState()->getVariableCount(); i+=1) {
+                    traj_pt["values"][i] = drone->getScratchState()->getVariablePosition(i);
+                }
+//                traj_pt["clearance"] = scene->getScene()->c(*drone->getScratchState());
+                apple_statpoint["trajectory"].append(traj_pt);
             }
-            long elapsed_millis = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    (post_solve - pre_solve)).count();
+
             std::cout << "Point-to-point solution found in " << elapsed_millis << "ms" << std::endl;
 
-            root.append((double) elapsed_millis);
+            apple_statpoint["solved"] = true;
 
         } else {
+            apple_statpoint["solved"] = false;
             std::cout << "Apple unreachable" << std::endl;
         }
+
+        apple_statpoint["feasible_solve_milliseconds"] = elapsed_millis;
+        apple_statpoint["prm_nodes_after_solve"] = prm.milestoneCount();
+        apple_statpoint["prm_edges_after_solve"] = prm.edgeCount();
+        apple_statpoint["goal_samples_tried"] = goal->getSamplesTried();
+        apple_statpoint["goal_samples_yielded"] = goal->getSamplesYielded();
+
+        root.append(apple_statpoint);
 
         prm.clearQuery();
     }

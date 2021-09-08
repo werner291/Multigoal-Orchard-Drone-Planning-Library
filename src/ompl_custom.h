@@ -64,7 +64,15 @@ class DroneEndEffectorNearTarget : public ompl::base::GoalSampleableRegion {
     double radius;
     Eigen::Vector3d target;
 
+    // Just for statistics, doesn't affect functionality, so it's mutable.
+    mutable size_t samples_yielded;
+    mutable size_t samples_tried;
+
 public:
+    size_t getSamplesYielded() const;
+
+    size_t getSamplesTried() const;
+
     DroneEndEffectorNearTarget(const ompl::base::SpaceInformationPtr &si, double radius, const Eigen::Vector3d &target);
 
     void sampleGoal(ompl::base::State *state) const override;

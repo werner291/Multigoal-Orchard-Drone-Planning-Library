@@ -20,7 +20,7 @@ bool BulletContinuousMotionValidator::checkMotion(const ompl::base::State *s1, c
 
 bool BulletContinuousMotionValidator::checkMotion(const ompl::base::State *s1, const ompl::base::State *s2,
                                                   std::pair<ompl::base::State *, double> &lastValid) const {
-    ROS_ERROR("Not implemented.");
+    ROS_ERROR("Not implemented BulletContinuousMotionValidator::checkMotion");
 
     return false;
 }
