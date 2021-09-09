@@ -153,6 +153,42 @@ PlanningScene establishPlanningScene(int branchingDepth, int numberOfApples) {
         planning_scene.apples = apples;
     }
 
+    {
+
+        moveit_msgs::CollisionObject floor_collision;
+        floor_collision.id = "floor";
+        floor_collision.header.frame_id = "world";
+
+        geometry_msgs::Pose pose;
+        pose.position.x = 0;
+        pose.position.y = 0;
+        pose.position.z = -0.5;
+        pose.orientation.x = 0;
+        pose.orientation.y = 0;
+        pose.orientation.z = 0;
+        pose.orientation.w = 1;
+        floor_collision.primitive_poses.push_back(pose);
+
+
+        shape_msgs::SolidPrimitive primitive;
+        primitive.type = primitive.BOX;
+        primitive.dimensions.resize(3);
+        primitive.dimensions[shape_msgs::SolidPrimitive::BOX_X] = 10.0;
+        primitive.dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 10.0;
+        primitive.dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 1.0;
+        floor_collision.primitives.push_back(primitive);
+
+        planning_scene.moveit_diff.world.collision_objects.push_back(floor_collision);
+
+        moveit_msgs::ObjectColor color;
+        color.id = "floor";
+        color.color.a = 1.0;
+        color.color.r = 0.3;
+        color.color.g = 0.2;
+        color.color.b = 0.1;
+        planning_scene.moveit_diff.object_colors.push_back(color);
+    }
+
     planning_scene.moveit_diff.is_diff = true;
 
     return planning_scene;
