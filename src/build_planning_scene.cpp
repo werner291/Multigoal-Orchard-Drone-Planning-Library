@@ -98,7 +98,7 @@ PlanningScene establishPlanningScene(int branchingDepth, int numberOfApples) {
         planning_scene.moveit_diff.allowed_collision_matrix.default_entry_names.push_back("leaves");
         planning_scene.moveit_diff.allowed_collision_matrix.default_entry_values.push_back(false);
 
-//        planning_scene.moveit_diff.world.collision_objects.push_back(leaves_collision);
+        planning_scene.moveit_diff.world.collision_objects.push_back(leaves_collision);
 
         moveit_msgs::ObjectColor leaves_color;
         leaves_color.id = "leaves";
@@ -106,7 +106,7 @@ PlanningScene establishPlanningScene(int branchingDepth, int numberOfApples) {
         leaves_color.color.r = 0.0;
         leaves_color.color.g = 0.8;
         leaves_color.color.b = 0.0;
-//        planning_scene.moveit_diff.object_colors.push_back(leaves_color);
+        planning_scene.moveit_diff.object_colors.push_back(leaves_color);
 
         planning_scene.leaf_vertices = std::move(leaf_vertices);
     }

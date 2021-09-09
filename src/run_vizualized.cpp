@@ -59,7 +59,6 @@ int main(int argc, char **argv) {
     auto si = std::make_shared<ompl::base::SpaceInformation>(state_space);
     si->setStateValidityChecker(std::make_shared<StateValidityChecker>(si.get(), scene));
     si->setMotionValidator(std::make_shared<BulletContinuousMotionValidator>(si.get(), drone, scene));
-
     si->setup();
 
     full_trajectory.addSuffixWaypoint(genStartState(drone));
@@ -73,6 +72,10 @@ int main(int argc, char **argv) {
     for (const Apple &apple: tree_scene.apples) {
 
         Json::Value apple_statpoint;
+
+        apple_statpoint["apple"][0] = apple.center.x();
+        apple_statpoint["apple"][1] = apple.center.y();
+        apple_statpoint["apple"][2] = apple.center.z();
 
         ompl::base::ScopedState start(si);
         state_space->copyToOMPLState(start.get(), full_trajectory.getTrajectory()->getLastWayPoint());
@@ -99,17 +102,18 @@ int main(int argc, char **argv) {
 
             auto path = pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
-//            ps.simplify(*path, 0.1);
+            ps.shortcutPath(*path, 50);
+            ps.smoothBSpline(*path);
 
             for (auto state: path->getStates()) {
                 state_space->copyToRobotState(*drone->getScratchState(), state);
                 full_trajectory.addSuffixWaypoint(*drone->getScratchState());
 
                 Json::Value traj_pt;
-                for (int i = 0; i < drone->getScratchState()->getVariableCount(); i+=1) {
+                for (int i = 0; i < drone->getScratchState()->getVariableCount(); i += 1) {
                     traj_pt["values"][i] = drone->getScratchState()->getVariablePosition(i);
                 }
-//                traj_pt["clearance"] = scene->getScene()->c(*drone->getScratchState());
+//                traj_pt["clearance"] = si->getStateValidityChecker()->clearance(state);
                 apple_statpoint["trajectory"].append(traj_pt);
             }
 
@@ -122,11 +126,11 @@ int main(int argc, char **argv) {
             std::cout << "Apple unreachable" << std::endl;
         }
 
-        apple_statpoint["feasible_solve_milliseconds"] = elapsed_millis;
-        apple_statpoint["prm_nodes_after_solve"] = prm.milestoneCount();
-        apple_statpoint["prm_edges_after_solve"] = prm.edgeCount();
-        apple_statpoint["goal_samples_tried"] = goal->getSamplesTried();
-        apple_statpoint["goal_samples_yielded"] = goal->getSamplesYielded();
+        apple_statpoint["feasible_solve_milliseconds"] = (int) elapsed_millis;
+        apple_statpoint["prm_nodes_after_solve"] = (int) prm.milestoneCount();
+        apple_statpoint["prm_edges_after_solve"] = (int) prm.edgeCount();
+        apple_statpoint["goal_samples_tried"] = (int) goal->getSamplesTried();
+        apple_statpoint["goal_samples_yielded"] = (int) goal->getSamplesYielded();
 
         root.append(apple_statpoint);
 
@@ -136,15 +140,13 @@ int main(int argc, char **argv) {
     std::cout << "Writing results" << std::endl;
 
     std::ofstream myfile;
-    myfile.open("example.json");
+    myfile.open("analysis/results.json");
     myfile << root;
     myfile.close();
 
-    full_trajectory.interpolate(5 * full_trajectory.getNumWaypoints());
+    full_trajectory.interpolate(2 * full_trajectory.getNumWaypoints());
 
     rviz.updateTrajectory(full_trajectory);
 
     return 0;
 }
-
-

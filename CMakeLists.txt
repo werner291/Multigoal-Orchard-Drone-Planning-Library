@@ -140,7 +140,7 @@ set(SHARED_SRC
         src/MyOMPLPlanner.cpp
         src/MyOMPLPlanner.h
         src/ompl_custom.cpp
-        src/ompl_custom.h)
+        src/ompl_custom.h src/LeavesCollisionChecker.cpp src/LeavesCollisionChecker.h)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
