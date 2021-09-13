@@ -21,12 +21,8 @@ bool StateValidityChecker::isValid(const ompl::base::State *state) const {
     moveit::core::RobotState robot_state(space->getRobotModel());
     space->copyToRobotState(robot_state, state);
 
-    collision_detection::CollisionRequest req;
-
-    req.contacts = true;
-
     // We rely on the sampler producing states that are  valid in all other aspects, so here we just check collision.
-    return !scene_->checkCollision(robot_state, req).collision;
+    return !scene_->checkCollision(robot_state).collision;
 
 }
 
