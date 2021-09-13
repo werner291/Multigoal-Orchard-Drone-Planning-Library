@@ -38,6 +38,8 @@ int main(int argc, char **argv) {
     auto scene = std::make_shared<Scene>(drone);
     auto tree_scene = establishPlanningScene(10, NUM_APPLES);
     scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
+    // Diff message apparently can't handle this?
+    scene->getScene()->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
     scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
 
     rviz.updateScene(scene);

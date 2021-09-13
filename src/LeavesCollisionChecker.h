@@ -10,12 +10,12 @@
 
 class LeavesCollisionChecker {
 
-    std::vector<size_t> checkLeafCollisions(const moveit::core::RobotState &state);
 
-    fcl::BVHModel<fcl::OBBRSSf> leaves;
+    fcl::BVHModel<fcl::OBBRSSd> leaves;
 
 public:
     LeavesCollisionChecker(const std::vector<Eigen::Vector3d> &leaf_vertices);
+    std::vector<size_t> checkLeafCollisions(const moveit::core::RobotState &state);
 
 };
 

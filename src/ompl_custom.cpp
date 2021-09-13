@@ -21,8 +21,27 @@ bool StateValidityChecker::isValid(const ompl::base::State *state) const {
     moveit::core::RobotState robot_state(space->getRobotModel());
     space->copyToRobotState(robot_state, state);
 
-    // We rely on the sampler producing states that are valid in all other aspects, so here we just check collision.
-    return !scene_->checkCollision(robot_state).collision;
+    collision_detection::CollisionRequest req;
+
+    req.contacts = true;
+
+    auto res = scene_->checkCollision(robot_state, req);
+
+    if (res.collision) {
+        for ( const auto &myPair : res.contacts ) {
+
+            collision_detection::AllowedCollision::Type tp;
+            bool allowed = scene_->getACMConst().getAllowedCollision(myPair.first.first, myPair.first.second, tp);
+
+            std::cout << myPair.first.first << " - " << myPair.first.second << " Allowed: " << allowed << " type: " << tp << std::endl;
+
+        }
+    }
+
+    // We rely on the sampler producing states that are  valid in all other aspects, so here we just check collision.
+
+    return ! res.collision;
+
 }
 
 double StateValidityChecker::clearance(const ompl::base::State *state) const {
@@ -69,11 +88,21 @@ void DroneEndEffectorNearTarget::sampleGoal(ompl::base::State *state) const {
 
     moveit::core::RobotState st(state_space->getRobotModel());
 
+    const size_t ATTEMPTS_BEFORE_GIVE_UP = 1000;
+
+    size_t attempts_this_time = 0;
+
     do {
         DroneStateConstraintSampler::randomizeUprightWithBase(st);
         DroneStateConstraintSampler::moveEndEffectorToGoal(st, radius, target);
         state_space->as<CustomModelBasedStateSpace>()->copyToOMPLState(state, st);
         samples_tried += 1;
+
+        if (attempts_this_time++ > ATTEMPTS_BEFORE_GIVE_UP) {
+            OMPL_WARN("Goal sampling failed after %d attempts. Giving up.", ATTEMPTS_BEFORE_GIVE_UP);
+            break;
+        }
+
     } while (!si_->isValid(state));
 
     samples_yielded += 1;
