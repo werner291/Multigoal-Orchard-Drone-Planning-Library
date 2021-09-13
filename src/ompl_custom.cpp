@@ -25,22 +25,8 @@ bool StateValidityChecker::isValid(const ompl::base::State *state) const {
 
     req.contacts = true;
 
-    auto res = scene_->checkCollision(robot_state, req);
-
-    if (res.collision) {
-        for ( const auto &myPair : res.contacts ) {
-
-            collision_detection::AllowedCollision::Type tp;
-            bool allowed = scene_->getACMConst().getAllowedCollision(myPair.first.first, myPair.first.second, tp);
-
-            std::cout << myPair.first.first << " - " << myPair.first.second << " Allowed: " << allowed << " type: " << tp << std::endl;
-
-        }
-    }
-
     // We rely on the sampler producing states that are  valid in all other aspects, so here we just check collision.
-
-    return ! res.collision;
+    return !scene_->checkCollision(robot_state, req).collision;
 
 }
 
