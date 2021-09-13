@@ -1,6 +1,6 @@
 { pkgs }:
 with pkgs; with rosPackages.noetic; buildRosPackage {
-  pname = "ros-noetic-moveit-planners-ompl";
+  pname = "ros-noetic-moveit-occupancy-map_monitor";
   version = "custom-master";
 
   src = /home/werner/catkin_ws/src/moveit;
@@ -8,16 +8,24 @@ with pkgs; with rosPackages.noetic; buildRosPackage {
   buildType = "catkin";
   propagatedBuildInputs = [ dynamic-reconfigure
         (import ./moveit_core.nix {pkgs=pkgs;})
-        (import ./moveit_ros_planning.nix {pkgs=pkgs;})
+        catkin
+        eigen
+        geometric-shapes
+        moveit-msgs
+        octomap
         ompl
+        pluginlib
         pluginlib
         rosconsole
         roscpp
-        tf2 ];
+        rosunit
+        tf2
+        tf2-ros
+        ];
   nativeBuildInputs = [ catkin ];
 
   configurePhase = ''
-              cmake moveit_planners/ompl -DCMAKE_INSTALL_PREFIX=$out
+              cmake moveit_ros/occupancy_map_monitor -DCMAKE_INSTALL_PREFIX=$out
           '';
 
   meta = {

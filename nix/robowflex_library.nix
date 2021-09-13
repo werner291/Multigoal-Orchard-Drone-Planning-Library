@@ -1,6 +1,6 @@
 { pkgs } :
-
-    with pkgs; with rosPackages.noetic; buildRosPackage {
+    let moveit_pkgs = (import ./moveit_package.nix {pkgs=pkgs;});
+    in with pkgs; with rosPackages.noetic; buildRosPackage {
         pname = "ros-noetic-robowflex";
         version = "rev-master";
 
@@ -10,16 +10,13 @@
 #        };
         src=/home/werner/catkin_ws/src/robowflex;
 
-
         buildType = "catkin";
         checkInputs = [ ];
         propagatedBuildInputs = [ 
-            moveit-core
-            moveit-ros-planning
-            moveit-ros-planning-interface
-            (import ./moveit_planners_ompl.nix {pkgs=pkgs;})
             assimp
-            boost 
+            moveit_pkgs.moveit_core
+            moveit_pkgs.moveit_ros_planning
+            boost
             bullet 
             console-bridge 
             eigen 

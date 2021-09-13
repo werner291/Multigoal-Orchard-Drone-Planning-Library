@@ -1,5 +1,6 @@
 { pkgs } :
-    with pkgs; with rosPackages.noetic; buildRosPackage {
+    let moveit_pkgs = (import ./moveit_package.nix {pkgs=pkgs;});
+    in with pkgs; with rosPackages.noetic; buildRosPackage {
         pname = "ros-noetic-robowflex";
         version = "rev-master";
 
@@ -13,10 +14,9 @@
         buildType = "catkin";
         checkInputs = [ ];
         propagatedBuildInputs = [ 
-            moveit-core
-            moveit-ros-planning
-            moveit-ros-planning-interface
-            moveit-planners-ompl
+            moveit_pkgs.moveit_core
+            moveit_pkgs.moveit_ros_planning
+            moveit_pkgs.moveit_planners_ompl
             (import ./robowflex_library.nix {pkgs=pkgs;})
             assimp
             boost 
