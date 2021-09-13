@@ -63,8 +63,6 @@ int main(int argc, char **argv) {
     si->setMotionValidator(std::make_shared<BulletContinuousMotionValidator>(si.get(), drone, scene));
     si->setup();
 
-    full_trajectory.addSuffixWaypoint(genStartState(drone));
-
     ompl::geometric::PRM prm(si);
 
     auto avoid_branches = std::make_shared<InverseClearanceIntegralObjectiveOMPL>(si, false);
