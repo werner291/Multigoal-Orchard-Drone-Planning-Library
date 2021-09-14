@@ -50,7 +50,8 @@ class ClearanceDecreaseMinimizationObjective : public ompl::base::MechanicalWork
     [[nodiscard]] bool isCostBetterThan(ompl::base::Cost c1, ompl::base::Cost c2) const override;
 
 public:
-    explicit ClearanceDecreaseMinimizationObjective(const ompl::base::SpaceInformationPtr &si, double pathLengthWeight = 0.00001)
+    explicit ClearanceDecreaseMinimizationObjective(const ompl::base::SpaceInformationPtr &si,
+                                                    double pathLengthWeight = 0.00001)
             : MechanicalWorkOptimizationObjective(si, pathLengthWeight) {
         description_ = "Minimize reduction of clearance";
     }

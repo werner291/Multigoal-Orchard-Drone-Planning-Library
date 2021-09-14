@@ -17,5 +17,4 @@ MyOMPLPlanner::MyOMPLPlanner(const robowflex::RobotPtr &robot, const std::string
                              const ompl::geometric::SimpleSetup &ss) : Planner(robot, name) {
 
 
-
 }

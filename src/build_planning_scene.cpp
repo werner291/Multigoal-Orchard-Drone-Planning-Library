@@ -18,7 +18,7 @@ PlanningScene establishPlanningScene(int branchingDepth, int numberOfApples) {
         collision_object.id = "trunk";
         collision_object.header.frame_id = "world";
 
-        for (const auto &tree_node : tree_flattened) {
+        for (const auto &tree_node: tree_flattened) {
             shape_msgs::SolidPrimitive primitive;
             primitive.type = primitive.CYLINDER;
             primitive.dimensions.resize(2);
@@ -67,7 +67,7 @@ PlanningScene establishPlanningScene(int branchingDepth, int numberOfApples) {
         leaves_collision.header.frame_id = "world";
 
         shape_msgs::Mesh mesh;
-        for (const auto &vtx : leaf_vertices) {
+        for (const auto &vtx: leaf_vertices) {
             geometry_msgs::Point pt;
             pt.x = vtx.x();
             pt.y = vtx.y();
@@ -75,7 +75,7 @@ PlanningScene establishPlanningScene(int branchingDepth, int numberOfApples) {
             mesh.vertices.push_back(pt);
         }
 
-        for (size_t i = 0; i < mesh.vertices.size();i+=3) {
+        for (size_t i = 0; i < mesh.vertices.size(); i += 3) {
             shape_msgs::MeshTriangle tri;
             tri.vertex_indices[0] = i;
             tri.vertex_indices[1] = i + 1;
@@ -120,7 +120,7 @@ PlanningScene establishPlanningScene(int branchingDepth, int numberOfApples) {
         leaves_collision.id = "apples";
         leaves_collision.header.frame_id = "world";
 
-        for (const auto &apple : apples) {
+        for (const auto &apple: apples) {
 
             geometry_msgs::Pose pose;
             pose.position.x = apple.center.x();

@@ -41,10 +41,10 @@ public:
 
     const std::string &getName() const override;
 
-    static void randomizeUprightWithBase(moveit::core::RobotState &state) ;
+    static void randomizeUprightWithBase(moveit::core::RobotState &state);
 
     static void moveEndEffectorToGoal(moveit::core::RobotState &state, double tolerance,
-                                      const Eigen::Vector3d &target) ;
+                                      const Eigen::Vector3d &target);
 };
 
 class DroneStateConstraintSamplerAllocator : public constraint_samplers::ConstraintSamplerAllocator {
@@ -63,8 +63,8 @@ class DroneStateConstraintSamplerAllocator : public constraint_samplers::Constra
                                   const moveit_msgs::Constraints &constr) const override {
 
         return constr.orientation_constraints.size() == 1 && constr.orientation_constraints[0].link_name == "base_link"
-                && (constr.position_constraints.empty() || constr.position_constraints.size() == 1 &&
-                constr.position_constraints[0].link_name == "end_effector");
+               && (constr.position_constraints.empty() || constr.position_constraints.size() == 1 &&
+                                                          constr.position_constraints[0].link_name == "end_effector");
     }
 
 };

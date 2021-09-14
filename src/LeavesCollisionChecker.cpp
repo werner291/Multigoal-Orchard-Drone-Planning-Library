@@ -19,7 +19,7 @@ LeavesCollisionChecker::LeavesCollisionChecker(const std::vector<Eigen::Vector3d
 }
 
 std::vector<size_t> LeavesCollisionChecker::checkLeafCollisions(const moveit::core::RobotState &state) {
-    const moveit::core::LinkModel* lm = state.getRobotModel()->getLinkModel("base_link");
+    const moveit::core::LinkModel *lm = state.getRobotModel()->getLinkModel("base_link");
 
     auto shapes = lm->getShapes();
 

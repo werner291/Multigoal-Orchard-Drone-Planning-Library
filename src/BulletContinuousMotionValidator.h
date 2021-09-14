@@ -19,7 +19,6 @@ class BulletContinuousMotionValidator : public ompl::base::MotionValidator {
     std::shared_ptr<const robowflex::Robot> rb_robot_;
 
 
-
 public:
     BulletContinuousMotionValidator(ompl::base::SpaceInformation *si,
                                     std::shared_ptr<const robowflex::Robot> rbRobot,

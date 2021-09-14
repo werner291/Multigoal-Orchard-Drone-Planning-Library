@@ -35,19 +35,21 @@ init_planner(const std::shared_ptr<robowflex::Robot> &drone, const std::shared_p
             .getConstraintSamplerManager()
             .registerSamplerAllocator(std::make_shared<DroneStateConstraintSamplerAllocator>());
 
-    simple_planner->setPrePlanCallback([drone, allocateOptimizationObjective](const ompl_interface::ModelBasedPlanningContextPtr &context, const robowflex::SceneConstPtr &scene,
-                                           const planning_interface::MotionPlanRequest &request){
-        const ompl::geometric::SimpleSetupPtr &ss = context->getOMPLSimpleSetup();
+    simple_planner->setPrePlanCallback(
+            [drone, allocateOptimizationObjective](const ompl_interface::ModelBasedPlanningContextPtr &context,
+                                                   const robowflex::SceneConstPtr &scene,
+                                                   const planning_interface::MotionPlanRequest &request) {
+                const ompl::geometric::SimpleSetupPtr &ss = context->getOMPLSimpleSetup();
 
 //        ss->setOptimizationObjective(
 //                std::make_shared<ClearanceDecreaseMinimzationObjective>(ss->getSpaceInformation())
 //        );
-        ss->setOptimizationObjective(
-                allocateOptimizationObjective(ss)
-        );
+                ss->setOptimizationObjective(
+                        allocateOptimizationObjective(ss)
+                );
 
 //        ss->getSpaceInformation()->setMotionValidator(std::make_shared<BulletContinuousMotionValidator>(ss->getSpaceInformation().get(), drone, scene));
-    });
+            });
 
     return simple_planner;
 }

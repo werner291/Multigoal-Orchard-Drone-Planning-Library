@@ -15,7 +15,7 @@ bool BulletContinuousMotionValidator::checkMotion(const ompl::base::State *s1, c
 
     rb_scene_->getSceneConst()->getCollisionEnv()->checkRobotCollision(req, res, *st1, *st2, rb_scene_->getACMConst());
 
-    return ! res.collision;
+    return !res.collision;
 }
 
 bool BulletContinuousMotionValidator::checkMotion(const ompl::base::State *s1, const ompl::base::State *s2,

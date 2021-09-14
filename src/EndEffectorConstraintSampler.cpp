@@ -29,12 +29,12 @@ bool DroneStateConstraintSampler::configure(const moveit_msgs::Constraints &cons
         ee_target_ = {};
     } else {
         ee_target_ = {{
-            .target = Eigen::Vector3d(
-                    constr.position_constraints[0].constraint_region.primitive_poses[0].position.x,
-                    constr.position_constraints[0].constraint_region.primitive_poses[0].position.y,
-                    constr.position_constraints[0].constraint_region.primitive_poses[0].position.z),
-                    .radius = constr.position_constraints[0].constraint_region.primitives[0].dimensions[shape_msgs::SolidPrimitive::SPHERE_RADIUS]
-        }};
+                              .target = Eigen::Vector3d(
+                                      constr.position_constraints[0].constraint_region.primitive_poses[0].position.x,
+                                      constr.position_constraints[0].constraint_region.primitive_poses[0].position.y,
+                                      constr.position_constraints[0].constraint_region.primitive_poses[0].position.z),
+                              .radius = constr.position_constraints[0].constraint_region.primitives[0].dimensions[shape_msgs::SolidPrimitive::SPHERE_RADIUS]
+                      }};
     }
 
     name_ = ee_name_ + "_position_with_mobile_base";
@@ -64,7 +64,8 @@ bool DroneStateConstraintSampler::sample(moveit::core::RobotState &state,
 
 void DroneStateConstraintSampler::moveEndEffectorToGoal(moveit::core::RobotState &state, double tolerance,
                                                         const Eigen::Vector3d &target) {
-    double sample_radius = tolerance * (random_numbers::RandomNumberGenerator().uniformReal(0.0, 1.0 - std::numeric_limits<double>::epsilon()));
+    double sample_radius = tolerance * (random_numbers::RandomNumberGenerator().uniformReal(0.0, 1.0 -
+                                                                                                 std::numeric_limits<double>::epsilon()));
 
     Eigen::Vector3d ee_pos = state.getGlobalLinkTransform("end_effector").translation();
 
@@ -87,15 +88,15 @@ void DroneStateConstraintSampler::moveEndEffectorToGoal(moveit::core::RobotState
 
 void DroneStateConstraintSampler::randomizeUprightWithBase(moveit::core::RobotState &state) {
     state.setToRandomPositions();
-    double* pos = state.getVariablePositions();
+    double *pos = state.getVariablePositions();
 
     random_numbers::RandomNumberGenerator rng;
 
-    pos[0] = rng.uniformReal(-20.0,20.0);
-    pos[1] = rng.uniformReal(-20.0,20.0);
-    pos[2] = rng.uniformReal(0,20.0);
+    pos[0] = rng.uniformReal(-20.0, 20.0);
+    pos[1] = rng.uniformReal(-20.0, 20.0);
+    pos[2] = rng.uniformReal(0, 20.0);
 
-    Eigen::Quaterniond q(Eigen::AngleAxisd( rng.uniformReal(-M_PI, M_PI), Eigen::Vector3d::UnitZ() ));
+    Eigen::Quaterniond q(Eigen::AngleAxisd(rng.uniformReal(-M_PI, M_PI), Eigen::Vector3d::UnitZ()));
     pos[3] = q.x();
     pos[4] = q.y();
     pos[5] = q.z();

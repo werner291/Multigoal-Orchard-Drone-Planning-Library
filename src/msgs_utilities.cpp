@@ -87,9 +87,9 @@ robot_state::RobotState genStartState(const std::shared_ptr<robowflex::Robot> &d
     start_state.setToDefaultValues();
     start_state.setJointGroupPositions(drone->getModelConst()->getJointModelGroup("whole_body"),
                                        {
-                                        -10.0, -10.0, 10.0,
-                                        0.0, 0.0, 0.0, 1.0,
-                                        0.0, 0.0, 0.0, 0.0
+                                               -10.0, -10.0, 10.0,
+                                               0.0, 0.0, 0.0, 1.0,
+                                               0.0, 0.0, 0.0, 0.0
                                        });
     return start_state;
 }
