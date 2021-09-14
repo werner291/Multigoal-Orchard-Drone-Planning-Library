@@ -140,7 +140,10 @@ set(SHARED_SRC
         src/MyOMPLPlanner.cpp
         src/MyOMPLPlanner.h
         src/ompl_custom.cpp
-        src/ompl_custom.h src/LeavesCollisionChecker.cpp src/LeavesCollisionChecker.h src/multi_goal_planners.cpp)
+        src/ompl_custom.h
+        src/LeavesCollisionChecker.cpp
+        src/LeavesCollisionChecker.h
+        src/multi_goal_planners.cpp)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -151,24 +154,6 @@ include_directories(
         ${FCL_INCLUDE_DIRS}
         ${JSONCPP_INCLUDE_DIRS}
 )
-
-### Declare a C++ library
-#add_library(${PROJECT_NAME}
-#        src/TreePlanner.cpp
-#        )
-
-## Benchmark node
-add_executable(${PROJECT_NAME}_benchmark
-        src/run_benchmark.cpp
-        ${SHARED_SRC} src/SpaceBreakingRoadmap.cpp)
-set_property(TARGET ${PROJECT_NAME}_benchmark PROPERTY CXX_STANDARD 17)
-
-target_link_libraries(${PROJECT_NAME}_benchmark
-        ${catkin_LIBRARIES}
-        ${EIGEN_LIBRARIES}
-        ${FCL_LIBRARIES}
-        jsoncpp_lib
-        )
 
 ## Visualization node
 add_executable(${PROJECT_NAME}_vizualized

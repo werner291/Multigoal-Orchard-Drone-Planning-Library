@@ -91,4 +91,8 @@ public:
 
 };
 
+std::shared_ptr<ompl::base::SpaceInformation>
+initSpaceInformation(const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
+                     std::shared_ptr<DroneStateSpace> &state_space);
+
 #endif //NEW_PLANNERS_OMPL_CUSTOM_H

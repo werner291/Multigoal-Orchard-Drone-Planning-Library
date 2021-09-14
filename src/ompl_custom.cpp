@@ -179,3 +179,13 @@ size_t DroneEndEffectorNearTarget::getSamplesTried() const {
     return samples_tried;
 }
 
+std::shared_ptr<ompl::base::SpaceInformation>
+initSpaceInformation(const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
+                     std::shared_ptr<DroneStateSpace> &state_space) {
+    auto si = std::make_shared<ompl::base::SpaceInformation>(state_space);
+    si->setStateValidityChecker(std::make_shared<StateValidityChecker>(si.get(), scene));
+    si->setMotionValidator(std::make_shared<BulletContinuousMotionValidator>(si.get(), robot, scene));
+    si->setup();
+
+    return si;
+}
