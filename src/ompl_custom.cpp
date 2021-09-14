@@ -2,6 +2,13 @@
 // Created by werner on 06-09-21.
 //
 
+#include "BulletContinuousMotionValidator.h"
+#include "procedural_tree_generation.h"
+#include "LeavesCollisionChecker.h"
+#include "multi_goal_planners.h"
+#include <robowflex_library/trajectory.h>
+#include <json/value.h>
+#include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <moveit/ompl_interface/detail/state_validity_checker.h>
 #include <ompl/base/DiscreteMotionValidator.h>
 #include <ompl/geometric/planners/prm/PRM.h>
@@ -14,9 +21,68 @@
 #include <robowflex_library/builder.h>
 #include "ompl_custom.h"
 
+/**
+ * Represents the union of all goal sampling regions.
+ * Samples are drawn sequentially from each sub-region.
+ */
+class UnionGoalSampleableRegion : public ompl::base::GoalSampleableRegion {
+
+    std::vector<std::shared_ptr<const GoalSampleableRegion>> goals;
+
+    // sampleGoal really shouldn't be const... Oh well.
+    mutable size_t next_goal = 0;
+
+public:
+    double distanceGoal(const ompl::base::State *st) const override {
+        double distance = INFINITY;
+
+        for (const auto &goal: goals) {
+            distance = std::min(distance, goal->distanceGoal(st));
+        }
+
+        return distance;
+    }
+
+    void sampleGoal(ompl::base::State *st) const override {
+
+        ompl::RNG rng;
+
+        for (size_t i = 0; i < goals.size(); i++) {
+
+            const std::shared_ptr<const GoalSampleableRegion> &goalToTry = goals[next_goal];
+            next_goal = (next_goal + 1) % goals.size();
+
+            if (goalToTry->canSample()) {
+                goalToTry->sampleGoal(st);
+                return;
+            }
+        }
+
+        OMPL_ERROR("UnionGoalSampleableRegion : No goals can sample.");
+
+    }
+
+    [[nodiscard]] unsigned int maxSampleCount() const override {
+        unsigned long total = 0;
+
+        for (const auto &goal: goals) {
+            unsigned long new_total = total + goal->maxSampleCount();
+            if (new_total < total) {
+                // Check for overflow, since maxSampleCount on infinite goals is often INT_MAX or UINT_MAX.
+                total = UINT_MAX;
+            } else {
+                total = new_total;
+            }
+        }
+
+        return total;
+    }
+
+};
+
 bool StateValidityChecker::isValid(const ompl::base::State *state) const {
 
-    auto space = si_->getStateSpace()->as<CustomModelBasedStateSpace>();
+    auto space = si_->getStateSpace()->as<DroneStateSpace>();
 
     moveit::core::RobotState robot_state(space->getRobotModel());
     space->copyToRobotState(robot_state, state);
@@ -27,7 +93,7 @@ bool StateValidityChecker::isValid(const ompl::base::State *state) const {
 }
 
 double StateValidityChecker::clearance(const ompl::base::State *state) const {
-    auto space = si_->getStateSpace()->as<CustomModelBasedStateSpace>();
+    auto space = si_->getStateSpace()->as<DroneStateSpace>();
 
     moveit::core::RobotState robot_state(space->getRobotModel());
     space->copyToRobotState(robot_state, state);
@@ -40,9 +106,9 @@ DroneStateSampler::DroneStateSampler(const ompl::base::StateSpace *space)
         : StateSampler(space) {}
 
 void DroneStateSampler::sampleUniform(ompl::base::State *state) {
-    moveit::core::RobotState st(space_->as<CustomModelBasedStateSpace>()->getRobotModel());
+    moveit::core::RobotState st(space_->as<DroneStateSpace>()->getRobotModel());
     DroneStateConstraintSampler::randomizeUprightWithBase(st);
-    space_->as<CustomModelBasedStateSpace>()->copyToOMPLState(state, st);
+    space_->as<DroneStateSpace>()->copyToOMPLState(state, st);
 }
 
 void DroneStateSampler::sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, double distance) {
@@ -66,7 +132,7 @@ DroneEndEffectorNearTarget::DroneEndEffectorNearTarget(const ompl::base::SpaceIn
         : GoalSampleableRegion(si), radius(radius), target(target) {}
 
 void DroneEndEffectorNearTarget::sampleGoal(ompl::base::State *state) const {
-    auto *state_space = si_->getStateSpace()->as<CustomModelBasedStateSpace>();
+    auto *state_space = si_->getStateSpace()->as<DroneStateSpace>();
 
     moveit::core::RobotState st(state_space->getRobotModel());
 
@@ -77,7 +143,7 @@ void DroneEndEffectorNearTarget::sampleGoal(ompl::base::State *state) const {
     do {
         DroneStateConstraintSampler::randomizeUprightWithBase(st);
         DroneStateConstraintSampler::moveEndEffectorToGoal(st, radius, target);
-        state_space->as<CustomModelBasedStateSpace>()->copyToOMPLState(state, st);
+        state_space->as<DroneStateSpace>()->copyToOMPLState(state, st);
         samples_tried += 1;
 
         if (attempts_this_time++ > ATTEMPTS_BEFORE_GIVE_UP) {
@@ -91,7 +157,7 @@ void DroneEndEffectorNearTarget::sampleGoal(ompl::base::State *state) const {
 }
 
 double DroneEndEffectorNearTarget::distanceGoal(const ompl::base::State *state) const {
-    auto *state_space = si_->getStateSpace()->as<CustomModelBasedStateSpace>();
+    auto *state_space = si_->getStateSpace()->as<DroneStateSpace>();
     moveit::core::RobotState st(state_space->getRobotModel());
 
     Eigen::Vector3d ee_pos = st.getGlobalLinkTransform("end_effector").translation();

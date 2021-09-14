@@ -5,23 +5,10 @@
 
 #include <utility>
 #include <ompl/base/MotionValidator.h>
+#include <ompl/base/objectives/StateCostIntegralObjective.h>
+#include <ompl/base/StateValidityChecker.h>
+#include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 
-class CustomModelBasedStateSpace : public ompl_interface::ModelBasedStateSpace {
-
-    const std::string param_type_ = "custom";
-public:
-    CustomModelBasedStateSpace(const ompl_interface::ModelBasedStateSpaceSpecification &spec)
-            : ModelBasedStateSpace(spec) {}
-
-    unsigned int validSegmentCount(const ompl::base::State *state1, const ompl::base::State *state2) const override {
-        return this->distance(state1, state2) / 0.2;
-    }
-
-    const std::string &getParameterizationType() const override {
-        return param_type_;
-    }
-
-};
 
 class StateValidityChecker : public ompl::base::StateValidityChecker {
 
@@ -48,6 +35,27 @@ public:
     void sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, double distance) override;
 
     void sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) override;
+};
+
+class DroneStateSpace : public ompl_interface::ModelBasedStateSpace {
+
+    const std::string param_type_ = "custom";
+public:
+    explicit DroneStateSpace(const ompl_interface::ModelBasedStateSpaceSpecification &spec)
+            : ModelBasedStateSpace(spec) {}
+
+    unsigned int validSegmentCount(const ompl::base::State *state1, const ompl::base::State *state2) const override {
+        return (int) std::ceil(this->distance(state1, state2) / 0.2);
+    }
+
+    [[nodiscard]] const std::string &getParameterizationType() const override {
+        return param_type_;
+    }
+
+    ompl::base::StateSamplerPtr allocDefaultStateSampler() const override {
+        return std::make_shared<DroneStateSampler>(this);
+    }
+
 };
 
 class InverseClearanceIntegralObjectiveOMPL : public ompl::base::StateCostIntegralObjective {
