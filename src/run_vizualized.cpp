@@ -36,62 +36,67 @@ int main(int argc, char **argv) {
 //    IO::RobotBroadcaster bc(drone);
 //    bc.start();
 
-    auto scene = std::make_shared<Scene>(drone);
-    auto tree_scene = establishPlanningScene(10, NUM_APPLES);
-    scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
-    // Diff message apparently can't handle this?
-    scene->getScene()->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
-    scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
-
-//    rviz.updateScene(scene);
-
-    ompl::msg::setLogLevel(ompl::msg::LOG_INFO);
-
-    std::vector<planning_interface::MotionPlanResponse> responses;
-
-    ompl_interface::ModelBasedStateSpaceSpecification spec(drone->getModelConst(), "whole_body");
-
-    auto state_space = std::make_shared<DroneStateSpace>(spec);
-
+    const int RUNS = 5;
     Json::Value benchmark_results;
 
-    const int RUNS_PER_SCENARIO = 5;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> apple_count(5, 100);
 
-    for (int i = 0; i < RUNS_PER_SCENARIO; i++) {
+    ompl::msg::setLogLevel(ompl::msg::LOG_INFO);
+    ompl_interface::ModelBasedStateSpaceSpecification spec(drone->getModelConst(), "whole_body");
+    auto state_space = std::make_shared<DroneStateSpace>(spec);
 
-        ompl::geometric::PRM prm(initSpaceInformation(scene, drone, state_space));
-        MultiGoalPlanResult result_random_prm = plan_random(tree_scene.apples, genStartState(drone), scene, drone, prm);
+    for (int i = 0; i < RUNS; i++) {
 
-        result_random_prm.stats["intermediate_planner"] = "PRM";
-        benchmark_results.append(result_random_prm.stats);
-    }
+        Json::Value run_results;
 
-    for (int i = 0; i < RUNS_PER_SCENARIO; i++) {
-        ompl::geometric::RRTConnect rrtconnect(initSpaceInformation(scene, drone, state_space));
-        MultiGoalPlanResult result_random_rrtconnect = plan_random(tree_scene.apples, genStartState(drone), scene,
-                                                                   drone, rrtconnect);
+        auto scene = std::make_shared<Scene>(drone);
+        int numberOfApples = apple_count(gen);
 
-        result_random_rrtconnect.stats["intermediate_planner"] = "RRTConnect";
-        benchmark_results.append(result_random_rrtconnect.stats);
-    }
+        run_results["number_of_apples"] = numberOfApples;
 
-    for (int i = 0; i < RUNS_PER_SCENARIO; i++) {
+        auto tree_scene = establishPlanningScene(10, numberOfApples);
+        scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
+        // Diff message apparently can't handle this?
+        scene->getScene()->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
+        scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
 
-        ompl::geometric::PRM prm(initSpaceInformation(scene, drone, state_space));
-        MultiGoalPlanResult result_random_prm = plan_nn_rrtconnect(tree_scene.apples, genStartState(drone), scene,
-                                                                   drone, prm);
+        const std::shared_ptr<ompl::base::SpaceInformation> si = initSpaceInformation(scene, drone, state_space);
+        {
+            ompl::geometric::PRM prm(si);
+            MultiGoalPlanResult result_random_prm = plan_random(tree_scene.apples, genStartState(drone), scene, drone,
+                                                                prm);
 
-        result_random_prm.stats["intermediate_planner"] = "PRM";
-        benchmark_results.append(result_random_prm.stats);
-    }
+            result_random_prm.stats["intermediate_planner"] = "PRM";
+            run_results.append(result_random_prm.stats);
+        }
+        {
+            ompl::geometric::RRTConnect rrtconnect(si);
+            MultiGoalPlanResult result_random_rrtconnect = plan_random(tree_scene.apples, genStartState(drone), scene,
+                                                                       drone, rrtconnect);
 
-    for (int i = 0; i < RUNS_PER_SCENARIO; i++) {
-        ompl::geometric::RRTConnect rrtconnect(initSpaceInformation(scene, drone, state_space));
-        MultiGoalPlanResult result_random_rrtconnect = plan_nn_rrtconnect(tree_scene.apples, genStartState(drone),
-                                                                          scene, drone, rrtconnect);
+            result_random_rrtconnect.stats["intermediate_planner"] = "RRTConnect";
+            run_results.append(result_random_rrtconnect.stats);
+        }
+        {
+            ompl::geometric::PRM prm(si);
+            MultiGoalPlanResult result_random_prm = plan_nn_rrtconnect(tree_scene.apples, genStartState(drone), scene,
+                                                                       drone, prm);
 
-        result_random_rrtconnect.stats["intermediate_planner"] = "RRTConnect";
-        benchmark_results.append(result_random_rrtconnect.stats);
+            result_random_prm.stats["intermediate_planner"] = "PRM";
+            run_results.append(result_random_prm.stats);
+        }
+        {
+            ompl::geometric::RRTConnect rrtconnect(si);
+            MultiGoalPlanResult result_random_rrtconnect = plan_nn_rrtconnect(tree_scene.apples, genStartState(drone),
+                                                                              scene, drone, rrtconnect);
+
+            result_random_rrtconnect.stats["intermediate_planner"] = "RRTConnect";
+            run_results.append(result_random_rrtconnect.stats);
+        }
+
+        benchmark_results.append(run_results);
     }
 
     std::ofstream results("analysis/results.json");
