@@ -124,11 +124,11 @@ PointToPointPlanResult planPointToPoint(const robowflex::RobotConstPtr &robot, r
     pdef->setGoal(goal);
 
     planner.setProblemDefinition(pdef);
-    planner.setup(); // We explicitly do the setup beforehand to avoid counting it in the benchmarking.
+    if (!planner.isSetup()) planner.setup(); // We explicitly do the setup beforehand to avoid counting it in the benchmarking.
 
     std::cout << "Planner start:" << std::endl;
     std::chrono::steady_clock::time_point pre_solve = std::chrono::steady_clock::now();
-    ompl::base::PlannerStatus status = planner.solve(ompl::base::timedPlannerTerminationCondition(5.0));
+    ompl::base::PlannerStatus status = planner.solve(ompl::base::timedPlannerTerminationCondition(0.5));
     std::chrono::steady_clock::time_point post_solve = std::chrono::steady_clock::now();
 
     long elapsed_millis = std::chrono::duration_cast<std::chrono::milliseconds>(
