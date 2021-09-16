@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 //    IO::RobotBroadcaster bc(drone);
 //    bc.start();
 
-    const int RUNS = 5;
+    const int RUNS = 10;
     Json::Value benchmark_results;
 
     std::random_device rd;
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
                                                                 prm);
 
             result_random_prm.stats["intermediate_planner"] = "PRM";
-            run_results.append(result_random_prm.stats);
+            run_results["planner_runs"].append(result_random_prm.stats);
         }
         {
             ompl::geometric::RRTConnect rrtconnect(si);
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
                                                                        drone, rrtconnect);
 
             result_random_rrtconnect.stats["intermediate_planner"] = "RRTConnect";
-            run_results.append(result_random_rrtconnect.stats);
+            run_results["planner_runs"].append(result_random_rrtconnect.stats);
         }
         {
             ompl::geometric::PRM prm(si);
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
                                                                        drone, prm);
 
             result_random_prm.stats["intermediate_planner"] = "PRM";
-            run_results.append(result_random_prm.stats);
+            run_results["planner_runs"].append(result_random_prm.stats);
         }
         {
             ompl::geometric::RRTConnect rrtconnect(si);
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
                                                                               scene, drone, rrtconnect);
 
             result_random_rrtconnect.stats["intermediate_planner"] = "RRTConnect";
-            run_results.append(result_random_rrtconnect.stats);
+            run_results["planner_runs"].append(result_random_rrtconnect.stats);
         }
 
         benchmark_results.append(run_results);
