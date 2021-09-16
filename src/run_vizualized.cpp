@@ -16,7 +16,6 @@
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <json/json.h>
 
-static const int NUM_APPLES = 20;
 using namespace robowflex;
 
 /**
@@ -36,7 +35,7 @@ int main(int argc, char **argv) {
 //    IO::RobotBroadcaster bc(drone);
 //    bc.start();
 
-    const int RUNS = 10;
+    const int RUNS = 100;
     Json::Value benchmark_results;
 
     std::random_device rd;
