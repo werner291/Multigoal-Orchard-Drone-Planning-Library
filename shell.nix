@@ -6,16 +6,20 @@ let
     moveit_pkgs = (import nix/moveit_package.nix {pkgs=pkgs;});
 in
     with pkgs; with rosPackages.noetic;
-mkShell {
-  nativeBuildInputs = [
-        moveit_pkgs.moveit_core
-        moveit_pkgs.moveit_planners_ompl
-        moveit_pkgs.moveit_ros_planning
-          robowflex_library
-          robowflex_ompl
-          rviz-visual-tools
-          jsoncpp
-          catkin
-          cmake
-  ];
-}
+        mkShell {
+            nativeBuildInputs = [
+                moveit_pkgs.moveit_core
+                moveit_pkgs.moveit_planners_ompl
+                moveit_pkgs.moveit_warehouse
+                moveit_pkgs.moveit_move_group
+                moveit_pkgs.moveit_ros_planning_interface
+                (import nix/moveit_visual_tools.nix {pkgs=pkgs;})
+                robowflex_library
+                robowflex_ompl
+                warehouse-ros
+                rviz-visual-tools
+                jsoncpp
+                catkin
+                cmake
+            ];
+        }
