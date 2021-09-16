@@ -21,5 +21,9 @@ in
                 jsoncpp
                 catkin
                 cmake
+                pythonPackages.numpy 
+                pythonPackages.notebook
+                pythonPackages.pandas
+                pythonPackages.matplotlib
             ];
         }
