@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 //    IO::RobotBroadcaster bc(drone);
 //    bc.start();
 
-    const int RUNS = 100;
+    const int RUNS = 20;
     Json::Value benchmark_results;
 
     std::random_device rd;
@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
 
             ompl::geometric::PRM prm(si);
             MultiGoalPlanResult result_random_prm = plan_knn(tree_scene.apples, start_state, scene,
-                                                            drone, 5, prm);
+                                                             drone, 5, prm);
 
             result_random_prm.stats["intermediate_planner"] = "PRM";
             run_results["planner_runs"].append(result_random_prm.stats);
@@ -125,7 +125,27 @@ int main(int argc, char **argv) {
 
             ompl::geometric::RRTConnect rrtconnect(si);
             MultiGoalPlanResult result_random_rrtconnect = plan_knn(tree_scene.apples, start_state,
-                                                                   scene, drone, 5, rrtconnect);
+                                                                    scene, drone, 5, rrtconnect);
+
+            result_random_rrtconnect.stats["intermediate_planner"] = "RRTConnect";
+            run_results["planner_runs"].append(result_random_rrtconnect.stats);
+        }
+        {
+            std::cout << "Attempting PRM 5-random." << std::endl;
+
+            ompl::geometric::PRM prm(si);
+            MultiGoalPlanResult result_random_prm = plan_k_random(tree_scene.apples, start_state, scene,
+                                                             drone, 5, prm);
+
+            result_random_prm.stats["intermediate_planner"] = "PRM";
+            run_results["planner_runs"].append(result_random_prm.stats);
+        }
+        {
+            std::cout << "Attempting RRTConnect 5-random." << std::endl;
+
+            ompl::geometric::RRTConnect rrtconnect(si);
+            MultiGoalPlanResult result_random_rrtconnect = plan_k_random(tree_scene.apples, start_state,
+                                                                    scene, drone, 5, rrtconnect);
 
             result_random_rrtconnect.stats["intermediate_planner"] = "RRTConnect";
             run_results["planner_runs"].append(result_random_rrtconnect.stats);
