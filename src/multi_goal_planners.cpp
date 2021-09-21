@@ -9,13 +9,6 @@
 #include "procedural_tree_generation.h"
 #include "BulletContinuousMotionValidator.h"
 
-Json::Value getStateStatisticsPoint(const moveit::core::RobotState &st);
-
-std::shared_ptr<ompl::base::SpaceInformation>
-initSpaceInformation(const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
-                     std::shared_ptr<DroneStateSpace> &state_space);
-
-
 Json::Value eigenToJson(const Eigen::Vector3d &vec) {
     Json::Value apple;
     apple[0] = vec.x();
@@ -23,6 +16,28 @@ Json::Value eigenToJson(const Eigen::Vector3d &vec) {
     apple[2] = vec.z();
     return apple;
 }
+
+Json::Value makePointToPointJson(const Eigen::Vector3d &target,
+                                 const std::optional<PointToPointPlanResult> &pointToPointPlanResult) {
+    Json::Value json;
+    json["apple"] = eigenToJson(target);
+    json["solved"] = pointToPointPlanResult.has_value();
+    if (pointToPointPlanResult.has_value()) {
+        json["path_length"] = pointToPointPlanResult.value().solution_length;
+    }
+    return json;
+}
+
+Json::Value getStateStatisticsPoint(const moveit::core::RobotState &st);
+
+std::shared_ptr<ompl::base::SpaceInformation>
+initSpaceInformation(const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
+                     std::shared_ptr<DroneStateSpace> &state_space);
+
+
+void extendTrajectory(robowflex::Trajectory &full_trajectory, robowflex::Trajectory &extension);
+
+
 
 MultiGoalPlanResult plan_nn(const std::vector<Apple> &apples,
                             const moveit::core::RobotState &start_state,
@@ -97,8 +112,7 @@ MultiGoalPlanResult plan_knn(const std::vector<Apple> &apples,
         std::vector<Eigen::Vector3d> knn;
         unvisited_nn.nearestK(start_eepos, k, knn);
 
-        PointToPointPlanResult bestResult;
-        bestResult.solution_length = {};
+        std::optional<PointToPointPlanResult> bestResult;
         double best_length = INFINITY;
         Eigen::Vector3d best_target;
 
@@ -107,24 +121,26 @@ MultiGoalPlanResult plan_knn(const std::vector<Apple> &apples,
                     point_to_point_planner.getSpaceInformation(), 0.2,
                     target);
 
-            PointToPointPlanResult pointToPointPlanResult = planPointToPoint(robot, full_trajectory,
+            auto pointToPointResult = planPointToPoint(robot, full_trajectory,
                                                                              point_to_point_planner,
                                                                              subgoal);
 
-            if (pointToPointPlanResult.solution_length.has_value() && pointToPointPlanResult.solution_length.value() < best_length) {
-                bestResult = pointToPointPlanResult;
-                best_length = pointToPointPlanResult.solution_length.value();
+            if (pointToPointResult.has_value() && pointToPointResult.value().solution_length < best_length) {
+                bestResult = pointToPointResult;
+                best_length = pointToPointResult.value().solution_length;
                 best_target = target;
             }
         }
 
-        if (bestResult.solution_length.has_value()) {
+        if (bestResult.has_value()) {
             unvisited_nn.remove(best_target);
+            extendTrajectory(full_trajectory, bestResult.value().point_to_point_trajectory);
+            root["segments"].append(makePointToPointJson(best_target, bestResult));
         } else {
             unvisited_nn.remove(knn[0]); // Better picks here? Maybe delete all?
         }
 
-        root["segments"].append(makePointToPointJson(target, bestResult));
+
     }
 
     std::ostringstream stringStream;
@@ -135,6 +151,12 @@ MultiGoalPlanResult plan_knn(const std::vector<Apple> &apples,
 
     return {full_trajectory, root};
 
+}
+
+void extendTrajectory(robowflex::Trajectory &full_trajectory, robowflex::Trajectory &extension) {
+    for (size_t i = 0; i < extension.getNumWaypoints(); i++) {
+        full_trajectory.addSuffixWaypoint(extension.getTrajectory()->getWayPoint(i));
+    }
 }
 
 MultiGoalPlanResult plan_k_random(const std::vector<Apple> &apples,
@@ -162,8 +184,7 @@ MultiGoalPlanResult plan_k_random(const std::vector<Apple> &apples,
         const Eigen::Vector3d start_eepos = full_trajectory.getTrajectory()->getLastWayPoint().getGlobalLinkTransform(
                 "end_effector").translation();
 
-        PointToPointPlanResult bestResult;
-        bestResult.solution_length = {};
+        std::optional<PointToPointPlanResult> bestResult {};
         double best_length = INFINITY;
         Eigen::Vector3d best_target;
 
@@ -179,15 +200,16 @@ MultiGoalPlanResult plan_k_random(const std::vector<Apple> &apples,
                                                                              point_to_point_planner,
                                                                              subgoal);
 
-            if (pointToPointPlanResult.solution_length.has_value() && pointToPointPlanResult.solution_length.value() < best_length) {
+            if (pointToPointPlanResult.has_value() && pointToPointPlanResult.value().solution_length < best_length) {
                 bestResult = pointToPointPlanResult;
                 best_length = pointToPointPlanResult.solution_length.value();
                 best_target = target;
             }
         }
 
-        if (bestResult.solution_length.has_value()) {
+        if (bestResult.has_value()) {
             targets.erase(std::find(targets.begin(), targets.end(), best_target));
+            extendTrajectory(full_trajectory, bestResult.value().point_to_point_trajectory);
         } else {
             targets.erase(targets.begin()); // Better picks here? Maybe delete all?
         }
@@ -203,16 +225,6 @@ MultiGoalPlanResult plan_k_random(const std::vector<Apple> &apples,
 
     return {full_trajectory, root};
 
-}
-
-Json::Value makePointToPointJson(const Eigen::Vector3d &target, PointToPointPlanResult &pointToPointPlanResult) {
-    Json::Value json;
-    json["apple"] = eigenToJson(target);
-    json["solved"] = pointToPointPlanResult.solution_length.has_value();
-    if (pointToPointPlanResult.solution_length.has_value()) {
-        json["path_length"] = pointToPointPlanResult.solution_length.value();
-    }
-    return json;
 }
 
 MultiGoalPlanResult plan_random(const std::vector<Apple> &apples,
@@ -261,8 +273,10 @@ Json::Value getStateStatisticsPoint(const moveit::core::RobotState &st) {
     return traj_pt;
 }
 
-PointToPointPlanResult planPointToPoint(const robowflex::RobotConstPtr &robot, robowflex::Trajectory &full_trajectory,
-                                        ompl::base::Planner &planner, const ompl::base::GoalPtr &goal) {
+PointToPointPlanResult planPointToPoint(const robowflex::RobotConstPtr &robot,
+                                        const robowflex::Trajectory &full_trajectory,
+                                        ompl::base::Planner &planner,
+                                        const ompl::base::GoalPtr &goal) {
 
     PointToPointPlanResult result;
 

@@ -49,7 +49,6 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < RUNS; i++) {
 
-
         Json::Value run_results;
 
         auto scene = std::make_shared<Scene>(drone);

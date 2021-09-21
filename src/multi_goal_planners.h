@@ -12,7 +12,8 @@ struct MultiGoalPlanResult {
 };
 
 struct PointToPointPlanResult {
-    std::optional<double> solution_length;
+    double solution_length;
+    robowflex::Trajectory point_to_point_trajectory;
 };
 
 MultiGoalPlanResult plan_nn(const std::vector<Apple> &apples,
@@ -41,5 +42,5 @@ MultiGoalPlanResult plan_k_random(const std::vector<Apple> &apples,
                                   size_t k,
                                   ompl::base::Planner &point_to_point_planner);
 
-PointToPointPlanResult planPointToPoint(const robowflex::RobotConstPtr &robot, robowflex::Trajectory &full_trajectory,
-                                        ompl::base::Planner &planner, const ompl::base::GoalPtr &goal);
+std::optional<PointToPointPlanResult> planPointToPoint(const robowflex::RobotConstPtr &robot, robowflex::Trajectory &full_trajectory,
+                                                       ompl::base::Planner &planner, const ompl::base::GoalPtr &goal);
