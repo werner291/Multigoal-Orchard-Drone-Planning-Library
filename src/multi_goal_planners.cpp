@@ -59,13 +59,7 @@ MultiGoalPlanResult plan_nn(const std::vector<Apple> &apples,
                                                                0.2,
                                                                target));
 
-        Json::Value json;
-        json["apple"] = eigenToJson(target);
-        json["solved"] = pointToPointPlanResult.solution_length.has_value();
-        if (pointToPointPlanResult.solution_length.has_value()) {
-            json["path_length"] = pointToPointPlanResult.solution_length.value();
-        }
-        root["segments"].append(json);
+        root["segments"].append(makePointToPointJson(target, pointToPointPlanResult));
     }
 
     root["ordering"] = "NN";
@@ -124,16 +118,13 @@ MultiGoalPlanResult plan_knn(const std::vector<Apple> &apples,
             }
         }
 
-        Json::Value json;
-        json["apple"] = eigenToJson(best_target);
-        json["solved"] = bestResult.solution_length.has_value();
         if (bestResult.solution_length.has_value()) {
-            json["path_length"] = bestResult.solution_length.value();
             unvisited_nn.remove(best_target);
         } else {
             unvisited_nn.remove(knn[0]); // Better picks here? Maybe delete all?
         }
-        root["segments"].append(json);
+
+        root["segments"].append(makePointToPointJson(target, bestResult));
     }
 
     std::ostringstream stringStream;
@@ -195,16 +186,13 @@ MultiGoalPlanResult plan_k_random(const std::vector<Apple> &apples,
             }
         }
 
-        Json::Value json;
-        json["apple"] = eigenToJson(best_target);
-        json["solved"] = bestResult.solution_length.has_value();
         if (bestResult.solution_length.has_value()) {
-            json["path_length"] = bestResult.solution_length.value();
             targets.erase(std::find(targets.begin(), targets.end(), best_target));
         } else {
             targets.erase(targets.begin()); // Better picks here? Maybe delete all?
         }
-        root["segments"].append(json);
+
+        root["segments"].append(makePointToPointJson(target, bestResult));
     }
 
     std::ostringstream stringStream;
@@ -255,8 +243,7 @@ MultiGoalPlanResult plan_random(const std::vector<Apple> &apples,
                                                                target));
 
 
-        Json::Value json = makePointToPointJson(target, pointToPointPlanResult);
-        root["segments"].append(json);
+        root["segments"].append(makePointToPointJson(target, pointToPointPlanResult));
     }
 
     root["ordering"] = "random";
@@ -313,11 +300,7 @@ PointToPointPlanResult planPointToPoint(const robowflex::RobotConstPtr &robot, r
         for (auto state: path->getStates()) {
             state_space->copyToRobotState(st, state);
             full_trajectory.addSuffixWaypoint(st);
-
-            //apple_statpoint["trajectory"].append(getStateStatisticsPoint(st));
         }
-
-//        std::cout << "Point-to-point solution found in " << elapsed_millis << "ms" << std::endl;
 
         result.solution_length = {path->length()};
 
@@ -325,16 +308,6 @@ PointToPointPlanResult planPointToPoint(const robowflex::RobotConstPtr &robot, r
         result.solution_length = {};
         std::cout << "Apple unreachable" << std::endl;
     }
-
-//    ompl::base::PlannerData pd(planner.getSpaceInformation());
-//
-//    planner.getPlannerData(pd);
-
-//    apple_statpoint["feasible_solve_milliseconds"] = (int) elapsed_millis;
-//    apple_statpoint["prm_nodes_after_solve"] = (int) pd.numVertices();
-//    apple_statpoint["prm_edges_after_solve"] = (int) pd.numEdges();
-//    apple_statpoint["goal_samples_tried"] = (int) goal->getSamplesTried();
-//    apple_statpoint["goal_samples_yielded"] = (int) goal->getSamplesYielded();
 
     planner.clearQuery();
 
