@@ -45,3 +45,7 @@ unsigned int UnionGoalSampleableRegion::maxSampleCount() const {
 
     return total;
 }
+
+UnionGoalSampleableRegion::UnionGoalSampleableRegion(const ompl::base::SpaceInformationPtr &si,
+                                                     const std::vector<std::shared_ptr<const GoalSampleableRegion>> &goals)
+        : GoalSampleableRegion(si), goals(goals) {}

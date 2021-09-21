@@ -24,11 +24,11 @@ Json::Value eigenToJson(const Eigen::Vector3d &vec) {
     return apple;
 }
 
-MultiGoalPlanResult plan_nn_rrtconnect(const std::vector<Apple> &apples,
-                                       const moveit::core::RobotState &start_state,
-                                       const robowflex::SceneConstPtr &scene,
-                                       const robowflex::RobotConstPtr &robot,
-                                       ompl::base::Planner &point_to_point_planner) {
+MultiGoalPlanResult plan_nn(const std::vector<Apple> &apples,
+                            const moveit::core::RobotState &start_state,
+                            const robowflex::SceneConstPtr &scene,
+                            const robowflex::RobotConstPtr &robot,
+                            ompl::base::Planner &point_to_point_planner) {
 
     ompl::NearestNeighborsGNAT<Eigen::Vector3d> unvisited_nn;
     unvisited_nn.setDistanceFunction([](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
@@ -52,13 +52,95 @@ MultiGoalPlanResult plan_nn_rrtconnect(const std::vector<Apple> &apples,
         const Eigen::Vector3d target = unvisited_nn.nearest(start_eepos);
         unvisited_nn.remove(target);
 
-        root["segments"].append(planPointToPoint(robot, full_trajectory, point_to_point_planner, target,
-                                                 std::make_shared<DroneEndEffectorNearTarget>(
-                                                         point_to_point_planner.getSpaceInformation(), 0.2,
-                                                         target)).statPoint);
+        auto pointToPointPlanResult = planPointToPoint(robot, full_trajectory,
+                                                       point_to_point_planner,
+                                                       std::make_shared<DroneEndEffectorNearTarget>(
+                                                               point_to_point_planner.getSpaceInformation(),
+                                                               0.2,
+                                                               target));
+
+        Json::Value json;
+        json["apple"] = eigenToJson(target);
+        json["solved"] = pointToPointPlanResult.solution_length.has_value();
+        if (pointToPointPlanResult.solution_length.has_value()) {
+            json["path_length"] = pointToPointPlanResult.solution_length.value();
+        }
+        root["segments"].append(json);
     }
 
-    root["ordering"] = "nearest neighbour";
+    root["ordering"] = "NN";
+
+    return {full_trajectory, root};
+
+}
+
+MultiGoalPlanResult plan_knn(const std::vector<Apple> &apples,
+                            const moveit::core::RobotState &start_state,
+                            const robowflex::SceneConstPtr &scene,
+                            const robowflex::RobotConstPtr &robot,
+                            size_t k,
+                            ompl::base::Planner &point_to_point_planner) {
+
+    ompl::NearestNeighborsGNAT<Eigen::Vector3d> unvisited_nn;
+    unvisited_nn.setDistanceFunction([](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
+        return (a - b).norm();
+    });
+
+    for (const Apple &apple: apples) {
+        unvisited_nn.add(apple.center);
+    }
+
+    robowflex::Trajectory full_trajectory(robot, "whole_body");
+    full_trajectory.addSuffixWaypoint(start_state);
+
+    Json::Value root;
+
+    while (unvisited_nn.size() > 0) {
+
+        const Eigen::Vector3d start_eepos = full_trajectory.getTrajectory()->getLastWayPoint().getGlobalLinkTransform(
+                "end_effector").translation();
+
+        std::vector<Eigen::Vector3d> knn;
+        unvisited_nn.nearestK(start_eepos, k, knn);
+
+        PointToPointPlanResult bestResult;
+        bestResult.solution_length = {};
+        double best_length = INFINITY;
+        Eigen::Vector3d best_target;
+
+        for (auto target : knn) {
+            auto subgoal = std::make_shared<DroneEndEffectorNearTarget>(
+                    point_to_point_planner.getSpaceInformation(), 0.2,
+                    target);
+
+            PointToPointPlanResult pointToPointPlanResult = planPointToPoint(robot, full_trajectory,
+                                                                             point_to_point_planner,
+                                                                             subgoal);
+
+            if (pointToPointPlanResult.solution_length.has_value() && pointToPointPlanResult.solution_length.value() < best_length) {
+                bestResult = pointToPointPlanResult;
+                best_length = pointToPointPlanResult.solution_length.value();
+                best_target = target;
+            }
+        }
+
+        Json::Value json;
+        json["apple"] = eigenToJson(best_target);
+        json["solved"] = bestResult.solution_length.has_value();
+        if (bestResult.solution_length.has_value()) {
+            json["path_length"] = bestResult.solution_length.value();
+            unvisited_nn.remove(best_target);
+        } else {
+            unvisited_nn.remove(knn[0]); // Better picks here? Maybe delete all?
+        }
+        root["segments"].append(json);
+    }
+
+    std::ostringstream stringStream;
+    stringStream << k;
+    stringStream << "-NN";
+
+    root["ordering"] = stringStream.str();
 
     return {full_trajectory, root};
 
@@ -84,10 +166,21 @@ MultiGoalPlanResult plan_random(const std::vector<Apple> &apples,
     Json::Value root;
 
     for (const auto &target: targets) {
-        root["segments"].append(planPointToPoint(robot, full_trajectory, point_to_point_planner, target,
-                                                 std::make_shared<DroneEndEffectorNearTarget>(
-                                                         point_to_point_planner.getSpaceInformation(), 0.2,
-                                                         target)).statPoint);
+        auto pointToPointPlanResult = planPointToPoint(robot, full_trajectory,
+                                                       point_to_point_planner,
+                                                       std::make_shared<DroneEndEffectorNearTarget>(
+                                                               point_to_point_planner.getSpaceInformation(),
+                                                               0.2,
+                                                               target));
+
+
+        Json::Value json;
+        json["apple"] = eigenToJson(target);
+        json["solved"] = pointToPointPlanResult.solution_length.has_value();
+        if (pointToPointPlanResult.solution_length.has_value()) {
+            json["path_length"] = pointToPointPlanResult.solution_length.value();
+        }
+        root["segments"].append(json);
     }
 
     root["ordering"] = "random";
@@ -106,15 +199,12 @@ Json::Value getStateStatisticsPoint(const moveit::core::RobotState &st) {
 }
 
 PointToPointPlanResult planPointToPoint(const robowflex::RobotConstPtr &robot, robowflex::Trajectory &full_trajectory,
-                                        ompl::base::Planner &planner, const Eigen::Vector3d &target,
-                                        const ompl::base::GoalPtr &goal) {
+                                        ompl::base::Planner &planner, const ompl::base::GoalPtr &goal) {
 
-    Json::Value apple_statpoint;
+    PointToPointPlanResult result;
 
     auto state_space = planner.getSpaceInformation()->getStateSpace()->as<DroneStateSpace>();
-
-    apple_statpoint["apple"] = eigenToJson(target);
-
+    
     ompl::base::ScopedState start(planner.getSpaceInformation());
     state_space->copyToOMPLState(start.get(), full_trajectory.getTrajectory()->getLastWayPoint());
 
@@ -126,9 +216,8 @@ PointToPointPlanResult planPointToPoint(const robowflex::RobotConstPtr &robot, r
     planner.setProblemDefinition(pdef);
     if (!planner.isSetup()) planner.setup(); // We explicitly do the setup beforehand to avoid counting it in the benchmarking.
 
-    std::cout << "Planner start:" << std::endl;
     std::chrono::steady_clock::time_point pre_solve = std::chrono::steady_clock::now();
-    ompl::base::PlannerStatus status = planner.solve(ompl::base::timedPlannerTerminationCondition(0.5));
+    ompl::base::PlannerStatus status = planner.solve(ompl::base::timedPlannerTerminationCondition(0.1));
     std::chrono::steady_clock::time_point post_solve = std::chrono::steady_clock::now();
 
     long elapsed_millis = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -152,28 +241,26 @@ PointToPointPlanResult planPointToPoint(const robowflex::RobotConstPtr &robot, r
             //apple_statpoint["trajectory"].append(getStateStatisticsPoint(st));
         }
 
-        std::cout << "Point-to-point solution found in " << elapsed_millis << "ms" << std::endl;
+//        std::cout << "Point-to-point solution found in " << elapsed_millis << "ms" << std::endl;
 
-        apple_statpoint["solved"] = true;
-        apple_statpoint["path_length"] = path->length();
-
+        result.solution_length = {path->length()};
 
     } else {
-        apple_statpoint["solved"] = false;
+        result.solution_length = {};
         std::cout << "Apple unreachable" << std::endl;
     }
 
-    ompl::base::PlannerData pd(planner.getSpaceInformation());
+//    ompl::base::PlannerData pd(planner.getSpaceInformation());
+//
+//    planner.getPlannerData(pd);
 
-    planner.getPlannerData(pd);
-
-    apple_statpoint["feasible_solve_milliseconds"] = (int) elapsed_millis;
-    apple_statpoint["prm_nodes_after_solve"] = (int) pd.numVertices();
-    apple_statpoint["prm_edges_after_solve"] = (int) pd.numEdges();
+//    apple_statpoint["feasible_solve_milliseconds"] = (int) elapsed_millis;
+//    apple_statpoint["prm_nodes_after_solve"] = (int) pd.numVertices();
+//    apple_statpoint["prm_edges_after_solve"] = (int) pd.numEdges();
 //    apple_statpoint["goal_samples_tried"] = (int) goal->getSamplesTried();
 //    apple_statpoint["goal_samples_yielded"] = (int) goal->getSamplesYielded();
 
     planner.clearQuery();
 
-    return {apple_statpoint};
+    return result;
 }

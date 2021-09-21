@@ -40,18 +40,26 @@ int main(int argc, char **argv) {
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> apple_count(5, 100);
 
-    ompl::msg::setLogLevel(ompl::msg::LOG_INFO);
+
+    ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
+
     ompl_interface::ModelBasedStateSpaceSpecification spec(drone->getModelConst(), "whole_body");
     auto state_space = std::make_shared<DroneStateSpace>(spec);
 
     for (int i = 0; i < RUNS; i++) {
 
+
         Json::Value run_results;
 
         auto scene = std::make_shared<Scene>(drone);
-        int numberOfApples = apple_count(gen);
+
+        double apple_t = std::uniform_real_distribution(0.0,1.0)(gen);
+
+        int numberOfApples = 1 + (apple_t * apple_t) * 99;
+
+        std::cout << "Run " << (i+1) << " out of " << RUNS << " with " << numberOfApples << " apples." << std::endl;
+
 
         run_results["number_of_apples"] = numberOfApples;
 
@@ -62,34 +70,62 @@ int main(int argc, char **argv) {
         scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
 
         const std::shared_ptr<ompl::base::SpaceInformation> si = initSpaceInformation(scene, drone, state_space);
+        const robot_state::RobotState start_state = genStartState(drone);
+
+
+
         {
+            std::cout << "Attempting PRM with random order." << std::endl;
             ompl::geometric::PRM prm(si);
-            MultiGoalPlanResult result_random_prm = plan_random(tree_scene.apples, genStartState(drone), scene, drone,
+            MultiGoalPlanResult result_random_prm = plan_random(tree_scene.apples, start_state, scene, drone,
                                                                 prm);
 
             result_random_prm.stats["intermediate_planner"] = "PRM";
             run_results["planner_runs"].append(result_random_prm.stats);
         }
         {
+            std::cout << "Attempting RRTConnect with random order." << std::endl;
             ompl::geometric::RRTConnect rrtconnect(si);
-            MultiGoalPlanResult result_random_rrtconnect = plan_random(tree_scene.apples, genStartState(drone), scene,
+            MultiGoalPlanResult result_random_rrtconnect = plan_random(tree_scene.apples, start_state, scene,
                                                                        drone, rrtconnect);
 
             result_random_rrtconnect.stats["intermediate_planner"] = "RRTConnect";
             run_results["planner_runs"].append(result_random_rrtconnect.stats);
         }
         {
+            std::cout << "Attempting PRM nearest neighbor." << std::endl;
             ompl::geometric::PRM prm(si);
-            MultiGoalPlanResult result_random_prm = plan_nn_rrtconnect(tree_scene.apples, genStartState(drone), scene,
-                                                                       drone, prm);
+            MultiGoalPlanResult result_random_prm = plan_nn(tree_scene.apples, start_state, scene,
+                                                            drone, prm);
 
             result_random_prm.stats["intermediate_planner"] = "PRM";
             run_results["planner_runs"].append(result_random_prm.stats);
         }
         {
+            std::cout << "Attempting RRTConnect nearest neighbor." << std::endl;
             ompl::geometric::RRTConnect rrtconnect(si);
-            MultiGoalPlanResult result_random_rrtconnect = plan_nn_rrtconnect(tree_scene.apples, genStartState(drone),
-                                                                              scene, drone, rrtconnect);
+            MultiGoalPlanResult result_random_rrtconnect = plan_nn(tree_scene.apples, start_state,
+                                                                   scene, drone, rrtconnect);
+
+            result_random_rrtconnect.stats["intermediate_planner"] = "RRTConnect";
+            run_results["planner_runs"].append(result_random_rrtconnect.stats);
+        }
+        {
+            std::cout << "Attempting PRM 5-nearest neighbor." << std::endl;
+
+            ompl::geometric::PRM prm(si);
+            MultiGoalPlanResult result_random_prm = plan_knn(tree_scene.apples, start_state, scene,
+                                                            drone, 5, prm);
+
+            result_random_prm.stats["intermediate_planner"] = "PRM";
+            run_results["planner_runs"].append(result_random_prm.stats);
+        }
+        {
+            std::cout << "Attempting RRTConnect 5-nearest neighbor." << std::endl;
+
+            ompl::geometric::RRTConnect rrtconnect(si);
+            MultiGoalPlanResult result_random_rrtconnect = plan_knn(tree_scene.apples, start_state,
+                                                                   scene, drone, 5, rrtconnect);
 
             result_random_rrtconnect.stats["intermediate_planner"] = "RRTConnect";
             run_results["planner_runs"].append(result_random_rrtconnect.stats);

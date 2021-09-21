@@ -12,14 +12,21 @@ struct MultiGoalPlanResult {
 };
 
 struct PointToPointPlanResult {
-    Json::Value statPoint;
+    std::optional<double> solution_length;
 };
 
-MultiGoalPlanResult plan_nn_rrtconnect(const std::vector<Apple> &apples,
-                                       const moveit::core::RobotState &start_state,
-                                       const robowflex::SceneConstPtr &scene,
-                                       const robowflex::RobotConstPtr &robot,
-                                       ompl::base::Planner &point_to_point_planner);
+MultiGoalPlanResult plan_nn(const std::vector<Apple> &apples,
+                            const moveit::core::RobotState &start_state,
+                            const robowflex::SceneConstPtr &scene,
+                            const robowflex::RobotConstPtr &robot,
+                            ompl::base::Planner &point_to_point_planner);
+
+MultiGoalPlanResult plan_knn(const std::vector<Apple> &apples,
+                            const moveit::core::RobotState &start_state,
+                            const robowflex::SceneConstPtr &scene,
+                            const robowflex::RobotConstPtr &robot,
+                            size_t k,
+                            ompl::base::Planner &point_to_point_planner);
 
 MultiGoalPlanResult plan_random(const std::vector<Apple> &apples,
                                 const moveit::core::RobotState &start_state,
@@ -28,5 +35,4 @@ MultiGoalPlanResult plan_random(const std::vector<Apple> &apples,
                                 ompl::base::Planner &point_to_point_planner);
 
 PointToPointPlanResult planPointToPoint(const robowflex::RobotConstPtr &robot, robowflex::Trajectory &full_trajectory,
-                                        ompl::base::Planner &planner, const Eigen::Vector3d &target,
-                                        const ompl::base::GoalPtr &goal);
+                                        ompl::base::Planner &planner, const ompl::base::GoalPtr &goal);
