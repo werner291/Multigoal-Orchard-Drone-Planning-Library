@@ -141,6 +141,8 @@ set(SHARED_SRC
         src/MyOMPLPlanner.h
         src/ompl_custom.cpp
         src/ompl_custom.h
+        src/UnionGoalSampleableRegion.cpp
+        src/UnionGoalSampleableRegion.h
         src/LeavesCollisionChecker.cpp
         src/LeavesCollisionChecker.h
         src/multi_goal_planners.cpp)

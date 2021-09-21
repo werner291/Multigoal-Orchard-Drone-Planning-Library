@@ -20,65 +20,7 @@
 #include <robowflex_library/util.h>
 #include <robowflex_library/builder.h>
 #include "ompl_custom.h"
-
-/**
- * Represents the union of all goal sampling regions.
- * Samples are drawn sequentially from each sub-region.
- */
-class UnionGoalSampleableRegion : public ompl::base::GoalSampleableRegion {
-
-    std::vector<std::shared_ptr<const GoalSampleableRegion>> goals;
-
-    // sampleGoal really shouldn't be const... Oh well.
-    mutable size_t next_goal = 0;
-
-public:
-    double distanceGoal(const ompl::base::State *st) const override {
-        double distance = INFINITY;
-
-        for (const auto &goal: goals) {
-            distance = std::min(distance, goal->distanceGoal(st));
-        }
-
-        return distance;
-    }
-
-    void sampleGoal(ompl::base::State *st) const override {
-
-        ompl::RNG rng;
-
-        for (size_t i = 0; i < goals.size(); i++) {
-
-            const std::shared_ptr<const GoalSampleableRegion> &goalToTry = goals[next_goal];
-            next_goal = (next_goal + 1) % goals.size();
-
-            if (goalToTry->canSample()) {
-                goalToTry->sampleGoal(st);
-                return;
-            }
-        }
-
-        OMPL_ERROR("UnionGoalSampleableRegion : No goals can sample.");
-
-    }
-
-    [[nodiscard]] unsigned int maxSampleCount() const override {
-        unsigned long total = 0;
-
-        for (const auto &goal: goals) {
-            unsigned long new_total = total + goal->maxSampleCount();
-            if (new_total < total) {
-                // Check for overflow, since maxSampleCount on infinite goals is often INT_MAX or UINT_MAX.
-                total = UINT_MAX;
-            } else {
-                total = new_total;
-            }
-        }
-
-        return total;
-    }
-
-};
+#include "UnionGoalSampleableRegion.h"
 
 bool StateValidityChecker::isValid(const ompl::base::State *state) const {
 
