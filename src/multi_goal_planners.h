@@ -42,5 +42,8 @@ MultiGoalPlanResult plan_k_random(const std::vector<Apple> &apples,
                                   size_t k,
                                   ompl::base::Planner &point_to_point_planner);
 
-std::optional<PointToPointPlanResult> planPointToPoint(const robowflex::RobotConstPtr &robot, robowflex::Trajectory &full_trajectory,
-                                                       ompl::base::Planner &planner, const ompl::base::GoalPtr &goal);
+std::optional<PointToPointPlanResult>
+planPointToPoint(const robowflex::RobotConstPtr &robot,
+                 ompl::base::Planner &planner,
+                 const ompl::base::GoalPtr &goal,
+                 const moveit::core::RobotState &from_state);

@@ -67,12 +67,13 @@ MultiGoalPlanResult plan_nn(const std::vector<Apple> &apples,
         const Eigen::Vector3d target = unvisited_nn.nearest(start_eepos);
         unvisited_nn.remove(target);
 
-        auto pointToPointPlanResult = planPointToPoint(robot, full_trajectory,
+        auto pointToPointPlanResult = planPointToPoint(robot,
                                                        point_to_point_planner,
                                                        std::make_shared<DroneEndEffectorNearTarget>(
                                                                point_to_point_planner.getSpaceInformation(),
                                                                0.2,
-                                                               target));
+                                                               target),
+                                                       full_trajectory.getTrajectory()->getLastWayPoint());
 
         root["segments"].append(makePointToPointJson(target, pointToPointPlanResult));
     }
@@ -121,9 +122,10 @@ MultiGoalPlanResult plan_knn(const std::vector<Apple> &apples,
                     point_to_point_planner.getSpaceInformation(), 0.2,
                     target);
 
-            auto pointToPointResult = planPointToPoint(robot, full_trajectory,
-                                                                             point_to_point_planner,
-                                                                             subgoal);
+            auto pointToPointResult = planPointToPoint(robot,
+                                                       point_to_point_planner,
+                                                       subgoal,
+                                                       full_trajectory.getTrajectory()->getLastWayPoint());
 
             if (pointToPointResult.has_value() && pointToPointResult.value().solution_length < best_length) {
                 bestResult = pointToPointResult;
@@ -196,13 +198,13 @@ MultiGoalPlanResult plan_k_random(const std::vector<Apple> &apples,
                     point_to_point_planner.getSpaceInformation(), 0.2,
                     target);
 
-            PointToPointPlanResult pointToPointPlanResult = planPointToPoint(robot, full_trajectory,
-                                                                             point_to_point_planner,
-                                                                             subgoal);
+            auto pointToPointPlanResult = planPointToPoint(robot,
+                                                           point_to_point_planner,
+                                                           subgoal, full_trajectory.getTrajectory()->getLastWayPoint());
 
             if (pointToPointPlanResult.has_value() && pointToPointPlanResult.value().solution_length < best_length) {
                 bestResult = pointToPointPlanResult;
-                best_length = pointToPointPlanResult.solution_length.value();
+                best_length = pointToPointPlanResult.value().solution_length;
                 best_target = target;
             }
         }
@@ -214,7 +216,7 @@ MultiGoalPlanResult plan_k_random(const std::vector<Apple> &apples,
             targets.erase(targets.begin()); // Better picks here? Maybe delete all?
         }
 
-        root["segments"].append(makePointToPointJson(target, bestResult));
+        root["segments"].append(makePointToPointJson(best_target, bestResult));
     }
 
     std::ostringstream stringStream;
@@ -247,12 +249,13 @@ MultiGoalPlanResult plan_random(const std::vector<Apple> &apples,
     Json::Value root;
 
     for (const auto &target: targets) {
-        auto pointToPointPlanResult = planPointToPoint(robot, full_trajectory,
+        auto pointToPointPlanResult = planPointToPoint(robot,
                                                        point_to_point_planner,
                                                        std::make_shared<DroneEndEffectorNearTarget>(
                                                                point_to_point_planner.getSpaceInformation(),
                                                                0.2,
-                                                               target));
+                                                               target),
+                                                       full_trajectory.getTrajectory()->getLastWayPoint());
 
 
         root["segments"].append(makePointToPointJson(target, pointToPointPlanResult));
@@ -273,17 +276,20 @@ Json::Value getStateStatisticsPoint(const moveit::core::RobotState &st) {
     return traj_pt;
 }
 
-PointToPointPlanResult planPointToPoint(const robowflex::RobotConstPtr &robot,
-                                        const robowflex::Trajectory &full_trajectory,
-                                        ompl::base::Planner &planner,
-                                        const ompl::base::GoalPtr &goal) {
+std::optional<PointToPointPlanResult>
+planPointToPoint(const robowflex::RobotConstPtr &robot,
+                 ompl::base::Planner &planner,
+                 const ompl::base::GoalPtr &goal,
+                 const moveit::core::RobotState &from_state) {
 
-    PointToPointPlanResult result;
+    std::optional<PointToPointPlanResult> result;
+
+    robowflex::Trajectory trajectory(robot, "whole_body");
 
     auto state_space = planner.getSpaceInformation()->getStateSpace()->as<DroneStateSpace>();
-    
+
     ompl::base::ScopedState start(planner.getSpaceInformation());
-    state_space->copyToOMPLState(start.get(), full_trajectory.getTrajectory()->getLastWayPoint());
+    state_space->copyToOMPLState(start.get(), from_state);
 
     auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner.getSpaceInformation());
     pdef->addStartState(start.get());
@@ -313,13 +319,15 @@ PointToPointPlanResult planPointToPoint(const robowflex::RobotConstPtr &robot,
 
         for (auto state: path->getStates()) {
             state_space->copyToRobotState(st, state);
-            full_trajectory.addSuffixWaypoint(st);
+            trajectory.addSuffixWaypoint(st);
         }
 
-        result.solution_length = {path->length()};
-
+        result = {
+                .solution_length = path->length(),
+                .point_to_point_trajectory = trajectory
+        };
     } else {
-        result.solution_length = {};
+        result = {};
         std::cout << "Apple unreachable" << std::endl;
     }
 
