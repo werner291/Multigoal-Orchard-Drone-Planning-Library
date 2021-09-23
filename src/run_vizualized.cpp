@@ -10,6 +10,7 @@
 #include "BulletContinuousMotionValidator.h"
 #include "multi_goal_planners.h"
 #include "ompl_custom.h"
+#include "LeavesCollisionChecker.h"
 #include <fcl/fcl.h>
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <ompl/geometric/planners/prm/PRM.h>
@@ -17,24 +18,6 @@
 #include <json/json.h>
 
 using namespace robowflex;
-
-//bool checkSolutionValidity(const robowflex::Trajectory& solution) {
-
-
-
-//    std::random_device rd;
-//    std::default_random_engine generator(rd());
-//
-//    double t = solution.getTrajectoryConst()->getDuration();
-//    std::uniform_real_distribution<double> time_sampling(0.0,t);
-//
-//    int collisions;
-//
-//    for (int i = 0; i < 10000; i++) {
-//        solution.
-//    }
-
-//}
 
 /**
  * The "visualized" version of this program, which serves as a scratch state in which to experiment with new,
@@ -53,7 +36,7 @@ int main(int argc, char **argv) {
 //    IO::RobotBroadcaster bc(drone);
 //    bc.start();
 
-    const int RUNS = 50;
+    const int RUNS = 2;
     Json::Value benchmark_results;
 
     std::random_device rd;
@@ -86,15 +69,17 @@ int main(int argc, char **argv) {
         scene->getScene()->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
         scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
 
+        LeavesCollisionChecker leavesCollisionChecker(tree_scene.leaf_vertices);
+
         const std::shared_ptr<ompl::base::SpaceInformation> si = initSpaceInformation(scene, drone, state_space);
         const robot_state::RobotState start_state = genStartState(drone);
 
         std::vector<std::shared_ptr<MultiGoalPlanner>> multiplanners{
                 std::make_shared<NearestNeighborPlanner>(),
-                std::make_shared<KNNPlanner>(10),
-                std::make_shared<KNNPlanner>(5),
                 std::make_shared<KNNPlanner>(1),
                 std::make_shared<KNNPlanner>(2),
+                std::make_shared<KNNPlanner>(3),
+                std::make_shared<KNNPlanner>(5),
                 std::make_shared<RandomPlanner>()
         };
 
@@ -111,7 +96,37 @@ int main(int argc, char **argv) {
 
                 MultiGoalPlanResult result = planner->plan(tree_scene.apples, start_state, scene, drone, *sub_planner);
 
-                run_results["is_collision_free"] = result.trajectory.isCollisionFree(scene);
+                result.stats["is_collision_free"] = result.trajectory.isCollisionFree(scene);
+
+                std::set<size_t> leaves;
+                size_t unique_collisions = 0;
+
+                for (double t = 0.0;
+                     t < result.trajectory.getTrajectory()->getDuration(); t += 0.1) { // NOLINT(cert-flp30-c)
+                    result.trajectory.getTrajectory()->getStateAtDurationFromStart(t, drone->getScratchState());
+                    std::set<size_t> new_leaves = leavesCollisionChecker.checkLeafCollisions(*drone->getScratchState());
+                    std::set<size_t> added_leaves;
+                    std::set_difference(new_leaves.begin(), new_leaves.end(), leaves.begin(), leaves.end(),
+                                        std::inserter(added_leaves, added_leaves.end()));
+                    std::set<size_t> removed_leaves;
+                    std::set_difference(leaves.begin(), leaves.end(), new_leaves.begin(), new_leaves.end(),
+                                        std::inserter(removed_leaves, removed_leaves.end()));
+                    unique_collisions += added_leaves.size();
+
+                    if (!added_leaves.empty() || !removed_leaves.empty()) {
+                        Json::Value leaf_collisions;
+                        leaf_collisions["t"] = t;
+                        std::cout << t << std::endl;
+                        leaf_collisions["contacts_ended"] = (int) removed_leaves.size();
+                        leaf_collisions["new_leaves_in_contact"] = (int) added_leaves.size();
+                        result.stats["leaf_collisions_over_time"].append(leaf_collisions);
+                    }
+
+                    leaves = new_leaves;
+
+                }
+
+                result.stats["unique_leaves_collided"] = (int) unique_collisions;
 
                 result.stats["intermediate_planner"] = sub_planner->getName();
                 run_results["planner_runs"].append(result.stats);
@@ -122,7 +137,7 @@ int main(int argc, char **argv) {
         benchmark_results.append(run_results);
     }
 
-    std::ofstream results("analysis/results.json");
+    std::ofstream results(RUNS < 50 ? "analysis/results_test.json" : "analysis/results.json");
     results << benchmark_results;
     results.close();
 

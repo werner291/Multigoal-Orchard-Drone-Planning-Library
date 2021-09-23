@@ -16,7 +16,7 @@ class LeavesCollisionChecker {
 public:
     LeavesCollisionChecker(const std::vector<Eigen::Vector3d> &leaf_vertices);
 
-    std::vector<size_t> checkLeafCollisions(const moveit::core::RobotState &state);
+    std::set<size_t> checkLeafCollisions(moveit::core::RobotState &state);
 
 };
 
