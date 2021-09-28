@@ -7,28 +7,8 @@
 #include "ompl_custom.h"
 #include "LeavesCollisionChecker.h"
 #include "procedural_tree_generation.h"
-#include "BulletContinuousMotionValidator.h"
-
-Json::Value eigenToJson(const Eigen::Vector3d &vec) {
-    Json::Value apple;
-    apple[0] = vec.x();
-    apple[1] = vec.y();
-    apple[2] = vec.z();
-    return apple;
-}
-
-Json::Value makePointToPointJson(const Eigen::Vector3d &target,
-                                 const std::optional<PointToPointPlanResult> &pointToPointPlanResult) {
-    Json::Value json;
-    json["apple"] = eigenToJson(target);
-    json["solved"] = pointToPointPlanResult.has_value();
-    if (pointToPointPlanResult.has_value()) {
-        json["path_length"] = pointToPointPlanResult.value().solution_length;
-    }
-    return json;
-}
-
-Json::Value getStateStatisticsPoint(const moveit::core::RobotState &st);
+#include "json_utils.h"
+#include "UnionGoalSampleableRegion.h"
 
 std::shared_ptr<ompl::base::SpaceInformation>
 initSpaceInformation(const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
@@ -44,14 +24,7 @@ void extendTrajectory(robowflex::Trajectory &full_trajectory, robowflex::Traject
     }
 }
 
-Json::Value getStateStatisticsPoint(const moveit::core::RobotState &st) {
-    Json::Value traj_pt;
-    for (int i = 0; i < st.getVariableCount(); i += 1) {
-        traj_pt["values"][i] = st.getVariablePosition(i);
-    }
 
-    return traj_pt;
-}
 
 std::optional<PointToPointPlanResult>
 planPointToPoint(const robowflex::RobotConstPtr &robot,
@@ -89,15 +62,20 @@ planPointToPoint(const robowflex::RobotConstPtr &robot,
 
         auto path = pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
-        ps.shortcutPath(*path, 50);
-        ps.smoothBSpline(*path);
+//        ps.shortcutPath(*path, 50);
+//        ps.smoothBSpline(*path);
 
         moveit::core::RobotState st(robot->getModelConst());
 
-        for (auto state: path->getStates()) {
-            state_space->copyToRobotState(st, state);
-            trajectory.addSuffixWaypoint(st);
-        }
+//        assert(planner.getSpaceInformation()->checkMotion(path->getStates(),3));
+
+//        for (auto state: path->getStates()) {
+//
+//            assert(planner.getSpaceInformation()->isValid(state));
+//
+//            state_space->copyToRobotState(st, state);
+//            trajectory.addSuffixWaypoint(st);
+//        }
 
         result = {
                 .solution_length = path->length(),
@@ -177,6 +155,75 @@ MultiGoalPlanResult KNNPlanner::plan(const std::vector<Apple> &apples, const mov
     stringStream << "-NN";
 
     root["ordering"] = stringStream.str();
+
+    return {full_trajectory, root};
+}
+
+UnionKNNPlanner::UnionKNNPlanner(size_t k) : k(k) {}
+
+MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<Apple> &apples, const moveit::core::RobotState &start_state,
+                                          const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
+                                          ompl::base::Planner &point_to_point_planner) {
+    ompl::NearestNeighborsGNAT<Eigen::Vector3d> unvisited_nn;
+    unvisited_nn.setDistanceFunction([](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
+        return (a - b).norm();
+    });
+
+    for (const Apple &apple: apples) {
+        unvisited_nn.add(apple.center);
+    }
+
+    robowflex::Trajectory full_trajectory(robot, "whole_body");
+    full_trajectory.addSuffixWaypoint(start_state);
+
+    Json::Value root;
+
+    while (unvisited_nn.size() > 0) {
+
+        const Eigen::Vector3d start_eepos = full_trajectory.getTrajectory()->getLastWayPoint().getGlobalLinkTransform(
+                "end_effector").translation();
+
+        std::vector<Eigen::Vector3d> knn;
+        unvisited_nn.nearestK(start_eepos, k, knn);
+
+        std::vector<std::shared_ptr<const ompl::base::GoalSampleableRegion>> subgoals;
+
+        for (const auto &target: knn) {
+            subgoals.push_back(std::make_shared<DroneEndEffectorNearTarget>(
+                    point_to_point_planner.getSpaceInformation(), 0.2,
+                    target));
+        }
+
+        auto pointToPointResult = planPointToPoint(robot,
+                                                   point_to_point_planner,
+                                                   std::make_shared<UnionGoalSampleableRegion>(
+                                                           point_to_point_planner.getSpaceInformation(), subgoals),
+                                                   full_trajectory.getTrajectory()->getLastWayPoint());
+
+        if (pointToPointResult.has_value()) {
+
+            const Eigen::Vector3d end_eepos = pointToPointResult.value().point_to_point_trajectory.getTrajectory()->getLastWayPoint().getGlobalLinkTransform(
+                    "end_effector").translation();
+
+            bool which_target = false;
+            for (auto &tgt: knn) {
+                if ((tgt - end_eepos).norm() < 0.2) {
+                    unvisited_nn.remove(tgt);
+                    extendTrajectory(full_trajectory, pointToPointResult.value().point_to_point_trajectory);
+                    root["segments"].append(makePointToPointJson(tgt, pointToPointResult));
+                    which_target = true;
+                    break;
+                }
+            }
+            assert(which_target);
+        } else {
+            unvisited_nn.remove(knn[0]); // Better picks here? Maybe delete all?
+        }
+
+
+    }
+
+    root["ordering"] = this->getName();
 
     return {full_trajectory, root};
 }

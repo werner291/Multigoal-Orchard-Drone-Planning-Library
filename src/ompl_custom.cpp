@@ -26,7 +26,9 @@ bool StateValidityChecker::isValid(const ompl::base::State *state) const {
 
     auto space = si_->getStateSpace()->as<DroneStateSpace>();
 
+    assert(space->getRobotModel());
     moveit::core::RobotState robot_state(space->getRobotModel());
+    assert(state->as<DroneStateSpace::StateType>());
     space->copyToRobotState(robot_state, state);
 
     // We rely on the sampler producing states that are  valid in all other aspects, so here we just check collision.

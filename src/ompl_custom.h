@@ -4,11 +4,12 @@
 #define NEW_PLANNERS_OMPL_CUSTOM_H
 
 #include <utility>
+#include <ompl/base/goals/GoalSampleableRegion.h>
 #include <ompl/base/MotionValidator.h>
 #include <ompl/base/objectives/StateCostIntegralObjective.h>
 #include <ompl/base/StateValidityChecker.h>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
-
+#include <robowflex_library/scene.h>
 
 class StateValidityChecker : public ompl::base::StateValidityChecker {
 

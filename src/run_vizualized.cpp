@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 //    IO::RobotBroadcaster bc(drone);
 //    bc.start();
 
-    const int RUNS = 100;
+    const int RUNS = 100; // 100 Is the value reported in the paper.
     Json::Value benchmark_results;
 
     std::random_device rd;
@@ -78,6 +78,10 @@ int main(int argc, char **argv) {
                 std::make_shared<KNNPlanner>(2),
                 std::make_shared<KNNPlanner>(3),
                 std::make_shared<KNNPlanner>(5),
+                std::make_shared<UnionKNNPlanner>(1),
+                std::make_shared<UnionKNNPlanner>(2),
+                std::make_shared<UnionKNNPlanner>(3),
+                std::make_shared<UnionKNNPlanner>(5),
                 std::make_shared<RandomPlanner>()
         };
 
@@ -99,8 +103,10 @@ int main(int argc, char **argv) {
                 std::set<size_t> leaves;
                 size_t unique_collisions = 0;
 
-                for (double t = 0.0;
-                     t < result.trajectory.getTrajectory()->getDuration(); t += 0.1) { // NOLINT(cert-flp30-c)
+                for (size_t ti = 0; ti < 10000; ti++) {
+
+                    double t = (double) ti * result.trajectory.getTrajectory()->getDuration() / 10000.0;
+
                     result.trajectory.getTrajectory()->getStateAtDurationFromStart(t, drone->getScratchState());
                     std::set<size_t> new_leaves = leavesCollisionChecker.checkLeafCollisions(*drone->getScratchState());
                     std::set<size_t> added_leaves;

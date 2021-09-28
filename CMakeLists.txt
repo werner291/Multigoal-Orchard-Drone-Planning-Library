@@ -145,6 +145,8 @@ set(SHARED_SRC
         src/UnionGoalSampleableRegion.h
         src/LeavesCollisionChecker.cpp
         src/LeavesCollisionChecker.h
+        src/json_utils.cpp
+        src/json_utils.h
         src/multi_goal_planners.h
         src/multi_goal_planners.cpp)
 

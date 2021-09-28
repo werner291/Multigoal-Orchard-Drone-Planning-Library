@@ -1,4 +1,7 @@
 
+#ifndef MULTI_GOAL_PLANNERS_H
+#define MULTI_GOAL_PLANNERS_H
+
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 #include <robowflex_ompl/ompl_interface.h>
 #include <robowflex_library/trajectory.h>
@@ -92,3 +95,5 @@ planPointToPoint(const robowflex::RobotConstPtr &robot,
                  ompl::base::Planner &planner,
                  const ompl::base::GoalPtr &goal,
                  const moveit::core::RobotState &from_state);
+
+#endif //MULTI_GOAL_PLANNERS_H
