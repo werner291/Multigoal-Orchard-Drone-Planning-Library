@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 //    IO::RobotBroadcaster bc(drone);
 //    bc.start();
 
-    const int RUNS = 2;
+    const int RUNS = 100;
     Json::Value benchmark_results;
 
     std::random_device rd;
@@ -60,7 +60,6 @@ int main(int argc, char **argv) {
 
         std::cout << "Run " << (i+1) << " out of " << RUNS << " with " << numberOfApples << " apples." << std::endl;
 
-
         run_results["number_of_apples"] = numberOfApples;
 
         auto tree_scene = establishPlanningScene(10, numberOfApples);
@@ -75,7 +74,6 @@ int main(int argc, char **argv) {
         const robot_state::RobotState start_state = genStartState(drone);
 
         std::vector<std::shared_ptr<MultiGoalPlanner>> multiplanners{
-                std::make_shared<NearestNeighborPlanner>(),
                 std::make_shared<KNNPlanner>(1),
                 std::make_shared<KNNPlanner>(2),
                 std::make_shared<KNNPlanner>(3),
@@ -86,7 +84,7 @@ int main(int argc, char **argv) {
         for (const auto &planner: multiplanners) {
 
             std::vector<std::shared_ptr<ompl::base::Planner>> subplanners{
-                    std::make_unique<ompl::geometric::PRM>(si), std::make_unique<ompl::geometric::RRTConnect>(si)
+                    std::make_unique<ompl::geometric::PRM>(si)//, std::make_unique<ompl::geometric::RRTConnect>(si)
             };
 
             // Nesting order is important here because the sub-planners are re-created every run.
@@ -116,7 +114,6 @@ int main(int argc, char **argv) {
                     if (!added_leaves.empty() || !removed_leaves.empty()) {
                         Json::Value leaf_collisions;
                         leaf_collisions["t"] = t;
-                        std::cout << t << std::endl;
                         leaf_collisions["contacts_ended"] = (int) removed_leaves.size();
                         leaf_collisions["new_leaves_in_contact"] = (int) added_leaves.size();
                         result.stats["leaf_collisions_over_time"].append(leaf_collisions);

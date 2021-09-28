@@ -13,7 +13,7 @@ struct MultiGoalPlanResult {
 };
 
 struct PointToPointPlanResult {
-    double solution_length;
+    double solution_length{};
     robowflex::Trajectory point_to_point_trajectory;
 };
 
@@ -31,23 +31,10 @@ public:
     virtual std::string getName() = 0;
 };
 
-class NearestNeighborPlanner : public MultiGoalPlanner {
-
-public:
-    NearestNeighborPlanner();
-
-    MultiGoalPlanResult plan(const std::vector<Apple> &apples, const moveit::core::RobotState &start_state,
-                             const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
-                             ompl::base::Planner &point_to_point_planner) override;
-
-    std::string getName() override;
-
-};
-
 class KNNPlanner : public MultiGoalPlanner {
 
 public:
-    KNNPlanner(size_t k);
+    explicit KNNPlanner(size_t k);
 
 private:
     size_t k;
@@ -66,6 +53,29 @@ public:
 
 };
 
+class UnionKNNPlanner : public MultiGoalPlanner {
+
+public:
+    explicit UnionKNNPlanner(size_t k);
+
+private:
+    size_t k;
+
+public:
+    MultiGoalPlanResult plan(const std::vector<Apple> &apples, const moveit::core::RobotState &start_state,
+                             const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
+                             ompl::base::Planner &point_to_point_planner) override;
+
+    std::string getName() override {
+        std::ostringstream os;
+        os << "U-";
+        os << k;
+        os << "-NN";
+        return os.str();
+    }
+
+};
+
 class RandomPlanner : public MultiGoalPlanner {
 
 public:
@@ -76,26 +86,6 @@ public:
     std::string getName() override;
 
 };
-
-MultiGoalPlanResult plan_knn(const std::vector<Apple> &apples,
-                             const moveit::core::RobotState &start_state,
-                             const robowflex::SceneConstPtr &scene,
-                             const robowflex::RobotConstPtr &robot,
-                             size_t k,
-                             ompl::base::Planner &point_to_point_planner);
-
-MultiGoalPlanResult plan_random(const std::vector<Apple> &apples,
-                                const moveit::core::RobotState &start_state,
-                                const robowflex::SceneConstPtr &scene,
-                                const robowflex::RobotConstPtr &robot,
-                                ompl::base::Planner &point_to_point_planner);
-
-MultiGoalPlanResult plan_k_random(const std::vector<Apple> &apples,
-                                  const moveit::core::RobotState &start_state,
-                                  const robowflex::SceneConstPtr &scene,
-                                  const robowflex::RobotConstPtr &robot,
-                                  size_t k,
-                                  ompl::base::Planner &point_to_point_planner);
 
 std::optional<PointToPointPlanResult>
 planPointToPoint(const robowflex::RobotConstPtr &robot,
