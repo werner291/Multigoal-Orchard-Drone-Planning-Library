@@ -1,4 +1,0 @@
-
-TEST(BulletContinuousMotionValidator, maxangle) {
-
-}

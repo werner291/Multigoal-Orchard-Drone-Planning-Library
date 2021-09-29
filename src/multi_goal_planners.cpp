@@ -69,13 +69,10 @@ planPointToPoint(const robowflex::RobotConstPtr &robot,
 
 //        assert(planner.getSpaceInformation()->checkMotion(path->getStates(),3));
 
-//        for (auto state: path->getStates()) {
-//
-//            assert(planner.getSpaceInformation()->isValid(state));
-//
-//            state_space->copyToRobotState(st, state);
-//            trajectory.addSuffixWaypoint(st);
-//        }
+        for (auto state: path->getStates()) {
+            state_space->copyToRobotState(st, state);
+            trajectory.addSuffixWaypoint(st);
+        }
 
         result = {
                 .solution_length = path->length(),
@@ -203,8 +200,6 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<Apple> &apples, cons
         if (pointToPointResult.has_value()) {
 
             auto traj = pointToPointResult.value().point_to_point_trajectory.getTrajectory();
-
-            ROS_ERROR("%d waypoints", pointToPointResult.value().point_to_point_trajectory.getTrajectory()->getWayPointCount());
 
             const Eigen::Vector3d end_eepos = pointToPointResult.value().point_to_point_trajectory.getTrajectory()->getLastWayPoint().getGlobalLinkTransform(
                     "end_effector").translation();

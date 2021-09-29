@@ -4,53 +4,71 @@
 
 bool BulletContinuousMotionValidator::checkMotion(const ompl::base::State *s1, const ompl::base::State *s2) const {
 
+    // Prepare the input and output structs.
     collision_detection::CollisionResult res;
     collision_detection::CollisionRequest req;
 
+    // Convert the OMPL states to RobotStates
     auto st1 = rb_robot_->allocState();
     si_->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToRobotState(*st1, s1);
 
     auto st2 = rb_robot_->allocState();
     si_->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToRobotState(*st2, s2);
 
+    // Compute the largest-possible rotation based on the angle changes in the joints.
     double max_angle = estimateMaximumRotation(st1, st2);
 
-    // 8 sections for every radian of rotation, upto a max of 16.
+    // Descide on the number of sections to break down into,
+    // see issue https://github.com/ros-planning/moveit/issues/2889
+    // 8 sections for every 180 degrees of rotation
     // TODO: Review it with Frank maybe?
     size_t num_sections = (size_t) std::ceil(max_angle * 8.0 / M_PI) + 1;
     size_t num_points = num_sections + 1;
 
+    // Keep track of the begin state of the next section to check.
     auto last = st1;
 
-    // TODO: Optimization: collisions are often normally-distributed around the middle of the motion.
+    // TODO: Possible optimization : collisions are often normally-distributed around the middle of the motion.
     for (size_t i = 0; i < num_sections; i++) {
 
+        // Interpolation coefficient based on loop index.
         double t = (double) i / (double) num_points;
-        std::shared_ptr<moveit::core::RobotState> interp;
 
-        if (i+1 == num_sections) {
+        std::shared_ptr<moveit::core::RobotState> interp;
+        if (i + 1 < num_sections) {
+            // Allocate a state and interpolate using the coefficient
             interp = rb_robot_->allocState();
             st1->interpolate(*st2, t, *interp);
             interp->update(true);
         } else {
+            // Just use the end state if we're in the last section
             interp = st2;
         }
 
-        rb_scene_->getSceneConst()->getCollisionEnv()->checkRobotCollision(req, res, *last, *interp, rb_scene_->getACMConst());
+        // Perform the linear CCD check. Note that this simply checks against the convex hull of the shapes of the robot
+        // before and after the transformation, which doesn't really work well with rotations and swinging motions,
+        // we break up the motion based on how much rotation is involved.
+        rb_scene_->getSceneConst()->getCollisionEnv()->checkRobotCollision(req, res, *last, *interp,
+                                                                           rb_scene_->getACMConst());
 
+        // Fail the collision check if the section causes a collision.
         if (res.collision) { return false; }
 
+        // End of the current section is beginning of the next.
         last = interp;
 
     }
 
+    // No collisions found in any of the sections, return valid.
     return true;
 }
 
 double BulletContinuousMotionValidator::estimateMaximumRotation(const moveit::core::RobotStatePtr &st1,
-                                                                const moveit::core::RobotStatePtr &st2) const {// Upper bound on the rotation of any part of the robot.
+                                                                const moveit::core::RobotStatePtr &st2) {// Upper bound on the rotation of any part of the robot.
+    assert(st1->getRobotModel() == st2->getRobotModel());
+
     double max_angle = 0.0;
-    for (const auto &jm: rb_robot_->getModelConst()->getJointModels()) {
+    for (const auto &jm: st1->getRobotModel()->getJointModels()) {
         switch (jm->getType()) {
             case moveit::core::JointModel::UNKNOWN:
                 ROS_ERROR("Cannot compute maximum rotation with unknown joint type.");
