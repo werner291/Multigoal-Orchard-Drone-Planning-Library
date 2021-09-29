@@ -1,4 +1,4 @@
-//
-// Created by werner on 11-08-21.
-//
 
+TEST(BulletContinuousMotionValidator, maxangle) {
+
+}

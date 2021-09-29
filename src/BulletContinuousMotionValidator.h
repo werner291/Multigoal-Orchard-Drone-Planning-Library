@@ -23,13 +23,17 @@ public:
     BulletContinuousMotionValidator(ompl::base::SpaceInformation *si,
                                     std::shared_ptr<const robowflex::Robot> rbRobot,
                                     std::shared_ptr<const robowflex::Scene> rbScene)
-            : MotionValidator(si), rb_robot_(std::move(rbRobot)), rb_scene_(std::move(rbScene)) {}
+            : MotionValidator(si), rb_robot_(std::move(rbRobot)), rb_scene_(std::move(rbScene)) {
+
+    }
 
     bool checkMotion(const ompl::base::State *s1, const ompl::base::State *s2) const override;
 
     bool checkMotion(const ompl::base::State *s1, const ompl::base::State *s2,
                      std::pair<ompl::base::State *, double> &lastValid) const override;
 
+    double
+    estimateMaximumRotation(const moveit::core::RobotStatePtr &st1, const moveit::core::RobotStatePtr &st2) const;
 };
 
 #endif //NEW_PLANNERS_BULLETCONTINUOUSMOTIONVALIDATOR_H
