@@ -56,24 +56,29 @@ int main(int argc, char **argv) {
 
     double apple_t = std::uniform_real_distribution(0.0, 1.0)(gen);
 
-    int numberOfApples = 1 + (apple_t * apple_t) * 99;
+    int numberOfApples = 200;
 
     auto tree_scene = establishPlanningScene(10, numberOfApples);
     scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
     // Diff message apparently can't handle this?
     scene->getScene()->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
+    scene->getScene()->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
     scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+    rviz.updateScene(scene);
 
     const std::shared_ptr<ompl::base::SpaceInformation> si = initSpaceInformation(scene, drone, state_space);
     const robot_state::RobotState start_state = genStartState(drone);
 
     auto multiplanner = std::make_shared<KNNPlanner>(1);
-    auto sub_planner = std::make_unique<ompl::geometric::PRM>(si);
+    auto sub_planner = std::make_unique<ompl::geometric::PRMstar>(si);
 
-                MultiGoalPlanResult result = multiplanner->plan(tree_scene.apples, start_state, scene, drone,
-                                                                *sub_planner);
+    MultiGoalPlanResult result = multiplanner->plan(tree_scene.apples, start_state, scene, drone,
+                                                    *sub_planner);
+
+    result.trajectory.interpolate(10000);
 
     rviz.updateTrajectory(result.trajectory);
+
 
     return 0;
 }
