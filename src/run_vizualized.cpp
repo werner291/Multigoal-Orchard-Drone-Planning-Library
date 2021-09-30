@@ -8,13 +8,18 @@
 #include "make_robot.h"
 #include "InverseClearanceIntegralObjective.h"
 #include "BulletContinuousMotionValidator.h"
-#include "multi_goal_planners.h"
+#include "multigoal/multi_goal_planners.h"
+#include "multigoal/knn.h"
+#include "multigoal/uknn.h"
+#include "multigoal/random_order.h"
 #include "ompl_custom.h"
 #include "LeavesCollisionChecker.h"
 #include <fcl/fcl.h>
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <ompl/geometric/planners/prm/PRM.h>
+#include <ompl/geometric/planners/prm/PRMstar.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
+#include <ompl/geometric/planners/rrt/RRT.h>
 #include <json/json.h>
 
 using namespace robowflex;
@@ -36,12 +41,11 @@ int main(int argc, char **argv) {
 //    IO::RobotBroadcaster bc(drone);
 //    bc.start();
 
-    const int RUNS = 100; // 100 Is the value reported in the paper.
+    const int RUNS = 50; // 100 Is the value reported in the paper.
     Json::Value benchmark_results;
 
     std::random_device rd;
     std::mt19937 gen(rd());
-
 
     ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
@@ -77,18 +81,19 @@ int main(int argc, char **argv) {
                 std::make_shared<KNNPlanner>(1),
                 std::make_shared<KNNPlanner>(2),
                 std::make_shared<KNNPlanner>(3),
-                std::make_shared<KNNPlanner>(5),
+//                std::make_shared<KNNPlanner>(5),
                 std::make_shared<UnionKNNPlanner>(1),
                 std::make_shared<UnionKNNPlanner>(2),
                 std::make_shared<UnionKNNPlanner>(3),
-                std::make_shared<UnionKNNPlanner>(5),
+//                std::make_shared<UnionKNNPlanner>(5),
                 std::make_shared<RandomPlanner>()
         };
 
         for (const auto &planner: multiplanners) {
 
             std::vector<std::shared_ptr<ompl::base::Planner>> subplanners{
-                    std::make_unique<ompl::geometric::PRM>(si)//, std::make_unique<ompl::geometric::RRTConnect>(si)
+                    std::make_unique<ompl::geometric::PRM>(si),
+                    std::make_unique<ompl::geometric::PRMstar>(si)
             };
 
             // Nesting order is important here because the sub-planners are re-created every run.

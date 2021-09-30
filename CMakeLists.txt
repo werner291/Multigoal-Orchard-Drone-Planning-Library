@@ -13,6 +13,7 @@ find_package(catkin
         geometry_msgs
         moveit_msgs
         ompl
+        urdf
         robowflex_library
         robowflex_ompl)
 
@@ -147,8 +148,16 @@ set(SHARED_SRC
         src/LeavesCollisionChecker.h
         src/json_utils.cpp
         src/json_utils.h
-        src/multi_goal_planners.h
-        src/multi_goal_planners.cpp)
+        src/multigoal/multi_goal_planners.h
+        src/multigoal/multi_goal_planners.cpp
+        src/multigoal/knn.h
+        src/multigoal/knn.cpp
+        src/multigoal/random_order.h
+        src/multigoal/random_order.cpp
+        src/multigoal/uknn.h
+        src/multigoal/uknn.cpp
+        src/multigoal/cluster_breaking.cpp
+        src/multigoal/cluster_breaking.h)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -174,7 +183,7 @@ target_link_libraries(${PROJECT_NAME}_vizualized
 
 ## Testing
 add_executable(${PROJECT_NAME}_tests
-        test/test_constraint_sampler.cpp ${SHARED_SRC})
+        test/tests.cpp ${SHARED_SRC})
 set_property(TARGET ${PROJECT_NAME}_tests PROPERTY CXX_STANDARD 17)
 
 target_link_libraries(${PROJECT_NAME}_tests

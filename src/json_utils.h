@@ -8,7 +8,7 @@
 #include "procedural_tree_generation.h"
 #include "LeavesCollisionChecker.h"
 #include "ompl_custom.h"
-#include "multi_goal_planners.h"
+#include "multigoal/multi_goal_planners.h"
 #include <random>
 #include <robowflex_library/trajectory.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>

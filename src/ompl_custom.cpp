@@ -5,7 +5,6 @@
 #include "BulletContinuousMotionValidator.h"
 #include "procedural_tree_generation.h"
 #include "LeavesCollisionChecker.h"
-#include "multi_goal_planners.h"
 #include <robowflex_library/trajectory.h>
 #include <json/value.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
