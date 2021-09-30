@@ -69,72 +69,9 @@ int main(int argc, char **argv) {
 
     auto multiplanner = std::make_shared<KNNPlanner>(1);
     auto sub_planner = std::make_unique<ompl::geometric::PRM>(si);
-        std::vector<std::shared_ptr<MultiGoalPlanner>> multiplanners{
-                std::make_shared<KNNPlanner>(1),
-                std::make_shared<KNNPlanner>(2),
-                std::make_shared<KNNPlanner>(3),
-//                std::make_shared<KNNPlanner>(5),
-                std::make_shared<UnionKNNPlanner>(1),
-                std::make_shared<UnionKNNPlanner>(2),
-                std::make_shared<UnionKNNPlanner>(3),
-//                std::make_shared<UnionKNNPlanner>(5),
-                std::make_shared<RandomPlanner>()
-        };
 
-        for (const auto &planner: multiplanners) {
-
-            std::vector<std::shared_ptr<ompl::base::Planner>> subplanners{
-                    std::make_unique<ompl::geometric::PRM>(si),
-                    std::make_unique<ompl::geometric::PRMstar>(si)
-            };
-
-            // Nesting order is important here because the sub-planners are re-created every run.
-            for (auto &sub_planner: subplanners) {
-                std::cout << "Attempting " << planner->getName() << " with sub-planner " << sub_planner->getName()
-                          << std::endl;
-
-                MultiGoalPlanResult result = planner->plan(tree_scene.apples, start_state, scene, drone, *sub_planner);
-
-                result.stats["is_collision_free"] = result.trajectory.isCollisionFree(scene);
-
-                std::set<size_t> leaves;
-                size_t unique_collisions = 0;
-
-                for (size_t ti = 0; ti < 10000; ti++) {
-
-                    double t = (double) ti * result.trajectory.getTrajectory()->getDuration() / 10000.0;
-
-                    result.trajectory.getTrajectory()->getStateAtDurationFromStart(t, drone->getScratchState());
-                    std::set<size_t> new_leaves = leavesCollisionChecker.checkLeafCollisions(*drone->getScratchState());
-                    std::set<size_t> added_leaves;
-                    std::set_difference(new_leaves.begin(), new_leaves.end(), leaves.begin(), leaves.end(),
-                                        std::inserter(added_leaves, added_leaves.end()));
-                    std::set<size_t> removed_leaves;
-                    std::set_difference(leaves.begin(), leaves.end(), new_leaves.begin(), new_leaves.end(),
-                                        std::inserter(removed_leaves, removed_leaves.end()));
-                    unique_collisions += added_leaves.size();
-
-                    if (!added_leaves.empty() || !removed_leaves.empty()) {
-                        Json::Value leaf_collisions;
-                        leaf_collisions["t"] = t;
-                        leaf_collisions["contacts_ended"] = (int) removed_leaves.size();
-                        leaf_collisions["new_leaves_in_contact"] = (int) added_leaves.size();
-                        result.stats["leaf_collisions_over_time"].append(leaf_collisions);
-                    }
-
-                    leaves = new_leaves;
-
-                }
-
-                result.stats["unique_leaves_collided"] = (int) unique_collisions;
-
-                result.stats["intermediate_planner"] = sub_planner->getName();
-                run_results["planner_runs"].append(result.stats);
-
-            }
-        }
-
-    MultiGoalPlanResult result = multiplanner->plan(tree_scene.apples, start_state, scene, drone, *sub_planner);
+                MultiGoalPlanResult result = multiplanner->plan(tree_scene.apples, start_state, scene, drone,
+                                                                *sub_planner);
 
     rviz.updateTrajectory(result.trajectory);
 
