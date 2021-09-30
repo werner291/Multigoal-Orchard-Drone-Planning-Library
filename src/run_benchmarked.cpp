@@ -8,7 +8,10 @@
 #include "make_robot.h"
 #include "InverseClearanceIntegralObjective.h"
 #include "BulletContinuousMotionValidator.h"
-#include "multi_goal_planners.h"
+#include "multigoal/multi_goal_planners.h"
+#include "multigoal/knn.h"
+#include "multigoal/uknn.h"
+#include "multigoal/random_order.h"
 #include "ompl_custom.h"
 #include "LeavesCollisionChecker.h"
 #include <fcl/fcl.h>
