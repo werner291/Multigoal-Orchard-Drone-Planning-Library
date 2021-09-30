@@ -8,18 +8,13 @@
 #include "make_robot.h"
 #include "InverseClearanceIntegralObjective.h"
 #include "BulletContinuousMotionValidator.h"
-#include "multigoal/multi_goal_planners.h"
-#include "multigoal/knn.h"
-#include "multigoal/uknn.h"
-#include "multigoal/random_order.h"
+#include "multi_goal_planners.h"
 #include "ompl_custom.h"
 #include "LeavesCollisionChecker.h"
 #include <fcl/fcl.h>
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <ompl/geometric/planners/prm/PRM.h>
-#include <ompl/geometric/planners/prm/PRMstar.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
-#include <ompl/geometric/planners/rrt/RRT.h>
 #include <json/json.h>
 
 using namespace robowflex;
@@ -37,11 +32,11 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<Robot> drone = make_robot();
 
-    IO::RVIZHelper rviz(drone);
-    IO::RobotBroadcaster bc(drone);
-    bc.start();
+//    IO::RVIZHelper rviz(drone);
+//    IO::RobotBroadcaster bc(drone);
+//    bc.start();
 
-    const int RUNS = 50; // 100 Is the value reported in the paper.
+    const int RUNS = 100; // 100 Is the value reported in the paper.
     Json::Value benchmark_results;
 
     std::random_device rd;
@@ -52,40 +47,47 @@ int main(int argc, char **argv) {
     ompl_interface::ModelBasedStateSpaceSpecification spec(drone->getModelConst(), "whole_body");
     auto state_space = std::make_shared<DroneStateSpace>(spec);
 
-    auto scene = std::make_shared<Scene>(drone);
+    for (int i = 0; i < RUNS; i++) {
 
-    double apple_t = std::uniform_real_distribution(0.0, 1.0)(gen);
+        Json::Value run_results;
 
-    int numberOfApples = 1 + (apple_t * apple_t) * 99;
+        auto scene = std::make_shared<Scene>(drone);
 
-    auto tree_scene = establishPlanningScene(10, numberOfApples);
-    scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
-    // Diff message apparently can't handle this?
-    scene->getScene()->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
-    scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+        double apple_t = std::uniform_real_distribution(0.0,1.0)(gen);
 
-    const std::shared_ptr<ompl::base::SpaceInformation> si = initSpaceInformation(scene, drone, state_space);
-    const robot_state::RobotState start_state = genStartState(drone);
+        int numberOfApples = 1 + (apple_t * apple_t) * 99;
 
-    auto multiplanner = std::make_shared<KNNPlanner>(1);
-    auto sub_planner = std::make_unique<ompl::geometric::PRM>(si);
+        std::cout << "Run " << (i+1) << " out of " << RUNS << " with " << numberOfApples << " apples." << std::endl;
+
+        run_results["number_of_apples"] = numberOfApples;
+
+        auto tree_scene = establishPlanningScene(10, numberOfApples);
+        scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
+        // Diff message apparently can't handle this?
+        scene->getScene()->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
+        scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+
+        LeavesCollisionChecker leavesCollisionChecker(tree_scene.leaf_vertices);
+
+        const std::shared_ptr<ompl::base::SpaceInformation> si = initSpaceInformation(scene, drone, state_space);
+        const robot_state::RobotState start_state = genStartState(drone);
+
         std::vector<std::shared_ptr<MultiGoalPlanner>> multiplanners{
                 std::make_shared<KNNPlanner>(1),
                 std::make_shared<KNNPlanner>(2),
                 std::make_shared<KNNPlanner>(3),
-//                std::make_shared<KNNPlanner>(5),
+                std::make_shared<KNNPlanner>(5),
                 std::make_shared<UnionKNNPlanner>(1),
                 std::make_shared<UnionKNNPlanner>(2),
                 std::make_shared<UnionKNNPlanner>(3),
-//                std::make_shared<UnionKNNPlanner>(5),
+                std::make_shared<UnionKNNPlanner>(5),
                 std::make_shared<RandomPlanner>()
         };
 
         for (const auto &planner: multiplanners) {
 
             std::vector<std::shared_ptr<ompl::base::Planner>> subplanners{
-                    std::make_unique<ompl::geometric::PRM>(si),
-                    std::make_unique<ompl::geometric::PRMstar>(si)
+                    std::make_unique<ompl::geometric::PRM>(si)//, std::make_unique<ompl::geometric::RRTConnect>(si)
             };
 
             // Nesting order is important here because the sub-planners are re-created every run.
@@ -134,9 +136,14 @@ int main(int argc, char **argv) {
             }
         }
 
-    MultiGoalPlanResult result = multiplanner->plan(tree_scene.apples, start_state, scene, drone, *sub_planner);
+        benchmark_results.append(run_results);
+    }
 
-    rviz.updateTrajectory(result.trajectory);
+    std::ofstream results(RUNS < 50 ? "analysis/results_test.json" : "analysis/results.json");
+    results << benchmark_results;
+    results.close();
+
+    std::cout << "Done!" << std::endl;
 
     return 0;
 }

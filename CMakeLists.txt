@@ -181,6 +181,24 @@ target_link_libraries(${PROJECT_NAME}_vizualized
         jsoncpp_lib
         )
 
+## Visualization node
+add_executable(${PROJECT_NAME}_benchmark
+        src/run_benchmarked.cpp ${SHARED_SRC})
+set_property(TARGET ${PROJECT_NAME}_benchmark PROPERTY CXX_STANDARD 17)
+
+target_link_libraries(${PROJECT_NAME}_benchmark
+        ${catkin_LIBRARIES}
+        ${EIGEN_LIBRARIES}
+        ${FCL_LIBRARIES}
+        jsoncpp_lib
+        )
+
+#############
+## Install ##
+#############
+
+# all install targets should use catkin DESTINATION variables
+# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 ## Testing
 add_executable(${PROJECT_NAME}_tests
         test/tests.cpp ${SHARED_SRC})
