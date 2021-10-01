@@ -25,7 +25,9 @@ void extendTrajectory(robowflex::Trajectory &full_trajectory, robowflex::Traject
 
 
 std::optional<PointToPointPlanResult>
-planPointToPoint(const robowflex::RobotConstPtr &robot, ompl::base::Planner &planner, const ompl::base::GoalPtr &goal,
+planPointToPoint(const robowflex::RobotConstPtr &robot,
+                 ompl::base::Planner &planner,
+                 const ompl::base::GoalPtr &goal,
                  const moveit::core::RobotState &from_state, double max_time) {
 
     std::optional<PointToPointPlanResult> result;

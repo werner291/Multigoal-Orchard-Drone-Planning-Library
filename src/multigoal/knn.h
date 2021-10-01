@@ -16,7 +16,7 @@ private:
     size_t k;
 
 public:
-    MultiGoalPlanResult plan(const std::vector<Apple> &apples, const moveit::core::RobotState &start_state,
+    MultiGoalPlanResult plan(const TreeScene &apples, const moveit::core::RobotState &start_state,
                              const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
                              ompl::base::Planner &point_to_point_planner) override;
 

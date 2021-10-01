@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
     auto multiplanner = std::make_shared<KNNPlanner>(1);
     auto sub_planner = std::make_unique<ompl::geometric::PRMstar>(si);
 
-    MultiGoalPlanResult result = multiplanner->plan(tree_scene.apples, start_state, scene, drone,
+    MultiGoalPlanResult result = multiplanner->plan(tree_scene, start_state, scene, drone,
                                                     *sub_planner);
 
     result.trajectory.interpolate(10000);

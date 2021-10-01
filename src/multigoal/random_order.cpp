@@ -9,13 +9,13 @@ std::string RandomPlanner::getName() {
     return "Random";
 }
 
-MultiGoalPlanResult RandomPlanner::plan(const std::vector<Apple> &apples, const moveit::core::RobotState &start_state,
+MultiGoalPlanResult RandomPlanner::plan(const TreeScene &apples, const moveit::core::RobotState &start_state,
                                         const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
                                         ompl::base::Planner &point_to_point_planner) {
 
     std::vector<Eigen::Vector3d> targets;
 
-    for (const Apple &apple: apples) {
+    for (const Apple &apple: apples.apples) {
         targets.push_back(apple.center);
     }
 

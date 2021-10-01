@@ -7,7 +7,7 @@
 
 KNNPlanner::KNNPlanner(size_t k) : k(k) {}
 
-MultiGoalPlanResult KNNPlanner::plan(const std::vector<Apple> &apples, const moveit::core::RobotState &start_state,
+MultiGoalPlanResult KNNPlanner::plan(const TreeScene &apples, const moveit::core::RobotState &start_state,
                                      const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
                                      ompl::base::Planner &point_to_point_planner) {
     ompl::NearestNeighborsGNAT<Eigen::Vector3d> unvisited_nn;
@@ -15,7 +15,7 @@ MultiGoalPlanResult KNNPlanner::plan(const std::vector<Apple> &apples, const mov
         return (a - b).norm();
     });
 
-    for (const Apple &apple: apples) {
+    for (const Apple &apple: apples.apples) {
         unvisited_nn.add(apple.center);
     }
 

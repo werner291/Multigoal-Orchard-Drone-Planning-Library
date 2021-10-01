@@ -27,7 +27,7 @@ class MultiGoalPlanner {
 
 public:
 
-    virtual MultiGoalPlanResult plan(const std::vector<Apple> &apples,
+    virtual MultiGoalPlanResult plan(const TreeScene &apples,
                                      const moveit::core::RobotState &start_state,
                                      const robowflex::SceneConstPtr &scene,
                                      const robowflex::RobotConstPtr &robot,

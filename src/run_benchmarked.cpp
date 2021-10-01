@@ -68,8 +68,8 @@ int main(int argc, char **argv) {
         const robot_state::RobotState start_state = genStartState(drone);
 
         std::vector<std::shared_ptr<MultiGoalPlanner>> multiplanners{
-//                std::make_shared<KNNPlanner>(1),
-//                std::make_shared<KNNPlanner>(2),
+                std::make_shared<KNNPlanner>(1),
+                std::make_shared<KNNPlanner>(2),
                 std::make_shared<KNNPlanner>(3),
 //                std::make_shared<KNNPlanner>(5),
                 std::make_shared<UnionKNNPlanner>(1),
