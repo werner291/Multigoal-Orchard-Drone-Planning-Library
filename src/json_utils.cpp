@@ -1,6 +1,6 @@
 
 #include "json_utils.h"
-#include "multi_goal_planners.h"
+#include "multigoal/multi_goal_planners.h"
 #include <robowflex_library/trajectory.h>
 
 Json::Value eigenToJson(const Eigen::Vector3d &vec) {
