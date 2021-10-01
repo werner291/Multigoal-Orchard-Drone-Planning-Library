@@ -60,7 +60,7 @@ std::shared_ptr<fcl::CollisionGeometryd> collisionGeometryFromShape(const shapes
     return {nullptr};
 }
 
-std::set<size_t> LeavesCollisionChecker::checkLeafCollisions(moveit::core::RobotState &state) {
+std::set<size_t> LeavesCollisionChecker::checkLeafCollisions(moveit::core::RobotState &state) const {
     state.updateCollisionBodyTransforms();
     const moveit::core::LinkModel *lm = state.getRobotModel()->getLinkModel("base_link");
     Eigen::Isometry3d link_transform = state.getGlobalLinkTransform(lm);

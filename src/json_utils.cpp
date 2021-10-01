@@ -1,6 +1,7 @@
 
 #include "json_utils.h"
 #include "multigoal/multi_goal_planners.h"
+#include "multigoal/PointToPointPlanner.h"
 #include <robowflex_library/trajectory.h>
 
 Json::Value eigenToJson(const Eigen::Vector3d &vec) {
@@ -12,12 +13,11 @@ Json::Value eigenToJson(const Eigen::Vector3d &vec) {
 }
 
 Json::Value
-makePointToPointJson(const Eigen::Vector3d &target,
-                     const std::optional<PointToPointPlanResult> &pointToPointPlanResult) {
+makePointToPointJson(const std::optional<PointToPointPlanResult> &pointToPointPlanResult) {
     Json::Value json;
-    json["apple"] = eigenToJson(target);
     json["solved"] = pointToPointPlanResult.has_value();
     if (pointToPointPlanResult.has_value()) {
+        json["apple"] = eigenToJson(pointToPointPlanResult.value().endEffectorTarget);
         json["path_length"] = pointToPointPlanResult.value().solution_length;
     }
     return json;

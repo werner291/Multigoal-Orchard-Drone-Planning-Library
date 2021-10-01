@@ -4,12 +4,16 @@
 
 #include "knn.h"
 #include "../json_utils.h"
+#include "PointToPointPlanner.h"
 
 KNNPlanner::KNNPlanner(size_t k) : k(k) {}
 
-MultiGoalPlanResult KNNPlanner::plan(const TreeScene &apples, const moveit::core::RobotState &start_state,
-                                     const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
-                                     ompl::base::Planner &point_to_point_planner) {
+MultiGoalPlanResult KNNPlanner::plan(const TreeScene &apples,
+                                     const moveit::core::RobotState &start_state,
+                                     const robowflex::SceneConstPtr &scene,
+                                     const robowflex::RobotConstPtr &robot,
+                                     PointToPointPlanner &point_to_point_planner) {
+
     ompl::NearestNeighborsGNAT<Eigen::Vector3d> unvisited_nn;
     unvisited_nn.setDistanceFunction([](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
         return (a - b).norm();
@@ -37,15 +41,9 @@ MultiGoalPlanResult KNNPlanner::plan(const TreeScene &apples, const moveit::core
         Eigen::Vector3d best_target;
 
         for (const auto &target: knn) {
-            auto subgoal = std::make_shared<DroneEndEffectorNearTarget>(
-                    point_to_point_planner.getSpaceInformation(), 0.2,
-                    target);
 
-            auto pointToPointResult = planPointToPoint(robot,
-                                                       point_to_point_planner,
-                                                       subgoal,
-                                                       full_trajectory.getTrajectory()->getLastWayPoint(),
-                                                       MAX_TIME_PER_TARGET_SECONDS / (double) k);
+            auto pointToPointResult = point_to_point_planner.planPointToPoint(
+                    full_trajectory.getTrajectory()->getLastWayPoint(), knn, 0);
 
             if (pointToPointResult.has_value() && pointToPointResult.value().solution_length < best_length) {
                 bestResult = pointToPointResult;
@@ -57,12 +55,10 @@ MultiGoalPlanResult KNNPlanner::plan(const TreeScene &apples, const moveit::core
         if (bestResult.has_value()) {
             unvisited_nn.remove(best_target);
             extendTrajectory(full_trajectory, bestResult.value().point_to_point_trajectory);
-            root["segments"].append(makePointToPointJson(best_target, bestResult));
+            root["segments"].append(makePointToPointJson(bestResult));
         } else {
             unvisited_nn.remove(knn[0]); // Better picks here? Maybe delete all?
         }
-
-
     }
 
     std::ostringstream stringStream;

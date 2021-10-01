@@ -9,6 +9,7 @@
 #include "LeavesCollisionChecker.h"
 #include "ompl_custom.h"
 #include "multigoal/multi_goal_planners.h"
+#include "multigoal/PointToPointPlanner.h"
 #include <random>
 #include <robowflex_library/trajectory.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
@@ -16,8 +17,7 @@
 
 Json::Value eigenToJson(const Eigen::Vector3d &vec);
 
-Json::Value makePointToPointJson(const Eigen::Vector3d &target,
-                                 const std::optional<PointToPointPlanResult> &pointToPointPlanResult);
+Json::Value makePointToPointJson(const std::optional<PointToPointPlanResult> &pointToPointPlanResult);
 
 Json::Value getStateStatisticsPoint(const moveit::core::RobotState &st);
 

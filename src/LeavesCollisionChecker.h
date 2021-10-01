@@ -18,14 +18,14 @@ class LeavesCollisionChecker {
 public:
     LeavesCollisionChecker(const std::vector<Eigen::Vector3d> &leaf_vertices);
 
-    std::set<size_t> checkLeafCollisions(moveit::core::RobotState &state);
+    std::set<size_t> checkLeafCollisions(moveit::core::RobotState &state) const;
 
 };
 
 class LeavesCollisionCountObjective : public ompl::base::StateCostIntegralObjective {
 
-    std::shared_ptr<moveit::core::RobotModel> robot;
-    std::shared_ptr<LeavesCollisionChecker> leaves;
+    const std::shared_ptr<const moveit::core::RobotModel> robot;
+    const std::shared_ptr<const LeavesCollisionChecker> leaves;
 
 public:
     LeavesCollisionCountObjective(const ompl::base::SpaceInformationPtr &si,
