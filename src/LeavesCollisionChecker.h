@@ -7,9 +7,11 @@
 
 #include <fcl/fcl.h>
 #include <moveit/robot_state/robot_state.h>
+#include <ompl/datastructures/GreedyKCenters.h>
+#include <ompl/base/objectives/StateCostIntegralObjective.h>
+#include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 
 class LeavesCollisionChecker {
-
 
     fcl::BVHModel<fcl::OBBRSSd> leaves;
 
@@ -20,5 +22,18 @@ public:
 
 };
 
+class LeavesCollisionCountObjective : public ompl::base::StateCostIntegralObjective {
+
+    std::shared_ptr<moveit::core::RobotModel> robot;
+    std::shared_ptr<LeavesCollisionChecker> leaves;
+
+public:
+    LeavesCollisionCountObjective(const ompl::base::SpaceInformationPtr &si,
+                                  const std::shared_ptr<moveit::core::RobotModel> &robot,
+                                  const std::shared_ptr<LeavesCollisionChecker> &leaves);
+
+    ompl::base::Cost stateCost(const ompl::base::State *s) const override;
+
+};
 
 #endif //NEW_PLANNERS_LEAVESCOLLISIONCHECKER_H
