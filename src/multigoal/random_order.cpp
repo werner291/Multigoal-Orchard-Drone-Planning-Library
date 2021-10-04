@@ -9,13 +9,15 @@ std::string RandomPlanner::getName() {
     return "Random";
 }
 
-MultiGoalPlanResult RandomPlanner::plan(const std::vector<Apple> &apples, const moveit::core::RobotState &start_state,
-                                        const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
-                                        ompl::base::Planner &point_to_point_planner) {
+MultiGoalPlanResult RandomPlanner::plan(const TreeScene &apples,
+                                        const moveit::core::RobotState &start_state,
+                                        const robowflex::SceneConstPtr &scene,
+                                        const robowflex::RobotConstPtr &robot,
+                                        PointToPointPlanner &point_to_point_planner) {
 
     std::vector<Eigen::Vector3d> targets;
 
-    for (const Apple &apple: apples) {
+    for (const Apple &apple: apples.apples) {
         targets.push_back(apple.center);
     }
 
@@ -27,17 +29,8 @@ MultiGoalPlanResult RandomPlanner::plan(const std::vector<Apple> &apples, const 
     Json::Value root;
 
     for (const auto &target: targets) {
-        auto pointToPointPlanResult = planPointToPoint(robot,
-                                                       point_to_point_planner,
-                                                       std::make_shared<DroneEndEffectorNearTarget>(
-                                                               point_to_point_planner.getSpaceInformation(),
-                                                               0.2,
-                                                               target),
-                                                       full_trajectory.getTrajectory()->getLastWayPoint(),
-                                                       MAX_TIME_PER_TARGET_SECONDS);
-
-
-        root["segments"].append(makePointToPointJson(target, pointToPointPlanResult));
+        auto pointToPointPlanResult = point_to_point_planner.planPointToPoint(full_trajectory.getTrajectory()->getLastWayPoint(), target);
+        root["segments"].append(makePointToPointJson(pointToPointPlanResult));
     }
 
     root["ordering"] = "random";

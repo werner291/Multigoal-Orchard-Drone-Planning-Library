@@ -69,11 +69,19 @@ int main(int argc, char **argv) {
     const std::shared_ptr<ompl::base::SpaceInformation> si = initSpaceInformation(scene, drone, state_space);
     const robot_state::RobotState start_state = genStartState(drone);
 
-    auto multiplanner = std::make_shared<KNNPlanner>(1);
-    auto sub_planner = std::make_unique<ompl::geometric::PRMstar>(si);
+    auto leavesCollisionChecker = std::make_shared<LeavesCollisionChecker>(tree_scene.leaf_vertices);
 
-    MultiGoalPlanResult result = multiplanner->plan(tree_scene.apples, start_state, scene, drone,
-                                                    *sub_planner);
+    auto multiplanner = std::make_shared<KNNPlanner>(1);
+    auto sub_planner = std::make_shared<ompl::geometric::PRMstar>(si);
+
+    auto opt = std::make_shared<LeavesCollisionCountObjective>(
+            si,
+            drone->getModelConst(),
+            leavesCollisionChecker);
+
+    PointToPointPlanner ptp(sub_planner,opt,drone);
+
+    MultiGoalPlanResult result = multiplanner->plan(tree_scene, start_state, scene, drone, ptp);
 
     result.trajectory.interpolate(10000);
 

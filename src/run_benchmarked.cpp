@@ -12,6 +12,7 @@
 #include "multigoal/knn.h"
 #include "multigoal/uknn.h"
 #include "multigoal/random_order.h"
+#include "multigoal/PointToPointPlanner.h"
 #include "ompl_custom.h"
 #include "LeavesCollisionChecker.h"
 #include <fcl/fcl.h>
@@ -62,7 +63,7 @@ int main(int argc, char **argv) {
         scene->getScene()->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
         scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
 
-        LeavesCollisionChecker leavesCollisionChecker(tree_scene.leaf_vertices);
+        auto leavesCollisionChecker = std::make_shared<LeavesCollisionChecker>(tree_scene.leaf_vertices);
 
         const std::shared_ptr<ompl::base::SpaceInformation> si = initSpaceInformation(scene, drone, state_space);
         const robot_state::RobotState start_state = genStartState(drone);
@@ -91,7 +92,15 @@ int main(int argc, char **argv) {
                 std::cout << "Attempting " << planner->getName() << " with sub-planner " << sub_planner->getName()
                           << std::endl;
 
-                MultiGoalPlanResult result = planner->plan(tree_scene.apples, start_state, scene, drone, *sub_planner);
+                PointToPointPlanner ptp(
+                        sub_planner,
+                        std::make_shared<LeavesCollisionCountObjective>(
+                                sub_planner.getSpaceInformation(),
+                                drone->getModelConst(),
+                                leavesCollisionChecker),
+                                drone);
+
+                MultiGoalPlanResult result = planner->plan(tree_scene.apples, start_state, scene, drone, ptp);
 
                 result.stats["is_collision_free"] = result.trajectory.isCollisionFree(scene);
 

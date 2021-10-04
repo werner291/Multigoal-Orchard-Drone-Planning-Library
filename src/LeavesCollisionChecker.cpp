@@ -55,9 +55,12 @@ std::shared_ptr<fcl::CollisionGeometryd> collisionGeometryFromShape(const shapes
             ROS_ERROR("Not implemented");
             return {nullptr};
     }
+
+    ROS_ERROR("Control should not reach this point.");
+    return {nullptr};
 }
 
-std::set<size_t> LeavesCollisionChecker::checkLeafCollisions(moveit::core::RobotState &state) {
+std::set<size_t> LeavesCollisionChecker::checkLeafCollisions(moveit::core::RobotState &state) const {
     state.updateCollisionBodyTransforms();
     const moveit::core::LinkModel *lm = state.getRobotModel()->getLinkModel("base_link");
     Eigen::Isometry3d link_transform = state.getGlobalLinkTransform(lm);
@@ -87,3 +90,17 @@ std::set<size_t> LeavesCollisionChecker::checkLeafCollisions(moveit::core::Robot
 
     return leaves_in_contact;
 }
+
+ompl::base::Cost LeavesCollisionCountObjective::stateCost(const ompl::base::State *s) const {
+
+    moveit::core::RobotState st(this->robot);
+
+    si_->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToRobotState(st, s);
+
+    return ompl::base::Cost(this->leaves->checkLeafCollisions(st).size());
+}
+
+LeavesCollisionCountObjective::LeavesCollisionCountObjective(const ompl::base::SpaceInformationPtr &si,
+                                                             const std::shared_ptr<moveit::core::RobotModel> &robot,
+                                                             const std::shared_ptr<LeavesCollisionChecker> &leaves)
+        : StateCostIntegralObjective(si, true), robot(robot), leaves(leaves) {}

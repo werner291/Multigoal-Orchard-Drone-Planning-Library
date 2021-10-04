@@ -13,9 +13,9 @@
  * Create a PlanningScene message that represents a scene with a tree in it.
  * @return The PlanningScene message.
  */
-PlanningScene establishPlanningScene(int branchingDepth, int numberOfApples);
+TreeScene establishPlanningScene(int branchingDepth, int numberOfApples);
 
 void buildPlanningScene(std::shared_ptr<robowflex::Robot> &drone, std::shared_ptr<robowflex::Scene> &scene,
-                        PlanningScene &tree_scene);
+                        TreeScene &tree_scene);
 
 #endif //NEW_PLANNERS_BUILD_PLANNING_SCENE_H

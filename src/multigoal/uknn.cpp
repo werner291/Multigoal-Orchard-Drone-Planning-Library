@@ -8,15 +8,18 @@
 
 UnionKNNPlanner::UnionKNNPlanner(size_t k) : k(k) {}
 
-MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<Apple> &apples, const moveit::core::RobotState &start_state,
-                                          const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
-                                          ompl::base::Planner &point_to_point_planner) {
+MultiGoalPlanResult UnionKNNPlanner::plan(const TreeScene &apples,
+                                          const moveit::core::RobotState &start_state,
+                                          const robowflex::SceneConstPtr &scene,
+                                          const robowflex::RobotConstPtr &robot,
+                                          PointToPointPlanner &point_to_point_planner) {
+
     ompl::NearestNeighborsGNAT<Eigen::Vector3d> unvisited_nn;
     unvisited_nn.setDistanceFunction([](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
         return (a - b).norm();
     });
 
-    for (const Apple &apple: apples) {
+    for (const Apple &apple: apples.apples) {
         unvisited_nn.add(apple.center);
     }
 
@@ -33,42 +36,13 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<Apple> &apples, cons
         std::vector<Eigen::Vector3d> knn;
         unvisited_nn.nearestK(start_eepos, k, knn);
 
-        std::vector<std::shared_ptr<const ompl::base::GoalSampleableRegion>> subgoals;
-
-        for (const auto &target: knn) {
-            subgoals.push_back(std::make_shared<DroneEndEffectorNearTarget>(
-                    point_to_point_planner.getSpaceInformation(), 0.2,
-                    target));
-        }
-
-        auto pointToPointResult = planPointToPoint(robot,
-                                                   point_to_point_planner,
-                                                   std::make_shared<UnionGoalSampleableRegion>(
-                                                           point_to_point_planner.getSpaceInformation(), subgoals),
-                                                   full_trajectory.getTrajectory()->getLastWayPoint(),
-                                                   MAX_TIME_PER_TARGET_SECONDS);
+        auto pointToPointResult = point_to_point_planner.planPointToPoint(
+                full_trajectory.getTrajectory()->getLastWayPoint(), knn, 0);
 
         if (pointToPointResult.has_value()) {
-
-            auto traj = pointToPointResult.value().point_to_point_trajectory.getTrajectory();
-
-            const Eigen::Vector3d end_eepos = pointToPointResult.value().point_to_point_trajectory.getTrajectory()->getLastWayPoint().getGlobalLinkTransform(
-                    "end_effector").translation();
-
-            bool which_target = false;
-            for (size_t i = 0; i < knn.size(); i++) {
-                auto tgt = knn[i];
-                if ((tgt - end_eepos).norm() < 0.2) {
-                    unvisited_nn.remove(tgt);
-                    extendTrajectory(full_trajectory, pointToPointResult.value().point_to_point_trajectory);
-                    auto value = makePointToPointJson(tgt, pointToPointResult);
-                    value["ith-nn"] = (int) i;
-                    root["segments"].append(value);
-                    which_target = true;
-                    break;
-                }
-            }
-            assert(which_target);
+            unvisited_nn.remove(pointToPointResult.value().endEffectorTarget);
+            extendTrajectory(full_trajectory, pointToPointResult.value().point_to_point_trajectory);
+            root["segments"].append(makePointToPointJson(pointToPointResult));
         } else {
             unvisited_nn.remove(knn[0]); // Better picks here? Maybe delete all?
         }

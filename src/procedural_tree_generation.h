@@ -94,7 +94,7 @@ Eigen::Isometry3d frame_on_branch(double azimuth, double t, const DetachedTreeNo
 std::vector<Eigen::Vector3d>
 generateLeafVertices(std::vector<DetachedTreeNode> &flattened);
 
-struct PlanningScene {
+struct TreeScene {
     moveit_msgs::PlanningScene moveit_diff;
     std::vector<Apple> apples;
     std::vector<Eigen::Vector3d> leaf_vertices;
