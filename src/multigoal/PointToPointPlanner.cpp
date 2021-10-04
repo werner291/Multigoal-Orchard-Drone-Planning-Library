@@ -4,6 +4,7 @@
 
 #include "PointToPointPlanner.h"
 #include "../UnionGoalSampleableRegion.h"
+#include "multi_goal_planners.h"
 
 
 PointToPointPlanner::PointToPointPlanner(const ompl::base::PlannerPtr &planner,
@@ -11,11 +12,12 @@ PointToPointPlanner::PointToPointPlanner(const ompl::base::PlannerPtr &planner,
                                          const robowflex::RobotPtr robot)
         : planner_(planner), optimizationObjective_(optimizationObjective), robot_(robot) {}
 
-std::optional<PointToPointPlanResult> PointToPointPlanner::planPointToPoint(const moveit::core::RobotState &from_state,
-                                                                            const Eigen::Vector3d& target) {
+std::optional<PointToPointPlanResult>
+PointToPointPlanner::planPointToPoint(const moveit::core::RobotState &from_state, const Eigen::Vector3d &target,
+                                      double maxTime) {
 
-    std::vector<Eigen::Vector3d> targets {target};
-    return this->planPointToPoint(from_state, targets, 0);
+    std::vector<Eigen::Vector3d> targets{target};
+    return this->planPointToPoint(from_state, targets, maxTime);
 }
 
 std::optional<PointToPointPlanResult> PointToPointPlanner::planPointToPoint(const moveit::core::RobotState &from_state,
@@ -52,8 +54,6 @@ std::optional<PointToPointPlanResult> PointToPointPlanner::planPointToPoint(cons
 
     if (status == ompl::base::PlannerStatus::EXACT_SOLUTION) {
 
-        PointToPointPlanResult actual_result;
-
         auto path = pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
         moveit::core::RobotState st(robot_->getModelConst());
@@ -63,22 +63,23 @@ std::optional<PointToPointPlanResult> PointToPointPlanner::planPointToPoint(cons
             trajectory.addSuffixWaypoint(st);
         }
 
-        const Eigen::Vector3d end_eepos = trajectory.getTrajectory()->getLastWayPoint().getGlobalLinkTransform("end_effector").translation();
+        const Eigen::Vector3d end_eepos = trajectory.getTrajectory()->getLastWayPoint().getGlobalLinkTransform(
+                "end_effector").translation();
 
-        bool which_target = false;
-        for (auto &tgt: targets) {
-            if ((tgt - end_eepos).norm() < 0.1) { // FIXME Don't use magic numbers!
-                actual_result.target = tgt;
-                which_target = true;
+        for (size_t i = 0; i < targets.size(); i++) {
+            auto tgt = targets[i];
+            if ((tgt - end_eepos).norm() < GOAL_END_EFFECTOR_RADIUS) { // FIXME Don't use magic numbers!
+                result = {PointToPointPlanResult{
+                        .solution_length = path->length(),
+                        .point_to_point_trajectory = trajectory,
+                        .endEffectorTarget = tgt,
+                        .ith_target = i,
+                }};
                 break;
             }
         }
-        assert(which_target);
 
-        actual_result.solution_length = path->length();
-        actual_result.point_to_point_trajectory = trajectory;
-
-        return {actual_result};
+        assert(result.has_value());
 
     } else {
         result = {};
@@ -93,13 +94,15 @@ std::optional<PointToPointPlanResult> PointToPointPlanner::planPointToPoint(cons
 
 ompl::base::GoalPtr PointToPointPlanner::constructUnionGoal(const std::vector<Eigen::Vector3d> &targets) {
     if (targets.size() == 1) {
-        return std::make_shared<DroneEndEffectorNearTarget>(planner_->getSpaceInformation(), 0.2, targets[0]);
+        return std::make_shared<DroneEndEffectorNearTarget>(planner_->getSpaceInformation(), GOAL_END_EFFECTOR_RADIUS,
+                                                            targets[0]);
     } else {
         std::vector<std::shared_ptr<const ompl::base::GoalSampleableRegion>> subgoals;
 
         for (const auto &target: targets) {
             subgoals.push_back(
-                    std::make_shared<DroneEndEffectorNearTarget>(planner_->getSpaceInformation(), 0.2, target));
+                    std::make_shared<DroneEndEffectorNearTarget>(planner_->getSpaceInformation(),
+                                                                 GOAL_END_EFFECTOR_RADIUS, target));
         }
 
         return std::make_shared<UnionGoalSampleableRegion>(planner_->getSpaceInformation(), subgoals);

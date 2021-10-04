@@ -79,7 +79,7 @@ void DroneEndEffectorNearTarget::sampleGoal(ompl::base::State *state) const {
 
     moveit::core::RobotState st(state_space->getRobotModel());
 
-    const size_t ATTEMPTS_BEFORE_GIVE_UP = 1000;
+    const size_t ATTEMPTS_BEFORE_GIVE_UP = 100;
 
     size_t attempts_this_time = 0;
 

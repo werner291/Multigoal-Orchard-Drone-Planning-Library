@@ -43,7 +43,7 @@ MultiGoalPlanResult KNNPlanner::plan(const TreeScene &apples,
         for (const auto &target: knn) {
 
             auto pointToPointResult = point_to_point_planner.planPointToPoint(
-                    full_trajectory.getTrajectory()->getLastWayPoint(), knn, 0);
+                    full_trajectory.getTrajectory()->getLastWayPoint(), knn, MAX_TIME_PER_TARGET_SECONDS / (double) k);
 
             if (pointToPointResult.has_value() && pointToPointResult.value().solution_length < best_length) {
                 bestResult = pointToPointResult;

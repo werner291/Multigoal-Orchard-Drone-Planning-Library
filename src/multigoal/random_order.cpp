@@ -29,7 +29,8 @@ MultiGoalPlanResult RandomPlanner::plan(const TreeScene &apples,
     Json::Value root;
 
     for (const auto &target: targets) {
-        auto pointToPointPlanResult = point_to_point_planner.planPointToPoint(full_trajectory.getTrajectory()->getLastWayPoint(), target);
+        auto pointToPointPlanResult = point_to_point_planner.planPointToPoint(
+                full_trajectory.getTrajectory()->getLastWayPoint(), target, MAX_TIME_PER_TARGET_SECONDS);
         root["segments"].append(makePointToPointJson(pointToPointPlanResult));
     }
 

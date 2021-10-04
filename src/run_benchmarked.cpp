@@ -20,6 +20,7 @@
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
+#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <json/json.h>
 
 using namespace robowflex;
@@ -50,7 +51,7 @@ int main(int argc, char **argv) {
 
         double apple_t = std::uniform_real_distribution(0.0,1.0)(gen);
 
-        int numberOfApples = 5 + (apple_t * apple_t) * 200;
+        int numberOfApples = 5 + (apple_t * apple_t) * 150;
 
         std::cout << "Run " << (i+1) << " out of " << RUNS << " with " << numberOfApples << " apples." << std::endl;
 
@@ -80,29 +81,39 @@ int main(int argc, char **argv) {
 //                std::make_shared<RandomPlanner>()
         };
 
+        std::vector<std::pair<std::string, std::shared_ptr<ompl::base::OptimizationObjective>>> optimizationObjectives{
+                {"leaves collision count", std::make_shared<LeavesCollisionCountObjective>(
+                        si,
+                        drone->getModelConst(),
+                        leavesCollisionChecker)},
+                {"path length",            std::make_shared<ompl::base::PathLengthOptimizationObjective>(si)}
+        };
+
         for (const auto &planner: multiplanners) {
 
-            std::vector<std::shared_ptr<ompl::base::Planner>> subplanners{
-                    std::make_unique<ompl::geometric::PRM>(si),
-                    std::make_unique<ompl::geometric::PRMstar>(si),
-            };
+            for (const auto &optimizationObjective: optimizationObjectives) {
 
-            // Nesting order is important here because the sub-planners are re-created every run.
-            for (auto &sub_planner: subplanners) {
-                std::cout << "Attempting " << planner->getName() << " with sub-planner " << sub_planner->getName()
-                          << std::endl;
+                std::vector<std::shared_ptr<ompl::base::Planner>> subplanners{
+                        std::make_unique<ompl::geometric::PRM>(si),
+                        std::make_unique<ompl::geometric::PRMstar>(si),
+                };
 
-                PointToPointPlanner ptp(
-                        sub_planner,
-                        std::make_shared<LeavesCollisionCountObjective>(
-                                sub_planner.getSpaceInformation(),
-                                drone->getModelConst(),
-                                leavesCollisionChecker),
-                                drone);
+                // Nesting order is important here because the sub-planners are re-created every run.
+#pragma omp parallel for
+                for (auto &sub_planner: subplanners) {
+                    std::cout << "Attempting " << planner->getName()
+                              << " with sub-planner " << sub_planner->getName()
+                              << " and objective " << optimizationObjective.first
+                              << std::endl;
 
-                MultiGoalPlanResult result = planner->plan(tree_scene.apples, start_state, scene, drone, ptp);
+                    PointToPointPlanner ptp(
+                            sub_planner,
+                            optimizationObjective.second,
+                            drone);
 
-                result.stats["is_collision_free"] = result.trajectory.isCollisionFree(scene);
+                    MultiGoalPlanResult result = planner->plan(tree_scene, start_state, scene, drone, ptp);
+
+                    result.stats["is_collision_free"] = result.trajectory.isCollisionFree(scene);
 
 //                std::set<size_t> leaves;
 //                size_t unique_collisions = 0;
@@ -135,9 +146,11 @@ int main(int argc, char **argv) {
 
 //                result.stats["unique_leaves_collided"] = (int) unique_collisions;
 
-                result.stats["intermediate_planner"] = sub_planner->getName();
-                run_results["planner_runs"].append(result.stats);
+                    result.stats["intermediate_planner"] = sub_planner->getName();
+                    result.stats["optimization_objective"] = optimizationObjective.first;
+                    run_results["planner_runs"].append(result.stats);
 
+                }
             }
         }
 

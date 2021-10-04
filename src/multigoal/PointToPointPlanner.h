@@ -1,6 +1,8 @@
 #ifndef NEW_PLANNERS_POINTTOPOINTPLANNER_H
 #define NEW_PLANNERS_POINTTOPOINTPLANNER_H
 
+static const double GOAL_END_EFFECTOR_RADIUS = 0.2;
+
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 #include <robowflex_ompl/ompl_interface.h>
 #include <robowflex_library/trajectory.h>
@@ -14,6 +16,7 @@ struct PointToPointPlanResult {
     double solution_length{};
     robowflex::Trajectory point_to_point_trajectory;
     Eigen::Vector3d endEffectorTarget;
+    size_t ith_target = 0;
 };
 
 
@@ -32,10 +35,11 @@ public:
                                                            const std::vector<Eigen::Vector3d> &targets,
                                                            double maxTime);
 
-    std::optional<PointToPointPlanResult> planPointToPoint(const moveit::core::RobotState &from_state,
-                                                           const Eigen::Vector3d& target);
+    std::optional<PointToPointPlanResult>
+    planPointToPoint(const moveit::core::RobotState &from_state, const Eigen::Vector3d &target,
+                     double maxTime);
 
-    ompl::base::GoalPtr constructUnionGoal(const std::vector<Eigen::Vector3d>& targets);
+    ompl::base::GoalPtr constructUnionGoal(const std::vector<Eigen::Vector3d> &targets);
 
 };
 
