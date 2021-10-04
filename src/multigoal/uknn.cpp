@@ -56,11 +56,14 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<Apple> &apples, cons
                     "end_effector").translation();
 
             bool which_target = false;
-            for (auto &tgt: knn) {
+            for (size_t i = 0; i < knn.size(); i++) {
+                auto tgt = knn[i];
                 if ((tgt - end_eepos).norm() < 0.2) {
                     unvisited_nn.remove(tgt);
                     extendTrajectory(full_trajectory, pointToPointResult.value().point_to_point_trajectory);
-                    root["segments"].append(makePointToPointJson(tgt, pointToPointResult));
+                    auto value = makePointToPointJson(tgt, pointToPointResult);
+                    value["ith-nn"] = (int) i;
+                    root["segments"].append(value);
                     which_target = true;
                     break;
                 }

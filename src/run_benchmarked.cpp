@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<Robot> drone = make_robot();
 
-    const int RUNS = 100; // 100 Is the value reported in the paper.
+    const int RUNS = 20; // 100 Is the value reported in the paper.
     Json::Value benchmark_results;
 
     std::random_device rd;
@@ -68,8 +68,8 @@ int main(int argc, char **argv) {
         const robot_state::RobotState start_state = genStartState(drone);
 
         std::vector<std::shared_ptr<MultiGoalPlanner>> multiplanners{
-//                std::make_shared<KNNPlanner>(1),
-//                std::make_shared<KNNPlanner>(2),
+                std::make_shared<KNNPlanner>(1),
+                std::make_shared<KNNPlanner>(2),
                 std::make_shared<KNNPlanner>(3),
 //                std::make_shared<KNNPlanner>(5),
                 std::make_shared<UnionKNNPlanner>(1),
