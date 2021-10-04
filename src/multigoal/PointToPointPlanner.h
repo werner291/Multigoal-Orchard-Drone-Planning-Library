@@ -35,21 +35,7 @@ class PointToPointPlanner {
     /// The optiization objective to use, incase of an optimizing planner.
     const std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective_;
 
-    robowflex::Trajectory convertTrajectory(const ompl::geometric::PathGeometric &path) {
-        // Initialize an empty trajectory.
-        robowflex::Trajectory trajectory(robot_, "whole_body");
-
-        moveit::core::RobotState st(robot_->getModelConst());
-
-        auto state_space = planner_->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>();
-
-        for (auto state: path.getStates()) {
-            state_space->copyToRobotState(st, state);
-            trajectory.addSuffixWaypoint(st);
-        }
-
-        return trajectory;
-    }
+    robowflex::Trajectory convertTrajectory(ompl::geometric::PathGeometric &path);
 
 public:
     PointToPointPlanner(const ompl::base::PlannerPtr &planner,

@@ -109,3 +109,19 @@ ompl::base::GoalPtr PointToPointPlanner::constructUnionGoal(const std::vector<Ei
         return std::make_shared<UnionGoalSampleableRegion>(planner_->getSpaceInformation(), subgoals);
     }
 }
+
+robowflex::Trajectory PointToPointPlanner::convertTrajectory(ompl::geometric::PathGeometric &path) {
+    // Initialize an empty trajectory.
+    robowflex::Trajectory trajectory(robot_, "whole_body");
+
+    moveit::core::RobotState st(robot_->getModelConst());
+
+    auto state_space = planner_->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>();
+
+    for (auto state: path.getStates()) {
+        state_space->copyToRobotState(st, state);
+        trajectory.addSuffixWaypoint(st);
+    }
+
+    return trajectory;
+}

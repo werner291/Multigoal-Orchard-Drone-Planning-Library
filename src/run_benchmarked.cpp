@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<Robot> drone = make_robot();
 
-    const int RUNS = 20; // 100 Is the value reported in the paper.
+    const int RUNS = 5; // 100 Is the value reported in the paper.
     Json::Value benchmark_results;
 
     std::random_device rd;
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
                         double t = (double) ti * result.trajectory.getTrajectory()->getDuration() / 10000.0;
 
                         result.trajectory.getTrajectory()->getStateAtDurationFromStart(t, drone->getScratchState());
-                        std::set<size_t> new_leaves = leavesCollisionChecker.checkLeafCollisions(
+                        std::set<size_t> new_leaves = leavesCollisionChecker->checkLeafCollisions(
                                 *drone->getScratchState());
                         std::set<size_t> added_leaves;
                         std::set_difference(new_leaves.begin(), new_leaves.end(), leaves.begin(), leaves.end(),
