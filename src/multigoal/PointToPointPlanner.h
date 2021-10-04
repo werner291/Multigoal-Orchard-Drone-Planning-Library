@@ -19,12 +19,37 @@ struct PointToPointPlanResult {
     size_t ith_target = 0;
 };
 
-
+/**
+ * Represents some algorithm or strategy that, given a robot state and a (a set of) target point(s) in R^3, attempts
+ * to plan a trajectory such that the end effector of the robot is within distance GOAL_END_EFFECTOR_RADIUS of
+ * (at least one of) the goal(s).
+ */
 class PointToPointPlanner {
 
+    /// The robot to plan for.
     const std::shared_ptr<robowflex::Robot> robot_;
+
+    /// The OMPL planner to use. This may be a multi-query planner, the goals are cleared automatically.
     const ompl::base::PlannerPtr planner_;
+
+    /// The optiization objective to use, incase of an optimizing planner.
     const std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective_;
+
+    robowflex::Trajectory convertTrajectory(const ompl::geometric::PathGeometric &path) {
+        // Initialize an empty trajectory.
+        robowflex::Trajectory trajectory(robot_, "whole_body");
+
+        moveit::core::RobotState st(robot_->getModelConst());
+
+        auto state_space = planner_->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>();
+
+        for (auto state: path.getStates()) {
+            state_space->copyToRobotState(st, state);
+            trajectory.addSuffixWaypoint(st);
+        }
+
+        return trajectory;
+    }
 
 public:
     PointToPointPlanner(const ompl::base::PlannerPtr &planner,
@@ -41,6 +66,8 @@ public:
 
     ompl::base::GoalPtr constructUnionGoal(const std::vector<Eigen::Vector3d> &targets);
 
+    std::shared_ptr<ompl::base::ProblemDefinition>
+    constructProblemDefinition(const moveit::core::RobotState &from_state, const ompl::base::GoalPtr &goal) const;
 };
 
 

@@ -7,6 +7,17 @@
 
 #include "multi_goal_planners.h"
 
+/**
+ * K-NN planner, whereby the apples are placed into a GNAT.
+ *
+ * The planner runs on a loop; every iteration, the k apples closest to the end-effector are chosen as candidates.
+ * The point-to-point planner is run for each, with a maximum time of (MAX_TIME_PER_TARGET_SECONDS/k) to compensate
+ * for the fact that it is run k times, with the shortest path picked as the best. The target closest to the end-effector
+ * after that path is removed from the GNAT. If all ptp planner attempts fail, the target closest to the end-effector is
+ * deleted from the GNAT and will not be visited.
+ *
+ * The planner terminates when the GNAT is empty.
+ */
 class KNNPlanner : public MultiGoalPlanner {
 
 public:

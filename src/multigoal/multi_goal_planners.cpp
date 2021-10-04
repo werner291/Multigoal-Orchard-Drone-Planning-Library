@@ -14,12 +14,8 @@
 #include "random_order.h"
 #include "PointToPointPlanner.h"
 
-std::shared_ptr<ompl::base::SpaceInformation>
-initSpaceInformation(const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
-                     std::shared_ptr<DroneStateSpace> &state_space);
-
-
 void extendTrajectory(robowflex::Trajectory &full_trajectory, robowflex::Trajectory &extension) {
+    // Just loop over all waypoints and copy them over.
     for (size_t i = 0; i < extension.getNumWaypoints(); i++) {
         full_trajectory.addSuffixWaypoint(extension.getTrajectory()->getWayPoint(i));
     }
