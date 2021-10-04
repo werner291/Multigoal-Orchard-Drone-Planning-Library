@@ -11,16 +11,15 @@
 #include "multigoal/multi_goal_planners.h"
 #include "multigoal/knn.h"
 #include "multigoal/uknn.h"
-#include "multigoal/random_order.h"
 #include "multigoal/PointToPointPlanner.h"
 #include "ompl_custom.h"
 #include "LeavesCollisionChecker.h"
-#include <fcl/fcl.h>
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
+#include <ompl/base/OptimizationObjective.h>
 #include <json/json.h>
 
 using namespace robowflex;
@@ -81,12 +80,19 @@ int main(int argc, char **argv) {
 //                std::make_shared<RandomPlanner>()
         };
 
+        auto leafCountObjective = std::make_shared<LeavesCollisionCountObjective>(si, drone->getModelConst(),
+                                                                                  leavesCollisionChecker);
+
+        auto pathLengthObjective = std::make_shared<ompl::base::PathLengthOptimizationObjective>(si);
+
+        auto multiObjective50_50 = std::make_shared<ompl::base::MultiOptimizationObjective>(si);
+        multiObjective50_50->addObjective(leafCountObjective, 0.5);
+        multiObjective50_50->addObjective(pathLengthObjective, 0.5);
+
         std::vector<std::pair<std::string, std::shared_ptr<ompl::base::OptimizationObjective>>> optimizationObjectives{
-                {"leaf count", std::make_shared<LeavesCollisionCountObjective>(
-                        si,
-                        drone->getModelConst(),
-                        leavesCollisionChecker)},
-                {"path length",            std::make_shared<ompl::base::PathLengthOptimizationObjective>(si)}
+                {"leaf count",  leafCountObjective},
+                {"path length", pathLengthObjective},
+                {"50/50",       multiObjective50_50}
         };
 
         for (const auto &planner: multiplanners) {
