@@ -24,6 +24,48 @@
 
 using namespace robowflex;
 
+Json::Value collectLeafCollisionStats(const std::shared_ptr<LeavesCollisionChecker> &leavesCollisionChecker,
+                                      robot_trajectory::RobotTrajectoryPtr &ptr) {
+
+    Json::Value leaf_collision_stats;
+    size_t unique_collisions = 0;
+
+    auto scratchState = std::make_shared<moveit::core::RobotState>(ptr->getWayPoint(0).getRobotModel());
+
+    std::set<size_t> leaves;
+    for (size_t ti = 0; ti < 10000; ti++) {
+
+        double t = (double) ti * ptr->getDuration() / 10000.0;
+
+        ptr->getStateAtDurationFromStart(t, scratchState);
+
+        std::set<size_t> new_leaves = leavesCollisionChecker->checkLeafCollisions(
+                *scratchState);
+        std::set<size_t> added_leaves;
+        std::set_difference(new_leaves.begin(), new_leaves.end(), leaves.begin(), leaves.end(),
+                            std::inserter(added_leaves, added_leaves.end()));
+        std::set<size_t> removed_leaves;
+        std::set_difference(leaves.begin(), leaves.end(), new_leaves.begin(), new_leaves.end(),
+                            std::inserter(removed_leaves, removed_leaves.end()));
+        unique_collisions += added_leaves.size();
+
+        if (!added_leaves.empty() || !removed_leaves.empty()) {
+            Json::Value leaf_collisions;
+            leaf_collisions["t"] = t;
+            leaf_collisions["contacts_ended"] = (int) removed_leaves.size();
+            leaf_collisions["new_leaves_in_contact"] = (int) added_leaves.size();
+            leaf_collision_stats["leaf_collisions_over_time"].append(leaf_collisions);
+        }
+
+        leaves = new_leaves;
+
+    }
+
+    leaf_collision_stats["unique_leaves_collided"] = (int) unique_collisions;
+
+    return leaf_collision_stats;
+}
+
 int main(int argc, char **argv) {
 
     // Startup ROS
@@ -105,7 +147,6 @@ int main(int argc, char **argv) {
                 };
 
                 // Nesting order is important here because the sub-planners are re-created every run.
-#pragma omp parallel for
                 for (auto &sub_planner: subplanners) {
                     std::cout << "Attempting " << planner->getName()
                               << " with sub-planner " << sub_planner->getName()
@@ -121,37 +162,14 @@ int main(int argc, char **argv) {
 
                     result.stats["is_collision_free"] = result.trajectory.isCollisionFree(scene);
 
-                    std::set<size_t> leaves;
-                    size_t unique_collisions = 0;
+                    {
+                        Json::Value leaf_collision_stats = collectLeafCollisionStats(
+                                leavesCollisionChecker, result.trajectory.getTrajectory());
 
-                    for (size_t ti = 0; ti < 10000; ti++) {
-
-                        double t = (double) ti * result.trajectory.getTrajectory()->getDuration() / 10000.0;
-
-                        result.trajectory.getTrajectory()->getStateAtDurationFromStart(t, drone->getScratchState());
-                        std::set<size_t> new_leaves = leavesCollisionChecker->checkLeafCollisions(
-                                *drone->getScratchState());
-                        std::set<size_t> added_leaves;
-                        std::set_difference(new_leaves.begin(), new_leaves.end(), leaves.begin(), leaves.end(),
-                                            std::inserter(added_leaves, added_leaves.end()));
-                        std::set<size_t> removed_leaves;
-                        std::set_difference(leaves.begin(), leaves.end(), new_leaves.begin(), new_leaves.end(),
-                                            std::inserter(removed_leaves, removed_leaves.end()));
-                        unique_collisions += added_leaves.size();
-
-                        if (!added_leaves.empty() || !removed_leaves.empty()) {
-                            Json::Value leaf_collisions;
-                            leaf_collisions["t"] = t;
-                            leaf_collisions["contacts_ended"] = (int) removed_leaves.size();
-                            leaf_collisions["new_leaves_in_contact"] = (int) added_leaves.size();
-                            result.stats["leaf_collisions_over_time"].append(leaf_collisions);
+                        for (auto &name: leaf_collision_stats.getMemberNames()) {
+                            result.stats[name] = leaf_collision_stats[name];
                         }
-
-                        leaves = new_leaves;
-
                     }
-
-                    result.stats["unique_leaves_collided"] = (int) unique_collisions;
 
                     result.stats["intermediate_planner"] = sub_planner->getName();
                     result.stats["optimization_objective"] = optimizationObjective.first;
