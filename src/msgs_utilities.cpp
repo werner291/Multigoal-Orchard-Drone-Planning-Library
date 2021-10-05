@@ -91,6 +91,7 @@ robot_state::RobotState genStartState(const std::shared_ptr<robowflex::Robot> &d
                                                0.0, 0.0, 0.0, 1.0,
                                                0.0, 0.0, 0.0, 0.0
                                        });
+    start_state.update(true);
     return start_state;
 }
 
