@@ -125,3 +125,11 @@ robowflex::Trajectory PointToPointPlanner::convertTrajectory(ompl::geometric::Pa
 
     return trajectory;
 }
+
+const ompl::base::PlannerPtr &PointToPointPlanner::getPlanner() const {
+    return planner_;
+}
+
+const std::shared_ptr<ompl::base::OptimizationObjective> &PointToPointPlanner::getOptimizationObjective() const {
+    return optimizationObjective_;
+}

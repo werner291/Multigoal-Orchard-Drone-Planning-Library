@@ -31,6 +31,12 @@ class PointToPointPlanner {
 
     /// The OMPL planner to use. This may be a multi-query planner, the goals are cleared automatically.
     const ompl::base::PlannerPtr planner_;
+public:
+    const ompl::base::PlannerPtr &getPlanner() const;
+
+    const std::shared_ptr<ompl::base::OptimizationObjective> &getOptimizationObjective() const;
+
+private:
 
     /// The optiization objective to use, incase of an optimizing planner.
     const std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective_;

@@ -15,6 +15,8 @@
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 
+void mergeIntoLeft(Json::Value &receiver, const Json::Value &donor);
+
 Json::Value eigenToJson(const Eigen::Vector3d &vec);
 
 Json::Value makePointToPointJson(const std::optional<PointToPointPlanResult> &pointToPointPlanResult);

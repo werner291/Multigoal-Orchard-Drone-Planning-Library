@@ -23,34 +23,32 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const TreeScene &apples,
         unvisited_nn.add(apple.center);
     }
 
-    robowflex::Trajectory full_trajectory(robot, "whole_body");
-    full_trajectory.addSuffixWaypoint(start_state);
-
-    Json::Value root;
+    MultiGoalPlanResult result;
 
     while (unvisited_nn.size() > 0) {
 
-        const Eigen::Vector3d start_eepos = full_trajectory.getTrajectory()->getLastWayPoint().getGlobalLinkTransform(
-                "end_effector").translation();
+        // Use forward kinematics to compute the end-effector position.
+        const auto segment_start_state = result.segments.empty() ? start_state
+                                                                 : result.segments.back().point_to_point_trajectory.getTrajectory()->getLastWayPoint();
+        const Eigen::Vector3d start_eepos =
+                segment_start_state
+                        .getGlobalLinkTransform("end_effector").translation();
 
         std::vector<Eigen::Vector3d> knn;
         unvisited_nn.nearestK(start_eepos, k, knn);
 
-        auto pointToPointResult = point_to_point_planner.planPointToPoint(
-                full_trajectory.getTrajectory()->getLastWayPoint(), knn, MAX_TIME_PER_TARGET_SECONDS);
+        auto pointToPointResult = point_to_point_planner.planPointToPoint(segment_start_state, knn,
+                                                                          MAX_TIME_PER_TARGET_SECONDS);
 
         if (pointToPointResult.has_value()) {
             unvisited_nn.remove(pointToPointResult.value().endEffectorTarget);
-            extendTrajectory(full_trajectory, pointToPointResult.value().point_to_point_trajectory);
-            root["segments"].append(makePointToPointJson(pointToPointResult));
+            result.segments.push_back(
+                    pointToPointResult.value()
+            );
         } else {
             unvisited_nn.remove(knn[0]); // Better picks here? Maybe delete all?
         }
-
-
     }
 
-    root["ordering"] = this->getName();
-
-    return {full_trajectory, root};
+    return result;
 }

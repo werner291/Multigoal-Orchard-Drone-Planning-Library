@@ -31,3 +31,9 @@ Json::Value getStateStatisticsPoint(const moveit::core::RobotState &st) {
 
     return traj_pt;
 }
+
+void mergeIntoLeft(Json::Value &receiver, const Json::Value &donor) {
+    for (auto &name: donor.getMemberNames()) {
+        receiver[name] = donor[name];
+    }
+}

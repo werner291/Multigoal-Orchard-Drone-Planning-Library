@@ -26,11 +26,24 @@ void extendTrajectory(robowflex::Trajectory &full_trajectory, robowflex::Traject
  * Result struct of a multi-goal planning operation.
  */
 struct MultiGoalPlanResult {
-    // TODO: keep track of the segments.
-    robowflex::Trajectory trajectory;
-    // Statistics about the planning operation.
-    Json::Value stats;
+    std::vector<PointToPointPlanResult> segments;
+
+    double computeTotalLength();
+
+    std::vector<Eigen::Vector3d> checkMissing(const std::vector<Eigen::Vector3d> &targets);
+
+    robowflex::Trajectory fullTrajectory() {
+        robowflex::Trajectory full(segments[0].point_to_point_trajectory.getTrajectory());
+
+        for (int i = 1; i < segments.size(); ++i) {
+            extendTrajectory(full, segments[i].point_to_point_trajectory);
+        }
+
+        return full;
+    }
+
 };
+
 
 /**
  * A meta-planner that, given a number of targets to visit,

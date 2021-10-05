@@ -4,6 +4,7 @@
 #include <robowflex_library/io/broadcaster.h>
 #include <robowflex_library/trajectory.h>
 #include "msgs_utilities.h"
+#include "json_utils.h"
 #include "build_planning_scene.h"
 #include "make_robot.h"
 #include "InverseClearanceIntegralObjective.h"
@@ -14,6 +15,7 @@
 #include "multigoal/PointToPointPlanner.h"
 #include "ompl_custom.h"
 #include "LeavesCollisionChecker.h"
+#include "multigoal/TwoOpt.h"
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
@@ -24,29 +26,31 @@
 
 using namespace robowflex;
 
-Json::Value collectLeafCollisionStats(const std::shared_ptr<LeavesCollisionChecker> &leavesCollisionChecker,
-                                      robot_trajectory::RobotTrajectoryPtr &ptr) {
+Json::Value collectLeafCollisionStats(const LeavesCollisionChecker &leavesCollisionChecker,
+                                      const robot_trajectory::RobotTrajectory &trajectory) {
 
     Json::Value leaf_collision_stats;
     size_t unique_collisions = 0;
 
-    auto scratchState = std::make_shared<moveit::core::RobotState>(ptr->getWayPoint(0).getRobotModel());
+    auto scratchState = std::make_shared<moveit::core::RobotState>(trajectory.getWayPoint(0).getRobotModel());
 
     std::set<size_t> leaves;
     for (size_t ti = 0; ti < 10000; ti++) {
 
-        double t = (double) ti * ptr->getDuration() / 10000.0;
+        double t = (double) ti * trajectory.getDuration() / 10000.0;
 
-        ptr->getStateAtDurationFromStart(t, scratchState);
+        trajectory.getStateAtDurationFromStart(t, scratchState);
 
-        std::set<size_t> new_leaves = leavesCollisionChecker->checkLeafCollisions(
-                *scratchState);
+        std::set<size_t> new_leaves = leavesCollisionChecker.checkLeafCollisions(*scratchState);
+
         std::set<size_t> added_leaves;
         std::set_difference(new_leaves.begin(), new_leaves.end(), leaves.begin(), leaves.end(),
                             std::inserter(added_leaves, added_leaves.end()));
+
         std::set<size_t> removed_leaves;
         std::set_difference(leaves.begin(), leaves.end(), new_leaves.begin(), new_leaves.end(),
                             std::inserter(removed_leaves, removed_leaves.end()));
+
         unique_collisions += added_leaves.size();
 
         if (!added_leaves.empty() || !removed_leaves.empty()) {
@@ -86,7 +90,7 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < RUNS; i++) {
 
-        Json::Value run_results;
+        Json::Value benchmark_stats;
 
         auto scene = std::make_shared<Scene>(drone);
 
@@ -96,7 +100,7 @@ int main(int argc, char **argv) {
 
         std::cout << "Run " << (i+1) << " out of " << RUNS << " with " << numberOfApples << " apples." << std::endl;
 
-        run_results["number_of_apples"] = numberOfApples;
+        benchmark_stats["number_of_apples"] = numberOfApples;
 
         auto tree_scene = establishPlanningScene(10, numberOfApples);
         scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
@@ -110,16 +114,10 @@ int main(int argc, char **argv) {
         const std::shared_ptr<ompl::base::SpaceInformation> si = initSpaceInformation(scene, drone, state_space);
         const robot_state::RobotState start_state = genStartState(drone);
 
-        std::vector<std::shared_ptr<MultiGoalPlanner>> multiplanners{
-                std::make_shared<KNNPlanner>(1),
-                std::make_shared<KNNPlanner>(2),
-                std::make_shared<KNNPlanner>(3),
-//                std::make_shared<KNNPlanner>(5),
-                std::make_shared<UnionKNNPlanner>(1),
-                std::make_shared<UnionKNNPlanner>(2),
-                std::make_shared<UnionKNNPlanner>(3),
-//                std::make_shared<UnionKNNPlanner>(5),
-//                std::make_shared<RandomPlanner>()
+        struct Experiment {
+            std::shared_ptr<MultiGoalPlanner> meta_planner;
+            std::shared_ptr<ompl::base::Planner> ptp_planner;
+            std::shared_ptr<ompl::base::OptimizationObjective> optimization_objective;
         };
 
         auto leafCountObjective = std::make_shared<LeavesCollisionCountObjective>(si, drone->getModelConst(),
@@ -131,55 +129,54 @@ int main(int argc, char **argv) {
         multiObjective50_50->addObjective(leafCountObjective, 0.5);
         multiObjective50_50->addObjective(pathLengthObjective, 0.5);
 
-        std::vector<std::pair<std::string, std::shared_ptr<ompl::base::OptimizationObjective>>> optimizationObjectives{
-                {"leaf count",  leafCountObjective},
-                {"path length", pathLengthObjective},
-                {"50/50",       multiObjective50_50}
+        std::vector<Experiment> experiments{
+//                {std::make_shared<KNNPlanner>(1), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective },
+//                {std::make_shared<KNNPlanner>(2), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective },
+//                {std::make_shared<KNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective },
+                {std::make_shared<UnionKNNPlanner>(1),               std::make_shared<ompl::geometric::PRMstar>(
+                        si), pathLengthObjective},
+                {std::make_shared<UnionKNNPlanner>(2),               std::make_shared<ompl::geometric::PRMstar>(
+                        si), pathLengthObjective},
+                {std::make_shared<UnionKNNPlanner>(3),               std::make_shared<ompl::geometric::PRMstar>(
+                        si), pathLengthObjective},
+//                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(si), leafCountObjective },
+//                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(si), multiObjective50_50 },
+                {std::make_shared<TwoOpt>(std::chrono::seconds(60)), std::make_shared<ompl::geometric::PRMstar>(
+                        si), pathLengthObjective},
         };
 
-        for (const auto &planner: multiplanners) {
+        for (const auto &experiment: experiments) {
 
-            for (const auto &optimizationObjective: optimizationObjectives) {
+            // Nesting order is important here because the sub-planners are re-created every run.
+            std::cout << "Attempting " << experiment.meta_planner->getName()
+                      << " with sub-planner " << experiment.ptp_planner->getName()
+                      << " and objective " << experiment.optimization_objective->getDescription()
+                      << std::endl;
 
-                std::vector<std::shared_ptr<ompl::base::Planner>> subplanners{
-                        std::make_unique<ompl::geometric::PRM>(si),
-                        std::make_unique<ompl::geometric::PRMstar>(si),
-                };
+            PointToPointPlanner ptp(experiment.ptp_planner, experiment.optimization_objective, drone);
 
-                // Nesting order is important here because the sub-planners are re-created every run.
-                for (auto &sub_planner: subplanners) {
-                    std::cout << "Attempting " << planner->getName()
-                              << " with sub-planner " << sub_planner->getName()
-                              << " and objective " << optimizationObjective.first
-                              << std::endl;
+            MultiGoalPlanResult result = experiment.meta_planner->plan(tree_scene, start_state, scene, drone, ptp);
+            auto full_trajectory = result.fullTrajectory();
 
-                    PointToPointPlanner ptp(
-                            sub_planner,
-                            optimizationObjective.second,
-                            drone);
+            Json::Value run_stats;
 
-                    MultiGoalPlanResult result = planner->plan(tree_scene, start_state, scene, drone, ptp);
+            mergeIntoLeft(run_stats,
+                          collectLeafCollisionStats(*leavesCollisionChecker, *full_trajectory.getTrajectory()));
 
-                    result.stats["is_collision_free"] = result.trajectory.isCollisionFree(scene);
+            run_stats["intermediate_planner"] = experiment.ptp_planner->getName();
+            run_stats["optimization_objective"] = experiment.optimization_objective->getDescription();
 
-                    {
-                        Json::Value leaf_collision_stats = collectLeafCollisionStats(
-                                leavesCollisionChecker, result.trajectory.getTrajectory());
-
-                        for (auto &name: leaf_collision_stats.getMemberNames()) {
-                            result.stats[name] = leaf_collision_stats[name];
-                        }
-                    }
-
-                    result.stats["intermediate_planner"] = sub_planner->getName();
-                    result.stats["optimization_objective"] = optimizationObjective.first;
-                    run_results["planner_runs"].append(result.stats);
-
-                }
+            for (const auto &item: result.segments) {
+                run_stats["segments"].append(
+                        makePointToPointJson({item})
+                );
             }
+
+            benchmark_stats["planner_runs"].append(run_stats);
+
         }
 
-        benchmark_results.append(run_results);
+        benchmark_results.append(benchmark_stats);
     }
 
     std::ofstream results(RUNS < 50 ? "analysis/results_test.json" : "analysis/results.json");

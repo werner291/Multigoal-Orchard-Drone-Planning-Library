@@ -156,10 +156,12 @@ set(SHARED_SRC
         src/multigoal/random_order.cpp
         src/multigoal/uknn.h
         src/multigoal/uknn.cpp
-        src/multigoal/cluster_breaking.cpp
-        src/multigoal/cluster_breaking.h
+        #        src/multigoal/cluster_breaking.cpp
+        #        src/multigoal/cluster_breaking.h
         src/multigoal/PointToPointPlanner.cpp
-        src/multigoal/PointToPointPlanner.h)
+        src/multigoal/PointToPointPlanner.h
+        src/multigoal/TwoOpt.cpp
+        src/multigoal/TwoOpt.h)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations

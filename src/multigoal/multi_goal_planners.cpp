@@ -20,3 +20,29 @@ void extendTrajectory(robowflex::Trajectory &full_trajectory, robowflex::Traject
         full_trajectory.addSuffixWaypoint(extension.getTrajectory()->getWayPoint(i));
     }
 }
+
+double MultiGoalPlanResult::computeTotalLength() {
+    double total = 0.0;
+    for (const auto &item: segments) {
+        total += item.solution_length;
+    }
+    return total;
+}
+
+/**
+ * \brief Given a vector of targets, returns which have not been visited.
+ */
+std::vector<Eigen::Vector3d> MultiGoalPlanResult::checkMissing(const std::vector<Eigen::Vector3d> &targets) {
+
+    auto cmp = [](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
+        return a.x() != b.x() ? a.x() < b.x() : (a.y() != b.y() ? a.y() < b.y() : a.z() < b.z());
+    };
+
+    std::set<Eigen::Vector3d, decltype(cmp)> remaining(targets.begin(), targets.end(), cmp);
+
+    for (const auto &item: segments) {
+        remaining.erase(item.endEffectorTarget);
+    }
+
+    return std::vector(remaining.begin(), remaining.end());
+}

@@ -23,18 +23,23 @@ MultiGoalPlanResult RandomPlanner::plan(const TreeScene &apples,
 
     std::shuffle(targets.begin(), targets.end(), std::mt19937(std::random_device()()));
 
-    robowflex::Trajectory full_trajectory(robot, "whole_body");
-    full_trajectory.addSuffixWaypoint(start_state);
-
-    Json::Value root;
+    MultiGoalPlanResult result;
 
     for (const auto &target: targets) {
-        auto pointToPointPlanResult = point_to_point_planner.planPointToPoint(
-                full_trajectory.getTrajectory()->getLastWayPoint(), target, MAX_TIME_PER_TARGET_SECONDS);
-        root["segments"].append(makePointToPointJson(pointToPointPlanResult));
+
+        const auto segment_start_state = result.segments.empty() ? start_state
+                                                                 : result.segments.back().point_to_point_trajectory.getTrajectory()->getLastWayPoint();
+
+        auto ptp_result = point_to_point_planner.planPointToPoint(segment_start_state, target,
+                                                                  MAX_TIME_PER_TARGET_SECONDS);
+
+        if (ptp_result.has_value()) {
+            result.segments.push_back(
+                    ptp_result.value()
+            );
+        }
+
     }
 
-    root["ordering"] = "random";
-
-    return {full_trajectory, root};
+    return result;
 }
