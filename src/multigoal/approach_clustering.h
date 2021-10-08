@@ -9,6 +9,11 @@
 
 namespace multigoal {
 
+    struct Visitation {
+        size_t target_idx;
+        size_t approach_idx;
+    };
+
     namespace ob = ompl::base;
     typedef std::shared_ptr<ompl::base::GoalSampleableRegion> GoalRegionPtr;
 
@@ -37,6 +42,8 @@ namespace multigoal {
                         int k);
 
         static void keepBest(const ompl::base::OptimizationObjective &opt, GoalApproachTable &table, int keep_k);
+
+        std::vector<Visitation> random_initial_solution(const GoalApproachTable &goal_samples);
     };
 
 }

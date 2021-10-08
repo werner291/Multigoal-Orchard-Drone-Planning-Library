@@ -5,8 +5,10 @@
 #include "approach_clustering.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
+#include <random>
 
 using namespace multigoal;
+
 
 MultiGoalPlanResult
 ApproachClustering::plan(const TreeScene &apples,
@@ -17,7 +19,13 @@ ApproachClustering::plan(const TreeScene &apples,
 
     auto si = point_to_point_planner.getPlanner()->getSpaceInformation();
     auto goals = constructGoalRegions(apples, si);
-    takeGoalSamples(si, goals, 10);
+
+    GoalApproachTable goal_samples = takeGoalSamples(si, goals, 10);
+
+
+    random_initial_solution(goal_samples);
+
+
 
     //    auto ss = si->getStateSpace()->as<DroneStateSpace>();
 
@@ -44,6 +52,21 @@ ApproachClustering::plan(const TreeScene &apples,
 //        }
 //    }
 
+}
+
+std::vector<Visitation> ApproachClustering::random_initial_solution(const GoalApproachTable &goal_samples) {
+
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
+    std::vector<Visitation> best_solution(goal_samples.size());
+    for (size_t idx = 0; idx < goal_samples.size(); ++idx) {
+        best_solution[idx] = {
+                idx, std::uniform_int_distribution<size_t>(0, goal_samples[idx].size() - 1)(gen)
+        };
+    }
+    std::shuffle(best_solution.begin(), best_solution.end(), gen);
+    return best_solution;
 }
 
 GoalApproachTable
