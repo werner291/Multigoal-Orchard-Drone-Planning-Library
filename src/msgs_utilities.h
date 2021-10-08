@@ -7,15 +7,15 @@
 #include <robowflex_library/robot.h>
 #include <moveit_msgs/MotionPlanRequest.h>
 #include "procedural_tree_generation.h"
+#include "multigoal/approach_clustering.h"
 
 robot_state::RobotState genStartState(const std::shared_ptr<robowflex::Robot> &drone);
 
-moveit_msgs::Constraints makeReachAppleGoalConstraints(Apple &apple);
+geometry_msgs::Point pointMsg(const Eigen::Vector3d &ee_pt);
 
-moveit_msgs::MotionPlanRequest
-makeAppleReachRequest(const std::shared_ptr<robowflex::Robot> &drone, const std::string &planner_id,
-                      double planning_time, const Apple &apple, const robot_state::RobotState &start_state);
+std_msgs::ColorRGBA colorMsgRGBA(const Eigen::Vector4d &ee_pt);
 
-Apple selectAppleNearCoG(std::vector<Apple> &apples);
+visualization_msgs::Marker buildApproachTableVisualization(const std::shared_ptr<robowflex::Robot> &drone,
+                                                           multigoal::GoalApproachTable &approach_table);
 
 #endif //NEW_PLANNERS_BUILD_REQUEST_H

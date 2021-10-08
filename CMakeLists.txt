@@ -156,12 +156,14 @@ set(SHARED_SRC
         src/multigoal/random_order.cpp
         src/multigoal/uknn.h
         src/multigoal/uknn.cpp
-        #        src/multigoal/cluster_breaking.cpp
-        #        src/multigoal/cluster_breaking.h
+        src/multigoal/approach_clustering.cpp
+        src/multigoal/approach_clustering.h
         src/multigoal/PointToPointPlanner.cpp
         src/multigoal/PointToPointPlanner.h
         src/multigoal/TwoOpt.cpp
         src/multigoal/TwoOpt.h)
+
+#message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations

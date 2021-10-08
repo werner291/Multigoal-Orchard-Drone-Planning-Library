@@ -14,6 +14,7 @@
 #include "multigoal/random_order.h"
 #include "ompl_custom.h"
 #include "LeavesCollisionChecker.h"
+#include "multigoal/approach_clustering.h"
 #include <fcl/fcl.h>
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <ompl/geometric/planners/prm/PRM.h>
@@ -23,6 +24,7 @@
 #include <json/json.h>
 
 using namespace robowflex;
+using namespace multigoal;
 
 /**
  * The "visualized" version of this program, which serves as a scratch state in which to experiment with new,
@@ -56,7 +58,7 @@ int main(int argc, char **argv) {
 
     double apple_t = std::uniform_real_distribution(0.0, 1.0)(gen);
 
-    int numberOfApples = 200;
+    int numberOfApples = 100;
 
     auto tree_scene = establishPlanningScene(10, numberOfApples);
     scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
@@ -70,22 +72,35 @@ int main(int argc, char **argv) {
     const robot_state::RobotState start_state = genStartState(drone);
 
     auto leavesCollisionChecker = std::make_shared<LeavesCollisionChecker>(tree_scene.leaf_vertices);
+    auto leafCountObjective = std::make_shared<LeavesCollisionCountObjective>(si, drone->getModelConst(),
+                                                                              leavesCollisionChecker);
 
-    auto multiplanner = std::make_shared<KNNPlanner>(1);
-    auto sub_planner = std::make_shared<ompl::geometric::PRMstar>(si);
+    auto approach_table = ApproachClustering::takeGoalSamples(si,
+                                                              ApproachClustering::constructGoalRegions(tree_scene, si),
+                                                              50);
 
-    auto opt = std::make_shared<LeavesCollisionCountObjective>(
-            si,
-            drone->getModelConst(),
-            leavesCollisionChecker);
+    ApproachClustering::keepBest(*leafCountObjective, approach_table, 5);
 
-    PointToPointPlanner ptp(sub_planner,opt,drone);
+    rviz.addMarker(buildApproachTableVisualization(drone, approach_table));
+    rviz.updateMarkers();
 
-    MultiGoalPlanResult result = multiplanner->plan(tree_scene, start_state, scene, drone, ptp);
 
-    result.trajectory.interpolate(10000);
-
-    rviz.updateTrajectory(result.trajectory);
+    //
+//    auto multiplanner = std::make_shared<KNNPlanner>(1);
+//    auto sub_planner = std::make_shared<ompl::geometric::PRMstar>(si);
+//
+//    auto opt = std::make_shared<LeavesCollisionCountObjective>(
+//            si,
+//            drone->getModelConst(),
+//            leavesCollisionChecker);
+//
+//    PointToPointPlanner ptp(sub_planner,opt,drone);
+//
+//    MultiGoalPlanResult result = multiplanner->plan(tree_scene, start_state, scene, drone, ptp);
+//
+//    result.trajectory.interpolate(10000);
+//
+//    rviz.updateTrajectory(result.trajectory);
 
 
     return 0;
