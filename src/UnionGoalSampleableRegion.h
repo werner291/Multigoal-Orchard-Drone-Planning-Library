@@ -28,6 +28,13 @@ public:
 
     [[nodiscard]] unsigned int maxSampleCount() const override;
 
+    /**
+     * Checks which of the subgoals is satisfied by the state, if any.
+     * @param st The state to check against.
+     * @return Index of the first match, or none if no matches are found.
+     */
+    std::optional<size_t> whichSatisfied(ompl::base::State *st);
+
 };
 
 #endif //NEW_PLANNERS_UNIONGOALSAMPLEABLEREGION_H

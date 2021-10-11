@@ -49,3 +49,9 @@ unsigned int UnionGoalSampleableRegion::maxSampleCount() const {
 UnionGoalSampleableRegion::UnionGoalSampleableRegion(const ompl::base::SpaceInformationPtr &si,
                                                      const std::vector<std::shared_ptr<const GoalSampleableRegion>> &goals)
         : GoalSampleableRegion(si), goals(goals) {}
+
+std::optional<size_t> UnionGoalSampleableRegion::whichSatisfied(ompl::base::State *st) {
+    auto fnd = std::find_if(goals.begin(), goals.end(), [&](const auto &sub_goal) { sub_goal->isSatisfied(st) });
+    if (fnd == goals.end()) return {};
+    else return {fnd - goals.begin()};
+}
