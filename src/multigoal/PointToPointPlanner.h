@@ -56,8 +56,6 @@ public:
     std::optional<PointToPointPlanResult>
     planPointToPoint(const moveit::core::RobotState &from_state, const Eigen::Vector3d &target, double maxTime);
 
-    ompl::base::GoalPtr constructUnionGoal(const std::vector<Eigen::Vector3d> &targets);
-
     [[nodiscard]] std::shared_ptr<ompl::base::ProblemDefinition>
     constructProblemDefinition(const moveit::core::RobotState &from_state, const ompl::base::GoalPtr &goal) const;
 

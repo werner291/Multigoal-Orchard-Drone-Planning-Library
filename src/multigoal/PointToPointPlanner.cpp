@@ -16,8 +16,26 @@ std::optional<PointToPointPlanResult>
 PointToPointPlanner::planPointToPoint(const moveit::core::RobotState &from_state, const Eigen::Vector3d &target,
                                       double maxTime) {
 
-    std::vector<Eigen::Vector3d> targets{target};
-    return this->planToEndEffectorTarget(from_state, targets, maxTime);
+    // Construct the OMPL goal from the set of targets.
+    ompl::base::GoalPtr goal = std::make_shared<DroneEndEffectorNearTarget>(planner_->getSpaceInformation(),
+                                                                            GOAL_END_EFFECTOR_RADIUS, target);
+
+    ompl::base::ScopedState start(planner_->getSpaceInformation());
+    planner_->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>()->copyToOMPLState(start.get(), from_state);
+    auto plan_result = planToOmplGoal(maxTime, start.get(), goal);
+
+    // "Approximate" solutions can be wildly off, so we accept exact solutions only.
+    if (plan_result) {
+        auto trajectory = convertTrajectory(*plan_result.value());
+        return {PointToPointPlanResult{
+                .solution_length = trajectory.getLength(),
+                .point_to_point_trajectory = trajectory,
+                .endEffectorTarget = target,
+        }};
+    } else {
+        std::cout << "Apple unreachable" << std::endl;
+        return {};
+    }
 }
 
 std::optional<PointToPointPlanResult>
@@ -26,7 +44,15 @@ PointToPointPlanner::planToEndEffectorTarget(const moveit::core::RobotState &fro
                                              double maxTime) {
 
     // Construct the OMPL goal from the set of targets.
-    ompl::base::GoalPtr goal = this->constructUnionGoal(targets);
+    std::vector<std::shared_ptr<const ompl::base::GoalSampleableRegion>> subgoals;
+
+    for (const auto &target: targets) {
+        subgoals.push_back(
+                std::make_shared<DroneEndEffectorNearTarget>(planner_->getSpaceInformation(),
+                                                             GOAL_END_EFFECTOR_RADIUS, target));
+    }
+
+    auto goal = std::make_shared<UnionGoalSampleableRegion>(planner_->getSpaceInformation(), subgoals);;
 
     ompl::base::ScopedState start(planner_->getSpaceInformation());
     planner_->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>()->copyToOMPLState(start.get(), from_state);
@@ -34,27 +60,12 @@ PointToPointPlanner::planToEndEffectorTarget(const moveit::core::RobotState &fro
 
     // "Approximate" solutions can be wildly off, so we accept exact solutions only.
     if (plan_result) {
-
-        // Initialize an empty trajectory.
-        auto trajectory = this->convertTrajectory(*plan_result.value());
-
-        const Eigen::Vector3d end_eepos = trajectory.getTrajectory()->getLastWayPoint().getGlobalLinkTransform(
-                "end_effector").translation();
-
-        for (size_t i = 0;
-             i < targets.size(); i++) { // NOLINT(modernize-loop-convert) (Clion, I'm using the index, ffs...)
-            auto tgt = targets[i];
-            if ((tgt - end_eepos).norm() < GOAL_END_EFFECTOR_RADIUS) { // FIXME Don't use magic numbers!
-                return {PointToPointPlanResult{
-                        .solution_length = trajectory.getLength(),
-                        .point_to_point_trajectory = trajectory,
-                        .endEffectorTarget = tgt,
-                }};
-            }
-        }
-
-        assert(false); // Should never get here.
-
+        auto trajectory = convertTrajectory(*plan_result.value());
+        return {PointToPointPlanResult{
+                .solution_length = trajectory.getLength(),
+                .point_to_point_trajectory = trajectory,
+                .endEffectorTarget = targets[goal->whichSatisfied(plan_result.value()->getStates().back()).value()],
+        }};
     } else {
         std::cout << "Apple unreachable" << std::endl;
         return {};
@@ -97,23 +108,6 @@ PointToPointPlanner::constructProblemDefinition(const ompl::base::State *start, 
     pdef->setOptimizationObjective(optimizationObjective_);
     pdef->setGoal(goal);
     return pdef;
-}
-
-ompl::base::GoalPtr PointToPointPlanner::constructUnionGoal(const std::vector<Eigen::Vector3d> &targets) {
-    if (targets.size() == 1) {
-        return std::make_shared<DroneEndEffectorNearTarget>(planner_->getSpaceInformation(), GOAL_END_EFFECTOR_RADIUS,
-                                                            targets[0]);
-    } else {
-        std::vector<std::shared_ptr<const ompl::base::GoalSampleableRegion>> subgoals;
-
-        for (const auto &target: targets) {
-            subgoals.push_back(
-                    std::make_shared<DroneEndEffectorNearTarget>(planner_->getSpaceInformation(),
-                                                                 GOAL_END_EFFECTOR_RADIUS, target));
-        }
-
-        return std::make_shared<UnionGoalSampleableRegion>(planner_->getSpaceInformation(), subgoals);
-    }
 }
 
 robowflex::Trajectory PointToPointPlanner::convertTrajectory(ompl::geometric::PathGeometric &path) {
