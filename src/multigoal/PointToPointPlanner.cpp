@@ -26,7 +26,7 @@ PointToPointPlanner::planPointToPoint(const moveit::core::RobotState &from_state
 
     // "Approximate" solutions can be wildly off, so we accept exact solutions only.
     if (plan_result) {
-        auto trajectory = convertTrajectory(*plan_result.value());
+        auto trajectory = convertTrajectory(*plan_result.value(), robot_);
         return {PointToPointPlanResult{
                 .solution_length = trajectory.getLength(),
                 .point_to_point_trajectory = trajectory,
@@ -60,7 +60,7 @@ PointToPointPlanner::planToEndEffectorTarget(const moveit::core::RobotState &fro
 
     // "Approximate" solutions can be wildly off, so we accept exact solutions only.
     if (plan_result) {
-        auto trajectory = convertTrajectory(*plan_result.value());
+        auto trajectory = convertTrajectory(*plan_result.value(), robot_);
         return {PointToPointPlanResult{
                 .solution_length = trajectory.getLength(),
                 .point_to_point_trajectory = trajectory,
@@ -102,21 +102,7 @@ PointToPointPlanner::constructProblemDefinition(const ompl::base::State *start, 
     return pdef;
 }
 
-robowflex::Trajectory PointToPointPlanner::convertTrajectory(ompl::geometric::PathGeometric &path) {
-    // Initialize an empty trajectory.
-    robowflex::Trajectory trajectory(robot_, "whole_body");
 
-    moveit::core::RobotState st(robot_->getModelConst());
-
-    auto state_space = planner_->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>();
-
-    for (auto state: path.getStates()) {
-        state_space->copyToRobotState(st, state);
-        trajectory.addSuffixWaypoint(st);
-    }
-
-    return trajectory;
-}
 
 const ompl::base::PlannerPtr &PointToPointPlanner::getPlanner() const {
     return planner_;

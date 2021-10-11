@@ -132,3 +132,20 @@ initSpaceInformation(const robowflex::SceneConstPtr &scene, const robowflex::Rob
 
     return si;
 }
+
+robowflex::Trajectory
+convertTrajectory(ompl::geometric::PathGeometric &path, const std::shared_ptr<const robowflex::Robot> &ptr) {
+    // Initialize an empty trajectory.
+    robowflex::Trajectory trajectory(ptr, "whole_body");
+
+    moveit::core::RobotState st(ptr->getModelConst());
+
+    auto state_space = path.getSpaceInformation()->getStateSpace()->as<DroneStateSpace>();
+
+    for (auto state: path.getStates()) {
+        state_space->copyToRobotState(st, state);
+        trajectory.addSuffixWaypoint(st);
+    }
+
+    return trajectory;
+}

@@ -8,8 +8,11 @@
 #include <ompl/base/MotionValidator.h>
 #include <ompl/base/objectives/StateCostIntegralObjective.h>
 #include <ompl/base/StateValidityChecker.h>
+#include <ompl/geometric/PathGeometric.h>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 #include <robowflex_library/scene.h>
+#include <robowflex_library/robot.h>
+#include <robowflex_library/trajectory.h>
 
 class StateValidityChecker : public ompl::base::StateValidityChecker {
 
@@ -95,5 +98,8 @@ public:
 std::shared_ptr<ompl::base::SpaceInformation>
 initSpaceInformation(const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
                      std::shared_ptr<DroneStateSpace> &state_space);
+
+robowflex::Trajectory
+convertTrajectory(ompl::geometric::PathGeometric &path, const std::shared_ptr<const robowflex::Robot> &ptr);
 
 #endif //NEW_PLANNERS_OMPL_CUSTOM_H

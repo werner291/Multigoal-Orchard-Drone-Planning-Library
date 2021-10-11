@@ -36,7 +36,6 @@ public:
 
     [[nodiscard]] const std::shared_ptr<ompl::base::OptimizationObjective> &getOptimizationObjective() const;
 
-    robowflex::Trajectory convertTrajectory(ompl::geometric::PathGeometric &path);
 private:
 
     /// The optiization objective to use, incase of an optimizing planner.
