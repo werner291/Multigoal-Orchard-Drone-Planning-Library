@@ -3,14 +3,17 @@
 //
 
 #include "PointToPointPlanner.h"
+
+#include <utility>
 #include "../UnionGoalSampleableRegion.h"
 #include "multi_goal_planners.h"
 
 
-PointToPointPlanner::PointToPointPlanner(const ompl::base::PlannerPtr &planner,
-                                         const std::shared_ptr<ompl::base::OptimizationObjective> &optimizationObjective,
-                                         const std::shared_ptr<robowflex::Robot> &robot)
-        : planner_(planner), optimizationObjective_(optimizationObjective), robot_(robot) {}
+PointToPointPlanner::PointToPointPlanner(ompl::base::PlannerPtr planner,
+                                         std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective,
+                                         std::shared_ptr<robowflex::Robot> robot)
+        : planner_(std::move(planner)), optimizationObjective_(std::move(optimizationObjective)),
+          robot_(std::move(robot)) {}
 
 std::optional<PointToPointPlanResult>
 PointToPointPlanner::planPointToPoint(const moveit::core::RobotState &from_state, const Eigen::Vector3d &target,

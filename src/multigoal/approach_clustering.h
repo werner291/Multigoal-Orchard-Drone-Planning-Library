@@ -43,7 +43,7 @@ namespace multigoal {
 
         static void keepBest(const ompl::base::OptimizationObjective &opt, GoalApproachTable &table, int keep_k);
 
-        std::vector<Visitation> random_initial_solution(const GoalApproachTable &goal_samples);
+        static std::vector<Visitation> random_initial_solution(const GoalApproachTable &goal_samples);
     };
 
 }

@@ -43,9 +43,9 @@ private:
 
 
 public:
-    PointToPointPlanner(const ompl::base::PlannerPtr &planner,
-                        const std::shared_ptr<ompl::base::OptimizationObjective> &optimizationObjective,
-                        const std::shared_ptr<robowflex::Robot> &robot);
+    PointToPointPlanner(ompl::base::PlannerPtr planner,
+                        std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective,
+                        std::shared_ptr<robowflex::Robot> robot);
 
     std::optional<PointToPointPlanResult> planToEndEffectorTarget(const moveit::core::RobotState &from_state,
                                                                   const std::vector<Eigen::Vector3d> &targets,

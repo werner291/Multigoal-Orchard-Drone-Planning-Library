@@ -3,8 +3,6 @@
 //
 
 #include "approach_clustering.h"
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
 #include <ompl/base/goals/GoalState.h>
 #include <random>
 
@@ -51,28 +49,6 @@ ApproachClustering::plan(const TreeScene &apples,
         }
     }
 
-//    ompl::NearestNeighborsGNAT<StatePtr> gnat;
-//    gnat.setDistanceFunction([](const ompl::base::ScopedStatePtr &a, const ompl::base::ScopedStatePtr &b) {
-//        return a->distance(b);
-//    });
-
-
-
-    //
-//    std::vector<StatePtr> states;
-//    gnat.list(states);
-//    boost::adjacency_list<> graph;
-//
-//    std::vector<StatePtr> knn;
-//
-//    for (const auto &st: states) {
-//        gnat.nearestK(st, initial_k, knn);
-//        for (const auto &item: knn) {
-//            if (si->checkMotion(st->get(), item->get())) {
-//                boost::add_edge(st, item, graph);
-//            }
-//        }
-//    }
     return result;
 }
 
