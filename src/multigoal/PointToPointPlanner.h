@@ -54,10 +54,10 @@ public:
     std::optional<PointToPointPlanResult>
     planPointToPoint(const moveit::core::RobotState &from_state, const Eigen::Vector3d &target, double maxTime);
 
-    [[nodiscard]] std::optional<ompl::geometric::PathGeometric *>
+    [[nodiscard]] std::optional<ompl::geometric::PathGeometric>
     planToOmplGoal(double maxTime, ompl::base::State *start, const ompl::base::GoalPtr &goal) const;
 
-    [[nodiscard]] std::optional<ompl::geometric::PathGeometric *>
+    [[nodiscard]] std::optional<ompl::geometric::PathGeometric>
     planToOmplState(double maxTime, ompl::base::State *start, const ompl::base::State *goal) const;
 
     std::shared_ptr<ompl::base::ProblemDefinition>

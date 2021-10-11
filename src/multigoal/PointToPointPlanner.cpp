@@ -26,7 +26,7 @@ PointToPointPlanner::planPointToPoint(const moveit::core::RobotState &from_state
 
     // "Approximate" solutions can be wildly off, so we accept exact solutions only.
     if (plan_result) {
-        auto trajectory = convertTrajectory(*plan_result.value(), robot_);
+        auto trajectory = convertTrajectory(plan_result.value(), robot_);
         return {PointToPointPlanResult{
                 .solution_length = trajectory.getLength(),
                 .point_to_point_trajectory = trajectory,
@@ -60,11 +60,11 @@ PointToPointPlanner::planToEndEffectorTarget(const moveit::core::RobotState &fro
 
     // "Approximate" solutions can be wildly off, so we accept exact solutions only.
     if (plan_result) {
-        auto trajectory = convertTrajectory(*plan_result.value(), robot_);
+        auto trajectory = convertTrajectory(plan_result.value(), robot_);
         return {PointToPointPlanResult{
                 .solution_length = trajectory.getLength(),
                 .point_to_point_trajectory = trajectory,
-                .endEffectorTarget = targets[goal->whichSatisfied(plan_result.value()->getStates().back()).value()],
+                .endEffectorTarget = targets[goal->whichSatisfied(plan_result.value().getStates().back()).value()],
         }};
     } else {
         std::cout << "Apple unreachable" << std::endl;
@@ -72,7 +72,7 @@ PointToPointPlanner::planToEndEffectorTarget(const moveit::core::RobotState &fro
     }
 }
 
-std::optional<ompl::geometric::PathGeometric *>
+std::optional<ompl::geometric::PathGeometric>
 PointToPointPlanner::planToOmplGoal(double maxTime, ompl::base::State *start, const ompl::base::GoalPtr &goal) const {
 
     planner_->clearQuery();
@@ -87,9 +87,9 @@ PointToPointPlanner::planToOmplGoal(double maxTime, ompl::base::State *start, co
 
     // "Approximate" solutions can be wildly off, so we accept exact solutions only.
     if (status == ompl::base::PlannerStatus::EXACT_SOLUTION) {
-        return pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+        return {*pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>()};
     } else {
-        return nullptr;
+        return {};
     }
 }
 
@@ -112,7 +112,7 @@ const std::shared_ptr<ompl::base::OptimizationObjective> &PointToPointPlanner::g
     return optimizationObjective_;
 }
 
-std::optional<ompl::geometric::PathGeometric *>
+std::optional<ompl::geometric::PathGeometric>
 PointToPointPlanner::planToOmplState(double maxTime, ompl::base::State *start, const ompl::base::State *goal) const {
     auto gs = std::make_shared<ompl::base::GoalState>(planner_->getSpaceInformation());
     gs->setState(goal);

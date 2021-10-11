@@ -39,7 +39,7 @@ ApproachClustering::plan(const TreeScene &apples,
         const auto &goal = goal_samples[visit.target_idx][visit.approach_idx];
         auto path = point_to_point_planner.planToOmplState(MAX_TIME_PER_TARGET_SECONDS, last_state, goal->get());
         if (path) {
-            auto traj = convertTrajectory(*path.value(), robot);
+            auto traj = convertTrajectory(path.value(), robot);
 
             result.segments.push_back(
                     PointToPointPlanResult{
