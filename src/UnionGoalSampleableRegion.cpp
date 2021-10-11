@@ -1,6 +1,8 @@
 
 #include "UnionGoalSampleableRegion.h"
 
+#include <utility>
+
 double UnionGoalSampleableRegion::distanceGoal(const ompl::base::State *st) const {
     double distance = INFINITY;
 
@@ -47,11 +49,12 @@ unsigned int UnionGoalSampleableRegion::maxSampleCount() const {
 }
 
 UnionGoalSampleableRegion::UnionGoalSampleableRegion(const ompl::base::SpaceInformationPtr &si,
-                                                     const std::vector<std::shared_ptr<const GoalSampleableRegion>> &goals)
-        : GoalSampleableRegion(si), goals(goals) {}
+                                                     std::vector<std::shared_ptr<const GoalSampleableRegion>> goals)
+        : GoalSampleableRegion(si), goals(std::move(goals)) {}
 
 std::optional<size_t> UnionGoalSampleableRegion::whichSatisfied(ompl::base::State *st) {
-    auto fnd = std::find_if(goals.begin(), goals.end(), [&](const auto &sub_goal) { sub_goal->isSatisfied(st) });
+    auto fnd = std::find_if(goals.begin(), goals.end(),
+                            [&](const auto &sub_goal) { return sub_goal->isSatisfied(st); });
     if (fnd == goals.end()) return {};
     else return {fnd - goals.begin()};
 }

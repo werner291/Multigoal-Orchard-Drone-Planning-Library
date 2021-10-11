@@ -44,5 +44,5 @@ std::vector<Eigen::Vector3d> MultiGoalPlanResult::checkMissing(const std::vector
         remaining.erase(item.endEffectorTarget);
     }
 
-    return std::vector(remaining.begin(), remaining.end());
+    return std::vector(remaining.begin(), remaining.end()); // NOLINT(modernize-return-braced-init-list)
 }

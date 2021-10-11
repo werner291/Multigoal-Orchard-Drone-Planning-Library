@@ -20,7 +20,7 @@ class UnionGoalSampleableRegion : public ompl::base::GoalSampleableRegion {
 
 public:
     UnionGoalSampleableRegion(const ompl::base::SpaceInformationPtr &si,
-                              const std::vector<std::shared_ptr<const GoalSampleableRegion>> &goals);
+                              std::vector<std::shared_ptr<const GoalSampleableRegion>> goals);
 
     double distanceGoal(const ompl::base::State *st) const override;
 

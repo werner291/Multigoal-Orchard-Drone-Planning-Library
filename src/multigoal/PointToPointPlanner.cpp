@@ -94,14 +94,6 @@ PointToPointPlanner::planToOmplGoal(double maxTime, ompl::base::State *start, co
 }
 
 std::shared_ptr<ompl::base::ProblemDefinition>
-PointToPointPlanner::constructProblemDefinition(const moveit::core::RobotState &from_state,
-                                                const ompl::base::GoalPtr &goal) const {
-    ompl::base::ScopedState start(planner_->getSpaceInformation());
-    planner_->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>()->copyToOMPLState(start.get(), from_state);
-    return constructProblemDefinition(start.get(), goal);
-}
-
-std::shared_ptr<ompl::base::ProblemDefinition>
 PointToPointPlanner::constructProblemDefinition(const ompl::base::State *start, const ompl::base::GoalPtr &goal) const {
     auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner_->getSpaceInformation());
     pdef->addStartState(start);

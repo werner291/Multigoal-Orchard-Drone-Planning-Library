@@ -45,8 +45,7 @@ ApproachClustering::plan(const TreeScene &apples,
                     PointToPointPlanResult{
                             traj.getLength(),
                             traj,
-                            apples.apples[visit.target_idx].center,
-                            0
+                            apples.apples[visit.target_idx].center
                     }
             );
         }

@@ -52,12 +52,8 @@ public:
                                                                   const std::vector<Eigen::Vector3d> &targets,
                                                                   double maxTime);
 
-
     std::optional<PointToPointPlanResult>
     planPointToPoint(const moveit::core::RobotState &from_state, const Eigen::Vector3d &target, double maxTime);
-
-    [[nodiscard]] std::shared_ptr<ompl::base::ProblemDefinition>
-    constructProblemDefinition(const moveit::core::RobotState &from_state, const ompl::base::GoalPtr &goal) const;
 
     [[nodiscard]] std::optional<ompl::geometric::PathGeometric *>
     planToOmplGoal(double maxTime, ompl::base::State *start, const ompl::base::GoalPtr &goal) const;
