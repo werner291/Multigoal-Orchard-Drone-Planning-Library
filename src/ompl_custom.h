@@ -14,6 +14,8 @@
 #include <robowflex_library/robot.h>
 #include <robowflex_library/trajectory.h>
 
+static const double GOAL_END_EFFECTOR_RADIUS = 0.2;
+
 class StateValidityChecker : public ompl::base::StateValidityChecker {
 
     robowflex::SceneConstPtr scene_;

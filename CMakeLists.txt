@@ -160,8 +160,9 @@ set(SHARED_SRC
         src/multigoal/approach_clustering.h
         src/multigoal/PointToPointPlanner.cpp
         src/multigoal/PointToPointPlanner.h
-        src/multigoal/TwoOpt.cpp
-        src/multigoal/TwoOpt.h)
+        #        src/multigoal/TwoOpt.cpp
+        #        src/multigoal/TwoOpt.h
+        )
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 

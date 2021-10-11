@@ -11,17 +11,17 @@ Json::Value eigenToJson(const Eigen::Vector3d &vec) {
     apple[2] = vec.z();
     return apple;
 }
-
-Json::Value
-makePointToPointJson(const std::optional<PointToPointPlanResult> &pointToPointPlanResult) {
-    Json::Value json;
-    json["solved"] = pointToPointPlanResult.has_value();
-    if (pointToPointPlanResult.has_value()) {
-        json["apple"] = eigenToJson(pointToPointPlanResult.value().endEffectorTarget);
-        json["path_length"] = pointToPointPlanResult.value().solution_length;
-    }
-    return json;
-}
+//
+//Json::Value
+//makePointToPointJson(const ompl::base::PathGeometric& ) {
+//    Json::Value json;
+//    json["solved"] = pointToPointPlanResult.has_value();
+//    if (pointToPointPlanResult.has_value()) {
+//        json["apple"] = eigenToJson(pointToPointPlanResult.value().endEffectorTarget);
+//        json["path_length"] = pointToPointPlanResult.value().solution_length;
+//    }
+//    return json;
+//}
 
 Json::Value getStateStatisticsPoint(const moveit::core::RobotState &st) {
     Json::Value traj_pt;

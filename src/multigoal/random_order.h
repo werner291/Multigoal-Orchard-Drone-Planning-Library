@@ -10,10 +10,8 @@
 class RandomPlanner : public MultiGoalPlanner {
 
 public:
-    MultiGoalPlanResult plan(const TreeScene &apples,
-                             const moveit::core::RobotState &start_state,
-                             const robowflex::SceneConstPtr &scene,
-                             const robowflex::RobotConstPtr &robot,
+    MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals,
+                             const ompl::base::State *start_state,
                              PointToPointPlanner &point_to_point_planner) override;
 
     std::string getName() override;

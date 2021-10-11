@@ -19,7 +19,7 @@ void mergeIntoLeft(Json::Value &receiver, const Json::Value &donor);
 
 Json::Value eigenToJson(const Eigen::Vector3d &vec);
 
-Json::Value makePointToPointJson(const std::optional<PointToPointPlanResult> &pointToPointPlanResult);
+//Json::Value makePointToPointJson(const std::optional<PointToPointPlanResult> &pointToPointPlanResult);
 
 Json::Value getStateStatisticsPoint(const moveit::core::RobotState &st);
 

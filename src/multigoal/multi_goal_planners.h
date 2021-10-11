@@ -14,6 +14,8 @@
 // For optimizing planners, approximately how much time should be left to the planning operation per target, all other things equal.
 const double MAX_TIME_PER_TARGET_SECONDS = 0.1;
 
+typedef std::shared_ptr<ompl::base::GoalSampleableRegion> GoalSamplerPtr;
+
 /**
  * Utility function to extend one trajectory with the waypoints of another.
  *
@@ -22,25 +24,28 @@ const double MAX_TIME_PER_TARGET_SECONDS = 0.1;
  */
 void extendTrajectory(robowflex::Trajectory &full_trajectory, robowflex::Trajectory &extension);
 
+struct PointToPointPath {
+    size_t to_goal;
+    ompl::geometric::PathGeometric path;
+};
+
 /**
  * Result struct of a multi-goal planning operation.
  */
 struct MultiGoalPlanResult {
-    std::vector<PointToPointPlanResult> segments;
+    std::vector<PointToPointPath> segments;
 
-    double computeTotalLength();
+//    double computeTotalLength();
 
-    std::vector<Eigen::Vector3d> checkMissing(const std::vector<Eigen::Vector3d> &targets);
-
-    robowflex::Trajectory fullTrajectory() {
-        robowflex::Trajectory full(segments[0].point_to_point_trajectory.getTrajectory());
-
-        for (int i = 1; i < segments.size(); ++i) {
-            extendTrajectory(full, segments[i].point_to_point_trajectory);
-        }
-
-        return full;
-    }
+//    robowflex::Trajectory fullTrajectory() {
+//        robowflex::Trajectory full(segments[0].point_to_point_trajectory.getTrajectory());
+//
+//        for (int i = 1; i < segments.size(); ++i) {
+//            extendTrajectory(full, segments[i].point_to_point_trajectory);
+//        }
+//
+//        return full;
+//    }
 
 };
 
@@ -64,10 +69,8 @@ public:
      * @param point_to_point_planner    The lower-level planner to use when computing a point-tp-point motion.
      * @return              The resulting trajectory along with some statistics.
      */
-    virtual MultiGoalPlanResult plan(const TreeScene &apples,
-                                     const moveit::core::RobotState &start_state,
-                                     const robowflex::SceneConstPtr &scene,
-                                     const robowflex::RobotConstPtr &robot,
+    virtual MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals,
+                                     const ompl::base::State *start_state,
                                      PointToPointPlanner &point_to_point_planner) = 0;
 
     /**

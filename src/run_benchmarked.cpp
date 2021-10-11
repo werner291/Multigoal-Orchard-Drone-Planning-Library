@@ -15,7 +15,7 @@
 #include "multigoal/PointToPointPlanner.h"
 #include "ompl_custom.h"
 #include "LeavesCollisionChecker.h"
-#include "multigoal/TwoOpt.h"
+//#include "multigoal/TwoOpt.h"
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
@@ -133,16 +133,16 @@ int main(int argc, char **argv) {
 //                {std::make_shared<KNNPlanner>(1), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective },
 //                {std::make_shared<KNNPlanner>(2), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective },
 //                {std::make_shared<KNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective },
-                {std::make_shared<UnionKNNPlanner>(1),               std::make_shared<ompl::geometric::PRMstar>(
+                {std::make_shared<UnionKNNPlanner>(1), std::make_shared<ompl::geometric::PRMstar>(
                         si), pathLengthObjective},
-                {std::make_shared<UnionKNNPlanner>(2),               std::make_shared<ompl::geometric::PRMstar>(
+                {std::make_shared<UnionKNNPlanner>(2), std::make_shared<ompl::geometric::PRMstar>(
                         si), pathLengthObjective},
-                {std::make_shared<UnionKNNPlanner>(3),               std::make_shared<ompl::geometric::PRMstar>(
+                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(
                         si), pathLengthObjective},
 //                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(si), leafCountObjective },
 //                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(si), multiObjective50_50 },
-                {std::make_shared<TwoOpt>(std::chrono::seconds(60)), std::make_shared<ompl::geometric::PRMstar>(
-                        si), pathLengthObjective},
+//                {std::make_shared<TwoOpt>(std::chrono::seconds(60)), std::make_shared<ompl::geometric::PRMstar>(
+//                        si), pathLengthObjective},
         };
 
         for (const auto &experiment: experiments) {

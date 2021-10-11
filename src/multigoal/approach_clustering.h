@@ -25,20 +25,18 @@ namespace multigoal {
     public:
         ApproachClustering(size_t initialK);
 
-        MultiGoalPlanResult plan(const TreeScene &apples,
-                                 const moveit::core::RobotState &start_state,
-                                 const robowflex::SceneConstPtr &scene,
-                                 const robowflex::RobotConstPtr &robot,
+        MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals,
+                                 const ompl::base::State *start_state,
                                  PointToPointPlanner &point_to_point_planner) override;
 
         std::string getName() override;
-
 
         static std::vector<GoalRegionPtr> constructGoalRegions(const TreeScene &apples,
                                                                const ompl::base::SpaceInformationPtr &si);
 
         static GoalApproachTable
-        takeGoalSamples(const ompl::base::SpaceInformationPtr &si, const std::vector<GoalRegionPtr> &goals,
+        takeGoalSamples(const ompl::base::SpaceInformationPtr &si,
+                        const std::vector<GoalRegionPtr> &goals,
                         int k);
 
         static void keepBest(const ompl::base::OptimizationObjective &opt, GoalApproachTable &table, int keep_k);

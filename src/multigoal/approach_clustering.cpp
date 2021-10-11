@@ -10,44 +10,39 @@ using namespace multigoal;
 
 
 MultiGoalPlanResult
-ApproachClustering::plan(const TreeScene &apples,
-                         const moveit::core::RobotState &start_state,
-                         const robowflex::SceneConstPtr &scene,
-                         const robowflex::RobotConstPtr &robot,
+ApproachClustering::plan(const std::vector<GoalSamplerPtr> &goals,
+                         const ompl::base::State *start_state,
                          PointToPointPlanner &point_to_point_planner) {
 
     auto si = point_to_point_planner.getPlanner()->getSpaceInformation();
-    auto goals = constructGoalRegions(apples, si);
 
     GoalApproachTable goal_samples = takeGoalSamples(si, goals, 10);
 
-    auto visitation_order = random_initial_solution(goal_samples);
+//    auto visitation_order = random_initial_solution(goal_samples);
 
     MultiGoalPlanResult result;
 
-    auto ss = si->getStateSpace()->as<DroneStateSpace>();
-
-    ompl::base::ScopedState start(si);
-
-    ss->copyToOMPLState(start.get(), start_state);
-
-    ompl::base::State *last_state = start.get();
-
-    for (const auto &visit: visitation_order) {
-        const auto &goal = goal_samples[visit.target_idx][visit.approach_idx];
-        auto path = point_to_point_planner.planToOmplState(MAX_TIME_PER_TARGET_SECONDS, last_state, goal->get());
-        if (path) {
-            auto traj = convertTrajectory(path.value(), robot);
-
-            result.segments.push_back(
-                    PointToPointPlanResult{
-                            traj.getLength(),
-                            traj,
-                            apples.apples[visit.target_idx].center
-                    }
-            );
-        }
-    }
+//    auto ss = si->getStateSpace()->as<DroneStateSpace>();
+//
+//    ompl::base::ScopedState start(si);
+//
+//    ompl::base::State *last_state = start.get();
+//
+//    for (const auto &visit: visitation_order) {
+//        const auto &goal = goal_samples[visit.target_idx][visit.approach_idx];
+//        auto path = point_to_point_planner.planToOmplState(MAX_TIME_PER_TARGET_SECONDS, last_state, goal->get());
+//        if (path) {
+//            auto traj = convertTrajectory(path.value(), robot);
+//
+//            result.segments.push_back(
+//                    PointToPointPlanResult{
+//                            traj.getLength(),
+//                            traj,
+//                            apples.apples[visit.target_idx].center
+//                    }
+//            );
+//        }
+//    }
 
     return result;
 }

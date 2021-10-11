@@ -10,16 +10,18 @@
 class UnionKNNPlanner : public MultiGoalPlanner {
 
 public:
-    explicit UnionKNNPlanner(size_t k);
+    UnionKNNPlanner(size_t k,
+                    std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection,
+                    std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection);
 
 private:
     size_t k;
+    std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection_;
+    std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection_;
 
 public:
-    MultiGoalPlanResult plan(const TreeScene &apples,
-                             const moveit::core::RobotState &start_state,
-                             const robowflex::SceneConstPtr &scene,
-                             const robowflex::RobotConstPtr &robot,
+    MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals,
+                             const ompl::base::State *start_state,
                              PointToPointPlanner &point_to_point_planner) override;
 
     std::string getName() override {

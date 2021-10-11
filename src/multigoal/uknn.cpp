@@ -6,49 +6,75 @@
 #include "../UnionGoalSampleableRegion.h"
 #include "../json_utils.h"
 
-UnionKNNPlanner::UnionKNNPlanner(size_t k) : k(k) {}
-
-MultiGoalPlanResult UnionKNNPlanner::plan(const TreeScene &apples,
-                                          const moveit::core::RobotState &start_state,
-                                          const robowflex::SceneConstPtr &scene,
-                                          const robowflex::RobotConstPtr &robot,
+MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
+                                          const ompl::base::State *start_state,
                                           PointToPointPlanner &point_to_point_planner) {
 
-    ompl::NearestNeighborsGNAT<Eigen::Vector3d> unvisited_nn;
-    unvisited_nn.setDistanceFunction([](const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-        return (a - b).norm();
+    struct GNATNode {
+        size_t goal{};
+        Eigen::Vector3d goal_pos;
+    };
+
+    // Place all apples into a Geometric Nearest-Neighbour access tree, using Euclidean distance.
+    ompl::NearestNeighborsGNAT<GNATNode> unvisited_nn;
+    unvisited_nn.setDistanceFunction([](const GNATNode &a, const GNATNode &b) {
+        return (a.goal_pos - b.goal_pos).norm();
     });
 
-    for (const Apple &apple: apples.apples) {
-        unvisited_nn.add(apple.center);
+    for (size_t idx = 0; idx < goals.size(); ++idx) {
+        unvisited_nn.add({
+                                 .goal = idx,
+                                 .goal_pos = goalProjection_(goals[idx].get()),
+                         });
     }
 
     MultiGoalPlanResult result;
 
+    // Keep going until the GNAT is empty.
     while (unvisited_nn.size() > 0) {
 
-        // Use forward kinematics to compute the end-effector position.
-        const auto segment_start_state = result.segments.empty() ? start_state
-                                                                 : result.segments.back().point_to_point_trajectory.getTrajectory()->getLastWayPoint();
-        const Eigen::Vector3d start_eepos =
-                segment_start_state
-                        .getGlobalLinkTransform("end_effector").translation();
+        const ompl::base::State *segment_start_state = result.segments.empty() ? start_state
+                                                                               : result.segments.back().path.getStates().back();
 
-        std::vector<Eigen::Vector3d> knn;
-        unvisited_nn.nearestK(start_eepos, k, knn);
+        const Eigen::Vector3d start_eepos = stateProjection_(segment_start_state);
 
-        auto pointToPointResult = point_to_point_planner.planToEndEffectorTarget(segment_start_state, knn,
-                                                                                 MAX_TIME_PER_TARGET_SECONDS);
+        // Look up k targets closest to it.
+        std::vector<GNATNode> knn;
+        unvisited_nn.nearestK({.goal = 0 /* A bit hackish, just use 0 here. */, .goal_pos = start_eepos}, k, knn);
 
-        if (pointToPointResult.has_value()) {
-            unvisited_nn.remove(pointToPointResult.value().endEffectorTarget);
-            result.segments.push_back(
-                    pointToPointResult.value()
-            );
+        std::vector<GoalSamplerPtr> knn_goals;
+        for (size_t idx = 0; idx < knn.size(); ++idx) {
+            knn_goals.push_back(goals[idx]);
+        }
+        auto union_goal = std::make_shared<UnionGoalSampleableRegion>(
+                point_to_point_planner.getPlanner()->getSpaceInformation(), knn_goals);
+
+        auto ptp_result = point_to_point_planner.planToOmplState(MAX_TIME_PER_TARGET_SECONDS, segment_start_state,
+                                                                 union_goal.get());
+
+        // If at least one attempt was successful...
+        if (ptp_result.has_value()) {
+
+            size_t ith_nn = union_goal->whichSatisfied(
+                    ptp_result.value().segments.back().path.getStates().back()).value();
+
+            // Delete the target since we've reached it.
+            unvisited_nn.remove(knn[ith_nn]);
+
+            result.segments.push_back({
+                                              ith_nn,
+                                              ptp_result.value(),
+                                      });
+
         } else {
+            // Just delete the first of the k nearest neighbours.
             unvisited_nn.remove(knn[0]); // Better picks here? Maybe delete all?
         }
     }
 
     return result;
 }
+
+UnionKNNPlanner::UnionKNNPlanner(size_t k, std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection,
+                                 std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection)
+        : k(k), goalProjection_(std::move(goalProjection)), stateProjection_(std::move(stateProjection)) {}
