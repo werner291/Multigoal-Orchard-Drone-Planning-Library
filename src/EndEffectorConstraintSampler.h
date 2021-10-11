@@ -63,8 +63,8 @@ class DroneStateConstraintSamplerAllocator : public constraint_samplers::Constra
                                   const moveit_msgs::Constraints &constr) const override {
 
         return constr.orientation_constraints.size() == 1 && constr.orientation_constraints[0].link_name == "base_link"
-               && (constr.position_constraints.empty() || constr.position_constraints.size() == 1 &&
-                                                          constr.position_constraints[0].link_name == "end_effector");
+               && (constr.position_constraints.empty() || (constr.position_constraints.size() == 1 &&
+                                                           constr.position_constraints[0].link_name == "end_effector"));
     }
 
 };

@@ -8,6 +8,7 @@ static const double GOAL_END_EFFECTOR_RADIUS = 0.2;
 #include <robowflex_library/trajectory.h>
 #include <robowflex_library/robot.h>
 #include <json/value.h>
+#include <ompl/base/goals/GoalState.h>
 #include "../procedural_tree_generation.h"
 #include "../ompl_custom.h"
 #include "../LeavesCollisionChecker.h"
@@ -16,7 +17,6 @@ struct PointToPointPlanResult {
     double solution_length{};
     robowflex::Trajectory point_to_point_trajectory;
     Eigen::Vector3d endEffectorTarget;
-    size_t ith_target = 0;
 };
 
 /**
@@ -32,34 +32,43 @@ class PointToPointPlanner {
     /// The OMPL planner to use. This may be a multi-query planner, the goals are cleared automatically.
     const ompl::base::PlannerPtr planner_;
 public:
-    const ompl::base::PlannerPtr &getPlanner() const;
+    [[nodiscard]] const ompl::base::PlannerPtr &getPlanner() const;
 
-    const std::shared_ptr<ompl::base::OptimizationObjective> &getOptimizationObjective() const;
+    [[nodiscard]] const std::shared_ptr<ompl::base::OptimizationObjective> &getOptimizationObjective() const;
 
+    robowflex::Trajectory convertTrajectory(ompl::geometric::PathGeometric &path);
 private:
 
     /// The optiization objective to use, incase of an optimizing planner.
     const std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective_;
 
-    robowflex::Trajectory convertTrajectory(ompl::geometric::PathGeometric &path);
 
 public:
     PointToPointPlanner(const ompl::base::PlannerPtr &planner,
                         const std::shared_ptr<ompl::base::OptimizationObjective> &optimizationObjective,
-                        const std::shared_ptr<robowflex::Robot> robot);
+                        const std::shared_ptr<robowflex::Robot> &robot);
 
-    std::optional<PointToPointPlanResult> planPointToPoint(const moveit::core::RobotState &from_state,
-                                                           const std::vector<Eigen::Vector3d> &targets,
-                                                           double maxTime);
+    std::optional<PointToPointPlanResult> planToEndEffectorTarget(const moveit::core::RobotState &from_state,
+                                                                  const std::vector<Eigen::Vector3d> &targets,
+                                                                  double maxTime);
+
 
     std::optional<PointToPointPlanResult>
-    planPointToPoint(const moveit::core::RobotState &from_state, const Eigen::Vector3d &target,
-                     double maxTime);
+    planPointToPoint(const moveit::core::RobotState &from_state, const Eigen::Vector3d &target, double maxTime);
 
     ompl::base::GoalPtr constructUnionGoal(const std::vector<Eigen::Vector3d> &targets);
 
-    std::shared_ptr<ompl::base::ProblemDefinition>
+    [[nodiscard]] std::shared_ptr<ompl::base::ProblemDefinition>
     constructProblemDefinition(const moveit::core::RobotState &from_state, const ompl::base::GoalPtr &goal) const;
+
+    [[nodiscard]] std::optional<ompl::geometric::PathGeometric *>
+    planToOmplGoal(double maxTime, ompl::base::State *start, const ompl::base::GoalPtr &goal) const;
+
+    [[nodiscard]] std::optional<ompl::geometric::PathGeometric *>
+    planToOmplState(double maxTime, ompl::base::State *start, const ompl::base::State *goal) const;
+
+    std::shared_ptr<ompl::base::ProblemDefinition>
+    constructProblemDefinition(const ompl::base::State *start, const ompl::base::GoalPtr &goal) const;
 };
 
 

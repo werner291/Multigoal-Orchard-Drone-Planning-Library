@@ -9,7 +9,7 @@
 
 PointToPointPlanner::PointToPointPlanner(const ompl::base::PlannerPtr &planner,
                                          const std::shared_ptr<ompl::base::OptimizationObjective> &optimizationObjective,
-                                         const robowflex::RobotPtr robot)
+                                         const std::shared_ptr<robowflex::Robot> &robot)
         : planner_(planner), optimizationObjective_(optimizationObjective), robot_(robot) {}
 
 std::optional<PointToPointPlanResult>
@@ -17,68 +17,69 @@ PointToPointPlanner::planPointToPoint(const moveit::core::RobotState &from_state
                                       double maxTime) {
 
     std::vector<Eigen::Vector3d> targets{target};
-    return this->planPointToPoint(from_state, targets, maxTime);
+    return this->planToEndEffectorTarget(from_state, targets, maxTime);
 }
 
-std::optional<PointToPointPlanResult> PointToPointPlanner::planPointToPoint(const moveit::core::RobotState &from_state,
-                                                                            const std::vector<Eigen::Vector3d> &targets,
-                                                                            double maxTime) {
+std::optional<PointToPointPlanResult>
+PointToPointPlanner::planToEndEffectorTarget(const moveit::core::RobotState &from_state,
+                                             const std::vector<Eigen::Vector3d> &targets,
+                                             double maxTime) {
 
     // Construct the OMPL goal from the set of targets.
     ompl::base::GoalPtr goal = this->constructUnionGoal(targets);
 
-    // Predeclare the result as an std::optional
-    std::optional<PointToPointPlanResult> result;
-
-    // Set the problem definition, including start state, goal and optimization objective.
-    auto ptr = constructProblemDefinition(from_state, goal);
-    planner_->setProblemDefinition(ptr);
-
-    // We explicitly do the setup beforehand to avoid counting it in the benchmarking.
-    if (!planner_->isSetup()) planner_->setup();
-
-    // Run the OMPL planner, record the time taken.
-    std::chrono::steady_clock::time_point pre_solve = std::chrono::steady_clock::now();
-    ompl::base::PlannerStatus status = planner_->solve(ompl::base::timedPlannerTerminationCondition(maxTime));
-    std::chrono::steady_clock::time_point post_solve = std::chrono::steady_clock::now();
-
-    // TODO: Store this in the statistics.
-    long elapsed_millis = std::chrono::duration_cast<std::chrono::milliseconds>(
-            (post_solve - pre_solve)).count();
+    ompl::base::ScopedState start(planner_->getSpaceInformation());
+    planner_->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>()->copyToOMPLState(start.get(), from_state);
+    auto plan_result = planToOmplGoal(maxTime, start.get(), goal);
 
     // "Approximate" solutions can be wildly off, so we accept exact solutions only.
-    if (status == ompl::base::PlannerStatus::EXACT_SOLUTION) {
+    if (plan_result) {
 
         // Initialize an empty trajectory.
-        auto trajectory = this->convertTrajectory(*ptr->getSolutionPath()->as<ompl::geometric::PathGeometric>());
+        auto trajectory = this->convertTrajectory(*plan_result.value());
 
         const Eigen::Vector3d end_eepos = trajectory.getTrajectory()->getLastWayPoint().getGlobalLinkTransform(
                 "end_effector").translation();
 
-        for (size_t i = 0; i < targets.size(); i++) {
+        for (size_t i = 0;
+             i < targets.size(); i++) { // NOLINT(modernize-loop-convert) (Clion, I'm using the index, ffs...)
             auto tgt = targets[i];
             if ((tgt - end_eepos).norm() < GOAL_END_EFFECTOR_RADIUS) { // FIXME Don't use magic numbers!
-                result = {PointToPointPlanResult{
+                return {PointToPointPlanResult{
                         .solution_length = trajectory.getLength(),
                         .point_to_point_trajectory = trajectory,
                         .endEffectorTarget = tgt,
-                        .ith_target = i,
                 }};
-                break;
             }
         }
 
-        assert(result.has_value());
+        assert(false); // Should never get here.
 
     } else {
-        result = {};
         std::cout << "Apple unreachable" << std::endl;
+        return {};
     }
+}
+
+std::optional<ompl::geometric::PathGeometric *>
+PointToPointPlanner::planToOmplGoal(double maxTime, ompl::base::State *start, const ompl::base::GoalPtr &goal) const {
 
     planner_->clearQuery();
 
-    return result;
+    auto pdef = constructProblemDefinition(start, goal);
+    planner_->setProblemDefinition(pdef);
 
+    // We explicitly do the setup beforehand to avoid counting it in the benchmarking.
+    if (!planner_->isSetup()) planner_->setup();
+
+    ompl::base::PlannerStatus status = planner_->solve(ompl::base::timedPlannerTerminationCondition(maxTime));
+
+    // "Approximate" solutions can be wildly off, so we accept exact solutions only.
+    if (status == ompl::base::PlannerStatus::EXACT_SOLUTION) {
+        return pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+    } else {
+        return nullptr;
+    }
 }
 
 std::shared_ptr<ompl::base::ProblemDefinition>
@@ -86,8 +87,13 @@ PointToPointPlanner::constructProblemDefinition(const moveit::core::RobotState &
                                                 const ompl::base::GoalPtr &goal) const {
     ompl::base::ScopedState start(planner_->getSpaceInformation());
     planner_->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>()->copyToOMPLState(start.get(), from_state);
+    return constructProblemDefinition(start.get(), goal);
+}
+
+std::shared_ptr<ompl::base::ProblemDefinition>
+PointToPointPlanner::constructProblemDefinition(const ompl::base::State *start, const ompl::base::GoalPtr &goal) const {
     auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner_->getSpaceInformation());
-    pdef->addStartState(start.get());
+    pdef->addStartState(start);
     pdef->setOptimizationObjective(optimizationObjective_);
     pdef->setGoal(goal);
     return pdef;
@@ -132,4 +138,11 @@ const ompl::base::PlannerPtr &PointToPointPlanner::getPlanner() const {
 
 const std::shared_ptr<ompl::base::OptimizationObjective> &PointToPointPlanner::getOptimizationObjective() const {
     return optimizationObjective_;
+}
+
+std::optional<ompl::geometric::PathGeometric *>
+PointToPointPlanner::planToOmplState(double maxTime, ompl::base::State *start, const ompl::base::State *goal) const {
+    auto gs = std::make_shared<ompl::base::GoalState>(planner_->getSpaceInformation());
+    gs->setState(goal);
+    return planToOmplGoal(maxTime, start, gs);
 }

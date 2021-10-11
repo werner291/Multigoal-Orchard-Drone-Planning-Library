@@ -49,7 +49,7 @@ MultiGoalPlanResult KNNPlanner::plan(const TreeScene &apples,
         for (const auto &target: knn) {
 
             // Try planning such that the end-effector is near the given target/
-            auto pointToPointResult = point_to_point_planner.planPointToPoint(
+            auto pointToPointResult = point_to_point_planner.planToEndEffectorTarget(
                     segment_start_state, knn, MAX_TIME_PER_TARGET_SECONDS / (double) k);
 
             // If an improvement, store it.

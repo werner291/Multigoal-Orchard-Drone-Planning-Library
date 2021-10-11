@@ -76,5 +76,4 @@ public:
     virtual std::string getName() = 0;
 };
 
-
 #endif //MULTI_GOAL_PLANNERS_H

@@ -5,6 +5,7 @@
 #include "approach_clustering.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
+#include <ompl/base/goals/GoalState.h>
 #include <random>
 
 using namespace multigoal;
@@ -22,12 +23,34 @@ ApproachClustering::plan(const TreeScene &apples,
 
     GoalApproachTable goal_samples = takeGoalSamples(si, goals, 10);
 
+    auto visitation_order = random_initial_solution(goal_samples);
 
-    random_initial_solution(goal_samples);
+    MultiGoalPlanResult result;
 
+    auto ss = si->getStateSpace()->as<DroneStateSpace>();
 
+    ompl::base::ScopedState start(si);
 
-    //    auto ss = si->getStateSpace()->as<DroneStateSpace>();
+    ss->copyToOMPLState(start.get(), start_state);
+
+    ompl::base::State *last_state = start.get();
+
+    for (const auto &visit: visitation_order) {
+        const auto &goal = goal_samples[visit.target_idx][visit.approach_idx];
+        auto path = point_to_point_planner.planToOmplState(MAX_TIME_PER_TARGET_SECONDS, last_state, goal->get());
+        if (path) {
+            auto traj = point_to_point_planner.convertTrajectory(*path.value());
+
+            result.segments.push_back(
+                    PointToPointPlanResult{
+                            traj.getLength(),
+                            traj,
+                            apples.apples[visit.target_idx].center,
+                            0
+                    }
+            );
+        }
+    }
 
 //    ompl::NearestNeighborsGNAT<StatePtr> gnat;
 //    gnat.setDistanceFunction([](const ompl::base::ScopedStatePtr &a, const ompl::base::ScopedStatePtr &b) {
@@ -51,7 +74,7 @@ ApproachClustering::plan(const TreeScene &apples,
 //            }
 //        }
 //    }
-
+    return result;
 }
 
 std::vector<Visitation> ApproachClustering::random_initial_solution(const GoalApproachTable &goal_samples) {

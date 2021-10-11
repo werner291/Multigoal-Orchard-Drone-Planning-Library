@@ -13,7 +13,7 @@ robot_state::RobotState genStartState(const std::shared_ptr<robowflex::Robot> &d
 
 geometry_msgs::Point pointMsg(const Eigen::Vector3d &ee_pt);
 
-std_msgs::ColorRGBA colorMsgRGBA(const Eigen::Vector4d &ee_pt);
+std_msgs::ColorRGBA colorMsgRGBA(const Eigen::Vector4f &ee_pt);
 
 visualization_msgs::Marker buildApproachTableVisualization(const std::shared_ptr<robowflex::Robot> &drone,
                                                            multigoal::GoalApproachTable &approach_table);

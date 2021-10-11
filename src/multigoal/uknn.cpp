@@ -37,8 +37,8 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const TreeScene &apples,
         std::vector<Eigen::Vector3d> knn;
         unvisited_nn.nearestK(start_eepos, k, knn);
 
-        auto pointToPointResult = point_to_point_planner.planPointToPoint(segment_start_state, knn,
-                                                                          MAX_TIME_PER_TARGET_SECONDS);
+        auto pointToPointResult = point_to_point_planner.planToEndEffectorTarget(segment_start_state, knn,
+                                                                                 MAX_TIME_PER_TARGET_SECONDS);
 
         if (pointToPointResult.has_value()) {
             unvisited_nn.remove(pointToPointResult.value().endEffectorTarget);

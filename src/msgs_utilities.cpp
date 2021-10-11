@@ -183,7 +183,7 @@ buildApproachTableVisualization(const std::shared_ptr<Robot> &drone, multigoal::
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::normal_distribution<double> color_range(0.0, 1.0);
+    std::normal_distribution<float> color_range(0.0, 1.0);
 
     visualization_msgs::Marker mrk;
     mrk.header.frame_id = drone->getModelConst()->getModelFrame();
@@ -195,10 +195,10 @@ buildApproachTableVisualization(const std::shared_ptr<Robot> &drone, multigoal::
 
     for (const auto &target_approaches: approach_table) {
 
-        Eigen::Vector3d rgb(abs(color_range(gen)), abs(color_range(gen)), abs(color_range(gen)));
+        Eigen::Vector3f rgb(abs(color_range(gen)), abs(color_range(gen)), abs(color_range(gen)));
         rgb.normalize();
 
-        Eigen::Vector4d color(rgb.x(), rgb.y(), rgb.z(), 1.0);
+        Eigen::Vector4f color(rgb.x(), rgb.y(), rgb.z(), 1.0);
 
         for (const ompl::base::ScopedStatePtr &state: target_approaches) {
             auto rs = std::make_shared<moveit::core::RobotState>(drone->getModelConst());
