@@ -47,42 +47,7 @@ ApproachClustering::plan(const std::vector<GoalSamplerPtr> &goals,
     return result;
 }
 
-std::vector<Visitation> ApproachClustering::random_initial_solution(const GoalApproachTable &goal_samples) {
 
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-
-    std::vector<Visitation> best_solution(goal_samples.size());
-    for (size_t idx = 0; idx < goal_samples.size(); ++idx) {
-        best_solution[idx] = {
-                idx, std::uniform_int_distribution<size_t>(0, goal_samples[idx].size() - 1)(gen)
-        };
-    }
-    std::shuffle(best_solution.begin(), best_solution.end(), gen);
-    return best_solution;
-}
-
-GoalApproachTable
-ApproachClustering::takeGoalSamples(const ompl::base::SpaceInformationPtr &si,
-                                    const std::vector<GoalRegionPtr> &goals,
-                                    int k) {
-
-    GoalApproachTable goal_states(goals.size());
-
-    for (size_t idx = 0; idx < goals.size(); ++idx) {
-        const auto &goal = goals[idx];
-        for (int i = 0; i < k; i++) {
-            ob::ScopedStatePtr state(new ompl::base::ScopedState(si));
-
-            goal->sampleGoal(state->get());
-            if (si->isValid(state->get())) {
-                goal_states[idx].push_back(state);
-            }
-        }
-    }
-
-    return goal_states;
-}
 
 std::vector<GoalRegionPtr>
 ApproachClustering::constructGoalRegions(const TreeScene &apples, const ompl::base::SpaceInformationPtr &si) {
@@ -99,20 +64,4 @@ std::string ApproachClustering::getName() {
 
 ApproachClustering::ApproachClustering(size_t initialK) : initial_k(initialK) {}
 
-void ApproachClustering::keepBest(const ompl::base::OptimizationObjective &opt, GoalApproachTable &table, int keep_k) {
 
-    for (auto &samples: table) {
-
-        if (samples.size() > keep_k) {
-            std::sort(samples.begin(), samples.end(), [&](const ob::ScopedStatePtr &a, const ob::ScopedStatePtr &b) {
-                return opt.isCostBetterThan(opt.stateCost(a->get()), opt.stateCost(b->get()));
-            });
-
-            samples.resize(keep_k);
-
-        }
-
-    }
-
-
-}

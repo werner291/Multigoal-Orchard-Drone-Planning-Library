@@ -32,7 +32,7 @@ public:
     planToOmplGoal(double maxTime, const ompl::base::State *start, const ompl::base::GoalPtr &goal) const;
 
     [[nodiscard]] std::optional<ompl::geometric::PathGeometric>
-    planToOmplState(double maxTime, ompl::base::State *start, const ompl::base::State *goal) const;
+    planToOmplState(double maxTime, const ompl::base::State *start, const ompl::base::State *goal) const;
 };
 
 

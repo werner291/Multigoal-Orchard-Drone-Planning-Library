@@ -158,6 +158,10 @@ set(SHARED_SRC
         src/multigoal/approach_clustering.h
         src/multigoal/PointToPointPlanner.cpp
         src/multigoal/PointToPointPlanner.h
+        src/multigoal/approach_table.cpp
+        src/multigoal/approach_table.h
+        src/multigoal/ATRandom.cpp
+        src/multigoal/ATRandom.h
         #        src/multigoal/TwoOpt.cpp
         #        src/multigoal/TwoOpt.h
         )

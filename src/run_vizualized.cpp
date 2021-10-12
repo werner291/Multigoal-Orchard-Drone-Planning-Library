@@ -15,12 +15,7 @@
 #include "ompl_custom.h"
 #include "LeavesCollisionChecker.h"
 #include "multigoal/approach_clustering.h"
-#include <fcl/fcl.h>
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
-#include <ompl/geometric/planners/prm/PRM.h>
-#include <ompl/geometric/planners/prm/PRMstar.h>
-#include <ompl/geometric/planners/rrt/RRTConnect.h>
-#include <ompl/geometric/planners/rrt/RRT.h>
 #include <json/json.h>
 
 using namespace robowflex;
@@ -75,11 +70,9 @@ int main(int argc, char **argv) {
     auto leafCountObjective = std::make_shared<LeavesCollisionCountObjective>(si, drone->getModelConst(),
                                                                               leavesCollisionChecker);
 
-    auto approach_table = ApproachClustering::takeGoalSamples(si,
-                                                              ApproachClustering::constructGoalRegions(tree_scene, si),
-                                                              50);
+    auto approach_table = takeGoalSamples(si, ApproachClustering::constructGoalRegions(tree_scene, si), 50);
 
-    ApproachClustering::keepBest(*leafCountObjective, approach_table, 5);
+    keepBest(*leafCountObjective, approach_table, 5);
 
     rviz.addMarker(buildApproachTableVisualization(drone, approach_table));
     rviz.updateMarkers();

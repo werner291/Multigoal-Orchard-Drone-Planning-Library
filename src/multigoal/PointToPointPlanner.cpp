@@ -48,7 +48,8 @@ const std::shared_ptr<ompl::base::OptimizationObjective> &PointToPointPlanner::g
 }
 
 std::optional<ompl::geometric::PathGeometric>
-PointToPointPlanner::planToOmplState(double maxTime, ompl::base::State *start, const ompl::base::State *goal) const {
+PointToPointPlanner::planToOmplState(double maxTime, const ompl::base::State *start,
+                                     const ompl::base::State *goal) const {
     auto gs = std::make_shared<ompl::base::GoalState>(planner_->getSpaceInformation());
     gs->setState(goal);
     return planToOmplGoal(maxTime, start, gs);
