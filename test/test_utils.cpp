@@ -1,8 +1,10 @@
+//
+// Created by werner on 12-10-21.
+//
 
-#include <gtest/gtest.h>
 #include "../src/BulletContinuousMotionValidator.h"
-
-using namespace robowflex;
+#include <gtest/gtest.h>
+#include "test_utils.h"
 
 moveit::core::RobotModelPtr loadRobotModel() {
     auto urdf = std::make_shared<urdf::Model>();
@@ -22,27 +24,4 @@ std::shared_ptr<moveit::core::RobotState> genRandomState(const std::shared_ptr<m
     st1_values[1] = st1->getRandomNumberGenerator().uniformReal(-100.0, 100.0);
     st1_values[2] = st1->getRandomNumberGenerator().uniformReal(-100.0, 100.0);
     return st1;
-}
-
-TEST(BulletContinuousMotionValidatorTest, max_angle) {
-
-    auto robot = loadRobotModel();
-
-    for (size_t i = 0; i < 1000; i++) {
-
-        auto st1 = genRandomState(robot);
-        auto st2 = genRandomState(robot);
-
-        double max_angle = BulletContinuousMotionValidator::estimateMaximumRotation(st1, st2);
-
-        for (const auto &lm: robot->getLinkModels()) {
-            Eigen::Quaterniond r1(st1->getGlobalLinkTransform(lm).rotation());
-            Eigen::Quaterniond r2(st2->getGlobalLinkTransform(lm).rotation());
-
-            double angle = r1.angularDistance(r2);
-
-            ASSERT_LE(angle, max_angle);
-        }
-    }
-
 }

@@ -208,7 +208,9 @@ target_link_libraries(${PROJECT_NAME}_benchmark
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 ## Testing
 add_executable(${PROJECT_NAME}_tests
-        test/tests.cpp ${SHARED_SRC})
+        test/test_utils.h
+        test/test_utils.cpp
+        test/BulletContinuousMotionValidatorTest.cpp ${SHARED_SRC})
 set_property(TARGET ${PROJECT_NAME}_tests PROPERTY CXX_STANDARD 17)
 
 target_link_libraries(${PROJECT_NAME}_tests
