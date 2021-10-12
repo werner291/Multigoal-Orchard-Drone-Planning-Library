@@ -77,6 +77,12 @@ class DroneEndEffectorNearTarget : public ompl::base::GoalSampleableRegion {
 
     double radius;
     Eigen::Vector3d target;
+public:
+    double getRadius() const;
+
+    const Eigen::Vector3d &getTarget() const;
+
+private:
 
     // Just for statistics, doesn't affect functionality, so it's mutable.
     mutable size_t samples_yielded;
@@ -98,10 +104,11 @@ public:
 };
 
 std::shared_ptr<ompl::base::SpaceInformation>
-initSpaceInformation(const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
+initSpaceInformation(const robowflex::SceneConstPtr &scene,
+                     const robowflex::RobotConstPtr &robot,
                      std::shared_ptr<DroneStateSpace> &state_space);
 
-robowflex::Trajectory
-convertTrajectory(ompl::geometric::PathGeometric &path, const std::shared_ptr<const robowflex::Robot> &ptr);
+robowflex::Trajectory convertTrajectory(const ompl::geometric::PathGeometric &path,
+                                        const std::shared_ptr<const robowflex::Robot> &ptr);
 
 #endif //NEW_PLANNERS_OMPL_CUSTOM_H

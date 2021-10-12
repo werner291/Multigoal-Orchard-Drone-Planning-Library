@@ -129,16 +129,27 @@ int main(int argc, char **argv) {
         multiObjective50_50->addObjective(leafCountObjective, 0.5);
         multiObjective50_50->addObjective(pathLengthObjective, 0.5);
 
+        auto stateProjection = [&](const ompl::base::State *state) {
+            moveit::core::RobotState st(drone->getModelConst());
+            state_space->copyToRobotState(st, state);
+            st.update(true);
+            return st.getGlobalLinkTransform("end_effector").translation();
+        };
+
+        auto goalProjection = [&](const ompl::base::Goal *goal) {
+            return goal->as<DroneEndEffectorNearTarget>()->getTarget();
+        };
+
         std::vector<Experiment> experiments{
 //                {std::make_shared<KNNPlanner>(1), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective },
 //                {std::make_shared<KNNPlanner>(2), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective },
 //                {std::make_shared<KNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective },
-                {std::make_shared<UnionKNNPlanner>(1), std::make_shared<ompl::geometric::PRMstar>(
-                        si), pathLengthObjective},
-                {std::make_shared<UnionKNNPlanner>(2), std::make_shared<ompl::geometric::PRMstar>(
-                        si), pathLengthObjective},
-                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(
-                        si), pathLengthObjective},
+                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
+                        std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
+                {std::make_shared<UnionKNNPlanner>(2, goalProjection, stateProjection),
+                        std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
+                {std::make_shared<UnionKNNPlanner>(3, goalProjection, stateProjection),
+                        std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
 //                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(si), leafCountObjective },
 //                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(si), multiObjective50_50 },
 //                {std::make_shared<TwoOpt>(std::chrono::seconds(60)), std::make_shared<ompl::geometric::PRMstar>(
@@ -153,10 +164,21 @@ int main(int argc, char **argv) {
                       << " and objective " << experiment.optimization_objective->getDescription()
                       << std::endl;
 
-            PointToPointPlanner ptp(experiment.ptp_planner, experiment.optimization_objective, drone);
+            PointToPointPlanner ptp(experiment.ptp_planner, experiment.optimization_objective);
 
-            MultiGoalPlanResult result = experiment.meta_planner->plan(tree_scene, start_state, scene, drone, ptp);
-            auto full_trajectory = result.fullTrajectory();
+            std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>> goals;
+            for (const auto &apple: tree_scene.apples)
+                goals.push_back(
+                        std::make_shared<DroneEndEffectorNearTarget>(si, GOAL_END_EFFECTOR_RADIUS, apple.center));
+
+            ompl::base::ScopedState start_state_ompl(si);
+            state_space->copyToOMPLState(start_state_ompl.get(), start_state);
+
+            MultiGoalPlanResult result = experiment.meta_planner->plan(goals, start_state_ompl.get(), ptp);
+            robowflex::Trajectory full_trajectory(drone, "whole_body");
+            for (const auto &item: result.segments) {
+                extendTrajectory(full_trajectory, convertTrajectory(item.path, drone));
+            }
 
             Json::Value run_stats;
 
@@ -165,12 +187,7 @@ int main(int argc, char **argv) {
 
             run_stats["intermediate_planner"] = experiment.ptp_planner->getName();
             run_stats["optimization_objective"] = experiment.optimization_objective->getDescription();
-
-            for (const auto &item: result.segments) {
-                run_stats["segments"].append(
-                        makePointToPointJson({item})
-                );
-            }
+            run_stats["total_path_length"] = full_trajectory.getLength();
 
             benchmark_stats["planner_runs"].append(run_stats);
 

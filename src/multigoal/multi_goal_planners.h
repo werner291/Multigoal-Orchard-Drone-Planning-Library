@@ -22,7 +22,7 @@ typedef std::shared_ptr<ompl::base::GoalSampleableRegion> GoalSamplerPtr;
  * @param full_trajectory Trajectory to be extended.
  * @param extension The trajectory to extend it with.
  */
-void extendTrajectory(robowflex::Trajectory &full_trajectory, robowflex::Trajectory &extension);
+void extendTrajectory(robowflex::Trajectory &full_trajectory, const robowflex::Trajectory &extension);
 
 struct PointToPointPath {
     size_t to_goal;

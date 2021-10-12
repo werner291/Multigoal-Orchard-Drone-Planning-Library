@@ -11,13 +11,13 @@ Json::Value eigenToJson(const Eigen::Vector3d &vec) {
     apple[2] = vec.z();
     return apple;
 }
-//
+////
 //Json::Value
-//makePointToPointJson(const ompl::base::PathGeometric& ) {
+//makePointToPointJson(const ompl::base::PathGeometric& path) {
 //    Json::Value json;
 //    json["solved"] = pointToPointPlanResult.has_value();
 //    if (pointToPointPlanResult.has_value()) {
-//        json["apple"] = eigenToJson(pointToPointPlanResult.value().endEffectorTarget);
+////        json["apple"] = eigenToJson(pointToPointPlanResult.value().endEffectorTarget);
 //        json["path_length"] = pointToPointPlanResult.value().solution_length;
 //    }
 //    return json;

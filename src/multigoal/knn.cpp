@@ -85,6 +85,10 @@ MultiGoalPlanResult KNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
     return result;
 }
 
-bool GNATNode::operator!=(const GNATNode &other) {
+bool GNATNode::operator==(const GNATNode &other) const {
     return goal == other.goal && goal_pos == other.goal_pos;
+}
+
+bool GNATNode::operator!=(const GNATNode &other) const {
+    return !(*this == other);
 }

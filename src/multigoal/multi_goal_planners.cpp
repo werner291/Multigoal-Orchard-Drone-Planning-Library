@@ -14,12 +14,12 @@
 #include "random_order.h"
 #include "PointToPointPlanner.h"
 //
-//void extendTrajectory(robowflex::Trajectory &full_trajectory, robowflex::Trajectory &extension) {
-//    // Just loop over all waypoints and copy them over.
-//    for (size_t i = 0; i < extension.getNumWaypoints(); i++) {
-//        full_trajectory.addSuffixWaypoint(extension.getTrajectory()->getWayPoint(i));
-//    }
-//}
+void extendTrajectory(robowflex::Trajectory &full_trajectory, const robowflex::Trajectory &extension) {
+    // Just loop over all waypoints and copy them over.
+    for (size_t i = 0; i < extension.getNumWaypoints(); i++) {
+        full_trajectory.addSuffixWaypoint(extension.getTrajectoryConst()->getWayPoint(i));
+    }
+}
 //
 //double MultiGoalPlanResult::computeTotalLength() {
 //    double total = 0.0;

@@ -22,7 +22,9 @@ struct GNATNode {
     size_t goal{};
     Eigen::Vector3d goal_pos;
 
-    bool operator!=(const GNATNode &other);
+    bool operator!=(const GNATNode &other) const;
+
+    bool operator==(const GNATNode &other) const;
 };
 
 class KNNPlanner : public MultiGoalPlanner {

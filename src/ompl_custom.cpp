@@ -122,6 +122,14 @@ size_t DroneEndEffectorNearTarget::getSamplesTried() const {
     return samples_tried;
 }
 
+double DroneEndEffectorNearTarget::getRadius() const {
+    return radius;
+}
+
+const Eigen::Vector3d &DroneEndEffectorNearTarget::getTarget() const {
+    return target;
+}
+
 std::shared_ptr<ompl::base::SpaceInformation>
 initSpaceInformation(const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
                      std::shared_ptr<DroneStateSpace> &state_space) {
@@ -134,7 +142,7 @@ initSpaceInformation(const robowflex::SceneConstPtr &scene, const robowflex::Rob
 }
 
 robowflex::Trajectory
-convertTrajectory(ompl::geometric::PathGeometric &path, const std::shared_ptr<const robowflex::Robot> &ptr) {
+convertTrajectory(const ompl::geometric::PathGeometric &path, const std::shared_ptr<const robowflex::Robot> &ptr) {
     // Initialize an empty trajectory.
     robowflex::Trajectory trajectory(ptr, "whole_body");
 
@@ -142,8 +150,8 @@ convertTrajectory(ompl::geometric::PathGeometric &path, const std::shared_ptr<co
 
     auto state_space = path.getSpaceInformation()->getStateSpace()->as<DroneStateSpace>();
 
-    for (auto state: path.getStates()) {
-        state_space->copyToRobotState(st, state);
+    for (size_t i = 0; i < path.getStateCount(); ++i) {
+        state_space->copyToRobotState(st, path.getState(i));
         trajectory.addSuffixWaypoint(st);
     }
 
