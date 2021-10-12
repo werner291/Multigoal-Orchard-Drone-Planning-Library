@@ -78,7 +78,7 @@ std::set<size_t> LeavesCollisionChecker::checkLeafCollisions(moveit::core::Robot
 
         Eigen::Isometry3d total_transform = link_transform * shape_transforms[i];
 
-        fcl::CollisionRequestd req(100, true);
+        fcl::CollisionRequestd req(500, true);
         fcl::CollisionResultd res;
         fcl::collide(&leaves, Eigen::Isometry3d::Identity(), collision_geometry.get(), total_transform, req, res);
 

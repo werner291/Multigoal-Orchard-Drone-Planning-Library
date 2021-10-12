@@ -138,8 +138,6 @@ set(SHARED_SRC
         src/BulletContinuousMotionValidator.cpp
         src/InverseClearanceIntegralObjective.cpp
         src/InverseClearanceIntegralObjective.h
-        src/MyOMPLPlanner.cpp
-        src/MyOMPLPlanner.h
         src/ompl_custom.cpp
         src/ompl_custom.h
         src/UnionGoalSampleableRegion.cpp
