@@ -62,12 +62,9 @@ public:
     /**
      * Plan the trajectory.
      *
-     * @param apples        Information about the scene, including the position of the leaves and the targets.
-     * @param start_state   The state of the robot at the start.
-     * @param scene         The planning scene, for collision detection.
-     * @param robot         The robot to plan for
-     * @param point_to_point_planner    The lower-level planner to use when computing a point-tp-point motion.
-     * @return              The resulting trajectory along with some statistics.
+     * @param goals                  List of GoalSampleableRegion, the planner will attempt to visit all.
+     * @param start_state            The state of the robot at the start.
+     * @param point_to_point_planner Wrapper for an OMPL planner and an optimization objective
      */
     virtual MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals,
                                      const ompl::base::State *start_state,

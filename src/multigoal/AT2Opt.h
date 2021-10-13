@@ -1,11 +1,14 @@
+//
+// Created by werner on 12-10-21.
+//
 
-#ifndef NEW_PLANNERS_ATRANDOM_H
-#define NEW_PLANNERS_ATRANDOM_H
+#ifndef NEW_PLANNERS_AT2OPT_H
+#define NEW_PLANNERS_AT2OPT_H
 
 #include "multi_goal_planners.h"
 #include "approach_table.h"
 
-class ATRandom : public MultiGoalPlanner {
+class AT2Opt : public MultiGoalPlanner {
 public:
     MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals,
                              const ompl::base::State *start_state,
@@ -17,4 +20,4 @@ public:
 };
 
 
-#endif //NEW_PLANNERS_ATRANDOM_H
+#endif //NEW_PLANNERS_AT2OPT_H
