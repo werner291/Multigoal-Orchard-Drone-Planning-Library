@@ -16,7 +16,11 @@ public:
 
     std::string getName() override;
 
-    static MultiGoalPlanResult toMultiGoalResult(multigoal::ATSolution &solution);
+    multigoal::ATSolution random_initial_solution(const PointToPointPlanner &point_to_point_planner,
+                                                  const multigoal::GoalApproachTable &table,
+                                                  const ompl::base::State *&start_state);
+
+    void check_replacements_validity(const std::vector<Replacement> &replacements) const;
 };
 
 

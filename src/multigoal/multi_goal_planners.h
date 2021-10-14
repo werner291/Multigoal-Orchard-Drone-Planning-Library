@@ -34,19 +34,6 @@ struct PointToPointPath {
  */
 struct MultiGoalPlanResult {
     std::vector<PointToPointPath> segments;
-
-//    double computeTotalLength();
-
-//    robowflex::Trajectory fullTrajectory() {
-//        robowflex::Trajectory full(segments[0].point_to_point_trajectory.getTrajectory());
-//
-//        for (int i = 1; i < segments.size(); ++i) {
-//            extendTrajectory(full, segments[i].point_to_point_trajectory);
-//        }
-//
-//        return full;
-//    }
-
 };
 
 

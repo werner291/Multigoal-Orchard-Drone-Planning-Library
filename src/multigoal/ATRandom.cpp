@@ -39,7 +39,7 @@ MultiGoalPlanResult ATRandom::toMultiGoalResult(ATSolution &solution) {
     for (const auto &item: solution.getSegments()) {
         result.segments.push_back(
                 {
-                        item.goal_id,
+                        item.visitation.target_idx,
                         item.approach_path
                 });
     }

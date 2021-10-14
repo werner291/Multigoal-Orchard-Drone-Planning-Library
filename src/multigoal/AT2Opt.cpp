@@ -5,136 +5,123 @@
 
 using namespace multigoal;
 
+
 MultiGoalPlanResult AT2Opt::plan(const std::vector<GoalSamplerPtr> &goals,
                                  const ompl::base::State *start_state,
                                  PointToPointPlanner &point_to_point_planner) {
 
+    // Build a goal approach table.
     GoalApproachTable table = takeGoalSamples(point_to_point_planner.getPlanner()->getSpaceInformation(), goals, 50);
 
+    // Delete any but the five best samples. (TODO: This is rather naive, surely we could vary this, maybe?)
     keepBest(*point_to_point_planner.getOptimizationObjective(), table, 5);
 
-    assert(goals.size() == table.size());
+    // Start with a randomized solution (TODO: Or nearest-neighbours maybe?)
+    ATSolution solution = random_initial_solution(point_to_point_planner, table, start_state);
 
-    ATSolution solution;
+    // Sanity check. TODO: Remove once the code works, maybe move to a test somewhere.
+    solution.check_valid(table);
 
-    for (Visitation v: random_initial_order(table)) {
-        auto ptp_result = point_to_point_planner.planToOmplState(MAX_TIME_PER_TARGET_SECONDS,
-                                                                 solution.getLastState().value_or(start_state),
-                                                                 table[v.target_idx][v.approach_idx]->get());
-        if (ptp_result) {
-            solution.getSegments().push_back(GoalApproach{
-                    v.target_idx, v.approach_idx, ptp_result.value()
-            });
-        }
-    }
+    // Keep track of missing targets. TODO Actually use this.
+    std::unordered_set<size_t> missing_targets = find_missing_targets(solution, table);
 
-    solution.check_valid();
-
-    std::unordered_set<size_t> missing_targets;
-    for (size_t i = 0; i < goals.size(); i++) {
-        missing_targets.insert(i);
-    }
-    for (const auto &segment: solution.getSegmentsConst()) {
-        missing_targets.erase(segment.goal_id);
-    }
-
-    std::default_random_engine generator;
-
+    // Run until 10 seconds have passed (Maybe something about tracking convergence rates?)
     ompl::base::PlannerTerminationCondition ptc = ompl::base::timedPlannerTerminationCondition(10.0);
 
     while (!ptc) {
         for (size_t i = 0; i < solution.getSegments().size(); i++) {
             for (size_t j = i + 1; j < solution.getSegments().size(); j++) {
 
-
-                std::vector<Visitation> pathThroughTable;
-                const ompl::base::State *new_path_start = solution.getSegments()[i].approach_path.getState(0);
-
-                pathThroughTable.push_back(Visitation{
-                        solution.getSegments()[j].goal_id,
-                        solution.getSegments()[j].approach_id
-                });
+                std::vector<Replacement> replacements;
 
                 if (j == i + 1) {
 
-                    // TODO Very carefully check all the array indices.
-                    std::optional<ompl::geometric::PathGeometric> ptp1 = point_to_point_planner.planToOmplState(0.1,
-                                                                                                                new_path_start,
-                                                                                                                table[solution.getSegments()[j].goal_id][solution.getSegments()[j].approach_id]->get());
-                    if (!ptp1) continue;
+                    Replacement repl;
 
-                    std::optional<ompl::geometric::PathGeometric> ptp2 = point_to_point_planner.planToOmplState(0.1,
-                                                                                                                ptp1.value().getStates().back(),
-                                                                                                                table[solution.getSegments()[i].goal_id][solution.getSegments()[i].approach_id]->get());
-                    if (!ptp2) continue;
+                    repl.first_segment = i;
+                    repl.last_segment = std::min(i + 2, solution.getSegments().size() - 1);
 
-                    std::optional<ompl::geometric::PathGeometric> ptp3;
+                    repl.visitations.push_back(solution.getSegments()[j].visitation);
+
+                    repl.visitations.push_back(solution.getSegments()[i].visitation,);
+
                     if (i + 2 < solution.getSegments().size()) {
-                        ptp3 = point_to_point_planner.planToOmplState(0.1,
-                                                                      ptp2.value().getStates().back(),
-                                                                      table[solution.getSegments()[i +
-                                                                                                   2].goal_id][solution.getSegments()[
-                                                                              i + 1].approach_id]->get());
-                        if (!ptp3) continue;
+                        repl.visitations.push_back(solution.getSegments()[i + 2].visitation,);
                     }
 
-                    if (solution.getSegments()[i].approach_path.length() +
-                        solution.getSegments()[i + 1].approach_path.length() +
-                        (ptp3.has_value() ? solution.getSegments()[i + 2].approach_path.length() : 0.0) >
-                        ptp1->length() + ptp2->length() + (ptp3.has_value() ? ptp3->length() : 0.0)) {
-                        std::swap(solution.getSegments()[i].goal_id, solution.getSegments()[j].goal_id);
-                        std::swap(solution.getSegments()[j].approach_id, solution.getSegments()[i].approach_id);
-                        solution.getSegments()[i].approach_path = ptp1.value();
-                        solution.getSegments()[i + 1].approach_path = ptp2.value();
-                        if (i + 2 < solution.getSegments().size())
-                            solution.getSegments()[i + 3].approach_path = ptp3.value();
-                    }
+                    replacements.push_back(repl);
 
                 } else {
 
-                    std::optional<ompl::geometric::PathGeometric> ptp1 = point_to_point_planner.planToOmplState(0.1,
-                                                                                                                new_path_start,
-                                                                                                                table[solution.getSegments()[j].goal_id][solution.getSegments()[j].approach_id]->get());
-                    if (!ptp1) continue;
-                    std::optional<ompl::geometric::PathGeometric> ptp2 = point_to_point_planner.planToOmplState(0.1,
-                                                                                                                ptp1.value().getStates().back(),
-                                                                                                                table[solution.getSegments()[
-                                                                                                                        i +
-                                                                                                                        1].goal_id][solution.getSegments()[
-                                                                                                                        i +
-                                                                                                                        1].approach_id]->get());
-                    if (!ptp2) continue;
+                    replacements.push_back({
+                                                   i, i + 1, {solution.getSegments()[j].visitation,
+                                                              solution.getSegments()[i + 1].visitation}
+                                           });
 
-                    const ompl::base::State *new_path_start_j = solution.getSegments()[i].approach_path.getState(0);
+                    Replacement repl;
 
-                    std::optional<ompl::geometric::PathGeometric> ptp3 = point_to_point_planner.planToOmplState(0.1,
-                                                                                                                new_path_start_j,
-                                                                                                                table[solution.getSegments()[i].goal_id][solution.getSegments()[i].approach_id]->get());
-                    if (!ptp3) continue;
-                    std::optional<ompl::geometric::PathGeometric> ptp4;
-                    if (j + 1 < solution.getSegments().size()) {
-                        ptp4 = point_to_point_planner.planToOmplState(0.1, ptp3.value().getStates().back(),
-                                                                      table[solution.getSegments()[j +
-                                                                                                   1].goal_id][solution.getSegments()[
-                                                                              j + 1].approach_id]->get());
-                        if (!ptp4) continue;
+                    repl.first_segment = j;
+                    repl.last_segment = std::min(j + 2, solution.getSegments().size() - 1);
+
+                    repl.visitations.push_back(solution.getSegments()[i].visitation);
+
+                    if (i + 2 < solution.getSegments().size()) {
+                        repl.visitations.push_back(solution.getSegments()[j + 1].visitation);
                     }
 
-                    if (solution.getSegments()[i].approach_path.length() +
-                        solution.getSegments()[i + 1].approach_path.length() +
-                        solution.getSegments()[j].approach_path.length() +
-                        (ptp4 ? solution.getSegments()[j + 1].approach_path.length() : 0.0) >
-                        ptp1->length() + ptp2->length() + ptp3->length() + (ptp4 ? ptp4->length() : 0.0)) {
-                        std::swap(solution.getSegments()[i].goal_id, solution.getSegments()[j].goal_id);
-                        std::swap(solution.getSegments()[j].approach_id, solution.getSegments()[i].approach_id);
-                        solution.getSegments()[i].approach_path = ptp1.value();
-                        solution.getSegments()[i + 1].approach_path = ptp2.value();
-                        solution.getSegments()[j].approach_path = ptp3.value();
-                        if (ptp4) solution.getSegments()[j + 1].approach_path = ptp4.value();
+                    replacements.push_back(repl);
+                }
+
+                // Validity checking.
+                check_replacements_validity(replacements);
+
+                struct NewApproachAt {
+                    size_t index{};
+                    GoalApproach ga;
+                };
+
+                std::vector<NewApproachAt> computed_replacements;
+
+                for (const auto &repl: replacements) {
+                    const ompl::base::State *from_state = repl.first_segment == 0 ? start_state
+                                                                                  : solution.getSegments()[repl.first_segment].approach_path.getState(
+                                    0);
+                    for (size_t vidx = 0; vidx < repl.visitations.size(); vidx++) {
+                        const auto &viz = repl.visitations[vidx];
+
+                        ompl::base::State *goal = table[viz.target_idx][viz.approach_idx]->get();
+                        auto ptp = point_to_point_planner.planToOmplState(0.1,
+                                                                          from_state,
+                                                                          goal);
+                        if (!ptp) break; // FIXME: Make sure we break from the whole thing.
+
+                        computed_replacements.push_back({
+                                                                repl.first_segment + vidx,
+                                                                GoalApproach{
+                                                                        viz.target_idx,
+                                                                        viz.approach_idx,
+                                                                        ptp.value()
+                                                                }
+                                                        });
+
+                        from_state = goal;
                     }
                 }
 
-                solution.check_valid();
+                double old_cost = 0.0;
+                double new_cost = 0.0;
+                for (const auto &cr: computed_replacements) {
+                    old_cost += solution.getSegments()[cr.index].approach_path.length(); // TODO Cache this, maybe?
+                    new_cost += cr.ga.approach_path.length();
+                }
+
+                if (old_cost > new_cost) {
+                    for (auto &cr: computed_replacements) {
+                        solution.getSegments()[cr.index] = cr.ga;
+                    }
+                }
+
+                solution.check_valid(table);
 
             }
 
@@ -142,23 +129,45 @@ MultiGoalPlanResult AT2Opt::plan(const std::vector<GoalSamplerPtr> &goals,
         }
     }
 
-    return toMultiGoalResult(solution);
+    return solution.toMultiGoalResult();
 
 }
 
-MultiGoalPlanResult AT2Opt::toMultiGoalResult(ATSolution &solution) {
-    MultiGoalPlanResult result;
+void AT2Opt::check_replacements_validity(const std::vector<Replacement> &replacements) const {
+    for (size_t ridx = 0; ridx < replacements.size(); ridx++) {
+        // Replacements must be ordered and strictly non-overlapping.
+        assert(replacements[ridx].visitations.size() ==
+               (replacements[ridx].last_segment - replacements[ridx].first_segment) + 1);
+        // The last segment must be later than the first.
+        assert(replacements[ridx].first_segment <= replacements[ridx].last_segment);
+        // Subsequent replacements must be strictly non-overlapping.
+        if (ridx + 1 < replacements.size())
+            assert(replacements[ridx].last_segment < replacements[ridx + 1].first_segment);
+    }
+}
 
-    for (const auto &item: solution.getSegments()) {
-        result.segments.push_back(
-                {
-                        item.goal_id,
-                        item.approach_path
-                });
+ATSolution AT2Opt::random_initial_solution(const PointToPointPlanner &point_to_point_planner,
+                                           const GoalApproachTable &table,
+                                           const ompl::base::State *&start_state) {
+
+    ATSolution solution;
+    // Create an empty solution.
+    // Visit goals in random order and with random approach.
+    for (Visitation v: random_initial_order(table)) {
+        auto ptp_result = point_to_point_planner.planToOmplState(MAX_TIME_PER_TARGET_SECONDS,
+                                                                 solution.getLastState().value_or(start_state),
+                                                                 table[v.target_idx][v.approach_idx]->get());
+        // Drop any goals where planning failed.
+        if (ptp_result) {
+            solution.getSegments().push_back(GoalApproach{
+                    v.target_idx, v.approach_idx, ptp_result.value()
+            });
+        }
     }
 
-    return result;
+    return solution;
 }
+
 
 std::string AT2Opt::getName() {
     return "AT2Opt";

@@ -159,8 +159,7 @@ int main(int argc, char **argv) {
                 {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(
                         si),                                        leafCountObjective},
 //                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(si), multiObjective50_50 },
-//                {std::make_shared<TwoOpt>(std::chrono::seconds(60)), std::make_shared<ompl::geometric::PRMstar>(
-//                        si), pathLengthObjective},
+                {std::make_shared<AT2Opt>(std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
         };
 
         for (const auto &experiment: experiments) {
