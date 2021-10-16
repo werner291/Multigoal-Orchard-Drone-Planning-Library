@@ -15,6 +15,7 @@
 #include "multigoal/PointToPointPlanner.h"
 #include "ompl_custom.h"
 #include "LeavesCollisionChecker.h"
+#include "multigoal/AT2Opt.h"
 //#include "multigoal/TwoOpt.h"
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <ompl/geometric/planners/prm/PRM.h>
@@ -141,25 +142,25 @@ int main(int argc, char **argv) {
         };
 
         std::vector<Experiment> experiments{
-                {std::make_shared<KNNPlanner>(1),      std::make_shared<ompl::geometric::PRMstar>(
-                        si),                                        pathLengthObjective},
-                {std::make_shared<KNNPlanner>(2),      std::make_shared<ompl::geometric::PRMstar>(
-                        si),                                        pathLengthObjective},
-                {std::make_shared<KNNPlanner>(3),      std::make_shared<ompl::geometric::PRMstar>(
-                        si),                                        pathLengthObjective},
-                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
-                                                       std::make_shared<ompl::geometric::PRMstar>(
-                                                               si), pathLengthObjective},
-                {std::make_shared<UnionKNNPlanner>(2, goalProjection, stateProjection),
-                                                       std::make_shared<ompl::geometric::PRMstar>(
-                                                               si), pathLengthObjective},
-                {std::make_shared<UnionKNNPlanner>(3, goalProjection, stateProjection),
-                                                       std::make_shared<ompl::geometric::PRMstar>(
-                                                               si), pathLengthObjective},
-                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(
-                        si),                                        leafCountObjective},
+//                {std::make_shared<KNNPlanner>(1),      std::make_shared<ompl::geometric::PRMstar>(
+//                        si),                                        pathLengthObjective},
+//                {std::make_shared<KNNPlanner>(2),      std::make_shared<ompl::geometric::PRMstar>(
+//                        si),                                        pathLengthObjective},
+//                {std::make_shared<KNNPlanner>(3),      std::make_shared<ompl::geometric::PRMstar>(
+//                        si),                                        pathLengthObjective},
+//                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
+//                                                       std::make_shared<ompl::geometric::PRMstar>(
+//                                                               si), pathLengthObjective},
+//                {std::make_shared<UnionKNNPlanner>(2, goalProjection, stateProjection),
+//                                                       std::make_shared<ompl::geometric::PRMstar>(
+//                                                               si), pathLengthObjective},
+//                {std::make_shared<UnionKNNPlanner>(3, goalProjection, stateProjection),
+//                                                       std::make_shared<ompl::geometric::PRMstar>(
+//                                                               si), pathLengthObjective},
+//                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(
+//                        si),                                        leafCountObjective},
 //                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(si), multiObjective50_50 },
-                {std::make_shared<AT2Opt>(std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
+                {std::make_shared<AT2Opt>(), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
         };
 
         for (const auto &experiment: experiments) {

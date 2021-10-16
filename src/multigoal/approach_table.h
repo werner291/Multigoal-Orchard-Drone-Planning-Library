@@ -55,6 +55,8 @@ namespace multigoal {
 
     public:
 
+        ATSolution(ompl::base::SpaceInformationPtr si);
+
         [[nodiscard]] std::vector<GoalApproach> &getSegments();
 
         [[nodiscard]] const std::vector<GoalApproach> &getSegmentsConst() const;
@@ -84,6 +86,15 @@ namespace multigoal {
     };
 
     std::unordered_set<size_t> find_missing_targets(const ATSolution &solution, const GoalApproachTable &goals);
+
+    std::vector<Replacement> replacementsForSwap(const multigoal::ATSolution &solution, size_t i, size_t j);
+
+    void check_replacements_validity(const std::vector<Replacement> &replacements);
+
+    multigoal::ATSolution random_initial_solution(const PointToPointPlanner &point_to_point_planner,
+                                                  const GoalApproachTable &table,
+                                                  const ompl::base::State *&start_state);
+
 }
 
 #endif //NEW_PLANNERS_APPROACH_TABLE_H

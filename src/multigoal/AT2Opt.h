@@ -10,17 +10,14 @@
 
 class AT2Opt : public MultiGoalPlanner {
 public:
+    AT2Opt();
+
     MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals,
                              const ompl::base::State *start_state,
                              PointToPointPlanner &point_to_point_planner) override;
 
     std::string getName() override;
 
-    multigoal::ATSolution random_initial_solution(const PointToPointPlanner &point_to_point_planner,
-                                                  const multigoal::GoalApproachTable &table,
-                                                  const ompl::base::State *&start_state);
-
-    void check_replacements_validity(const std::vector<Replacement> &replacements) const;
 };
 
 

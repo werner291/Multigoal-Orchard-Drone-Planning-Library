@@ -16,7 +16,7 @@ MultiGoalPlanResult ATRandom::plan(const std::vector<GoalSamplerPtr> &goals, con
 
     assert(goals.size() == table.size());
 
-    ATSolution solution;
+    ATSolution solution(point_to_point_planner.getPlanner()->getSpaceInformation());
 
     for (Visitation v: random_initial_order(table)) {
         auto ptp_result = point_to_point_planner.planToOmplState(MAX_TIME_PER_TARGET_SECONDS,

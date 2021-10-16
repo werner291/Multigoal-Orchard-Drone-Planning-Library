@@ -1,6 +1,8 @@
 
 #include "approach_table.h"
 
+#include <utility>
+
 using namespace multigoal;
 namespace ob = ompl::base;
 
@@ -65,7 +67,7 @@ std::vector<Visitation> multigoal::random_initial_order(const GoalApproachTable 
     return best_solution;
 }
 
-std::unordered_set<size_t> find_missing_targets(const ATSolution &solution, const GoalApproachTable &goals) {
+std::unordered_set<size_t> multigoal::find_missing_targets(const ATSolution &solution, const GoalApproachTable &goals) {
     std::unordered_set<size_t> missing_targets;
     for (size_t i = 0; i < goals.size(); i++) {
         missing_targets.insert(i);
@@ -74,6 +76,85 @@ std::unordered_set<size_t> find_missing_targets(const ATSolution &solution, cons
         missing_targets.erase(segment.visitation.target_idx);
     }
     return missing_targets;
+}
+
+void multigoal::check_replacements_validity(const std::vector<Replacement> &replacements) {
+    for (size_t ridx = 0; ridx < replacements.size(); ridx++) {
+        // Replacements must be ordered and strictly non-overlapping.
+        assert(replacements[ridx].visitations.size() ==
+               (replacements[ridx].last_segment - replacements[ridx].first_segment) + 1);
+        // The last segment must be later than the first.
+        assert(replacements[ridx].first_segment <= replacements[ridx].last_segment);
+        // Subsequent replacements must be strictly non-overlapping.
+        if (ridx + 1 < replacements.size())
+            assert(replacements[ridx].last_segment < replacements[ridx + 1].first_segment);
+    }
+}
+
+std::vector<Replacement> multigoal::replacementsForSwap(const multigoal::ATSolution &solution, size_t i, size_t j) {
+    assert(i < j);
+    std::vector<Replacement> replacements;
+    if (j == i + 1) {
+
+        Replacement repl;
+
+        repl.first_segment = i;
+        repl.last_segment = std::min(i + 2, solution.getSegmentsConst().size() - 1);
+
+        repl.visitations.push_back(solution.getSegmentsConst()[j].visitation);
+
+        repl.visitations.push_back(solution.getSegmentsConst()[i].visitation);
+
+        if (i + 2 < solution.getSegmentsConst().size()) {
+            repl.visitations.push_back(solution.getSegmentsConst()[i + 2].visitation);
+        }
+
+        replacements.push_back(repl);
+
+    } else {
+
+        replacements.push_back({
+                                       i, i + 1, {solution.getSegmentsConst()[j].visitation,
+                                                  solution.getSegmentsConst()[i + 1].visitation}
+                               });
+
+        Replacement repl;
+
+        repl.first_segment = j;
+        repl.last_segment = std::min(j + 1, solution.getSegmentsConst().size() - 1);
+
+        repl.visitations.push_back(solution.getSegmentsConst()[i].visitation);
+
+        if (j + 1 < solution.getSegmentsConst().size()) {
+            repl.visitations.push_back(solution.getSegmentsConst()[j + 1].visitation);
+        }
+
+        replacements.push_back(repl);
+    }
+
+    return replacements;
+}
+
+multigoal::ATSolution
+multigoal::random_initial_solution(const PointToPointPlanner &point_to_point_planner, const GoalApproachTable &table,
+                                   const ompl::base::State *&start_state) {
+
+    ATSolution solution(point_to_point_planner.getPlanner()->getSpaceInformation());
+    // Create an empty solution.
+    // Visit goals in random order and with random approach.
+    for (Visitation v: random_initial_order(table)) {
+        auto ptp_result = point_to_point_planner.planToOmplState(MAX_TIME_PER_TARGET_SECONDS,
+                                                                 solution.getLastState().value_or(start_state),
+                                                                 table[v.target_idx][v.approach_idx]->get());
+        // Drop any goals where planning failed.
+        if (ptp_result) {
+            solution.getSegments().push_back(GoalApproach{
+                    v.target_idx, v.approach_idx, ptp_result.value()
+            });
+        }
+    }
+
+    return solution;
 }
 
 std::vector<GoalApproach> &ATSolution::getSegments() {
@@ -111,9 +192,7 @@ void ATSolution::check_valid(const GoalApproachTable &table) const {
 
         if (i + 1 < solution_.size()) {
             // If there is another segment after this, the start-and-end-states must match up.
-            assert(si_->distance(last_in_path,
-                                 approach.approach_path.getState(
-                                         solution_[i + 1].approach_path.getStateCount() - 1)) < EPSILON);
+            assert(si_->distance(last_in_path, solution_[i + 1].approach_path.getState(0)) < EPSILON);
         }
 
         for (size_t motion_idx = 0; motion_idx + 1 < approach.approach_path.getStateCount(); ++motion_idx) {
@@ -156,3 +235,5 @@ MultiGoalPlanResult ATSolution::toMultiGoalResult() {
 
     return result;
 }
+
+ATSolution::ATSolution(ompl::base::SpaceInformationPtr si) : si_(std::move(si)) {}
