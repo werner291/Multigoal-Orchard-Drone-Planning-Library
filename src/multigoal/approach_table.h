@@ -85,12 +85,30 @@ namespace multigoal {
         GoalApproach new_segment;
     };
 
+    /**
+     * \brief Compute the set of unvisited targets in the ATSolution.
+     *
+     * Note: This does not check if the end-effector passes near any targets during a point-to-point motion,
+     * it only looks at the level of the GoalApproachTable.
+     */
     std::unordered_set<size_t> find_missing_targets(const ATSolution &solution, const GoalApproachTable &goals);
 
-    std::vector<Replacement> replacementsForSwap(const multigoal::ATSolution &solution, size_t i, size_t j);
+    /**
+     * \brief Computes which parts of an ATSolution should be replaced in order to realize a swap
+     * of targets i and j (in the current ATSolution's order). Each range is strictly disjoint.
+     *
+     * Requires that i < j, and that i,j are valid indices in the ATSolution.
+     */
+    std::vector<Replacement> replacements_for_swap(const multigoal::ATSolution &solution, size_t i, size_t j);
 
+    /**
+     * \brief Verify (through assertions) that a vector of Replacements is valid. (For debugging purposes)
+     */
     void check_replacements_validity(const std::vector<Replacement> &replacements);
 
+    /**
+     * \brief Computes an ATSolution from a GoalApproachTable by visiting the goals in the order computed by `random_initial_order`.
+     */
     multigoal::ATSolution random_initial_solution(const PointToPointPlanner &point_to_point_planner,
                                                   const GoalApproachTable &table,
                                                   const ompl::base::State *&start_state);

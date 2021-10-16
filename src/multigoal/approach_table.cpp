@@ -68,13 +68,20 @@ std::vector<Visitation> multigoal::random_initial_order(const GoalApproachTable 
 }
 
 std::unordered_set<size_t> multigoal::find_missing_targets(const ATSolution &solution, const GoalApproachTable &goals) {
+
+    // Initialize an empty set.
     std::unordered_set<size_t> missing_targets;
+
+    // Insert the indices of the inner vectors into the set.
     for (size_t i = 0; i < goals.size(); i++) {
         missing_targets.insert(i);
     }
+
+    // Remove all those visited according to the ATSolution.
     for (const auto &segment: solution.getSegmentsConst()) {
         missing_targets.erase(segment.visitation.target_idx);
     }
+
     return missing_targets;
 }
 
@@ -91,48 +98,63 @@ void multigoal::check_replacements_validity(const std::vector<Replacement> &repl
     }
 }
 
-std::vector<Replacement> multigoal::replacementsForSwap(const multigoal::ATSolution &solution, size_t i, size_t j) {
+std::vector<Replacement> multigoal::replacements_for_swap(const multigoal::ATSolution &solution, size_t i, size_t j) {
+    // Check precondition that i < j.
     assert(i < j);
-    std::vector<Replacement> replacements;
+
     if (j == i + 1) {
+        // This is a special case, since the goals are adjacent.
+        //
+        // An ordering like:  `i-1 -> i -> j -> j+1` will become `i-1 -> j -> i -> j+1`,
+        // with every -> representing a point-to-point motion that must be re-planned.
+
+        // The `j+1` will be omitted if j is the last target in the current ATSolution,
+        // assuming we don't have some preferred end state. ALso, note that `i-1` may
+        // be the initial state.
 
         Replacement repl;
 
-        repl.first_segment = i;
-        repl.last_segment = std::min(i + 2, solution.getSegmentsConst().size() - 1);
+        repl.first_segment = i; // Replace the point-to-point motions from (i-1 -> i)
+        repl.last_segment = std::min(i + 2, solution.getSegmentsConst().size() - 1); // until at most (j -> j+1)
 
-        repl.visitations.push_back(solution.getSegmentsConst()[j].visitation);
+        repl.visitations.push_back(solution.getSegmentsConst()[j].visitation); // Recompute (i-1 -> j)
+        repl.visitations.push_back(solution.getSegmentsConst()[i].visitation); // (j -> i)
 
-        repl.visitations.push_back(solution.getSegmentsConst()[i].visitation);
-
-        if (i + 2 < solution.getSegmentsConst().size()) {
-            repl.visitations.push_back(solution.getSegmentsConst()[i + 2].visitation);
+        if (i + 2 < solution.getSegmentsConst().size()) { // If not at the end, recompute (i -> j+1) as well
+            repl.visitations.push_back(solution.getSegmentsConst()[j + 1].visitation);
         }
 
-        replacements.push_back(repl);
+        return {repl};
 
     } else {
+        // Regular case: the two areas in the ATSolution are disjoint and can be treated more-or-less separately.
+        // The original solution will be like: ... -> i-1 -> i -> i+1 -> ... -> j-1 -> j -> j+1 -> ...
+        // and will be transformed to be like: ... -> i-1 -> j -> i+1 -> ... -> j-1 -> i -> j+1 -> ...
+        //
+        // Note that `j+1` might not exist if `j` is last in the solution, but `i+1` always exists.
 
-        replacements.push_back({
-                                       i, i + 1, {solution.getSegmentsConst()[j].visitation,
-                                                  solution.getSegmentsConst()[i + 1].visitation}
-                               });
+        // This replaces the movements (i-1 -> i) and (i -> i+1) with...
+        Replacement repl1{i, i + 1, {
+                solution.getSegmentsConst()[j].visitation, // (i-1 -> j)
+                solution.getSegmentsConst()[i + 1].visitation} // (j -> i+1)
+        };
 
+        // This replaces the movements (j-1 -> j) and, if applicable, (j -> j+1) with...
         Replacement repl;
-
         repl.first_segment = j;
         repl.last_segment = std::min(j + 1, solution.getSegmentsConst().size() - 1);
 
+        // (j-1 -> i)
         repl.visitations.push_back(solution.getSegmentsConst()[i].visitation);
 
+        // If applicable, (i -> j+1)
         if (j + 1 < solution.getSegmentsConst().size()) {
             repl.visitations.push_back(solution.getSegmentsConst()[j + 1].visitation);
         }
 
-        replacements.push_back(repl);
+        // Return both of those ranges, in sequence.
+        return {repl, repl1};
     }
-
-    return replacements;
 }
 
 multigoal::ATSolution

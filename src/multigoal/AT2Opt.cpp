@@ -32,7 +32,7 @@ MultiGoalPlanResult AT2Opt::plan(const std::vector<GoalSamplerPtr> &goals,
         for (size_t i = 0; i < solution.getSegments().size(); i++) {
             for (size_t j = i + 1; j < solution.getSegments().size(); j++) {
 
-                std::vector<Replacement> replacements = replacementsForSwap(solution, i, j);
+                std::vector<Replacement> replacements = replacements_for_swap(solution, i, j);
 
                 // Validity checking.
                 check_replacements_validity(replacements);
