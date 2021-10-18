@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 
     double apple_t = std::uniform_real_distribution(0.0, 1.0)(gen);
 
-    int numberOfApples = 100;
+    int numberOfApples = 10;
 
     auto tree_scene = establishPlanningScene(10, numberOfApples);
     scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);

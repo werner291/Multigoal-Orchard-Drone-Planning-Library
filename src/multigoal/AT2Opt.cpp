@@ -37,53 +37,29 @@ MultiGoalPlanResult AT2Opt::plan(const std::vector<GoalSamplerPtr> &goals,
                 // Validity checking.
                 check_replacements_validity(replacements);
 
-                struct NewApproachAt {
-                    size_t index{};
-                    GoalApproach ga;
-                };
+                auto computed_replacements =
+                        multigoal::computeNewPathSegments(start_state,
+                                                          point_to_point_planner,
+                                                          table,
+                                                          solution,
+                                                          replacements);
 
-                std::vector<NewApproachAt> computed_replacements;
-
-                for (const auto &repl: replacements) {
-                    const ompl::base::State *from_state = repl.first_segment == 0 ? start_state
-                                                                                  : solution.getSegments()[repl.first_segment].approach_path.getState(
-                                    0);
-                    for (size_t vidx = 0; vidx < repl.visitations.size(); vidx++) {
-                        const auto &viz = repl.visitations[vidx];
-
-                        ompl::base::State *goal = table[viz.target_idx][viz.approach_idx]->get();
-                        auto ptp = point_to_point_planner.planToOmplState(0.05,
-                                                                          from_state,
-                                                                          goal);
-                        if (!ptp) break; // FIXME: Make sure we break from the whole thing.
-
-                        computed_replacements.push_back({
-                                                                repl.first_segment + vidx,
-                                                                GoalApproach{
-                                                                        viz.target_idx,
-                                                                        viz.approach_idx,
-                                                                        ptp.value()
-                                                                }
-                                                        });
-
-                        from_state = goal;
+                if (computed_replacements) {
+                    double old_cost = 0.0;
+                    double new_cost = 0.0;
+                    for (const auto &cr: computed_replacements.value()) {
+                        old_cost += solution.getSegments()[cr.index].approach_path.length(); // TODO Cache this, maybe?
+                        new_cost += cr.ga.approach_path.length();
                     }
-                }
 
-                double old_cost = 0.0;
-                double new_cost = 0.0;
-                for (const auto &cr: computed_replacements) {
-                    old_cost += solution.getSegments()[cr.index].approach_path.length(); // TODO Cache this, maybe?
-                    new_cost += cr.ga.approach_path.length();
-                }
-
-                if (old_cost > new_cost) {
-                    for (auto &cr: computed_replacements) {
-                        solution.getSegments()[cr.index] = cr.ga;
+                    if (old_cost > new_cost) {
+                        for (auto &cr: computed_replacements.value()) {
+                            solution.getSegments()[cr.index] = cr.ga;
+                        }
                     }
-                }
 
-                solution.check_valid(table);
+                    solution.check_valid(table);
+                }
 
             }
 

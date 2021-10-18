@@ -55,12 +55,16 @@ std::vector<Visitation> multigoal::random_initial_order(const GoalApproachTable 
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
 
-    std::vector<Visitation> best_solution(goal_samples.size()); // One for every goal
+    std::vector<Visitation> best_solution;
+    best_solution.reserve(goal_samples.size()); // One for every goal
     for (size_t idx = 0; idx < goal_samples.size(); ++idx) {
-        // Pick an approach at random.
-        best_solution[idx] = {
-                idx, std::uniform_int_distribution<size_t>(0, goal_samples[idx].size() - 1)(gen)
-        };
+        if (!goal_samples[idx].empty()) {
+            // Pick an approach at random.
+            best_solution.push_back({
+                                            idx,
+                                            std::uniform_int_distribution<size_t>(0, goal_samples[idx].size() - 1)(gen)
+                                    });
+        }
     }
     // Randomize the order.
     std::shuffle(best_solution.begin(), best_solution.end(), gen);
@@ -120,7 +124,7 @@ std::vector<Replacement> multigoal::replacements_for_swap(const multigoal::ATSol
         repl.visitations.push_back(solution.getSegmentsConst()[j].visitation); // Recompute (i-1 -> j)
         repl.visitations.push_back(solution.getSegmentsConst()[i].visitation); // (j -> i)
 
-        if (i + 2 < solution.getSegmentsConst().size()) { // If not at the end, recompute (i -> j+1) as well
+        if (j + 1 < solution.getSegmentsConst().size()) { // If not at the end, recompute (i -> j+1) as well
             repl.visitations.push_back(solution.getSegmentsConst()[j + 1].visitation);
         }
 
@@ -198,6 +202,10 @@ void ATSolution::check_valid(const GoalApproachTable &table) const {
         // Paths must be non-empty; they should at least have the goal state in them.
         assert(approach.approach_path.getStateCount() > 0);
 
+        // Every target must be visited exactly once.
+        // It is possible that the end-effector passes by a goal twice,
+        // but this should not be represented at this level of abstraction.
+        assert(targets_visited.find(approach.visitation.target_idx) == targets_visited.end());
         targets_visited.insert(approach.visitation.target_idx);
 
         const ompl::base::State *last_in_path = approach.approach_path.getState(
@@ -218,18 +226,15 @@ void ATSolution::check_valid(const GoalApproachTable &table) const {
         }
 
 //        assert(approach.approach_path.check());
-        for (size_t motion_idx = 0; motion_idx + 1 < approach.approach_path.getStateCount(); ++motion_idx) {
-            // Every state-to-state motion in the approach path must be valid.
-            assert(si_->checkMotion(approach.approach_path.getState(motion_idx),
-                                    approach.approach_path.getState(motion_idx + 1)));
-        }
+//        for (size_t motion_idx = 0; motion_idx + 1 < approach.approach_path.getStateCount(); ++motion_idx) {
+//            // Every state-to-state motion in the approach path must be valid.
+//            assert(si_->checkMotion(approach.approach_path.getState(motion_idx),
+//                                    approach.approach_path.getState(motion_idx + 1)));
+//        } TODO: Look into this later maybe?
 
     }
 
-    // Every target must be visited exactly once.
-    // It is possible that the end-effector passes by a goal twice,
-    // but this should not be represented at this level of abstraction.
-    assert(targets_visited.size() == solution_.size());
+
 }
 
 std::optional<const ompl::base::State *> ATSolution::getLastState() const {
@@ -239,6 +244,42 @@ std::optional<const ompl::base::State *> ATSolution::getLastState() const {
         return {solution_.back().approach_path.getState(
                 solution_.back().approach_path.getStateCount() - 1)};
     }
+}
+
+std::optional<std::vector<multigoal::NewApproachAt>>
+multigoal::computeNewPathSegments(const ompl::base::State *start_state,
+                                  PointToPointPlanner &point_to_point_planner,
+                                  const multigoal::GoalApproachTable &table,
+                                  const multigoal::ATSolution &solution,
+                                  const std::vector<Replacement> &replacements) {
+    std::vector<NewApproachAt> computed_replacements;
+
+    for (const auto &repl: replacements) {
+        const ompl::base::State *from_state = repl.first_segment == 0 ? start_state
+                                                                      : solution.getSegmentsConst()[repl.first_segment].approach_path.getState(
+                        0);
+        for (size_t vidx = 0; vidx < repl.visitations.size(); vidx++) {
+            const auto &viz = repl.visitations[vidx];
+
+            ompl::base::State *goal = table[viz.target_idx][viz.approach_idx]->get();
+            auto ptp = point_to_point_planner.planToOmplState(0.01,
+                                                              from_state,
+                                                              goal);
+            if (!ptp) return {}; // FIXME: Make sure we break from the whole thing.
+
+            computed_replacements.push_back({
+                                                    repl.first_segment + vidx,
+                                                    GoalApproach{
+                                                            viz.target_idx,
+                                                            viz.approach_idx,
+                                                            ptp.value()
+                                                    }
+                                            });
+
+            from_state = goal;
+        }
+    }
+    return {computed_replacements};
 }
 
 const std::vector<GoalApproach> &ATSolution::getSegmentsConst() const {

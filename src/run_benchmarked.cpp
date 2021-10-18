@@ -95,11 +95,11 @@ int main(int argc, char **argv) {
 
         auto scene = std::make_shared<Scene>(drone);
 
-        double apple_t = std::uniform_real_distribution(0.0,1.0)(gen);
+        double apple_t = std::uniform_real_distribution(0.0, 1.0)(gen);
 
-        int numberOfApples = 5 + (apple_t * apple_t) * 150;
+        int numberOfApples = 5;//TODO reenable + (apple_t * apple_t) * 150;
 
-        std::cout << "Run " << (i+1) << " out of " << RUNS << " with " << numberOfApples << " apples." << std::endl;
+        std::cout << "Run " << (i + 1) << " out of " << RUNS << " with " << numberOfApples << " apples." << std::endl;
 
         benchmark_stats["number_of_apples"] = numberOfApples;
 

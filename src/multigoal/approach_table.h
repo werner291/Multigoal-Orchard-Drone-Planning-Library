@@ -80,9 +80,9 @@ namespace multigoal {
 
     /// Designates a single point-to-point movement in an ATSolution,
     /// and includes the computed GoalApproach to replace it with.
-    class ComputedReplacement {
-        size_t position;
-        GoalApproach new_segment;
+    struct NewApproachAt {
+        size_t index{};
+        GoalApproach ga;
     };
 
     /**
@@ -113,6 +113,11 @@ namespace multigoal {
                                                   const GoalApproachTable &table,
                                                   const ompl::base::State *&start_state);
 
+    std::optional<std::vector<multigoal::NewApproachAt>> computeNewPathSegments(const ompl::base::State *start_state,
+                                                                                PointToPointPlanner &point_to_point_planner,
+                                                                                const multigoal::GoalApproachTable &table,
+                                                                                const multigoal::ATSolution &solution,
+                                                                                const std::vector<Replacement> &replacements);
 }
 
 #endif //NEW_PLANNERS_APPROACH_TABLE_H
