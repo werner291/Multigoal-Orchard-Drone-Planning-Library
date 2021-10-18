@@ -52,8 +52,7 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<GoalSamplerPtr> &goa
         // If at least one attempt was successful...
         if (ptp_result.has_value()) {
 
-            size_t ith_nn = union_goal->whichSatisfied(
-                    ptp_result.value().getStates().back()).value();
+            size_t ith_nn = union_goal->whichSatisfied(ptp_result.value().getStates().back()).value();
 
             // Delete the target since we've reached it.
             unvisited_nn.remove(knn[ith_nn]);

@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<Robot> drone = make_robot();
 
-    const int RUNS = 5; // 100 Is the value reported in the paper.
+    const int RUNS = 3; // 100 Is the value reported in the paper.
     Json::Value benchmark_results;
 
     std::random_device rd;
@@ -148,9 +148,8 @@ int main(int argc, char **argv) {
 //                        si),                                        pathLengthObjective},
 //                {std::make_shared<KNNPlanner>(3),      std::make_shared<ompl::geometric::PRMstar>(
 //                        si),                                        pathLengthObjective},
-//                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
-//                                                       std::make_shared<ompl::geometric::PRMstar>(
-//                                                               si), pathLengthObjective},
+                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
+                 std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
 //                {std::make_shared<UnionKNNPlanner>(2, goalProjection, stateProjection),
 //                                                       std::make_shared<ompl::geometric::PRMstar>(
 //                                                               si), pathLengthObjective},
@@ -181,7 +180,10 @@ int main(int argc, char **argv) {
             ompl::base::ScopedState start_state_ompl(si);
             state_space->copyToOMPLState(start_state_ompl.get(), start_state);
 
+            auto start = std::chrono::steady_clock::now();
             MultiGoalPlanResult result = experiment.meta_planner->plan(goals, start_state_ompl.get(), ptp);
+            auto end = std::chrono::steady_clock::now();
+
             robowflex::Trajectory full_trajectory(drone, "whole_body");
             for (const auto &item: result.segments) {
                 extendTrajectory(full_trajectory, convertTrajectory(item.path, drone));
@@ -195,6 +197,8 @@ int main(int argc, char **argv) {
             run_stats["intermediate_planner"] = experiment.ptp_planner->getName();
             run_stats["optimization_objective"] = experiment.optimization_objective->getDescription();
             run_stats["total_path_length"] = full_trajectory.getLength();
+            run_stats["total_runtime"] = (double) std::chrono::duration_cast<std::chrono::milliseconds>(
+                    end - start).count();
 
             benchmark_stats["planner_runs"].append(run_stats);
 

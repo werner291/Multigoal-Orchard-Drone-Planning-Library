@@ -23,7 +23,6 @@ bool BulletContinuousMotionValidator::checkMotion(const ompl::base::State *s1, c
     // 8 sections for every 180 degrees of rotation
     // TODO: Review it with Frank maybe?
     size_t num_sections = (size_t) std::ceil(max_angle * 8.0 / M_PI) + 1;
-    size_t num_points = num_sections + 1;
 
     // Keep track of the begin state of the next section to check.
     auto last = st1;
@@ -32,7 +31,9 @@ bool BulletContinuousMotionValidator::checkMotion(const ompl::base::State *s1, c
     for (size_t i = 0; i < num_sections; i++) {
 
         // Interpolation coefficient based on loop index.
-        double t = (double) i / (double) num_points;
+        double t = (double) i / (double) num_sections;
+
+        assert(t >= 0.0 && t < 1.0);
 
         std::shared_ptr<moveit::core::RobotState> interp;
         if (i + 1 < num_sections) {
@@ -81,7 +82,7 @@ double BulletContinuousMotionValidator::estimateMaximumRotation(const moveit::co
             case moveit::core::JointModel::PLANAR: {
                 const double *variables1 = st1->getJointPositions(jm);
                 const double *variables2 = st2->getJointPositions(jm);
-                max_angle += std::abs(variables1[2] - variables2[2]);
+                max_angle += std::abs(variables1[2] - variables2[2]); //FIXME this looks wrong, what about wrapping?
             }
                 break;
 
@@ -99,7 +100,7 @@ double BulletContinuousMotionValidator::estimateMaximumRotation(const moveit::co
             case moveit::core::JointModel::REVOLUTE: {
                 const double *variables1 = st1->getJointPositions(jm);
                 const double *variables2 = st2->getJointPositions(jm);
-                max_angle += std::abs(variables1[0] - variables2[0]);
+                max_angle += std::abs(variables1[0] - variables2[0]); // FIXME Wrong, but shouldn't cause asymmetry.
             }
                 break;
         }

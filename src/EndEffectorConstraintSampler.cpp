@@ -83,6 +83,8 @@ void DroneStateConstraintSampler::moveEndEffectorToGoal(moveit::core::RobotState
         positions[2] += delta.z();
 
         state.update(true);
+    } else {
+        // How?
     }
 }
 

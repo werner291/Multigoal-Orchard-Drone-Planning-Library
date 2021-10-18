@@ -52,7 +52,7 @@ MultiGoalPlanResult AT2Opt::plan(const std::vector<GoalSamplerPtr> &goals,
                         const auto &viz = repl.visitations[vidx];
 
                         ompl::base::State *goal = table[viz.target_idx][viz.approach_idx]->get();
-                        auto ptp = point_to_point_planner.planToOmplState(0.1,
+                        auto ptp = point_to_point_planner.planToOmplState(0.05,
                                                                           from_state,
                                                                           goal);
                         if (!ptp) break; // FIXME: Make sure we break from the whole thing.

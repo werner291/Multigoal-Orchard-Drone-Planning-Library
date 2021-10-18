@@ -153,7 +153,7 @@ std::vector<Replacement> multigoal::replacements_for_swap(const multigoal::ATSol
         }
 
         // Return both of those ranges, in sequence.
-        return {repl, repl1};
+        return {repl1, repl};
     }
 }
 
@@ -217,6 +217,7 @@ void ATSolution::check_valid(const GoalApproachTable &table) const {
             assert(si_->distance(last_in_path, solution_[i + 1].approach_path.getState(0)) < EPSILON);
         }
 
+//        assert(approach.approach_path.check());
         for (size_t motion_idx = 0; motion_idx + 1 < approach.approach_path.getStateCount(); ++motion_idx) {
             // Every state-to-state motion in the approach path must be valid.
             assert(si_->checkMotion(approach.approach_path.getState(motion_idx),

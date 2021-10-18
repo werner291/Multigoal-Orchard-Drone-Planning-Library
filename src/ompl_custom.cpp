@@ -72,7 +72,9 @@ ompl::base::Cost InverseClearanceIntegralObjectiveOMPL::stateCost(const ompl::ba
 
 DroneEndEffectorNearTarget::DroneEndEffectorNearTarget(const ompl::base::SpaceInformationPtr &si, double radius,
                                                        const Eigen::Vector3d &target)
-        : GoalSampleableRegion(si), radius(radius), target(target) {}
+        : GoalSampleableRegion(si), radius(radius), target(target) {
+    this->setThreshold(1e-5);
+}
 
 void DroneEndEffectorNearTarget::sampleGoal(ompl::base::State *state) const {
     auto *state_space = si_->getStateSpace()->as<DroneStateSpace>();
@@ -91,7 +93,7 @@ void DroneEndEffectorNearTarget::sampleGoal(ompl::base::State *state) const {
 
         if (attempts_this_time++ > ATTEMPTS_BEFORE_GIVE_UP) {
             OMPL_WARN("Goal sampling failed after %d attempts. Giving up.", ATTEMPTS_BEFORE_GIVE_UP);
-            break;
+            return;
         }
 
     } while (!si_->isValid(state));
@@ -102,12 +104,13 @@ void DroneEndEffectorNearTarget::sampleGoal(ompl::base::State *state) const {
 double DroneEndEffectorNearTarget::distanceGoal(const ompl::base::State *state) const {
     auto *state_space = si_->getStateSpace()->as<DroneStateSpace>();
     moveit::core::RobotState st(state_space->getRobotModel());
+    state_space->copyToRobotState(st, state);
 
     Eigen::Vector3d ee_pos = st.getGlobalLinkTransform("end_effector").translation();
 
     Eigen::Vector3d delta = target - ee_pos;
 
-    return delta.norm();
+    return std::max(delta.norm() - radius, 0.0);
 }
 
 unsigned int DroneEndEffectorNearTarget::maxSampleCount() const {

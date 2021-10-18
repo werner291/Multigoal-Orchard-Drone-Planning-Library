@@ -33,6 +33,7 @@ PointToPointPlanner::planToOmplGoal(double maxTime, const ompl::base::State *sta
 
     // "Approximate" solutions can be wildly off, so we accept exact solutions only.
     if (status == ompl::base::PlannerStatus::EXACT_SOLUTION) {
+//        assert(pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>()->check());
         return {*pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>()};
     } else {
         return {};
