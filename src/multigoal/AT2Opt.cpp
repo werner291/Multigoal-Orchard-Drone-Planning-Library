@@ -31,44 +31,36 @@ MultiGoalPlanResult AT2Opt::plan(const std::vector<GoalSamplerPtr> &goals,
     while (!ptc) {
         for (size_t i = 0; i < solution.getSegments().size(); i++) {
             for (size_t j = i + 1; j < solution.getSegments().size(); j++) {
-
-                std::vector<Replacement> replacements = replacements_for_swap(solution, i, j);
-
-                // Validity checking.
-                check_replacements_validity(replacements);
-
-                auto computed_replacements =
-                        multigoal::computeNewPathSegments(start_state,
-                                                          point_to_point_planner,
-                                                          table,
-                                                          solution,
-                                                          replacements);
-
-                if (computed_replacements) {
-                    double old_cost = 0.0;
-                    double new_cost = 0.0;
-                    for (const auto &cr: computed_replacements.value()) {
-                        old_cost += solution.getSegments()[cr.index].approach_path.length(); // TODO Cache this, maybe?
-                        new_cost += cr.ga.approach_path.length();
-                    }
-
-                    if (old_cost > new_cost) {
-                        for (auto &cr: computed_replacements.value()) {
-                            solution.getSegments()[cr.index] = cr.ga;
-                        }
-                    }
-
-                    solution.check_valid(table);
-                }
-
+                try_swap(start_state, point_to_point_planner, table, solution, i, j);
             }
-
             // TODO: Try to insert one of the missing goals after i.
         }
     }
 
     return solution.toMultiGoalResult();
 
+}
+
+void AT2Opt::try_swap(const ompl::base::State *start_state, PointToPointPlanner &point_to_point_planner,
+                      const GoalApproachTable &table, ATSolution &solution, size_t i, size_t j) const {
+    std::vector<Replacement> replacements = replacements_for_swap(solution, i, j);
+
+    // Validity checking.
+    check_replacements_validity(replacements);
+
+    auto computed_replacements =
+            computeNewPathSegments(start_state,
+                                   point_to_point_planner,
+                                   table,
+                                   solution,
+                                   replacements);
+
+    if (computed_replacements) {
+        if (solution.is_improvement(computed_replacements.value())) {
+            solution.apply_replacements(computed_replacements.value());
+        }
+        solution.check_valid(table);
+    }
 }
 
 

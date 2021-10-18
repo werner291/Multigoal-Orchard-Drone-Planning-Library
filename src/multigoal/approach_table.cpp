@@ -301,3 +301,19 @@ MultiGoalPlanResult ATSolution::toMultiGoalResult() {
 }
 
 ATSolution::ATSolution(ompl::base::SpaceInformationPtr si) : si_(std::move(si)) {}
+
+bool ATSolution::apply_replacements(std::vector<NewApproachAt> &replacements) {
+    for (auto cr: replacements) {
+        solution_[cr.index] = cr.ga;
+    }
+}
+
+bool ATSolution::is_improvement(const std::vector<NewApproachAt> &replacements) const {
+    double old_cost = 0.0;
+    double new_cost = 0.0;
+    for (const auto &cr: replacements) {
+        old_cost += solution_[cr.index].approach_path.length(); // TODO Cache this, maybe?
+        new_cost += cr.ga.approach_path.length();
+    }
+    return old_cost > new_cost;
+}

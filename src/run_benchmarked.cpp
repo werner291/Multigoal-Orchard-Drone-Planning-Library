@@ -194,6 +194,7 @@ int main(int argc, char **argv) {
             mergeIntoLeft(run_stats,
                           collectLeafCollisionStats(*leavesCollisionChecker, *full_trajectory.getTrajectory()));
 
+            run_stats["targets_visited"] = (int) result.segments.size();
             run_stats["order_planning"] = experiment.meta_planner->getName();
             run_stats["intermediate_planner"] = experiment.ptp_planner->getName();
             run_stats["optimization_objective"] = experiment.optimization_objective->getDescription();

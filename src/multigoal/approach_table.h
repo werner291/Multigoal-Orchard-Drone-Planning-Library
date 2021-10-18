@@ -43,6 +43,20 @@ namespace multigoal {
         ompl::geometric::PathGeometric approach_path;
     };
 
+    /// Designates a range inside of an ATSolution, and a number of Visitations to replace that range with.
+    struct Replacement {
+        size_t first_segment{};
+        size_t last_segment{}; // End of range is inclusive.
+        std::vector<Visitation> visitations;
+    };
+
+    /// Designates a single point-to-point movement in an ATSolution,
+    /// and includes the computed GoalApproach to replace it with.
+    struct NewApproachAt {
+        size_t index{};
+        GoalApproach ga;
+    };
+
     /// Equivalent of a MultiGoalPlanResult, but defined in terms of a GoalApproachTable.
     class ATSolution {
 
@@ -67,23 +81,15 @@ namespace multigoal {
         /// Check internal invariants via assertions (crashes if violated)
         void check_valid(const GoalApproachTable &table) const;
 
+        bool is_improvement(const std::vector<NewApproachAt> &replacements) const;
+
+        bool apply_replacements(std::vector<NewApproachAt> &replacements);
+
         /// Strip out the ATSolution-specific information to create a MultiGoalPlanResult.
         MultiGoalPlanResult toMultiGoalResult();
     };
 
-    /// Designates a range inside of an ATSolution, and a number of Visitations to replace that range with.
-    struct Replacement {
-        size_t first_segment{};
-        size_t last_segment{}; // End of range is inclusive.
-        std::vector<Visitation> visitations;
-    };
 
-    /// Designates a single point-to-point movement in an ATSolution,
-    /// and includes the computed GoalApproach to replace it with.
-    struct NewApproachAt {
-        size_t index{};
-        GoalApproach ga;
-    };
 
     /**
      * \brief Compute the set of unvisited targets in the ATSolution.

@@ -19,6 +19,8 @@ public:
     std::string getName() override;
 
 
+    void try_swap(const ompl::base::State *start_state, PointToPointPlanner &point_to_point_planner,
+                  const multigoal::GoalApproachTable &table, multigoal::ATSolution &solution, size_t i, size_t j) const;
 };
 
 
