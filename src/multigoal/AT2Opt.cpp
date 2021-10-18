@@ -26,7 +26,7 @@ MultiGoalPlanResult AT2Opt::plan(const std::vector<GoalSamplerPtr> &goals,
     std::unordered_set<size_t> missing_targets = find_missing_targets(solution, table);
 
     // Run until 10 seconds have passed (Maybe something about tracking convergence rates?)
-    ompl::base::PlannerTerminationCondition ptc = ompl::base::timedPlannerTerminationCondition(10.0);
+    ompl::base::PlannerTerminationCondition ptc = ompl::base::timedPlannerTerminationCondition(20.0);
 
     while (!ptc) {
         for (size_t i = 0; i < solution.getSegments().size(); i++) {
@@ -34,6 +34,8 @@ MultiGoalPlanResult AT2Opt::plan(const std::vector<GoalSamplerPtr> &goals,
                 try_swap(start_state, point_to_point_planner, table, solution, i, j);
             }
             // TODO: Try to insert one of the missing goals after i.
+
+            if (ptc) break;
         }
     }
 
@@ -41,8 +43,11 @@ MultiGoalPlanResult AT2Opt::plan(const std::vector<GoalSamplerPtr> &goals,
 
 }
 
-void AT2Opt::try_swap(const ompl::base::State *start_state, PointToPointPlanner &point_to_point_planner,
-                      const GoalApproachTable &table, ATSolution &solution, size_t i, size_t j) const {
+void AT2Opt::try_swap(const ompl::base::State *start_state,
+                      PointToPointPlanner &point_to_point_planner,
+                      const GoalApproachTable &table,
+                      ATSolution &solution, size_t i, size_t j) const {
+
     std::vector<Replacement> replacements = replacements_for_swap(solution, i, j);
 
     // Validity checking.

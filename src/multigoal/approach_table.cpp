@@ -302,8 +302,8 @@ MultiGoalPlanResult ATSolution::toMultiGoalResult() {
 
 ATSolution::ATSolution(ompl::base::SpaceInformationPtr si) : si_(std::move(si)) {}
 
-bool ATSolution::apply_replacements(std::vector<NewApproachAt> &replacements) {
-    for (auto cr: replacements) {
+void ATSolution::apply_replacements(std::vector<NewApproachAt> &replacements) {
+    for (const auto &cr: replacements) {
         solution_[cr.index] = cr.ga;
     }
 }

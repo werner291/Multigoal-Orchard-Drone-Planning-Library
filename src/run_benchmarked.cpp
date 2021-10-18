@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<Robot> drone = make_robot();
 
-    const int RUNS = 3; // 100 Is the value reported in the paper.
+    const int RUNS = 5; // 100 Is the value reported in the paper.
     Json::Value benchmark_results;
 
     std::random_device rd;
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
 
         double apple_t = std::uniform_real_distribution(0.0, 1.0)(gen);
 
-        int numberOfApples = 5;//TODO reenable + (apple_t * apple_t) * 150;
+        int numberOfApples = 5 + (apple_t * apple_t) * 150;
 
         std::cout << "Run " << (i + 1) << " out of " << RUNS << " with " << numberOfApples << " apples." << std::endl;
 

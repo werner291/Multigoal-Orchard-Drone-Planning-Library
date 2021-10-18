@@ -83,7 +83,7 @@ namespace multigoal {
 
         bool is_improvement(const std::vector<NewApproachAt> &replacements) const;
 
-        bool apply_replacements(std::vector<NewApproachAt> &replacements);
+        void apply_replacements(std::vector<NewApproachAt> &replacements);
 
         /// Strip out the ATSolution-specific information to create a MultiGoalPlanResult.
         MultiGoalPlanResult toMultiGoalResult();
