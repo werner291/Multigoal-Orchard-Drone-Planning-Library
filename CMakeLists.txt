@@ -164,6 +164,8 @@ set(SHARED_SRC
         src/multigoal/ATRandom.h
         src/multigoal/AT2Opt.cpp
         src/multigoal/AT2Opt.h
+        src/multigoal/ATNN.cpp
+        src/multigoal/ATNN.h
         #        src/multigoal/TwoOpt.cpp
         #        src/multigoal/TwoOpt.h
         )
