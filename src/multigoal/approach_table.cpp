@@ -174,8 +174,8 @@ multigoal::replacements_for_insertion(const GoalApproachTable &goals,
 
     Replacement repl;
     repl.from = i; // Corresponds to the (-> i) movement, which needs to be replaced.
-    repl.until = std::min(i + 1, solution.getSegmentsConst().size() -
-                                 1); // If at the end, we get from == until, signaling an empty range to be replaced.
+    repl.until = std::min(i + 1,
+                          solution.getSegmentsConst().size()); // If at the end, we get from == until, signaling an empty range to be replaced.
 
     repl.visitations.push_back(v); // (i-1 -> v)
     repl.visitations.push_back(solution.getSegmentsConst()[i].visitation); // (v -> i)
@@ -280,9 +280,12 @@ multigoal::computeNewPathSegments(const ompl::base::State *start_state,
     std::vector<ompl::geometric::PathGeometric> computed_replacements;
 
     for (const auto &repl: replacements) {
-        const ompl::base::State *from_state = repl.from == 0 ? start_state
-                                                             : solution.getSegmentsConst()[repl.from].approach_path.getState(
-                        0);
+        const ompl::base::State *from_state;
+
+        from_state =
+                repl.from == 0 ? start_state : table[solution.getSegmentsConst()[repl.from - 1].visitation.target_idx]
+                [solution.getSegmentsConst()[repl.from - 1].visitation.approach_idx]->get();
+
         for (auto viz: repl.visitations) {
             ompl::base::State *goal = table[viz.target_idx][viz.approach_idx]->get();
             auto ptp = point_to_point_planner.planToOmplState(0.01, from_state, goal);
