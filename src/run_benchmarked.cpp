@@ -148,8 +148,8 @@ int main(int argc, char **argv) {
 //                        si),                                        pathLengthObjective},
 //                {std::make_shared<KNNPlanner>(3),      std::make_shared<ompl::geometric::PRMstar>(
 //                        si),                                        pathLengthObjective},
-                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
-                 std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
+//                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
+//                 std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
 //                {std::make_shared<UnionKNNPlanner>(2, goalProjection, stateProjection),
 //                                                       std::make_shared<ompl::geometric::PRMstar>(
 //                                                               si), pathLengthObjective},

@@ -102,7 +102,10 @@ void multigoal::check_replacements_validity(const std::vector<Replacement> &repl
     }
 }
 
-std::vector<Replacement> multigoal::replacements_for_swap(const multigoal::ATSolution &solution, size_t i, size_t j) {
+std::vector<Replacement>
+multigoal::replacements_for_swap(const GoalApproachTable &goals,
+                                 const multigoal::ATSolution &solution, size_t i,
+                                 size_t j) {
     // Check precondition that i < j.
     assert(i < j);
 
@@ -159,6 +162,22 @@ std::vector<Replacement> multigoal::replacements_for_swap(const multigoal::ATSol
         // Return both of those ranges, in sequence.
         return {repl1, repl};
     }
+}
+
+std::vector<Replacement>
+multigoal::replacements_for_insertion(const GoalApproachTable &goals,
+                                      const ATSolution &solution,
+                                      size_t i,
+                                      Visitation v) {
+
+    Replacement repl;
+    repl.first_segment = i;
+    repl.last_segment = std::min(i + 1, solution.getSegmentsConst().size() - 1);
+
+    repl.visitations.push_back(v);
+    repl.visitations.push_back(solution.getSegmentsConst()[i].visitation);
+
+    return {repl};
 }
 
 multigoal::ATSolution
@@ -246,40 +265,67 @@ std::optional<const ompl::base::State *> ATSolution::getLastState() const {
     }
 }
 
-std::optional<std::vector<multigoal::NewApproachAt>>
+std::optional<std::vector<ompl::geometric::PathGeometric>>
 multigoal::computeNewPathSegments(const ompl::base::State *start_state,
                                   PointToPointPlanner &point_to_point_planner,
                                   const multigoal::GoalApproachTable &table,
                                   const multigoal::ATSolution &solution,
                                   const std::vector<Replacement> &replacements) {
-    std::vector<NewApproachAt> computed_replacements;
+
+    std::vector<ompl::geometric::PathGeometric> computed_replacements;
 
     for (const auto &repl: replacements) {
         const ompl::base::State *from_state = repl.first_segment == 0 ? start_state
                                                                       : solution.getSegmentsConst()[repl.first_segment].approach_path.getState(
                         0);
-        for (size_t vidx = 0; vidx < repl.visitations.size(); vidx++) {
-            const auto &viz = repl.visitations[vidx];
-
+        for (auto viz: repl.visitations) {
             ompl::base::State *goal = table[viz.target_idx][viz.approach_idx]->get();
-            auto ptp = point_to_point_planner.planToOmplState(0.01,
-                                                              from_state,
-                                                              goal);
-            if (!ptp) return {}; // FIXME: Make sure we break from the whole thing.
+            auto ptp = point_to_point_planner.planToOmplState(0.01, from_state, goal);
 
-            computed_replacements.push_back({
-                                                    repl.first_segment + vidx,
-                                                    GoalApproach{
-                                                            viz.target_idx,
-                                                            viz.approach_idx,
-                                                            ptp.value()
-                                                    }
-                                            });
+            if (!ptp) return {};
+
+            computed_replacements.push_back(ptp.value());
 
             from_state = goal;
         }
     }
     return {computed_replacements};
+}
+
+void multigoal::ATSolution::try_swap(const ompl::base::State *start_state,
+                                     PointToPointPlanner &point_to_point_planner,
+                                     const GoalApproachTable &table,
+                                     size_t i,
+                                     size_t j) {
+    try_replacements(start_state, point_to_point_planner, table, replacements_for_swap(table, *this, i, j));
+}
+
+void
+multigoal::ATSolution::try_insert(const ompl::base::State *start_state, PointToPointPlanner &point_to_point_planner,
+                                  const GoalApproachTable &table, size_t i, multigoal::Visitation v) {
+    try_replacements(start_state, point_to_point_planner, table, replacements_for_insertion(table, *this, i, v));
+}
+
+void multigoal::ATSolution::try_replacements(const ompl::base::State *start_state,
+                                             PointToPointPlanner &point_to_point_planner,
+                                             const GoalApproachTable &table,
+                                             const std::vector<Replacement> &replacements) { // Validity checking.
+
+    check_replacements_validity(replacements);
+
+    auto computed_replacements =
+            computeNewPathSegments(start_state,
+                                   point_to_point_planner,
+                                   table,
+                                   *this,
+                                   replacements);
+
+    if (computed_replacements) {
+        if (is_improvement(replacements, computed_replacements.value())) {
+            apply_replacements(replacements, computed_replacements.value());
+        }
+        check_valid(table);
+    }
 }
 
 const std::vector<GoalApproach> &ATSolution::getSegmentsConst() const {
@@ -302,18 +348,48 @@ MultiGoalPlanResult ATSolution::toMultiGoalResult() {
 
 ATSolution::ATSolution(ompl::base::SpaceInformationPtr si) : si_(std::move(si)) {}
 
-void ATSolution::apply_replacements(std::vector<NewApproachAt> &replacements) {
-    for (const auto &cr: replacements) {
-        solution_[cr.index] = cr.ga;
+void ATSolution::apply_replacements(const std::vector<Replacement> &replacement_specs,
+                                    const std::vector<ompl::geometric::PathGeometric> &computed_replacements) {
+
+    if (replacement_specs.empty()) return;
+
+    auto cr_itr = computed_replacements.crbegin();
+
+    for (auto itr = replacement_specs.crbegin(); itr != replacement_specs.crend(); ++itr) {
+
+        solution_.erase(solution_.begin() + (long) itr->first_segment,
+                        solution_.begin() + (long) itr->last_segment + 1);
+
+        long insert_pos = 0;
+
+        for (auto itr2 = itr->visitations.crbegin(); itr2 != itr->visitations.crend(); ++itr2) {
+            GoalApproach ga{
+                    *itr2,
+                    *(cr_itr++)// TODO: Is this slow? Perhaps use a unique_ptr, or use std::move with iterators somehow?
+            };
+            solution_.insert(solution_.begin() + (long) itr->first_segment/* + (insert_pos++)*/, ga);
+        }
     }
+    assert(cr_itr == computed_replacements.crend());
 }
 
-bool ATSolution::is_improvement(const std::vector<NewApproachAt> &replacements) const {
+bool ATSolution::is_improvement(const std::vector<Replacement> &replacement_specs,
+                                const std::vector<ompl::geometric::PathGeometric> &computed_replacements) const {
+
     double old_cost = 0.0;
-    double new_cost = 0.0;
-    for (const auto &cr: replacements) {
-        old_cost += solution_[cr.index].approach_path.length(); // TODO Cache this, maybe?
-        new_cost += cr.ga.approach_path.length();
+    size_t old_targets_visited = 0;
+
+    for (const auto &rs: replacement_specs) {
+        for (size_t idx = rs.first_segment; idx <= rs.last_segment; ++idx) {
+            old_cost += solution_[idx].approach_path.length(); // TODO Cache this, maybe?
+            ++old_targets_visited;
+        }
     }
-    return old_cost > new_cost;
+
+    double new_cost = 0.0;
+    size_t new_targets_visited = computed_replacements.size();
+
+    for (const auto &item: computed_replacements) new_cost += item.length();
+
+    return old_cost / (double) old_targets_visited > new_cost / (double) new_targets_visited;
 }

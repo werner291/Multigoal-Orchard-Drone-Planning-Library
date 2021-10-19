@@ -50,13 +50,6 @@ namespace multigoal {
         std::vector<Visitation> visitations;
     };
 
-    /// Designates a single point-to-point movement in an ATSolution,
-    /// and includes the computed GoalApproach to replace it with.
-    struct NewApproachAt {
-        size_t index{};
-        GoalApproach ga;
-    };
-
     /// Equivalent of a MultiGoalPlanResult, but defined in terms of a GoalApproachTable.
     class ATSolution {
 
@@ -81,15 +74,39 @@ namespace multigoal {
         /// Check internal invariants via assertions (crashes if violated)
         void check_valid(const GoalApproachTable &table) const;
 
-        bool is_improvement(const std::vector<NewApproachAt> &replacements) const;
+        bool is_improvement(const std::vector<Replacement> &replacement_specs,
+                            const std::vector<ompl::geometric::PathGeometric> &computed_replacements) const;
 
-        void apply_replacements(std::vector<NewApproachAt> &replacements);
+        void apply_replacements(const std::vector<Replacement> &replacement_specs,
+                                const std::vector<ompl::geometric::PathGeometric> &computed_replacements);
+
+        /**
+         * \brief Tries to swap the visitations at indices i and j, and modifies the solution if this lowers the path length.
+         */
+        void try_swap(const ompl::base::State *start_state,
+                      PointToPointPlanner &point_to_point_planner,
+                      const GoalApproachTable &table,
+                      size_t i, size_t j);
+
+        /**
+         * \brief Tries to insert the visitation at position i, shifting everything behind by one position.
+         *
+         * Solution is modified if the insertion lowers the path length per target visited (total length may increase).
+         */
+        void try_insert(const ompl::base::State *start_state,
+                        PointToPointPlanner &point_to_point_planner,
+                        const multigoal::GoalApproachTable &table,
+                        size_t i,
+                        multigoal::Visitation v);
+
+        void try_replacements(const ompl::base::State *start_state,
+                              PointToPointPlanner &point_to_point_planner,
+                              const GoalApproachTable &table,
+                              const std::vector<Replacement> &replacements);
 
         /// Strip out the ATSolution-specific information to create a MultiGoalPlanResult.
         MultiGoalPlanResult toMultiGoalResult();
     };
-
-
 
     /**
      * \brief Compute the set of unvisited targets in the ATSolution.
@@ -105,7 +122,19 @@ namespace multigoal {
      *
      * Requires that i < j, and that i,j are valid indices in the ATSolution.
      */
-    std::vector<Replacement> replacements_for_swap(const multigoal::ATSolution &solution, size_t i, size_t j);
+    std::vector<Replacement> replacements_for_swap(const GoalApproachTable &goals,
+                                                   const multigoal::ATSolution &solution,
+                                                   size_t i,
+                                                   size_t j);
+
+    /**
+     * \brief Computes which parts of an ATSolution should be replaced in order to realize an additional
+     * visitation of a previously un-visited target.
+     */
+    std::vector<Replacement> replacements_for_insertion(const GoalApproachTable &goals,
+                                                        const multigoal::ATSolution &solution,
+                                                        size_t i,
+                                                        Visitation v);
 
     /**
      * \brief Verify (through assertions) that a vector of Replacements is valid. (For debugging purposes)
@@ -119,11 +148,12 @@ namespace multigoal {
                                                   const GoalApproachTable &table,
                                                   const ompl::base::State *&start_state);
 
-    std::optional<std::vector<multigoal::NewApproachAt>> computeNewPathSegments(const ompl::base::State *start_state,
-                                                                                PointToPointPlanner &point_to_point_planner,
-                                                                                const multigoal::GoalApproachTable &table,
-                                                                                const multigoal::ATSolution &solution,
-                                                                                const std::vector<Replacement> &replacements);
+    std::optional<std::vector<ompl::geometric::PathGeometric>>
+    computeNewPathSegments(const ompl::base::State *start_state,
+                           PointToPointPlanner &point_to_point_planner,
+                           const multigoal::GoalApproachTable &table,
+                           const multigoal::ATSolution &solution,
+                           const std::vector<Replacement> &replacements);
 }
 
 #endif //NEW_PLANNERS_APPROACH_TABLE_H
