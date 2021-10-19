@@ -22,7 +22,7 @@ MultiGoalPlanResult AT2Opt::plan(const std::vector<GoalSamplerPtr> &goals,
     // Sanity check. TODO: Remove once the code works, maybe move to a test somewhere.
     solution.check_valid(table);
 
-    // Keep track of missing targets. TODO Actually use this.
+    // Keep track of missing targets.
     std::unordered_set<size_t> missing_targets = find_missing_targets(solution, table);
 
     // Run until 10 seconds have passed (Maybe something about tracking convergence rates?)
@@ -31,15 +31,35 @@ MultiGoalPlanResult AT2Opt::plan(const std::vector<GoalSamplerPtr> &goals,
     // TODO: A heuristic to try: try swapping pairs that are already close by first, maybe with some probabilistic bias.
     // That, or maybe try it with a shorter point-to-point planning time.
 
+
+
     while (!ptc) {
         for (size_t i = 0; i < solution.getSegments().size(); i++) {
             for (size_t j = i + 1; j < solution.getSegments().size(); j++) {
                 // TODO Approach changes
                 solution.try_swap(start_state, point_to_point_planner, table, i, j);
             }
-            // TODO: Try to insert one of the missing goals after i.
-
             if (ptc) break;
+        }
+
+        std::random_device rd;  //Will be used to obtain a seed for the random number engine
+        std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
+        for (size_t i = 0; i < solution.getSegments().size() + 1; i++) {
+            if (ptc) break;
+            for (const auto &item: missing_targets) {
+                size_t approaches = table[item].size();
+
+                if (approaches > 0) {
+                    solution.try_insert(
+                            start_state, point_to_point_planner, table, i, Visitation{
+                                    item,
+                                    std::uniform_int_distribution<size_t>(0, approaches - 1)(gen)
+                            }
+                    );
+                }
+            }
+            missing_targets = find_missing_targets(solution, table);
         }
     }
 

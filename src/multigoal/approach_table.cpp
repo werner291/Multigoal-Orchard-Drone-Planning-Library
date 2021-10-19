@@ -91,9 +91,6 @@ std::unordered_set<size_t> multigoal::find_missing_targets(const ATSolution &sol
 
 void multigoal::check_replacements_validity(const std::vector<Replacement> &replacements) {
     for (size_t ridx = 0; ridx < replacements.size(); ridx++) {
-        // Replacements must be ordered and strictly non-overlapping.
-        assert(replacements[ridx].visitations.size() ==
-               (replacements[ridx].last_segment - replacements[ridx].first_segment) + 1);
         // The last segment must be later than the first.
         assert(replacements[ridx].first_segment <= replacements[ridx].last_segment);
         // Subsequent replacements must be strictly non-overlapping.
@@ -176,6 +173,8 @@ multigoal::replacements_for_insertion(const GoalApproachTable &goals,
 
     repl.visitations.push_back(v);
     repl.visitations.push_back(solution.getSegmentsConst()[i].visitation);
+    if (i + 1 < solution.getSegmentsConst().size())
+        repl.visitations.push_back(solution.getSegmentsConst()[i + 1].visitation);
 
     return {repl};
 }
