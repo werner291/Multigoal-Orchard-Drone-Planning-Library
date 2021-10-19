@@ -92,10 +92,10 @@ std::unordered_set<size_t> multigoal::find_missing_targets(const ATSolution &sol
 void multigoal::check_replacements_validity(const std::vector<Replacement> &replacements) {
     for (size_t ridx = 0; ridx < replacements.size(); ridx++) {
         // The last segment must be later than the first.
-        assert(replacements[ridx].first_segment <= replacements[ridx].last_segment);
+        assert(replacements[ridx].from <= replacements[ridx].until);
         // Subsequent replacements must be strictly non-overlapping.
         if (ridx + 1 < replacements.size())
-            assert(replacements[ridx].last_segment < replacements[ridx + 1].first_segment);
+            assert(replacements[ridx].until <= replacements[ridx + 1].from);
     }
 }
 
@@ -118,8 +118,8 @@ multigoal::replacements_for_swap(const GoalApproachTable &goals,
 
         Replacement repl;
 
-        repl.first_segment = i; // Replace the point-to-point motions from (i-1 -> i)
-        repl.last_segment = std::min(i + 2, solution.getSegmentsConst().size() - 1); // until at most (j -> j+1)
+        repl.from = i; // Replace the point-to-point motions from (i-1 -> i)
+        repl.until = std::min(i + 3, solution.getSegmentsConst().size()); // until at most (j -> j+1)
 
         repl.visitations.push_back(solution.getSegmentsConst()[j].visitation); // Recompute (i-1 -> j)
         repl.visitations.push_back(solution.getSegmentsConst()[i].visitation); // (j -> i)
@@ -138,15 +138,15 @@ multigoal::replacements_for_swap(const GoalApproachTable &goals,
         // Note that `j+1` might not exist if `j` is last in the solution, but `i+1` always exists.
 
         // This replaces the movements (i-1 -> i) and (i -> i+1) with...
-        Replacement repl1{i, i + 1, {
+        Replacement repl1{i, i + 2, {
                 solution.getSegmentsConst()[j].visitation, // (i-1 -> j)
                 solution.getSegmentsConst()[i + 1].visitation} // (j -> i+1)
         };
 
         // This replaces the movements (j-1 -> j) and, if applicable, (j -> j+1) with...
         Replacement repl;
-        repl.first_segment = j;
-        repl.last_segment = std::min(j + 1, solution.getSegmentsConst().size() - 1);
+        repl.from = j;
+        repl.until = std::min(j + 2, solution.getSegmentsConst().size());
 
         // (j-1 -> i)
         repl.visitations.push_back(solution.getSegmentsConst()[i].visitation);
@@ -166,15 +166,21 @@ multigoal::replacements_for_insertion(const GoalApproachTable &goals,
                                       const ATSolution &solution,
                                       size_t i,
                                       Visitation v) {
+    /*
+     * These replacements will transform a sequence of the form (i-1 -> i)
+     * into something of the form (i-1 -> v -> i), where i is optional if
+     * the solution has no ith visitation.
+     */
 
     Replacement repl;
-    repl.first_segment = i;
-    repl.last_segment = std::min(i + 1, solution.getSegmentsConst().size() - 1);
+    repl.from = i; // Corresponds to the (-> i) movement, which needs to be replaced.
+    repl.until = std::min(i + 1, solution.getSegmentsConst().size() -
+                                 1); // If at the end, we get from == until, signaling an empty range to be replaced.
 
-    repl.visitations.push_back(v);
-    repl.visitations.push_back(solution.getSegmentsConst()[i].visitation);
-    if (i + 1 < solution.getSegmentsConst().size())
-        repl.visitations.push_back(solution.getSegmentsConst()[i + 1].visitation);
+    repl.visitations.push_back(v); // (i-1 -> v)
+    repl.visitations.push_back(solution.getSegmentsConst()[i].visitation); // (v -> i)
+//    if (i + 1 < solution.getSegmentsConst().size())
+//        repl.visitations.push_back(solution.getSegmentsConst()[i + 1].visitation);
 
     return {repl};
 }
@@ -274,8 +280,8 @@ multigoal::computeNewPathSegments(const ompl::base::State *start_state,
     std::vector<ompl::geometric::PathGeometric> computed_replacements;
 
     for (const auto &repl: replacements) {
-        const ompl::base::State *from_state = repl.first_segment == 0 ? start_state
-                                                                      : solution.getSegmentsConst()[repl.first_segment].approach_path.getState(
+        const ompl::base::State *from_state = repl.from == 0 ? start_state
+                                                             : solution.getSegmentsConst()[repl.from].approach_path.getState(
                         0);
         for (auto viz: repl.visitations) {
             ompl::base::State *goal = table[viz.target_idx][viz.approach_idx]->get();
@@ -356,8 +362,8 @@ void ATSolution::apply_replacements(const std::vector<Replacement> &replacement_
 
     for (auto itr = replacement_specs.crbegin(); itr != replacement_specs.crend(); ++itr) {
 
-        solution_.erase(solution_.begin() + (long) itr->first_segment,
-                        solution_.begin() + (long) itr->last_segment + 1);
+        solution_.erase(solution_.begin() + (long) itr->from,
+                        solution_.begin() + (long) itr->until);
 
         long insert_pos = 0;
 
@@ -366,7 +372,7 @@ void ATSolution::apply_replacements(const std::vector<Replacement> &replacement_
                     *itr2,
                     *(cr_itr++)// TODO: Is this slow? Perhaps use a unique_ptr, or use std::move with iterators somehow?
             };
-            solution_.insert(solution_.begin() + (long) itr->first_segment/* + (insert_pos++)*/, ga);
+            solution_.insert(solution_.begin() + (long) itr->from/* + (insert_pos++)*/, ga);
         }
     }
     assert(cr_itr == computed_replacements.crend());
@@ -379,7 +385,7 @@ bool ATSolution::is_improvement(const std::vector<Replacement> &replacement_spec
     size_t old_targets_visited = 0;
 
     for (const auto &rs: replacement_specs) {
-        for (size_t idx = rs.first_segment; idx <= rs.last_segment; ++idx) {
+        for (size_t idx = rs.from; idx < rs.until; ++idx) {
             old_cost += solution_[idx].approach_path.length(); // TODO Cache this, maybe?
             ++old_targets_visited;
         }

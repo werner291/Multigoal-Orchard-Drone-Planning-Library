@@ -31,8 +31,6 @@ MultiGoalPlanResult AT2Opt::plan(const std::vector<GoalSamplerPtr> &goals,
     // TODO: A heuristic to try: try swapping pairs that are already close by first, maybe with some probabilistic bias.
     // That, or maybe try it with a shorter point-to-point planning time.
 
-
-
     while (!ptc) {
         for (size_t i = 0; i < solution.getSegments().size(); i++) {
             for (size_t j = i + 1; j < solution.getSegments().size(); j++) {

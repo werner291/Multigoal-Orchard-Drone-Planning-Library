@@ -45,8 +45,8 @@ namespace multigoal {
 
     /// Designates a range inside of an ATSolution, and a number of Visitations to replace that range with.
     struct Replacement {
-        size_t first_segment{};
-        size_t last_segment{}; // End of range is inclusive.
+        size_t from{};
+        size_t until{}; // End of range is inclusive.
         std::vector<Visitation> visitations;
     };
 
@@ -62,6 +62,7 @@ namespace multigoal {
 
     public:
 
+        /// Construct an empty ATSolution that visits no targets.
         ATSolution(ompl::base::SpaceInformationPtr si);
 
         [[nodiscard]] std::vector<GoalApproach> &getSegments();
@@ -74,31 +75,29 @@ namespace multigoal {
         /// Check internal invariants via assertions (crashes if violated)
         void check_valid(const GoalApproachTable &table) const;
 
+        /// Compute whether the new replacements would improve the cost-per-target metric.
         bool is_improvement(const std::vector<Replacement> &replacement_specs,
                             const std::vector<ompl::geometric::PathGeometric> &computed_replacements) const;
 
+        /// Apply a set of replacements.
         void apply_replacements(const std::vector<Replacement> &replacement_specs,
                                 const std::vector<ompl::geometric::PathGeometric> &computed_replacements);
 
-        /**
-         * \brief Tries to swap the visitations at indices i and j, and modifies the solution if this lowers the path length.
-         */
+        /// Tries to swap the visitations at indices i and j, and modifies the solution if this lowers the path length.
         void try_swap(const ompl::base::State *start_state,
                       PointToPointPlanner &point_to_point_planner,
                       const GoalApproachTable &table,
                       size_t i, size_t j);
 
-        /**
-         * \brief Tries to insert the visitation at position i, shifting everything behind by one position.
-         *
-         * Solution is modified if the insertion lowers the path length per target visited (total length may increase).
-         */
+        /// Tries to insert the visitation at position i, shifting everything behind by one position.
+        /// Solution is modified if the insertion lowers the path length per target visited (total length may increase).
         void try_insert(const ompl::base::State *start_state,
                         PointToPointPlanner &point_to_point_planner,
                         const multigoal::GoalApproachTable &table,
                         size_t i,
                         multigoal::Visitation v);
 
+        /// Try a set of replacements, and modify the solution if these form an improvement.
         void try_replacements(const ompl::base::State *start_state,
                               PointToPointPlanner &point_to_point_planner,
                               const GoalApproachTable &table,
@@ -136,18 +135,16 @@ namespace multigoal {
                                                         size_t i,
                                                         Visitation v);
 
-    /**
-     * \brief Verify (through assertions) that a vector of Replacements is valid. (For debugging purposes)
-     */
+    /// Verify (through assertions) that a vector of Replacements is valid. (For debugging purposes)
     void check_replacements_validity(const std::vector<Replacement> &replacements);
 
-    /**
-     * \brief Computes an ATSolution from a GoalApproachTable by visiting the goals in the order computed by `random_initial_order`.
-     */
+    /// Computes an ATSolution from a GoalApproachTable by visiting the goals in the order computed by `random_initial_order`.
     multigoal::ATSolution random_initial_solution(const PointToPointPlanner &point_to_point_planner,
                                                   const GoalApproachTable &table,
                                                   const ompl::base::State *&start_state);
 
+    /// Computes a vector of `PathGeometric` corresponding, in order, to the `replacements`.
+    /// Computation is fallible, and the `optional` will be filled only on success.
     std::optional<std::vector<ompl::geometric::PathGeometric>>
     computeNewPathSegments(const ompl::base::State *start_state,
                            PointToPointPlanner &point_to_point_planner,
