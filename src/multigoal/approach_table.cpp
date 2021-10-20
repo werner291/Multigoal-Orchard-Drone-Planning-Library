@@ -178,9 +178,9 @@ multigoal::replacements_for_insertion(const GoalApproachTable &goals,
                           solution.getSegmentsConst().size()); // If at the end, we get from == until, signaling an empty range to be replaced.
 
     repl.visitations.push_back(v); // (i-1 -> v)
-    repl.visitations.push_back(solution.getSegmentsConst()[i].visitation); // (v -> i)
-//    if (i + 1 < solution.getSegmentsConst().size())
-//        repl.visitations.push_back(solution.getSegmentsConst()[i + 1].visitation);
+    if (i < solution.getSegmentsConst().size()) {
+        repl.visitations.push_back(solution.getSegmentsConst()[i].visitation); // (v -> i), if i exists.
+    }
 
     return {repl};
 }
