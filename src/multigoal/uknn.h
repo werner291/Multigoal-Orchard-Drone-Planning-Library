@@ -5,21 +5,23 @@
 #ifndef NEW_PLANNERS_UKNN_H
 #define NEW_PLANNERS_UKNN_H
 
+typedef std::function<Eigen::Vector3d(const ompl::base::Goal *)> GoalProjectionFn;
+
+typedef std::function<Eigen::Vector3d(const ompl::base::State *)> StateProjectionFn;
+
 #include "multi_goal_planners.h"
 
 class UnionKNNPlanner : public MultiGoalPlanner {
 
+    size_t k;
+    GoalProjectionFn goalProjection_;
+    StateProjectionFn stateProjection_;
+
 public:
     UnionKNNPlanner(size_t k,
-                    std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection,
-                    std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection);
+                    GoalProjectionFn goalProjection,
+                    StateProjectionFn stateProjection);
 
-private:
-    size_t k;
-    std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection_;
-    std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection_;
-
-public:
     MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals,
                              const ompl::base::State *start_state,
                              PointToPointPlanner &point_to_point_planner) override;

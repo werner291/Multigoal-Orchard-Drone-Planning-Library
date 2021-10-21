@@ -368,8 +368,6 @@ void ATSolution::apply_replacements(const std::vector<Replacement> &replacement_
         solution_.erase(solution_.begin() + (long) itr->from,
                         solution_.begin() + (long) itr->until);
 
-        long insert_pos = 0;
-
         for (auto itr2 = itr->visitations.crbegin(); itr2 != itr->visitations.crend(); ++itr2) {
             GoalApproach ga{
                     *itr2,

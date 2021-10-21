@@ -16,6 +16,8 @@ const double MAX_TIME_PER_TARGET_SECONDS = 0.1;
 
 typedef std::shared_ptr<ompl::base::GoalSampleableRegion> GoalSamplerPtr;
 
+typedef const std::vector<GoalSamplerPtr> GoalSet;
+
 /**
  * Utility function to extend one trajectory with the waypoints of another.
  *
@@ -33,7 +35,41 @@ struct PointToPointPath {
  * Result struct of a multi-goal planning operation.
  */
 struct MultiGoalPlanResult {
+
+    struct ReplacementSpec {
+        size_t from;
+        size_t until;
+        std::vector<size_t> target_ids;
+    };
+
     std::vector<PointToPointPath> segments;
+
+    /**
+     * \brief Computes which parts of a MultiGoalPlanResult should be replaced in order to realize a swap
+     * of targets i and j (in the current MultiGoalPlanResult's order). Each range is strictly disjoint.
+     *
+     * Requires that i < j, and that i,j are valid indices in the ATSolution.
+     */
+    std::vector<ReplacementSpec> replacements_for_swap(size_t num_goals, size_t i, size_t j);
+
+    const ompl::base::State *state_after_segments(size_t count, const ompl::base::State *start_state) const;
+
+    /// Check internal invariants via assertions (crashes if violated)
+    void check_valid(const GoalSet &table, const ompl::base::SpaceInformation &si) const;
+
+    /// Compute whether the new replacements would improve the cost-per-target metric.
+    bool is_improvement(const std::vector<ReplacementSpec> &replacement_specs,
+                        const std::vector<PointToPointPath> &computed_replacements) const;
+
+    /// Apply a set of replacements.
+    void apply_replacements(const std::vector<ReplacementSpec> &replacement_specs,
+                            const std::vector<PointToPointPath> &computed_replacements);
+
+    double total_length() {
+        return std::accumulate(segments.begin(), segments.end(), 0.0, [](double &a, const PointToPointPath &b) {
+            return a + b.path.length();
+        });
+    }
 };
 
 
@@ -53,7 +89,7 @@ public:
      * @param start_state            The state of the robot at the start.
      * @param point_to_point_planner Wrapper for an OMPL planner and an optimization objective
      */
-    virtual MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals,
+    virtual MultiGoalPlanResult plan(GoalSet &goals,
                                      const ompl::base::State *start_state,
                                      PointToPointPlanner &point_to_point_planner) = 0;
 
@@ -61,6 +97,16 @@ public:
      * \brief Returns the name of the meta-planner. Does NOT include any sub-planners or optimization objectives.
      */
     virtual std::string getName() = 0;
+
+    /// Computes a vector of `PathGeometric` corresponding, in order, to the `replacements`.
+    /// Computation is fallible, and the `optional` will be filled only on success.
+    static std::optional<std::vector<PointToPointPath>>
+    computeNewPathSegments(const ompl::base::State *start_state,
+                           PointToPointPlanner &point_to_point_planner,
+                           const GoalSet &goals,
+                           const MultiGoalPlanResult &solution,
+                           const std::vector<MultiGoalPlanResult::ReplacementSpec> &replacements);
 };
+
 
 #endif //MULTI_GOAL_PLANNERS_H

@@ -166,8 +166,8 @@ set(SHARED_SRC
         src/multigoal/AT2Opt.h
         src/multigoal/ATNN.cpp
         src/multigoal/ATNN.h
-        #        src/multigoal/TwoOpt.cpp
-        #        src/multigoal/TwoOpt.h
+        src/multigoal/NNThenTwoOpt.cpp
+        src/multigoal/NNThenTwoOpt.h
         )
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})

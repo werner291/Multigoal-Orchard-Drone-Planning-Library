@@ -19,6 +19,7 @@
 //#include "multigoal/TwoOpt.h"
 #include "multigoal/ATNN.h"
 #include "multigoal/ATRandom.h"
+#include "multigoal/NNThenTwoOpt.h"
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<Robot> drone = make_robot();
 
-    const int RUNS = 5; // 100 Is the value reported in the paper.
+    const int RUNS = 10; // 100 Is the value reported in the paper.
     Json::Value benchmark_results;
 
     std::random_device rd;
@@ -99,7 +100,7 @@ int main(int argc, char **argv) {
 
         double apple_t = std::uniform_real_distribution(0.0, 1.0)(gen);
 
-        int numberOfApples = 5 + (apple_t * apple_t) * 150;
+        int numberOfApples = 5 + (apple_t * apple_t) * 50;//150;
 
         std::cout << "Run " << (i + 1) << " out of " << RUNS << " with " << numberOfApples << " apples." << std::endl;
 
@@ -144,30 +145,26 @@ int main(int argc, char **argv) {
         };
 
         std::vector<Experiment> experiments{
-//                {std::make_shared<KNNPlanner>(1),      std::make_shared<ompl::geometric::PRMstar>(
-//                        si),                                        pathLengthObjective},
-//                {std::make_shared<KNNPlanner>(2),      std::make_shared<ompl::geometric::PRMstar>(
-//                        si),                                        pathLengthObjective},
-//                {std::make_shared<KNNPlanner>(3),      std::make_shared<ompl::geometric::PRMstar>(
-//                        si),                                        pathLengthObjective},
-                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
-                                                      std::make_shared<ompl::geometric::PRMstar>(
-                                                              si), pathLengthObjective},
-//                {std::make_shared<UnionKNNPlanner>(2, goalProjection, stateProjection),
-//                                                       std::make_shared<ompl::geometric::PRMstar>(
-//                                                               si), pathLengthObjective},
-//                {std::make_shared<UnionKNNPlanner>(3, goalProjection, stateProjection),
-//                                                       std::make_shared<ompl::geometric::PRMstar>(
-//                                                               si), pathLengthObjective},
+                {std::make_shared<NNThenTwoOpt>(goalProjection, stateProjection),
+                 std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
+                Experiment{std::make_shared<KNNPlanner>(1, goalProjection, stateProjection),
+                           std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
+                {std::make_shared<KNNPlanner>(2, goalProjection, stateProjection),
+                 std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
+                {std::make_shared<KNNPlanner>(3, goalProjection, stateProjection),
+                 std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
+                Experiment{std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
+                           std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
+                Experiment{std::make_shared<UnionKNNPlanner>(2, goalProjection, stateProjection),
+                           std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
+                Experiment{std::make_shared<UnionKNNPlanner>(3, goalProjection, stateProjection),
+                           std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
+//                {std::make_shared<AT2Opt>(), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
 //                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(
 //                        si),                                        leafCountObjective},
 //                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(si), multiObjective50_50 },
-                {std::make_shared<AT2Opt>(),          std::make_shared<ompl::geometric::PRMstar>(
-                        si),                                       pathLengthObjective},
-                {std::make_shared<multigoal::ATNN>(), std::make_shared<ompl::geometric::PRMstar>(
-                        si),                                       pathLengthObjective},
-                {std::make_shared<ATRandom>(),        std::make_shared<ompl::geometric::PRMstar>(
-                        si),                                       pathLengthObjective},
+//                {std::make_shared<multigoal::ATNN>(), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
+//                {std::make_shared<ATRandom>(),        std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective}
         };
 
         for (const auto &experiment: experiments) {
@@ -191,6 +188,8 @@ int main(int argc, char **argv) {
             auto start = std::chrono::steady_clock::now();
             MultiGoalPlanResult result = experiment.meta_planner->plan(goals, start_state_ompl.get(), ptp);
             auto end = std::chrono::steady_clock::now();
+
+            result.check_valid(goals, *si);
 
             robowflex::Trajectory full_trajectory(drone, "whole_body");
             for (const auto &item: result.segments) {

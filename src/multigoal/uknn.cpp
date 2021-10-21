@@ -40,8 +40,9 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<GoalSamplerPtr> &goa
         unvisited_nn.nearestK({.goal = 0 /* A bit hackish, just use 0 here. */, .goal_pos = start_eepos}, k, knn);
 
         std::vector<std::shared_ptr<const ompl::base::GoalSampleableRegion>> knn_goals;
-        for (size_t idx = 0; idx < knn.size(); ++idx) {
-            knn_goals.push_back(goals[idx]);
+        for (auto &idx: knn) {
+//            knn_goals.push_back(goals[idx]);
+            knn_goals.push_back(goals[idx.goal]);
         }
         auto union_goal = std::make_shared<UnionGoalSampleableRegion>(
                 point_to_point_planner.getPlanner()->getSpaceInformation(), knn_goals);
@@ -58,15 +59,21 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<GoalSamplerPtr> &goa
             unvisited_nn.remove(knn[ith_nn]);
 
             result.segments.push_back({
-                                              ith_nn,
+                                              knn[ith_nn].goal,
                                               ptp_result.value(),
                                       });
+
+            assert(union_goal->isSatisfied(ptp_result->getState(ptp_result->getStateCount() - 1)));
+            assert(knn_goals[ith_nn]->isSatisfied(ptp_result->getState(ptp_result->getStateCount() - 1)));
+            assert(goals[knn[ith_nn].goal]->isSatisfied(ptp_result->getState(ptp_result->getStateCount() - 1)));
 
         } else {
             // Just delete the first of the k nearest neighbours.
             unvisited_nn.remove(knn[0]); // Better picks here? Maybe delete all?
         }
     }
+
+    result.check_valid(goals, *point_to_point_planner.getPlanner()->getSpaceInformation());
 
     return result;
 }
