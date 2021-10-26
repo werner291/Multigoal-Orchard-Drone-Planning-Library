@@ -164,52 +164,37 @@ int main(int argc, char **argv) {
                         std::make_shared<ompl::geometric::PRMstar>(si),
                         pathLengthObjective, true},
 
-//                {std::make_shared<KNNPlanner>(2, goalProjection, stateProjection),
-//                 std::make_shared<ompl::geometric::PRMstar>(si),
-//                         pathLengthObjective, false},
-//
-//                {std::make_shared<KNNPlanner>(3, goalProjection, stateProjection),
-//                 std::make_shared<ompl::geometric::PRMstar>(si),
-//                         pathLengthObjective, false},
-
                 {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
                         std::make_shared<ompl::geometric::PRMstar>(si),
                         pathLengthObjective, false},
 
-
                 {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
                         std::make_shared<ompl::geometric::PRMstar>(si),
                         pathLengthObjective, true},
-//
-//                {std::make_shared<UnionKNNPlanner>(2, goalProjection, stateProjection),
-//                        std::make_shared<ompl::geometric::PRMstar>(si),
-//                        pathLengthObjective, false},
-//
-//                {std::make_shared<UnionKNNPlanner>(3, goalProjection, stateProjection),
-//                        std::make_shared<ompl::geometric::PRMstar>(si),
-//                        pathLengthObjective, false},
 
-//                {std::make_shared<UnionKNNPlanner>(2, goalProjection, stateProjection),
-//                        std::make_shared<ompl::geometric::PRMstar>(si),
-//                        pathLengthObjective, true},
-//
-//                {std::make_shared<UnionKNNPlanner>(3, goalProjection, stateProjection),
-//                        std::make_shared<ompl::geometric::PRMstar>(si),
-//                        pathLengthObjective, true},
+                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
+                        std::make_shared<ompl::geometric::PRMstar>(si),
+                        leafCountObjective,  false},
 
-//                {std::make_shared<AT2Opt>(), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
-//                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(
-//                        si),                                        leafCountObjective},
-//                {std::make_shared<UnionKNNPlanner>(3), std::make_shared<ompl::geometric::PRMstar>(si), multiObjective50_50 },
-//                {std::make_shared<multigoal::ATNN>(), std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective},
-//                {std::make_shared<ATRandom>(),        std::make_shared<ompl::geometric::PRMstar>(si), pathLengthObjective}
+                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
+                        std::make_shared<ompl::geometric::PRMstar>(si),
+                        leafCountObjective,  true},
+
+                {std::make_shared<RandomizedTwoOpt>(std::make_shared<KNNPlanner>(1, goalProjection, stateProjection)),
+                        std::make_shared<ompl::geometric::PRMstar>(si),
+                        leafCountObjective,  true},
+
+                {std::make_shared<RandomizedTwoOpt>(std::make_shared<KNNPlanner>(1, goalProjection, stateProjection)),
+                        std::make_shared<ompl::geometric::PRMstar>(si),
+                        leafCountObjective,  false},
+
         };
 
         // TODO: Throw in something about sampling strategies and different planners.
         // TODO try out the experience-based planners.
 
         // TODO: Allocate and utilize the time budget fairly for all planners
-        std::chrono::milliseconds time_budget(10000);
+        std::chrono::milliseconds time_budget(1000 + 100);
 
         for (const auto &experiment: experiments) {
 
