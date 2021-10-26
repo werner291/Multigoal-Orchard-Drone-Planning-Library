@@ -55,7 +55,7 @@ MultiGoalPlanResult KNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
 
             // Try planning such that the end-effector is near the given target/
             auto pointToPointResult = point_to_point_planner.planToOmplGoal(
-                    MAX_TIME_PER_TARGET_SECONDS / (double) k,
+                    MAX_TIME_PER_TARGET_SECONDS / (double) k, // FIXME use the time budget
                     segment_start_state,
                     goals[target.goal]);
 

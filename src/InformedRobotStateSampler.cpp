@@ -63,7 +63,7 @@ void ExpandingHyperspheroidBasedSampler::sample(ompl::base::State *state) {
     space_->interpolate(start_state, goal_sample.get(), rng_.uniform01(), inBetween.get());
 
     ompl::base::ScopedState uniform_random_sample(this->goalRegion->getSpaceInformation());
-    uniformSampler->sampleUniformNear(state, inBetween.get(), std::abs(rng_.gaussian(0.0, 5.0)));
+    uniformSampler->sampleUniformNear(state, inBetween.get(), std::abs(rng_.gaussian(0.0, stddev_)));
 
 }
 
@@ -84,12 +84,14 @@ void ExpandingHyperspheroidBasedSampler::sampleGaussian(ompl::base::State *state
 }
 
 ExpandingHyperspheroidBasedSampler::ExpandingHyperspheroidBasedSampler(const ompl::base::StateSpace *space,
-                                                                       const std::shared_ptr<ompl::base::StateSampler> &uniformSampler,
+                                                                       std::shared_ptr<ompl::base::StateSampler> uniformSampler,
                                                                        const ompl::base::State *startState,
-                                                                       const std::shared_ptr<const ompl::base::GoalSampleableRegion> &goalRegion,
+                                                                       std::shared_ptr<const ompl::base::GoalSampleableRegion> goalRegion,
                                                                        double stddev)
         : StateSampler(space),
-          uniformSampler(uniformSampler),
+          uniformSampler(std::move(uniformSampler)),
           start_state(startState),
-          goalRegion(goalRegion),
-          stddev(stddev) {}
+          goalRegion(std::move(goalRegion)),
+          stddev_(stddev) {
+    std::cout << "New sampler" << std::endl;
+}

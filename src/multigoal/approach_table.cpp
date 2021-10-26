@@ -186,7 +186,7 @@ multigoal::replacements_for_insertion(const GoalApproachTable &goals,
 }
 
 multigoal::ATSolution
-multigoal::random_initial_solution(const PointToPointPlanner &point_to_point_planner, const GoalApproachTable &table,
+multigoal::random_initial_solution(PointToPointPlanner &point_to_point_planner, const GoalApproachTable &table,
                                    const ompl::base::State *&start_state) {
 
     ATSolution solution(point_to_point_planner.getPlanner()->getSpaceInformation());

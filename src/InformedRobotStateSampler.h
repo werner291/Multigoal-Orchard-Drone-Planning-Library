@@ -14,9 +14,9 @@ class ExpandingHyperspheroidBasedSampler : public ompl::base::StateSampler {
 public:
 
     ExpandingHyperspheroidBasedSampler(const ompl::base::StateSpace *space,
-                                       const std::shared_ptr<ompl::base::StateSampler> &uniformSampler,
+                                       std::shared_ptr<ompl::base::StateSampler> uniformSampler,
                                        const ompl::base::State *startState,
-                                       const std::shared_ptr<const ompl::base::GoalSampleableRegion> &goalRegion,
+                                       std::shared_ptr<const ompl::base::GoalSampleableRegion> goalRegion,
                                        double stddev);
 
     void sample(ompl::base::State *state);
@@ -27,12 +27,12 @@ public:
 
     void sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) override;
 
-private:
-
-    const std::shared_ptr<ompl::base::StateSampler> uniformSampler;
     const ompl::base::State *start_state;
-    const std::shared_ptr<const ompl::base::GoalSampleableRegion> goalRegion;
-    double stddev;
+    std::shared_ptr<const ompl::base::GoalSampleableRegion> goalRegion;
+    double stddev_;
+
+private:
+    const std::shared_ptr<ompl::base::StateSampler> uniformSampler;
     ompl::RNG rng_;
 
 };

@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 
         double apple_t = std::uniform_real_distribution(0.0, 1.0)(gen);
 
-        int numberOfApples = 5 + (apple_t * apple_t) * 50;//150;
+        int numberOfApples = 5 + (apple_t * apple_t) * 50;//150 TODO change this back;
 
         std::cout << "Run " << (i + 1) << " out of " << RUNS << " with " << numberOfApples << " apples." << std::endl;
 
@@ -150,11 +150,11 @@ int main(int argc, char **argv) {
 
                 {std::make_shared<RandomizedTwoOpt>(std::make_shared<KNNPlanner>(1, goalProjection, stateProjection)),
                         std::make_shared<ompl::geometric::PRMstar>(si),
-                        pathLengthObjective, false},
+                        pathLengthObjective, true},
 
                 {std::make_shared<RandomizedTwoOpt>(std::make_shared<KNNPlanner>(1, goalProjection, stateProjection)),
                         std::make_shared<ompl::geometric::PRMstar>(si),
-                        pathLengthObjective, true},
+                        pathLengthObjective, false},
 
                 {std::make_shared<KNNPlanner>(1, goalProjection, stateProjection),
                         std::make_shared<ompl::geometric::PRMstar>(si),
@@ -220,7 +220,8 @@ int main(int argc, char **argv) {
                       << ", and " << (experiment.useInformedSampler ? "custom" : "default") << " sampling."
                       << std::endl;
 
-            PointToPointPlanner ptp(experiment.ptp_planner, experiment.optimization_objective, false);
+            PointToPointPlanner ptp(experiment.ptp_planner, experiment.optimization_objective,
+                                    experiment.useInformedSampler);
 
             std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>> goals;
             for (const auto &apple: tree_scene.apples)

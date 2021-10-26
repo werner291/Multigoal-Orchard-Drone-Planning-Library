@@ -139,7 +139,7 @@ namespace multigoal {
     void check_replacements_validity(const std::vector<Replacement> &replacements);
 
     /// Computes an ATSolution from a GoalApproachTable by visiting the goals in the order computed by `random_initial_order`.
-    multigoal::ATSolution random_initial_solution(const PointToPointPlanner &point_to_point_planner,
+    multigoal::ATSolution random_initial_solution(PointToPointPlanner &point_to_point_planner,
                                                   const GoalApproachTable &table,
                                                   const ompl::base::State *&start_state);
 

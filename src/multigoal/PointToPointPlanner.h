@@ -6,6 +6,7 @@
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 #include <ompl/base/goals/GoalState.h>
 #include <ompl/base/Planner.h>
+#include "../InformedRobotStateSampler.h"
 
 /**
  * Represents some algorithm or strategy that, given a robot state and a (a set of) target point(s) in R^3, attempts
@@ -22,6 +23,9 @@ class PointToPointPlanner {
 
     bool useInformedSampler;
 
+    // OMPL clearly doesn't want us to change the sampler after the setup. Let's do it anyway!
+    std::vector<std::shared_ptr<ExpandingHyperspheroidBasedSampler>> existingSamplers;
+
 public:
     [[nodiscard]] const ompl::base::PlannerPtr &getPlanner() const;
 
@@ -32,10 +36,10 @@ public:
                         bool useInformedSampler);
 
     [[nodiscard]] std::optional<ompl::geometric::PathGeometric>
-    planToOmplGoal(double maxTime, const ompl::base::State *start, const ompl::base::GoalPtr &goal) const;
+    planToOmplGoal(double maxTime, const ompl::base::State *start, const ompl::base::GoalPtr &goal);
 
     [[nodiscard]] std::optional<ompl::geometric::PathGeometric>
-    planToOmplState(double maxTime, const ompl::base::State *start, const ompl::base::State *goal) const;
+    planToOmplState(double maxTime, const ompl::base::State *start, const ompl::base::State *goal);
 };
 
 
