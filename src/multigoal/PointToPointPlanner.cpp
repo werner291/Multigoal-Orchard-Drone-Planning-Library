@@ -12,13 +12,17 @@
 
 PointToPointPlanner::PointToPointPlanner(ompl::base::PlannerPtr planner,
                                          std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective,
-                                         bool useInformedSampler)
+                                         std::shared_ptr<SamplerWrapper> sampler)
         : planner_(std::move(planner)), optimizationObjective_(std::move(optimizationObjective)),
-          useInformedSampler(useInformedSampler) {}
+          sampler_(std::move(sampler)) {
+    planner_->getSpaceInformation()->getStateSpace()->setStateSamplerAllocator(
+            [this](const ompl::base::StateSpace *ss) { return this->sampler_->getSampler(); });
+}
 
 
 std::optional<ompl::geometric::PathGeometric>
-PointToPointPlanner::planToOmplGoal(double maxTime, const ompl::base::State *start,
+PointToPointPlanner::planToOmplGoal(double maxTime,
+                                    const ompl::base::State *start,
                                     const ompl::base::GoalPtr &goal) {
 
     assert(planner_->getSpaceInformation()->isValid(start));
@@ -31,34 +35,11 @@ PointToPointPlanner::planToOmplGoal(double maxTime, const ompl::base::State *sta
     pdef->setGoal(goal);
     planner_->setProblemDefinition(pdef);
 
-    if (useInformedSampler) {
-        planner_->getSpaceInformation()->getStateSpace()->setStateSamplerAllocator(
-                [goal, start, this](const ompl::base::StateSpace *ss) {
-                    existingSamplers.push_back(std::make_shared<ExpandingHyperspheroidBasedSampler>(
-                            ss,
-                            ss->allocDefaultStateSampler(),
-                            start,
-                            std::dynamic_pointer_cast<ompl::base::GoalSampleableRegion>(goal),
-                            5.0
-                    ));
-                    std::cout << "PTP planner has " << existingSamplers.size() << " samplers." << std::endl;
-                    return existingSamplers.back();
-                });
-    } else {
-        planner_->getSpaceInformation()->getStateSpace()->setStateSamplerAllocator(
-                [](const ompl::base::StateSpace *ss) {
-                    return ss->allocDefaultStateSampler();
-                }); // TODO: Refactor this into the class constructor or something.
-    }
+    sampler_->setStartAndGoal(start, std::dynamic_pointer_cast<ompl::base::GoalSampleableRegion>(goal));
 
     // We explicitly do the setup beforehand to avoid counting it in the benchmarking.
     if (!planner_->isSetup()) {
         planner_->setup();
-    }
-
-    for (auto &item: existingSamplers) {
-        item->start_state = start;
-        item->goalRegion = std::dynamic_pointer_cast<ompl::base::GoalSampleableRegion>(goal);
     }
 
     ompl::base::PlannerStatus status = planner_->solve(ompl::base::timedPlannerTerminationCondition(maxTime));
@@ -90,3 +71,4 @@ PointToPointPlanner::planToOmplState(double maxTime, const ompl::base::State *st
     gs->setState(goal);
     return planToOmplGoal(maxTime, start, gs);
 }
+

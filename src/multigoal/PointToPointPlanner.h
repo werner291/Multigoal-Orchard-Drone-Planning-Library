@@ -7,6 +7,8 @@
 #include <ompl/base/goals/GoalState.h>
 #include <ompl/base/Planner.h>
 #include "../InformedRobotStateSampler.h"
+#include "../DroneStateSampler.h"
+#include "../SamplerWrapper.h"
 
 /**
  * Represents some algorithm or strategy that, given a robot state and a (a set of) target point(s) in R^3, attempts
@@ -21,10 +23,7 @@ class PointToPointPlanner {
     /// The optimization objective to use, incase of an optimizing planner.
     const std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective_;
 
-    bool useInformedSampler;
-
-    // OMPL clearly doesn't want us to change the sampler after the setup. Let's do it anyway!
-    std::vector<std::shared_ptr<ExpandingHyperspheroidBasedSampler>> existingSamplers;
+    const std::shared_ptr<SamplerWrapper> sampler_;
 
 public:
     [[nodiscard]] const ompl::base::PlannerPtr &getPlanner() const;
@@ -33,7 +32,7 @@ public:
 
     PointToPointPlanner(ompl::base::PlannerPtr planner,
                         std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective,
-                        bool useInformedSampler);
+                        std::shared_ptr<SamplerWrapper> sampler);
 
     [[nodiscard]] std::optional<ompl::geometric::PathGeometric>
     planToOmplGoal(double maxTime, const ompl::base::State *start, const ompl::base::GoalPtr &goal);

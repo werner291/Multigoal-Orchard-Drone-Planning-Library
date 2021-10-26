@@ -150,6 +150,8 @@ set(SHARED_SRC
         src/DroneStateSampler.cpp
         src/InformedRobotStateSampler.h
         src/InformedRobotStateSampler.cpp
+        src/SamplerWrapper.h
+        src/SamplerWrapper.cpp
         src/multigoal/multi_goal_planners.h
         src/multigoal/multi_goal_planners.cpp
         src/multigoal/knn.h
