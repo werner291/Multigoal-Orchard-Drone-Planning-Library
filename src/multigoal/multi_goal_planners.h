@@ -91,7 +91,8 @@ public:
      */
     virtual MultiGoalPlanResult plan(GoalSet &goals,
                                      const ompl::base::State *start_state,
-                                     PointToPointPlanner &point_to_point_planner) = 0;
+                                     PointToPointPlanner &point_to_point_planner,
+                                     std::chrono::milliseconds time_budget) = 0;
 
     /**
      * \brief Returns the name of the meta-planner. Does NOT include any sub-planners or optimization objectives.

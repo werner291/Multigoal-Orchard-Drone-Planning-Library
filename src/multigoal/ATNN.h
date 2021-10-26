@@ -28,8 +28,10 @@ namespace multigoal {
                                              ompl::NearestNeighborsGNAT<Node> &unvisited_nn, const ATNN::Node &nearest);
 
     public:
-        MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals, const ompl::base::State *start_state,
-                                 PointToPointPlanner &point_to_point_planner) override;
+        MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals,
+                                 const ompl::base::State *start_state,
+                                 PointToPointPlanner &point_to_point_planner,
+                                 std::chrono::milliseconds time_budget) override;
 
         std::string getName() override;
 

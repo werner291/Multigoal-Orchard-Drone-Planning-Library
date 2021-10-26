@@ -11,7 +11,8 @@ std::string RandomPlanner::getName() {
 
 MultiGoalPlanResult RandomPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
                                         const ompl::base::State *start_state,
-                                        PointToPointPlanner &point_to_point_planner) {
+                                        PointToPointPlanner &point_to_point_planner,
+                                        std::chrono::milliseconds time_budget) {
 
     std::vector<size_t> goals_visitation_order(goals.size());
     for (size_t i = 0; i < goals.size(); ++i) {

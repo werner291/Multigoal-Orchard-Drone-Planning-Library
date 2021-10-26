@@ -15,7 +15,8 @@ KNNPlanner::KNNPlanner(size_t k,
 
 MultiGoalPlanResult KNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
                                      const ompl::base::State *start_state,
-                                     PointToPointPlanner &point_to_point_planner) {
+                                     PointToPointPlanner &point_to_point_planner,
+                                     std::chrono::milliseconds time_budget) {
 
     // Place all apples into a Geometric Nearest-Neighbour access tree, using Euclidean distance.
     ompl::NearestNeighborsGNAT<GNATNode> unvisited_nn;

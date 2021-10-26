@@ -12,7 +12,7 @@
 #include <ompl/base/DiscreteMotionValidator.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <fcl/fcl.h>
-#include "EndEffectorConstraintSampler.h"
+#include "DroneStateConstraintSampler.h"
 #include "InverseClearanceIntegralObjective.h"
 #include "init_planner.h"
 #include <robowflex_library/io/broadcaster.h>
@@ -43,23 +43,6 @@ double StateValidityChecker::clearance(const ompl::base::State *state) const {
 
     // We rely on the sampler producing states that are valid in all other aspects, so here we just check collision.
     return scene_->distanceToCollision(robot_state);
-}
-
-DroneStateSampler::DroneStateSampler(const ompl::base::StateSpace *space)
-        : StateSampler(space) {}
-
-void DroneStateSampler::sampleUniform(ompl::base::State *state) {
-    moveit::core::RobotState st(space_->as<DroneStateSpace>()->getRobotModel());
-    DroneStateConstraintSampler::randomizeUprightWithBase(st);
-    space_->as<DroneStateSpace>()->copyToOMPLState(state, st);
-}
-
-void DroneStateSampler::sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, double distance) {
-    ROS_ERROR("Not implemented DroneStateSampler::sampleUniformNear");
-}
-
-void DroneStateSampler::sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) {
-    ROS_ERROR("Not implemented DroneStateSampler::sampleGaussian");
 }
 
 InverseClearanceIntegralObjectiveOMPL::InverseClearanceIntegralObjectiveOMPL(const ompl::base::SpaceInformationPtr &si,

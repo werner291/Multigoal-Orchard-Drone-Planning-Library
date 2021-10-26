@@ -20,13 +20,16 @@ class PointToPointPlanner {
     /// The optimization objective to use, incase of an optimizing planner.
     const std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective_;
 
+    bool useInformedSampler;
+
 public:
     [[nodiscard]] const ompl::base::PlannerPtr &getPlanner() const;
 
     [[nodiscard]] const std::shared_ptr<ompl::base::OptimizationObjective> &getOptimizationObjective() const;
 
     PointToPointPlanner(ompl::base::PlannerPtr planner,
-                        std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective);
+                        std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective,
+                        bool useInformedSampler);
 
     [[nodiscard]] std::optional<ompl::geometric::PathGeometric>
     planToOmplGoal(double maxTime, const ompl::base::State *start, const ompl::base::GoalPtr &goal) const;

@@ -17,7 +17,7 @@
 #include <robowflex_ompl/ompl_interface.h>
 #include <robowflex_library/benchmarking.h>
 #include <robowflex_library/builder.h>
-#include "EndEffectorConstraintSampler.h"
+#include "DroneStateConstraintSampler.h"
 
 DroneStateConstraintSampler::DroneStateConstraintSampler(
         const planning_scene::PlanningSceneConstPtr &scene, const std::string &groupName) :
@@ -83,8 +83,6 @@ void DroneStateConstraintSampler::moveEndEffectorToGoal(moveit::core::RobotState
         positions[2] += delta.z();
 
         state.update(true);
-    } else {
-        // How?
     }
 }
 

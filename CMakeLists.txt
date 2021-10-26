@@ -123,7 +123,7 @@ catkin_package(
 
 set(SHARED_SRC
         src/procedural_tree_generation.cpp
-        src/EndEffectorConstraintSampler.cpp
+        src/DroneStateConstraintSampler.cpp
         src/msgs_utilities.cpp
         src/msgs_utilities.h
         src/build_planning_scene.cpp
@@ -146,6 +146,10 @@ set(SHARED_SRC
         src/LeavesCollisionChecker.h
         src/json_utils.cpp
         src/json_utils.h
+        src/DroneStateSampler.h
+        src/DroneStateSampler.cpp
+        src/InformedRobotStateSampler.h
+        src/InformedRobotStateSampler.cpp
         src/multigoal/multi_goal_planners.h
         src/multigoal/multi_goal_planners.cpp
         src/multigoal/knn.h
@@ -166,8 +170,10 @@ set(SHARED_SRC
         src/multigoal/AT2Opt.h
         src/multigoal/ATNN.cpp
         src/multigoal/ATNN.h
-        src/multigoal/NNThenTwoOpt.cpp
-        src/multigoal/NNThenTwoOpt.h
+        src/multigoal/RandomizedTwoOpt.cpp
+        src/multigoal/RandomizedTwoOpt.h
+        src/multigoal/SubtourMovingPlanner.cpp
+        src/multigoal/SubtourMovingPlanner.h
         )
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})

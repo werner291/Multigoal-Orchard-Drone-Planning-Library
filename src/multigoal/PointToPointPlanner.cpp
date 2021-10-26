@@ -7,11 +7,14 @@
 #include <utility>
 #include "../UnionGoalSampleableRegion.h"
 #include "multi_goal_planners.h"
+#include "../InformedRobotStateSampler.h"
 
 
 PointToPointPlanner::PointToPointPlanner(ompl::base::PlannerPtr planner,
-                                         std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective)
-        : planner_(std::move(planner)), optimizationObjective_(std::move(optimizationObjective)) {}
+                                         std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective,
+                                         bool useInformedSampler)
+        : planner_(std::move(planner)), optimizationObjective_(std::move(optimizationObjective)),
+          useInformedSampler(useInformedSampler) {}
 
 
 std::optional<ompl::geometric::PathGeometric>
@@ -28,6 +31,19 @@ PointToPointPlanner::planToOmplGoal(double maxTime, const ompl::base::State *sta
     pdef->setGoal(goal);
     planner_->setProblemDefinition(pdef);
 
+    if (useInformedSampler) {
+        planner_->getSpaceInformation()->getStateSpace()->setStateSamplerAllocator(
+                [&](const ompl::base::StateSpace *ss) {
+                    return std::make_shared<ExpandingHyperspheroidBasedSampler>(
+                            ss,
+                            ss->allocDefaultStateSampler(),
+                            start,
+                            std::dynamic_pointer_cast<ompl::base::GoalSampleableRegion>(goal),
+                            5.0
+                    );
+                });
+    }
+
     // We explicitly do the setup beforehand to avoid counting it in the benchmarking.
     if (!planner_->isSetup()) planner_->setup();
 
@@ -35,7 +51,8 @@ PointToPointPlanner::planToOmplGoal(double maxTime, const ompl::base::State *sta
 
     // "Approximate" solutions can be wildly off, so we accept exact solutions only.
     if (status == ompl::base::PlannerStatus::EXACT_SOLUTION) {
-//        assert(pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>()->check());
+        // FIXME: This check fails for some reason, my guess because of the undirected graph used inside PRM.
+        // assert(pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>()->check());
         return {*pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>()};
     } else {
         return {};

@@ -41,7 +41,8 @@ private:
 public:
     MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals,
                              const ompl::base::State *start_state,
-                             PointToPointPlanner &point_to_point_planner) override;
+                             PointToPointPlanner &point_to_point_planner,
+                             std::chrono::milliseconds time_budget) override;
 
     std::string getName() override {
         std::ostringstream os;

@@ -3,8 +3,10 @@
 
 
 MultiGoalPlanResult
-multigoal::ATNN::plan(const std::vector<GoalSamplerPtr> &goals, const ompl::base::State *start_state,
-                      PointToPointPlanner &point_to_point_planner) {
+multigoal::ATNN::plan(const std::vector<GoalSamplerPtr> &goals,
+                      const ompl::base::State *start_state,
+                      PointToPointPlanner &point_to_point_planner,
+                      std::chrono::milliseconds time_budget) {
 
     // Build a goal approach table.
     GoalApproachTable table = takeGoalSamples(point_to_point_planner.getPlanner()->getSpaceInformation(), goals, 50);

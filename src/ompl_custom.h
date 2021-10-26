@@ -13,6 +13,7 @@
 #include <robowflex_library/scene.h>
 #include <robowflex_library/robot.h>
 #include <robowflex_library/trajectory.h>
+#include "DroneStateSampler.h"
 
 static const double GOAL_END_EFFECTOR_RADIUS = 0.2;
 
@@ -29,18 +30,6 @@ public:
 
     double clearance(const ompl::base::State *state) const override;
 
-};
-
-class DroneStateSampler : public ompl::base::StateSampler {
-
-public:
-    explicit DroneStateSampler(const ompl::base::StateSpace *space);
-
-    void sampleUniform(ompl::base::State *state) override;
-
-    void sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, double distance) override;
-
-    void sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) override;
 };
 
 class DroneStateSpace : public ompl_interface::ModelBasedStateSpace {

@@ -1,5 +1,5 @@
-#ifndef NEW_PLANNERS_ENDEFFECTORCONSTRAINTSAMPLER_H
-#define NEW_PLANNERS_ENDEFFECTORCONSTRAINTSAMPLER_H
+#ifndef NEW_PLANNERS_DRONESTATECONSTRAINTSAMPLER_H
+#define NEW_PLANNERS_DRONESTATECONSTRAINTSAMPLER_H
 
 #include <random_numbers/random_numbers.h>
 #include <moveit/constraint_samplers/constraint_sampler.h>
@@ -69,4 +69,4 @@ class DroneStateConstraintSamplerAllocator : public constraint_samplers::Constra
 
 };
 
-#endif //NEW_PLANNERS_ENDEFFECTORCONSTRAINTSAMPLER_H
+#endif //NEW_PLANNERS_DRONESTATECONSTRAINTSAMPLER_H

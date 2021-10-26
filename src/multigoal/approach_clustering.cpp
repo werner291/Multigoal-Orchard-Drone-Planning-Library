@@ -12,7 +12,8 @@ using namespace multigoal;
 MultiGoalPlanResult
 ApproachClustering::plan(const std::vector<GoalSamplerPtr> &goals,
                          const ompl::base::State *start_state,
-                         PointToPointPlanner &point_to_point_planner) {
+                         PointToPointPlanner &point_to_point_planner,
+                         std::chrono::milliseconds time_budget) {
 
     auto si = point_to_point_planner.getPlanner()->getSpaceInformation();
 
