@@ -18,7 +18,9 @@ MultiGoalPlanResult KNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
                                      PointToPointPlanner &point_to_point_planner,
                                      std::chrono::milliseconds time_budget) {
 
-    auto deadline = std::chrono::steady_clock::now() + time_budget;
+    auto start = std::chrono::steady_clock::now();
+    auto deadline = start + time_budget;
+    auto expected_time_per_ptp = time_budget / (double) (goals.size() * k);
 
     // Place all apples into a Geometric Nearest-Neighbour access tree, using Euclidean distance.
     ompl::NearestNeighborsGNAT<GNATNode> unvisited_nn;
@@ -52,17 +54,37 @@ MultiGoalPlanResult KNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
         double best_length = INFINITY;
         GNATNode best_target;
 
-        auto time_remaining = deadline - std::chrono::steady_clock::now();
-        std::chrono::duration<double, std::ratio<1>> time_budget_per_ptp = time_remaining / unvisited_nn.size();
+//        auto time_remaining = deadline - std::chrono::steady_clock::now();
+//        auto expected_time_remaining = expected_time_per_ptp * (double)(unvisited_nn.size() * k);
+//        auto delta = time_remaining - expected_time_remaining;
+////        assert(time_remaining.count() > 0);
+//        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() << "ms since start" << std::endl;
+//        std::cout << "Delta: ms " << std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() << std::endl;
+//        std::cout << "Expected total: ms " << std::chrono::duration_cast<std::chrono::milliseconds>(expected_time_remaining).count() << std::endl;
+//        std::cout << "Actual total: ms " << std::chrono::duration_cast<std::chrono::milliseconds>(time_remaining).count() << std::endl;
+//        std::chrono::duration<double, std::ratio<1>> time_budget_per_ptp = (time_remaining+delta) / (double)(k*unvisited_nn.size());
+//        if (time_budget_per_ptp < expected_time_remaining*0.5) time_budget_per_ptp = expected_time_remaining*0.5 / (double)(k*unvisited_nn.size());;
+//        if (time_budget_per_ptp > expected_time_remaining*1.5) time_budget_per_ptp = expected_time_remaining*1.5 / (double)(k*unvisited_nn.size());;
 
         // Try to plan to each target.
         for (const auto &target: knn) {
 
+            std::chrono::duration<double, std::ratio<1>> ptp_budget = expected_time_per_ptp;
+
+            auto ptp_start = std::chrono::steady_clock::now();
+
+
+//            std::cout << time_budget_per_ptp.count() << "/" << (k*unvisited_nn.size()) <<  std::endl;
             // Try planning such that the end-effector is near the given target/
             auto pointToPointResult = point_to_point_planner.planToOmplGoal(
-                    time_budget_per_ptp.count(), // FIXME use the time budget
+                    ptp_budget.count(),
                     segment_start_state,
                     goals[target.goal]);
+
+            auto ptp_end = std::chrono::steady_clock::now();
+
+//            std::cout << "PTP took " << std::chrono::duration_cast<std::chrono::milliseconds>(ptp_end-ptp_start).count()
+//                    << " ms (" << std::chrono::duration_cast<std::chrono::milliseconds>(ptp_budget).count() << "ms budget)" << std::endl;
 
             // If an improvement, store it.
             if (pointToPointResult.has_value() && pointToPointResult.value().length() < best_length) {

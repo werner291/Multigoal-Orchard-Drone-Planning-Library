@@ -13,7 +13,7 @@ MultiGoalPlanResult RandomizedTwoOpt::plan(const std::vector<GoalSamplerPtr> &go
 
     auto deadline = std::chrono::steady_clock::now() + time_budget;
 
-    auto solution = initialAttemptPlanner_->plan(goals, start_state, point_to_point_planner, time_budget / 10);
+    auto solution = initialAttemptPlanner_->plan(goals, start_state, point_to_point_planner, time_budget / 2);
 
     while (std::chrono::steady_clock::now() < deadline) {
 

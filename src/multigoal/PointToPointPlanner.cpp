@@ -37,7 +37,6 @@ PointToPointPlanner::planToOmplGoal(double maxTime,
 
     sampler_->setStartAndGoal(start, std::dynamic_pointer_cast<ompl::base::GoalSampleableRegion>(goal));
 
-    // We explicitly do the setup beforehand to avoid counting it in the benchmarking.
     if (!planner_->isSetup()) {
         planner_->setup();
     }
