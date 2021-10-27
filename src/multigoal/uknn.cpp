@@ -13,6 +13,8 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<GoalSamplerPtr> &goa
                                           PointToPointPlanner &point_to_point_planner,
                                           std::chrono::milliseconds time_budget) {
 
+    auto deadline = std::chrono::steady_clock::now() + time_budget;
+
     // Place all apples into a Geometric Nearest-Neighbour access tree, using Euclidean distance.
     ompl::NearestNeighborsGNAT<GNATNode> unvisited_nn;
     unvisited_nn.setDistanceFunction([](const GNATNode &a, const GNATNode &b) {
@@ -26,10 +28,14 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<GoalSamplerPtr> &goa
                          });
     }
 
+
     MultiGoalPlanResult result;
 
     // Keep going until the GNAT is empty.
     while (unvisited_nn.size() > 0) {
+
+        auto time_remaining = deadline - std::chrono::steady_clock::now();
+        std::chrono::duration<double, std::ratio<1>> time_budget_per_ptp = time_remaining / unvisited_nn.size();
 
         const ompl::base::State *segment_start_state = result.segments.empty() ? start_state
                                                                                : result.segments.back().path.getStates().back();
@@ -48,7 +54,7 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<GoalSamplerPtr> &goa
         auto union_goal = std::make_shared<UnionGoalSampleableRegion>(
                 point_to_point_planner.getPlanner()->getSpaceInformation(), knn_goals);
 
-        auto ptp_result = point_to_point_planner.planToOmplGoal(MAX_TIME_PER_TARGET_SECONDS, segment_start_state,
+        auto ptp_result = point_to_point_planner.planToOmplGoal(time_budget_per_ptp.count(), segment_start_state,
                                                                 union_goal);
 
         // If at least one attempt was successful...
@@ -73,8 +79,6 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<GoalSamplerPtr> &goa
             unvisited_nn.remove(knn[0]); // Better picks here? Maybe delete all?
         }
     }
-
-    result.check_valid(goals, *point_to_point_planner.getPlanner()->getSpaceInformation());
 
     return result;
 }

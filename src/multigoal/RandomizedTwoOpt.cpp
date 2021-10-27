@@ -11,11 +11,11 @@ MultiGoalPlanResult RandomizedTwoOpt::plan(const std::vector<GoalSamplerPtr> &go
                                            PointToPointPlanner &point_to_point_planner,
                                            std::chrono::milliseconds time_budget) {
 
+    auto deadline = std::chrono::steady_clock::now() + time_budget;
+
     auto solution = initialAttemptPlanner_->plan(goals, start_state, point_to_point_planner, time_budget / 10);
 
-    auto ptc = ompl::base::timedPlannerTerminationCondition(10.0);
-
-    while (!ptc) {
+    while (std::chrono::steady_clock::now() < deadline) {
 
         std::random_device rd;  //Will be used to obtain a seed for the random number engine
         std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()

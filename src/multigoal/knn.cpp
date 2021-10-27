@@ -18,6 +18,8 @@ MultiGoalPlanResult KNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
                                      PointToPointPlanner &point_to_point_planner,
                                      std::chrono::milliseconds time_budget) {
 
+    auto deadline = std::chrono::steady_clock::now() + time_budget;
+
     // Place all apples into a Geometric Nearest-Neighbour access tree, using Euclidean distance.
     ompl::NearestNeighborsGNAT<GNATNode> unvisited_nn;
     unvisited_nn.setDistanceFunction([](const GNATNode &a, const GNATNode &b) {
@@ -50,12 +52,15 @@ MultiGoalPlanResult KNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
         double best_length = INFINITY;
         GNATNode best_target;
 
+        auto time_remaining = deadline - std::chrono::steady_clock::now();
+        std::chrono::duration<double, std::ratio<1>> time_budget_per_ptp = time_remaining / unvisited_nn.size();
+
         // Try to plan to each target.
         for (const auto &target: knn) {
 
             // Try planning such that the end-effector is near the given target/
             auto pointToPointResult = point_to_point_planner.planToOmplGoal(
-                    MAX_TIME_PER_TARGET_SECONDS / (double) k, // FIXME use the time budget
+                    time_budget_per_ptp.count(), // FIXME use the time budget
                     segment_start_state,
                     goals[target.goal]);
 

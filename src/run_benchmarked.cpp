@@ -149,50 +149,50 @@ int main(int argc, char **argv) {
 
         std::vector<Experiment> experiments{
 
+//                {std::make_shared<RandomizedTwoOpt>(std::make_shared<KNNPlanner>(1, goalProjection, stateProjection)),
+//                        std::make_shared<ompl::geometric::PRMstar>(si),
+//                        pathLengthObjective,
+//                                             std::make_shared<InformedGaussian>(state_space.get())},
+//
+//                {std::make_shared<RandomizedTwoOpt>(std::make_shared<KNNPlanner>(1, goalProjection, stateProjection)),
+//                        std::make_shared<ompl::geometric::PRMstar>(si),
+//                        pathLengthObjective,
+//                                             std::make_shared<UniformSampler>(state_space.get())},
+//
+//                {std::make_shared<KNNPlanner>(1, goalProjection, stateProjection),
+//                        std::make_shared<ompl::geometric::PRMstar>(si),
+//                        pathLengthObjective,
+//                                             std::make_shared<UniformSampler>(state_space.get())},
+//
+//                {std::make_shared<KNNPlanner>(1, goalProjection, stateProjection),
+//                        std::make_shared<ompl::geometric::PRMstar>(si),
+//                        pathLengthObjective,
+//                                             std::make_shared<InformedGaussian>(state_space.get())},
+//
+//                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
+//                        std::make_shared<ompl::geometric::PRMstar>(si),
+//                        pathLengthObjective,
+//                                             std::make_shared<UniformSampler>(state_space.get())},
+//
+//                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
+//                        std::make_shared<ompl::geometric::PRMstar>(si),
+//                        pathLengthObjective, std::make_shared<InformedGaussian>(state_space.get())},
+
+//                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
+//                        std::make_shared<ompl::geometric::PRMstar>(si),
+//                        leafCountObjective,  std::make_shared<UniformSampler>(state_space.get())},
+
+//                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
+//                        std::make_shared<ompl::geometric::PRMstar>(si),
+//                        leafCountObjective,  std::make_shared<InformedGaussian>(state_space.get())},
+//
                 {std::make_shared<RandomizedTwoOpt>(std::make_shared<KNNPlanner>(1, goalProjection, stateProjection)),
-                        std::make_shared<ompl::geometric::PRMstar>(si),
-                        pathLengthObjective,
-                                             std::make_shared<InformedGaussian>(state_space.get())},
-
-                {std::make_shared<RandomizedTwoOpt>(std::make_shared<KNNPlanner>(1, goalProjection, stateProjection)),
-                        std::make_shared<ompl::geometric::PRMstar>(si),
-                        pathLengthObjective,
-                                             std::make_shared<UniformSampler>(state_space.get())},
-
-                {std::make_shared<KNNPlanner>(1, goalProjection, stateProjection),
-                        std::make_shared<ompl::geometric::PRMstar>(si),
-                        pathLengthObjective,
-                                             std::make_shared<UniformSampler>(state_space.get())},
-
-                {std::make_shared<KNNPlanner>(1, goalProjection, stateProjection),
-                        std::make_shared<ompl::geometric::PRMstar>(si),
-                        pathLengthObjective,
-                                             std::make_shared<InformedGaussian>(state_space.get())},
-
-                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
-                        std::make_shared<ompl::geometric::PRMstar>(si),
-                        pathLengthObjective,
-                                             std::make_shared<UniformSampler>(state_space.get())},
-
-                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
-                        std::make_shared<ompl::geometric::PRMstar>(si),
-                        pathLengthObjective, std::make_shared<InformedGaussian>(state_space.get())},
-
-                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
-                        std::make_shared<ompl::geometric::PRMstar>(si),
-                        leafCountObjective,  std::make_shared<UniformSampler>(state_space.get())},
-
-                {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
-                        std::make_shared<ompl::geometric::PRMstar>(si),
-                        leafCountObjective,  std::make_shared<InformedGaussian>(state_space.get())},
-
-                {std::make_shared<RandomizedTwoOpt>(std::make_shared<KNNPlanner>(1, goalProjection, stateProjection)),
-                        std::make_shared<ompl::geometric::PRMstar>(si),
-                        leafCountObjective,  std::make_shared<UniformSampler>(state_space.get())},
-
-                {std::make_shared<RandomizedTwoOpt>(std::make_shared<KNNPlanner>(1, goalProjection, stateProjection)),
-                        std::make_shared<ompl::geometric::PRMstar>(si),
-                        leafCountObjective,  std::make_shared<UniformSampler>(state_space.get())},
+                 std::make_shared<ompl::geometric::PRMstar>(si),
+                 leafCountObjective, std::make_shared<UniformSampler>(state_space.get())},
+//
+//                {std::make_shared<RandomizedTwoOpt>(std::make_shared<KNNPlanner>(1, goalProjection, stateProjection)),
+//                        std::make_shared<ompl::geometric::PRMstar>(si),
+//                        leafCountObjective,  std::make_shared<UniformSampler>(state_space.get())},
 
         };
 
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
         // TODO try out the experience-based planners.
 
         // TODO: Allocate and utilize the time budget fairly for all planners
-        std::chrono::milliseconds time_budget(1000 + 100);
+        std::chrono::milliseconds time_budget(10000);
 
         for (const auto &experiment: experiments) {
 
@@ -226,6 +226,14 @@ int main(int argc, char **argv) {
             MultiGoalPlanResult result = experiment.meta_planner->plan(goals, start_state_ompl.get(), ptp, time_budget);
             auto end = std::chrono::steady_clock::now();
 
+            // Let's be honest, the result is simply invalid if the time budget is not respected.
+            auto elapsed = end - start;
+
+            std::cout << "Elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count() << "ms"
+                      << std::endl;
+
+            assert(abs(time_budget - elapsed) < std::chrono::milliseconds(500));
+
             result.check_valid(goals, *si);
 
             robowflex::Trajectory full_trajectory(drone, "whole_body");
@@ -245,7 +253,7 @@ int main(int argc, char **argv) {
             run_stats["optimization_objective"] = experiment.optimization_objective->getDescription();
             run_stats["total_path_length"] = full_trajectory.getLength();
             run_stats["total_runtime"] = (double) std::chrono::duration_cast<std::chrono::milliseconds>(
-                    end - start).count();
+                    elapsed).count();
 
             benchmark_stats["planner_runs"].append(run_stats);
 
