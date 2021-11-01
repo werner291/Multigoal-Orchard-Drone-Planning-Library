@@ -26,6 +26,8 @@ class PointToPointPlanner {
     const std::shared_ptr<SamplerWrapper> sampler_;
 
 public:
+
+
     [[nodiscard]] const ompl::base::PlannerPtr &getPlanner() const;
 
     [[nodiscard]] const std::shared_ptr<ompl::base::OptimizationObjective> &getOptimizationObjective() const;

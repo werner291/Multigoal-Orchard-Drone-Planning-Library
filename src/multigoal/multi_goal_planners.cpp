@@ -118,9 +118,14 @@ void MultiGoalPlanResult::check_valid(const GoalSet &table, const ompl::base::Sp
     }
 }
 
-bool MultiGoalPlanResult::is_improvement(const std::vector<ReplacementSpec> &replacement_specs,
-                                         const std::vector<PointToPointPath> &computed_replacements) const {
+double MultiGoalPlanResult::newCost(const std::vector<PointToPointPath> &computed_replacements) const {
+    return std::accumulate(computed_replacements.begin(), computed_replacements.end(), 0.0,
+                           [](double &a, const PointToPointPath &b) {
+                               return a + b.path.length();
+                           }) / (double) computed_replacements.size();
+}
 
+double MultiGoalPlanResult::originalCost(const std::vector<ReplacementSpec> &replacement_specs) const {
     double original_cost = 0.0;
     size_t targets_visited = 0;
 
@@ -132,14 +137,7 @@ bool MultiGoalPlanResult::is_improvement(const std::vector<ReplacementSpec> &rep
     }
 
     original_cost /= (double) targets_visited;
-
-    double new_cost = std::accumulate(computed_replacements.begin(), computed_replacements.end(), 0.0,
-                                      [](double &a, const PointToPointPath &b) {
-                                          return a + b.path.length();
-                                      }) / (double) computed_replacements.size();
-
-    return new_cost < original_cost;
-
+    return original_cost;
 }
 
 void MultiGoalPlanResult::apply_replacements(const std::vector<ReplacementSpec> &replacement_specs,

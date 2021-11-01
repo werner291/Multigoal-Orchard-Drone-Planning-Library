@@ -57,10 +57,6 @@ struct MultiGoalPlanResult {
     /// Check internal invariants via assertions (crashes if violated)
     void check_valid(const GoalSet &table, const ompl::base::SpaceInformation &si) const;
 
-    /// Compute whether the new replacements would improve the cost-per-target metric.
-    bool is_improvement(const std::vector<ReplacementSpec> &replacement_specs,
-                        const std::vector<PointToPointPath> &computed_replacements) const;
-
     /// Apply a set of replacements.
     void apply_replacements(const std::vector<ReplacementSpec> &replacement_specs,
                             const std::vector<PointToPointPath> &computed_replacements);
@@ -70,6 +66,10 @@ struct MultiGoalPlanResult {
             return a + b.path.length();
         });
     }
+
+    double originalCost(const std::vector<ReplacementSpec> &replacement_specs) const;
+
+    double newCost(const std::vector<PointToPointPath> &computed_replacements) const;
 };
 
 

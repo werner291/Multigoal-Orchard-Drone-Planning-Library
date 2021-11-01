@@ -42,9 +42,21 @@ void RandomizedTwoOpt::trySwap(const std::vector<GoalSamplerPtr> &goals, MultiGo
                                PointToPointPlanner &planner, size_t i, size_t j,
                                const ompl::base::State *start_state) {
 
-//    std::cout << "Attempted swapping " << i << ", " << j << std::endl;
+    std::cout << "Attempted swapping " << i << ", " << j << std::endl;
 
     auto replacement_spec = result.replacements_for_swap(goals.size(), i, j);
+
+    const double originalCost = result.originalCost(replacement_spec);
+
+    if (useCostRejectionHeuristic) {
+        const double heuristicNewCost = this->computeNewPathLengthLowerbound(start_state, planner, goals, result,
+                                                                             replacement_spec);
+
+        if (heuristicNewCost > originalCost) {
+            std::cout << "Rejected by heuristic." << std::endl;
+            return;
+        }
+    }
 
     auto computed = computeNewPathSegments(
             start_state,
@@ -55,7 +67,11 @@ void RandomizedTwoOpt::trySwap(const std::vector<GoalSamplerPtr> &goals, MultiGo
     );
 
     if (computed) {
-        if (result.is_improvement(replacement_spec, *computed)) {
+
+
+        double newCost = result.newCost(*computed);
+
+        if (newCost < originalCost) {
             double before = result.total_length();
             result.apply_replacements(replacement_spec, *computed);
             double after = result.total_length();
@@ -68,5 +84,57 @@ void RandomizedTwoOpt::trySwap(const std::vector<GoalSamplerPtr> &goals, MultiGo
 
 }
 
-RandomizedTwoOpt::RandomizedTwoOpt(std::shared_ptr<MultiGoalPlanner> initialAttemptPlanner) :
-        initialAttemptPlanner_(std::move(initialAttemptPlanner)) {}
+double RandomizedTwoOpt::computeNewPathLengthLowerbound(const ompl::base::State *start_state,
+                                                        PointToPointPlanner &point_to_point_planner,
+                                                        const GoalSet &goals,
+                                                        const MultiGoalPlanResult &solution,
+                                                        const std::vector<MultiGoalPlanResult::ReplacementSpec> &replacements) {
+
+    double total = 0.0;
+
+    for (const auto &repl: replacements) {
+        // Instead of invalidating every subsequent solution segment, we instead lock the final state of the to-be-replaced segments
+        // to be the starting state of the next segment, if any.
+        std::optional<const ompl::base::State *> to_state;
+        if (repl.until < solution.segments.size()) to_state = solution.state_after_segments(repl.until, start_state);
+
+        assert(repl.until == solution.segments.size() || goals[repl.target_ids.back()]->isSatisfied(*to_state));
+
+        std::variant<const ompl::base::State *, const ompl::base::Goal *> heuristicPlanFrom = solution.state_after_segments(
+                repl.from, start_state);
+
+        for (unsigned long target_id: repl.target_ids) {
+
+            if (std::holds_alternative<const ompl::base::State *>(heuristicPlanFrom)) {
+                // For better accuracy, we'd use the final state. This provides a good lower bound, though (hopefully)
+                total += betweenStateAndGoalHeuristic_(
+                        std::get<const ompl::base::State *>(heuristicPlanFrom),
+                        goals[target_id].get()
+                );
+            } else {
+                total += betweenGoalDistanceHeuristic_(
+                        std::get<const ompl::base::Goal *>(heuristicPlanFrom),
+                        goals[target_id].get()
+                );
+            }
+
+            heuristicPlanFrom = goals[target_id].get();
+
+        }
+    }
+
+    return total;
+
+}
+
+
+RandomizedTwoOpt::RandomizedTwoOpt(std::shared_ptr<MultiGoalPlanner> initialAttemptPlanner,
+                                   std::function<double(const ompl::base::Goal *,
+                                                        const ompl::base::Goal *)> betweenGoalDistanceHeuristic,
+                                   std::function<double(const ompl::base::State *,
+                                                        const ompl::base::Goal *)> betweenStateAndGoalHeuristic,
+                                   bool useCostRejectionHeuristic) :
+        initialAttemptPlanner_(std::move(initialAttemptPlanner)),
+        betweenGoalDistanceHeuristic_(std::move(betweenGoalDistanceHeuristic)),
+        betweenStateAndGoalHeuristic_(betweenStateAndGoalHeuristic),
+        useCostRejectionHeuristic(useCostRejectionHeuristic) {}

@@ -7,13 +7,12 @@
 #include <utility>
 #include "../UnionGoalSampleableRegion.h"
 #include "multi_goal_planners.h"
-#include "../InformedRobotStateSampler.h"
-
 
 PointToPointPlanner::PointToPointPlanner(ompl::base::PlannerPtr planner,
                                          std::shared_ptr<ompl::base::OptimizationObjective> optimizationObjective,
                                          std::shared_ptr<SamplerWrapper> sampler)
-        : planner_(std::move(planner)), optimizationObjective_(std::move(optimizationObjective)),
+        : planner_(std::move(planner)),
+          optimizationObjective_(std::move(optimizationObjective)),
           sampler_(std::move(sampler)) {
     planner_->getSpaceInformation()->getStateSpace()->setStateSamplerAllocator(
             [this](const ompl::base::StateSpace *ss) { return this->sampler_->getSampler(); });
