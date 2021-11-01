@@ -103,10 +103,10 @@ public:
     /// Computation is fallible, and the `optional` will be filled only on success.
     static std::optional<std::vector<PointToPointPath>>
     computeNewPathSegments(const ompl::base::State *start_state,
-                           PointToPointPlanner &point_to_point_planner,
-                           const GoalSet &goals,
+                           PointToPointPlanner &point_to_point_planner, const GoalSet &goals,
                            const MultiGoalPlanResult &solution,
-                           const std::vector<MultiGoalPlanResult::ReplacementSpec> &replacements);
+                           const std::vector<MultiGoalPlanResult::ReplacementSpec> &replacements,
+                           double maxTimePerSegment);
 };
 
 

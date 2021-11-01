@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<Robot> drone = make_robot();
 
-    const int RUNS = 20; // 100 Is the value reported in the paper.
+    const int RUNS = 10; // 100 Is the value reported in the paper.
     Json::Value benchmark_results;
 
     std::random_device rd;
@@ -166,35 +166,35 @@ int main(int argc, char **argv) {
 
         std::vector<Experiment> experiments{
 
-                {std::make_shared<RandomizedTwoOpt>(mknn(), goalToGoal, stateToGoal, false),
+                {std::make_shared<RandomizedTwoOpt>(mknn(), goalToGoal, stateToGoal, true),
                         std::make_shared<ompl::geometric::PRMstar>(si),
                         pathLengthObjective,
-                                             std::make_shared<InformedGaussian>(state_space.get())},
-
-                {std::make_shared<RandomizedTwoOpt>(mknn(), goalToGoal, stateToGoal, false),
-                        std::make_shared<ompl::geometric::PRMstar>(si),
-                        pathLengthObjective,
-                                             std::make_shared<UniformSampler>(state_space.get())},
+                        std::make_shared<InformedGaussian>(state_space.get())},
 
                 {std::make_shared<RandomizedTwoOpt>(mknn(), goalToGoal, stateToGoal, true),
                         std::make_shared<ompl::geometric::PRMstar>(si),
                         pathLengthObjective,
-                                             std::make_shared<InformedGaussian>(state_space.get())},
+                        std::make_shared<UniformSampler>(state_space.get())},
 
-                {std::make_shared<RandomizedTwoOpt>(mknn(), goalToGoal, stateToGoal, true),
+                {std::make_shared<RandomizedTwoOpt>(mknn(), goalToGoal, stateToGoal, false),
                         std::make_shared<ompl::geometric::PRMstar>(si),
                         pathLengthObjective,
-                                             std::make_shared<UniformSampler>(state_space.get())},
+                        std::make_shared<InformedGaussian>(state_space.get())},
+
+                {std::make_shared<RandomizedTwoOpt>(mknn(), goalToGoal, stateToGoal, false),
+                        std::make_shared<ompl::geometric::PRMstar>(si),
+                        pathLengthObjective,
+                        std::make_shared<UniformSampler>(state_space.get())},
 
                 {mknn(),
                         std::make_shared<ompl::geometric::PRMstar>(si),
                         pathLengthObjective,
-                                             std::make_shared<UniformSampler>(state_space.get())},
+                        std::make_shared<UniformSampler>(state_space.get())},
 
                 {mknn(),
                         std::make_shared<ompl::geometric::PRMstar>(si),
                         pathLengthObjective,
-                                             std::make_shared<InformedGaussian>(state_space.get())},
+                        std::make_shared<InformedGaussian>(state_space.get())},
 
                 {std::make_shared<UnionKNNPlanner>(1, goalProjection, stateProjection),
                         std::make_shared<ompl::geometric::PRMstar>(si),

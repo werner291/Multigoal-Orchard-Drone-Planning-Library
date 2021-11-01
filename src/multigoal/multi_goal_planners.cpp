@@ -159,10 +159,10 @@ void MultiGoalPlanResult::apply_replacements(const std::vector<ReplacementSpec> 
 
 std::optional<std::vector<PointToPointPath>>
 MultiGoalPlanner::computeNewPathSegments(const ompl::base::State *start_state,
-                                         PointToPointPlanner &point_to_point_planner,
-                                         const GoalSet &goals,
+                                         PointToPointPlanner &point_to_point_planner, const GoalSet &goals,
                                          const MultiGoalPlanResult &solution,
-                                         const std::vector<MultiGoalPlanResult::ReplacementSpec> &replacements) {
+                                         const std::vector<MultiGoalPlanResult::ReplacementSpec> &replacements,
+                                         double maxTimePerSegment) {
 
     std::vector<PointToPointPath> computed_replacements;
 
@@ -185,11 +185,15 @@ MultiGoalPlanner::computeNewPathSegments(const ompl::base::State *start_state,
             // If there's a final locked-in state, and we're at the end of the replacement sequence,
             // plan to that state instead of just an end-effector goal.
             auto ptp = (point_idx + 1 < repl.target_ids.size() || !to_state.has_value())
-                       ? point_to_point_planner.planToOmplGoal(0.01, from_state, goals[repl.target_ids[point_idx]])
-                       : point_to_point_planner.planToOmplState(0.01, from_state, to_state.value());
+                       ? point_to_point_planner.planToOmplGoal(maxTimePerSegment, from_state,
+                                                               goals[repl.target_ids[point_idx]])
+                       : point_to_point_planner.planToOmplState(maxTimePerSegment, from_state, to_state.value());
 
             // Planning is fallible. The whole replacement fails if one sub-plan fails.
-            if (!ptp) return {};
+            if (!ptp) {
+                std::cout << "Point-to-point plan failed." << std::endl;
+                return {};
+            };
 
             assert(point_to_point_planner.getPlanner()->getSpaceInformation()->isValid(
                     ptp->getState(ptp->getStateCount() - 1)));

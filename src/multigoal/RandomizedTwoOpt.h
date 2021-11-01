@@ -36,8 +36,8 @@ public:
     std::string getName() override;
 
     void trySwap(const std::vector<GoalSamplerPtr> &goals, MultiGoalPlanResult &result,
-                 PointToPointPlanner &planner, size_t i, size_t j,
-                 const ompl::base::State *start_state);
+                 PointToPointPlanner &planner, size_t i, size_t j, const ompl::base::State *start_state,
+                 double maxTimePerSegment);
 
     double
     computeNewPathLengthLowerbound(const ompl::base::State *start_state, PointToPointPlanner &point_to_point_planner,

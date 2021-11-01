@@ -27,7 +27,7 @@ MultiGoalPlanResult RandomizedTwoOpt::plan(const std::vector<GoalSamplerPtr> &go
 
         assert(i < j && j < solution.segments.size());
 
-        trySwap(goals, solution, point_to_point_planner, i, j, start_state);
+        trySwap(goals, solution, point_to_point_planner, i, j, start_state, 0.1);
 
     }
 
@@ -35,12 +35,12 @@ MultiGoalPlanResult RandomizedTwoOpt::plan(const std::vector<GoalSamplerPtr> &go
 }
 
 std::string RandomizedTwoOpt::getName() {
-    return initialAttemptPlanner_->getName() + "Prob2OPT";
+    return initialAttemptPlanner_->getName() + "Prob2OPT" + (useCostRejectionHeuristic ? "-H" : "");
 }
 
 void RandomizedTwoOpt::trySwap(const std::vector<GoalSamplerPtr> &goals, MultiGoalPlanResult &result,
-                               PointToPointPlanner &planner, size_t i, size_t j,
-                               const ompl::base::State *start_state) {
+                               PointToPointPlanner &planner, size_t i, size_t j, const ompl::base::State *start_state,
+                               double maxTimePerSegment) {
 
     std::cout << "Attempted swapping " << i << ", " << j << std::endl;
 
@@ -63,8 +63,7 @@ void RandomizedTwoOpt::trySwap(const std::vector<GoalSamplerPtr> &goals, MultiGo
             planner,
             goals,
             result,
-            replacement_spec
-    );
+            replacement_spec, maxTimePerSegment);
 
     if (computed) {
 
