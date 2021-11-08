@@ -34,6 +34,8 @@ using namespace robowflex;
 Json::Value collectLeafCollisionStats(const LeavesCollisionChecker &leavesCollisionChecker,
                                       const robot_trajectory::RobotTrajectory &trajectory) {
 
+    assert(!trajectory.empty());
+
     Json::Value leaf_collision_stats;
     size_t unique_collisions = 0;
 
@@ -82,7 +84,7 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<Robot> drone = make_robot();
 
-    const int RUNS = 5; // 100 Is the value reported in the paper.
+    const int RUNS = 50; // 100 Is the value reported in the paper.
     Json::Value benchmark_results;
 
     std::random_device rd;
@@ -198,7 +200,7 @@ int main(int argc, char **argv) {
         std::chrono::milliseconds ptp_budget1(100);
         std::chrono::milliseconds ptp_budget2(200);
 
-        for (auto budget: {100, 500/*, 1000, 2000, 5000, 7500, 10000, 15000, 20000*/ }) {
+        for (auto budget: {500, 1000/*, 2000, 5000, 7500, 10000, 15000, 20000*/ }) {
 
             std::vector<std::function<std::shared_ptr<SamplerWrapper>()>> samplers{
 //                    [&](){return std::make_shared<UniformSampler>(state_space.get());},
@@ -382,7 +384,7 @@ int main(int argc, char **argv) {
         benchmark_results.append(benchmark_stats);
     }
 
-    std::ofstream results(RUNS < 50 ? "analysis/results_test.json" : "analysis/results.json");
+    std::ofstream results("analysis/results.json");
     results << benchmark_results;
     results.close();
 

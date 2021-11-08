@@ -61,8 +61,9 @@ MetricTwoOpt::plan(GoalSet &goals, const ompl::base::State *start_state, PointTo
             newCost += (j_proj - after_i).norm() + (i_proj - before_j).norm();
         }
 
-        if (oldCost < newCost) {
+        if (oldCost > newCost) {
             std::swap(goals_in_order[i], goals_in_order[j]);
+            std::cout << "Swap " << i << " " << j << std::endl;
         }
     }
 
