@@ -19,6 +19,9 @@ class RandomizedTwoOpt : public MultiGoalPlanner {
     BetweenGoalFn betweenGoalDistanceHeuristic_;
     CostToGoFn betweenStateAndGoalHeuristic_;
     bool useCostRejectionHeuristic;
+    bool keepGoingOnImprovement;
+    double nnBudgetFraction = 0.5;
+    std::chrono::milliseconds ptp_budget_;
 
 public:
     RandomizedTwoOpt(std::shared_ptr<MultiGoalPlanner> initialAttemptPlanner,
@@ -26,7 +29,10 @@ public:
                                           const ompl::base::Goal *)> betweenGoalDistanceHeuristic,
                      std::function<double(const ompl::base::State *,
                                           const ompl::base::Goal *)> betweenStateAndGoalHeuristic,
-                     bool useCostRejectionHeuristic);
+                     bool useCostRejectionHeuristic,
+                     bool keepGoingOnImprovement,
+                     double nnBudgetFraction,
+                     std::chrono::milliseconds ptp_budget);
 
     MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals,
                              const ompl::base::State *start_state,

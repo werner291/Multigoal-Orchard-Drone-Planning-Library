@@ -23,7 +23,7 @@ std::string UniformSampler::getName() {
     return "uniform";
 }
 
-InformedGaussian::InformedGaussian(ompl::base::StateSpace *ss) : SamplerWrapper(ss) {}
+InformedGaussian::InformedGaussian(ompl::base::StateSpace *ss, double stddev) : SamplerWrapper(ss), stddev_(stddev) {}
 
 std::shared_ptr<ompl::base::StateSampler> InformedGaussian::getSampler() {
     if (!underlying_sampler_) {
@@ -37,7 +37,7 @@ void InformedGaussian::setStartAndGoal(const ompl::base::State *start,
     if (!underlying_sampler_) {
         underlying_sampler_.reset(
                 new ExpandingHyperspheroidBasedSampler(ss_, std::make_shared<DroneStateSampler>(ss_), start, goal,
-                                                       5.0));
+                                                       stddev_));
     } else {
         underlying_sampler_->goalRegion = goal;
         underlying_sampler_->start_state = start;
@@ -45,5 +45,10 @@ void InformedGaussian::setStartAndGoal(const ompl::base::State *start,
 }
 
 std::string InformedGaussian::getName() {
-    return "InfGauss";
+    std::stringstream ss;
+
+    ss << "InfGauss";
+    ss << this->stddev_;
+
+    return ss.str();
 }

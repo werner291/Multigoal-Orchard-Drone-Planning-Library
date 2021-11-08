@@ -7,6 +7,7 @@
 #include "../UnionGoalSampleableRegion.h"
 #include "../json_utils.h"
 #include "knn.h"
+#include "goals_gnat.h"
 
 MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
                                           const ompl::base::State *start_state,
@@ -16,18 +17,7 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<GoalSamplerPtr> &goa
     auto deadline = std::chrono::steady_clock::now() + time_budget;
 
     // Place all apples into a Geometric Nearest-Neighbour access tree, using Euclidean distance.
-    ompl::NearestNeighborsGNAT<GNATNode> unvisited_nn;
-    unvisited_nn.setDistanceFunction([](const GNATNode &a, const GNATNode &b) {
-        return (a.goal_pos - b.goal_pos).norm();
-    });
-
-    for (size_t idx = 0; idx < goals.size(); ++idx) {
-        unvisited_nn.add({
-                                 .goal = idx,
-                                 .goal_pos = goalProjection_(goals[idx].get()),
-                         });
-    }
-
+    auto unvisited_nn = buildGoalGNAT(goals, goalProjection_);
 
     MultiGoalPlanResult result;
 

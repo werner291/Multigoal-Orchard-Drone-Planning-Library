@@ -7,33 +7,39 @@
 #include <utility>
 #include "../json_utils.h"
 #include "PointToPointPlanner.h"
+#include "goals_gnat.h"
 
-KNNPlanner::KNNPlanner(size_t k,
-                       std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection,
-                       std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection)
-        : k(k), goalProjection_(std::move(goalProjection)), stateProjection_(std::move(stateProjection)) {}
+//double budgetFractionFn(size_t n, size_t i, double biasFactor) {
+//
+//    double t = (double) i / (double) n;
+//
+//    return (1.0/(double)n) * (biasFactor * t)
+//
+//}
+
+KNNPlanner::KNNPlanner(size_t k, std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection,
+                       std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection,
+                       double budgetBiasFactor)
+        : k(k), goalProjection_(std::move(goalProjection)), stateProjection_(std::move(stateProjection)),
+          budgetBiasFactor(budgetBiasFactor) {}
 
 MultiGoalPlanResult KNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
                                      const ompl::base::State *start_state,
                                      PointToPointPlanner &point_to_point_planner,
                                      std::chrono::milliseconds time_budget) {
 
+
     auto start = std::chrono::steady_clock::now();
     auto deadline = start + time_budget;
-    auto expected_time_per_ptp = time_budget / (double) (goals.size() * k);
+
+    auto first_ptp_time = time_budget * budgetBiasFactor / (double) (goals.size() * k);
+    auto other_ptp_time = (time_budget - first_ptp_time) / (double) ((goals.size() - 1) * k);
+
+    assert(abs(first_ptp_time * k + (goals.size() - 1) * k * other_ptp_time - time_budget) <
+           std::chrono::milliseconds(1));
 
     // Place all apples into a Geometric Nearest-Neighbour access tree, using Euclidean distance.
-    ompl::NearestNeighborsGNAT<GNATNode> unvisited_nn;
-    unvisited_nn.setDistanceFunction([](const GNATNode &a, const GNATNode &b) {
-        return (a.goal_pos - b.goal_pos).norm();
-    });
-
-    for (size_t idx = 0; idx < goals.size(); ++idx) {
-        unvisited_nn.add({
-                                 .goal = idx,
-                                 .goal_pos = goalProjection_(goals[idx].get()),
-                         });
-    }
+    auto unvisited_nn = buildGoalGNAT(goals, goalProjection_);
 
     MultiGoalPlanResult result;
 
@@ -69,7 +75,8 @@ MultiGoalPlanResult KNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
         // Try to plan to each target.
         for (const auto &target: knn) {
 
-            std::chrono::duration<double, std::ratio<1>> ptp_budget = expected_time_per_ptp;
+            std::chrono::duration<double, std::ratio<1>> ptp_budget = result.segments.empty() ? first_ptp_time
+                                                                                              : other_ptp_time;
 
             auto ptp_start = std::chrono::steady_clock::now();
 
@@ -110,13 +117,9 @@ MultiGoalPlanResult KNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
         }
     }
 
+    // TODO: Try occasionally re-computing the full path perhaps? Maybe after a successful swap?
+
     return result;
 }
 
-bool GNATNode::operator==(const GNATNode &other) const {
-    return goal == other.goal && goal_pos == other.goal_pos;
-}
 
-bool GNATNode::operator!=(const GNATNode &other) const {
-    return !(*this == other);
-}

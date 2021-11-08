@@ -47,9 +47,10 @@ public:
 class InformedGaussian : public SamplerWrapper {
 
     std::shared_ptr<ExpandingHyperspheroidBasedSampler> underlying_sampler_;
+    double stddev_;
 
 public:
-    explicit InformedGaussian(ompl::base::StateSpace *ss);
+    explicit InformedGaussian(ompl::base::StateSpace *ss, double stddev);
 
     std::shared_ptr<ompl::base::StateSampler> getSampler() override;
 

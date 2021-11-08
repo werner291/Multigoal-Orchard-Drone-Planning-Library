@@ -13,7 +13,13 @@ MultiGoalPlanResult RandomizedTwoOpt::plan(const std::vector<GoalSamplerPtr> &go
 
     auto deadline = std::chrono::steady_clock::now() + time_budget;
 
-    auto solution = initialAttemptPlanner_->plan(goals, start_state, point_to_point_planner, time_budget / 2);
+    std::chrono::milliseconds nn_time((long) ((double) time_budget.count() * nnBudgetFraction));
+    auto solution = initialAttemptPlanner_->plan(goals, start_state, point_to_point_planner, nn_time);
+
+    if (solution.segments.size() < 2) {
+        std::cerr << "Solution from nearest-neighbor algorithm too short." << std::endl;
+        return solution;
+    }
 
     while (std::chrono::steady_clock::now() < deadline) {
 
@@ -27,7 +33,7 @@ MultiGoalPlanResult RandomizedTwoOpt::plan(const std::vector<GoalSamplerPtr> &go
 
         assert(i < j && j < solution.segments.size());
 
-        trySwap(goals, solution, point_to_point_planner, i, j, start_state, 0.1);
+        trySwap(goals, solution, point_to_point_planner, i, j, start_state, (double) ptp_budget_.count() / 1000.0);
 
     }
 
@@ -35,7 +41,15 @@ MultiGoalPlanResult RandomizedTwoOpt::plan(const std::vector<GoalSamplerPtr> &go
 }
 
 std::string RandomizedTwoOpt::getName() {
-    return initialAttemptPlanner_->getName() + "Prob2OPT" + (useCostRejectionHeuristic ? "-H" : "");
+
+    std::stringstream ss;
+    ss << initialAttemptPlanner_->getName() << "*" << nnBudgetFraction;
+    ss << "+" "Prob2OPT";
+    if (useCostRejectionHeuristic) ss << "-H";
+    if (keepGoingOnImprovement) ss << "-K";
+    ss << "-ptp" << ptp_budget_.count() << "ms";
+
+    return ss.str();
 }
 
 void RandomizedTwoOpt::trySwap(const std::vector<GoalSamplerPtr> &goals, MultiGoalPlanResult &result,
@@ -49,10 +63,22 @@ void RandomizedTwoOpt::trySwap(const std::vector<GoalSamplerPtr> &goals, MultiGo
     const double originalCost = result.originalCost(replacement_spec);
 
     if (useCostRejectionHeuristic) {
+
+        double heuristicOldCost = 0.0;
+        for (const auto &item: replacement_spec)
+            for (int i = item.from; i < item.until; ++i) {
+                if (i == item.from)
+                    heuristicOldCost += this->betweenStateAndGoalHeuristic_(result.state_after_segments(i, start_state),
+                                                                            goals[result.segments[i].to_goal].get());
+                else
+                    heuristicOldCost += this->betweenGoalDistanceHeuristic_(goals[result.segments[i - 1].to_goal].get(),
+                                                                            goals[result.segments[i].to_goal].get());
+            }
+
         const double heuristicNewCost = this->computeNewPathLengthLowerbound(start_state, planner, goals, result,
                                                                              replacement_spec);
 
-        if (heuristicNewCost > originalCost) {
+        if (heuristicNewCost > heuristicOldCost * 1.5 /* TODO determine parameter value, or randomize */) {
             std::cout << "Rejected by heuristic." << std::endl;
             return;
         }
@@ -67,16 +93,37 @@ void RandomizedTwoOpt::trySwap(const std::vector<GoalSamplerPtr> &goals, MultiGo
 
     if (computed) {
 
-
         double newCost = result.newCost(*computed);
 
         if (newCost < originalCost) {
             double before = result.total_length();
+            // FIXME Try copying, applying, and THEN checking lengths, just in case the comparison method is broken.
             result.apply_replacements(replacement_spec, *computed);
             double after = result.total_length();
 
             std::cout << "Improved from " << before << " to " << after << std::endl;
+            assert(after < before);
             result.check_valid(goals, *planner.getPlanner()->getSpaceInformation());
+
+            if (keepGoingOnImprovement) {
+                auto computed2 = computeNewPathSegments(
+                        start_state,
+                        planner,
+                        goals,
+                        result,
+                        replacement_spec, maxTimePerSegment);
+
+                double secondNewCost = result.newCost(*computed2);
+
+                if (secondNewCost < newCost) {
+                    double before2 = result.total_length();
+                    result.apply_replacements(replacement_spec, *computed);
+                    double after2 = result.total_length();
+                    std::cout << "Kept going: improved from " << before << " to " << after << std::endl;
+                } else {
+                    std::cout << "Further improvement failed." << after << std::endl;
+                }
+            }
 
         }
     }
@@ -132,8 +179,11 @@ RandomizedTwoOpt::RandomizedTwoOpt(std::shared_ptr<MultiGoalPlanner> initialAtte
                                                         const ompl::base::Goal *)> betweenGoalDistanceHeuristic,
                                    std::function<double(const ompl::base::State *,
                                                         const ompl::base::Goal *)> betweenStateAndGoalHeuristic,
-                                   bool useCostRejectionHeuristic) :
+                                   bool useCostRejectionHeuristic, bool keepGoingOnImprovement,
+                                   double nnBudgetFraction,
+                                   std::chrono::milliseconds ptp_budget) :
         initialAttemptPlanner_(std::move(initialAttemptPlanner)),
         betweenGoalDistanceHeuristic_(std::move(betweenGoalDistanceHeuristic)),
-        betweenStateAndGoalHeuristic_(betweenStateAndGoalHeuristic),
-        useCostRejectionHeuristic(useCostRejectionHeuristic) {}
+        betweenStateAndGoalHeuristic_(std::move(betweenStateAndGoalHeuristic)),
+        useCostRejectionHeuristic(useCostRejectionHeuristic), keepGoingOnImprovement(keepGoingOnImprovement),
+        nnBudgetFraction(nnBudgetFraction), ptp_budget_(ptp_budget) {}

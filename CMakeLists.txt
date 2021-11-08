@@ -174,8 +174,12 @@ set(SHARED_SRC
         src/multigoal/ATNN.h
         src/multigoal/RandomizedTwoOpt.cpp
         src/multigoal/RandomizedTwoOpt.h
-        src/multigoal/SubtourMovingPlanner.cpp
-        src/multigoal/SubtourMovingPlanner.h
+        src/multigoal/MetricTwoOpt.cpp
+        src/multigoal/MetricTwoOpt.h
+        src/multigoal/goals_gnat.h
+        src/multigoal/goals_gnat.cpp
+        #        src/multigoal/SubtourMovingPlanner.cpp
+        #        src/multigoal/SubtourMovingPlanner.h
         )
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})

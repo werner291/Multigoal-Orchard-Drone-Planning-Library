@@ -18,25 +18,19 @@
  *
  * The planner terminates when the GNAT is empty.
  */
-struct GNATNode {
-    size_t goal{};
-    Eigen::Vector3d goal_pos;
-
-    bool operator!=(const GNATNode &other) const;
-
-    bool operator==(const GNATNode &other) const;
-};
-
 class KNNPlanner : public MultiGoalPlanner {
 
 public:
     explicit KNNPlanner(size_t k, std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection,
-                        std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection);
+                        std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection,
+                        double budgetBiasFactor);
 
 private:
     size_t k;
     std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection_;
     std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection_;
+
+    double budgetBiasFactor = 1.0;
 
 public:
     MultiGoalPlanResult plan(const std::vector<GoalSamplerPtr> &goals,
@@ -48,6 +42,7 @@ public:
         std::ostringstream os;
         os << k;
         os << "-NN";
+        if (budgetBiasFactor != 1.0) { os << ":" << budgetBiasFactor; }
         return os.str();
     }
 
