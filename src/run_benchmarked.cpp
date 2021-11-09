@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
         std::chrono::milliseconds ptp_budget1(100);
         std::chrono::milliseconds ptp_budget2(200);
 
-        for (auto budget: {500, 1000/*, 2000, 5000, 7500, 10000, 15000, 20000*/ }) {
+        for (auto budget: {500, 1000, 2000, 5000/*, 7500, 10000, 15000, 20000*/ }) {
 
             std::vector<std::function<std::shared_ptr<SamplerWrapper>()>> samplers{
 //                    [&](){return std::make_shared<UniformSampler>(state_space.get());},
@@ -223,17 +223,25 @@ int main(int argc, char **argv) {
 //                                              std::chrono::milliseconds(budget)
 //                                      });
 
+//                experiments.push_back({
+//                                              std::make_shared<RandomizedTwoOpt>(mknn(), goalToGoal, stateToGoal, false,
+//                                                                                 false, 0.25, ptp_budget1),
+//                                              mkprms(),
+//                                              pathLengthObjective,
+//                                              mksampler(),
+//                                              std::chrono::milliseconds(budget)
+//                                      });
+//                experiments.push_back({
+//                                              std::make_shared<RandomizedTwoOpt>(mknn(), goalToGoal, stateToGoal, false,
+//                                                                                 false, 0.25, ptp_budget2),
+//                                              mkprms(),
+//                                              pathLengthObjective,
+//                                              mksampler(),
+//                                              std::chrono::milliseconds(budget)
+//                                      });
+
                 experiments.push_back({
-                                              std::make_shared<RandomizedTwoOpt>(mknn(), goalToGoal, stateToGoal, false,
-                                                                                 false, 0.25, ptp_budget1),
-                                              mkprms(),
-                                              pathLengthObjective,
-                                              mksampler(),
-                                              std::chrono::milliseconds(budget)
-                                      });
-                experiments.push_back({
-                                              std::make_shared<RandomizedTwoOpt>(mknn(), goalToGoal, stateToGoal, false,
-                                                                                 false, 0.25, ptp_budget2),
+                                              std::make_shared<MetricTwoOpt>(goalProjection, stateProjection, 0.2),
                                               mkprms(),
                                               pathLengthObjective,
                                               mksampler(),
@@ -241,7 +249,7 @@ int main(int argc, char **argv) {
                                       });
 
                 experiments.push_back({
-                                              std::make_shared<MetricTwoOpt>(goalProjection, stateProjection),
+                                              std::make_shared<MetricTwoOpt>(goalProjection, stateProjection, 0.0),
                                               mkprms(),
                                               pathLengthObjective,
                                               mksampler(),

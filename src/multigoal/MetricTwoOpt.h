@@ -11,10 +11,12 @@ class MetricTwoOpt : public MultiGoalPlanner {
 
     std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection_;
     std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection_;
+    double swapping_budget_portion;
 
 public:
     MetricTwoOpt(std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection,
-                 std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection);
+                 std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection,
+                 double swappingBudgetPortion);
 
     MultiGoalPlanResult
     plan(GoalSet &goals, const ompl::base::State *start_state, PointToPointPlanner &point_to_point_planner,

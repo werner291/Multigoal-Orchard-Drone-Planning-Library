@@ -31,7 +31,9 @@ MetricTwoOpt::plan(GoalSet &goals, const ompl::base::State *start_state, PointTo
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
 
-    while (std::chrono::steady_clock::now() < start_time + time_budget / 5) {
+    std::chrono::milliseconds swapping_budget((long) ((double) time_budget.count() * swapping_budget_portion));
+
+    while (std::chrono::steady_clock::now() < start_time + swapping_budget) {
 
         // Alternatively, we do this deterministically, or with some kind of "candidate" heuristic
         size_t i = std::uniform_int_distribution<size_t>(0, goals_in_order.size() - 1)(gen);
@@ -71,7 +73,8 @@ MetricTwoOpt::plan(GoalSet &goals, const ompl::base::State *start_state, PointTo
 
     for (const auto &item: goals_in_order) {
         auto ptp_result = point_to_point_planner.planToOmplGoal(
-                0.8 * (double) time_budget.count() / ((double) goals_in_order.size() * 1000.0),
+                (1.0 - swapping_budget_portion) * (double) time_budget.count() /
+                ((double) goals_in_order.size() * 1000.0),
                 result.state_after_segments(result.segments.size(), start_state),
                 goals[item]
         );
@@ -85,9 +88,13 @@ MetricTwoOpt::plan(GoalSet &goals, const ompl::base::State *start_state, PointTo
 }
 
 std::string MetricTwoOpt::getName() {
-    return "M-NN+2Opt";
+    std::stringstream ss;
+    ss << "M-NN+2Opt" << swapping_budget_portion;
+    return ss.str();
 }
 
 MetricTwoOpt::MetricTwoOpt(std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection,
-                           std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection)
-        : goalProjection_(std::move(goalProjection)), stateProjection_(std::move(stateProjection)) {}
+                           std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection,
+                           double swappingBudgetPortion)
+        : goalProjection_(std::move(goalProjection)), stateProjection_(std::move(stateProjection)),
+          swapping_budget_portion(swappingBudgetPortion) {}
