@@ -20,6 +20,7 @@ MultiGoalPlanResult KNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,
                                      PointToPointPlanner &point_to_point_planner,
                                      std::chrono::milliseconds time_budget) {
 
+    assert(point_to_point_planner.getPlanner()->getSpaceInformation()->isValid(start_state));
 
     auto start = std::chrono::steady_clock::now();
     auto deadline = start + time_budget;

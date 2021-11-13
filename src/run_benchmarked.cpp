@@ -13,12 +13,8 @@
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/base/OptimizationObjective.h>
 #include <json/json.h>
-#include <ros/ros.h>
 
 int main(int argc, char **argv) {
-
-    // Startup ROS
-    ROS ros(argc, argv);
 
     auto drone = loadRobotModel();
 
@@ -135,12 +131,7 @@ int main(int argc, char **argv) {
             PointToPointPlanner ptp(experiment.ptp_planner, experiment.optimization_objective,
                                     experiment.sampler);
 
-            static const double GOAL_END_EFFECTOR_RADIUS = 0.01;
-
-            std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>> goals;
-            for (const auto &apple: tree_scene.apples)
-                goals.push_back(
-                        std::make_shared<DroneEndEffectorNearTarget>(si, GOAL_END_EFFECTOR_RADIUS, apple.center));
+            std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>> goals = constructAppleGoals(tree_scene, si);
 
             ompl::base::ScopedState start_state_ompl(si);
             state_space->copyToOMPLState(start_state_ompl.get(), start_state);

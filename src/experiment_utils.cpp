@@ -99,3 +99,14 @@ moveit::core::RobotModelPtr loadRobotModel() {
 
     return std::make_shared<moveit::core::RobotModel>(urdf, srdf);
 }
+
+std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>>
+constructAppleGoals(TreePlanningScene &tree_scene, const std::shared_ptr<ompl::base::SpaceInformation> &si) {
+    static const double GOAL_END_EFFECTOR_RADIUS = 0.01;
+
+    std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>> goals;
+    for (const auto &apple: tree_scene.apples)
+        goals.push_back(
+                std::make_shared<DroneEndEffectorNearTarget>(si, GOAL_END_EFFECTOR_RADIUS, apple.center));
+    return goals;
+}

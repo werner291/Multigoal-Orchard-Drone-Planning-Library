@@ -59,4 +59,8 @@ TreePlanningScene buildPlanningScene(int numberOfApples, moveit::core::RobotMode
 
 moveit::core::RobotModelPtr loadRobotModel();
 
+std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>>
+constructAppleGoals(TreePlanningScene &tree_scene, const std::shared_ptr<ompl::base::SpaceInformation> &si);
+
+
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H
