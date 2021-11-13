@@ -7,6 +7,7 @@ find_package(catkin
         moveit_core
         moveit_ros_planning
         moveit_ros_planning_interface
+        moveit_planners_ompl
         moveit_visual_tools
         rviz_visual_tools
         roscpp
@@ -14,8 +15,7 @@ find_package(catkin
         moveit_msgs
         ompl
         urdf
-        robowflex_library
-        robowflex_ompl)
+        )
 
 ## System dependencies are found with CMake's conventions
 find_package(Eigen3 REQUIRED)
@@ -126,14 +126,10 @@ set(SHARED_SRC
         src/DroneStateConstraintSampler.cpp
         src/msgs_utilities.cpp
         src/msgs_utilities.h
-        src/build_planning_scene.cpp
-        src/build_planning_scene.h
+        src/planning_scene_diff_message.cpp
+        src/planning_scene_diff_message.h
         src/ClearanceDecreaseMinimizationObjective.h
         src/ClearanceDecreaseMinimizationObjective.cpp
-        src/make_robot.h
-        src/make_robot.cpp
-        src/init_planner.h
-        src/init_planner.cpp
         src/BulletContinuousMotionValidator.h
         src/BulletContinuousMotionValidator.cpp
         src/InverseClearanceIntegralObjective.cpp
@@ -152,6 +148,8 @@ set(SHARED_SRC
         src/InformedRobotStateSampler.cpp
         src/SamplerWrapper.h
         src/SamplerWrapper.cpp
+        src/experiment_utils.h
+        src/experiment_utils.cpp
         src/multigoal/multi_goal_planners.h
         src/multigoal/multi_goal_planners.cpp
         src/multigoal/knn.h
@@ -160,8 +158,8 @@ set(SHARED_SRC
         src/multigoal/random_order.cpp
         src/multigoal/uknn.h
         src/multigoal/uknn.cpp
-        src/multigoal/approach_clustering.cpp
-        src/multigoal/approach_clustering.h
+        #        src/multigoal/approach_clustering.cpp
+        #        src/multigoal/approach_clustering.h
         src/multigoal/PointToPointPlanner.cpp
         src/multigoal/PointToPointPlanner.h
         src/multigoal/approach_table.cpp
@@ -194,48 +192,17 @@ include_directories(
         ${JSONCPP_INCLUDE_DIRS}
 )
 
-## Visualization node
-add_executable(${PROJECT_NAME}_vizualized
-        src/run_vizualized.cpp ${SHARED_SRC})
-set_property(TARGET ${PROJECT_NAME}_vizualized PROPERTY CXX_STANDARD 17)
+link_libraries(${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} jsoncpp_lib)
 
-target_link_libraries(${PROJECT_NAME}_vizualized
-        ${catkin_LIBRARIES}
-        ${EIGEN_LIBRARIES}
-        ${FCL_LIBRARIES}
-        jsoncpp_lib
-        )
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ## Visualization node
-add_executable(${PROJECT_NAME}_benchmark
-        src/run_benchmarked.cpp ${SHARED_SRC})
-set_property(TARGET ${PROJECT_NAME}_benchmark PROPERTY CXX_STANDARD 17)
+add_executable(${PROJECT_NAME}_vizualized src/run_vizualized.cpp ${SHARED_SRC})
 
-target_link_libraries(${PROJECT_NAME}_benchmark
-        ${catkin_LIBRARIES}
-        ${EIGEN_LIBRARIES}
-        ${FCL_LIBRARIES}
-        jsoncpp_lib
-        )
+add_executable(${PROJECT_NAME}_benchmark src/run_benchmarked.cpp ${SHARED_SRC})
 
-#############
-## Install ##
-#############
+add_executable(${PROJECT_NAME}_ptp_correlation experiments/ptp_correlation.cpp ${SHARED_SRC})
 
-# all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
-## Testing
-add_executable(${PROJECT_NAME}_tests
-        test/test_utils.h
-        test/test_utils.cpp
-        test/BulletContinuousMotionValidatorTest.cpp ${SHARED_SRC})
-set_property(TARGET ${PROJECT_NAME}_tests PROPERTY CXX_STANDARD 17)
-
-target_link_libraries(${PROJECT_NAME}_tests
-        ${catkin_LIBRARIES}
-        ${EIGEN_LIBRARIES}
-        ${FCL_LIBRARIES}
-        jsoncpp_lib
-        gtest
-        gtest_main
-        )
+add_executable(${PROJECT_NAME}_tests test/test_utils.h test/test_utils.cpp test/BulletContinuousMotionValidatorTest.cpp ${SHARED_SRC})
+target_link_libraries(${PROJECT_NAME}_tests gtest gtest_main)

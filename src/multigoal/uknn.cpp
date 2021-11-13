@@ -6,7 +6,6 @@
 #include "uknn.h"
 #include "../UnionGoalSampleableRegion.h"
 #include "../json_utils.h"
-#include "knn.h"
 #include "goals_gnat.h"
 
 MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,

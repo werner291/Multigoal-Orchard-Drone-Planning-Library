@@ -1,7 +1,7 @@
 
 #include <ompl/geometric/planners/rrt/TRRT.h>
-#include <robowflex_library/builder.h>
 #include "procedural_tree_generation.h"
+#include <stack>
 
 Eigen::Isometry3d frame_on_branch(double azimuth, double t, const DetachedTreeNode &treeNode) {
 
@@ -191,5 +191,12 @@ std::vector<Eigen::Vector3d> generateLeafVertices(std::vector<DetachedTreeNode> 
 
     }
     return vertices;
+}
+
+std::vector<DetachedTreeNode>
+make_tree_branches(const Eigen::Isometry3d &root_at, unsigned int branching_depth, double root_radius) {
+    std::vector<DetachedTreeNode> nodes;
+    make_tree_branches(root_at, branching_depth, root_radius, nodes);
+    return nodes;
 }
 

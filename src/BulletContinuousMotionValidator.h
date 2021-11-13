@@ -5,24 +5,21 @@
 #ifndef NEW_PLANNERS_BULLETCONTINUOUSMOTIONVALIDATOR_H
 #define NEW_PLANNERS_BULLETCONTINUOUSMOTIONVALIDATOR_H
 
-#include <memory>
-#include <utility>
-#include <ompl/base/State.h>
 #include <ompl/base/MotionValidator.h>
 #include <ompl/base/SpaceInformation.h>
-#include <robowflex_library/scene.h>
-#include <robowflex_library/robot.h>
+#include <moveit/planning_scene/planning_scene.h>
+#include <moveit/robot_model/robot_model.h>
 
 class BulletContinuousMotionValidator : public ompl::base::MotionValidator {
 
-    std::shared_ptr<const robowflex::Scene> rb_scene_;
-    std::shared_ptr<const robowflex::Robot> rb_robot_;
+    planning_scene::PlanningSceneConstPtr rb_scene_;
+    moveit::core::RobotModelConstPtr rb_robot_;
 
 
 public:
     BulletContinuousMotionValidator(ompl::base::SpaceInformation *si,
-                                    std::shared_ptr<const robowflex::Robot> rbRobot,
-                                    std::shared_ptr<const robowflex::Scene> rbScene)
+                                    moveit::core::RobotModelConstPtr rbRobot,
+                                    planning_scene::PlanningSceneConstPtr rbScene)
             : MotionValidator(si), rb_robot_(std::move(rbRobot)), rb_scene_(std::move(rbScene)) {
 
     }
@@ -46,7 +43,7 @@ public:
  * @return Maximum rotation in radians
  */
     static double
-    estimateMaximumRotation(const moveit::core::RobotStatePtr &st1, const moveit::core::RobotStatePtr &st2);
+    estimateMaximumRotation(const moveit::core::RobotState &st1, const moveit::core::RobotState &st2);
 };
 
 #endif //NEW_PLANNERS_BULLETCONTINUOUSMOTIONVALIDATOR_H

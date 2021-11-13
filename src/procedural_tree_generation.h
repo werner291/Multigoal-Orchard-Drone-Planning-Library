@@ -53,10 +53,8 @@ struct Apple {
  * @param root_radius       The radius of the trunk at the root of this (sub) tree.
  * @return                  TreeNode representing this (sub)tree.
  */
-void make_tree_branches(const Eigen::Isometry3d &root_at,
-                        unsigned int branching_depth,
-                        double root_radius,
-                        std::vector<DetachedTreeNode> &nodes);
+std::vector<DetachedTreeNode>
+make_tree_branches(const Eigen::Isometry3d &root_at, unsigned int branching_depth, double root_radius);
 
 /**
  *

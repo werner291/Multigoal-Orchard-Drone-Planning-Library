@@ -10,17 +10,17 @@
 #include "ompl_custom.h"
 #include "multigoal/multi_goal_planners.h"
 #include "multigoal/PointToPointPlanner.h"
-#include <random>
-#include <robowflex_library/trajectory.h>
-#include <ompl/geometric/planners/rrt/RRTConnect.h>
-#include <ompl/geometric/planners/prm/PRM.h>
+#include "experiment_utils.h"
 
-void mergeIntoLeft(Json::Value &receiver, const Json::Value &donor);
+std::vector<LeafCollisions> collectLeafCollisionStats(const LeavesCollisionChecker &leavesCollisionChecker,
+                                                      const robot_trajectory::RobotTrajectory &trajectory);
 
-Json::Value eigenToJson(const Eigen::Vector3d &vec);
+Json::Value toJSON(const LeafCollisions &leaf_collisions);
 
-//Json::Value makePointToPointJson(const std::optional<PointToPointPlanResult> &pointToPointPlanResult);
-
-Json::Value getStateStatisticsPoint(const moveit::core::RobotState &st);
+Json::Value buildRunStatistics(const std::shared_ptr<LeavesCollisionChecker> &leavesCollisionChecker,
+                               const Experiment &experiment,
+                               const MultiGoalPlanResult &result,
+                               const std::chrono::milliseconds elapsed,
+                               const moveit::core::RobotModelPtr &robot);
 
 #endif //NEW_PLANNERS_JSON_UTILS_H

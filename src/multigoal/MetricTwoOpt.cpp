@@ -24,6 +24,7 @@ MetricTwoOpt::plan(GoalSet &goals, const ompl::base::State *start_state, PointTo
         auto nearest = unvisited_nn.nearest({0, current_pos});
         unvisited_nn.remove(nearest);
         goals_in_order.push_back(nearest.goal);
+        current_pos = nearest.goal_pos;
     }
 
     assert(goals_in_order.size() >= 2);
@@ -72,6 +73,9 @@ MetricTwoOpt::plan(GoalSet &goals, const ompl::base::State *start_state, PointTo
     MultiGoalPlanResult result;
 
     for (const auto &item: goals_in_order) {
+
+//        std::cout << "Plan to :" << goalProjection_(goals[item].get()) << std::endl;
+
         auto ptp_result = point_to_point_planner.planToOmplGoal(
                 (1.0 - swapping_budget_portion) * (double) time_budget.count() /
                 ((double) goals_in_order.size() * 1000.0),

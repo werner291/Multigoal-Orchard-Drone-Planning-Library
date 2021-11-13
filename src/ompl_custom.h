@@ -9,20 +9,17 @@
 #include <ompl/base/objectives/StateCostIntegralObjective.h>
 #include <ompl/base/StateValidityChecker.h>
 #include <ompl/geometric/PathGeometric.h>
+#include <moveit/planning_scene/planning_scene.h>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
-#include <robowflex_library/scene.h>
-#include <robowflex_library/robot.h>
-#include <robowflex_library/trajectory.h>
 #include "DroneStateSampler.h"
 
-static const double GOAL_END_EFFECTOR_RADIUS = 0.2;
 
 class StateValidityChecker : public ompl::base::StateValidityChecker {
 
-    robowflex::SceneConstPtr scene_;
+    const planning_scene::PlanningScenePtr scene_;
 
 public:
-    StateValidityChecker(ompl::base::SpaceInformation *si, robowflex::SceneConstPtr scene)
+    StateValidityChecker(ompl::base::SpaceInformation *si, planning_scene::PlanningScenePtr scene)
             : ompl::base::StateValidityChecker(si), scene_(std::move(scene)) {
     }
 
@@ -93,11 +90,8 @@ public:
 };
 
 std::shared_ptr<ompl::base::SpaceInformation>
-initSpaceInformation(const robowflex::SceneConstPtr &scene,
-                     const robowflex::RobotConstPtr &robot,
+initSpaceInformation(const planning_scene::PlanningScenePtr &scene,
+                     const moveit::core::RobotModelPtr &robot,
                      std::shared_ptr<DroneStateSpace> &state_space);
-
-robowflex::Trajectory convertTrajectory(const ompl::geometric::PathGeometric &path,
-                                        const std::shared_ptr<const robowflex::Robot> &ptr);
 
 #endif //NEW_PLANNERS_OMPL_CUSTOM_H

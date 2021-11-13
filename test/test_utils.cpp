@@ -5,16 +5,7 @@
 #include "../src/BulletContinuousMotionValidator.h"
 #include <gtest/gtest.h>
 #include "test_utils.h"
-
-moveit::core::RobotModelPtr loadRobotModel() {
-    auto urdf = std::make_shared<urdf::Model>();
-    assert(urdf->initFile("test_robots/urdf/bot.urdf"));
-
-    auto srdf = std::make_shared<srdf::Model>();
-    assert(srdf->initFile(*urdf, "test_robots/config/aerial_manipulator_drone.srdf"));
-
-    return std::make_shared<moveit::core::RobotModel>(urdf, srdf);
-}
+#include "../src/experiment_utils.h"
 
 std::shared_ptr<moveit::core::RobotState> genRandomState(const std::shared_ptr<moveit::core::RobotModel> &drone) {
     auto st1 = std::make_shared<moveit::core::RobotState>(drone);

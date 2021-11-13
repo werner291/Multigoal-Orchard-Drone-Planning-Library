@@ -1,18 +1,18 @@
-#include <robowflex_library/geometry.h>
-#include <robowflex_ompl/ompl_interface.h>
+
 #include "BulletContinuousMotionValidator.h"
+#include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 
 bool BulletContinuousMotionValidator::checkMotion(const ompl::base::State *s1, const ompl::base::State *s2) const {
     auto dummy_pair = std::make_pair((ompl::base::State *) nullptr, 0.0);
     return checkMotion(s1, s2, dummy_pair);
 }
 
-double BulletContinuousMotionValidator::estimateMaximumRotation(const moveit::core::RobotStatePtr &st1,
-                                                                const moveit::core::RobotStatePtr &st2) {// Upper bound on the rotation of any part of the robot.
-    assert(st1->getRobotModel() == st2->getRobotModel());
+double BulletContinuousMotionValidator::estimateMaximumRotation(const moveit::core::RobotState &st1,
+                                                                const moveit::core::RobotState &st2) {// Upper bound on the rotation of any part of the robot.
+    assert(st1.getRobotModel() == st2.getRobotModel());
 
     double max_angle = 0.0;
-    for (const auto &jm: st1->getRobotModel()->getJointModels()) {
+    for (const auto &jm: st1.getRobotModel()->getJointModels()) {
         switch (jm->getType()) {
             case moveit::core::JointModel::UNKNOWN:
                 ROS_ERROR("Cannot compute maximum rotation with unknown joint type.");
@@ -23,17 +23,17 @@ double BulletContinuousMotionValidator::estimateMaximumRotation(const moveit::co
                 break;
 
             case moveit::core::JointModel::PLANAR: {
-                const double *variables1 = st1->getJointPositions(jm);
-                const double *variables2 = st2->getJointPositions(jm);
+                const double *variables1 = st1.getJointPositions(jm);
+                const double *variables2 = st2.getJointPositions(jm);
                 max_angle += std::abs(variables1[2] - variables2[2]); //FIXME this looks wrong, what about wrapping?
             }
                 break;
 
             case moveit::core::JointModel::FLOATING: {
 
-                const double *variables1 = st1->getJointPositions(jm);
+                const double *variables1 = st1.getJointPositions(jm);
                 Eigen::Quaterniond rot1(variables1[6], variables1[3], variables1[4], variables1[5]);
-                const double *variables2 = st2->getJointPositions(jm);
+                const double *variables2 = st2.getJointPositions(jm);
                 Eigen::Quaterniond rot2(variables2[6], variables2[3], variables2[4], variables2[5]);
 
                 max_angle += rot1.angularDistance(rot2);
@@ -41,8 +41,8 @@ double BulletContinuousMotionValidator::estimateMaximumRotation(const moveit::co
                 break;
 
             case moveit::core::JointModel::REVOLUTE: {
-                const double *variables1 = st1->getJointPositions(jm);
-                const double *variables2 = st2->getJointPositions(jm);
+                const double *variables1 = st1.getJointPositions(jm);
+                const double *variables2 = st2.getJointPositions(jm);
                 max_angle += std::abs(variables1[0] - variables2[0]); // FIXME Wrong, but shouldn't cause asymmetry.
             }
                 break;
@@ -59,11 +59,11 @@ bool BulletContinuousMotionValidator::checkMotion(const ompl::base::State *s1, c
     collision_detection::CollisionRequest req;
 
     // Convert the OMPL states to RobotStates
-    auto st1 = rb_robot_->allocState();
-    si_->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToRobotState(*st1, s1);
+    moveit::core::RobotState st1(this->rb_robot_);
+    si_->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToRobotState(st1, s1);
 
-    auto st2 = rb_robot_->allocState();
-    si_->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToRobotState(*st2, s2);
+    moveit::core::RobotState st2(this->rb_robot_);
+    si_->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToRobotState(st2, s2);
 
     // Compute the largest-possible rotation based on the angle changes in the joints.
     double max_angle = estimateMaximumRotation(st1, st2);
@@ -81,16 +81,13 @@ bool BulletContinuousMotionValidator::checkMotion(const ompl::base::State *s1, c
     // TODO: the usage of T as the end of the section is weird, here. Check logic.
     for (size_t i = 0; i < num_sections; i++) {
 
-
-        std::shared_ptr<moveit::core::RobotState> interp;
+        moveit::core::RobotState interp(this->rb_robot_);
         if (i + 1 < num_sections) {
             // Allocate a state and interpolate using the coefficient
-            interp = rb_robot_->allocState();
-
             // Interpolation coefficient based on loop index, +1 since it's the end of the motion.
             double t = (double) (i + 1) / (double) num_sections;
-            st1->interpolate(*st2, t, *interp);
-            interp->update(true);
+            st1.interpolate(st2, t, interp);
+            interp.update(true);
         } else {
             // Just use the end state if we're in the last section
             interp = st2;
@@ -99,15 +96,15 @@ bool BulletContinuousMotionValidator::checkMotion(const ompl::base::State *s1, c
         // Perform the linear CCD check. Note that this simply checks against the convex hull of the shapes of the robot
         // before and after the transformation, which doesn't really work well with rotations and swinging motions,
         // we break up the motion based on how much rotation is involved.
-        rb_scene_->getSceneConst()->getCollisionEnv()->checkRobotCollision(req, res, *last, *interp,
-                                                                           rb_scene_->getACMConst());
+        rb_scene_->getCollisionEnv()->checkRobotCollision(req, res, last, interp,
+                                                          rb_scene_->getAllowedCollisionMatrix());
 
         // Fail the collision check if the section causes a collision.
         if (res.collision) {
 
             if (lastValid.first != nullptr) {
                 si_->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToOMPLState(lastValid.first,
-                                                                                                  *last);
+                                                                                                  last);
                 lastValid.second = (double) i / (double) num_sections;
             }
 

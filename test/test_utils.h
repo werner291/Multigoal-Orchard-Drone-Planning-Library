@@ -7,8 +7,6 @@
 
 #include "../src/ompl_custom.h"
 
-moveit::core::RobotModelPtr loadRobotModel();
-
 std::shared_ptr<moveit::core::RobotState> genRandomState(const std::shared_ptr<moveit::core::RobotModel> &drone);
 
 std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>> genGoals(const ompl::base::SpaceInformationPtr &si);

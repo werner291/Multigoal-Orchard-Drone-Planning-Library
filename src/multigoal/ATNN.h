@@ -5,7 +5,7 @@
 #include "approach_table.h"
 
 namespace multigoal {
-    class ATNN : public MultiGoalPlanner {
+    class [[maybe_unused]] ATNN : public MultiGoalPlanner {
 
         /// Just a pointer to an OMPL State with a back-pointer into a GoalApproachTable.
         struct Node {

@@ -4,8 +4,7 @@
 #include <robowflex_library/io/broadcaster.h>
 #include <robowflex_library/trajectory.h>
 #include "msgs_utilities.h"
-#include "build_planning_scene.h"
-#include "make_robot.h"
+#include "planning_scene_diff_message.h"
 #include "InverseClearanceIntegralObjective.h"
 #include "BulletContinuousMotionValidator.h"
 #include "multigoal/multi_goal_planners.h"
@@ -15,10 +14,10 @@
 #include "ompl_custom.h"
 #include "LeavesCollisionChecker.h"
 #include "multigoal/approach_clustering.h"
+#include "experiment_utils.h"
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <json/json.h>
 
-using namespace robowflex;
 using namespace multigoal;
 
 /**
@@ -30,8 +29,6 @@ using namespace multigoal;
 int main(int argc, char **argv) {
 
     // Startup ROS
-    ROS ros(argc, argv);
-
     std::shared_ptr<Robot> drone = make_robot();
 
     IO::RVIZHelper rviz(drone);
@@ -55,13 +52,7 @@ int main(int argc, char **argv) {
 
     int numberOfApples = 10;
 
-    auto tree_scene = establishPlanningScene(10, numberOfApples);
-    scene->getScene()->setPlanningSceneDiffMsg(tree_scene.moveit_diff);
-    // Diff message apparently can't handle this?
-    scene->getScene()->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
-    scene->getScene()->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
-    scene->getScene()->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
-    rviz.updateScene(scene);
+    auto scene = buildPlanningScene(numberOfApples, drone);
 
     const std::shared_ptr<ompl::base::SpaceInformation> si = initSpaceInformation(scene, drone, state_space);
     const robot_state::RobotState start_state = genStartState(drone);

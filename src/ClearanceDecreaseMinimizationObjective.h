@@ -7,8 +7,6 @@
 
 #include <ompl/base/objectives/MechanicalWorkOptimizationObjective.h>
 
-#include <utility>
-
 /**
  * An optimization objective inspired by TRRT and BiTRRT that assigns
  * costs to increasing the inverse of the clearance.

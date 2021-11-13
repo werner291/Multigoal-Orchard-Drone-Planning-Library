@@ -1,23 +1,11 @@
-//
-// Created by werner on 06-09-21.
-//
 
 #include "BulletContinuousMotionValidator.h"
-#include "procedural_tree_generation.h"
-#include "LeavesCollisionChecker.h"
-#include <robowflex_library/trajectory.h>
-#include <json/value.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <moveit/ompl_interface/detail/state_validity_checker.h>
 #include <ompl/base/DiscreteMotionValidator.h>
-#include <ompl/geometric/planners/prm/PRM.h>
 #include <fcl/fcl.h>
 #include "DroneStateConstraintSampler.h"
 #include "InverseClearanceIntegralObjective.h"
-#include "init_planner.h"
-#include <robowflex_library/io/broadcaster.h>
-#include <robowflex_library/util.h>
-#include <robowflex_library/builder.h>
 #include "ompl_custom.h"
 #include "UnionGoalSampleableRegion.h"
 
@@ -31,7 +19,10 @@ bool StateValidityChecker::isValid(const ompl::base::State *state) const {
     space->copyToRobotState(robot_state, state);
 
     // We rely on the sampler producing states that are  valid in all other aspects, so here we just check collision.
-    return !scene_->checkCollision(robot_state).collision;
+    collision_detection::CollisionResult result;
+    collision_detection::CollisionRequest request;
+    scene_->checkCollision(request, result, robot_state);
+    return result.collision;
 
 }
 
@@ -81,6 +72,8 @@ void DroneEndEffectorNearTarget::sampleGoal(ompl::base::State *state) const {
 
     } while (!si_->isValid(state));
 
+    assert(this->isSatisfied(state));
+
     samples_yielded += 1;
 }
 
@@ -117,8 +110,10 @@ const Eigen::Vector3d &DroneEndEffectorNearTarget::getTarget() const {
 }
 
 std::shared_ptr<ompl::base::SpaceInformation>
-initSpaceInformation(const robowflex::SceneConstPtr &scene, const robowflex::RobotConstPtr &robot,
+initSpaceInformation(const planning_scene::PlanningScenePtr &scene,
+                     const moveit::core::RobotModelPtr &robot,
                      std::shared_ptr<DroneStateSpace> &state_space) {
+
     auto si = std::make_shared<ompl::base::SpaceInformation>(state_space);
     si->setStateValidityChecker(std::make_shared<StateValidityChecker>(si.get(), scene));
     si->setMotionValidator(std::make_shared<BulletContinuousMotionValidator>(si.get(), robot, scene));
@@ -127,19 +122,3 @@ initSpaceInformation(const robowflex::SceneConstPtr &scene, const robowflex::Rob
     return si;
 }
 
-robowflex::Trajectory
-convertTrajectory(const ompl::geometric::PathGeometric &path, const std::shared_ptr<const robowflex::Robot> &ptr) {
-    // Initialize an empty trajectory.
-    robowflex::Trajectory trajectory(ptr, "whole_body");
-
-    moveit::core::RobotState st(ptr->getModelConst());
-
-    auto state_space = path.getSpaceInformation()->getStateSpace()->as<DroneStateSpace>();
-
-    for (size_t i = 0; i < path.getStateCount(); ++i) {
-        state_space->copyToRobotState(st, path.getState(i));
-        trajectory.addSuffixWaypoint(st);
-    }
-
-    return trajectory;
-}

@@ -9,14 +9,6 @@
 #include "PointToPointPlanner.h"
 #include "goals_gnat.h"
 
-//double budgetFractionFn(size_t n, size_t i, double biasFactor) {
-//
-//    double t = (double) i / (double) n;
-//
-//    return (1.0/(double)n) * (biasFactor * t)
-//
-//}
-
 KNNPlanner::KNNPlanner(size_t k, std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection,
                        std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection,
                        double budgetBiasFactor)

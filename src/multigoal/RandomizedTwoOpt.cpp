@@ -3,7 +3,7 @@
 //
 
 #include "RandomizedTwoOpt.h"
-
+#include <variant>
 #include <utility>
 
 MultiGoalPlanResult RandomizedTwoOpt::plan(const std::vector<GoalSamplerPtr> &goals,

@@ -3,8 +3,6 @@
 #define MULTI_GOAL_PLANNERS_H
 
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
-#include <robowflex_ompl/ompl_interface.h>
-#include <robowflex_library/trajectory.h>
 #include <json/value.h>
 #include "../procedural_tree_generation.h"
 #include "../ompl_custom.h"
@@ -17,14 +15,6 @@ const double MAX_TIME_PER_TARGET_SECONDS = 0.1;
 typedef std::shared_ptr<ompl::base::GoalSampleableRegion> GoalSamplerPtr;
 
 typedef const std::vector<GoalSamplerPtr> GoalSet;
-
-/**
- * Utility function to extend one trajectory with the waypoints of another.
- *
- * @param full_trajectory Trajectory to be extended.
- * @param extension The trajectory to extend it with.
- */
-void extendTrajectory(robowflex::Trajectory &full_trajectory, const robowflex::Trajectory &extension);
 
 struct PointToPointPath {
     size_t to_goal;

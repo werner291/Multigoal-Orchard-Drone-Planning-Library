@@ -1,22 +1,7 @@
-//
-// Created by werner on 13-08-21.
-//
-
 #include "procedural_tree_generation.h"
 #include <moveit/robot_state/conversions.h>
 #include <Eigen/Geometry>
 #include <random_numbers/random_numbers.h>
-#include <ompl/geometric/planners/rrt/TRRT.h>
-#include <robowflex_library/io/broadcaster.h>
-#include <robowflex_library/io/visualization.h>
-#include <robowflex_library/log.h>
-#include <robowflex_library/util.h>
-#include <robowflex_library/scene.h>
-#include <robowflex_library/planning.h>
-#include <robowflex_library/geometry.h>
-#include <robowflex_ompl/ompl_interface.h>
-#include <robowflex_library/benchmarking.h>
-#include <robowflex_library/builder.h>
 #include "DroneStateConstraintSampler.h"
 
 DroneStateConstraintSampler::DroneStateConstraintSampler(
