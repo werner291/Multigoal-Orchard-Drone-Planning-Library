@@ -22,7 +22,8 @@ bool StateValidityChecker::isValid(const ompl::base::State *state) const {
     collision_detection::CollisionResult result;
     collision_detection::CollisionRequest request;
     scene_->checkCollision(request, result, robot_state);
-    return result.collision;
+
+    return !result.collision;
 
 }
 
