@@ -5,14 +5,13 @@
 #include "knn.h"
 
 #include <utility>
-#include "../json_utils.h"
 #include "PointToPointPlanner.h"
 #include "goals_gnat.h"
 
-KNNPlanner::KNNPlanner(size_t k, std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection,
-                       std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection,
+KNNPlanner::KNNPlanner(size_t k, GoalProjectionFn goalProjection, StateProjectionFn stateProjection,
                        double budgetBiasFactor)
-        : k(k), goalProjection_(std::move(goalProjection)), stateProjection_(std::move(stateProjection)),
+        : k(k), goalProjection_(std::move(goalProjection)),
+          stateProjection_(std::move(stateProjection)),
           budgetBiasFactor(budgetBiasFactor) {}
 
 MultiGoalPlanResult KNNPlanner::plan(const std::vector<GoalSamplerPtr> &goals,

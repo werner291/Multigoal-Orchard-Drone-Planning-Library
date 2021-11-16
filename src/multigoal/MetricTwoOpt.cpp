@@ -8,7 +8,9 @@
 #include "goals_gnat.h"
 
 MultiGoalPlanResult
-MetricTwoOpt::plan(GoalSet &goals, const ompl::base::State *start_state, PointToPointPlanner &point_to_point_planner,
+MetricTwoOpt::plan(GoalSet &goals,
+                   const ompl::base::State *start_state,
+                   PointToPointPlanner &point_to_point_planner,
                    std::chrono::milliseconds time_budget) {
 
     auto start_time = std::chrono::steady_clock::now();
@@ -44,21 +46,21 @@ MetricTwoOpt::plan(GoalSet &goals, const ompl::base::State *start_state, PointTo
         else std::swap(i, j);
         assert(i < j && j < goals_in_order.size());
 
-        auto before_i = i == 0 ? stateProjection_(start_state) : goalProjection_(goals[goals_in_order[i - 1]].get());
-        auto i_proj = goalProjection_(goals[goals_in_order[i]].get());
-        auto j_proj = goalProjection_(goals[goals_in_order[j]].get());
+        auto before_i = i == 0 ? stateProjection_(start_state) : goalProjection_(goals[goals_in_order[i - 1]]);
+        auto i_proj = goalProjection_(goals[goals_in_order[i]]);
+        auto j_proj = goalProjection_(goals[goals_in_order[j]]);
 
         std::optional<Eigen::Vector3d> after_j{};
 
-        if (j + 1 < goals_in_order.size()) after_j = {goalProjection_(goals[goals_in_order[j + 1]].get())};
+        if (j + 1 < goals_in_order.size()) after_j = {goalProjection_(goals[goals_in_order[j + 1]])};
 
         double oldCost = (before_i - i_proj).norm() + (after_j ? (j_proj - *after_j).norm() : 0.0);
         double newCost = (before_i - j_proj).norm() + (after_j ? (i_proj - *after_j).norm() : 0.0);
 
         if (i + 1 < j) {
 
-            auto after_i = goalProjection_(goals[goals_in_order[i + 1]].get());
-            auto before_j = goalProjection_(goals[goals_in_order[j - 1]].get());
+            auto after_i = goalProjection_(goals[goals_in_order[i + 1]]);
+            auto before_j = goalProjection_(goals[goals_in_order[j - 1]]);
 
             oldCost += (i_proj - after_i).norm() + (j_proj - before_j).norm();
             newCost += (j_proj - after_i).norm() + (i_proj - before_j).norm();
@@ -74,7 +76,7 @@ MetricTwoOpt::plan(GoalSet &goals, const ompl::base::State *start_state, PointTo
 
     for (const auto &item: goals_in_order) {
 
-//        std::cout << "Plan to :" << goalProjection_(goals[item].get()) << std::endl;
+//        std::cout << "Plan to :" << goalProjection_(goals[item]) << std::endl;
 
         auto ptp_result = point_to_point_planner.planToOmplGoal(
                 (1.0 - swapping_budget_portion) * (double) time_budget.count() /
@@ -97,7 +99,7 @@ std::string MetricTwoOpt::getName() {
     return ss.str();
 }
 
-MetricTwoOpt::MetricTwoOpt(std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection,
+MetricTwoOpt::MetricTwoOpt(GoalProjectionFn goalProjection,
                            std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection,
                            double swappingBudgetPortion)
         : goalProjection_(std::move(goalProjection)), stateProjection_(std::move(stateProjection)),

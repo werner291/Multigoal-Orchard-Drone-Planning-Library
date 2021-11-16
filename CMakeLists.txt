@@ -178,7 +178,7 @@ set(SHARED_SRC
         src/multigoal/goals_gnat.cpp
         #        src/multigoal/SubtourMovingPlanner.cpp
         #        src/multigoal/SubtourMovingPlanner.h
-        )
+        src/preorder_strategy/preorder_strategy.cpp src/preorder_strategy/preorder_strategy.h)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
@@ -203,6 +203,8 @@ add_executable(${PROJECT_NAME}_vizualized src/run_vizualized.cpp ${SHARED_SRC})
 add_executable(${PROJECT_NAME}_benchmark src/run_benchmarked.cpp ${SHARED_SRC})
 
 add_executable(${PROJECT_NAME}_ptp_correlation experiments/ptp_correlation.cpp ${SHARED_SRC})
+
+add_executable(${PROJECT_NAME}_euclidean_tsp experiments/euclidean_tsp.cpp ${SHARED_SRC})
 
 add_executable(${PROJECT_NAME}_tests test/test_utils.h test/test_utils.cpp test/BulletContinuousMotionValidatorTest.cpp ${SHARED_SRC})
 target_link_libraries(${PROJECT_NAME}_tests gtest gtest_main)

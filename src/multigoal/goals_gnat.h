@@ -21,7 +21,22 @@ struct GNATNode {
 /**
  * \brief Build a Geometric Nearest-neighbour Access Tree by projecting each goal using the given projection function.
  */
+template<typename Goal>
 ompl::NearestNeighborsGNAT<GNATNode>
-buildGoalGNAT(const GoalSet &goals, const std::function<Eigen::Vector3d(const ompl::base::Goal *)> &goalProjection);
+buildGoalGNAT(const std::vector<Goal> &goals,
+              const std::function<Eigen::Vector3d(const Goal &)> &goalProjection) {
+
+    ompl::NearestNeighborsGNAT<GNATNode> nn;
+
+    nn.setDistanceFunction([](const GNATNode &a, const GNATNode &b) {
+        return (a.goal_pos - b.goal_pos).norm();
+    });
+
+    for (size_t idx = 0; idx < goals.size(); ++idx) {
+        nn.add({idx, goalProjection(goals[idx])});
+    }
+
+    return nn;
+}
 
 #endif //NEW_PLANNERS_GOALS_GNAT_H

@@ -1,11 +1,10 @@
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <fcl/fcl.h>
-#include "multigoal/approach_clustering.h"
 #include "ompl_custom.h"
 #include "InverseClearanceIntegralObjective.h"
-#include "planning_scene_diff_message.h"
 #include <moveit/robot_state/conversions.h>
 #include "msgs_utilities.h"
+#include "multigoal/approach_table.h"
 
 
 geometry_msgs::Point pointMsg(const Eigen::Vector3d &ee_pt) {

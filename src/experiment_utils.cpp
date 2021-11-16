@@ -1,8 +1,14 @@
 
+#include "../src/experiment_utils.h"
+#include <ompl/geometric/planners/prm/PRMstar.h>
+#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
+#include <cstddef>
+#include <moveit/collision_detection/collision_detector_allocator.h>
 #include "../src/BulletContinuousMotionValidator.h"
 #include "experiment_utils.h"
 #include "json_utils.h"
 #include "planning_scene_diff_message.h"
+#include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 
 robot_state::RobotState genStartState(const moveit::core::RobotModelConstPtr &drone) {
     robot_state::RobotState start_state(drone);
@@ -110,3 +116,4 @@ constructAppleGoals(TreePlanningScene &tree_scene, const std::shared_ptr<ompl::b
                 std::make_shared<DroneEndEffectorNearTarget>(si, GOAL_END_EFFECTOR_RADIUS, apple.center));
     return goals;
 }
+

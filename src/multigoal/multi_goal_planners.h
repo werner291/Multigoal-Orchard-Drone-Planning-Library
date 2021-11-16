@@ -4,16 +4,15 @@
 
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 #include <json/value.h>
-#include "../procedural_tree_generation.h"
 #include "../ompl_custom.h"
-#include "../LeavesCollisionChecker.h"
 #include "PointToPointPlanner.h"
 
 // For optimizing planners, approximately how much time should be left to the planning operation per target, all other things equal.
 const double MAX_TIME_PER_TARGET_SECONDS = 0.1;
 
 typedef std::shared_ptr<ompl::base::GoalSampleableRegion> GoalSamplerPtr;
-
+typedef std::function<Eigen::Vector3d(const GoalSamplerPtr &)> GoalProjectionFn;
+typedef std::function<Eigen::Vector3d(const ompl::base::State *)> StateProjectionFn;
 typedef const std::vector<GoalSamplerPtr> GoalSet;
 
 struct PointToPointPath {
@@ -57,9 +56,9 @@ struct MultiGoalPlanResult {
         });
     }
 
-    double originalCost(const std::vector<ReplacementSpec> &replacement_specs) const;
+    [[nodiscard]] double originalCost(const std::vector<ReplacementSpec> &replacement_specs) const;
 
-    double newCost(const std::vector<PointToPointPath> &computed_replacements) const;
+    [[nodiscard]] double newCost(const std::vector<PointToPointPath> &computed_replacements) const;
 };
 
 

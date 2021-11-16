@@ -4,25 +4,14 @@
 
 #include "procedural_tree_generation.h"
 #include <moveit/robot_state/conversions.h>
-#include <fcl/fcl.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/rrt/RRT.h>
 #include <json/json.h>
 #include <ompl/base/OptimizationObjective.h>
-#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
-#include <ompl/geometric/planners/rrt/RRTConnect.h>
-#include <ompl/geometric/planners/prm/PRMstar.h>
-#include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 #include "multigoal/MetricTwoOpt.h"
 #include "SamplerWrapper.h"
-#include "LeavesCollisionChecker.h"
-#include "ompl_custom.h"
-#include "BulletContinuousMotionValidator.h"
-#include "InverseClearanceIntegralObjective.h"
 #include "planning_scene_diff_message.h"
-#include "msgs_utilities.h"
-#include "../src/ompl_custom.h"
 
 struct StateProjection {
     ompl_interface::ModelBasedStateSpace *state_space;
@@ -62,5 +51,22 @@ moveit::core::RobotModelPtr loadRobotModel();
 std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>>
 constructAppleGoals(TreePlanningScene &tree_scene, const std::shared_ptr<ompl::base::SpaceInformation> &si);
 
+/**
+ *
+ * Pick a pair of distinct integers between `0` and `collection_size` (excluded) uniformly at random.
+ *
+ * @tparam RNG
+ * @param gen
+ * @param collection_size
+ * @return
+ */
+template<class RNG>
+std::pair<size_t, size_t> generateIndexPairNoReplacement(RNG &gen, unsigned long collection_size) {
 
+    size_t i = std::uniform_int_distribution<size_t>(0, collection_size - 1)(gen);
+    size_t j = std::uniform_int_distribution<size_t>(0, collection_size - 2)(gen);
+    if (j >= i) j += 1;
+
+    return std::make_pair(i, j);
+}
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

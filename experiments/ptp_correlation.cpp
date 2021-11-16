@@ -1,23 +1,41 @@
 
 #include <cstddef>
+#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
+#include <ompl/geometric/planners/prm/PRMstar.h>
 #include "../src/experiment_utils.h"
+#include <fstream>
+
+/// Data about a single point-to-point planning result.
+struct PointToPointPlanResultStat {
+    size_t scene_id{};
+    size_t pair_id{};
+    double euclidean_distance{};
+    std::optional<double> actual_distance;
+    double planning_time_seconds{};
+};
+
+Json::Value toJson(const PointToPointPlanResultStat &ptp_stats) {
+    Json::Value ptp;
+    ptp["scene_id"] = (int) ptp_stats.scene_id;
+    ptp["pair_id"] = (int) ptp_stats.pair_id;
+    ptp["euclidean_distance"] = ptp_stats.euclidean_distance;
+    ptp["planning_time"] = ptp_stats.planning_time_seconds;
+    if (ptp_stats.actual_distance) { ptp["actual_distance"] = *ptp_stats.actual_distance; }
+    else { ptp["actual_distance"] = Json::nullValue; }
+    return ptp;
+}
 
 int main(int argc, char **argv) {
-
 
     auto drone = loadRobotModel();
 
     ompl_interface::ModelBasedStateSpaceSpecification spec(drone, "whole_body");
     auto state_space = std::make_shared<DroneStateSpace>(spec);
 
-    struct PointToPointPlanResultStat {
-        double euclidean_distance{};
-        std::optional<double> actual_distance;
-    };
+    std::vector<std::vector<PointToPointPlanResultStat>> stats(100);
 
-    std::vector<std::vector<PointToPointPlanResultStat>> stats(10);
-
-    for (auto &scene_i: stats) {
+    for (size_t scene_id = 0; scene_id < stats.size(); ++scene_id) {
+        std::cout << "Tree: " << scene_id << std::endl;
 
         auto tree_scene = buildPlanningScene(50 /* TODO vary? */, drone);
         auto si = initSpaceInformation(tree_scene.scene, drone, state_space);
@@ -30,52 +48,75 @@ int main(int argc, char **argv) {
 
         auto goals = constructAppleGoals(tree_scene, si);
 
-        std::vector<PointToPointPlanResultStat> scene_stats(10);
+        auto destroyState = [&](ompl::base::State *st) {
+            state_space->freeState(st);
+        };
 
-        for (auto &scene_stat: scene_stats) {
+        // Similar to ScopedState, but I trust this implementation more with regards to copying and such.
+        typedef std::unique_ptr<ompl::base::State, decltype(destroyState)> StateUptr;
 
-            size_t i = std::uniform_int_distribution<size_t>(0, goals.size() - 1)(gen);
-            size_t j = std::uniform_int_distribution<size_t>(0, goals.size() - 2)(gen);
-            if (j >= i) j += 1;
+        struct StateGoalPair {
+            size_t scene_id;
+            size_t pair_id;
+            double euclidean_distance;
+            StateUptr state;
+            std::shared_ptr<ompl::base::GoalSampleableRegion> goal;
+        };
 
-            ompl::base::ScopedState from(si);
-            goals[i]->sampleGoal(from.get());
+        std::vector<StateGoalPair> pairs;
 
-            ompl::base::ScopedState to(si);
-            goals[j]->sampleGoal(to.get());
+        for (size_t ptp_t = 0; ptp_t < 10; ++ptp_t) {
 
-            assert(si->isValid(from.get()));
-            assert(si->isValid(to.get()));
+            auto index_pair = generateIndexPairNoReplacement(gen, goals.size());
+
+            StateUptr from_state(state_space->allocState(), destroyState);
+            goals[index_pair.first]->sampleGoal(from_state.get());
+
+            pairs.push_back({
+                                    scene_id, ptp_t,
+                                    (tree_scene.apples[index_pair.first].center -
+                                     tree_scene.apples[index_pair.second].center).norm(),
+                                    std::move(from_state),
+                                    goals[index_pair.second]
+                            });
+        }
+
+        for (double time: {0.01, 0.05, 0.1, 0.2, 0.5, 1.0}) {
 
             PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
-//            auto plan_result = ptp.planToOmplGoal(1.0, from.get(), goals[j]);
-            auto plan_result = ptp.planToOmplState(1.0, from.get(), to.get());
+            for (auto &pair: pairs) {
 
-            PointToPointPlanResultStat stat;
+                if (si->isValid(pair.state.get())) {
 
-            stat.euclidean_distance = (tree_scene.apples[i].center - tree_scene.apples[j].center).norm();
-            if (plan_result) {
-                stat.actual_distance = plan_result->length();
-            } else {
-                std::cout << "Planning failed" << std::endl;
+                    PointToPointPlanResultStat ptp_stat;
+
+                    ptp_stat.euclidean_distance = pair.euclidean_distance;
+                    ptp_stat.planning_time_seconds = time;
+                    ptp_stat.scene_id = scene_id;
+                    ptp_stat.pair_id = pair.pair_id;
+
+                    auto plan_result = ptp.planToOmplGoal(time, pair.state.get(), pair.goal);
+
+                    PointToPointPlanResultStat stat;
+
+                    if (plan_result) {
+                        ptp_stat.actual_distance = plan_result->length();
+                    } else {
+                        std::cout << "Planning failed" << std::endl;
+                    }
+
+                    stats[scene_id].push_back(ptp_stat);
+                }
             }
-
-            scene_stat = stat;
         }
-
-        scene_i = scene_stats;
     }
 
     Json::Value all_scenes;
     for (const auto &item: stats) {
         Json::Value all_ptps;
-        for (const auto &item2: item) {
-            Json::Value ptp;
-            ptp["euclidean_distance"] = item2.euclidean_distance;
-            if (item2.actual_distance) { ptp["actual_distance"] = *item2.actual_distance; }
-            else { ptp["actual_distance"] = Json::nullValue; }
-            all_ptps.append(ptp);
+        for (const auto &ptp_stats: item) {
+            all_ptps.append(toJson(ptp_stats));
         }
         all_scenes.append(all_ptps);
     }

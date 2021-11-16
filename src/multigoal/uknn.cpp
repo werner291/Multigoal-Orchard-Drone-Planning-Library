@@ -72,6 +72,5 @@ MultiGoalPlanResult UnionKNNPlanner::plan(const std::vector<GoalSamplerPtr> &goa
     return result;
 }
 
-UnionKNNPlanner::UnionKNNPlanner(size_t k, std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection,
-                                 std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection)
+UnionKNNPlanner::UnionKNNPlanner(size_t k, GoalProjectionFn goalProjection, StateProjectionFn stateProjection)
         : k(k), goalProjection_(std::move(goalProjection)), stateProjection_(std::move(stateProjection)) {}

@@ -21,10 +21,11 @@ MultiGoalPlanResult RandomizedTwoOpt::plan(const std::vector<GoalSamplerPtr> &go
         return solution;
     }
 
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
     while (std::chrono::steady_clock::now() < deadline) {
 
-        std::random_device rd;  //Will be used to obtain a seed for the random number engine
-        std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
 
         size_t i = std::uniform_int_distribution<size_t>(0, solution.segments.size() - 1)(gen);
         size_t j = std::uniform_int_distribution<size_t>(0, solution.segments.size() - 2)(gen);

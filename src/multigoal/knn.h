@@ -21,14 +21,14 @@
 class KNNPlanner : public MultiGoalPlanner {
 
 public:
-    explicit KNNPlanner(size_t k, std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection,
+    explicit KNNPlanner(size_t k, GoalProjectionFn goalProjection,
                         std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection,
                         double budgetBiasFactor);
 
 private:
     size_t k;
-    std::function<Eigen::Vector3d(const ompl::base::Goal *)> goalProjection_;
-    std::function<Eigen::Vector3d(const ompl::base::State *)> stateProjection_;
+    GoalProjectionFn goalProjection_;
+    StateProjectionFn stateProjection_;
 
     double budgetBiasFactor = 1.0;
 
