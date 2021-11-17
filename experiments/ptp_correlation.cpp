@@ -12,6 +12,7 @@ struct PointToPointPlanResultStat {
     double euclidean_distance{};
     std::optional<double> actual_distance;
     double planning_time_seconds{};
+    bool cleared;
 };
 
 Json::Value toJson(const PointToPointPlanResultStat &ptp_stats) {
@@ -20,6 +21,7 @@ Json::Value toJson(const PointToPointPlanResultStat &ptp_stats) {
     ptp["pair_id"] = (int) ptp_stats.pair_id;
     ptp["euclidean_distance"] = ptp_stats.euclidean_distance;
     ptp["planning_time"] = ptp_stats.planning_time_seconds;
+    ptp["cleared"] = ptp_stats.cleared;
     if (ptp_stats.actual_distance) { ptp["actual_distance"] = *ptp_stats.actual_distance; }
     else { ptp["actual_distance"] = Json::nullValue; }
     return ptp;
@@ -32,7 +34,7 @@ int main(int argc, char **argv) {
     ompl_interface::ModelBasedStateSpaceSpecification spec(drone, "whole_body");
     auto state_space = std::make_shared<DroneStateSpace>(spec);
 
-    std::vector<std::vector<PointToPointPlanResultStat>> stats(100);
+    std::vector<std::vector<PointToPointPlanResultStat>> stats(10);
 
     for (size_t scene_id = 0; scene_id < stats.size(); ++scene_id) {
         std::cout << "Tree: " << scene_id << std::endl;
@@ -81,32 +83,37 @@ int main(int argc, char **argv) {
                             });
         }
 
-        for (double time: {0.01, 0.05, 0.1, 0.2, 0.5, 1.0}) {
+        for (bool clearBetweenRuns: {false, true}) {
+            for (double time: {0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0}) {
 
-            PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
+                PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
-            for (auto &pair: pairs) {
+                for (auto &pair: pairs) {
 
-                if (si->isValid(pair.state.get())) {
+                    if (clearBetweenRuns) ptp.getPlanner()->clear();
 
-                    PointToPointPlanResultStat ptp_stat;
+                    if (si->isValid(pair.state.get())) {
 
-                    ptp_stat.euclidean_distance = pair.euclidean_distance;
-                    ptp_stat.planning_time_seconds = time;
-                    ptp_stat.scene_id = scene_id;
-                    ptp_stat.pair_id = pair.pair_id;
+                        PointToPointPlanResultStat ptp_stat;
 
-                    auto plan_result = ptp.planToOmplGoal(time, pair.state.get(), pair.goal);
+                        ptp_stat.euclidean_distance = pair.euclidean_distance;
+                        ptp_stat.planning_time_seconds = time;
+                        ptp_stat.scene_id = scene_id;
+                        ptp_stat.pair_id = pair.pair_id;
+                        ptp_stat.cleared = clearBetweenRuns;
 
-                    PointToPointPlanResultStat stat;
+                        auto plan_result = ptp.planToOmplGoal(time, pair.state.get(), pair.goal);
 
-                    if (plan_result) {
-                        ptp_stat.actual_distance = plan_result->length();
-                    } else {
-                        std::cout << "Planning failed" << std::endl;
+                        PointToPointPlanResultStat stat;
+
+                        if (plan_result) {
+                            ptp_stat.actual_distance = plan_result->length();
+                        } else {
+                            std::cout << "Planning failed" << std::endl;
+                        }
+
+                        stats[scene_id].push_back(ptp_stat);
                     }
-
-                    stats[scene_id].push_back(ptp_stat);
                 }
             }
         }

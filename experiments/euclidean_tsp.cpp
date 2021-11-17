@@ -8,62 +8,6 @@
 #include "../src/preorder_strategy/preorder_strategy.h"
 #include "../src/experiment_utils.h"
 
-
-template<typename T>
-std::vector<size_t> indexOf(const std::vector<T> &target_positions) {
-    std::vector<size_t> current_solution;
-    for (size_t i = 0; i < target_positions.size(); ++i) current_solution.push_back(i);
-    return current_solution;
-}
-
-class SimulatedAnnealingBySwapping : public PreorderStrategy {
-
-    double cooldown_rate;
-    double temperature;
-
-public:
-
-    SimulatedAnnealingBySwapping(double cooldown_rate, double initial_temperature)
-            : cooldown_rate(cooldown_rate), temperature(initial_temperature) {}
-
-    Solution
-    generate_proposals(const Eigen::Vector3d &start_position, const std::vector<Eigen::Vector3d> &target_positions,
-                       std::function<bool(std::vector<size_t>)> callback) override {
-
-        Solution current_solution;
-        KClosestNearestNeighbourOrder().generate_proposals(start_position, target_positions,
-                                                           [&](std::vector<size_t> solution) {
-                                                               current_solution = {solution};
-                                                               return false; // accept the first one.
-                                                           });
-//        Solution current_solution { indexOf(target_positions) };
-
-        std::random_device rd;  //Will be used to obtain a seed for the random number engine
-        std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-        std::uniform_int_distribution<size_t>(0, current_solution.ordering.size())(gen);
-
-        while (callback(current_solution.ordering)) {
-
-            auto pair = generateIndexPairNoReplacement(gen, current_solution.ordering.size());
-
-            Solution new_solution = current_solution;
-
-            std::swap(new_solution.ordering[pair.first], new_solution.ordering[pair.second]);
-
-            if (std::generate_canonical<double, 10>(gen) < temperature ||
-                new_solution.length(start_position, target_positions) <
-                current_solution.length(start_position, target_positions)) {
-                current_solution = std::move(new_solution);
-            }
-
-            temperature *= cooldown_rate;
-        }
-
-        return current_solution;
-    }
-};
-
-
 int main(int argc, char **argv) {
 
     Json::Value output_json;
