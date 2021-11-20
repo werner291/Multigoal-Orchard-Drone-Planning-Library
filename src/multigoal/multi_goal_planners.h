@@ -51,7 +51,7 @@ struct MultiGoalPlanResult {
                             const std::vector<PointToPointPath> &computed_replacements);
 
     double total_length() {
-        return std::accumulate(segments.begin(), segments.end(), 0.0, [](double &a, const PointToPointPath &b) {
+        return std::accumulate(segments.begin(), segments.end(), 0.0, [](double a, const PointToPointPath &b) {
             return a + b.path.length();
         });
     }

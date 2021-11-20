@@ -131,7 +131,8 @@ int main(int argc, char **argv) {
             PointToPointPlanner ptp(experiment.ptp_planner, experiment.optimization_objective,
                                     experiment.sampler);
 
-            std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>> goals = constructAppleGoals(tree_scene, si);
+            std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>> goals = constructAppleGoals(si,
+                                                                                                       tree_scene.apples);
 
             ompl::base::ScopedState start_state_ompl(si);
             state_space->copyToOMPLState(start_state_ompl.get(), start_state);

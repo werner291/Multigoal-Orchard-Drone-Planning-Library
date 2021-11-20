@@ -11,7 +11,6 @@ static const float BRANCH_RADIUS_REDUCTION_FACTOR = 0.9;
 
 #include <moveit_msgs/PlanningScene.h>
 #include <Eigen/Geometry>
-//#include <fcl/broadphase/broadphase_dynamic_AABB_tree.h>
 #include <random>
 
 /**
@@ -40,8 +39,15 @@ struct DetachedTreeNode {
 struct Apple {
     Eigen::Vector3d center;
     Eigen::Vector3d branch_normal;
-//    std::unique_ptr<fcl::CollisionObject> collision_object;
 };
+
+struct TreeSceneData {
+    std::vector<DetachedTreeNode> branches;
+    std::vector<Apple> apples;
+    std::vector<Eigen::Vector3d> leaf_vertices;
+};
+
+TreeSceneData generateTreeScene(int numberOfApples);
 
 /**
  * Generate the branching structure of the tree, including trunk radius, lengths, branching points, etc...
@@ -61,15 +67,13 @@ make_tree_branches(const Eigen::Isometry3d &root_at, unsigned int branching_dept
  * Generate a number of apples in the tree, making sure that they do not overlap.
  *
  * @param flattened                 The value returned by the `flatten_tree` method.
-// * @param tree_model_broadphase     The fcl broadphase datastructure to sue for collision checking.
  * @param NUMBER_OF_APPLES          How many apples to generate in the tree.
  * @param apple_radius              The size of the apples.
  * @return                          A vector of apples, containing their center point and CollisionObject
  */
 std::vector<Apple> spawn_apples(const std::vector<DetachedTreeNode> &flattened,
-//                                fcl::DynamicAABBTreeCollisionManager &tree_model_broadphase,
-                                const size_t NUMBER_OF_APPLES,
-                                const double apple_radius);
+                                size_t NUMBER_OF_APPLES,
+                                double apple_radius);
 
 /**
  * Returns a transformation that represents a frame affixed to the surface of the tree branch,
@@ -89,13 +93,6 @@ Eigen::Isometry3d frame_on_branch(double azimuth, double t, const DetachedTreeNo
  * @param eng           The random engine used.
  * @return              The vertices, where each chunk of 3 vertices is a triangle.
  */
-std::vector<Eigen::Vector3d>
-generateLeafVertices(std::vector<DetachedTreeNode> &flattened);
-
-struct TreeScene {
-    moveit_msgs::PlanningScene moveit_diff;
-    std::vector<Apple> apples;
-    std::vector<Eigen::Vector3d> leaf_vertices;
-};
+std::vector<Eigen::Vector3d> generateLeafVertices(std::vector<DetachedTreeNode> &flattened);
 
 #endif //PLANNING_PROCEDURAL_TREE_GENERATION_H

@@ -9,6 +9,7 @@
 #include <json/json.h>
 #include <ompl/base/OptimizationObjective.h>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
+#include <moveit/collision_detection/collision_detector_allocator.h>
 #include "multigoal/MetricTwoOpt.h"
 #include "SamplerWrapper.h"
 #include "planning_scene_diff_message.h"
@@ -44,12 +45,13 @@ struct TreePlanningScene {
     planning_scene::PlanningScenePtr scene;
 };
 
+[[deprecated]]
 TreePlanningScene buildPlanningScene(int numberOfApples, moveit::core::RobotModelPtr &drone);
 
 moveit::core::RobotModelPtr loadRobotModel();
 
 std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>>
-constructAppleGoals(TreePlanningScene &tree_scene, const std::shared_ptr<ompl::base::SpaceInformation> &si);
+constructAppleGoals(const std::shared_ptr<ompl::base::SpaceInformation> &si, const std::vector<Apple> &apples);
 
 /**
  *
@@ -69,4 +71,7 @@ std::pair<size_t, size_t> generateIndexPairNoReplacement(RNG &gen, unsigned long
 
     return std::make_pair(i, j);
 }
+
+planning_scene::PlanningScenePtr constructPlanningScene(const TreeSceneData &tsd, moveit::core::RobotModelPtr &drone);
+
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

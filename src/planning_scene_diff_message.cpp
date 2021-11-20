@@ -5,7 +5,7 @@
 #include <std_msgs/ColorRGBA.h>
 #include "planning_scene_diff_message.h"
 
-void createTrunkInPlanningSceneMessage(std::vector<DetachedTreeNode> &tree_flattened,
+void createTrunkInPlanningSceneMessage(const std::vector<DetachedTreeNode> &tree_flattened,
                                        moveit_msgs::PlanningScene &planning_scene) {
     moveit_msgs::CollisionObject collision_object;
 
@@ -52,7 +52,8 @@ void createTrunkInPlanningSceneMessage(std::vector<DetachedTreeNode> &tree_flatt
 }
 
 
-void spawnLeavesInPlanningScene(std::vector<Eigen::Vector3d> &leafVertices, moveit_msgs::PlanningScene &planningScene) {
+void spawnLeavesInPlanningScene(const std::vector<Eigen::Vector3d> &leafVertices,
+                                moveit_msgs::PlanningScene &planningScene) {
     moveit_msgs::CollisionObject leavesCollision;
     leavesCollision.id = "leaves";
     leavesCollision.header.frame_id = "world";
@@ -100,7 +101,7 @@ void spawnLeavesInPlanningScene(std::vector<Eigen::Vector3d> &leafVertices, move
     planningScene.object_colors.push_back(leavesColor);
 }
 
-void spawnApplesInPlanningScene(const double appleRadius, std::vector<Apple> &apples,
+void spawnApplesInPlanningScene(const double appleRadius, const std::vector<Apple> &apples,
                                 moveit_msgs::PlanningScene &planning_scene_diff) {
     moveit_msgs::CollisionObject leavesCollision;
     leavesCollision.id = "apples";
@@ -173,8 +174,9 @@ void spawnFloorInPlanningScene(moveit_msgs::PlanningScene &planning_scene_diff) 
 }
 
 moveit_msgs::PlanningScene
-createPlanningSceneDiff(std::vector<DetachedTreeNode> &treeFlattened, std::vector<Eigen::Vector3d> &leafVertices,
-                        const double appleRadius, std::vector<Apple> &apples) {
+createPlanningSceneDiff(const std::vector<DetachedTreeNode> &treeFlattened,
+                        const std::vector<Eigen::Vector3d> &leafVertices,
+                        const double appleRadius, const std::vector<Apple> &apples) {
     moveit_msgs::PlanningScene planning_scene_diff;
     createTrunkInPlanningSceneMessage(treeFlattened, planning_scene_diff);
     spawnLeavesInPlanningScene(leafVertices, planning_scene_diff);

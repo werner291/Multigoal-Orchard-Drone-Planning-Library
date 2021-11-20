@@ -76,7 +76,7 @@ public:
 /**
  * A brute-force optimal algorithm using a branch-and-bound strategy.
  */
-class BruteForceOptimal : public PreorderStrategy {
+class BranchAndBoundOptimal : public PreorderStrategy {
 
 public:
     Solution

@@ -3,7 +3,9 @@
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include "../src/experiment_utils.h"
+#include "../src/json_utils.h"
 #include <fstream>
+#include <filesystem>
 
 /// Data about a single point-to-point planning result.
 struct PointToPointPlanResultStat {
@@ -34,103 +36,112 @@ int main(int argc, char **argv) {
     ompl_interface::ModelBasedStateSpaceSpecification spec(drone, "whole_body");
     auto state_space = std::make_shared<DroneStateSpace>(spec);
 
-    std::vector<std::vector<PointToPointPlanResultStat>> stats(10);
+    const Json::Value trees_data = jsonFromGzipFile("test_robots/trees/trees_2021-11-20T12:21:28Z.json.gzip");
 
-    for (size_t scene_id = 0; scene_id < stats.size(); ++scene_id) {
-        std::cout << "Tree: " << scene_id << std::endl;
+    const size_t MAX_TREES = 50;
 
-        auto tree_scene = buildPlanningScene(50 /* TODO vary? */, drone);
-        auto si = initSpaceInformation(tree_scene.scene, drone, state_space);
-        auto pathLengthObjective = std::make_shared<ompl::base::PathLengthOptimizationObjective>(si);
-        auto sampler = std::make_shared<InformedGaussian>(state_space.get(), 2.5);
-        auto prms = std::make_shared<ompl::geometric::PRMstar>(si);
+    Json::Value stats;
 
-        std::random_device rd;
-        std::mt19937 gen(rd());
+    const std::string PATH = "analysis/ptp_stats.json";
 
-        auto goals = constructAppleGoals(tree_scene, si);
-
-        auto destroyState = [&](ompl::base::State *st) {
-            state_space->freeState(st);
-        };
-
-        // Similar to ScopedState, but I trust this implementation more with regards to copying and such.
-        typedef std::unique_ptr<ompl::base::State, decltype(destroyState)> StateUptr;
-
-        struct StateGoalPair {
-            size_t scene_id;
-            size_t pair_id;
-            double euclidean_distance;
-            StateUptr state;
-            std::shared_ptr<ompl::base::GoalSampleableRegion> goal;
-        };
-
-        std::vector<StateGoalPair> pairs;
-
-        for (size_t ptp_t = 0; ptp_t < 10; ++ptp_t) {
-
-            auto index_pair = generateIndexPairNoReplacement(gen, goals.size());
-
-            StateUptr from_state(state_space->allocState(), destroyState);
-            goals[index_pair.first]->sampleGoal(from_state.get());
-
-            pairs.push_back({
-                                    scene_id, ptp_t,
-                                    (tree_scene.apples[index_pair.first].center -
-                                     tree_scene.apples[index_pair.second].center).norm(),
-                                    std::move(from_state),
-                                    goals[index_pair.second]
-                            });
+    {
+        std::ifstream statfile(PATH);
+        if (statfile.is_open()) {
+            statfile >> stats;
+            statfile.close();
         }
+    }
 
-        for (bool clearBetweenRuns: {false, true}) {
-            for (double time: {0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0}) {
+    auto last_access = std::chrono::steady_clock::now();
 
-                PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
+    for (bool clearBetweenRuns: {false, true}) {
+        for (double time: {0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0}) {
+            for (size_t scene_id = 0; scene_id < trees_data.size() && scene_id < MAX_TREES; ++scene_id) {
 
-                for (auto &pair: pairs) {
+                Json::Value &stats_entry = stats[clearBetweenRuns ? "cleared" : "maintained"][std::to_string(
+                        time)][(Json::ArrayIndex) scene_id];
 
-                    if (clearBetweenRuns) ptp.getPlanner()->clear();
+                const size_t PTP_PER_TREE = 10;
 
-                    if (si->isValid(pair.state.get())) {
+                if (stats_entry.isArray() && stats_entry.size() == PTP_PER_TREE) {
+                    std::cout << "Result is cached." << std::endl;
+                } else {
 
-                        PointToPointPlanResultStat ptp_stat;
+                    std::cout << "Tree: " << scene_id << std::endl;
 
-                        ptp_stat.euclidean_distance = pair.euclidean_distance;
-                        ptp_stat.planning_time_seconds = time;
-                        ptp_stat.scene_id = scene_id;
-                        ptp_stat.pair_id = pair.pair_id;
-                        ptp_stat.cleared = clearBetweenRuns;
+                    auto tree_data = *treeSceneFromJson(trees_data[(Json::ArrayIndex) scene_id]);
 
-                        auto plan_result = ptp.planToOmplGoal(time, pair.state.get(), pair.goal);
+                    auto planning_scene = constructPlanningScene(tree_data, drone);
+                    auto si = initSpaceInformation(planning_scene, drone, state_space);
+                    auto pathLengthObjective = std::make_shared<ompl::base::PathLengthOptimizationObjective>(si);
+                    auto sampler = std::make_shared<InformedGaussian>(state_space.get(), 2.5);
+                    auto prms = std::make_shared<ompl::geometric::PRMstar>(si);
 
-                        PointToPointPlanResultStat stat;
+                    auto goals = constructAppleGoals(si, tree_data.apples);
 
-                        if (plan_result) {
-                            ptp_stat.actual_distance = plan_result->length();
-                        } else {
-                            std::cout << "Planning failed" << std::endl;
+                    auto destroyState = [&](ompl::base::State *st) {
+                        state_space->freeState(st);
+                    };
+
+                    // Similar to ScopedState, but I trust this implementation more with regards to copying and such.
+                    typedef std::unique_ptr<ompl::base::State, decltype(destroyState)> StateUptr;
+
+                    PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
+
+                    for (size_t ptp_t = 0; ptp_t < PTP_PER_TREE; ++ptp_t) {
+
+                        std::mt19937 gen(ptp_t); // Fixed seed is the ptp index.
+
+                        auto index_pair = generateIndexPairNoReplacement(gen, goals.size());
+
+                        if (clearBetweenRuns) ptp.getPlanner()->clear();
+
+                        StateUptr from_state(state_space->allocState(), destroyState);
+                        goals[index_pair.first]->sampleGoal(from_state.get());
+
+                        double euclidean_distance = (tree_data.apples[index_pair.first].center -
+                                                     tree_data.apples[index_pair.second].center).norm();
+
+                        if (si->isValid(from_state.get())) {
+
+                            PointToPointPlanResultStat ptp_stat;
+
+                            ptp_stat.euclidean_distance = euclidean_distance;
+                            ptp_stat.planning_time_seconds = time;
+                            ptp_stat.scene_id = scene_id;
+                            ptp_stat.pair_id = ptp_t;
+                            ptp_stat.cleared = clearBetweenRuns;
+
+                            auto plan_result = ptp.planToOmplGoal(time, from_state.get(), goals[index_pair.second]);
+
+                            if (plan_result) {
+                                ptp_stat.actual_distance = plan_result->length();
+                            } else {
+                                std::cout << "Planning failed" << std::endl;
+                            }
+
+                            stats_entry[(Json::ArrayIndex) ptp_t] = toJson(ptp_stat);
                         }
-
-                        stats[scene_id].push_back(ptp_stat);
                     }
+                }
+
+                if (std::chrono::steady_clock::now() - last_access > std::chrono::seconds(60)) {
+                    last_access = std::chrono::steady_clock::now();
+                    std::cout << "Saving results so far." << std::endl;
+                    std::ofstream statfile_out(PATH);
+                    statfile_out << stats;
+                    statfile_out.close();
                 }
             }
         }
     }
 
-    Json::Value all_scenes;
-    for (const auto &item: stats) {
-        Json::Value all_ptps;
-        for (const auto &ptp_stats: item) {
-            all_ptps.append(toJson(ptp_stats));
-        }
-        all_scenes.append(all_ptps);
+    {
+        std::ofstream statfile_out(PATH);
+        statfile_out << stats;
+        statfile_out.close();
     }
-
-    std::ofstream results("analysis/ptp_statistics.json");
-    results << all_scenes;
-    results.close();
 
     return 0;
 }
+

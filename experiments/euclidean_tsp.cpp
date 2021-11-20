@@ -35,6 +35,14 @@ int main(int argc, char **argv) {
                                                                return false;
                                                            });
 
+        BranchAndBoundOptimal().generate_proposals(start_point, apples,
+                                                   [&](const std::vector<size_t> &solution) {
+                                                       scene_results["b&b"].append(
+                                                               PreorderStrategy::Solution{solution}.length(
+                                                                       start_point, apples));
+                                                       return false;
+                                                   });
+
         for (double initial_temperature: {0.0, 0.00001, 0.0001}) {
             for (double cooldown_rate: {0.99990, 0.99995, 0.99999}) {
                 // Simulated annealing.

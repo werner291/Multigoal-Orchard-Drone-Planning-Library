@@ -107,13 +107,27 @@ moveit::core::RobotModelPtr loadRobotModel() {
 }
 
 std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>>
-constructAppleGoals(TreePlanningScene &tree_scene, const std::shared_ptr<ompl::base::SpaceInformation> &si) {
+constructAppleGoals(const std::shared_ptr<ompl::base::SpaceInformation> &si, const std::vector<Apple> &apples) {
     static const double GOAL_END_EFFECTOR_RADIUS = 0.01;
 
     std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>> goals;
-    for (const auto &apple: tree_scene.apples)
+    for (const auto &apple: apples)
         goals.push_back(
                 std::make_shared<DroneEndEffectorNearTarget>(si, GOAL_END_EFFECTOR_RADIUS, apple.center));
     return goals;
+}
+
+planning_scene::PlanningScenePtr constructPlanningScene(const TreeSceneData &tsd, moveit::core::RobotModelPtr &drone) {
+
+    planning_scene::PlanningScenePtr scene = std::make_shared<planning_scene::PlanningScene>(drone);
+
+    scene->setPlanningSceneDiffMsg(createPlanningSceneDiff(tsd.branches, tsd.leaf_vertices, 0.05, tsd.apples));
+
+    // Diff message apparently can't handle partial ACM updates?
+    scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
+    scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
+    scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+
+    return scene;
 }
 

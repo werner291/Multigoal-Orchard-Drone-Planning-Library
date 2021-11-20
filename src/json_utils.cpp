@@ -1,4 +1,13 @@
 
+#include "procedural_tree_generation.h"
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/categories.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <fstream>
+#include "../src/experiment_utils.h"
+#include <ompl/geometric/planners/prm/PRMstar.h>
+#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
+#include <cstddef>
 #include <json/json.h>
 #include <ompl/base/OptimizationObjective.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
@@ -6,6 +15,8 @@
 #include "ompl_custom.h"
 #include "json_utils.h"
 #include "multigoal/multi_goal_planners.h"
+
+Json::Value jsonFromGzipFile(const std::string &path);
 
 Json::Value toJSON(const LeafCollisions &leaf_collisions) {
     Json::Value leaf_collisions_json;
@@ -85,4 +96,151 @@ buildRunStatistics(const std::shared_ptr<LeavesCollisionChecker> &leavesCollisio
     run_stats["runtime_budget"] = (double) std::chrono::duration_cast<std::chrono::milliseconds>(
             experiment.time_budget).count();
     return run_stats;
+}
+
+
+Json::Value toJSON(const Eigen::Vector3d &v) {
+    Json::Value json;
+    json["x"] = v.x();
+    json["y"] = v.y();
+    json["z"] = v.z();
+    return json;
+}
+
+Eigen::Vector3d fromJsonVector3d(const Json::Value &json) {
+    return Eigen::Vector3d(
+            json["x"].asDouble(),
+            json["y"].asDouble(),
+            json["z"].asDouble()
+    );
+}
+
+Json::Value toJSON(const Eigen::Quaterniond &q) {
+    Json::Value json;
+    json["x"] = q.x();
+    json["y"] = q.y();
+    json["z"] = q.z();
+    json["w"] = q.w();
+    return json;
+}
+
+Eigen::Quaterniond fromJsonQuaternion3d(const Json::Value &json) {
+    return {
+            json["w"].asDouble(),
+            json["x"].asDouble(),
+            json["y"].asDouble(),
+            json["z"].asDouble()
+    };
+}
+
+Json::Value toJSON(const Eigen::Isometry3d &isom) {
+    Json::Value json;
+    json["translation"] = toJSON(isom.translation());
+    json["orientation"] = toJSON(Eigen::Quaterniond(isom.rotation()));
+    return json;
+}
+
+Eigen::Isometry3d fromJsonIsometry3d(const Json::Value &json) {
+
+    Eigen::Isometry3d iso;
+    iso.setIdentity();
+    iso.translate(fromJsonVector3d(json["translation"]));
+    iso.rotate(fromJsonQuaternion3d(json["orientation"]));
+    return iso;
+}
+
+Json::Value toJSON(const TreeSceneData &tree_scene) {
+    Json::Value output;
+
+    for (const auto &branch: tree_scene.branches) {
+
+        Json::Value branch_json;
+
+        branch_json["radius"] = branch.radius;
+        branch_json["length"] = branch.length;
+        branch_json["root_at"] = toJSON(branch.root_at_absolute);
+
+        output["branches"].append(branch_json);
+    }
+
+    for (const auto &vertex: tree_scene.leaf_vertices) {
+        output["leaf_vertices"].append(toJSON(vertex));
+    }
+
+    for (const auto &apple: tree_scene.apples) {
+
+        Json::Value apple_json;
+        apple_json["center"] = toJSON(apple.center);
+        apple_json["branch_normal"] = toJSON(apple.branch_normal);
+        output["apples"].append(apple_json);
+
+    }
+
+    return output;
+}
+
+std::optional<TreeSceneData> treeSceneFromJson(const Json::Value &json) {
+
+    TreeSceneData scene_data;
+
+    scene_data.branches.reserve(json["branches"].size());
+
+    for (const auto &branch: json["branches"]) {
+        scene_data.branches.push_back({
+                                              .root_at_absolute = fromJsonIsometry3d(branch["root_at"]),
+                                              .length = branch["length"].asDouble(),
+                                              .radius = branch["radius"].asDouble(),
+                                      });
+    }
+
+    scene_data.leaf_vertices.reserve(json["leaf_vertices"].size());
+
+    for (const auto &vertex: json["leaf_vertices"]) {
+        scene_data.leaf_vertices.push_back(fromJsonVector3d(vertex));
+    }
+
+    scene_data.apples.reserve(json["apples"].size());
+
+    for (const auto &apple: json["apples"]) {
+
+        scene_data.apples.push_back(
+                {
+                        .center = fromJsonVector3d(apple["center"]),
+                        .branch_normal = fromJsonVector3d(apple["branch_normal"]),
+                }
+        );
+
+    }
+
+    return scene_data;
+
+}
+
+Json::Value jsonFromGzipFile(const std::string &path) {
+
+    std::ifstream file(path, std::ios_base::out | std::ios_base::binary);
+
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+    inbuf.push(boost::iostreams::gzip_decompressor());
+    inbuf.push(file);
+    std::istream in(&inbuf);
+
+    Json::Value trees_json;
+    in >> trees_json;
+
+    boost::iostreams::close(in);
+    file.close();
+
+    return trees_json;
+}
+
+void jsonToGzipFile(const Json::Value &all_trees, const std::string &path) {
+    std::ofstream file(path, std::ios_base::out | std::ios_base::binary);
+    boost::iostreams::filtering_streambuf<boost::iostreams::output> outbuf;
+    outbuf.push(boost::iostreams::gzip_compressor());
+    outbuf.push(file);
+    std::ostream out(&outbuf);
+    out << all_trees;
+    boost::iostreams::close(outbuf);
+    file.close();
 }

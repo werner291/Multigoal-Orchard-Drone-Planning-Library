@@ -76,7 +76,7 @@ PreorderStrategy::Solution SimulatedAnnealingBySwapping::generate_proposals(cons
 
     // Start from the first nearest-neighbors solution.
     Solution current_solution = KClosestNearestNeighbourOrder().generate_proposals(start_position, target_positions,
-                                                                                   [&](std::vector<size_t> solution) {
+                                                                                   [&](const std::vector<size_t> &solution) {
                                                                                        return false; // accept the first one.
                                                                                    });
 
@@ -163,7 +163,7 @@ void heap_recurse(size_t depth,
     }
 }
 
-BruteForceOptimal::Solution BruteForceOptimal::generate_proposals(
+BranchAndBoundOptimal::Solution BranchAndBoundOptimal::generate_proposals(
         const Eigen::Vector3d &start_position,
         const std::vector<Eigen::Vector3d> &target_positions,
         std::function<bool(std::vector<size_t>)> callback) {

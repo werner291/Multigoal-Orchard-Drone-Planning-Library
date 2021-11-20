@@ -23,4 +23,24 @@ Json::Value buildRunStatistics(const std::shared_ptr<LeavesCollisionChecker> &le
                                const std::chrono::milliseconds elapsed,
                                const moveit::core::RobotModelPtr &robot);
 
+Json::Value toJSON(const Eigen::Vector3d &v);
+
+Eigen::Vector3d fromJsonVector3d(const Json::Value &json);
+
+Json::Value toJSON(const Eigen::Quaterniond &q);
+
+Eigen::Quaterniond fromJsonQuaternion3d(const Json::Value &json);
+
+Json::Value toJSON(const Eigen::Isometry3d &isom);
+
+Eigen::Isometry3d fromJsonIsometry3d(const Json::Value &json);
+
+Json::Value toJSON(const TreeSceneData &tree_scene);
+
+std::optional<TreeSceneData> treeSceneFromJson(const Json::Value &json);
+
+Json::Value jsonFromGzipFile(const std::string &path);
+
+void jsonToGzipFile(const Json::Value &all_trees, const std::string &path);
+
 #endif //NEW_PLANNERS_JSON_UTILS_H
