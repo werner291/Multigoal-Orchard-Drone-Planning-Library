@@ -30,8 +30,9 @@ std::deque<PtpExperiment> makeExperiments(const Json::Value &trees_data, const s
 Json::Value toJson(const PointToPointPlanResultStat &ptp_stats);
 
 Json::Value &getExperimentStats(Json::Value &stats, const PtpExperiment &current) {
-    return stats[current.clearBetweenRuns ? "cleared" : "maintained"][std::to_string(
-            current.time)][(Json::ArrayIndex) current.scene_id];
+    return stats[current.clearBetweenRuns ? "cleared" : "maintained"]
+    [std::to_string(current.time)]
+    [(Json::ArrayIndex) current.scene_id];
 }
 
 
@@ -46,7 +47,7 @@ int main(int argc, char **argv) {
     const Json::Value trees_data = jsonFromGzipFile("test_robots/trees/trees_2021-11-20T12:21:28Z.json.gzip");
 
     // Limit ourselves to a subset of all trees.
-    const size_t MAX_TREES = 10;
+    const size_t MAX_TREES = 50;
 
     // Load the cached statistics. (Delete the file to re-run cleanly)
     Json::Value stats = loadJsonFromFile(PATH);
@@ -76,8 +77,6 @@ int main(int argc, char **argv) {
 
     // A condition variable to notify the main thread when a result has been obtained.
     std::condition_variable cv;
-
-    size_t planners_working = 0;
 
     // Init a worker pool.
     std::vector<std::thread> pool;
@@ -153,16 +152,14 @@ int main(int argc, char **argv) {
                     ompl::base::ScopedState from_state(si);
                     state_space->copyToOMPLState(from_state.get(), ptp_specs[current.scene_id][ptp_t].start_state);
 
+                    PointToPointPlanResultStat ptp_stat;
+                    ptp_stat.euclidean_distance = euclidean_distance;
+                    ptp_stat.planning_time_seconds = current.time;
+                    ptp_stat.scene_id = current.scene_id;
+                    ptp_stat.pair_id = ptp_t;
+                    ptp_stat.cleared = current.clearBetweenRuns;
+
                     if (si->isValid(from_state.get())) {
-
-                        PointToPointPlanResultStat ptp_stat;
-
-                        ptp_stat.euclidean_distance = euclidean_distance;
-                        ptp_stat.planning_time_seconds = current.time;
-                        ptp_stat.scene_id = current.scene_id;
-                        ptp_stat.pair_id = ptp_t;
-                        ptp_stat.cleared = current.clearBetweenRuns;
-
                         auto plan_result = ptp.planToOmplGoal(current.time, from_state.get(),
                                                               goals[ptp_specs[current.scene_id][ptp_t].goal_idx]);
 
@@ -172,12 +169,13 @@ int main(int argc, char **argv) {
                             std::cout << "Planning failed" << std::endl;
                         }
 
-                        {
-                            std::lock_guard lock(mtx);
-                            getExperimentStats(stats, current)[(Json::ArrayIndex) ptp_t] = toJson(ptp_stat);
-                        }
-                        cv.notify_one();
                     }
+
+                    {
+                        std::lock_guard lock(mtx);
+                        getExperimentStats(stats, current)[(Json::ArrayIndex) ptp_t] = toJson(ptp_stat);
+                    }
+                    cv.notify_one();
                 }
             }
         });
