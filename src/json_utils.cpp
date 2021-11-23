@@ -1,4 +1,8 @@
 
+#include <random>
+#include <condition_variable>
+#include <filesystem>
+#include "../src/json_utils.h"
 #include "procedural_tree_generation.h"
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/categories.hpp>
@@ -243,4 +247,61 @@ void jsonToGzipFile(const Json::Value &all_trees, const std::string &path) {
     out << all_trees;
     boost::iostreams::close(outbuf);
     file.close();
+}
+
+Json::Value loadJsonFromFile(const std::string &path) {
+    Json::Value stats;
+
+    {
+        std::ifstream statfile(path);
+        if (statfile.is_open()) {
+            statfile >> stats;
+            statfile.close();
+        }
+    }
+    return stats;
+}
+
+std::vector<std::vector<PtpSpec>> ptpSpecsFromJson(const moveit::core::RobotModelPtr &drone, const Json::Value &stats) {
+    std::vector<std::vector<PtpSpec>> ptp_specs;
+
+    for (const auto &ptp: stats) {
+        ptp_specs.emplace_back(/* empty vector */);
+
+        for (const auto &pair: ptp) {
+            moveit::core::RobotState start_state(drone);
+            for (Json::ArrayIndex vidx = 0; vidx < pair["start_state"].size(); vidx++) {
+                start_state.setVariablePosition((int) vidx, pair["start_state"][vidx].asDouble());
+            }
+            ptp_specs.back().push_back({
+                                               start_state, (size_t) pair["from_goal"].asInt(),
+                                               (size_t) pair["to_goal"].asInt()
+                                       });
+        }
+    }
+
+    return ptp_specs;
+}
+
+Json::Value ptpSpecsToJson(const std::vector<std::vector<PtpSpec>> &specs) {
+
+    Json::Value specs_json;
+
+    for (const auto &ptp: specs) {
+        Json::Value ptp_json;
+
+        for (const auto &pair: ptp) {
+            Json::Value pair_json;
+            pair_json["from_goal"] = (int) pair.from_goal_idx;
+            pair_json["to_goal"] = (int) pair.goal_idx;
+            for (size_t var_i = 0; var_i < pair.start_state.getVariableCount(); var_i++) {
+                pair_json["start_state"][(Json::ArrayIndex) var_i] = pair.start_state.getVariablePosition((int) var_i);
+            }
+            ptp_json.append(pair_json);
+        }
+
+        specs_json.append(ptp_json);
+    }
+
+    return specs_json;
 }

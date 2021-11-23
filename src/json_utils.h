@@ -43,4 +43,12 @@ Json::Value jsonFromGzipFile(const std::string &path);
 
 void jsonToGzipFile(const Json::Value &all_trees, const std::string &path);
 
+Json::Value loadJsonFromFile(const std::string &path);
+
+std::vector<std::vector<PtpSpec>> ptpSpecsFromJson(const moveit::core::RobotModelPtr &drone,
+                                                   const Json::Value &stats);
+
+Json::Value ptpSpecsToJson(const std::vector<std::vector<PtpSpec>> &specs);
+
+
 #endif //NEW_PLANNERS_JSON_UTILS_H

@@ -3,7 +3,6 @@
 #define NEW_PLANNERS_EXPERIMENT_UTILS_H
 
 #include "procedural_tree_generation.h"
-#include <moveit/robot_state/conversions.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/rrt/RRT.h>
 #include <json/json.h>
@@ -72,6 +71,24 @@ std::pair<size_t, size_t> generateIndexPairNoReplacement(RNG &gen, unsigned long
     return std::make_pair(i, j);
 }
 
-planning_scene::PlanningScenePtr constructPlanningScene(const TreeSceneData &tsd, moveit::core::RobotModelPtr &drone);
+planning_scene::PlanningScenePtr
+constructPlanningScene(const TreeSceneData &tsd, const moveit::core::RobotModelConstPtr &drone);
+
+struct PtpExperiment {
+    bool clearBetweenRuns{};
+    double time{};
+    size_t scene_id{};
+};
+
+struct PtpSpec {
+    const moveit::core::RobotState start_state;
+    size_t from_goal_idx{};
+    size_t goal_idx{};
+};
+
+
+std::vector<std::vector<PtpSpec>>
+genPointToPointSpecs(const moveit::core::RobotModelPtr &drone, const Json::Value &trees_data, std::mt19937 &gen,
+                     size_t pairsPerTree);
 
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

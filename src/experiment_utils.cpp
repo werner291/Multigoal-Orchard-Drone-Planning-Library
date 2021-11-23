@@ -117,7 +117,8 @@ constructAppleGoals(const std::shared_ptr<ompl::base::SpaceInformation> &si, con
     return goals;
 }
 
-planning_scene::PlanningScenePtr constructPlanningScene(const TreeSceneData &tsd, moveit::core::RobotModelPtr &drone) {
+planning_scene::PlanningScenePtr
+constructPlanningScene(const TreeSceneData &tsd, const moveit::core::RobotModelConstPtr &drone) {
 
     planning_scene::PlanningScenePtr scene = std::make_shared<planning_scene::PlanningScene>(drone);
 
@@ -129,5 +130,46 @@ planning_scene::PlanningScenePtr constructPlanningScene(const TreeSceneData &tsd
     scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
 
     return scene;
+}
+
+std::vector<std::vector<PtpSpec>> genPointToPointSpecs(const moveit::core::RobotModelPtr &drone,
+                                                       const Json::Value &trees_data, std::mt19937 &gen,
+                                                       size_t pairsPerTree) {
+
+    std::vector<std::vector<PtpSpec>> ptp_specs;
+
+    ompl_interface::ModelBasedStateSpaceSpecification spec(drone, "whole_body");
+
+    for (const auto &tree: trees_data) {
+
+        ptp_specs.emplace_back(/* empty vector */);
+
+        auto state_space = std::make_shared<DroneStateSpace>(spec);
+        // Decode the JSON object into tree data.
+        auto tree_data = *treeSceneFromJson(tree);
+
+        // Build the space information, planning scene, etc...
+        auto planning_scene = constructPlanningScene(tree_data, drone);
+        auto si = initSpaceInformation(planning_scene, drone, state_space);
+
+        for (size_t ptp_t = 0; ptp_t < pairsPerTree; ++ptp_t) {
+
+            // Pick a pair of goals to plan between.
+            auto index_pair = generateIndexPairNoReplacement(gen, tree["apples"].size());
+
+            ompl::base::ScopedState from_state(si);
+            DroneEndEffectorNearTarget(si, 0.01, fromJsonVector3d(
+                    tree["apples"][(Json::ArrayIndex) index_pair.first]["center"])).sampleGoal(from_state.get());
+
+            moveit::core::RobotState start_state(drone);
+            state_space->copyToRobotState(start_state, from_state.get());
+            start_state.update(true);
+
+            ptp_specs.back().push_back({start_state, index_pair.first, index_pair.second});
+
+        }
+    }
+
+    return ptp_specs;
 }
 
