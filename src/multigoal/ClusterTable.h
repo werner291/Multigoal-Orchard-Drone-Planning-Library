@@ -47,6 +47,9 @@ public:
          std::chrono::milliseconds time_budget) override;
 
     std::string getName() override;
+
+    void buildClusters(GoalSet &goals, PointToPointPlanner &point_to_point_planner,
+                       const std::vector<StateAtGoal> &goal_samples) const;
 };
 
 #endif //NEW_PLANNERS_CLUSTERTABLE_H
