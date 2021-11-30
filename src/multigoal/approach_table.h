@@ -22,6 +22,14 @@ namespace multigoal {
     struct Visitation {
         size_t target_idx; /// Outer vector index
         size_t approach_idx; /// Inner vector index.
+
+        bool operator==(const Visitation &other) const {
+            return target_idx == other.target_idx && approach_idx == other.approach_idx;
+        }
+
+        bool operator!=(const Visitation &other) const {
+            return !(*this == other);
+        }
     };
 
     /// \brief Compute the GoalApproachTable with at most k valid samples per goal.

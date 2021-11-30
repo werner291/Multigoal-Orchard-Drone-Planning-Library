@@ -122,6 +122,7 @@ catkin_package(
 ###########
 
 set(SHARED_SRC
+        src/genbattle_dkm.hpp
         src/procedural_tree_generation.cpp
         src/DroneStateConstraintSampler.cpp
         src/msgs_utilities.cpp
@@ -179,7 +180,15 @@ set(SHARED_SRC
         #        src/multigoal/SubtourMovingPlanner.cpp
         #        src/multigoal/SubtourMovingPlanner.h
         src/preorder_strategy/preorder_strategy.cpp
-        src/preorder_strategy/preorder_strategy.h)
+        src/preorder_strategy/preorder_strategy.h
+        src/representative_states.cpp
+        src/representative_states.h
+        src/multigoal/representative_goal_samples.cpp
+        #        src/multigoal/GATMatrix.cpp
+        #        src/multigoal/GATMatrix.h
+        src/multigoal/ClusterTable.cpp
+        src/multigoal/ClusterTable.h
+        )
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
@@ -202,6 +211,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(${PROJECT_NAME}_vizualized src/run_vizualized.cpp ${SHARED_SRC})
 
 add_executable(${PROJECT_NAME}_benchmark src/run_benchmarked.cpp ${SHARED_SRC} experiments/bnb_comparison.cpp)
+
+add_executable(${PROJECT_NAME}_at_benchmark experiments/at_benchmark.cpp ${SHARED_SRC})
 
 add_executable(${PROJECT_NAME}_ptp_correlation experiments/ptp_correlation.cpp ${SHARED_SRC})
 

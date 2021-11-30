@@ -76,6 +76,7 @@ constructPlanningScene(const TreeSceneData &tsd, const moveit::core::RobotModelC
 
 struct PtpExperiment {
     bool clearBetweenRuns{};
+    bool useInformedSampling{};
     double time{};
     size_t scene_id{};
 };

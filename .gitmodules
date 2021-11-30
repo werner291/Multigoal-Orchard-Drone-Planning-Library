@@ -1,0 +1,3 @@
+[submodule "K-Medoids"]
+	path = K-Medoids
+	url = git@github.com:e-dang/K-Medoids.git

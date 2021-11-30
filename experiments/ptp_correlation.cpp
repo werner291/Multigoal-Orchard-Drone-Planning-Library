@@ -31,6 +31,7 @@ Json::Value toJson(const PointToPointPlanResultStat &ptp_stats);
 
 Json::Value &getExperimentStats(Json::Value &stats, const PtpExperiment &current) {
     return stats[current.clearBetweenRuns ? "cleared" : "maintained"]
+    [current.useInformedSampling ? "informed" : "uniform"]
     [std::to_string(current.time)]
     [(Json::ArrayIndex) current.scene_id];
 }
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
 
     // Init a worker pool.
     std::vector<std::thread> pool;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 4; i++) {
         // Create a worker thread.
         pool.emplace_back([&]() {
 
@@ -124,7 +125,13 @@ int main(int argc, char **argv) {
                 auto planning_scene = constructPlanningScene(tree_data, drone);
                 auto si = initSpaceInformation(planning_scene, drone, state_space);
                 auto pathLengthObjective = std::make_shared<ompl::base::PathLengthOptimizationObjective>(si);
-                auto sampler = std::make_shared<InformedGaussian>(state_space.get(), 2.5);
+
+                std::shared_ptr<SamplerWrapper> sampler;
+                if (current.useInformedSampling) {
+                    sampler = std::make_shared<InformedGaussian>(state_space.get(), 2.5);
+                } else {
+                    sampler = std::make_shared<UniformSampler>(state_space.get());
+                }
                 auto prms = std::make_shared<ompl::geometric::PRMstar>(si);
 
                 // Convert the apples into sampleable goal regons.
@@ -212,12 +219,14 @@ int main(int argc, char **argv) {
 
 std::deque<PtpExperiment> makeExperiments(const Json::Value &trees_data, const size_t MAX_TREES) {
     std::deque<PtpExperiment> experiments;
-    for (bool clearBetweenRuns: {false, true}) {
-        for (double time: {0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0}) {
-            for (size_t scene_id = 0; scene_id < trees_data.size() && scene_id < MAX_TREES; ++scene_id) {
-                experiments.push_back({
-                                              clearBetweenRuns, time, scene_id
-                                      });
+    for (bool useInformedSampling: {false, true}) {
+        for (bool clearBetweenRuns: {false, true}) {
+            for (double time: {0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0}) {
+                for (size_t scene_id = 0; scene_id < trees_data.size() && scene_id < MAX_TREES; ++scene_id) {
+                    experiments.push_back({
+                                                  clearBetweenRuns, useInformedSampling, time, scene_id
+                                          });
+                }
             }
         }
     }
@@ -226,11 +235,11 @@ std::deque<PtpExperiment> makeExperiments(const Json::Value &trees_data, const s
 
 Json::Value toJson(const PointToPointPlanResultStat &ptp_stats) {
     Json::Value ptp;
-    ptp["scene_id"] = (int) ptp_stats.scene_id;
-    ptp["pair_id"] = (int) ptp_stats.pair_id;
+//    ptp["scene_id"] = (int) ptp_stats.scene_id;
+//    ptp["pair_id"] = (int) ptp_stats.pair_id;
     ptp["euclidean_distance"] = ptp_stats.euclidean_distance;
-    ptp["planning_time"] = ptp_stats.planning_time_seconds;
-    ptp["cleared"] = ptp_stats.cleared;
+//    ptp["planning_time"] = ptp_stats.planning_time_seconds;
+//    ptp["cleared"] = ptp_stats.cleared;
     if (ptp_stats.actual_distance) { ptp["actual_distance"] = *ptp_stats.actual_distance; }
     else { ptp["actual_distance"] = Json::nullValue; }
     return ptp;
