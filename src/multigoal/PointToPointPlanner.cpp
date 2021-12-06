@@ -26,18 +26,17 @@ PointToPointPlanner::planToOmplGoal(double maxTime,
 
     assert(planner_->getSpaceInformation()->isValid(start));
 
-    planner_->clearQuery();
-
     auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner_->getSpaceInformation());
     pdef->addStartState(start);
     pdef->setOptimizationObjective(optimizationObjective_);
     pdef->setGoal(goal);
     planner_->setProblemDefinition(pdef);
-
     sampler_->setStartAndGoal(start, std::dynamic_pointer_cast<ompl::base::GoalSampleableRegion>(goal));
 
     if (!planner_->isSetup()) {
         planner_->setup();
+    } else {
+        planner_->clearQuery();
     }
 
     ompl::base::PlannerStatus status = planner_->solve(ompl::base::timedPlannerTerminationCondition(maxTime));

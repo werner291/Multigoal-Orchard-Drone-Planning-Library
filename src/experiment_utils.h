@@ -74,7 +74,12 @@ std::pair<size_t, size_t> generateIndexPairNoReplacement(RNG &gen, unsigned long
 planning_scene::PlanningScenePtr
 constructPlanningScene(const TreeSceneData &tsd, const moveit::core::RobotModelConstPtr &drone);
 
+enum PlannerType {
+    PRMSTAR, AITSTAR
+};
+
 struct PtpExperiment {
+    PlannerType planner_type;
     bool clearBetweenRuns{};
     bool useInformedSampling{};
     double time{};

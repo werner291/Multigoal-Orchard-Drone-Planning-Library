@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
+#include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include "../src/experiment_utils.h"
 #include "../src/json_utils.h"
 #include <fstream>
@@ -9,7 +10,7 @@
 #include <condition_variable>
 #include <random>
 
-const std::string PATH = "analysis/ptp_stats.json";
+const std::string PATH = "analysis/ptp_stats2.json";
 
 /// Data about a single point-to-point planning result.
 struct PointToPointPlanResultStat {
@@ -21,7 +22,6 @@ struct PointToPointPlanResultStat {
     bool cleared;
 };
 
-
 const size_t PTP_PER_TREE = 10;
 
 
@@ -30,10 +30,13 @@ std::deque<PtpExperiment> makeExperiments(const Json::Value &trees_data, const s
 Json::Value toJson(const PointToPointPlanResultStat &ptp_stats);
 
 Json::Value &getExperimentStats(Json::Value &stats, const PtpExperiment &current) {
-    return stats[current.clearBetweenRuns ? "cleared" : "maintained"]
-    [current.useInformedSampling ? "informed" : "uniform"]
-    [std::to_string(current.time)]
-    [(Json::ArrayIndex) current.scene_id];
+    return
+            stats["results"]
+            [current.planner_type == PRMSTAR ? "PRM*" : "AIT*"]
+            [current.clearBetweenRuns ? "cleared" : "maintained"]
+            [current.useInformedSampling ? "informed" : "uniform"]
+            [std::to_string(current.time)]
+            [(Json::ArrayIndex) current.scene_id];
 }
 
 
@@ -124,7 +127,7 @@ int main(int argc, char **argv) {
                 // Build the space information, planning scene, etc...
                 auto planning_scene = constructPlanningScene(tree_data, drone);
                 auto si = initSpaceInformation(planning_scene, drone, state_space);
-                auto pathLengthObjective = std::make_shared<ompl::base::PathLengthOptimizationObjective>(si);
+                auto pathLengthObjective = std::make_shared<PathLengthWithInformedSamplerObjective>(si);
 
                 std::shared_ptr<SamplerWrapper> sampler;
                 if (current.useInformedSampling) {
@@ -132,7 +135,17 @@ int main(int argc, char **argv) {
                 } else {
                     sampler = std::make_shared<UniformSampler>(state_space.get());
                 }
-                auto prms = std::make_shared<ompl::geometric::PRMstar>(si);
+                std::shared_ptr<ompl::base::Planner> prms;
+                switch (current.planner_type) {
+                    case PRMSTAR:
+                        prms = std::make_shared<ompl::geometric::PRMstar>(si);
+                        break;
+                    case AITSTAR:
+
+                        prms = std::make_shared<ompl::geometric::AITstar>(si);
+
+                        break;
+                }
 
                 // Convert the apples into sampleable goal regons.
                 auto goals = constructAppleGoals(si, tree_data.apples);
@@ -218,18 +231,31 @@ int main(int argc, char **argv) {
 }
 
 std::deque<PtpExperiment> makeExperiments(const Json::Value &trees_data, const size_t MAX_TREES) {
+
+    double times[] = {0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, /*5.0*/};
+
     std::deque<PtpExperiment> experiments;
-    for (bool useInformedSampling: {false, true}) {
-        for (bool clearBetweenRuns: {false, true}) {
-            for (double time: {0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0}) {
-                for (size_t scene_id = 0; scene_id < trees_data.size() && scene_id < MAX_TREES; ++scene_id) {
-                    experiments.push_back({
-                                                  clearBetweenRuns, useInformedSampling, time, scene_id
-                                          });
-                }
-            }
+
+    for (size_t scene_id = 0; scene_id < trees_data.size() && scene_id < MAX_TREES; ++scene_id) {
+        for (double time: times) {
+            experiments.push_back({
+                                          AITSTAR, false, false, time, scene_id
+                                  });
         }
     }
+
+//    for (bool useInformedSampling: {false, true}) {
+//        for (bool clearBetweenRuns: {false, true}) {
+//            for (double time: times) {
+//                for (size_t scene_id = 0; scene_id < trees_data.size() && scene_id < MAX_TREES; ++scene_id) {
+//                    experiments.push_back({
+//                                                  PRMSTAR, clearBetweenRuns, useInformedSampling, time, scene_id
+//                                          });
+//                }
+//            }
+//        }
+//    }
+
     return experiments;
 }
 

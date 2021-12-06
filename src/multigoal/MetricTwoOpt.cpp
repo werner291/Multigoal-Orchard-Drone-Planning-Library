@@ -8,7 +8,7 @@
 #include "goals_gnat.h"
 
 MultiGoalPlanResult
-MetricTwoOpt::plan(GoalSet &goals,
+MetricTwoOpt::plan(const GoalSet &goals,
                    const ompl::base::State *start_state,
                    PointToPointPlanner &point_to_point_planner,
                    std::chrono::milliseconds time_budget) {

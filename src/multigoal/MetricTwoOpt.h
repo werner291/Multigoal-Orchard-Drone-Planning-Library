@@ -19,7 +19,7 @@ public:
                  double swappingBudgetPortion);
 
     MultiGoalPlanResult
-    plan(GoalSet &goals, const ompl::base::State *start_state, PointToPointPlanner &point_to_point_planner,
+    plan(const GoalSet &goals, const ompl::base::State *start_state, PointToPointPlanner &point_to_point_planner,
          std::chrono::milliseconds time_budget) override;
 
     std::string getName() override;

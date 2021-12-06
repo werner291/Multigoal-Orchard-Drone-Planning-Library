@@ -113,6 +113,20 @@ int main(int argc, char **argv) {
                                               std::chrono::milliseconds(budget)
                                       });
             }
+
+            This
+            is
+            your
+            reminder
+            to
+            use
+            KNN
+            with
+            higher
+            K and more
+            time
+            per
+            apple.
         }
 
         // TODO: Throw in something about sampling strategies and different planners.

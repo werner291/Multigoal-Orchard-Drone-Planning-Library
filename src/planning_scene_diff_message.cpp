@@ -153,7 +153,6 @@ void spawnFloorInPlanningScene(moveit_msgs::PlanningScene &planning_scene_diff) 
     pose.orientation.w = 1;
     floorCollision.primitive_poses.push_back(pose);
 
-
     shape_msgs::SolidPrimitive primitive;
     primitive.type = primitive.BOX;
     primitive.dimensions.resize(3);

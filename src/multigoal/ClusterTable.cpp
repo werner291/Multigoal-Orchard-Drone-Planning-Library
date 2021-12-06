@@ -1,35 +1,10 @@
 
 #include "ClusterTable.h"
 
-ClusterTable::ClusterTable(const GoalSet &goals) {
+using namespace clustering;
 
-}
-
-struct StateAtGoal {
-    size_t goal_idx;
-    ompl::base::ScopedStatePtr state;
-};
-
-struct InCluster {
-    size_t member_id;
-    double path_distance_from_center;
-};
-
-struct ClusterNeighbour {
-    size_t through_member;
-    size_t to_cluster;
-};
-
-struct Cluster {
-    size_t representative;
-    std::vector<InCluster> members;
-    std::vector<ClusterNeighbour> neighbours;
-};
-
-std::vector<double> computeDensities(std::vector<Cluster> &new_clusters);
-
-std::vector<StateAtGoal>
-takeInitialSamples(const GoalSet &goals, const ompl::base::SpaceInformationPtr &si, const int samples_per_goal) {
+std::vector<StateAtGoal> clustering::takeInitialSamples(const GoalSet &goals, const ompl::base::SpaceInformationPtr &si,
+                                                        const int samples_per_goal) {
 
     std::vector<StateAtGoal> goal_samples;
 
@@ -69,39 +44,39 @@ std::vector<std::vector<size_t>> find_overlap(const std::vector<Cluster> &cluste
     return goal_in_clusters;
 }
 
-void expandClusters(PointToPointPlanner &point_to_point_planner,
-                    const std::vector<StateAtGoal> &goal_samples,
-                    double threshold,
-                    std::vector<Cluster> &clusters) {
+void clustering::expandClusters(PointToPointPlanner &point_to_point_planner,
+                                const std::vector<StateAtGoal> &goal_samples,
+                                double threshold,
+                                std::vector<Cluster> &clusters) {
 
     ompl::NearestNeighborsGNAT<size_t> gnat;
     gnat.setDistanceFunction([&](const size_t &a, const size_t &b) {
-        return goal_samples[a].state->distance(goal_samples[b].state->get());
+        return goal_samples[clusters[a].representative].state->distance(
+                goal_samples[clusters[b].representative].state->get());
     });
 
-    for (const Cluster &cluster: clusters) {
-        gnat.add(cluster.representative);
-    }
+    for (size_t cluster = 0; cluster < clusters.size(); cluster++) gnat.add(cluster);
 
-    for (Cluster &cluster: clusters) {
+    for (size_t cluster = 0; cluster < clusters.size(); cluster++) {
 
         std::vector<size_t> nearby_samples;
-        gnat.nearestR(cluster.representative, threshold, nearby_samples);
+        gnat.nearestR(cluster, threshold, nearby_samples);
 
         for (const auto &nearby_sample: nearby_samples) {
-            auto ptp = point_to_point_planner.planToOmplState(0.2,
-                                                              goal_samples[cluster.representative].state->get(),
+
+            auto ptp = point_to_point_planner.planToOmplState(0.1,
+                                                              goal_samples[clusters[cluster].representative].state->get(),
                                                               goal_samples[nearby_sample].state->get());
 
             if (ptp) { // TODO avoid duplicates here
-                cluster.members.push_back({nearby_sample, ptp->length()});
+                clusters[cluster].members.push_back({nearby_sample, ptp->length()});
             }
         }
     }
 }
 
-std::vector<Cluster> buildTrivialClusters(GoalSet &goals, const std::vector<StateAtGoal> &goal_samples) {
-    std::vector<Cluster> clusters(goals.size());
+std::vector<Cluster> clustering::buildTrivialClusters(const std::vector<StateAtGoal> &goal_samples) {
+    std::vector<Cluster> clusters(goal_samples.size());
 
     for (size_t sample_id = 0; sample_id < goal_samples.size(); ++sample_id) {
         clusters[sample_id].representative = sample_id;
@@ -110,21 +85,22 @@ std::vector<Cluster> buildTrivialClusters(GoalSet &goals, const std::vector<Stat
     return clusters;
 }
 
-std::vector<double> computeDensities(const std::vector<Cluster> &new_clusters) {
+std::vector<double> clustering::computeDensities(const std::vector<Cluster> &new_clusters) {
     std::vector<double> densities;
     densities.reserve(new_clusters.size());
 
     for (const auto &cluster: new_clusters) {
         double density = 0.0;
         for (const auto &item: cluster.members) {
-            density += 1.0 / item.path_distance_from_center;
+            if (item.path_distance_from_center > 0.0) { density += 1.0 / item.path_distance_from_center; }
         }
         densities.push_back(density);
     }
     return densities;
 }
 
-std::vector<size_t> findDensityMaxima(const std::vector<Cluster> &new_clusters, const std::vector<double> &densities) {
+std::vector<size_t>
+clustering::findDensityMaxima(const std::vector<Cluster> &new_clusters, const std::vector<double> &densities) {
 
     assert(new_clusters.size() == densities.size());
 
@@ -164,7 +140,7 @@ std::vector<Cluster> recluster(PointToPointPlanner &point_to_point_planner,
 }
 
 
-std::vector<std::vector<Cluster>> buildClusters(GoalSet &goals,
+std::vector<std::vector<Cluster>> buildClusters(const GoalSet &goals,
                                                 PointToPointPlanner &point_to_point_planner,
                                                 const std::vector<StateAtGoal> &goal_samples) {
     double threshold = 0.1;
@@ -173,7 +149,7 @@ std::vector<std::vector<Cluster>> buildClusters(GoalSet &goals,
 
     // Start by building singleton clusters: one for every goal sample.
     // TODO: Idea: don't copy the clusters this much, just build a hierarchy of references.
-    std::vector<std::vector<Cluster>> cluster_hierarchy = {buildTrivialClusters(goals, goal_samples)};
+    std::vector<std::vector<Cluster>> cluster_hierarchy = {buildTrivialClusters(goal_samples)};
 
     while (threshold < maxDistance) {
         threshold *= growFactor;
@@ -242,7 +218,7 @@ std::vector<std::vector<Cluster>> buildClusters(GoalSet &goals,
 //    }
 //}
 
-MultiGoalPlanResult ClusterBasedPlanner::plan(GoalSet &goals, const ompl::base::State *start_state,
+MultiGoalPlanResult ClusterBasedPlanner::plan(const GoalSet &goals, const ompl::base::State *start_state,
                                               PointToPointPlanner &point_to_point_planner,
                                               std::chrono::milliseconds time_budget) {
 

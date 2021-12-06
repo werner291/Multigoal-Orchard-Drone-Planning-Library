@@ -13,7 +13,7 @@ const double MAX_TIME_PER_TARGET_SECONDS = 0.1;
 typedef std::shared_ptr<ompl::base::GoalSampleableRegion> GoalSamplerPtr;
 typedef std::function<Eigen::Vector3d(const GoalSamplerPtr &)> GoalProjectionFn;
 typedef std::function<Eigen::Vector3d(const ompl::base::State *)> StateProjectionFn;
-typedef const std::vector<GoalSamplerPtr> GoalSet;
+typedef std::vector<GoalSamplerPtr> GoalSet;
 
 struct PointToPointPath {
     size_t to_goal;
@@ -78,7 +78,7 @@ public:
      * @param start_state            The state of the robot at the start.
      * @param point_to_point_planner Wrapper for an OMPL planner and an optimization objective
      */
-    virtual MultiGoalPlanResult plan(GoalSet &goals,
+    virtual MultiGoalPlanResult plan(const GoalSet &goals,
                                      const ompl::base::State *start_state,
                                      PointToPointPlanner &point_to_point_planner,
                                      std::chrono::milliseconds time_budget) = 0;

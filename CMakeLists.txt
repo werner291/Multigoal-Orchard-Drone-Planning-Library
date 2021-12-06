@@ -122,7 +122,6 @@ catkin_package(
 ###########
 
 set(SHARED_SRC
-        src/genbattle_dkm.hpp
         src/procedural_tree_generation.cpp
         src/DroneStateConstraintSampler.cpp
         src/msgs_utilities.cpp
@@ -159,8 +158,6 @@ set(SHARED_SRC
         src/multigoal/random_order.cpp
         src/multigoal/uknn.h
         src/multigoal/uknn.cpp
-        #        src/multigoal/approach_clustering.cpp
-        #        src/multigoal/approach_clustering.h
         src/multigoal/PointToPointPlanner.cpp
         src/multigoal/PointToPointPlanner.h
         src/multigoal/approach_table.cpp
@@ -183,12 +180,12 @@ set(SHARED_SRC
         src/preorder_strategy/preorder_strategy.h
         src/representative_states.cpp
         src/representative_states.h
-        src/multigoal/representative_goal_samples.cpp
         #        src/multigoal/GATMatrix.cpp
         #        src/multigoal/GATMatrix.h
         src/multigoal/ClusterTable.cpp
         src/multigoal/ClusterTable.h
-        )
+        src/MoveitPathLengthObjective.cpp
+        src/MoveitPathLengthObjective.h)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
@@ -220,5 +217,12 @@ add_executable(${PROJECT_NAME}_euclidean_tsp experiments/euclidean_tsp.cpp ${SHA
 
 add_executable(${PROJECT_NAME}_generate_tree_data src/generate_tree_data.cpp ${SHARED_SRC})
 
-add_executable(${PROJECT_NAME}_tests test/test_utils.h test/test_utils.cpp test/BulletContinuousMotionValidatorTest.cpp ${SHARED_SRC} test/JsonTests.cpp)
+add_executable(${PROJECT_NAME}_tests
+        test/test_utils.h
+        test/test_utils.cpp
+        test/BulletContinuousMotionValidatorTest.cpp
+        test/JsonTests.cpp
+        #        test/MoveitPathLengthObjectiveTest.cpp
+        test/clustering_tests.cpp
+        ${SHARED_SRC})
 target_link_libraries(${PROJECT_NAME}_tests gtest gtest_main)
