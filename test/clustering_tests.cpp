@@ -129,9 +129,6 @@ TEST_F(ClusteringTests, test_cluster_sinespacing) {
     size_t count_niners = 0;
     size_t count_singletons = 0;
     for (const auto &cluster: clusters) {
-        std::cout << "Cluster size:" << cluster.members.size() << " repr " << cluster.representative << std::endl;
-
-        // TODO test cluster radius
         ASSERT_GE(9, cluster.members.size());
         if (cluster.members.size() == 9) count_niners += 1;
         if (cluster.members.size() == 1) count_singletons += 1;
@@ -144,16 +141,16 @@ TEST_F(ClusteringTests, test_cluster_sinespacing) {
     // Select representatives for the next round.
     auto selections = select_clusters(clusters, densities);
 
-//    std::sort(selections.begin(), selections.end());
+    ASSERT_FALSE(selections.empty());
 
     for (const auto &selected_idx: selections) {
-        std::cout << "Selected: " << selected_idx << " Repr: " << clusters[selected_idx].representative << std::endl;
         ASSERT_EQ(0, selected_idx % 5);
     }
 
 }
 
 TEST_F(ClusteringTests, test_full_wall) {
+
     planning_scene::PlanningScenePtr scene = std::make_shared<planning_scene::PlanningScene>(drone);
     scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
 
@@ -176,6 +173,8 @@ TEST_F(ClusteringTests, test_full_wall) {
                                  Eigen::Vector3d(0.2, (double) i, 5.0),
                                  Eigen::Vector3d(1.0, 0.0, 0.0),
                          });
+    }
+    for (size_t i = 20; i >= -10; --i) {
         apples.push_back({
                                  Eigen::Vector3d(-0.2, (double) i, 5.0),
                                  Eigen::Vector3d(-1.0, 0.0, 0.0),
@@ -187,6 +186,35 @@ TEST_F(ClusteringTests, test_full_wall) {
     scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
     scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
 
-//    Cluster
+    auto si = initSpaceInformation(scene, drone, state_space);
+
+    static const int SAMPLES_PER_GOAL = 10;
+
+    auto goal_samples = clustering::takeInitialSamples(goals, si, SAMPLES_PER_GOAL);
+
+    // Obstacle is pretty simple, should be able to sample all goals.
+    assert(goal_samples.size() >= goals.size() * SAMPLES_PER_GOAL);
+
+    auto prms = std::make_shared<ompl::geometric::PRMstar>(si);
+    auto pathLengthObjective = std::make_shared<ompl::base::PathLengthOptimizationObjective>(si);
+    auto sampler = std::make_shared<InformedGaussian>(state_space.get(), 2.5);
+
+    PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
+
+    auto clusters = clustering::buildClusters(ptp, goal_samples);
+
+    ompl::base::ScopedState start_state(si);
+    ASSERT_EQ(0, goal_samples[0].goal_idx);
+    state_space->copyState(start_state.get(), goal_samples[0].state->get());
+    start_state->as<DroneStateSpace::StateType>()->values[0] -= 1.0; // Engineer it so it's close to one of the goals, but not on it.
+    start_state->as<DroneStateSpace::StateType>()->values[1] -= 1.0;
+
+    auto ordering = clustering::visit_clusters(clusters, goal_samples);
+
+    ASSERT_EQ(ordering.size(), goals.size());
+
+    for (size_t i = 0; i < ordering.size(); ++i) {
+        ASSERT_EQ(goal_samples[ordering[i]].goal_idx, i);
+    }
 
 }

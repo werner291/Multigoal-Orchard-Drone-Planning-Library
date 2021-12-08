@@ -174,9 +174,8 @@ std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clus
 }
 
 
-std::vector<std::vector<Cluster>> buildClusters(const GoalSet &goals,
-                                                PointToPointPlanner &point_to_point_planner,
-                                                const std::vector<StateAtGoal> &goal_samples) {
+std::vector<std::vector<Cluster>>
+clustering::buildClusters(PointToPointPlanner &point_to_point_planner, const std::vector<StateAtGoal> &goal_samples) {
     double threshold = 0.1;
     double growFactor = 1.5;
     double maxDistance = 100.0;
@@ -193,23 +192,20 @@ std::vector<std::vector<Cluster>> buildClusters(const GoalSet &goals,
         // Expand the clusters to connect them to neighbouring clusters
         expandClusters(point_to_point_planner, goal_samples, threshold, new_clusters);
 
-        auto overlap = find_overlap(new_clusters);
+        auto densities = computeDensities(new_clusters);
+
+        auto selection = select_clusters(new_clusters, densities);
 
         cluster_hierarchy.emplace_back(/*empty*/);
 
-        for (size_t i = 0; i < new_clusters.size(); ++i) {
-            if (overlap[i].size() < 2) {
-                // TODO: Idea: use this as a way to link clusters together.
-                // TODO: Incorporate planning distances somehow.
-
-                cluster_hierarchy.back().push_back(std::move(new_clusters[i]));
-            }
+        for (const auto &item: selection) {
+            cluster_hierarchy.back().push_back(std::move(new_clusters[item]));
         }
     }
 
     return cluster_hierarchy;
 }
-//
+
 //void heap_recurse(size_t depth,
 //                  const Eigen::Vector3d &start_position,
 //                  std::vector<std::pair<size_t, Eigen::Vector3d>> &target_positions,
@@ -258,7 +254,7 @@ MultiGoalPlanResult ClusterBasedPlanner::plan(const GoalSet &goals, const ompl::
 
     auto goal_samples = takeInitialSamples(goals, point_to_point_planner.getPlanner()->getSpaceInformation(), 50);
     auto gnat = buildGoalSampleGnat(goal_samples);
-    auto clusters = buildClusters(goals, point_to_point_planner, goal_samples);
+    auto clusters = buildClusters(point_to_point_planner, goal_samples);
 
     // Use a branch-and-bound strategy that is guided using the cluster hierarchy to rapidly lower the bound as much as possible.
 

@@ -63,6 +63,12 @@ namespace clustering {
      */
     std::vector<size_t> select_clusters(const std::vector<Cluster> &clusters, std::vector<double> densities);
 
+    std::vector<std::vector<Cluster>>
+    buildClusters(PointToPointPlanner &point_to_point_planner, const std::vector<StateAtGoal> &goal_samples);
+
+    std::vector<size_t>
+    visit_clusters(const std::vector<std::vector<Cluster>> &clusters, const std::vector<StateAtGoal> &goal_samples);
+
     /**
      * The cluster-based planner is an attempt to provide a heuristic method to solve the multi-goal planning problem.
      *
