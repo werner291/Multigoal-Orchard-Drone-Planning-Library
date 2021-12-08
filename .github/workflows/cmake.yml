@@ -25,7 +25,7 @@ jobs:
         workspace: '$GITHUB_WORKSPACE'
 
     - name: Install Dependencies
-      run: sudo apt install ros-noetic-moveit-msgs ros-noetic-moveit-core ros-noetic-moveit-ros-planning ros-noetic-moveit-ros-planning-interface ros-noetic-moveit-ros-perception ros-noetic-rviz-visual-tools ros-noetic-moveit-visual-tools ros-noetic-moveit-planners-ompl
+      run: sudo apt install ros-noetic-moveit-msgs ros-noetic-moveit-core ros-noetic-moveit-ros-planning ros-noetic-moveit-ros-planning-interface ros-noetic-moveit-ros-perception ros-noetic-rviz-visual-tools ros-noetic-moveit-visual-tools ros-noetic-moveit-planners-ompl libjsoncpp-dev
 
     - name: Cakin Make
       run: catkin_make_isolated
