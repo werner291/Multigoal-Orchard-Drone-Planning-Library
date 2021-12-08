@@ -220,9 +220,9 @@ add_executable(${PROJECT_NAME}_generate_tree_data src/generate_tree_data.cpp ${S
 add_executable(${PROJECT_NAME}_tests
         test/test_utils.h
         test/test_utils.cpp
-        test/BulletContinuousMotionValidatorTest.cpp
+        #test/BulletContinuousMotionValidatorTest.cpp
         test/JsonTests.cpp
         #        test/MoveitPathLengthObjectiveTest.cpp
-        test/clustering_tests.cpp
+        #test/clustering_tests.cpp
         ${SHARED_SRC})
 target_link_libraries(${PROJECT_NAME}_tests gtest gtest_main)
