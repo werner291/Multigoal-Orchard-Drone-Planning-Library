@@ -44,6 +44,25 @@ namespace clustering {
     std::vector<size_t>
     findDensityMaxima(const std::vector<Cluster> &new_clusters, const std::vector<double> &densities);
 
+    std::vector<std::vector<size_t>> find_overlap(const std::vector<Cluster> &clusters);
+
+    /**
+     * Taking a vector of clusters as input, this algorithm will select a subset of the available clusters,
+     * based on maximum local density or on whether the cluster is an outlier.
+     *
+     * The algorithm works by building a priority queue of each cluster based on local density, highest density first.
+     *
+     * It will then extract clusters one-by-one from the queue, adding to the selected set. For each cluster added
+     * to the set, the neighbors will be removed from consideration (by lazy deletion), and second-order neighbours
+     * will have their local density reduced accordingly (this reduces priority for consideration, which is also
+     * implemented via lazy deletion).
+     *
+     * @param clusters The clusters to pick from.
+     * @param densities The local density of each cluster.
+     * @return A vector of indices into `clusters`, forming the selected subset.
+     */
+    std::vector<size_t> select_clusters(const std::vector<Cluster> &clusters, std::vector<double> densities);
+
     /**
      * The cluster-based planner is an attempt to provide a heuristic method to solve the multi-goal planning problem.
      *

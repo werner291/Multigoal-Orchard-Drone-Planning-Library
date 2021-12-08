@@ -32,7 +32,7 @@ ompl::NearestNeighborsGNAT<size_t> buildGoalSampleGnat(const std::vector<StateAt
     return gnat;
 }
 
-std::vector<std::vector<size_t>> find_overlap(const std::vector<Cluster> &clusters) {
+std::vector<std::vector<size_t>> clustering::find_overlap(const std::vector<Cluster> &clusters) {
     std::vector<std::vector<size_t>> goal_in_clusters(clusters.size());
 
     for (const auto &cluster: clusters) {
@@ -64,13 +64,16 @@ void clustering::expandClusters(PointToPointPlanner &point_to_point_planner,
 
         for (const auto &nearby_sample: nearby_samples) {
 
-            auto ptp = point_to_point_planner.planToOmplState(0.1,
-                                                              goal_samples[clusters[cluster].representative].state->get(),
-                                                              goal_samples[nearby_sample].state->get());
+//            auto ptp = point_to_point_planner.planToOmplState(0.05,
+//                                                              goal_samples[clusters[cluster].representative].state->get(),
+//                                                              goal_samples[nearby_sample].state->get());
+//
+//            if (ptp) { // TODO avoid duplicates here
+//                clusters[cluster].members.push_back({nearby_sample, ptp->length()});
+//            }
+            ROS_WARN("Change this back.");
+            clusters[cluster].members.push_back({nearby_sample, 0.0});
 
-            if (ptp) { // TODO avoid duplicates here
-                clusters[cluster].members.push_back({nearby_sample, ptp->length()});
-            }
         }
     }
 }
@@ -117,23 +120,54 @@ clustering::findDensityMaxima(const std::vector<Cluster> &new_clusters, const st
 
 }
 
-std::vector<Cluster> recluster(PointToPointPlanner &point_to_point_planner,
-                               const std::vector<StateAtGoal> &goal_samples,
-                               double threshold,
-                               const std::vector<Cluster> &sub_clusters) {
+std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clusters, std::vector<double> densities) {
 
-    std::vector<Cluster> candidate_clusters = sub_clusters;
+    struct InQueue {
+        size_t cluster_id;
+        double density_at_insertion;
+    };
 
-    // Expand the clusters to connect them to neighbouring clusters
-    expandClusters(point_to_point_planner, goal_samples, threshold, candidate_clusters);
+    // Build a priority queue that returns the cluster index with highest density first.
+    auto cmp = [&](const InQueue &a, const InQueue &b) {
+        return a.density_at_insertion < b.density_at_insertion;
+    };
+    std::priority_queue<InQueue, std::vector<InQueue>, decltype(cmp)> by_density(cmp);
+    std::vector<bool> cluster_visited(densities.size());
 
-    auto densities = computeDensities(candidate_clusters);
-    auto maxima = findDensityMaxima(candidate_clusters, densities);
+    // Insult all the clusters/
+    for (size_t i = 0; i < densities.size(); ++i) {
+        by_density.push({i, densities[i]});
+        cluster_visited[i] = false;
+    }
 
-    std::vector<Cluster> new_clusters;
+    std::vector<size_t> new_clusters;
 
-    for (const auto maximum: maxima) {
-        new_clusters.push_back(std::move(candidate_clusters[maximum]));
+    // Keep going until all has been processed.
+    while (!by_density.empty()) {
+
+        // Take the remaining cluster with the highest density.
+        // This is a global maximum, hence also a local maximum.
+        InQueue current_cluster = by_density.top();
+        by_density.pop();
+
+        // If the cluster has been visited, it is already a part of one of the new clusters.
+        // If the density at insertion doesn't match, perform lazy deletion since we'll be
+        // running into this cluster again later in the correct order.
+        if (cluster_visited[current_cluster.cluster_id] ||
+            densities[current_cluster.cluster_id] != current_cluster.density_at_insertion) {
+            continue;
+        } else {
+            assert(!cluster_visited[current_cluster.cluster_id]);
+            cluster_visited[current_cluster.cluster_id] = true;
+
+            new_clusters.push_back(current_cluster.cluster_id);
+
+            for (const auto &member: clusters[current_cluster.cluster_id].members) {
+                cluster_visited[member.member_id] = true;
+                densities[member.member_id] -= 1.0 / member.path_distance_from_center;
+                by_density.push({member.member_id, densities[member.member_id]});
+            }
+        }
     }
 
     return new_clusters;

@@ -34,11 +34,6 @@ protected:
         tree_data = *treeSceneFromJson(trees_data[0]);
 
         auto planning_scene = constructPlanningScene(tree_data, drone);
-//            si = initSpaceInformation(planning_scene, drone, state_space);
-
-//            si =
-
-//            goals = constructAppleGoals(si,tree_data.apples);
     }
 
     std::vector<clustering::StateAtGoal> makeLineOfSampleClusters(const ompl::base::SpaceInformationPtr &si) {
@@ -49,9 +44,9 @@ protected:
 
         for (int i = -100; i < 100; ++i) {
 
-            //            std::cout << "Offset: " << offset << std::endl;
+            double offset = sinewaveOffset(i);
 
-            st.setVariablePosition(0 /* X position of the base link. */, sinewaveOffset(i));
+            st.setVariablePosition(0 /* X position of the base link. */, offset);
 
             auto state = std::make_shared<ompl::base::ScopedState<ompl::base::StateSpace> >(si);
             state_space->copyToOMPLState(state->get(), st);
@@ -107,30 +102,54 @@ TEST_F(ClusteringTests, test_cluster_sinespacing) {
 
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
-    clustering::expandClusters(ptp, samples, 1.1, clusters);
+    clustering::expandClusters(ptp, samples, 3.5, clusters);
 
-    size_t count_fivers = 0;
+    // Assert member symmetry.
+    for (size_t cluster_id = 0; cluster_id < clusters.size(); cluster_id++) {
+        for (const auto &member: clusters[cluster_id].members) {
+            ASSERT_TRUE(
+                    std::any_of(clusters[member.member_id].members.begin(), clusters[member.member_id].members.end(),
+                                [&](const clustering::InCluster &sndorder_member) {
+                                    return sndorder_member.member_id ==
+                                           cluster_id;//TODO && sndorder_member.path_distance_from_center == member.path_distance_from_center;
+                                }));
+        }
+    }
+
+    // For the sake of test determinism, I'll be forcing the distances to simply be the distance between cluster representative states.
+    for (auto &cluster: clusters) {
+        for (auto &member: cluster.members) {
+            member.path_distance_from_center = state_space->distance(
+                    samples[cluster.representative].state->get(),
+                    samples[clusters[member.member_id].representative].state->get()
+            );
+        }
+    }
+
+    size_t count_niners = 0;
     size_t count_singletons = 0;
     for (const auto &cluster: clusters) {
-        std::cout << "Cluster size:" << cluster.members.size() << std::endl;
-        ASSERT_GE(5, cluster.members.size());
-        if (cluster.members.size() == 5) count_fivers += 1;
+        std::cout << "Cluster size:" << cluster.members.size() << " repr " << cluster.representative << std::endl;
+
+        // TODO test cluster radius
+        ASSERT_GE(9, cluster.members.size());
+        if (cluster.members.size() == 9) count_niners += 1;
         if (cluster.members.size() == 1) count_singletons += 1;
     }
-    ASSERT_EQ(20, count_fivers);
+    ASSERT_EQ(20, count_niners);
 
+    // Compute the initial density of all clusters
     auto densities = computeDensities(clusters);
 
-    std::cout << "Densities: ";
+    // Select representatives for the next round.
+    auto selections = select_clusters(clusters, densities);
 
-    for (const auto &item: densities)
-        std::cout << item << ", ";
+//    std::sort(selections.begin(), selections.end());
 
-    std::cout << std::endl;
-
-    auto maxima = findDensityMaxima(clusters, densities);
-
-    ASSERT_EQ(maxima.size(), count_fivers + count_singletons);
+    for (const auto &selected_idx: selections) {
+        std::cout << "Selected: " << selected_idx << " Repr: " << clusters[selected_idx].representative << std::endl;
+        ASSERT_EQ(0, selected_idx % 5);
+    }
 
 }
 
