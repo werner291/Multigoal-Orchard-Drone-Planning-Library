@@ -4,6 +4,7 @@
 
 #include <ompl/base/ScopedState.h>
 #include "multi_goal_planners.h"
+#include "../general_utlities.h"
 
 namespace clustering {
 
@@ -26,25 +27,26 @@ namespace clustering {
         size_t to_cluster;
     };
 
+    // A coherent of collection of items from some context.
     struct Cluster {
-        size_t representative;
-        std::vector<InCluster> members;
-        std::vector<ClusterNeighbour> neighbours;
+        // The index of the representative goal sample.
+        ompl::base::ScopedStatePtr representative;
+        // A mapping of indices into a vector containing the items to be clustered, and a cost to reach the indicated item from the representative sample.
+        // These indices either refer to goal samples directly on the lowest clustering level,
+        // or to sub-clusters on higher levels of the hierarchy.
+        std::map<size_t, double> members;
+        // A sorted set of goal indices that are reachable through a goal sample within this cluster sub-hierarchy.
+        std::set<size_t> goals_reachable;
     };
 
     std::vector<Cluster> buildTrivialClusters(const std::vector<StateAtGoal> &goal_samples);
 
-    void expandClusters(PointToPointPlanner &point_to_point_planner,
-                        const std::vector<StateAtGoal> &goal_samples,
-                        double threshold,
-                        std::vector<Cluster> &clusters);
+    std::vector<Cluster> create_cluster_candidates(PointToPointPlanner &point_to_point_planner,
+                                                   const std::vector<StateAtGoal> &goal_samples,
+                                                   double threshold,
+                                                   const std::vector<Cluster> &clusters);
 
     std::vector<double> computeDensities(const std::vector<Cluster> &new_clusters);
-
-    std::vector<size_t>
-    findDensityMaxima(const std::vector<Cluster> &new_clusters, const std::vector<double> &densities);
-
-    std::vector<std::vector<size_t>> find_overlap(const std::vector<Cluster> &clusters);
 
     /**
      * Taking a vector of clusters as input, this algorithm will select a subset of the available clusters,
@@ -67,7 +69,88 @@ namespace clustering {
     buildClusters(PointToPointPlanner &point_to_point_planner, const std::vector<StateAtGoal> &goal_samples);
 
     std::vector<size_t>
-    visit_clusters(const std::vector<std::vector<Cluster>> &clusters, const std::vector<StateAtGoal> &goal_samples);
+    visit_clusters(const std::vector<std::vector<Cluster>> &clusters,
+                   const std::vector<StateAtGoal> &goal_samples,
+                   const ompl::base::State *start_state);
+
+    std::vector<size_t>
+    visit_clusters_naive(const std::vector<std::vector<Cluster>> &cluster_hierarchy,
+                         const std::vector<StateAtGoal> &goal_samples,
+                         const ompl::base::State *start_state,
+                         const ompl::base::SpaceInformation &si);
+
+    template<typename T>
+    std::vector<std::vector<size_t>> propose_orders(const T &entry_point,
+                                                    const std::optional<T> &exit_point,
+                                                    const std::vector<T> &visitable,
+                                                    const std::function<double(const T &, const T &)> &distance_fn) {
+
+        std::vector<size_t> visit_order = index_vector<T>(visitable);
+
+//    std::unordered_map<size_t, std::vector<size_t>> goals_cluster_overlap;
+//
+//    for (size_t i = 0; i < visitable.size(); ++i) {
+//        for (const auto &goal_idx : visitable[i].goals_reachable) {
+//            goals_cluster_overlap[goal_idx].push_back(i);
+//        }
+//    }
+//
+//    std::vector<std::unordered_map<size_t, double>> goals_to_visit_per_cluster(visitable.size());
+
+        std::random_device rand;
+        std::mt19937 rng(rand());
+
+        struct Candidate {
+            double cost_estimate{};
+            std::vector<size_t> ordering;
+        };
+
+        auto cmp = [](const Candidate &a, const Candidate &b) {
+            return a.cost_estimate < b.cost_estimate; // TODO Might have to reverse this.
+        };
+
+        std::priority_queue<Candidate, std::vector<Candidate>, decltype(cmp)> top_10(cmp);
+
+        do {
+//        for (const auto &item: goals_cluster_overlap) {
+//            size_t picked = std::uniform_int_distribution<size_t>(0, item.second.size() - 1)(rng);
+//            goals_to_visit_per_cluster[item.second[picked]][item.first] = 1.0;
+//        }
+
+            double cost_estimate = distance_fn(entry_point, visitable[0]);
+
+            std::set<size_t> goals_visited;
+
+            for (size_t visit_i = 1; visit_i < visit_order.size(); visit_i++) {
+                cost_estimate += distance_fn(visitable[visit_order[visit_i - 1]],
+                                             visitable[visit_order[visit_i]]);
+                // TODO weigh by the number of goals visited?
+            }
+
+            if (exit_point) {
+                cost_estimate += distance_fn(visitable[visit_order.back()], *exit_point);
+            }
+
+            top_10.push({
+                                cost_estimate,
+                                visit_order
+                        });
+
+            if (top_10.size() > 10) top_10.pop();
+
+        } while (std::next_permutation(visit_order.begin(), visit_order.end()));
+
+        std::vector<std::vector<size_t>> candidates;
+
+        while (!top_10.empty()) {
+            candidates.push_back(top_10.top().ordering);
+            top_10.pop();
+        }
+
+        std::reverse(candidates.begin(), candidates.end());
+
+        return candidates;
+    }
 
     /**
      * The cluster-based planner is an attempt to provide a heuristic method to solve the multi-goal planning problem.

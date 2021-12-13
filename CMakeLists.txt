@@ -185,7 +185,7 @@ set(SHARED_SRC
         src/multigoal/ClusterTable.cpp
         src/multigoal/ClusterTable.h
         src/MoveitPathLengthObjective.cpp
-        src/MoveitPathLengthObjective.h)
+        src/MoveitPathLengthObjective.h src/general_utlities.h)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
