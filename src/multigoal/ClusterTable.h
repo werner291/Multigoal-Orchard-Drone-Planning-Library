@@ -3,6 +3,7 @@
 
 
 #include <ompl/base/ScopedState.h>
+#include <variant>
 #include "multi_goal_planners.h"
 #include "../general_utlities.h"
 
@@ -79,6 +80,85 @@ namespace clustering {
                          const ompl::base::State *start_state,
                          const ompl::base::SpaceInformation &si);
 
+
+    template<typename T, typename V>
+    void generate_combinations
+            (std::vector<T> visitable,
+             const V empty_value,
+             const std::function<V(std::vector<size_t>::const_iterator first,
+                                   std::vector<size_t>::const_iterator last,
+                                   const V &)> &consider_cb,
+             size_t elements_fixed = 0) {
+
+
+        for (size_t swap_with = elements_fixed; swap_with < visitable.size(); ++swap_with) {
+            std::swap(visitable[elements_fixed], visitable[swap_with]);
+            V value = consider_cb(visitable.begin(), visitable.begin() + elements_fixed + 1, empty_value);
+            generate_combinations(
+                    visitable, value, consider_cb, elements_fixed + 1
+            );
+            std::swap(visitable[elements_fixed], visitable[swap_with]);
+        }
+    }
+
+    struct VisitationOrderSolution {
+        std::vector<size_t> visit_order;
+        double cost;
+        size_t goals_visited;
+
+        bool is_better_than(const VisitationOrderSolution &sln) {
+            return goals_visited > sln.goals_visited || (goals_visited == sln.goals_visited && cost < sln.cost);
+        }
+    };
+
+    template<typename P, typename T>
+    void generate_visitations(
+            const P &start_point,
+            const std::vector<T> &visitable,
+            const std::optional<P> &end_point,
+            std::function<double(const std::variant<P, T> a, const std::variant<P, T> b)> distance,
+            std::function<const std::vector<size_t> &(const T &a)> reachable,
+            const std::function<void(const VisitationOrderSolution &sol)> &solution_callback
+    ) {
+
+        struct PartialScore {
+            std::unordered_set<size_t> goals_visited;
+            double cost{};
+        };
+
+        solution_callback({{}, end_point ? distance({start_point}, {*end_point}) : 0.0, 0});
+
+        clustering::generate_combinations<size_t, PartialScore>(
+                index_vector(visitable),
+                {{}, 0.0},
+                [&](auto begin, auto end, const PartialScore &cost) {
+
+                    PartialScore new_cost = cost;
+
+                    if (begin + 1 == end) {
+                        new_cost.cost += distance({visitable[*begin]}, {start_point});
+                    } else {
+                        new_cost.cost += distance({visitable[*(end - 2)]}, {visitable[*(end - 1)]});
+                    }
+
+                    const std::vector<size_t> reachable_goals = reachable(visitable[*(end - 1)]);
+                    new_cost.goals_visited.insert(reachable_goals.begin(), reachable_goals.end());
+
+                    double total_cost = end_point ? (new_cost.cost + distance({visitable[*(end - 1)]}, {*end_point}))
+                                                  : new_cost.cost;
+
+                    // TODO: Avoid the inconsistent use of iterator ranges and copying.
+                    solution_callback(VisitationOrderSolution{
+                            std::vector(begin, end),
+                            total_cost,
+                            new_cost.goals_visited.size()
+                    });
+
+                    return new_cost;
+                });
+
+    }
+
     template<typename T>
     std::vector<std::vector<size_t>> propose_orders(const T &entry_point,
                                                     const std::optional<T> &exit_point,
@@ -87,18 +167,7 @@ namespace clustering {
 
         std::vector<size_t> visit_order = index_vector<T>(visitable);
 
-//    std::unordered_map<size_t, std::vector<size_t>> goals_cluster_overlap;
-//
-//    for (size_t i = 0; i < visitable.size(); ++i) {
-//        for (const auto &goal_idx : visitable[i].goals_reachable) {
-//            goals_cluster_overlap[goal_idx].push_back(i);
-//        }
-//    }
-//
-//    std::vector<std::unordered_map<size_t, double>> goals_to_visit_per_cluster(visitable.size());
-
         std::random_device rand;
-        std::mt19937 rng(rand());
 
         struct Candidate {
             double cost_estimate{};
@@ -112,11 +181,6 @@ namespace clustering {
         std::priority_queue<Candidate, std::vector<Candidate>, decltype(cmp)> top_10(cmp);
 
         do {
-//        for (const auto &item: goals_cluster_overlap) {
-//            size_t picked = std::uniform_int_distribution<size_t>(0, item.second.size() - 1)(rng);
-//            goals_to_visit_per_cluster[item.second[picked]][item.first] = 1.0;
-//        }
-
             double cost_estimate = distance_fn(entry_point, visitable[0]);
 
             std::set<size_t> goals_visited;
@@ -151,6 +215,7 @@ namespace clustering {
 
         return candidates;
     }
+
 
     /**
      * The cluster-based planner is an attempt to provide a heuristic method to solve the multi-goal planning problem.

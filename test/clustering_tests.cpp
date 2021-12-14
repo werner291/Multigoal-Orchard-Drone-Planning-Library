@@ -117,7 +117,7 @@ TEST_F(ClusteringTests, test_cluster_sinespacing) {
     auto clusters = clustering::buildTrivialClusters(samples);
 
     // There should be a cluster for each
-    ASSERT_EQ(clusters.size(), samples.size());
+    EXPECT_EQ(clusters.size(), samples.size());
 
     // Construct a PointToPointPlanner to be used while expanding the clusters.
     auto prms = std::make_shared<ompl::geometric::PRMstar>(si);
@@ -133,8 +133,8 @@ TEST_F(ClusteringTests, test_cluster_sinespacing) {
         // Iterate over all cluster members.
         for (const auto &member: clusters[cluster_id].members) {
             auto backref = clusters[member.first].members.find(cluster_id);
-            ASSERT_NE(backref, clusters[member.first].members.end());
-            ASSERT_EQ(backref->second, member.second);
+            EXPECT_NE(backref, clusters[member.first].members.end());
+            EXPECT_EQ(backref->second, member.second);
         }
     }
 
@@ -151,10 +151,10 @@ TEST_F(ClusteringTests, test_cluster_sinespacing) {
     // There should be 20 density peaks in the goal samples, which should have 9 cluster members each.
     size_t count_niners = 0;
     for (const auto &cluster: clusters) {
-        ASSERT_GE(9, cluster.members.size());
+        EXPECT_GE(9, cluster.members.size());
         if (cluster.members.size() == 9) count_niners += 1;
     }
-    ASSERT_EQ(20, count_niners);
+    EXPECT_EQ(20, count_niners);
 
     // Compute the initial density of all clusters
     auto densities = computeDensities(clusters);
@@ -163,24 +163,19 @@ TEST_F(ClusteringTests, test_cluster_sinespacing) {
     auto selections = select_clusters(clusters, densities);
 
     // Make sure we have some.
-    ASSERT_FALSE(selections.empty());
+    EXPECT_FALSE(selections.empty());
 
     // We expect the clusters to be centered on either the density peaks, or the density valleys (that form outliers)
     for (const auto &selected_idx: selections) {
-        ASSERT_EQ(0, selected_idx % 5);
+        EXPECT_EQ(0, selected_idx % 5);
     }
 
 }
 
-TEST(ClusteringSubroutineTests, order_proposal) {
+TEST(ClusteringSubroutineTests, order_proposal_simple) {
 
     std::vector<double> doubles{
-            0.0,
-            1.0,
-            2.0,
-            3.0,
-            4.0,
-            5.0
+            0.0, 1.0, 2.0, 3.0, 4.0, 5.0
     };
 
     auto orders = clustering::propose_orders<double>(
@@ -190,7 +185,122 @@ TEST(ClusteringSubroutineTests, order_proposal) {
             [](const double &a, const double &b) { return std::abs(a - b); }
     );
 
-    ASSERT_EQ(index_vector(doubles), orders[0]);
+    EXPECT_EQ(index_vector(doubles), orders[0]);
+
+}
+
+TEST(ClusteringSubroutineTests, generate_combinations_test) {
+
+    const std::vector<size_t> elements{
+            1, 2, 3
+    };
+
+    const std::vector<std::vector<size_t>> expected{
+            {1},
+            {1, 2},
+            {1, 2, 3},
+            {1, 3},
+            {1, 3, 2},
+            {2},
+            {2, 1},
+            {2, 1, 3},
+            {2, 3},
+            {2, 3, 1},
+            {3},
+            {3, 2},
+            {3, 2, 1},
+            {3, 1},
+            {3, 1, 2},
+    };
+
+    auto itr = expected.begin();
+
+    clustering::generate_combinations<size_t, size_t>(elements, 0, [&](std::vector<size_t>::const_iterator first,
+                                                                       std::vector<size_t>::const_iterator last,
+                                                                       const size_t &super_value) {
+        EXPECT_NE(itr, expected.end());
+
+        auto reference_vector = (*itr++);
+
+        EXPECT_EQ(super_value, reference_vector.size() - 1);
+
+        EXPECT_EQ(reference_vector.size(), (last - first));
+
+        auto ref_itr = reference_vector.begin();
+        while (first != last) {
+            std::cout << *first;
+            EXPECT_EQ(*first, *ref_itr);
+            first++;
+            ref_itr++;
+        }
+        std::cout << std::endl;
+
+        return reference_vector.size();
+    });
+
+    EXPECT_EQ(itr, expected.end());
+}
+
+TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
+
+    struct PotentialGoal {
+        Eigen::Vector2d v;
+        std::vector<size_t> goals;
+    };
+
+    Eigen::Vector2d start_pos(-1.0, 0.0);
+
+    std::vector<PotentialGoal> points{
+            PotentialGoal{
+                    Eigen::Vector2d(0.0, 0.0), {1, 2}
+            },
+            PotentialGoal{
+                    Eigen::Vector2d(1.0, -0.1), {2} // Note: this goal can be skipped.
+            },
+            PotentialGoal{
+                    Eigen::Vector2d(2.0, 0.0), {3} // Note: this goal can be skipped.
+            },
+            PotentialGoal{
+                    Eigen::Vector2d(2.0, 1.0), {3, 4}
+            },
+            PotentialGoal{
+                    Eigen::Vector2d(3.0, 0.0), {6}
+            },
+            PotentialGoal{
+                    Eigen::Vector2d(4.0, 0.0), {7, 8, 9}
+            },
+    };
+
+    struct PartialScore {
+        std::unordered_set<size_t> goals_visited;
+        double cost;
+    };
+
+    clustering::VisitationOrderSolution best_solution{
+            {}, INFINITY, 0
+    };
+
+    clustering::generate_visitations<Eigen::Vector2d, PotentialGoal>(
+            start_pos,
+            points,
+            {/*empty*/},
+            [](const std::variant<Eigen::Vector2d, PotentialGoal> &a,
+               const std::variant<Eigen::Vector2d, PotentialGoal> &b) {
+                return
+                        ((holds_alternative<Eigen::Vector2d>(a) ? get<Eigen::Vector2d>(a) : get<PotentialGoal>(a).v)
+                         - (holds_alternative<Eigen::Vector2d>(b) ? get<Eigen::Vector2d>(b) : get<PotentialGoal>(
+                                b).v)).norm();
+            },
+            [](const PotentialGoal &a) -> const std::vector<size_t> & { return a.goals; },
+            [&](auto soln) {
+                if (soln.is_better_than(best_solution)) {
+                    best_solution = soln;
+                }
+            });
+
+    const std::vector<size_t> known_optimal{0, 3, 4, 5};
+
+    EXPECT_EQ(known_optimal, best_solution.visit_order);
 
 }
 
@@ -205,7 +315,7 @@ TEST(ClusteringSubroutineTests, order_proposal) {
 TEST_F(ClusteringTests, test_full_wall) {
 
     std::unordered_set<size_t> s;
-    ASSERT_EQ(s.find(5), s.end());
+    EXPECT_EQ(s.find(5), s.end());
 
     planning_scene::PlanningScenePtr scene = std::make_shared<planning_scene::PlanningScene>(drone);
     scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
@@ -255,7 +365,7 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     for (const auto &sample: goal_samples) {
         std::cout << sample.goal_idx << std::endl;
-        ASSERT_TRUE(si->isValid(sample.state->get()));
+        EXPECT_TRUE(si->isValid(sample.state->get()));
     }
 
     auto prms = std::make_shared<ompl::geometric::PRMstar>(si);
@@ -271,11 +381,11 @@ TEST_F(ClusteringTests, test_full_wall) {
         for (const auto &cluster: level) {
             visited_goals.insert(cluster.goals_reachable.begin(), cluster.goals_reachable.end());
         }
-        ASSERT_EQ(visited_goals.size(), goals.size());
+        EXPECT_EQ(visited_goals.size(), goals.size());
     }
 
     ompl::base::ScopedState start_state(si);
-    ASSERT_EQ(0, goal_samples[0].goal_idx);
+    EXPECT_EQ(0, goal_samples[0].goal_idx);
     state_space->copyState(start_state.get(), goal_samples[0].state->get());
     start_state->as<DroneStateSpace::StateType>()->values[0] -= 1.0; // Engineer it so it's close to one of the goals, but not on it.
     start_state->as<DroneStateSpace::StateType>()->values[1] -= 1.0;
@@ -284,14 +394,14 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     std::unordered_set<size_t> visited_goals;
     for (const auto &item: ordering) {
-        ASSERT_TRUE(visited_goals.find(goal_samples[item].goal_idx) == visited_goals.end());
+        EXPECT_TRUE(visited_goals.find(goal_samples[item].goal_idx) == visited_goals.end());
         visited_goals.insert(goal_samples[item].goal_idx);
     }
 
-    ASSERT_EQ(ordering.size(), goals.size());
+    EXPECT_EQ(ordering.size(), goals.size());
 
     for (size_t i = 0; i < ordering.size(); ++i) {
-        ASSERT_EQ(goal_samples[ordering[i]].goal_idx, i);
+        EXPECT_EQ(goal_samples[ordering[i]].goal_idx, i);
     }
 
 }

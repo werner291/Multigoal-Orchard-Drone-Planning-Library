@@ -111,10 +111,9 @@ void MultiGoalPlanResult::check_valid(const GoalSet &table, const ompl::base::Sp
 }
 
 double MultiGoalPlanResult::newCost(const std::vector<PointToPointPath> &computed_replacements) const {
-    return std::accumulate(computed_replacements.begin(), computed_replacements.end(), 0.0,
-                           [](double &a, const PointToPointPath &b) {
-                               return a + b.path.length();
-                           }) / (double) computed_replacements.size();
+    double cost = 0.0;
+    for (const auto &item: computed_replacements) cost += item.path.length();
+    return cost / (double) computed_replacements.size();
 }
 
 double MultiGoalPlanResult::originalCost(const std::vector<ReplacementSpec> &replacement_specs) const {

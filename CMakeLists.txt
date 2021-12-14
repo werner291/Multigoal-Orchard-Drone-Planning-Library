@@ -185,7 +185,8 @@ set(SHARED_SRC
         src/multigoal/ClusterTable.cpp
         src/multigoal/ClusterTable.h
         src/MoveitPathLengthObjective.cpp
-        src/MoveitPathLengthObjective.h src/general_utlities.h)
+        src/MoveitPathLengthObjective.h
+        src/general_utlities.h)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
@@ -201,7 +202,7 @@ include_directories(
 
 link_libraries(${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} jsoncpp_lib)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ## Visualization node
@@ -223,6 +224,6 @@ add_executable(${PROJECT_NAME}_tests
         #test/BulletContinuousMotionValidatorTest.cpp
         test/JsonTests.cpp
         #        test/MoveitPathLengthObjectiveTest.cpp
-        #test/clustering_tests.cpp
+        test/clustering_tests.cpp
         ${SHARED_SRC})
 target_link_libraries(${PROJECT_NAME}_tests gtest gtest_main)

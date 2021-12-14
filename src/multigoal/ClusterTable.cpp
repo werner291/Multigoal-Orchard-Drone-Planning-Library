@@ -169,7 +169,6 @@ std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clus
         // This is a global maximum, hence also a local maximum.
         InQueue current_cluster = by_density.top();
 
-
         // If the cluster has been visited, it is already a part of one of the new clusters.
         // If the density at insertion doesn't match, perform lazy deletion since we'll be
         // running into this cluster again later in the correct order.
@@ -245,9 +244,8 @@ clustering::visit_clusters_naive(const std::vector<std::vector<Cluster>> &cluste
 
     std::vector<StackFrame> stack;
     for (size_t i = 0; i < cluster_hierarchy.back().size(); ++i) {
-        stack.push_back({
-                                cluster_hierarchy.size() - 1,
-                                i
+        stack.push_back({cluster_hierarchy.size() - 1,
+                         i
                         });
     }
 
@@ -332,48 +330,6 @@ clustering::visit_clusters_naive(const std::vector<std::vector<Cluster>> &cluste
 //    double proportion_visited = (double) goals_visited.size() / (double) goals_reachable.size();
 //    double solution_badness = cost_per_target * (1.0/proportion_visited);
 //
-//}
-
-//void heap_recurse(size_t depth,
-//                  const Eigen::Vector3d &start_position,
-//                  std::vector<std::pair<size_t, Eigen::Vector3d>> &target_positions,
-//                  const double costSoFar,
-//                  double &bestCost,
-//                  std::vector<std::pair<size_t, Eigen::Vector3d>> &bestSolution) {
-//
-//    // Cost can only go up as we go deeper, so no point in doing so
-//    // if the prefix is more expensive than the best-known solution.
-//    if (costSoFar > bestCost) return;
-//
-//    if (depth == target_positions.size()) {
-//
-//        // The order of the whole array is fixed, the cost of this order is thus fully known.
-//        // Record it if it is better than the best-known.
-//        if (costSoFar < bestCost) {
-//            bestCost = costSoFar;
-//            bestSolution = target_positions;
-//        }
-//
-//    } else {
-//
-//        // The point from which we travel to the next candidate goal.
-//        Eigen::Vector3d previous = depth == 0 ? start_position : target_positions[depth - 1].second;
-//
-//        // Go through all unvisited goals as possible candidates as the next to visit.
-//        for (size_t i = depth; depth < target_positions.size(); ++i) {
-//
-//            // Swap it into the next position.
-//            std::swap(target_positions[i], target_positions[depth]);
-//
-//            // Recurse, with that position now fixed.
-//            heap_recurse(depth + 1, start_position, target_positions,
-//                         costSoFar + (previous - target_positions[depth].second).norm(), bestCost, bestSolution);
-//
-//            // Undo the swap to make sure the candidate selection process is not disturbed.
-//            std::swap(target_positions[i], target_positions[depth]);
-//
-//        }
-//    }
 //}
 
 MultiGoalPlanResult ClusterBasedPlanner::plan(const GoalSet &goals, const ompl::base::State *start_state,
