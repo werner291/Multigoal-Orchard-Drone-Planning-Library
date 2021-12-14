@@ -81,6 +81,23 @@ namespace clustering {
                          const ompl::base::SpaceInformation &si);
 
 
+    /**
+     * Recursively generate all permutations of all non-empty subsets of the provided vector of items,
+     * while providing a bit of machinery to compute a left-fold of every permutation as well.
+     *
+     * @tparam T                The type of item in the vector of items to be permuted.
+     * @tparam V                The output of the left-fold operation.
+     * @param visitable         The vector of items to be permuted.
+     * @param empty_value       The value of the left-fold of an empty sequence.
+     * @param consider_cb       A callback, provided with the begin/end (non-inclusive) of the permuted version
+     *                          of `visitable`, and the left-fold of all elements in the provided range,
+     *                          EXCLUDING the last element.
+     *
+     *                          To return: the fold value of the full range.
+     *
+     * @param elements_fixed    The length of the prefix of `visitable` to keep fixed; set to zero (default option)
+     *                          to generate all permutations of all non-empty subsets.
+     */
     template<typename T, typename V>
     void generate_combinations
             (std::vector<T> visitable,
@@ -90,13 +107,22 @@ namespace clustering {
                                    const V &)> &consider_cb,
              size_t elements_fixed = 0) {
 
-
+        // Iterate over every element beyond the range of fixed elements.
+        // This intentionally includes the first element in that range.
         for (size_t swap_with = elements_fixed; swap_with < visitable.size(); ++swap_with) {
+            // Swap the first element in the variable range with the pointed-to element.
+            // Both indices may be euqal, in which case the swap is a no-op.
             std::swap(visitable[elements_fixed], visitable[swap_with]);
+
+            // Call the callback with the fixed range extended by 1.
             V value = consider_cb(visitable.begin(), visitable.begin() + elements_fixed + 1, empty_value);
+
+            // Recurse, also with the extended fixed range.
             generate_combinations(
                     visitable, value, consider_cb, elements_fixed + 1
             );
+
+            // Undo the swap to ensure predictable behavior to bring te vector back to what it was.
             std::swap(visitable[elements_fixed], visitable[swap_with]);
         }
     }
@@ -106,11 +132,27 @@ namespace clustering {
         double cost;
         size_t goals_visited;
 
-        bool is_better_than(const VisitationOrderSolution &sln) {
-            return goals_visited > sln.goals_visited || (goals_visited == sln.goals_visited && cost < sln.cost);
-        }
+        bool is_better_than(const VisitationOrderSolution &sln) const;
     };
 
+    /**
+     * Given a collection of items, each associated with some point in space and a collection of "goal" identifiers,
+     * this method will generate every possible order in which to visit the goals - with the option of skipping
+     * any of them - and calculates cost and number of unique goal identifiers of each visitation order.
+     *
+     * Any such tour is assumed to start at a given `start_point` in space, and optionally end at a given `end_point`.
+     *
+     * @tparam P                 The type of the point in space with which every item is associated.
+     * @tparam T                 The type of the items to be visited, or proxies thereof.
+     * @param start_point        A point to start each tour from.
+     * @param visitable          A vector of items to be visited.
+     * @param end_point          An optional end point. If present, the cost of moving there
+     *                           from the last item in the tour is added to the costs.
+     * @param distance           A distance function, taking a distance between two items, a point and an item, or two points.
+     *                           Parameters are std::variant<P,T>, so any combination is possible.
+     * @param reachable          Returns a vector of "goal" identifiers associated with each item.
+     * @param solution_callback  A callback to be called with candidate visitation orders, including a cost and number of goals visited.
+     */
     template<typename P, typename T>
     void generate_visitations(
             const P &start_point,
@@ -126,6 +168,7 @@ namespace clustering {
             double cost{};
         };
 
+        // Generate an empty soltion, that is either zero-cost, or goes from the start point to the end point.
         solution_callback({{}, end_point ? distance({start_point}, {*end_point}) : 0.0, 0});
 
         clustering::generate_combinations<size_t, PartialScore>(
@@ -133,20 +176,29 @@ namespace clustering {
                 {{}, 0.0},
                 [&](auto begin, auto end, const PartialScore &cost) {
 
+                    // Grab a copy (TODO: maybe a way to optimize by avoiding the copy? Use a persistent set?)
                     PartialScore new_cost = cost;
 
                     if (begin + 1 == end) {
+                        // We're at the start of the tour, so the cost is from the starting point
                         new_cost.cost += distance({visitable[*begin]}, {start_point});
                     } else {
+                        // The added cost is simply between the last and second-to-last visited goal.
                         new_cost.cost += distance({visitable[*(end - 2)]}, {visitable[*(end - 1)]});
                     }
 
+                    // Look up which goal identifies are reachable from here.
                     const std::vector<size_t> reachable_goals = reachable(visitable[*(end - 1)]);
+
+                    // Mark these goals off as visited by the current tour.
                     new_cost.goals_visited.insert(reachable_goals.begin(), reachable_goals.end());
 
+                    // If there is an end point, add up the cost of reaching it from the end of the current tour.
+                    // Note: do NOT add it to the cost in the return value!
                     double total_cost = end_point ? (new_cost.cost + distance({visitable[*(end - 1)]}, {*end_point}))
                                                   : new_cost.cost;
 
+                    // Call the callback with the currently-generated solution.
                     // TODO: Avoid the inconsistent use of iterator ranges and copying.
                     solution_callback(VisitationOrderSolution{
                             std::vector(begin, end),
@@ -154,9 +206,9 @@ namespace clustering {
                             new_cost.goals_visited.size()
                     });
 
+                    // Return the left-fold of the tour so far
                     return new_cost;
                 });
-
     }
 
     template<typename T>

@@ -271,11 +271,6 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
             },
     };
 
-    struct PartialScore {
-        std::unordered_set<size_t> goals_visited;
-        double cost;
-    };
-
     clustering::VisitationOrderSolution best_solution{
             {}, INFINITY, 0
     };

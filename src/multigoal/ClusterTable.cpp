@@ -352,3 +352,7 @@ MultiGoalPlanResult ClusterBasedPlanner::plan(const GoalSet &goals, const ompl::
 std::string ClusterBasedPlanner::getName() {
     return "ClusterBasedPlanner";
 }
+
+bool clustering::VisitationOrderSolution::is_better_than(const VisitationOrderSolution &sln) const {
+    return goals_visited > sln.goals_visited || (goals_visited == sln.goals_visited && cost < sln.cost);
+}
