@@ -172,23 +172,6 @@ TEST_F(ClusteringTests, test_cluster_sinespacing) {
 
 }
 
-TEST(ClusteringSubroutineTests, order_proposal_simple) {
-
-    std::vector<double> doubles{
-            0.0, 1.0, 2.0, 3.0, 4.0, 5.0
-    };
-
-    auto orders = clustering::propose_orders<double>(
-            -1.0,
-            {6.0},
-            doubles,
-            [](const double &a, const double &b) { return std::abs(a - b); }
-    );
-
-    EXPECT_EQ(index_vector(doubles), orders[0]);
-
-}
-
 TEST(ClusteringSubroutineTests, generate_combinations_test) {
 
     const std::vector<size_t> elements{

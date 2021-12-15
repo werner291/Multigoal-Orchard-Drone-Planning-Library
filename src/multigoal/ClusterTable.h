@@ -132,7 +132,7 @@ namespace clustering {
         double cost;
         size_t goals_visited;
 
-        bool is_better_than(const VisitationOrderSolution &sln) const;
+        [[nodiscard]] bool is_better_than(const VisitationOrderSolution &sln) const;
     };
 
     /**
@@ -210,64 +210,6 @@ namespace clustering {
                     return new_cost;
                 });
     }
-
-    template<typename T>
-    std::vector<std::vector<size_t>> propose_orders(const T &entry_point,
-                                                    const std::optional<T> &exit_point,
-                                                    const std::vector<T> &visitable,
-                                                    const std::function<double(const T &, const T &)> &distance_fn) {
-
-        std::vector<size_t> visit_order = index_vector<T>(visitable);
-
-        std::random_device rand;
-
-        struct Candidate {
-            double cost_estimate{};
-            std::vector<size_t> ordering;
-        };
-
-        auto cmp = [](const Candidate &a, const Candidate &b) {
-            return a.cost_estimate < b.cost_estimate; // TODO Might have to reverse this.
-        };
-
-        std::priority_queue<Candidate, std::vector<Candidate>, decltype(cmp)> top_10(cmp);
-
-        do {
-            double cost_estimate = distance_fn(entry_point, visitable[0]);
-
-            std::set<size_t> goals_visited;
-
-            for (size_t visit_i = 1; visit_i < visit_order.size(); visit_i++) {
-                cost_estimate += distance_fn(visitable[visit_order[visit_i - 1]],
-                                             visitable[visit_order[visit_i]]);
-                // TODO weigh by the number of goals visited?
-            }
-
-            if (exit_point) {
-                cost_estimate += distance_fn(visitable[visit_order.back()], *exit_point);
-            }
-
-            top_10.push({
-                                cost_estimate,
-                                visit_order
-                        });
-
-            if (top_10.size() > 10) top_10.pop();
-
-        } while (std::next_permutation(visit_order.begin(), visit_order.end()));
-
-        std::vector<std::vector<size_t>> candidates;
-
-        while (!top_10.empty()) {
-            candidates.push_back(top_10.top().ordering);
-            top_10.pop();
-        }
-
-        std::reverse(candidates.begin(), candidates.end());
-
-        return candidates;
-    }
-
 
     /**
      * The cluster-based planner is an attempt to provide a heuristic method to solve the multi-goal planning problem.
