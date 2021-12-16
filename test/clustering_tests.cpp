@@ -325,6 +325,15 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
         if (x % 5 == 0) pts.push_back({sinewaveOffset(x + 3), {}});
         pts.back().points.push_back({sinewaveOffset(x), {static_cast<unsigned long>(x + 100),
                                                          static_cast<unsigned long>(x * 9 / 10 + 100)}});
+
+        TODO:
+        Make
+        sure
+        inque
+        visitations
+        work, this
+        doesn
+        't make sense...'
     }
 
     std::unordered_set<size_t> all_goals;
