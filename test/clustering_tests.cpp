@@ -13,6 +13,14 @@
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 
+#include <random>
+
+/**
+ * \brief This produces a set of monotonically increasing x-coordinates spaced with a smooth, wave-like pattern
+ *        that consistently produces a set of dense and non-dense regions.
+ */
+double sinewaveOffset(int i) { return sin((double) i * M_PI / 5.0) + (double) i; }
+
 // A simple text fixture to be used for the various tests below.
 class ClusteringTests : public ::testing::Test {
 
@@ -65,13 +73,10 @@ protected:
         return samples;
     }
 
-    /**
-     * \brief This produces a set of monotonically increasing x-coordinates spaced with a smooth, wave-like pattern
-     *        that consistently produces a set of dense and non-dense regions.
-     */
-    static double sinewaveOffset(int i) { return sin((double) i * M_PI / 5.0) + (double) i; }
+
 
 };
+
 
 /// Just a simple test to make sure the sampler works at all.
 TEST_F(ClusteringTests, test_sampling) {
@@ -228,7 +233,7 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
 
     struct PotentialGoal {
         Eigen::Vector2d v;
-        std::vector<size_t> goals;
+        std::set<size_t> goals;
     };
 
     Eigen::Vector2d start_pos(-1.0, 0.0);
@@ -254,8 +259,11 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
             },
     };
 
+    std::unordered_set<size_t> all_goals;
+    for (const auto &item: points) all_goals.insert(item.goals.begin(), item.goals.end());
+
     clustering::VisitationOrderSolution best_solution{
-            {}, INFINITY, 0
+            {}, INFINITY, {}
     };
 
     clustering::generate_visitations<Eigen::Vector2d, PotentialGoal>(
@@ -269,16 +277,142 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
                          - (holds_alternative<Eigen::Vector2d>(b) ? get<Eigen::Vector2d>(b) : get<PotentialGoal>(
                                 b).v)).norm();
             },
-            [](const PotentialGoal &a) -> const std::vector<size_t> & { return a.goals; },
+            [](const PotentialGoal &a) -> const std::set<size_t> & { return a.goals; },
+            [&](const clustering::VisitationOrderSolution &soln) {
+                if (soln.is_better_than(best_solution)) {
+                    best_solution = soln;
+                }
+            });
+
+    const std::vector<clustering::Visitation> known_optimal{
+            {0, {1, 2}},
+            {3, {3, 4}},
+            {4, {6}},
+            {5, {7, 8, 9}}
+    };
+
+    EXPECT_EQ(known_optimal, best_solution.visit_order);
+
+    std::unordered_set<size_t> goals_visited;
+    for (const auto &cluster: best_solution.visit_order) {
+        for (const auto &goal_id: cluster.goals_to_visit) {
+            EXPECT_FALSE(goals_visited.contains(goal_id));
+            goals_visited.insert(goal_id);
+        }
+    }
+    EXPECT_EQ(all_goals, goals_visited);
+
+}
+
+TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
+
+    double start_pos = sinewaveOffset(-21);
+
+    struct PotentialGoal {
+        double v;
+        std::set<size_t> goals;
+    };
+
+    struct Cluster {
+        double representative;
+        std::vector<PotentialGoal> points;
+        std::set<size_t> reachable_goals;
+    };
+
+    std::vector<Cluster> pts;
+
+    for (int x = -20; x <= 20; x += 5) {
+        if (x % 5 == 0) pts.push_back({sinewaveOffset(x + 3), {}});
+        pts.back().points.push_back({sinewaveOffset(x), {static_cast<unsigned long>(x + 100),
+                                                         static_cast<unsigned long>(x * 9 / 10 + 100)}});
+    }
+
+    std::unordered_set<size_t> all_goals;
+
+    std::random_device r;
+    std::mt19937 rng(r());
+    std::shuffle(pts.begin(), pts.end(), rng);
+    for (auto &item: pts) std::shuffle(item.points.begin(), item.points.end(), rng);
+    for (auto &cluster: pts) {
+        for (const auto &item: cluster.points) {
+            cluster.reachable_goals.insert(item.goals.begin(), item.goals.end());
+            all_goals.insert(item.goals.begin(), item.goals.end());
+        }
+    }
+
+    clustering::VisitationOrderSolution best_solution{
+            {}, INFINITY, {}
+    };
+
+    clustering::generate_visitations<double, Cluster>(
+            start_pos,
+            pts,
+            {/*empty*/},
+            [](const std::variant<double, Cluster> &a,
+               const std::variant<double, Cluster> &b) {
+                return abs((holds_alternative<double>(a) ? get<double>(a) : get<Cluster>(a).representative)
+                           - (holds_alternative<double>(b) ? get<double>(b) : get<Cluster>(b).representative));
+            },
+            [](const Cluster &a) -> const std::set<size_t> & { return a.reachable_goals; },
             [&](auto soln) {
                 if (soln.is_better_than(best_solution)) {
                     best_solution = soln;
                 }
             });
 
-    const std::vector<size_t> known_optimal{0, 3, 4, 5};
+    for (size_t i = 0; i + 1 < best_solution.visit_order.size(); ++i) {
+        EXPECT_LT(pts[best_solution.visit_order[i].subcluster_index].representative,
+                  pts[best_solution.visit_order[i + 1].subcluster_index].representative);
+    }
 
-    EXPECT_EQ(known_optimal, best_solution.visit_order);
+    std::vector<PotentialGoal> resulting_path;
+
+    for (size_t i = 0; i < best_solution.visit_order.size(); ++i) {
+
+        clustering::VisitationOrderSolution best_sub_solution{
+                {}, INFINITY, {}
+        };
+
+        std::optional<double> end_point{};
+        if (i + 1 < best_solution.visit_order.size()) {
+            *end_point = pts[best_solution.visit_order[i + 1].subcluster_index].representative;
+        }
+
+        clustering::generate_visitations<double, PotentialGoal>(
+                i == 0 ? start_pos : pts[best_solution.visit_order[i - 1].subcluster_index].representative,
+                pts[best_solution.visit_order[i].subcluster_index].points,
+                end_point,
+                [](const std::variant<double, PotentialGoal> &a,
+                   const std::variant<double, PotentialGoal> &b) {
+                    return abs((holds_alternative<double>(a) ? get<double>(a) : get<PotentialGoal>(a).v)
+                               - (holds_alternative<double>(b) ? get<double>(b) : get<PotentialGoal>(b).v));
+                },
+                [](const PotentialGoal &a) -> const std::set<size_t> & { return a.goals; },
+                [&](auto soln) {
+                    if (soln.is_better_than(best_sub_solution)) {
+                        best_sub_solution = soln;
+                    }
+                });
+
+        for (const auto &item: best_sub_solution.visit_order) {
+            resulting_path.push_back(pts[best_solution.visit_order[i].subcluster_index].points[item.subcluster_index]);
+        }
+    }
+
+    std::unordered_set<size_t> goals_reached;
+
+    for (size_t i = 0; i + 1 < resulting_path.size(); ++i) {
+        EXPECT_LT(resulting_path[i].v, resulting_path[i + 1].v);
+    }
+
+    for (const auto &item: resulting_path) {
+        for (const auto &goal_id: item.goals) {
+            EXPECT_EQ(goals_reached.find(goal_id), goals_reached.end());
+            goals_reached.insert(goal_id);
+        }
+    }
+
+    EXPECT_EQ(all_goals, goals_reached);
 
 }
 

@@ -354,5 +354,6 @@ std::string ClusterBasedPlanner::getName() {
 }
 
 bool clustering::VisitationOrderSolution::is_better_than(const VisitationOrderSolution &sln) const {
-    return goals_visited > sln.goals_visited || (goals_visited == sln.goals_visited && cost < sln.cost);
+    return goals_visited.size() > sln.goals_visited.size() ||
+           (goals_visited.size() == sln.goals_visited.size() && cost < sln.cost);
 }

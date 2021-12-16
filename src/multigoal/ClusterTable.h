@@ -29,9 +29,10 @@ namespace clustering {
     };
 
     // A coherent of collection of items from some context.
-    struct Cluster {
+    template<typename Repr>
+    struct GenericCluster {
         // The index of the representative goal sample.
-        ompl::base::ScopedStatePtr representative;
+        Repr representative;
         // A mapping of indices into a vector containing the items to be clustered, and a cost to reach the indicated item from the representative sample.
         // These indices either refer to goal samples directly on the lowest clustering level,
         // or to sub-clusters on higher levels of the hierarchy.
@@ -39,6 +40,8 @@ namespace clustering {
         // A sorted set of goal indices that are reachable through a goal sample within this cluster sub-hierarchy.
         std::set<size_t> goals_reachable;
     };
+
+    typedef GenericCluster<ompl::base::ScopedStatePtr> Cluster;
 
     std::vector<Cluster> buildTrivialClusters(const std::vector<StateAtGoal> &goal_samples);
 
@@ -127,10 +130,19 @@ namespace clustering {
         }
     }
 
+    struct Visitation {
+        size_t subcluster_index;
+        std::unordered_set<size_t> goals_to_visit;
+
+        bool operator==(const Visitation &other) const {
+            return subcluster_index == other.subcluster_index && goals_to_visit == other.goals_to_visit;
+        }
+    };
+
     struct VisitationOrderSolution {
-        std::vector<size_t> visit_order;
+        std::vector<Visitation> visit_order;
         double cost;
-        size_t goals_visited;
+        std::unordered_set<size_t> goals_visited;
 
         [[nodiscard]] bool is_better_than(const VisitationOrderSolution &sln) const;
     };
@@ -159,25 +171,25 @@ namespace clustering {
             const std::vector<T> &visitable,
             const std::optional<P> &end_point,
             std::function<double(const std::variant<P, T> a, const std::variant<P, T> b)> distance,
-            std::function<const std::vector<size_t> &(const T &a)> reachable,
+            std::function<const std::set<size_t> &(const T &a)> reachable,
             const std::function<void(const VisitationOrderSolution &sol)> &solution_callback
     ) {
 
-        struct PartialScore {
-            std::unordered_set<size_t> goals_visited;
-            double cost{};
-        };
+        // Generate an empty solution, that is either zero-cost, or goes from the start point to the end point.
+        solution_callback({{}, end_point ? distance({start_point}, {*end_point}) : 0.0, {}});
 
-        // Generate an empty soltion, that is either zero-cost, or goes from the start point to the end point.
-        solution_callback({{}, end_point ? distance({start_point}, {*end_point}) : 0.0, 0});
-
-        clustering::generate_combinations<size_t, PartialScore>(
+        clustering::generate_combinations<size_t, VisitationOrderSolution>(
                 index_vector(visitable),
                 {{}, 0.0},
-                [&](auto begin, auto end, const PartialScore &cost) {
+                [&](auto begin, auto end, const VisitationOrderSolution &cost) {
 
-                    // Grab a copy (TODO: maybe a way to optimize by avoiding the copy? Use a persistent set?)
-                    PartialScore new_cost = cost;
+                    // Grab a copy (TODO: maybe a way to optimize by avoiding the copy? {Persistent datastructures may help})
+                    VisitationOrderSolution new_cost = cost;
+
+                    new_cost.visit_order.push_back({
+                                                           *(end - 1),
+                                                           {}
+                                                   });
 
                     if (begin + 1 == end) {
                         // We're at the start of the tour, so the cost is from the starting point
@@ -187,24 +199,27 @@ namespace clustering {
                         new_cost.cost += distance({visitable[*(end - 2)]}, {visitable[*(end - 1)]});
                     }
 
-                    // Look up which goal identifies are reachable from here.
-                    const std::vector<size_t> reachable_goals = reachable(visitable[*(end - 1)]);
+                    // Look up which goal identifiers are reachable from here.
+                    const std::set<size_t> reachable_goals = reachable(visitable[*(end - 1)]);
 
-                    // Mark these goals off as visited by the current tour.
-                    new_cost.goals_visited.insert(reachable_goals.begin(), reachable_goals.end());
+                    for (const size_t goal_id: reachable_goals) {
+                        if (!new_cost.goals_visited.contains(goal_id)) {
+                            // Mark these goals off as visited by the current tour.
+                            new_cost.goals_visited.insert(goal_id);
+                            new_cost.visit_order.back().goals_to_visit.insert(goal_id);
+                        }
+                    }
+
+                    double partial_cost = new_cost.cost;
 
                     // If there is an end point, add up the cost of reaching it from the end of the current tour.
-                    // Note: do NOT add it to the cost in the return value!
-                    double total_cost = end_point ? (new_cost.cost + distance({visitable[*(end - 1)]}, {*end_point}))
-                                                  : new_cost.cost;
+                    new_cost.cost = end_point ? (new_cost.cost + distance({visitable[*(end - 1)]}, {*end_point}))
+                                              : new_cost.cost;
 
                     // Call the callback with the currently-generated solution.
-                    // TODO: Avoid the inconsistent use of iterator ranges and copying.
-                    solution_callback(VisitationOrderSolution{
-                            std::vector(begin, end),
-                            total_cost,
-                            new_cost.goals_visited.size()
-                    });
+                    solution_callback(new_cost);
+
+                    new_cost.cost = partial_cost; // Restore old value
 
                     // Return the left-fold of the tour so far
                     return new_cost;
