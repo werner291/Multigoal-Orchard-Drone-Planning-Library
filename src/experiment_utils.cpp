@@ -13,12 +13,14 @@
 robot_state::RobotState genStartState(const moveit::core::RobotModelConstPtr &drone) {
     robot_state::RobotState start_state(drone);
     start_state.setToDefaultValues();
-    start_state.setJointGroupPositions(drone->getJointModelGroup("whole_body"),
-                                       {
-                                               -10.0, -10.0, 10.0,
-                                               0.0, 0.0, 0.0, 1.0,
-                                               0.0, 0.0, 0.0, 0.0
-                                       });
+
+    std::vector<double> positions {
+        -10.0, -10.0, 10.0,
+        0.0, 0.0, 0.0, 1.0,
+        0.0, 0.0, 0.0, 0.0
+    };
+
+    start_state.setJointGroupPositions(drone->getJointModelGroup("whole_body"), positions);
     start_state.update(true);
     return start_state;
 }

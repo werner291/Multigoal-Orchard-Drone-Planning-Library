@@ -203,7 +203,7 @@ namespace clustering {
                     const std::set<size_t> reachable_goals = reachable(visitable[*(end - 1)]);
 
                     for (const size_t goal_id: reachable_goals) {
-                        if (!new_cost.goals_visited.contains(goal_id)) {
+                        if (new_cost.goals_visited.count(goal_id) == 0) {
                             // Mark these goals off as visited by the current tour.
                             new_cost.goals_visited.insert(goal_id);
                             new_cost.visit_order.back().goals_to_visit.insert(goal_id);

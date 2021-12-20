@@ -273,8 +273,8 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
             [](const std::variant<Eigen::Vector2d, PotentialGoal> &a,
                const std::variant<Eigen::Vector2d, PotentialGoal> &b) {
                 return
-                        ((holds_alternative<Eigen::Vector2d>(a) ? get<Eigen::Vector2d>(a) : get<PotentialGoal>(a).v)
-                         - (holds_alternative<Eigen::Vector2d>(b) ? get<Eigen::Vector2d>(b) : get<PotentialGoal>(
+                        ((std::holds_alternative<Eigen::Vector2d>(a) ? get<Eigen::Vector2d>(a) : get<PotentialGoal>(a).v)
+                         - (std::holds_alternative<Eigen::Vector2d>(b) ? get<Eigen::Vector2d>(b) : get<PotentialGoal>(
                                 b).v)).norm();
             },
             [](const PotentialGoal &a) -> const std::set<size_t> & { return a.goals; },
@@ -296,7 +296,7 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
     std::unordered_set<size_t> goals_visited;
     for (const auto &cluster: best_solution.visit_order) {
         for (const auto &goal_id: cluster.goals_to_visit) {
-            EXPECT_FALSE(goals_visited.contains(goal_id));
+            EXPECT_EQ(0, goals_visited.count(goal_id));
             goals_visited.insert(goal_id);
         }
     }
@@ -326,14 +326,14 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
         pts.back().points.push_back({sinewaveOffset(x), {static_cast<unsigned long>(x + 100),
                                                          static_cast<unsigned long>(x * 9 / 10 + 100)}});
 
-        TODO:
-        Make
-        sure
-        inque
-        visitations
-        work, this
-        doesn
-        't make sense...'
+//        TODO:
+//        Make
+//        sure
+//        inque
+//        visitations
+//        work, this
+//        doesn
+//        't make sense...'
     }
 
     std::unordered_set<size_t> all_goals;
@@ -359,8 +359,8 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
             {/*empty*/},
             [](const std::variant<double, Cluster> &a,
                const std::variant<double, Cluster> &b) {
-                return abs((holds_alternative<double>(a) ? get<double>(a) : get<Cluster>(a).representative)
-                           - (holds_alternative<double>(b) ? get<double>(b) : get<Cluster>(b).representative));
+                return abs((std::holds_alternative<double>(a) ? get<double>(a) : get<Cluster>(a).representative)
+                           - (std::holds_alternative<double>(b) ? get<double>(b) : get<Cluster>(b).representative));
             },
             [](const Cluster &a) -> const std::set<size_t> & { return a.reachable_goals; },
             [&](auto soln) {
@@ -393,8 +393,8 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
                 end_point,
                 [](const std::variant<double, PotentialGoal> &a,
                    const std::variant<double, PotentialGoal> &b) {
-                    return abs((holds_alternative<double>(a) ? get<double>(a) : get<PotentialGoal>(a).v)
-                               - (holds_alternative<double>(b) ? get<double>(b) : get<PotentialGoal>(b).v));
+                    return abs((std::holds_alternative<double>(a) ? get<double>(a) : get<PotentialGoal>(a).v)
+                               - (std::holds_alternative<double>(b) ? get<double>(b) : get<PotentialGoal>(b).v));
                 },
                 [](const PotentialGoal &a) -> const std::set<size_t> & { return a.goals; },
                 [&](auto soln) {

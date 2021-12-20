@@ -6,7 +6,7 @@ find_package(catkin
         COMPONENTS
         moveit_core
         moveit_ros_planning
-        moveit_ros_planning_interface
+#        moveit_ros_planning_interface
         moveit_planners_ompl
         moveit_visual_tools
         rviz_visual_tools
@@ -202,7 +202,7 @@ include_directories(
 
 link_libraries(${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} jsoncpp_lib)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ## Visualization node
