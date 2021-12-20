@@ -259,7 +259,7 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
             },
     };
 
-    std::unordered_set<size_t> all_goals;
+    std::set<size_t> all_goals;
     for (const auto &item: points) all_goals.insert(item.goals.begin(), item.goals.end());
 
     clustering::VisitationOrderSolution best_solution{
@@ -269,6 +269,7 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
     clustering::generate_visitations<Eigen::Vector2d, PotentialGoal>(
             start_pos,
             points,
+            all_goals,
             {/*empty*/},
             [](const std::variant<Eigen::Vector2d, PotentialGoal> &a,
                const std::variant<Eigen::Vector2d, PotentialGoal> &b) {
@@ -293,7 +294,7 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
 
     EXPECT_EQ(known_optimal, best_solution.visit_order);
 
-    std::unordered_set<size_t> goals_visited;
+    std::set<size_t> goals_visited;
     for (const auto &cluster: best_solution.visit_order) {
         for (const auto &goal_id: cluster.goals_to_visit) {
             EXPECT_EQ(0, goals_visited.count(goal_id));
@@ -306,122 +307,214 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
 
 TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
 
-    double start_pos = sinewaveOffset(-21);
+    double start_pos = -201.0;
 
-    struct PotentialGoal {
-        double v;
-        std::set<size_t> goals;
-    };
+    struct PotentialGoal { double v; size_t goal_id; };
+    typedef clustering::GenericCluster<double> Cluster;
 
-    struct Cluster {
-        double representative;
-        std::vector<PotentialGoal> points;
-        std::set<size_t> reachable_goals;
-    };
+    std::set<size_t> all_goals;
 
-    std::vector<Cluster> pts;
+    std::vector<PotentialGoal> points;
+    for (int x = -200; x <= 200; x += 1) {
 
-    for (int x = -20; x <= 20; x += 5) {
-        if (x % 5 == 0) pts.push_back({sinewaveOffset(x + 3), {}});
-        pts.back().points.push_back({sinewaveOffset(x), {static_cast<unsigned long>(x + 100),
-                                                         static_cast<unsigned long>(x * 9 / 10 + 100)}});
+        size_t goal_i = static_cast<unsigned long>(x /* * 9 / 10 */ +  1000);
 
-//        TODO:
-//        Make
-//        sure
-//        inque
-//        visitations
-//        work, this
-//        doesn
-//        't make sense...'
+        points.push_back({(double) x, goal_i});
+
+        all_goals.insert(goal_i);
     }
 
-    std::unordered_set<size_t> all_goals;
+    std::vector<std::vector<Cluster>> hierarchy;
+    {
+        hierarchy.emplace_back(/*empty*/);
 
-    std::random_device r;
-    std::mt19937 rng(r());
-    std::shuffle(pts.begin(), pts.end(), rng);
-    for (auto &item: pts) std::shuffle(item.points.begin(), item.points.end(), rng);
-    for (auto &cluster: pts) {
-        for (const auto &item: cluster.points) {
-            cluster.reachable_goals.insert(item.goals.begin(), item.goals.end());
-            all_goals.insert(item.goals.begin(), item.goals.end());
+        for (size_t idx = 0; idx < points.size(); ++idx) {
+            hierarchy.back().push_back({
+                                               points[idx].v, {{idx, 1.0}}, {points[idx].goal_id}
+                                       });
         }
+
+        while (hierarchy.back().size() > 5) {
+
+            std::vector<Cluster> new_layer;
+
+            for (size_t idx = 0; idx < hierarchy.back().size(); idx += 5) {
+
+                size_t middle = idx + std::min(idx + 5, hierarchy.back().size() - 1) / 2;
+
+                Cluster new_cluster;
+
+                new_cluster.representative = hierarchy.back()[middle].representative;
+
+                for (size_t inner_idx = idx; inner_idx < hierarchy.back().size() && inner_idx < idx + 5; ++inner_idx) {
+                    new_cluster.members[inner_idx] = 1.0;
+                    new_cluster.goals_reachable.insert(hierarchy.back()[inner_idx].goals_reachable.begin(),
+                                                       hierarchy.back()[inner_idx].goals_reachable.end());
+                }
+
+                new_layer.push_back(std::move(new_cluster));
+            }
+
+            std::set<size_t> reachable_in_layer;
+            for (const auto &item : new_layer) {
+                reachable_in_layer.insert(item.goals_reachable.begin(), item.goals_reachable.end());
+            }
+            EXPECT_EQ(all_goals, reachable_in_layer);
+
+            hierarchy.push_back(std::move(new_layer));
+
+        }
+
+        std::reverse(hierarchy.begin(), hierarchy.end());
     }
 
-    clustering::VisitationOrderSolution best_solution{
-            {}, INFINITY, {}
+    clustering::VisitationOrderSolution best_solution {
+        {}, INFINITY, {}
     };
 
     clustering::generate_visitations<double, Cluster>(
             start_pos,
-            pts,
+            hierarchy.front(),
+            all_goals,
             {/*empty*/},
-            [](const std::variant<double, Cluster> &a,
-               const std::variant<double, Cluster> &b) {
+            [](const std::variant<double, Cluster> &a, const std::variant<double, Cluster> &b) {
                 return abs((std::holds_alternative<double>(a) ? get<double>(a) : get<Cluster>(a).representative)
-                           - (std::holds_alternative<double>(b) ? get<double>(b) : get<Cluster>(b).representative));
-            },
-            [](const Cluster &a) -> const std::set<size_t> & { return a.reachable_goals; },
-            [&](auto soln) {
+                - (std::holds_alternative<double>(b) ? get<double>(b) : get<Cluster>(b).representative));
+                },
+                [](const Cluster &a) -> const std::set<size_t> & { return a.goals_reachable; },
+                [&](auto soln) {
                 if (soln.is_better_than(best_solution)) {
                     best_solution = soln;
                 }
             });
 
-    for (size_t i = 0; i + 1 < best_solution.visit_order.size(); ++i) {
-        EXPECT_LT(pts[best_solution.visit_order[i].subcluster_index].representative,
-                  pts[best_solution.visit_order[i + 1].subcluster_index].representative);
+    std::vector<clustering::Visitation> previous_layer_order = best_solution.visit_order;
+
+    for (size_t layer_i = 1; layer_i < hierarchy.size(); ++layer_i) {
+        std::cout << "Layer: " << layer_i << std::endl;
+
+        std::vector<clustering::Visitation> layer_order;
+
+        const std::vector<Cluster>& layer = hierarchy[layer_i];
+        const std::vector<Cluster>& previous_layer = hierarchy[layer_i-1];
+
+        for (size_t visit_i = 0; visit_i < previous_layer_order.size(); ++visit_i) {
+
+            clustering::VisitationOrderSolution sub_layer_best_solution {
+                {}, INFINITY, {}
+            };
+
+            double entry_point = start_pos;
+            if (visit_i > 0) {
+                entry_point = layer[previous_layer_order[visit_i-1].subcluster_index].representative;
+            }
+
+            std::optional<double> exit_point;
+            if (visit_i + 1 < previous_layer_order.size()) {
+                exit_point = layer[previous_layer_order[visit_i+1].subcluster_index].representative;
+            }
+
+            std::vector<size_t> members_vec;
+            for (const auto &item : previous_layer[previous_layer_order[visit_i].subcluster_index].members) {
+                members_vec.push_back(item.first);
+            }
+
+            for (const auto &item : previous_layer_order[visit_i].goals_to_visit) {
+                EXPECT_EQ(1, previous_layer[previous_layer_order[visit_i].subcluster_index].goals_reachable.count(item));
+            }
+
+//            for (const auto &item : previous_layer_order[visit_i].goals_to_visit) {
+//                size_t cnt = 0;
+//                for (const auto &member : members_vec) {
+//                    cnt += layer[member].goals_reachable.count(item);
+//                }
+//                EXPECT_EQ(1, cnt);
+//            }
+
+
+
+            clustering::generate_visitations<double, size_t>(
+                    entry_point, members_vec, previous_layer_order[visit_i].goals_to_visit, exit_point,
+                    [&](const std::variant<double, size_t> &a, const std::variant<double, size_t> &b) {
+                        const auto repr_a = std::holds_alternative<double>(a) ?
+                                std::get<double>(a) : layer[std::get<size_t>(a)].representative;
+                        const auto repr_b = std::holds_alternative<double>(b) ?
+                                std::get<double>(b) : layer[std::get<size_t>(b)].representative;
+                        return abs(repr_a - repr_b);
+                        },
+                        [&](const size_t &a) -> const std::set<size_t> & { return layer[a].goals_reachable; },
+                        [&](auto soln) {
+                        if (soln.is_better_than(sub_layer_best_solution)) {
+                            sub_layer_best_solution = soln;
+                        }
+                    });
+
+            EXPECT_EQ(previous_layer_order[visit_i].goals_to_visit, sub_layer_best_solution.goals_visited);
+
+            for (const auto &visit : sub_layer_best_solution.visit_order) {
+
+                layer_order.push_back({
+                    members_vec[visit.subcluster_index],
+                    visit.goals_to_visit
+                });
+            }
+        }
+
+        std::set<size_t> goals_reached;
+
+        for (const auto &visit : layer_order) {
+            for (const auto &goal : visit.goals_to_visit) {
+                EXPECT_EQ(0,goals_reached.count(goal));
+                goals_reached.insert(goal);
+            }
+        }
+
+        for (size_t i = 0; i + 1 < layer_order.size(); ++i) {
+            EXPECT_LT(layer_order[i].subcluster_index,
+                      layer_order[i+1].subcluster_index);
+            EXPECT_LT(layer[layer_order[i].subcluster_index].representative,
+                      layer[layer_order[i+1].subcluster_index].representative);
+        }
+
+        EXPECT_EQ(goals_reached, all_goals);
+
+        previous_layer_order = layer_order;
+
     }
 
     std::vector<PotentialGoal> resulting_path;
 
-    for (size_t i = 0; i < best_solution.visit_order.size(); ++i) {
+    EXPECT_EQ(points.size(), hierarchy.back().size());
 
-        clustering::VisitationOrderSolution best_sub_solution{
-                {}, INFINITY, {}
-        };
+    for (const auto& point_idx : previous_layer_order) {
 
-        std::optional<double> end_point{};
-        if (i + 1 < best_solution.visit_order.size()) {
-            *end_point = pts[best_solution.visit_order[i + 1].subcluster_index].representative;
-        }
+        std::cout <<  "l: " << point_idx.subcluster_index
+                  << " s: " << point_idx.goals_to_visit.size()
+                  << " v: " << points[point_idx.subcluster_index].v << std::endl;
 
-        clustering::generate_visitations<double, PotentialGoal>(
-                i == 0 ? start_pos : pts[best_solution.visit_order[i - 1].subcluster_index].representative,
-                pts[best_solution.visit_order[i].subcluster_index].points,
-                end_point,
-                [](const std::variant<double, PotentialGoal> &a,
-                   const std::variant<double, PotentialGoal> &b) {
-                    return abs((std::holds_alternative<double>(a) ? get<double>(a) : get<PotentialGoal>(a).v)
-                               - (std::holds_alternative<double>(b) ? get<double>(b) : get<PotentialGoal>(b).v));
-                },
-                [](const PotentialGoal &a) -> const std::set<size_t> & { return a.goals; },
-                [&](auto soln) {
-                    if (soln.is_better_than(best_sub_solution)) {
-                        best_sub_solution = soln;
-                    }
-                });
+        EXPECT_EQ(1, point_idx.goals_to_visit.size());
 
-        for (const auto &item: best_sub_solution.visit_order) {
-            resulting_path.push_back(pts[best_solution.visit_order[i].subcluster_index].points[item.subcluster_index]);
-        }
+        resulting_path.push_back(points[point_idx.subcluster_index]);
     }
 
-    std::unordered_set<size_t> goals_reached;
+    std::set<size_t> goals_reached;
 
     for (size_t i = 0; i + 1 < resulting_path.size(); ++i) {
         EXPECT_LT(resulting_path[i].v, resulting_path[i + 1].v);
     }
 
     for (const auto &item: resulting_path) {
-        for (const auto &goal_id: item.goals) {
-            EXPECT_EQ(goals_reached.find(goal_id), goals_reached.end());
-            goals_reached.insert(goal_id);
-        }
+        std::cout << "Goal reached: " << item.goal_id << std::endl;
+        EXPECT_EQ(goals_reached.find(item.goal_id), goals_reached.end());
+        goals_reached.insert(item.goal_id);
     }
 
     EXPECT_EQ(all_goals, goals_reached);
+
+    for (auto goal_i : all_goals) {
+        if (goals_reached.count(goal_i) == 0)
+            std::cout << "Goal missed: " << goal_i << std::endl;
+    }
 
 }
 
@@ -511,18 +604,18 @@ TEST_F(ClusteringTests, test_full_wall) {
     start_state->as<DroneStateSpace::StateType>()->values[0] -= 1.0; // Engineer it so it's close to one of the goals, but not on it.
     start_state->as<DroneStateSpace::StateType>()->values[1] -= 1.0;
 
-    auto ordering = clustering::visit_clusters_naive(clusters, goal_samples, start_state.get(), *si);
-
-    std::unordered_set<size_t> visited_goals;
-    for (const auto &item: ordering) {
-        EXPECT_TRUE(visited_goals.find(goal_samples[item].goal_idx) == visited_goals.end());
-        visited_goals.insert(goal_samples[item].goal_idx);
-    }
-
-    EXPECT_EQ(ordering.size(), goals.size());
-
-    for (size_t i = 0; i < ordering.size(); ++i) {
-        EXPECT_EQ(goal_samples[ordering[i]].goal_idx, i);
-    }
+//
+//
+//    std::unordered_set<size_t> visited_goals;
+//    for (const auto &item: ordering) {
+//        EXPECT_TRUE(visited_goals.find(goal_samples[item].goal_idx) == visited_goals.end());
+//        visited_goals.insert(goal_samples[item].goal_idx);
+//    }
+//
+//    EXPECT_EQ(ordering.size(), goals.size());
+//
+//    for (size_t i = 0; i < ordering.size(); ++i) {
+//        EXPECT_EQ(goal_samples[ordering[i]].goal_idx, i);
+//    }
 
 }

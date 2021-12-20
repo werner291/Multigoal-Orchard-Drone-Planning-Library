@@ -132,7 +132,7 @@ namespace clustering {
 
     struct Visitation {
         size_t subcluster_index;
-        std::unordered_set<size_t> goals_to_visit;
+        std::set<size_t> goals_to_visit;
 
         bool operator==(const Visitation &other) const {
             return subcluster_index == other.subcluster_index && goals_to_visit == other.goals_to_visit;
@@ -142,7 +142,7 @@ namespace clustering {
     struct VisitationOrderSolution {
         std::vector<Visitation> visit_order;
         double cost;
-        std::unordered_set<size_t> goals_visited;
+        std::set<size_t> goals_visited;
 
         [[nodiscard]] bool is_better_than(const VisitationOrderSolution &sln) const;
     };
@@ -169,6 +169,7 @@ namespace clustering {
     void generate_visitations(
             const P &start_point,
             const std::vector<T> &visitable,
+            const std::set<size_t> &goals_to_visit,
             const std::optional<P> &end_point,
             std::function<double(const std::variant<P, T> a, const std::variant<P, T> b)> distance,
             std::function<const std::set<size_t> &(const T &a)> reachable,
@@ -187,9 +188,9 @@ namespace clustering {
                     VisitationOrderSolution new_cost = cost;
 
                     new_cost.visit_order.push_back({
-                                                           *(end - 1),
-                                                           {}
-                                                   });
+                        *(end - 1),
+                        {}
+                    });
 
                     if (begin + 1 == end) {
                         // We're at the start of the tour, so the cost is from the starting point
@@ -203,7 +204,7 @@ namespace clustering {
                     const std::set<size_t> reachable_goals = reachable(visitable[*(end - 1)]);
 
                     for (const size_t goal_id: reachable_goals) {
-                        if (new_cost.goals_visited.count(goal_id) == 0) {
+                        if (new_cost.goals_visited.count(goal_id) == 0 && goals_to_visit.count(goal_id) > 0) {
                             // Mark these goals off as visited by the current tour.
                             new_cost.goals_visited.insert(goal_id);
                             new_cost.visit_order.back().goals_to_visit.insert(goal_id);
