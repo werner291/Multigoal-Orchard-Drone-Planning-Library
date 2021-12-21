@@ -16,6 +16,7 @@ find_package(catkin
         ompl
         urdf
         )
+#find_package(GTest REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 find_package(Eigen3 REQUIRED)
@@ -24,6 +25,7 @@ find_package(jsoncpp REQUIRED)
 
 find_package(fcl REQUIRED)
 
+find_package(Boost REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -198,9 +200,11 @@ include_directories(
         ${EIGEN3_INCLUDE_DIRS}
         ${FCL_INCLUDE_DIRS}
         ${JSONCPP_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIRS}
+        ${GTEST_INCLUDE_DIRS}
 )
 
-link_libraries(${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} jsoncpp_lib)
+link_libraries(${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -218,12 +222,17 @@ add_executable(${PROJECT_NAME}_euclidean_tsp experiments/euclidean_tsp.cpp ${SHA
 
 add_executable(${PROJECT_NAME}_generate_tree_data src/generate_tree_data.cpp ${SHARED_SRC})
 
-add_executable(${PROJECT_NAME}_tests
+catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
         test/test_utils.h
         test/test_utils.cpp
-        #test/BulletContinuousMotionValidatorTest.cpp
-        test/JsonTests.cpp
-        #        test/MoveitPathLengthObjectiveTest.cpp
+#        #test/BulletContinuousMotionValidatorTest.cpp
+#        test/JsonTests.cpp
+#        #        test/MoveitPathLengthObjectiveTest.cpp
         test/clustering_tests.cpp
-        ${SHARED_SRC})
-target_link_libraries(${PROJECT_NAME}_tests gtest gtest_main)
+        ${SHARED_SRC}
+        )
+
+#target_link_libraries(${PROJECT_NAME}_tests ${CATKIN_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib)
+
+#include(GoogleTest)
+#gtest_discover_tests(${PROJECT_NAME}_tests)

@@ -75,8 +75,6 @@ protected:
         return samples;
     }
 
-
-
 };
 
 
@@ -231,118 +229,6 @@ TEST(ClusteringSubroutineTests, generate_combinations_test) {
     EXPECT_EQ(itr, expected.end());
 }
 
-/**
- *
- * Iteratively descend the hierarchy of clusters, and determine a good traversal order.
- *
- * @tparam P        The type of "point" to use, such as a robot configuration or a Eigen::Vector2d.
- * @param start_pos The start point of the tour.
- * @param all_goals A set containing all goal identifiers to try to visit.
- * @param hierarchy A cluster hierarchy to attempt to traverse.
- *
- * @return A vector of indices into the most detailed level of the hierarchy, indicative of visitation order.
- */
-template<typename P>
-std::vector<size_t> determine_visitation_order(const P &start_pos,
-                                               const std::set<size_t> &all_goals,
-                                               const std::vector<std::vector<clustering::GenericCluster<P>>> &hierarchy) {
-
-    // Shorthand so we don't have to keep typing the GenericCluster.
-    typedef clustering::GenericCluster<P> Cluster;
-
-    // A solution for the topmost level of the hierarchy.
-    clustering::VisitationOrderSolution best_solution {
-        {}, INFINITY, {}
-    };
-
-    // Brute-force try every order of the highest level of abstraction.
-    clustering::generate_visitations<double, Cluster>(
-            start_pos,
-            hierarchy.front(),
-            all_goals,
-            {/*empty*/}, // No end goal at the top level.
-            [](const std::variant<double, Cluster> &a, const std::variant<double, Cluster> &b) {
-                return abs((std::holds_alternative<double>(a) ? get<double>(a) : get<Cluster>(a).representative)
-                - (std::holds_alternative<double>(b) ? get<double>(b) : get<Cluster>(b).representative));
-                },
-                [](const Cluster &a) -> const std::set<size_t> & { return a.goals_reachable; },
-                [&](auto soln) {
-                if (soln.is_better_than(best_solution)) {
-                    best_solution = soln;
-                }
-            });
-
-    std::vector<clustering::Visitation> previous_layer_order = best_solution.visit_order;
-
-    for (size_t layer_i = 1; layer_i < hierarchy.size(); ++layer_i) {
-        std::vector<clustering::Visitation> layer_order;
-
-        const std::vector<Cluster>& layer = hierarchy[layer_i];
-        const std::vector<Cluster>& previous_layer = hierarchy[layer_i-1];
-
-        for (size_t visit_i = 0; visit_i < previous_layer_order.size(); ++visit_i) {
-
-            clustering::VisitationOrderSolution sub_layer_best_solution {
-                {}, INFINITY, {}
-            };
-
-            double entry_point = start_pos;
-            if (visit_i > 0) {
-                entry_point = layer[previous_layer_order[visit_i-1].subcluster_index].representative;
-            }
-
-            std::optional<double> exit_point;
-            if (visit_i + 1 < previous_layer_order.size()) {
-                exit_point = layer[previous_layer_order[visit_i+1].subcluster_index].representative;
-            }
-
-            std::vector<size_t> members_vec;
-            for (const auto &item : previous_layer[previous_layer_order[visit_i].subcluster_index].members) {
-                members_vec.push_back(item.first);
-            }
-
-            auto distance = [&](const std::variant<double, size_t> &a,
-                                const std::variant<double, size_t> &b) {
-                const auto repr_a = std::holds_alternative<double>(a) ?
-                                    std::get<double>(a) : layer[std::get<size_t>(a)].representative;
-                const auto repr_b = std::holds_alternative<double>(b) ?
-                                    std::get<double>(b) : layer[std::get<size_t>(b)].representative;
-                return abs(repr_a - repr_b);
-            };
-
-            auto lookup_reachable = [&](const size_t &a) -> const std::set<size_t> & {
-                return layer[a].goals_reachable;
-            };
-
-            clustering::generate_visitations<double, size_t>(
-                    entry_point, members_vec, previous_layer_order[visit_i].goals_to_visit, exit_point,
-                    distance,
-                        lookup_reachable,
-                        [&](auto soln) {
-                        if (soln.is_better_than(sub_layer_best_solution)) {
-                            sub_layer_best_solution = soln;
-                        }
-                    });
-
-            for (const auto &visit : sub_layer_best_solution.visit_order) {
-
-                layer_order.push_back({
-                    members_vec[visit.subcluster_index],
-                    visit.goals_to_visit
-                });
-            }
-        }
-
-        previous_layer_order = layer_order;
-
-    }
-
-    return boost::copy_range<std::vector<size_t>>(
-            previous_layer_order | boost::adaptors::transformed([](const auto& elt) {
-                return elt.subcluster_index;
-            }));
-}
-
 TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
 
     struct PotentialGoal {
@@ -448,7 +334,7 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
                                        });
         }
 
-        while (hierarchy.back().size() > 5) {
+        while (hierarchy.back().size() > 1) {
             std::vector<Cluster> new_layer;
 
             for (size_t idx = 0; idx < hierarchy.back().size(); idx += 5) {
@@ -482,11 +368,10 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
         std::reverse(hierarchy.begin(), hierarchy.end());
     }
 
-    auto traversal_order = determine_visitation_order<double>(
+    auto traversal_order = clustering::determine_visitation_order<double>(
             start_pos,
-            all_goals,
             hierarchy
-            );
+    );
 
     auto resulting_path = boost::copy_range<std::vector<PotentialGoal>>(
             traversal_order | boost::adaptors::transformed([&](size_t i) { return points[i]; })

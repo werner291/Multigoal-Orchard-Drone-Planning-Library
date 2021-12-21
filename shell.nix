@@ -1,5 +1,5 @@
 let 
-    tb = builtins.fetchTarball { name = "nix-ros-overlay"; url = "https://github.com/lopsided98/nix-ros-overlay/archive/6ed3fe9f34a9b44dc306bcc668ea70d0685d86be.tar.gz";};
+    tb = builtins.fetchTarball { name = "nix-ros-overlay"; url = "https://github.com/lopsided98/nix-ros-overlay/archive/3f30908bc180ecab76d64f71b779c40f8b106949.tar.gz";};
     pkgs = import tb { };
     robowflex_library = import nix/robowflex_library.nix { pkgs = pkgs; };
     robowflex_ompl = import nix/robowflex_ompl.nix { pkgs = pkgs; };
