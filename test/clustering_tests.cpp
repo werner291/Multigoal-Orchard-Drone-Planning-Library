@@ -335,18 +335,18 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
         }
 
         while (hierarchy.back().size() > 5) {
-
             std::vector<Cluster> new_layer;
 
             for (size_t idx = 0; idx < hierarchy.back().size(); idx += 5) {
 
-                size_t middle = idx + std::min(idx + 5, hierarchy.back().size() - 1) / 2;
+                size_t range_end = std::min(idx + 5, hierarchy.back().size());
+                size_t middle = idx + (range_end - idx) / 2;
 
                 Cluster new_cluster;
 
                 new_cluster.representative = hierarchy.back()[middle].representative;
 
-                for (size_t inner_idx = idx; inner_idx < hierarchy.back().size() && inner_idx < idx + 5; ++inner_idx) {
+                for (size_t inner_idx = idx; inner_idx < range_end; ++inner_idx) {
                     new_cluster.members[inner_idx] = 1.0;
                     new_cluster.goals_reachable.insert(hierarchy.back()[inner_idx].goals_reachable.begin(),
                                                        hierarchy.back()[inner_idx].goals_reachable.end());
@@ -389,6 +389,14 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
             });
 
     std::vector<clustering::Visitation> previous_layer_order = best_solution.visit_order;
+
+    for (size_t i = 0; i + 1 < previous_layer_order.size(); ++i) {
+        EXPECT_LT(previous_layer_order[i].subcluster_index,
+                  previous_layer_order[i+1].subcluster_index);
+        EXPECT_LT(hierarchy.front()[previous_layer_order[i].subcluster_index].representative,
+                  hierarchy.front()[previous_layer_order[i+1].subcluster_index].representative);
+    }
+
 
     for (size_t layer_i = 1; layer_i < hierarchy.size(); ++layer_i) {
         std::cout << "Layer: " << layer_i << std::endl;
@@ -463,6 +471,7 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
         std::set<size_t> goals_reached;
 
         for (const auto &visit : layer_order) {
+            std::cout << "Visit: " << visit.subcluster_index << std::endl;
             for (const auto &goal : visit.goals_to_visit) {
                 EXPECT_EQ(0,goals_reached.count(goal));
                 goals_reached.insert(goal);
