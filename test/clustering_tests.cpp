@@ -37,13 +37,13 @@ protected:
 
         // Construct the state space for that robot.
         ompl_interface::ModelBasedStateSpaceSpecification spec(drone, "whole_body");
-
-        // Load the scene data
-        const Json::Value trees_data = jsonFromGzipFile("test_robots/trees/trees_2021-11-20T12:21:28Z.json.gzip");
         state_space = std::make_shared<DroneStateSpace>(spec);
 
-        // Load some tree and branch data.
-        tree_data = *treeSceneFromJson(trees_data[0]);
+//        // Load the scene data
+//        const Json::Value trees_data = jsonFromGzipFile("test_robots/trees/trees_2021-11-20T12:21:28Z.json.gzip");
+//
+//        // Load some tree and branch data.
+//        tree_data = *treeSceneFromJson(trees_data[0]);
 
     }
 
@@ -82,11 +82,28 @@ protected:
 TEST_F(ClusteringTests, test_sampling) {
 
     // We don't use any obstacles here.
-    auto si = std::make_shared<ompl::base::SpaceInformation>(state_space);
+    planning_scene::PlanningScenePtr scene = std::make_shared<planning_scene::PlanningScene>(drone);
+    scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+    auto si = initSpaceInformation(scene, drone, state_space);
 
     // Construct the necessary goals and take 10- samples from each.
     static const int SAMPLES_PER_GOAL = 10;
-    auto goals = constructAppleGoals(si, tree_data.apples);
+
+    std::random_device rd;
+    std::mt19937 rng(rd());
+
+    std::uniform_real_distribution<double> distr(-10.0,10.0);
+
+    auto goals = constructAppleGoals(
+            si,
+            boost::copy_range<std::vector<Apple>>(boost::irange(0,10)
+                | boost::adaptors::transformed([&](auto _) {
+                    return Apple {
+                        Eigen::Vector3d(distr(rng),distr(rng),distr(rng)),
+                        Eigen::Vector3d(distr(rng),distr(rng),distr(rng)).normalized()
+                    };
+                })));
+
     auto goal_samples = clustering::takeInitialSamples(goals, si, SAMPLES_PER_GOAL);
 
     // Since there are no obstacles, expect to have all expected samples.
@@ -370,7 +387,8 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
 
     auto traversal_order = clustering::determine_visitation_order<double>(
             start_pos,
-            hierarchy
+            hierarchy,
+            [](const double& a, const double& b) {return abs(a-b);}
     );
 
     auto resulting_path = boost::copy_range<std::vector<PotentialGoal>>(
@@ -491,24 +509,25 @@ TEST_F(ClusteringTests, test_full_wall) {
         EXPECT_EQ(visited_goals.size(), goals.size());
     }
 
-    ompl::base::ScopedState start_state(si);
+    auto start_state = std::make_shared<ompl::base::ScopedState<ompl::base::StateSpace> >(si);
     EXPECT_EQ(0, goal_samples[0].goal_idx);
-    state_space->copyState(start_state.get(), goal_samples[0].state->get());
-    start_state->as<DroneStateSpace::StateType>()->values[0] -= 1.0; // Engineer it so it's close to one of the goals, but not on it.
-    start_state->as<DroneStateSpace::StateType>()->values[1] -= 1.0;
+    state_space.get()->copyState(start_state->get(), goal_samples[0].state->get());
+    start_state->get()->as<DroneStateSpace::StateType>()->values[0] -= 1.0; // Engineer it so it's close to one of the goals, but not on it.
+    start_state->get()->as<DroneStateSpace::StateType>()->values[1] -= 1.0;
 
-//
-//
-//    std::unordered_set<size_t> visited_goals;
-//    for (const auto &item: ordering) {
-//        EXPECT_TRUE(visited_goals.find(goal_samples[item].goal_idx) == visited_goals.end());
-//        visited_goals.insert(goal_samples[item].goal_idx);
-//    }
-//
-//    EXPECT_EQ(ordering.size(), goals.size());
-//
-//    for (size_t i = 0; i < ordering.size(); ++i) {
-//        EXPECT_EQ(goal_samples[ordering[i]].goal_idx, i);
-//    }
+    auto ordering = clustering::determine_visitation_order<ompl::base::ScopedStatePtr>(start_state,clusters,
+                                                                                       [](const auto& a, const auto& b) {return a->distance(b->get());});
+
+    std::unordered_set<size_t> visited_goals;
+    for (const auto &item: ordering) {
+        EXPECT_TRUE(visited_goals.find(goal_samples[item].goal_idx) == visited_goals.end());
+        visited_goals.insert(goal_samples[item].goal_idx);
+    }
+
+    EXPECT_EQ(ordering.size(), goals.size());
+
+    for (size_t i = 0; i < ordering.size(); ++i) {
+        EXPECT_EQ(goal_samples[ordering[i]].goal_idx, i);
+    }
 
 }

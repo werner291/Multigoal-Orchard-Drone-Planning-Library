@@ -241,7 +241,8 @@ namespace clustering {
  */
     template<typename P>
     std::vector<size_t> determine_visitation_order(const P &start_pos,
-                                                   const std::vector<std::vector<clustering::GenericCluster<P>>> &hierarchy) {
+                                                   const std::vector<std::vector<clustering::GenericCluster<P>>> &hierarchy,
+                                                   const std::function<double(const P&, const P&)> distanceFn) {
 
         assert(hierarchy[0].size() == 1);
 
@@ -275,7 +276,7 @@ namespace clustering {
 
                 // The ordering is aware of entry-and-exit-points.
                 // For the first in the sequence, that's the starting position of the robot.
-                double entry_point = start_pos;
+                P entry_point = start_pos;
                 if (visit_i > 0) {
                     // On subsequent sub-clusters, we use the previous cluster's representative as a reference point.
                     entry_point = layer[previous_layer_order[visit_i-1].subcluster_index].representative;
@@ -283,7 +284,7 @@ namespace clustering {
 
                 // Same for the exit point, except that we don't have a specified end point for the global sequence,
                 // so it's only relevant if we know we'll be visiting another cluster after this.
-                std::optional<double> exit_point;
+                std::optional<P> exit_point;
                 if (visit_i + 1 < previous_layer_order.size()) {
                     exit_point = layer[previous_layer_order[visit_i+1].subcluster_index].representative;
                 }
@@ -299,7 +300,7 @@ namespace clustering {
                         const std::variant<P, size_t> &b) {
                     const auto repr_a = std::holds_alternative<P>(a) ? std::get<P>(a) : layer[std::get<size_t>(a)].representative;
                     const auto repr_b = std::holds_alternative<P>(b) ? std::get<P>(b) : layer[std::get<size_t>(b)].representative;
-                    return abs(repr_a - repr_b);
+                    return distanceFn(repr_a, repr_b);
                 };
 
                 // Look up a cluster's reachable goal identifiers.
@@ -310,7 +311,7 @@ namespace clustering {
                 };
 
                 // Go through every possible permutation of the clusters and keep track of the best.
-                clustering::generate_visitations<double, size_t>(
+                clustering::generate_visitations<P, size_t>(
                         entry_point, members_vec, previous_layer_order[visit_i].goals_to_visit, exit_point,
                         distance,
                         lookup_reachable,
