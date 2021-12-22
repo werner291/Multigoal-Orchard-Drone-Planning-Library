@@ -96,7 +96,7 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
                 point_to_point_planner.getPlanner()->clear();
 
                 // The expensive part: Try to plan from representative to representative.
-                auto ptp = point_to_point_planner.planToOmplState(0.05,
+                auto ptp = point_to_point_planner.planToOmplState(0.2,
                                                                   clusters[cluster].representative->get(),
                                                                   clusters[nearby_sample].representative->get());
 
@@ -196,15 +196,17 @@ std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clus
 
 std::vector<std::vector<Cluster>>
 clustering::buildClusters(PointToPointPlanner &point_to_point_planner, const std::vector<StateAtGoal> &goal_samples) {
+
     double threshold = 0.1;
     double growFactor = 1.2;
-    double maxDistance = 100.0;
 
     // Start by building singleton clusters: one for every goal sample.
     // TODO: Idea: don't copy the clusters this much, just build a hierarchy of references.
     std::vector<std::vector<Cluster>> cluster_hierarchy = {buildTrivialClusters(goal_samples)};
 
-    while (threshold < maxDistance && cluster_hierarchy.back().size() > 1) {
+    size_t max_iters = 500;
+
+    while (cluster_hierarchy.back().size() > 1 && --max_iters > 0) {
         threshold *= growFactor;
 
         std::cout << "Threshold: " << threshold << " Top: " << cluster_hierarchy.back().size() << std::endl;
@@ -217,11 +219,19 @@ clustering::buildClusters(PointToPointPlanner &point_to_point_planner, const std
 
         auto selection = select_clusters(new_clusters, densities);
 
-        cluster_hierarchy.emplace_back(/*empty*/);
+        if (selection.size() < cluster_hierarchy.back().size()) {
+            cluster_hierarchy.emplace_back(/*empty*/);
 
-        for (const auto &item: selection) {
-            cluster_hierarchy.back().push_back(new_clusters[item]);
+            for (const auto &item: selection) {
+                cluster_hierarchy.back().push_back(new_clusters[item]);
+            }
         }
+    }
+
+    std::reverse(cluster_hierarchy.begin(), cluster_hierarchy.end());
+
+    if (cluster_hierarchy.front().size() > 1) {
+        ROS_WARN("Cluster hierarchy is not connected.");
     }
 
     return cluster_hierarchy;

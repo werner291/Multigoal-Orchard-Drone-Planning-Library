@@ -6,14 +6,9 @@
 #include "../src/LeavesCollisionChecker.h"
 #include "../src/multigoal/approach_table.h"
 #include "../src/experiment_utils.h"
-#include "../src/json_utils.h"
 #include "../src/multigoal/ClusterTable.h"
-#include "../src/general_utlities.h"
-#include <tf2_eigen/tf2_eigen.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
-#include <boost/range/adaptors.hpp>
-#include <boost/range/adaptor/transformed.hpp>
 
 #include <random>
 
@@ -447,32 +442,11 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     moveit_msgs::PlanningScene planning_scene_diff;
 
-    moveit_msgs::CollisionObject wallCollision;
-    wallCollision.id = "floor";
-    wallCollision.header.frame_id = "world";
-    wallCollision.primitive_poses.push_back(Eigen::toMsg(Eigen::Isometry3d(Eigen::Translation3d(0.0, 0.0, 5.0))));
+    spawn_wall(planning_scene_diff);
 
-    shape_msgs::SolidPrimitive primitive;
-    primitive.type = primitive.BOX;
-    primitive.dimensions = {0.1, 20.0, 10.0};
-    wallCollision.primitives.push_back(primitive);
-    planning_scene_diff.world.collision_objects.push_back(wallCollision);
-
-    std::vector<Apple> apples;
-    for (int i = -10; i <= 20; ++i) {
-        apples.push_back({
-                                 Eigen::Vector3d(0.5, (double) i, 5.0),
-                                 Eigen::Vector3d(1.0, 0.0, 0.0),
-                         });
-    }
-    for (int i = 20; i >= -10; --i) {
-        apples.push_back({
-                                 Eigen::Vector3d(-0.5, (double) i, 5.0),
-                                 Eigen::Vector3d(-1.0, 0.0, 0.0),
-                         });
-    }
-
+    auto apples = apples_around_wall();
     spawnApplesInPlanningScene(0.1, apples, planning_scene_diff);
+
     scene->setPlanningSceneDiffMsg(planning_scene_diff);
     scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
     scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
@@ -501,13 +475,38 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     auto clusters = clustering::buildClusters(ptp, goal_samples);
 
+    std::ofstream fout;
+    fout.open("analysis/cluster_pts.txt");
+    assert(fout.is_open());
+
     for (const auto &level: clusters) {
         std::unordered_set<size_t> visited_goals;
+
+        fout << "========= Level =========" << std::endl;
+
         for (const auto &cluster: level) {
             visited_goals.insert(cluster.goals_reachable.begin(), cluster.goals_reachable.end());
+
+            moveit::core::RobotState st(drone);
+            state_space->copyToRobotState(st, cluster.representative->get());
+
+            st.update(true);
+
+//            auto ee_tf = st.getGlobalLinkTransform("end_effector");
+
+            fout << st.getVariablePosition(0) << ", "
+                      << st.getVariablePosition(1) << ", "
+                      << st.getVariablePosition(2) << std::endl;
+
+            for (const auto &item : cluster.members) {
+                fout << item.first << ",";
+            }
+            fout << std::endl;
         }
+
         EXPECT_EQ(visited_goals.size(), goals.size());
     }
+    fout.close();
 
     auto start_state = std::make_shared<ompl::base::ScopedState<ompl::base::StateSpace> >(si);
     EXPECT_EQ(0, goal_samples[0].goal_idx);
@@ -530,4 +529,11 @@ TEST_F(ClusteringTests, test_full_wall) {
         EXPECT_EQ(goal_samples[ordering[i]].goal_idx, i);
     }
 
+    for (size_t i = 0; i < ordering.size(); ++i) {
+        moveit::core::RobotState st(drone);
+        state_space->copyToRobotState(st, goal_samples[ordering[i]].state->get());
+        std::cout << st.getVariablePosition(0) << ", "
+                  << st.getVariablePosition(1) << ", "
+                  << st.getVariablePosition(2) << std::endl;
+    }
 }

@@ -1,11 +1,8 @@
-//
-// Created by werner on 12-10-21.
-//
-
 #include "../src/BulletContinuousMotionValidator.h"
 #include <gtest/gtest.h>
 #include "test_utils.h"
 #include "../src/experiment_utils.h"
+#include <eigen_conversions/eigen_msg.h>
 
 std::shared_ptr<moveit::core::RobotState> genRandomState(const std::shared_ptr<moveit::core::RobotModel> &drone) {
     auto st1 = std::make_shared<moveit::core::RobotState>(drone);
@@ -30,4 +27,36 @@ std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>> genGoals(const om
         )));
     }
     return goals;
+}
+
+void spawn_wall(moveit_msgs::PlanningScene &planning_scene_diff) {
+    moveit_msgs::CollisionObject wallCollision;
+    wallCollision.id = "wall";
+    wallCollision.header.frame_id = "world";
+    wallCollision.primitive_poses.resize(1);
+    tf::poseEigenToMsg(Eigen::Isometry3d(Eigen::Translation3d(0.0, 0.0, 5.0)), wallCollision.primitive_poses.back());
+
+    shape_msgs::SolidPrimitive primitive;
+    primitive.type = primitive.BOX;
+    primitive.dimensions = {0.1, 200.0, 10.0};
+    wallCollision.primitives.push_back(primitive);
+    planning_scene_diff.world.collision_objects.push_back(wallCollision);
+}
+
+std::vector<Apple> apples_around_wall() {
+    std::vector<Apple> apples;
+    for (int i = -5; i <= 10; ++i) {
+        apples.push_back({
+                                 Eigen::Vector3d(0.5, (double) i, 5.0),
+                                 Eigen::Vector3d(1.0, 0.0, 0.0),
+                         });
+    }
+
+    for (int i = 10; i >= -5; --i) {
+        apples.push_back({
+                                 Eigen::Vector3d(-0.5, (double) i, 5.0),
+                                 Eigen::Vector3d(-1.0, 0.0, 0.0),
+                         });
+    }
+    return apples;
 }

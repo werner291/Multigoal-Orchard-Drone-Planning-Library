@@ -13,6 +13,7 @@ find_package(catkin
         roscpp
         geometry_msgs
         moveit_msgs
+        eigen_conversions
         ompl
         urdf
         )
@@ -229,6 +230,8 @@ catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
 #        test/JsonTests.cpp
 #        #        test/MoveitPathLengthObjectiveTest.cpp
         test/clustering_tests.cpp
+        test/collision_checking_test.cpp
+        test/ptp_tests.cpp
         ${SHARED_SRC}
         )
 
