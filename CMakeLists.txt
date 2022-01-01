@@ -226,12 +226,13 @@ add_executable(${PROJECT_NAME}_generate_tree_data src/generate_tree_data.cpp ${S
 catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
         test/test_utils.h
         test/test_utils.cpp
+        test/informed_sampler_test.cpp
 #        #test/BulletContinuousMotionValidatorTest.cpp
 #        test/JsonTests.cpp
 #        #        test/MoveitPathLengthObjectiveTest.cpp
-        test/clustering_tests.cpp
-        test/collision_checking_test.cpp
-        test/ptp_tests.cpp
+#        test/clustering_tests.cpp
+#        test/collision_checking_test.cpp
+#        test/ptp_tests.cpp
         ${SHARED_SRC}
         )
 
