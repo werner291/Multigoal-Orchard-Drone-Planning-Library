@@ -3,6 +3,7 @@
 #include <moveit/collision_detection/collision_detector_allocator.h>
 #include "../src/experiment_utils.h"
 #include <random_numbers/random_numbers.h>
+#include "../src/general_utilities.h"
 
 double quat_dist(const Eigen::Quaterniond& qs1, const Eigen::Quaterniond& qs2) {
 
@@ -93,82 +94,126 @@ break;
 
 }
 
+
+TEST(InformedSamplerTest, perpendicular_of_two) {
+
+    ompl::RNG rng;
+
+    Eigen::Vector4d
+                a(rng.gaussian01(),
+                   rng.gaussian01(),
+                   rng.gaussian01(),
+                   rng.gaussian01()),
+                b(rng.gaussian01(),
+                   rng.gaussian01(),
+                   rng.gaussian01(),
+                   rng.gaussian01());
+
+    a.normalize();
+    b.normalize();
+
+    auto c = any_perpendicular_of_two(a,b);
+
+    EXPECT_NEAR(a.dot(c), 0.0, 1.0e-10);
+    EXPECT_NEAR(b.dot(c), 0.0, 1.0e-10);
+    EXPECT_GT(c.norm(), 1.0e-10);
+
+    auto d = cross_three(a,b,c);
+
+    EXPECT_NEAR(d.dot(a), 0.0, 1.0e-10);
+    EXPECT_NEAR(d.dot(b), 0.0, 1.0e-10);
+    EXPECT_NEAR(d.dot(c), 0.0, 1.0e-10);
+}
+
+
 TEST(InformedSamplerTest, informed_point_on_sphere) {
 
     ompl::RNG rng;
 
     for (size_t i : boost::irange(0,1000)) {
 
-        Eigen::Vector3d ra(1.0,0.0,1.0), rb(-1.0,0.0,1.0);
-
-//        Eigen::Vector3d
-//                ra(rng.gaussian01(),
-//                   rng.gaussian01(),
-//                   rng.gaussian01()),
-//                rb(rng.gaussian01(),
-//                   rng.gaussian01(),
-//                   rng.gaussian01());
-//
-//        ra.z() = 0.0;
-//        rb = ra;
-//        rb.x() *= 1.0;
+        Eigen::Vector4d
+                ra(rng.gaussian01(),
+                   rng.gaussian01(),
+                   rng.gaussian01(),
+                   rng.gaussian01()),
+                rb(rng.gaussian01(),
+                   rng.gaussian01(),
+                   rng.gaussian01(),
+                   rng.gaussian01());
 
         ra.normalize();
         rb.normalize();
 
-        std::cout << ra.x() << ", " << ra.y() << ", "<< ra.z() << std::endl;
-        std::cout << rb.x() << ", " << rb.y() << ", "<< rb.z() << std::endl;
+        std::cout << ra << std::endl;
+        std::cout << rb << std::endl;
 
-        auto midpoint = (0.5 * ra + 0.5 * rb).normalized();
-        auto axis = (rb - ra).normalized();
-        auto third = midpoint.cross(axis);
+        auto up = (0.5 * ra + 0.5 * rb).normalized();
+        auto fw = (ra - rb).normalized();
 
-        std::cout << midpoint.x() << ", " << midpoint.y() << ", "<< midpoint.z() << std::endl;
-        std::cout << axis.x() << ", " << axis.y() << ", "<< axis.z() << std::endl;
-        std::cout << third.x() << ", " << third.y() << ", "<< third.z() << std::endl;
+        Eigen::Vector4d p1 = any_perpendicular_of_two(up,fw).normalized();
+        Eigen::Vector4d p2 = cross_three(up,fw,p1);
 
         double c = std::acos(ra.dot(rb));
-        double m = std::min(c * 1.5, M_PI - 0.1);
+        double m = c * 1.5;
 
-        std::cout << "c: " << c << "m: " << m << std::endl;
+        std::cout << "c: " << c << " m: " << m << std::endl;
 
-        std::vector<double> sample_xy(2);
-        rng.uniformInBall(1.0, sample_xy);
+        Eigen::Vector4d xfed;
 
-        double sma = std::tan(m / 4.0);
-        double smi = std::tan(std::acos(std::cos(m / 2.0) / std::cos(c / 2.0))/2.0);
+        if (m+c >= 2.0*M_PI) {
+            xfed = Eigen::Vector4d(rng.gaussian01(),
+                   rng.gaussian01(),
+                   rng.gaussian01(),
+                   rng.gaussian01());
+            xfed.normalize();
+        } else {
 
-        Eigen::Vector2d sample(sample_xy[0] * sma, sample_xy[1] * smi);
+            std::vector<double> sample_xy(3);
+            rng.uniformInBall(1.0, sample_xy);
 
-        std::cout << "sma: " << sma << " smi: " << smi << std::endl;
-        std::cout << "sx: " << sample.x() << " sy: " << sample.y() << std::endl;
+            double sma = std::tan(m / 4.0);
+            double smi = std::tan(std::acos(std::cos(m / 2.0) / std::cos(c / 2.0))/2.0);
 
-        Eigen::Vector3d on_sphere(
-                2 * sample.x() / (1.0 + sample.x() * sample.x() + sample.y() * sample.y()),
-                2 * sample.y() / (1.0 + sample.x() * sample.x() + sample.y() * sample.y()),
-                (1.0 - sample.x() * sample.x() - sample.y() * sample.y()) /
-                (1.0 + sample.x() * sample.x() + sample.y() * sample.y())
-        );
+            std::cout
+                << std::cos(c / 2.0) << ", "
+                << std::cos(m / 2.0) << ", "
+                << (std::cos(m / 2.0) / std::cos(c / 2.0)) << ", "
+                << std::acos(std::cos(m / 2.0) / std::cos(c / 2.0)) << std::endl;
 
-        EXPECT_FLOAT_EQ(1.0, on_sphere.norm());
+            Eigen::Vector3d sample(sample_xy[0] * sma, sample_xy[1] * smi, sample_xy[2] * smi);
 
-//        Eigen::Matrix3d xf {
-//                {axis.x(),axis.y(),axis.z()},
-//                {third.x(),third.y(),third.z()},
-//                {midpoint.x(),midpoint.y(),midpoint.z()}
-//        };
+            std::cout << "sma: " << sma << " smi: " << smi << std::endl;
+            std::cout << "sample: " << sample << std::endl;
 
-        auto xfed = /*xf **/ on_sphere;
+            Eigen::Vector4d on_sphere(
+                    2.0 * sample.x() / (1.0 + sample.x() * sample.x() + sample.y() * sample.y() + sample.z() * sample.z()),
+                    2.0 * sample.y() / (1.0 + sample.x() * sample.x() + sample.y() * sample.y() + sample.z() * sample.z()),
+                    2.0 * sample.z() / (1.0 + sample.x() * sample.x() + sample.y() * sample.y() + sample.z() * sample.z()),
+                    (1.0 - sample.x() * sample.x() - sample.y() * sample.y() - sample.z() * sample.z()) /
+                    (1.0 + sample.x() * sample.x() + sample.y() * sample.y() + sample.z() * sample.z())
+            );
 
-//        xfed = Eigen::Vector3d(0,0,1);
+            EXPECT_NEAR(1.0, on_sphere.norm(), 1.0e-10);
 
-        std::cout << "Xfed: " << xfed.x() << ", " << xfed.y() << ", "<< xfed.z() << std::endl;
+            Eigen::Matrix4d xf {
+                    {fw.x(),p1.x(),p2.x(),up.x()},
+                    {fw.y(),p1.y(),p2.y(),up.y()},
+                    {fw.z(),p1.z(),p2.z(),up.z()},
+                    {fw.w(),p1.w(),p2.w(),up.w()},
+            };
 
+            std::cout << "Xf: " << xf << std::endl;
 
-        EXPECT_FLOAT_EQ(1.0, xfed.norm());
+            xfed = xf * on_sphere;
+        }
+
+        std::cout << "Xfed: " << xfed << std::endl;
+
+        EXPECT_NEAR(1.0, xfed.norm(), 1.0e-10);
 
         EXPECT_GE(
-                m + 1.0e-2, std::acos(xfed.dot(ra)) + std::acos(xfed.dot(rb))
+                m + 0.05, std::acos(xfed.dot(ra)) + std::acos(xfed.dot(rb))
         );
 
     }

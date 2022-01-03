@@ -189,7 +189,8 @@ set(SHARED_SRC
         src/multigoal/ClusterTable.h
         src/MoveitPathLengthObjective.cpp
         src/MoveitPathLengthObjective.h
-        src/general_utlities.h)
+        src/general_utilities.h
+        src/general_utilities.cpp)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
@@ -239,4 +240,4 @@ catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
 #target_link_libraries(${PROJECT_NAME}_tests ${CATKIN_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib)
 
 #include(GoogleTest)
-#gtest_discover_tests(${PROJECT_NAME}_tests)
+gtest_discover_tests(${PROJECT_NAME}_tests)

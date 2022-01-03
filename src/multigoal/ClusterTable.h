@@ -7,7 +7,7 @@
 #include <boost/range/adaptors.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include "multi_goal_planners.h"
-#include "../general_utlities.h"
+#include "../general_utilities.h"
 
 namespace clustering {
 

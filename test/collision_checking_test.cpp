@@ -3,6 +3,29 @@
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include "test_utils.h"
 #include "../src/experiment_utils.h"
+#include "../src/BulletContinuousMotionValidator.h"
+
+TEST(CollisionCheckingTests, max_angle) {
+
+    auto robot = loadRobotModel();
+
+    for (size_t i = 0; i < 1000; i++) {
+
+        auto st1 = genRandomState(robot);
+        auto st2 = genRandomState(robot);
+
+        double max_angle = BulletContinuousMotionValidator::estimateMaximumRotation(*st1, *st2);
+
+        for (const auto &lm: robot->getLinkModels()) {
+            Eigen::Quaterniond r1(st1->getGlobalLinkTransform(lm).rotation());
+            Eigen::Quaterniond r2(st2->getGlobalLinkTransform(lm).rotation());
+
+            double angle = r1.angularDistance(r2);
+
+            ASSERT_LE(angle, max_angle);
+        }
+    }
+}
 
 TEST(CollisionCheckingTests, symmetric_wall) {
 
