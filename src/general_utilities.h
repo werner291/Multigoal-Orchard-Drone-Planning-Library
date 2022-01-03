@@ -20,8 +20,20 @@ Eigen::Vector4d any_perpendicular_of_two(const Eigen::Vector4d& a, const Eigen::
 
 
 /**
- * \brief Take the generalized vector cross product of three Vector4d's. That is, a vector perpendicular to all three.
+ * Take the generalized vector cross product of three Vector4d's. That is, a vector perpendicular to all three.
  */
 Eigen::Vector4d cross_three(const Eigen::Vector4d& a, const Eigen::Vector4d& b, const Eigen::Vector4d& c);
+
+/**
+ *
+ * Given two quaternions `qa` and `qb` and a positive scalar `max_distance`, produce a third quaternion `qs` such that:
+ *
+ *  `acos(qa.dot(qs)) + acos(qb.dot(qs)) <= max_distance`
+ *
+ * Note: `qa` and `qb` must be unit quaternions, such that `acos(qa.dot(qb)) <= max_distance`.
+ */
+Eigen::Quaterniond sampleInformedQuaternion(const Eigen::Quaterniond& qa,
+                                            const Eigen::Quaterniond& qb,
+                                            const double max_distance);
 
 #endif //NEW_PLANNERS_GENERAL_UTLITIES_CPP

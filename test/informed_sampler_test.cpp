@@ -126,89 +126,18 @@ TEST(InformedSamplerTest, perpendicular_of_two) {
 }
 
 
+
 TEST(InformedSamplerTest, informed_point_on_sphere) {
 
     ompl::RNG rng;
 
     for (size_t i : boost::irange(0,1000)) {
 
-        Eigen::Vector4d
-                ra(rng.gaussian01(),
-                   rng.gaussian01(),
-                   rng.gaussian01(),
-                   rng.gaussian01()),
-                rb(rng.gaussian01(),
-                   rng.gaussian01(),
-                   rng.gaussian01(),
-                   rng.gaussian01());
+        auto ra = Eigen::Quaterniond::UnitRandom();
+        auto rb = Eigen::Quaterniond::UnitRandom();
 
-        ra.normalize();
-        rb.normalize();
-
-        std::cout << ra << std::endl;
-        std::cout << rb << std::endl;
-
-        auto up = (0.5 * ra + 0.5 * rb).normalized();
-        auto fw = (ra - rb).normalized();
-
-        Eigen::Vector4d p1 = any_perpendicular_of_two(up,fw).normalized();
-        Eigen::Vector4d p2 = cross_three(up,fw,p1);
-
-        double c = std::acos(ra.dot(rb));
-        double m = c * 1.5;
-
-        std::cout << "c: " << c << " m: " << m << std::endl;
-
-        Eigen::Vector4d xfed;
-
-        if (m+c >= 2.0*M_PI) {
-            xfed = Eigen::Vector4d(rng.gaussian01(),
-                   rng.gaussian01(),
-                   rng.gaussian01(),
-                   rng.gaussian01());
-            xfed.normalize();
-        } else {
-
-            std::vector<double> sample_xy(3);
-            rng.uniformInBall(1.0, sample_xy);
-
-            double sma = std::tan(m / 4.0);
-            double smi = std::tan(std::acos(std::cos(m / 2.0) / std::cos(c / 2.0))/2.0);
-
-            std::cout
-                << std::cos(c / 2.0) << ", "
-                << std::cos(m / 2.0) << ", "
-                << (std::cos(m / 2.0) / std::cos(c / 2.0)) << ", "
-                << std::acos(std::cos(m / 2.0) / std::cos(c / 2.0)) << std::endl;
-
-            Eigen::Vector3d sample(sample_xy[0] * sma, sample_xy[1] * smi, sample_xy[2] * smi);
-
-            std::cout << "sma: " << sma << " smi: " << smi << std::endl;
-            std::cout << "sample: " << sample << std::endl;
-
-            Eigen::Vector4d on_sphere(
-                    2.0 * sample.x() / (1.0 + sample.x() * sample.x() + sample.y() * sample.y() + sample.z() * sample.z()),
-                    2.0 * sample.y() / (1.0 + sample.x() * sample.x() + sample.y() * sample.y() + sample.z() * sample.z()),
-                    2.0 * sample.z() / (1.0 + sample.x() * sample.x() + sample.y() * sample.y() + sample.z() * sample.z()),
-                    (1.0 - sample.x() * sample.x() - sample.y() * sample.y() - sample.z() * sample.z()) /
-                    (1.0 + sample.x() * sample.x() + sample.y() * sample.y() + sample.z() * sample.z())
-            );
-
-            EXPECT_NEAR(1.0, on_sphere.norm(), 1.0e-10);
-
-            Eigen::Matrix4d xf {
-                    {fw.x(),p1.x(),p2.x(),up.x()},
-                    {fw.y(),p1.y(),p2.y(),up.y()},
-                    {fw.z(),p1.z(),p2.z(),up.z()},
-                    {fw.w(),p1.w(),p2.w(),up.w()},
-            };
-
-            std::cout << "Xf: " << xf << std::endl;
-
-            xfed = xf * on_sphere;
-        }
-
-        std::cout << "Xfed: " << xfed << std::endl;
+        double m = std::acos(ra.dot(rb) * 1.5);
+        auto xfed = sampleInformedQuaternion(ra, rb, m);
 
         EXPECT_NEAR(1.0, xfed.norm(), 1.0e-10);
 
