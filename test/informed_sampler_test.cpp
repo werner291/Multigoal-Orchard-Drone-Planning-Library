@@ -125,25 +125,28 @@ TEST(InformedSamplerTest, perpendicular_of_two) {
     EXPECT_NEAR(d.dot(c), 0.0, 1.0e-10);
 }
 
-
-
 TEST(InformedSamplerTest, informed_point_on_sphere) {
 
     ompl::RNG rng;
 
-    for (size_t i : boost::irange(0,1000)) {
+    for (size_t i : boost::irange(0,100)) {
 
         auto ra = Eigen::Quaterniond::UnitRandom();
         auto rb = Eigen::Quaterniond::UnitRandom();
 
-        double m = std::acos(ra.dot(rb) * 1.5);
-        auto xfed = sampleInformedQuaternion(ra, rb, m);
+        double qd = quat_dist(ra,rb);
+        EXPECT_GE(M_PI/2.0,qd);
+        double m = std::min(qd * rng.uniformReal(1.0,1.5),M_PI);
 
-        EXPECT_NEAR(1.0, xfed.norm(), 1.0e-10);
+        for (size_t i : boost::irange(0,100)) {
+            auto sample = sampleInformedQuaternion(ra, rb, m);
 
-        EXPECT_GE(
-                m + 0.05, std::acos(xfed.dot(ra)) + std::acos(xfed.dot(rb))
-        );
+            EXPECT_NEAR(1.0, sample.norm(), 1.0e-10);
+
+            EXPECT_GE(
+                    m + 0.05, quat_dist(ra,sample)+quat_dist(sample,rb)
+            );
+        }
 
     }
 
