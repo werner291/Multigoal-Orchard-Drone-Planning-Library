@@ -100,10 +100,10 @@ Eigen::Vector3d StateProjection::operator()(const ompl::base::State *state) cons
 
 moveit::core::RobotModelPtr loadRobotModel() {
     auto urdf = std::make_shared<urdf::Model>();
-    assert(urdf->initFile("test_robots/urdf/bot.urdf"));
+    assert(urdf->initFile("../test_robots/urdf/bot.urdf"));
 
     auto srdf = std::make_shared<srdf::Model>();
-    assert(srdf->initFile(*urdf, "test_robots/config/aerial_manipulator_drone.srdf"));
+    assert(srdf->initFile(*urdf, "../test_robots/config/aerial_manipulator_drone.srdf"));
 
     auto robot = std::make_shared<moveit::core::RobotModel>(urdf, srdf);
 

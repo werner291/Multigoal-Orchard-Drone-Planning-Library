@@ -4,6 +4,7 @@
 #include "../src/experiment_utils.h"
 #include <random_numbers/random_numbers.h>
 #include "../src/general_utilities.h"
+#include <boost/range/combine.hpp>
 
 double quat_dist(const Eigen::Quaterniond& qs1, const Eigen::Quaterniond& qs2) {
 
@@ -21,10 +22,38 @@ void sampleBetween(const moveit::core::RobotState& a,
                    moveit::core::RobotState& result,
                    double maxDist) {
 
+    result = a;
+
+    // Get an RNG for sampling
     ompl::RNG rng;
 
-    for (const auto jm: a.getRobotModel()->getActiveJointModels()) {
+    std::vector<double> weights(a.getRobotModel()->getActiveJointModels().size());
 
+    // Compute a random weight for each joint, wuch that all weights sum to 1.
+    double total = 0.0;
+    for (double& w : weights) {
+        w = rng.uniform01(); // TODO deal with weighted joints
+        total += w;
+    }
+    for (double& w : weights) {
+        w /= total;
+    }
+
+    // The distance between a and b limits how much sampling freedom we have.
+    double wiggle_room = maxDist - a.distance(b);
+
+    // If this is negative, the user requested a path length lower than the lower bound.
+    assert(wiggle_room >= 0.0);
+
+    // Loop through all the joint models with the weight previously-assigned to them.
+    for (const auto& w_jm: boost::combine(weights, a.getRobotModel()->getActiveJointModels())) {
+
+        // Destructure the pair
+        double w;
+        const moveit::core::JointModel *jm;
+        boost::tie(w, jm) = w_jm;
+
+        // Get a pointer to the variables.
         const double* pos_a = a.getJointPositions(jm);
         const double* pos_b = b.getJointPositions(jm);
 
@@ -32,65 +61,63 @@ void sampleBetween(const moveit::core::RobotState& a,
 
             case moveit::core::JointModel::JointType::REVOLUTE:
             case moveit::core::JointModel::JointType::PRISMATIC: {
-                double middle = (pos_a[0] + pos_b[0]) / 2.0;
 
-                result.setJointPositions(jm, {rng.uniformReal(middle - maxDist / 2.0, middle + maxDist / 2.0)});
-            }
-                break;
-
-            case moveit::core::JointModel::JointType::PLANAR: {
-                ompl::ProlateHyperspheroid phs(2, pos_a, pos_b);
-                phs.setTransverseDiameter(maxDist);
-
-                double phs_result[2];
-
-                // See https://stackoverflow.com/a/28523089 for the shared_ptr hackery.
-                rng.uniformProlateHyperspheroid(std::shared_ptr<ompl::ProlateHyperspheroid>(
-                        std::shared_ptr<ompl::ProlateHyperspheroid>(), &phs),
-                                                phs_result);
-
-                double theta_middle = (pos_a[2] + pos_b[2]) / 2.0;
+                double middle;
+                jm->interpolate(pos_a,pos_b,0.5,&middle);
 
                 result.setJointPositions(jm, {
-                        phs_result[0], phs_result[1],
-                    rng.uniformReal(theta_middle - maxDist / 2.0, theta_middle + maxDist / 2.0)
+                    rng.uniformReal(middle - wiggle_room*w/2.0,
+                                    middle + wiggle_room*w/2.0)
                 });
-
-
             }
+            break;
 
-break;
+            case moveit::core::JointModel::JointType::PLANAR:
+
+                ROS_ERROR("Not implemented.");
+                break;
+
             case moveit::core::JointModel::JointType::FLOATING: {
-                ompl::ProlateHyperspheroid phs(3, pos_a, pos_b);
-                phs.setTransverseDiameter(maxDist);
 
-                double phs_result[3];
+                size_t dim = jm->getType() == moveit::core::JointModel::JointType::PLANAR ? 2 : 3;
+
+                double linear_weight = rng.uniform01();
+
+                ompl::ProlateHyperspheroid phs(dim, pos_a, pos_b);
+
+                double d = 0.0;
+                for (auto d : boost::irange<size_t>(0,dim)) d += std::pow(pos_a[d]-pos_b[d],2);
+                phs.setTransverseDiameter(std::sqrt(d) + wiggle_room * w * linear_weight);
+
+                double phs_sample[3];
 
                 // See https://stackoverflow.com/a/28523089 for the shared_ptr hackery.
                 rng.uniformProlateHyperspheroid(std::shared_ptr<ompl::ProlateHyperspheroid>(
-                                                        std::shared_ptr<ompl::ProlateHyperspheroid>(), &phs),
-                                                phs_result);
+                        std::shared_ptr<ompl::ProlateHyperspheroid>(), &phs), phs_sample);
 
+                    Eigen::Quaterniond qa(Eigen::Quaterniond(pos_a[6], pos_a[3], pos_a[4], pos_a[5]));
+                    Eigen::Quaterniond qb(Eigen::Quaterniond(pos_b[6], pos_b[3], pos_b[4], pos_b[5]));
 
+                    auto sample = sampleInformedQuaternion(qa,qb,quat_dist(qa,qb) + (1.0-w) * wiggle_room);
 
-                double quat_middle[4];
+                    result.setJointPositions(jm,
+                                             {
+                                             phs_sample[0],phs_sample[1],phs_sample[2],
+                                             sample.x(), sample.y(), sample.z(), sample.w()
+                                             });
 
-//                result.setJointPositions(jm, {
-//                        phs_result[0], phs_result[1],
-//                        rng.uniformReal(theta_middle - maxDist / 2.0, theta_middle + maxDist / 2.0)
-//                });
             }
-break;
+
             case moveit::core::JointModel::JointType::FIXED:
-            {
-                // Fixed joint, not sampling.
-            }
-break;
+                // Do nothing.
+                break;
+
             default:
                 ROS_ERROR("Unknown joint type not supported.");
-
         }
     }
+
+    result.update(true);
 
 }
 
@@ -129,63 +156,42 @@ TEST(InformedSamplerTest, informed_point_on_sphere) {
 
     ompl::RNG rng;
 
-    for (size_t i : boost::irange(0,100)) {
+    // Test with 100 pairs of random quaternions
+    for (size_t i : boost::irange(0,10000)) {
 
+        // Generate two random quaternions
         auto ra = Eigen::Quaterniond::UnitRandom();
         auto rb = Eigen::Quaterniond::UnitRandom();
 
+        // Compute the distance.
         double qd = quat_dist(ra,rb);
-        EXPECT_GE(M_PI/2.0,qd);
+        EXPECT_GE(M_PI/2.0,qd); // Sanity check: should never be greater than PI/2
+
+        // Pick a maximum distance of at least the given distance.
+        // No point in picking anything reater than M_PI since the sum
+        // of quaternion distances can never exceed it anyway.
         double m = std::min(qd * rng.uniformReal(1.0,1.5),M_PI);
 
-        for (size_t i : boost::irange(0,100)) {
+        // Pick a hundred samples
+        for (size_t _i : boost::irange(0,10000)) {
             auto sample = sampleInformedQuaternion(ra, rb, m);
 
+            // Ensure the quaternions are unit norm.
             EXPECT_NEAR(1.0, sample.norm(), 1.0e-10);
 
+            // Make sure the sum of distances doesn't exceed the maximum.
+            // TODO: I'm still plenty happy if it exceeds by a tiny amount,
+            // since that's a very decent approximation, but I'd like to know
+            // why we can't seem to be able to use a margin of 0.001.
+            // Just some big numerical errors?
+            if (m + 0.01 <= quat_dist(ra,sample)+quat_dist(sample,rb))
+                std::cout << quat_dist(ra,sample) << " + " << quat_dist(sample,rb) << std::endl;
             EXPECT_GE(
-                    m + 0.05, quat_dist(ra,sample)+quat_dist(sample,rb)
+                    m + 0.01, quat_dist(ra,sample)+quat_dist(sample,rb)
             );
         }
 
     }
-
-}
-
-TEST(InformedSamplerTest, informed_so3_sampling_test) {
-
-    /*
-     * acos(qa ⋅ qs) + acos(qb ⋅ qs) = m
-     *
-     * cos(acos(qa ⋅ qs) + acos(qb ⋅ qs)) = cos(m)
-     *
-     * cos(acos(qa ⋅ qs)) * cos(acos(qb ⋅ qs)) - sin(acos(qa ⋅ qs)) * sin(acos(qb ⋅ qs)) = cos(m)
-     *
-     * (qa ⋅ qs) * (qb ⋅ qs) - sqrt(1-(qa ⋅ qs)^2) * sqrt(1-(qa ⋅ qs)^2) = cos(m)
-     *
-     * A * B - sqrt(1-A^2) * sqrt(1-B^2) = cos(m)
-     *      with A = qa ⋅ qs, B = qb ⋅ qs
-     *      so, qs = A ⋅/ qa, qs = B ⋅/ qa
-     *
-     */
-//
-//    Eigen::Vector3d ra(1.0,1.0,1.0), rb(-2.0,0.0,0.0);
-//
-//    Eigen::Quaterniond
-//        ra(Eigen::AngleAxisd(ra.norm(), ra.normalized())),
-//        rb(Eigen::AngleAxisd(rb.norm(), rb.normalized()));
-//
-//    double max_rot = ra.
-//
-//    ompl::RNG rng;
-//
-//    for (size_t i : boost::irange(0,10000)) {
-//        std::vector<double> sample_aa(3);
-//        rng.uniformInBall(M_PI, sample_aa);
-//        Eigen::AngleAxisd sample_rot(sample_aa);
-//
-//
-//    }
 
 }
 
@@ -199,7 +205,7 @@ TEST(InformedSamplerTest, test_random_state_pairs) {
     std::mt19937 rng(rd());
     std::uniform_real_distribution range_distr(1.0,10.0);
 
-    for (size_t i : boost::irange(0,100)) {
+    for (size_t i : boost::irange(0,1000)) {
 
         st1.setToRandomPositions();
         st2.setToRandomPositions();
@@ -210,7 +216,7 @@ TEST(InformedSamplerTest, test_random_state_pairs) {
 
         sampleBetween(st1,st2,sample,maxDist);
 
-        EXPECT_LT(st1.distance(sample)+sample.distance(st2),maxDist);
+        EXPECT_LT(st1.distance(sample)+sample.distance(st2),maxDist+0.1);
 
     }
 

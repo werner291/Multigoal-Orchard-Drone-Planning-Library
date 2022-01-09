@@ -27,4 +27,9 @@ in
                 pythonPackages.pandas
                 pythonPackages.matplotlib
             ];
+
+		    shellHook = ''
+      export TMPDIR="/tmp"
+    '';
+
         }

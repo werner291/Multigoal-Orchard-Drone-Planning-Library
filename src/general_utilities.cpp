@@ -92,7 +92,7 @@ Eigen::Quaterniond sampleInformedQuaternion(const Eigen::Quaterniond& qa,
         * See https://www.geogebra.org/calculator/sbt2csng for a 3D demonstration of this calculation;
         * the math trivially scales to 4D.
         *
-        * TODO: a formal proof, but the test results and Geogebra construction have proven convincing to me so far.
+        * For the relationship between spherical ellipses and regular ellipses, see this thesis: https://www.geometrie.tuwien.ac.at/theses/pdf/diplomarbeit_tranacher.pdf
         */
 
         // Compute the semi-major and semi-minor axes of this ellipse.
