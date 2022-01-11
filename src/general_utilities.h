@@ -36,4 +36,9 @@ Eigen::Quaterniond sampleInformedQuaternion(const Eigen::Quaterniond& qa,
                                             const Eigen::Quaterniond& qb,
                                             const double max_distance);
 
+/**
+ * The slerp distance between two quaternions, defined as acos(|qs1⋅qs2|), in radians.
+ */
+double quat_dist(const Eigen::Quaterniond& qs1, const Eigen::Quaterniond& qs2);
+
 #endif //NEW_PLANNERS_GENERAL_UTLITIES_CPP

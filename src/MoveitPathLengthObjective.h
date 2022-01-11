@@ -8,6 +8,9 @@ class MoveitPathLengthObjective : public ompl::base::PathLengthOptimizationObjec
 public:
     MoveitPathLengthObjective(const ompl::base::SpaceInformationPtr &si);
 
+    ompl::base::InformedSamplerPtr allocInformedStateSampler(
+        const ompl::base::ProblemDefinitionPtr &probDefn,
+        unsigned int maxNumberCalls) const override;
 
 };
 

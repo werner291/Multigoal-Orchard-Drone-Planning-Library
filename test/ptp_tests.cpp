@@ -2,9 +2,14 @@
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/collision_detection/collision_detector_allocator.h>
+#include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
+
 #include <moveit_msgs/PlanningScene.h>
+#include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include "../src/experiment_utils.h"
 #include "test_utils.h"
+#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
+#include "../src/MoveitPathLengthObjective.h"
 
 TEST(PTPTest, through_wall_local_adversarial) {
 
@@ -28,9 +33,33 @@ TEST(PTPTest, through_wall_local_adversarial) {
 
     for (size_t i : boost::irange(0,1000)) {
 
-    s1.random();
-    s2.random();
+        ompl::geometric::AITstar aitstar(si);
 
-    EXPECT_EQ(si->checkMotion(s1.get(),s2.get()),si->checkMotion(s2.get(),s1.get()));
+        std::cout << "i: " << std::endl;
+
+        s1.random();
+        s2.random();
+
+        EXPECT_EQ(si->checkMotion(s1.get(),s2.get()),si->checkMotion(s2.get(),s1.get()));
+
+        if (si->isValid(s1.get()) && si->isValid(s2.get())) {
+
+            std::cout << "will try to plan" << std::endl;
+
+            auto pdef = std::make_shared<ompl::base::ProblemDefinition>(si);
+
+            pdef->setStartAndGoalStates(s1.get(),s2.get());
+
+            auto opt = std::make_shared<MoveitPathLengthObjective>(si);
+
+            pdef->setOptimizationObjective(opt);
+
+            aitstar.setProblemDefinition(pdef);
+
+            aitstar.solve(ompl::base::timedPlannerTerminationCondition(0.1));
+
+            EXPECT_TRUE(pdef->hasExactSolution());
+        }
     }
+
 }

@@ -125,72 +125,75 @@ catkin_package(
 ###########
 
 set(SHARED_SRC
-        src/procedural_tree_generation.cpp
-        src/DroneStateConstraintSampler.cpp
-        src/msgs_utilities.cpp
-        src/msgs_utilities.h
-        src/planning_scene_diff_message.cpp
-        src/planning_scene_diff_message.h
-        src/ClearanceDecreaseMinimizationObjective.h
-        src/ClearanceDecreaseMinimizationObjective.cpp
-        src/BulletContinuousMotionValidator.h
+                src/BetweenMoveItStatesInformedSampler.cpp
+        src/BetweenMoveItStatesInformedSampler.h
         src/BulletContinuousMotionValidator.cpp
+        src/BulletContinuousMotionValidator.h
+        src/ClearanceDecreaseMinimizationObjective.cpp
+        src/ClearanceDecreaseMinimizationObjective.h
+        src/DroneStateConstraintSampler.cpp
+        src/DroneStateSampler.cpp
+        src/DroneStateSampler.h
+        src/experiment_utils.cpp
+        src/experiment_utils.h
+        src/general_utilities.cpp
+        src/general_utilities.h
+        src/InformedRobotStateSampler.cpp
+        src/InformedRobotStateSampler.h
         src/InverseClearanceIntegralObjective.cpp
         src/InverseClearanceIntegralObjective.h
-        src/ompl_custom.cpp
-        src/ompl_custom.h
-        src/UnionGoalSampleableRegion.cpp
-        src/UnionGoalSampleableRegion.h
-        src/LeavesCollisionChecker.cpp
-        src/LeavesCollisionChecker.h
         src/json_utils.cpp
         src/json_utils.h
-        src/DroneStateSampler.h
-        src/DroneStateSampler.cpp
-        src/InformedRobotStateSampler.h
-        src/InformedRobotStateSampler.cpp
-        src/SamplerWrapper.h
-        src/SamplerWrapper.cpp
-        src/experiment_utils.h
-        src/experiment_utils.cpp
-        src/multigoal/multi_goal_planners.h
-        src/multigoal/multi_goal_planners.cpp
-        src/multigoal/knn.h
-        src/multigoal/knn.cpp
-        src/multigoal/random_order.h
-        src/multigoal/random_order.cpp
-        src/multigoal/uknn.h
-        src/multigoal/uknn.cpp
-        src/multigoal/PointToPointPlanner.cpp
-        src/multigoal/PointToPointPlanner.h
+        src/LeavesCollisionChecker.cpp
+        src/LeavesCollisionChecker.h
+        src/MoveitPathLengthObjective.cpp
+        src/MoveitPathLengthObjective.h
+        src/msgs_utilities.cpp
+        src/msgs_utilities.h
         src/multigoal/approach_table.cpp
         src/multigoal/approach_table.h
-        src/multigoal/ATRandom.cpp
-        src/multigoal/ATRandom.h
         src/multigoal/AT2Opt.cpp
         src/multigoal/AT2Opt.h
         src/multigoal/ATNN.cpp
         src/multigoal/ATNN.h
-        src/multigoal/RandomizedTwoOpt.cpp
-        src/multigoal/RandomizedTwoOpt.h
-        src/multigoal/MetricTwoOpt.cpp
-        src/multigoal/MetricTwoOpt.h
-        src/multigoal/goals_gnat.h
-        src/multigoal/goals_gnat.cpp
-        #        src/multigoal/SubtourMovingPlanner.cpp
-        #        src/multigoal/SubtourMovingPlanner.h
-        src/preorder_strategy/preorder_strategy.cpp
-        src/preorder_strategy/preorder_strategy.h
-        src/representative_states.cpp
-        src/representative_states.h
-        #        src/multigoal/GATMatrix.cpp
-        #        src/multigoal/GATMatrix.h
+        src/multigoal/ATRandom.cpp
+        src/multigoal/ATRandom.h
         src/multigoal/ClusterTable.cpp
         src/multigoal/ClusterTable.h
-        src/MoveitPathLengthObjective.cpp
-        src/MoveitPathLengthObjective.h
-        src/general_utilities.h
-        src/general_utilities.cpp)
+        #        src/multigoal/GATMatrix.cpp
+        #        src/multigoal/GATMatrix.h
+        src/multigoal/goals_gnat.cpp
+        src/multigoal/goals_gnat.h
+        src/multigoal/knn.cpp
+        src/multigoal/knn.h
+        src/multigoal/MetricTwoOpt.cpp
+        src/multigoal/MetricTwoOpt.h
+        src/multigoal/multi_goal_planners.cpp
+        src/multigoal/multi_goal_planners.h
+        src/multigoal/PointToPointPlanner.cpp
+        src/multigoal/PointToPointPlanner.h
+        src/multigoal/RandomizedTwoOpt.cpp
+        src/multigoal/RandomizedTwoOpt.h
+        src/multigoal/random_order.cpp
+        src/multigoal/random_order.h
+        #        src/multigoal/SubtourMovingPlanner.cpp
+        #        src/multigoal/SubtourMovingPlanner.h
+        src/multigoal/uknn.cpp
+        src/multigoal/uknn.h
+        src/ompl_custom.cpp
+        src/ompl_custom.h
+        src/planning_scene_diff_message.cpp
+        src/planning_scene_diff_message.h
+        src/preorder_strategy/preorder_strategy.cpp
+        src/preorder_strategy/preorder_strategy.h
+        src/procedural_tree_generation.cpp
+        src/representative_states.cpp
+        src/representative_states.h
+        src/SamplerWrapper.cpp
+        src/SamplerWrapper.h
+        src/UnionGoalSampleableRegion.cpp
+        src/UnionGoalSampleableRegion.h
+        )
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
@@ -233,7 +236,7 @@ catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
 #        #        test/MoveitPathLengthObjectiveTest.cpp
 #        test/clustering_tests.cpp
 #        test/collision_checking_test.cpp
-#        test/ptp_tests.cpp
+       test/ptp_tests.cpp
         ${SHARED_SRC}
         )
 

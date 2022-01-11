@@ -155,3 +155,14 @@ Eigen::Quaterniond sampleInformedQuaternion(const Eigen::Quaterniond& qa,
     // Convert the result 1-to-1 to a quaternion, and return it.
     return Eigen::Quaterniond(result_vec.w(),result_vec.x(),result_vec.y(),result_vec.z());
 }
+
+double quat_dist(const Eigen::Quaterniond& qs1, const Eigen::Quaterniond& qs2) {
+
+    const double MAX_QUATERNION_NORM_ERROR = 1.0e-10;
+
+    double dq = fabs(qs1.x() * qs2.x() + qs1.y() * qs2.y() + qs1.z() * qs2.z() + qs1.w() * qs2.w());
+
+    if (dq > 1.0 - MAX_QUATERNION_NORM_ERROR)
+        return 0.0;
+    return acos(dq);
+}
