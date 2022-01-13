@@ -4,9 +4,9 @@
 
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 
-class MoveitPathLengthObjective : public ompl::base::PathLengthOptimizationObjective {
+class ManipulatorDroneMoveitPathLengthObjective : public ompl::base::PathLengthOptimizationObjective {
 public:
-    MoveitPathLengthObjective(const ompl::base::SpaceInformationPtr &si);
+    ManipulatorDroneMoveitPathLengthObjective(const ompl::base::SpaceInformationPtr &si);
 
     ompl::base::InformedSamplerPtr allocInformedStateSampler(
         const ompl::base::ProblemDefinitionPtr &probDefn,

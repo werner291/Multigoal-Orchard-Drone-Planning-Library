@@ -1,16 +1,17 @@
-
 #include <gtest/gtest.h>
 #include <moveit/collision_detection/collision_detector_allocator.h>
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
+#include <ompl/geometric/planners/prm/PRMstar.h>
+#include <ompl/geometric/planners/informedtrees/AITstar.h>
+#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
+#include <random>
+
 #include "test_utils.h"
 #include "../src/LeavesCollisionChecker.h"
 #include "../src/multigoal/approach_table.h"
 #include "../src/experiment_utils.h"
 #include "../src/multigoal/ClusterTable.h"
-#include <ompl/geometric/planners/prm/PRMstar.h>
-#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
-
-#include <random>
+#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 
 /**
  * \brief This produces a set of monotonically increasing x-coordinates spaced with a smooth, wave-like pattern
@@ -137,8 +138,8 @@ TEST_F(ClusteringTests, test_cluster_sinespacing) {
     EXPECT_EQ(clusters.size(), samples.size());
 
     // Construct a PointToPointPlanner to be used while expanding the clusters.
-    auto prms = std::make_shared<ompl::geometric::PRMstar>(si);
-    auto pathLengthObjective = std::make_shared<ompl::base::PathLengthOptimizationObjective>(si);
+    auto prms = std::make_shared<ompl::geometric::AITstar>(si);
+    auto pathLengthObjective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
     auto sampler = std::make_shared<InformedGaussian>(state_space.get(), 2.5);
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
@@ -467,8 +468,8 @@ TEST_F(ClusteringTests, test_full_wall) {
         EXPECT_TRUE(si->isValid(sample.state->get()));
     }
 
-    auto prms = std::make_shared<ompl::geometric::PRMstar>(si);
-    auto pathLengthObjective = std::make_shared<ompl::base::PathLengthOptimizationObjective>(si);
+    auto prms = std::make_shared<ompl::geometric::AITstar>(si);
+    auto pathLengthObjective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
     auto sampler = std::make_shared<InformedGaussian>(state_space.get(), 2.5);
 
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
@@ -476,7 +477,7 @@ TEST_F(ClusteringTests, test_full_wall) {
     auto clusters = clustering::buildClusters(ptp, goal_samples);
 
     std::ofstream fout;
-    fout.open("analysis/cluster_pts.txt");
+    fout.open("../analysis/cluster_pts.txt");
     assert(fout.is_open());
 
     for (const auto &level: clusters) {

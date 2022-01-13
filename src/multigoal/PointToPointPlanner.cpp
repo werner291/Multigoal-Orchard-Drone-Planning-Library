@@ -14,8 +14,9 @@ PointToPointPlanner::PointToPointPlanner(ompl::base::PlannerPtr planner,
         : planner_(std::move(planner)),
           optimizationObjective_(std::move(optimizationObjective)),
           sampler_(std::move(sampler)) {
-    planner_->getSpaceInformation()->getStateSpace()->setStateSamplerAllocator(
-            [this](const ompl::base::StateSpace *ss) { return this->sampler_->getSampler(); });
+
+//     planner_->getSpaceInformation()->getStateSpace()->setStateSamplerAllocator(
+//             [this](const ompl::base::StateSpace *ss) { return this->sampler_->getSampler(); });
 }
 
 
@@ -23,6 +24,8 @@ std::optional<ompl::geometric::PathGeometric>
 PointToPointPlanner::planToOmplGoal(double maxTime,
                                     const ompl::base::State *start,
                                     const ompl::base::GoalPtr &goal) {
+
+    std::cout << "Planner: " << planner_->getName() << std::endl;
 
     assert(planner_->getSpaceInformation()->isValid(start));
 
@@ -62,6 +65,7 @@ const std::shared_ptr<ompl::base::OptimizationObjective> &PointToPointPlanner::g
 std::optional<ompl::geometric::PathGeometric>
 PointToPointPlanner::planToOmplState(double maxTime, const ompl::base::State *start,
                                      const ompl::base::State *goal) {
+
     assert(planner_->getSpaceInformation()->isValid(goal));
 
     auto gs = std::make_shared<ompl::base::GoalState>(planner_->getSpaceInformation());

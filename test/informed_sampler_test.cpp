@@ -6,6 +6,8 @@
 #include "../src/general_utilities.h"
 #include <boost/range/combine.hpp>
 #include "../src/BetweenMoveItStatesInformedSampler.h"
+#include "../src/InformedManipulatorDroneSampler.h"
+#include "../src/DroneStateConstraintSampler.h"
 
 TEST(InformedSamplerTest, perpendicular_of_two) {
 
@@ -102,6 +104,34 @@ TEST(InformedSamplerTest, test_random_state_pairs) {
         sampleBetween(st1,st2,sample,maxDist);
 
         EXPECT_LT(st1.distance(sample)+sample.distance(st2),maxDist+0.1);
+
+    }
+
+}
+
+TEST(InformedManipulatorDroneSampler, test_random_state_pairs_upright) {
+
+    auto drone = loadRobotModel();
+
+    moveit::core::RobotState st1(drone),st2(drone),sample(drone);
+
+    ompl::RNG rng;
+
+    for (size_t i : boost::irange(0,1000)) {
+
+        DroneStateConstraintSampler::randomizeUprightWithBase(st1);
+        DroneStateConstraintSampler::randomizeUprightWithBase(st2);
+
+        double distance = st1.distance(st2);
+
+        double maxDist = distance * rng.uniformReal(1.0,10.0);
+
+        sampleBetweenUpright(st1,st2,sample,maxDist);
+
+        EXPECT_LT(st1.distance(sample)+sample.distance(st2),maxDist+0.01);
+
+       EXPECT_EQ((sample.getGlobalLinkTransform("base_link").rotation() *
+                  Eigen::Vector3d::UnitZ()).dot(Eigen::Vector3d::UnitZ()), 1.0);
 
     }
 

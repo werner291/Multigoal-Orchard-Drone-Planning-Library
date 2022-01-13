@@ -9,7 +9,7 @@
 #include "../src/experiment_utils.h"
 #include "test_utils.h"
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
-#include "../src/MoveitPathLengthObjective.h"
+#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 
 TEST(PTPTest, through_wall_local_adversarial) {
 
@@ -35,8 +35,6 @@ TEST(PTPTest, through_wall_local_adversarial) {
 
         ompl::geometric::AITstar aitstar(si);
 
-        std::cout << "i: " << std::endl;
-
         s1.random();
         s2.random();
 
@@ -44,13 +42,11 @@ TEST(PTPTest, through_wall_local_adversarial) {
 
         if (si->isValid(s1.get()) && si->isValid(s2.get())) {
 
-            std::cout << "will try to plan" << std::endl;
-
             auto pdef = std::make_shared<ompl::base::ProblemDefinition>(si);
 
             pdef->setStartAndGoalStates(s1.get(),s2.get());
 
-            auto opt = std::make_shared<MoveitPathLengthObjective>(si);
+            auto opt = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
 
             pdef->setOptimizationObjective(opt);
 

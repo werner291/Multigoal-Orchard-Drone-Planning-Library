@@ -92,13 +92,14 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
                     new_cluster.members[nearby_sample] = itr->second;
                 } // Else, it was probably unreachable.
             } else {
-
-                point_to_point_planner.getPlanner()->clear();
+//                 point_to_point_planner.getPlanner()->clear();
+//     assert(false);
 
                 // The expensive part: Try to plan from representative to representative.
                 auto ptp = point_to_point_planner.planToOmplState(0.2,
                                                                   clusters[cluster].representative->get(),
                                                                   clusters[nearby_sample].representative->get());
+//     assert(false);
 
                 // If successful, store this as a cluster member.
                 if (ptp) {

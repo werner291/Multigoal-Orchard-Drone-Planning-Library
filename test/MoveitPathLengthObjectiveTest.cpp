@@ -33,7 +33,7 @@ TEST(MoveitPathLengthObjectiveTest, TestInformedSampler) {
     }
 
     pdef->addStartState(start);
-    auto objective = std::make_shared<MoveitPathLengthObjective>(space_information);
+    auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(space_information);
     pdef->setOptimizationObjective(objective);
     pdef->setGoal(goal);
 

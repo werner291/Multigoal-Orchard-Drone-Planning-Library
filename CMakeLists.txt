@@ -140,14 +140,16 @@ set(SHARED_SRC
         src/general_utilities.h
         src/InformedRobotStateSampler.cpp
         src/InformedRobotStateSampler.h
+        src/InformedManipulatorDroneSampler.cpp
+        src/InformedManipulatorDroneSampler.h
         src/InverseClearanceIntegralObjective.cpp
         src/InverseClearanceIntegralObjective.h
         src/json_utils.cpp
         src/json_utils.h
         src/LeavesCollisionChecker.cpp
         src/LeavesCollisionChecker.h
-        src/MoveitPathLengthObjective.cpp
-        src/MoveitPathLengthObjective.h
+        src/ManipulatorDroneMoveitPathLengthObjective.cpp
+        src/ManipulatorDroneMoveitPathLengthObjective.h
         src/msgs_utilities.cpp
         src/msgs_utilities.h
         src/multigoal/approach_table.cpp
@@ -234,7 +236,7 @@ catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
 #        #test/BulletContinuousMotionValidatorTest.cpp
 #        test/JsonTests.cpp
 #        #        test/MoveitPathLengthObjectiveTest.cpp
-#        test/clustering_tests.cpp
+       test/clustering_tests.cpp
 #        test/collision_checking_test.cpp
        test/ptp_tests.cpp
         ${SHARED_SRC}
