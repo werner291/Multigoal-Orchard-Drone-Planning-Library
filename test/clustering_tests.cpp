@@ -145,7 +145,7 @@ TEST_F(ClusteringTests, test_cluster_sinespacing) {
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
     // Expand the (singleton) clusters, connecting them to others within range.
-    clustering::create_cluster_candidates(ptp, samples, 3.5, clusters);
+   clusters = clustering::create_cluster_candidates(ptp, samples, 3.5, clusters, SIZE_MAX);
 
     // Assert member symmetry.
     for (size_t cluster_id = 0; cluster_id < clusters.size(); cluster_id++) {
@@ -162,7 +162,7 @@ TEST_F(ClusteringTests, test_cluster_sinespacing) {
         for (auto &member: cluster.members) {
             member.second = state_space->distance(
                     cluster.representative->get(),
-                    cluster.representative->get()
+                    clusters[member.first].representative->get()
             );
         }
     }
@@ -171,6 +171,7 @@ TEST_F(ClusteringTests, test_cluster_sinespacing) {
     size_t count_niners = 0;
     for (const auto &cluster: clusters) {
         EXPECT_GE(9, cluster.members.size());
+        std::cout << "Cluster size: " << cluster.members.size() << std::endl;
         if (cluster.members.size() == 9) count_niners += 1;
     }
     EXPECT_EQ(20, count_niners);

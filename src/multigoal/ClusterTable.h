@@ -50,7 +50,8 @@ namespace clustering {
     std::vector<Cluster> create_cluster_candidates(PointToPointPlanner &point_to_point_planner,
                                                    const std::vector<StateAtGoal> &goal_samples,
                                                    double threshold,
-                                                   const std::vector<Cluster> &clusters);
+                                                   const std::vector<Cluster> &clusters,
+                                                   const size_t max_cluster_size = 5);
 
     std::vector<double> computeDensities(const std::vector<Cluster> &new_clusters);
 

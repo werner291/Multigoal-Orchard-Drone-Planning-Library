@@ -45,7 +45,8 @@ ompl::NearestNeighborsGNAT<size_t> buildGoalSampleGnat(const std::vector<StateAt
 std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &point_to_point_planner,
                                                            const std::vector<StateAtGoal> &goal_samples,
                                                            double threshold,
-                                                           const std::vector<Cluster> &clusters) {
+                                                           const std::vector<Cluster> &clusters,
+                                                           const size_t max_cluster_size) {
 
     // Build a GNAT to perform large-scale NN-lookups.
     ompl::NearestNeighborsGNAT<size_t> gnat;
@@ -64,8 +65,8 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
         std::vector<size_t> nearby_samples;
         gnat.nearestR(cluster, threshold, nearby_samples);
 
-        if (nearby_samples.size() > 5) {
-            nearby_samples.resize(5);
+        if (nearby_samples.size() > max_cluster_size) {
+            nearby_samples.resize(max_cluster_size);
         }
 
         // The new cluster
@@ -85,8 +86,8 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
             if (nearby_sample == cluster) continue;
             else if (nearby_sample < cluster) {
                 // We've already seen this one, so just look up if we can connect to it.
-                auto itr = new_clusters[nearby_sample].members.find(nearby_sample);
-                if (itr == new_clusters[nearby_sample].members.end()) {
+                auto itr = new_clusters[nearby_sample].members.find(cluster);
+                if (itr != new_clusters[nearby_sample].members.end()) {
                     // Yes, a path has already been planned to this representative, so just look it up.
                     // As a bonus, this makes the connections symmetric.
                     new_cluster.members[nearby_sample] = itr->second;
@@ -103,9 +104,14 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
 
                 // If successful, store this as a cluster member.
                 if (ptp) {
+
+
                     new_cluster.members[nearby_sample] = ptp->length();
                     new_cluster.goals_reachable.insert(clusters[nearby_sample].goals_reachable.begin(),
                                                        clusters[nearby_sample].goals_reachable.end());
+                    std::cout << "Yes!" << new_cluster.members.size() <<  std::endl;
+                } else {
+                    std::cout << "Planning to one neighbour failed." << std::endl;
                 }
             }
         }
