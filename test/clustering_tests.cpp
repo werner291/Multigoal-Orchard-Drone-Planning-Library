@@ -12,6 +12,7 @@
 #include "../src/experiment_utils.h"
 #include "../src/multigoal/ClusterTable.h"
 #include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
+#include "../src/DroneStateConstraintSampler.h"
 
 /**
  * \brief This produces a set of monotonically increasing x-coordinates spaced with a smooth, wave-like pattern
@@ -54,7 +55,7 @@ protected:
         std::vector<clustering::StateAtGoal> samples;
 
         moveit::core::RobotState st(drone);
-        st.setToRandomPositions();
+        DroneStateConstraintSampler::randomizeUprightWithBase(st);
 
         for (int i = -100; i < 100; ++i) {
 
@@ -217,7 +218,7 @@ TEST(ClusteringSubroutineTests, generate_combinations_test) {
     auto itr = expected.begin();
 
     clustering::generate_combinations<size_t, size_t>(elements, 0, [&](std::vector<size_t>::const_iterator first,
-                                                                       std::vector<size_t>::const_iterator last,
+        std::vector<size_t>::const_iterator last,
                                                                        const size_t &super_value) {
         EXPECT_NE(itr, expected.end());
 
