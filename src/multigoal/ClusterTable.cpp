@@ -14,8 +14,11 @@ std::vector<StateAtGoal> clustering::takeInitialSamples(const GoalSet &goals, co
         for (size_t i = 0; i < samples_per_goal; ++i) {
             ompl::base::ScopedStatePtr goal_sample(new ompl::base::ScopedState(si));
             goals[goal_idx]->sampleGoal(goal_sample->get());
-            goal_samples.push_back({goal_idx, goal_sample});
+            if (si->isValid(goal_sample->get())) {
+                goal_samples.push_back({goal_idx, goal_sample});
+            }
         }
+
     }
 
     return goal_samples;
@@ -70,7 +73,7 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
         }
 
         // The new cluster
-        Cluster new_cluster{
+        Cluster new_cluster {
                 clusters[cluster].representative,
                 {{cluster, 0.0}},
                 clusters[cluster].goals_reachable
