@@ -485,17 +485,16 @@ TEST_F(ClusteringTests, test_full_wall) {
     for (const auto &level: clusters) {
         std::unordered_set<size_t> visited_goals;
 
-        fout << "========= Level =========" << std::endl;
+        fout << "========= Level ========= " << std::endl;
 
-        for (const auto &cluster: level) {
+        for (size_t cluster_id = 0; cluster_id < level.size(); cluster_id++) {
+            const auto& cluster = level[cluster_id];
             visited_goals.insert(cluster.goals_reachable.begin(), cluster.goals_reachable.end());
 
             moveit::core::RobotState st(drone);
             state_space->copyToRobotState(st, cluster.representative->get());
 
             st.update(true);
-
-//            auto ee_tf = st.getGlobalLinkTransform("end_effector");
 
             fout << st.getVariablePosition(0) << ", "
                       << st.getVariablePosition(1) << ", "
@@ -505,6 +504,8 @@ TEST_F(ClusteringTests, test_full_wall) {
                 fout << item.first << ",";
             }
             fout << std::endl;
+
+            EXPECT_LE(cluster.members.size(), clustering::DEFAULT_CLUSTER_SIZE);
         }
 
         EXPECT_EQ(visited_goals.size(), goals.size());

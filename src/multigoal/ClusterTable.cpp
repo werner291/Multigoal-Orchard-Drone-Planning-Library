@@ -18,7 +18,6 @@ std::vector<StateAtGoal> clustering::takeInitialSamples(const GoalSet &goals, co
                 goal_samples.push_back({goal_idx, goal_sample});
             }
         }
-
     }
 
     return goal_samples;
@@ -45,6 +44,34 @@ ompl::NearestNeighborsGNAT<size_t> buildGoalSampleGnat(const std::vector<StateAt
     return gnat;
 }
 
+ompl::NearestNeighborsGNAT<size_t> buildLayerGNAT(const std::vector<Cluster> &clusters) {
+    // Build a GNAT to perform large-scale NN-lookups.
+    ompl::NearestNeighborsGNAT<size_t> gnat;
+    gnat.setDistanceFunction([&](const size_t &a, const size_t &b) {
+        return clusters[a].representative->distance(clusters[b].representative->get());
+    });
+    for (size_t cluster = 0; cluster < clusters.size(); cluster++) gnat.add(cluster);
+    return gnat;
+}
+
+std::vector<size_t> search_r_try_n(const ompl::NearestNeighborsGNAT<size_t>& gnat,
+                                   size_t around,
+                                   double radius,
+                                   size_t n) {
+    std::vector<size_t> nearby_samples;
+    gnat.nearestR(around, radius, nearby_samples);
+    truncate(nearby_samples, n);
+    return nearby_samples;
+}
+
+std::vector<size_t> nearestK(const ompl::NearestNeighborsGNAT<size_t>& gnat,
+                                   size_t around,
+                                   size_t n) {
+    std::vector<size_t> nearby_samples;
+    gnat.nearestK(around, n, nearby_samples);
+    return nearby_samples;
+}
+
 std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &point_to_point_planner,
                                                            const std::vector<StateAtGoal> &goal_samples,
                                                            double threshold,
@@ -52,11 +79,7 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
                                                            const size_t max_cluster_size) {
 
     // Build a GNAT to perform large-scale NN-lookups.
-    ompl::NearestNeighborsGNAT<size_t> gnat;
-    gnat.setDistanceFunction([&](const size_t &a, const size_t &b) {
-        return clusters[a].representative->distance(clusters[b].representative->get());
-    });
-    for (size_t cluster = 0; cluster < clusters.size(); cluster++) gnat.add(cluster);
+    auto gnat = buildLayerGNAT(clusters);
 
     // We keep a list of new clusters to return.
     std::vector<Cluster> new_clusters;
@@ -64,60 +87,59 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
     // There is one candidate for every sub-cluster in the previous layer.
     for (size_t cluster = 0; cluster < clusters.size(); cluster++) {
 
-        // Find which sub-clusters are near this sub-cluster by checking distance to the representative.
-        std::vector<size_t> nearby_samples;
-        gnat.nearestR(cluster, threshold, nearby_samples);
-
-        if (nearby_samples.size() > max_cluster_size) {
-            nearby_samples.resize(max_cluster_size);
-        }
-
         // The new cluster
-        Cluster new_cluster {
-                clusters[cluster].representative,
-                {{cluster, 0.0}},
-                clusters[cluster].goals_reachable
-        };
+        auto new_cluster = Cluster::new_around(clusters, cluster);
+
+        // Find which sub-clusters are near this sub-cluster by checking distance to the representative.
+        auto nearby_samples = nearestK(gnat, cluster, max_cluster_size);
+//         auto nearby_samples = search_r_try_n(gnat, cluster, threshold, max_cluster_size);
 
         std::cout << "Attempting to connect to " << nearby_samples.size() << " neighbours." << std::endl;
+
+        size_t successes = 0;;
 
         // Try to connect to nearby sub-clusters.
         for (const auto &nearby_sample: nearby_samples) {
 
-
             // Filter out the cluster itself.
-            if (nearby_sample == cluster) continue;
-            else if (nearby_sample < cluster) {
-                // We've already seen this one, so just look up if we can connect to it.
-                auto itr = new_clusters[nearby_sample].members.find(cluster);
-                if (itr != new_clusters[nearby_sample].members.end()) {
-                    // Yes, a path has already been planned to this representative, so just look it up.
-                    // As a bonus, this makes the connections symmetric.
-                    new_cluster.members[nearby_sample] = itr->second;
-                } // Else, it was probably unreachable.
+            if (nearby_sample == cluster) { continue;
+//             else if (nearby_sample < cluster) {
+//                 // We've already seen this one, so just look up if we can connect to it.
+//                 auto itr = new_clusters[nearby_sample].members.find(cluster);
+//                 if (itr != new_clusters[nearby_sample].members.end()) {
+//                     // Yes, a path has already been planned to this representative, so just look it up.
+//                     // As a bonus, this makes the connections symmetric.
+//                     new_cluster.add_reachable(clusters, nearby_sample, itr->second);
+//                     successes++;
+//                 } else { // Else, it was probably unreachable.
+//                     std::cout << "Cache lookup failed." << std::endl;
+//                 }
             } else {
-//                 point_to_point_planner.getPlanner()->clear();
-//     assert(false);
-
                 // The expensive part: Try to plan from representative to representative.
                 auto ptp = point_to_point_planner.planToOmplState(0.2,
                                                                   clusters[cluster].representative->get(),
                                                                   clusters[nearby_sample].representative->get());
-//     assert(false);
+
+                std::cout << "Attempting to connect to number " << nearby_sample << std::endl;
 
                 // If successful, store this as a cluster member.
                 if (ptp) {
+                    new_cluster.add_reachable(clusters, nearby_sample, ptp->length());
+                    std::cout << "Connected to number " << nearby_sample << std::endl;
 
-
-                    new_cluster.members[nearby_sample] = ptp->length();
-                    new_cluster.goals_reachable.insert(clusters[nearby_sample].goals_reachable.begin(),
-                                                       clusters[nearby_sample].goals_reachable.end());
-                    std::cout << "Yes!" << new_cluster.members.size() <<  std::endl;
                 } else {
-                    std::cout << "Planning to one neighbour failed." << std::endl;
+                    std::cout << "planning failed" << std::endl;
                 }
             }
         }
+
+        std::cout << "planning succeeded " << successes << " times, to:";
+
+        for (auto m:new_cluster.members) {
+            std::cout << m.first << ",";
+        }
+        std::cout << std::endl;
+
 
         new_clusters.push_back(new_cluster);
     }
@@ -151,7 +173,18 @@ std::vector<double> clustering::computeDensities(const std::vector<Cluster> &new
     return densities;
 }
 
-std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clusters, std::vector<double> densities) {
+std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clusters,
+                                                std::vector<double> densities) {
+
+    std::cout << "Selecting from " << clusters.size() << " candidates." << std::endl;
+
+//     for (auto cl : clusters) {
+//         std::cout << "Cluster with members: ";
+//         for (auto m:cl.members) {
+//             std::cout << m.first << ",";
+//         }
+//         std::cout << std::endl;
+//     }
 
     struct InQueue {
         size_t cluster_id;
@@ -162,6 +195,7 @@ std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clus
     auto cmp = [&](const InQueue &a, const InQueue &b) {
         return a.density_at_insertion < b.density_at_insertion;
     };
+
     std::priority_queue<InQueue, std::vector<InQueue>, decltype(cmp)> by_density(cmp);
     std::vector<bool> cluster_visited(densities.size());
 
@@ -179,26 +213,43 @@ std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clus
         // This is a global maximum, hence also a local maximum.
         InQueue current_cluster = by_density.top();
 
+//         std::cout << "Looking at cluster " << current_cluster.cluster_id << std::endl;
+
         // If the cluster has been visited, it is already a part of one of the new clusters.
         // If the density at insertion doesn't match, perform lazy deletion since we'll be
         // running into this cluster again later in the correct order.
         if (cluster_visited[current_cluster.cluster_id] ||
             densities[current_cluster.cluster_id] != current_cluster.density_at_insertion) {
+            // Do nothing.
+
+            if (densities[current_cluster.cluster_id] != current_cluster.density_at_insertion) {
+//                 std::cout << "Rejected by lazy-deletion." << std::endl;
+            } else {
+//                 std::cout << "Pruned a cluster." << std::endl;
+            }
+
+
         } else {
             assert(!cluster_visited[current_cluster.cluster_id]);
             cluster_visited[current_cluster.cluster_id] = true;
+//             std::cout << "Accepted:" << current_cluster.cluster_id << std::endl;
 
             new_clusters.push_back(current_cluster.cluster_id);
 
             for (const auto &member: clusters[current_cluster.cluster_id].members) {
                 cluster_visited[member.first] = true;
-                densities[member.first] -= 1.0 / member.second;
-                by_density.push({member.first, densities[member.first]});
+//                 if (member.first != current_cluster.cluster_id)
+//                     std::cout << "Marked a member cluster as visited:" << member.first << std::endl;
+                // FIXME Should update the SECOND ORDER densities
+//                 densities[member.first] -= 1.0 / member.second;
+//                 by_density.push({member.first, densities[member.first]});
             }
         }
 
         by_density.pop();
     }
+
+    std::cout << "Selected: " << new_clusters.size() << std::endl;
 
     return new_clusters;
 }

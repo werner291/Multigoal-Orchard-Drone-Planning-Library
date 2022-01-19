@@ -41,4 +41,8 @@ Eigen::Quaterniond sampleInformedQuaternion(const Eigen::Quaterniond& qa,
  */
 double quat_dist(const Eigen::Quaterniond& qs1, const Eigen::Quaterniond& qs2);
 
+template<typename V> void truncate(std::vector<V>& v, size_t n) {
+    if (v.size() > n) {v.resize(n);}
+}
+
 #endif //NEW_PLANNERS_GENERAL_UTLITIES_CPP

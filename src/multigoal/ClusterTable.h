@@ -41,17 +41,28 @@ namespace clustering {
         std::map<size_t, double> members;
         // A sorted set of goal indices that are reachable through a goal sample within this cluster sub-hierarchy.
         std::set<size_t> goals_reachable;
+
+        void add_reachable(const std::vector<GenericCluster<Repr>>& parent_layer, size_t which, double distance) {
+            members[which] = distance;
+            goals_reachable.insert(parent_layer[which].goals_reachable.begin(), parent_layer[which].goals_reachable.end());
+        }
+
+        static GenericCluster<Repr> new_around(const std::vector<GenericCluster<Repr>>& parent_layer, size_t parent) {
+            return {parent_layer[parent].representative, {{parent, 0.0}}, parent_layer[parent].goals_reachable};
+        }
     };
 
     typedef GenericCluster<ompl::base::ScopedStatePtr> Cluster;
 
     std::vector<Cluster> buildTrivialClusters(const std::vector<StateAtGoal> &goal_samples);
 
+    const size_t DEFAULT_CLUSTER_SIZE = 5;
+
     std::vector<Cluster> create_cluster_candidates(PointToPointPlanner &point_to_point_planner,
                                                    const std::vector<StateAtGoal> &goal_samples,
                                                    double threshold,
                                                    const std::vector<Cluster> &clusters,
-                                                   const size_t max_cluster_size = 5);
+                                                   const size_t max_cluster_size = DEFAULT_CLUSTER_SIZE);
 
     std::vector<double> computeDensities(const std::vector<Cluster> &new_clusters);
 
