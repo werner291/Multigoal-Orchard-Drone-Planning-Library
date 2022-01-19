@@ -485,7 +485,7 @@ TEST_F(ClusteringTests, test_full_wall) {
     for (const auto &level: clusters) {
         std::unordered_set<size_t> visited_goals;
 
-        fout << "========= Level ========= " << std::endl;
+        fout << "========= Level =========" << std::endl;
 
         for (size_t cluster_id = 0; cluster_id < level.size(); cluster_id++) {
             const auto& cluster = level[cluster_id];
