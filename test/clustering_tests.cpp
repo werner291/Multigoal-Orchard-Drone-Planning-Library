@@ -427,6 +427,75 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
 
 }
 
+TEST_F(ClusteringTests, distance_matrix_test) {
+
+
+    // Build a dummy empty scene with the drone in it and the type of collision detector it expects.
+    auto scene = std::make_shared<planning_scene::PlanningScene>(drone);
+    scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+
+    // Build a space information with it.
+    auto si = initSpaceInformation(scene, drone, state_space);
+
+    std::vector<clustering::Cluster> context_cluster;
+
+    moveit::core::RobotState st(drone);
+    DroneStateConstraintSampler::randomizeUprightWithBase(st);
+
+    clustering::Cluster collective {
+        std::make_shared<ompl::base::ScopedState<>>(si),
+        {},
+        {}
+    };
+
+    size_t GRID_SIZE = 2;
+
+    for (int x = 0; x < GRID_SIZE; ++x) {
+        for (int y = 0; y < GRID_SIZE; ++y) {
+            st.setVariablePosition(0,(double)x);
+            st.setVariablePosition(1,(double)y);
+
+            auto repr = std::make_shared<ompl::base::ScopedState<>>(si);
+
+            state_space->copyToOMPLState(repr->get(), st);
+
+            context_cluster.push_back({repr, {}, {}});
+
+            collective.members[x*GRID_SIZE+y] = 1.0;
+        }
+    }
+
+    auto prms = std::make_shared<ompl::geometric::AITstar>(si);
+    auto pathLengthObjective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
+    auto sampler = std::make_shared<InformedGaussian>(state_space.get(), 2.5);
+    PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
+
+    auto dm = clustering::computeDistanceMatrix(ptp, collective, context_cluster, 0.2);
+
+    ASSERT_EQ(GRID_SIZE*GRID_SIZE,dm.size());
+    for (auto row : dm) ASSERT_EQ(GRID_SIZE*GRID_SIZE,row.size());
+
+    ompl::RNG rng;
+
+    for (size_t i : boost::irange(0,100)) {
+        size_t x1 = rng.uniformInt(0,GRID_SIZE-1);
+        size_t x2 = rng.uniformInt(0,GRID_SIZE-1);
+        size_t y1 = rng.uniformInt(0,GRID_SIZE-1);
+        size_t y2 = rng.uniformInt(0,GRID_SIZE-1);
+
+        std::cout << x1 << "," << y1 << std::endl;
+        std::cout << "2: " << x2 << "," << y2 << std::endl;
+
+        double expected_distance =
+            std::sqrt((std::pow((double)x1-(double)x2,2)
+                     + std::pow((double)y1-(double)y2,2)));
+
+        EXPECT_NEAR(expected_distance,dm[x1*GRID_SIZE+y1][x2*GRID_SIZE+y2],0.1);
+        EXPECT_NEAR(expected_distance,dm[x2*GRID_SIZE+y2][x1*GRID_SIZE+y1],0.1);
+    }
+
+}
+
 /// In this test, the planning scene consists of a single, tall and thin wall.
 /// Apples are arranged in a line on both sides; the line extends to the end of the wall on one side.
 ///
@@ -497,8 +566,8 @@ TEST_F(ClusteringTests, test_full_wall) {
             st.update(true);
 
             fout << st.getVariablePosition(0) << ", "
-                      << st.getVariablePosition(1) << ", "
-                      << st.getVariablePosition(2) << std::endl;
+                 << st.getVariablePosition(1) << ", "
+                 << st.getVariablePosition(2) << std::endl;
 
             for (const auto &item : cluster.members) {
                 fout << item.first << ",";
@@ -530,14 +599,14 @@ TEST_F(ClusteringTests, test_full_wall) {
     EXPECT_EQ(ordering.size(), goals.size());
 
     for (size_t i = 0; i < ordering.size(); ++i) {
-        EXPECT_EQ(goal_samples[ordering[i]].goal_idx, i);
-    }
-
-    for (size_t i = 0; i < ordering.size(); ++i) {
         moveit::core::RobotState st(drone);
         state_space->copyToRobotState(st, goal_samples[ordering[i]].state->get());
         std::cout << st.getVariablePosition(0) << ", "
                   << st.getVariablePosition(1) << ", "
                   << st.getVariablePosition(2) << std::endl;
+    }
+
+    for (size_t i = 0; i < ordering.size(); ++i) {
+        EXPECT_EQ(goal_samples[ordering[i]].goal_idx, i);
     }
 }

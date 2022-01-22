@@ -66,6 +66,16 @@ namespace clustering {
 
     std::vector<double> computeDensities(const std::vector<Cluster> &new_clusters);
 
+    typedef std::vector<std::vector<double> > DistanceMatrix;
+
+    DistanceMatrix computeDistanceMatrix(PointToPointPlanner &point_to_point_planner,
+                                         const std::vector<Cluster> &clusters);
+
+    DistanceMatrix computeDistanceMatrix(PointToPointPlanner &point_to_point_planner,
+                                         const Cluster& forCluster,
+                                         const std::vector<Cluster> &clusters,
+                                         double planningTimePerPair = 0.2);
+
     /**
      * Taking a vector of clusters as input, this algorithm will select a subset of the available clusters,
      * based on maximum local density or on whether the cluster is an outlier.
@@ -83,8 +93,12 @@ namespace clustering {
      */
     std::vector<size_t> select_clusters(const std::vector<Cluster> &clusters, std::vector<double> densities);
 
-    std::vector<std::vector<Cluster>>
-    buildClusters(PointToPointPlanner &point_to_point_planner, const std::vector<StateAtGoal> &goal_samples);
+    typedef std::vector<std::vector<Cluster>> ClusterHierarchy;
+
+    ClusterHierarchy buildClusters(PointToPointPlanner &point_to_point_planner,
+                                   const std::vector<StateAtGoal> &goal_samples);
+
+    std::vector<std::vector<DistanceMatrix>> computeAllDistances(PointToPointPlanner &point_to_point_planner, const ClusterHierarchy& clusters);
 
     std::vector<size_t>
     visit_clusters(const std::vector<std::vector<Cluster>> &clusters,

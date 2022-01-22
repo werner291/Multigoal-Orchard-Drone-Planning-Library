@@ -2,6 +2,7 @@
 #include "ClusterTable.h"
 
 #include <random>
+#include <boost/range/irange.hpp>
 
 using namespace clustering;
 
@@ -158,6 +159,20 @@ std::vector<Cluster> clustering::buildTrivialClusters(const std::vector<StateAtG
 
     return clusters;
 }
+
+ std::vector<std::vector<DistanceMatrix>> clustering::computeAllDistances(PointToPointPlanner &point_to_point_planner, const ClusterHierarchy& clusters) {
+
+        std::vector<std::vector<DistanceMatrix>> distances(clusters.size()-1);
+
+        for (size_t layer_i = 1; layer_i < clusters.size(); layer_i++) {
+            distances[layer_i] = boost::copy_range<std::vector<DistanceMatrix> >(
+                clusters[layer_i] | boost::adaptors::transformed([&](const Cluster& cl) {
+                return computeDistanceMatrix(point_to_point_planner, cl, clusters[layer_i-1]);
+            }));
+        }
+
+        return distances;
+    }
 
 std::vector<double> clustering::computeDensities(const std::vector<Cluster> &new_clusters) {
     std::vector<double> densities;
@@ -354,6 +369,41 @@ clustering::visit_clusters_naive(const std::vector<std::vector<Cluster>> &cluste
 
     return visit_order;
 };
+
+
+std::vector<std::vector<double>> clustering::computeDistanceMatrix(
+    PointToPointPlanner &point_to_point_planner,
+    const Cluster& cluster,
+    const std::vector<Cluster> &parent_clusters,
+    double planningTimePerPair) {
+
+    std::vector<ompl::base::ScopedStatePtr> states;
+    states.reserve(cluster.members.size());
+
+    for (const auto& m : cluster.members) {
+        states.push_back(parent_clusters[m.first].representative);
+    }
+
+    std::vector<std::vector<double>> output(states.size());
+
+    for (size_t i : boost::irange<size_t>(0,states.size())) {
+        output[i].resize(states.size());
+        output[i][i] = 0.0;
+        for (size_t j = 0; j < i; ++j) {
+            auto ptp = point_to_point_planner.planToOmplState(planningTimePerPair,states[i]->get(),states[j]->get());
+            output[i][j] = ptp ? ptp->length() : INFINITY;
+            output[j][i] = output[i][j];
+            std::cout << "Planning from " << i << " to " << j << ": " << output[j][i] << std::endl;
+
+        }
+    }
+
+    return output;
+
+}
+
+
+
 
 //
 //std::vector<size_t>
