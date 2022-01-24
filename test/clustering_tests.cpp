@@ -533,7 +533,7 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     auto si = initSpaceInformation(scene, drone, state_space);
 
-    static const int SAMPLES_PER_GOAL = 5;
+    static const int SAMPLES_PER_GOAL = 20;
 
     auto goals = constructAppleGoals(si, apples);
 
@@ -670,7 +670,9 @@ TEST_F(ClusteringTests, test_full_wall) {
     for (size_t i = 0; i < ordering.size(); ++i) {
         moveit::core::RobotState st(drone);
         state_space->copyToRobotState(st, goal_samples[ordering[i]].state->get());
-        std::cout << st.getVariablePosition(0) << ", "
+
+        std::cout << goal_samples[ordering[i]].goal_idx << " - "
+                  << st.getVariablePosition(0) << ", "
                   << st.getVariablePosition(1) << ", "
                   << st.getVariablePosition(2) << std::endl;
     }
