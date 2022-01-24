@@ -42,12 +42,13 @@ namespace clustering {
         // A sorted set of goal indices that are reachable through a goal sample within this cluster sub-hierarchy.
         std::set<size_t> goals_reachable;
 
-        void add_reachable(const std::vector<GenericCluster<Repr>>& parent_layer, size_t which, double distance) {
+        void add_reachable(const std::vector<GenericCluster<Repr>> &parent_layer, size_t which, double distance) {
             members[which] = distance;
-            goals_reachable.insert(parent_layer[which].goals_reachable.begin(), parent_layer[which].goals_reachable.end());
+            goals_reachable.insert(parent_layer[which].goals_reachable.begin(),
+                                   parent_layer[which].goals_reachable.end());
         }
 
-        static GenericCluster<Repr> new_around(const std::vector<GenericCluster<Repr>>& parent_layer, size_t parent) {
+        static GenericCluster<Repr> new_around(const std::vector<GenericCluster<Repr>> &parent_layer, size_t parent) {
             return {parent_layer[parent].representative, {{parent, 0.0}}, parent_layer[parent].goals_reachable};
         }
     };
@@ -62,17 +63,18 @@ namespace clustering {
                                                    const std::vector<StateAtGoal> &goal_samples,
                                                    double threshold,
                                                    const std::vector<Cluster> &clusters,
-                                                   const size_t max_cluster_size = DEFAULT_CLUSTER_SIZE);
+                                                   const size_t max_cluster_size = DEFAULT_CLUSTER_SIZE,
+                                                   double time_per_ptp = 0.2);
 
     std::vector<double> computeDensities(const std::vector<Cluster> &new_clusters);
 
-    typedef std::vector<std::vector<double> > DistanceMatrix;
+    typedef std::map<std::pair<size_t,size_t>,double> DistanceMatrix;
+
+//    DistanceMatrix computeDistanceMatrix(PointToPointPlanner &point_to_point_planner,
+//                                         const std::vector<Cluster> &clusters);
 
     DistanceMatrix computeDistanceMatrix(PointToPointPlanner &point_to_point_planner,
-                                         const std::vector<Cluster> &clusters);
-
-    DistanceMatrix computeDistanceMatrix(PointToPointPlanner &point_to_point_planner,
-                                         const Cluster& forCluster,
+                                         const Cluster &forCluster,
                                          const std::vector<Cluster> &clusters,
                                          double planningTimePerPair = 0.2);
 
@@ -95,10 +97,12 @@ namespace clustering {
 
     typedef std::vector<std::vector<Cluster>> ClusterHierarchy;
 
+
     ClusterHierarchy buildClusters(PointToPointPlanner &point_to_point_planner,
                                    const std::vector<StateAtGoal> &goal_samples);
 
-    std::vector<std::vector<DistanceMatrix>> computeAllDistances(PointToPointPlanner &point_to_point_planner, const ClusterHierarchy& clusters);
+    std::vector<std::vector<DistanceMatrix>>
+    computeAllDistances(PointToPointPlanner &point_to_point_planner, const ClusterHierarchy &clusters);
 
     std::vector<size_t>
     visit_clusters(const std::vector<std::vector<Cluster>> &clusters,
@@ -216,9 +220,9 @@ namespace clustering {
                     VisitationOrderSolution new_cost = cost;
 
                     new_cost.visit_order.push_back({
-                        *(end - 1),
-                        {}
-                    });
+                                                           *(end - 1),
+                                                           {}
+                                                   });
 
                     if (begin + 1 == end) {
                         // We're at the start of the tour, so the cost is from the starting point
@@ -255,7 +259,9 @@ namespace clustering {
                 });
     }
 
-    /**
+    template<typename P>
+    using ClusterDistanceFn = std::function<double(const std::variant<P, size_t> &,const std::variant<P, size_t> &, size_t, size_t)>;
+/**
  *
  * Iteratively descend the hierarchy of clusters, and determine a good traversal order.
  *
@@ -268,7 +274,7 @@ namespace clustering {
     template<typename P>
     std::vector<size_t> determine_visitation_order(const P &start_pos,
                                                    const std::vector<std::vector<clustering::GenericCluster<P>>> &hierarchy,
-                                                   const std::function<double(const P&, const P&)> distanceFn) {
+                                                   const ClusterDistanceFn<P>& distanceFn) {
 
         assert(hierarchy[0].size() == 1);
 
@@ -277,27 +283,29 @@ namespace clustering {
 
         // Base case: hierarchy is guaranteed to have exactly one cluster at the top.
         std::vector<clustering::Visitation> previous_layer_order = {
-                {0,hierarchy[0][0].goals_reachable}
+                {0, hierarchy[0][0].goals_reachable}
         };
 
         // Step case: go layer-by-layer down the hierarchy.
         for (size_t layer_i = 1; layer_i < hierarchy.size(); ++layer_i) {
 
+            std::cout << "Ordering on layer " << layer_i << std::endl;
+
             // Build up a visitation order.
             std::vector<clustering::Visitation> layer_order;
 
             // Get a reference to the current layer of the hierarchy...
-            const std::vector<Cluster>& layer = hierarchy[layer_i];
+            const std::vector<Cluster> &layer = hierarchy[layer_i];
             // And the lower LOD layer that we just came through.
-            const std::vector<Cluster>& previous_layer = hierarchy[layer_i-1];
+            const std::vector<Cluster> &previous_layer = hierarchy[layer_i - 1];
 
             // In the previous step, we determined an order in which to visit the clusters.
             // We will now do so, in that order.
             for (size_t visit_i = 0; visit_i < previous_layer_order.size(); ++visit_i) {
 
                 // We're looking for the optimal order in which to traverse the cluster members.
-                clustering::VisitationOrderSolution sub_layer_best_solution {
-                    {}, INFINITY, {}
+                clustering::VisitationOrderSolution sub_layer_best_solution{
+                        {}, INFINITY, {}
                 };
 
                 // The ordering is aware of entry-and-exit-points.
@@ -305,14 +313,14 @@ namespace clustering {
                 P entry_point = start_pos;
                 if (visit_i > 0) {
                     // On subsequent sub-clusters, we use the previous cluster's representative as a reference point.
-                    entry_point = layer[previous_layer_order[visit_i-1].subcluster_index].representative;
+                    entry_point = layer[previous_layer_order[visit_i - 1].subcluster_index].representative;
                 }
 
                 // Same for the exit point, except that we don't have a specified end point for the global sequence,
                 // so it's only relevant if we know we'll be visiting another cluster after this.
                 std::optional<P> exit_point;
                 if (visit_i + 1 < previous_layer_order.size()) {
-                    exit_point = layer[previous_layer_order[visit_i+1].subcluster_index].representative;
+                    exit_point = layer[previous_layer_order[visit_i + 1].subcluster_index].representative;
                 }
 
                 // Get the cluster members and put them in a vector.
@@ -320,13 +328,21 @@ namespace clustering {
                         previous_layer[previous_layer_order[visit_i].subcluster_index].members
                         | boost::adaptors::map_keys);
 
+//                // Distance function. Either looks up the representative of a cluster based on index,
+//                // or uses the given reference point directly.
+//                auto distance = [&](const std::variant<P, size_t> &a,
+//                                    const std::variant<P, size_t> &b) {
+//                    const auto repr_a = std::holds_alternative<P>(a) ? std::get<P>(a) : layer[std::get<size_t>(
+//                            a)].representative;
+//                    const auto repr_b = std::holds_alternative<P>(b) ? std::get<P>(b) : layer[std::get<size_t>(
+//                            b)].representative;
+//                    return distanceFn(repr_a, repr_b);
+//                };
+
                 // Distance function. Either looks up the representative of a cluster based on index,
                 // or uses the given reference point directly.
-                auto distance = [&](const std::variant<P, size_t> &a,
-                        const std::variant<P, size_t> &b) {
-                    const auto repr_a = std::holds_alternative<P>(a) ? std::get<P>(a) : layer[std::get<size_t>(a)].representative;
-                    const auto repr_b = std::holds_alternative<P>(b) ? std::get<P>(b) : layer[std::get<size_t>(b)].representative;
-                    return distanceFn(repr_a, repr_b);
+                auto distance = [&](const std::variant<P, size_t> &a, const std::variant<P, size_t> &b) {
+                    return distanceFn(a, b, layer_i, previous_layer_order[visit_i].subcluster_index);
                 };
 
                 // Look up a cluster's reachable goal identifiers.
@@ -348,13 +364,13 @@ namespace clustering {
                         });
 
                 // Concatenate to the total solution for this abstraction layer.
-                for (const auto &visit : sub_layer_best_solution.visit_order) {
+                for (const auto &visit: sub_layer_best_solution.visit_order) {
                     layer_order.push_back({
-                        // Note: generate_visitations produces a vector of indices into the vector given to it,
-                        // so we need to perform a lookup to translate to cluster layer indices.
-                        members_vec[visit.subcluster_index],
-                        visit.goals_to_visit
-                    });
+                                                  // Note: generate_visitations produces a vector of indices into the vector given to it,
+                                                  // so we need to perform a lookup to translate to cluster layer indices.
+                                                  members_vec[visit.subcluster_index],
+                                                  visit.goals_to_visit
+                                          });
                 }
             }
 
@@ -363,7 +379,7 @@ namespace clustering {
 
         // Strip the goal visitation information and just return the indices as a vector.
         return boost::copy_range<std::vector<size_t>>(
-                previous_layer_order | boost::adaptors::transformed([](const auto& elt) {
+                previous_layer_order | boost::adaptors::transformed([](const auto &elt) {
                     return elt.subcluster_index;
                 }));
     }

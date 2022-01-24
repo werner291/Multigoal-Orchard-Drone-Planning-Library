@@ -120,7 +120,7 @@ TEST_F(ClusteringTests, test_sampling) {
 
 /// Arrange the goal samples positioned using `makeLineOfSampleClusters` in order to
 /// test the density-based cluster construction step.
-TEST_F(ClusteringTests, test_cluster_sinespacing) {
+TEST_F(ClusteringTests, DISABLED_test_cluster_sinespacing) {
 
     // Build a dummy empty scene with the drone in it and the type of collision detector it expects.
     auto scene = std::make_shared<planning_scene::PlanningScene>(drone);
@@ -145,7 +145,7 @@ TEST_F(ClusteringTests, test_cluster_sinespacing) {
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
     // Expand the (singleton) clusters, connecting them to others within range.
-   clusters = clustering::create_cluster_candidates(ptp, samples, 3.5, clusters, SIZE_MAX);
+   clusters = clustering::create_cluster_candidates(ptp, samples, 3.5, clusters, 11, 0.1);
 
     // Assert member symmetry.
     for (size_t cluster_id = 0; cluster_id < clusters.size(); cluster_id++) {
@@ -386,7 +386,18 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
     auto traversal_order = clustering::determine_visitation_order<double>(
             start_pos,
             hierarchy,
-            [](const double& a, const double& b) {return abs(a-b);}
+            [&](const auto& a, const auto& b, size_t t, size_t cluster_i) {
+
+                const auto layer = hierarchy[t];
+
+                const auto repr_a = std::holds_alternative<double>(a) ? std::get<double>(a) : layer[std::get<size_t>(
+                        a)].representative;
+
+                const auto repr_b = std::holds_alternative<double>(b) ? std::get<double>(b) : layer[std::get<size_t>(
+                        b)].representative;
+
+                return std::abs(repr_a-repr_b);
+            }
     );
 
     auto resulting_path = boost::copy_range<std::vector<PotentialGoal>>(
@@ -428,7 +439,6 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
 }
 
 TEST_F(ClusteringTests, distance_matrix_test) {
-
 
     // Build a dummy empty scene with the drone in it and the type of collision detector it expects.
     auto scene = std::make_shared<planning_scene::PlanningScene>(drone);
@@ -472,8 +482,7 @@ TEST_F(ClusteringTests, distance_matrix_test) {
 
     auto dm = clustering::computeDistanceMatrix(ptp, collective, context_cluster, 0.2);
 
-    ASSERT_EQ(GRID_SIZE*GRID_SIZE,dm.size());
-    for (auto row : dm) ASSERT_EQ(GRID_SIZE*GRID_SIZE,row.size());
+    ASSERT_EQ(std::pow(GRID_SIZE,4),dm.size());
 
     ompl::RNG rng;
 
@@ -490,10 +499,9 @@ TEST_F(ClusteringTests, distance_matrix_test) {
             std::sqrt((std::pow((double)x1-(double)x2,2)
                      + std::pow((double)y1-(double)y2,2)));
 
-        EXPECT_NEAR(expected_distance,dm[x1*GRID_SIZE+y1][x2*GRID_SIZE+y2],0.1);
-        EXPECT_NEAR(expected_distance,dm[x2*GRID_SIZE+y2][x1*GRID_SIZE+y1],0.1);
+        EXPECT_NEAR(expected_distance,dm[std::make_pair(x1*GRID_SIZE+y1,x2*GRID_SIZE+y2)],0.1);
+        EXPECT_NEAR(expected_distance,dm[std::make_pair(x2*GRID_SIZE+y2,x1*GRID_SIZE+y1)],0.1);
     }
-
 }
 
 /// In this test, the planning scene consists of a single, tall and thin wall.
@@ -525,7 +533,7 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     auto si = initSpaceInformation(scene, drone, state_space);
 
-    static const int SAMPLES_PER_GOAL = 10;
+    static const int SAMPLES_PER_GOAL = 5;
 
     auto goals = constructAppleGoals(si, apples);
 
@@ -547,11 +555,18 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     auto clusters = clustering::buildClusters(ptp, goal_samples);
 
+    std::cout << "Clusters built." << std::endl;
+
+    auto distanceMatrices = clustering::computeAllDistances(ptp, clusters);
+
+    std::cout << "Distance matrices computed." << std::endl;
+
     std::ofstream fout;
     fout.open("../analysis/cluster_pts.txt");
     assert(fout.is_open());
 
-    for (const auto &level: clusters) {
+    for (size_t level_id = 0; level_id < clusters.size(); level_id++) {
+        auto level = clusters[level_id];
         std::unordered_set<size_t> visited_goals;
 
         fout << "========= Level =========" << std::endl;
@@ -574,7 +589,20 @@ TEST_F(ClusteringTests, test_full_wall) {
             }
             fout << std::endl;
 
+            if (level_id + 1 < clusters.size()) {
+                for (const auto &a : cluster.members) {
+                    for (const auto &b : cluster.members) {
+                        EXPECT_NE(
+                            distanceMatrices[level_id][cluster_id].find(std::make_pair(a.first, b.first)),
+                            distanceMatrices[level_id][cluster_id].end()
+                        );
+                    }
+                }
+            }
+
             EXPECT_LE(cluster.members.size(), clustering::DEFAULT_CLUSTER_SIZE);
+
+
         }
 
         EXPECT_EQ(visited_goals.size(), goals.size());
@@ -587,8 +615,49 @@ TEST_F(ClusteringTests, test_full_wall) {
     start_state->get()->as<DroneStateSpace::StateType>()->values[0] -= 1.0; // Engineer it so it's close to one of the goals, but not on it.
     start_state->get()->as<DroneStateSpace::StateType>()->values[1] -= 1.0;
 
-    auto ordering = clustering::determine_visitation_order<ompl::base::ScopedStatePtr>(start_state,clusters,
-                                                                                       [](const auto& a, const auto& b) {return a->distance(b->get());});
+    //                // Distance function. Either looks up the representative of a cluster based on index,
+    //                // or uses the given reference point directly.
+    //                auto distance = [&](const std::variant<P, size_t> &a,
+    //                                    const std::variant<P, size_t> &b) {
+    //                    const auto repr_a = std::holds_alternative<P>(a) ? std::get<P>(a) : layer[std::get<size_t>(
+    //                            a)].representative;
+    //                    const auto repr_b = std::holds_alternative<P>(b) ? std::get<P>(b) : layer[std::get<size_t>(
+    //                            b)].representative;
+    //                    return distanceFn(repr_a, repr_b);
+    //                };
+
+    auto distance_straight = [&](const auto& a, const auto& b, size_t layer_i, size_t _in_cluster_i) {
+        const auto layer = clusters[layer_i];
+
+        const auto repr_a = std::holds_alternative<ompl::base::ScopedStatePtr>(a) ? std::get<ompl::base::ScopedStatePtr>(a) : layer[std::get<size_t>(
+                a)].representative;
+
+        const auto repr_b = std::holds_alternative<ompl::base::ScopedStatePtr>(b) ? std::get<ompl::base::ScopedStatePtr>(b) : layer[std::get<size_t>(
+                b)].representative;
+
+        return repr_a->distance(repr_b->get());
+    };
+
+    auto distance = [&](const auto& a, const auto& b, size_t layer_i, size_t in_cluster_i) {
+
+        if (std::holds_alternative<ompl::base::ScopedStatePtr>(a) || std::holds_alternative<ompl::base::ScopedStatePtr>(b)) {
+            return distance_straight(a, b, layer_i, in_cluster_i);
+        } else {
+            auto key = std::make_pair(std::get<size_t>(a),std::get<size_t>(b));
+
+            EXPECT_NE(clusters[layer_i-1][in_cluster_i].members.find(key.first),
+                      clusters[layer_i-1][in_cluster_i].members.end());
+
+            EXPECT_NE(clusters[layer_i-1][in_cluster_i].members.find(key.second),
+                      clusters[layer_i-1][in_cluster_i].members.end());
+
+            EXPECT_NE(distanceMatrices[layer_i-1][in_cluster_i].find(key),distanceMatrices[layer_i][in_cluster_i].end());
+
+            return distanceMatrices[layer_i-1][in_cluster_i][key];
+        }
+    };
+
+    auto ordering = clustering::determine_visitation_order<ompl::base::ScopedStatePtr>(start_state,clusters,distance);
 
     std::unordered_set<size_t> visited_goals;
     for (const auto &item: ordering) {

@@ -45,14 +45,17 @@ void spawn_wall(moveit_msgs::PlanningScene &planning_scene_diff) {
 
 std::vector<Apple> apples_around_wall() {
     std::vector<Apple> apples;
-    for (int i = -5; i <= 10; ++i) {
+
+    // TODO Change this back.
+
+    for (int i = 8; i <= 10; ++i) {
         apples.push_back({
                                  Eigen::Vector3d(0.5, (double) i, 5.0),
                                  Eigen::Vector3d(1.0, 0.0, 0.0),
                          });
     }
 
-    for (int i = 10; i >= -5; --i) {
+    for (int i = 10; i >= 8; --i) {
         apples.push_back({
                                  Eigen::Vector3d(-0.5, (double) i, 5.0),
                                  Eigen::Vector3d(-1.0, 0.0, 0.0),

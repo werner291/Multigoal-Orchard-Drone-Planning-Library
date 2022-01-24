@@ -1,8 +1,8 @@
 
-#include "ClusterTable.h"
-
 #include <random>
 #include <boost/range/irange.hpp>
+
+#include "ClusterTable.h"
 
 using namespace clustering;
 
@@ -77,7 +77,8 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
                                                            const std::vector<StateAtGoal> &goal_samples,
                                                            double threshold,
                                                            const std::vector<Cluster> &clusters,
-                                                           const size_t max_cluster_size) {
+                                                           const size_t max_cluster_size,
+                                                           double time_per_ptp) {
 
     // Build a GNAT to perform large-scale NN-lookups.
     auto gnat = buildLayerGNAT(clusters);
@@ -117,7 +118,7 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
 //                 }
             } else {
                 // The expensive part: Try to plan from representative to representative.
-                auto ptp = point_to_point_planner.planToOmplState(0.2,
+                auto ptp = point_to_point_planner.planToOmplState(time_per_ptp,
                                                                   clusters[cluster].representative->get(),
                                                                   clusters[nearby_sample].representative->get());
 
@@ -134,8 +135,7 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
             }
         }
 
-        std::cout << "planning succeeded " << successes << " times, to:";
-
+        std::cout << "planning succeeded to:";
         for (auto m:new_cluster.members) {
             std::cout << m.first << ",";
         }
@@ -162,12 +162,22 @@ std::vector<Cluster> clustering::buildTrivialClusters(const std::vector<StateAtG
 
  std::vector<std::vector<DistanceMatrix>> clustering::computeAllDistances(PointToPointPlanner &point_to_point_planner, const ClusterHierarchy& clusters) {
 
+     assert(clusters.size() >= 1);
+
         std::vector<std::vector<DistanceMatrix>> distances(clusters.size()-1);
 
-        for (size_t layer_i = 1; layer_i < clusters.size(); layer_i++) {
+        for (size_t layer_i = 0; layer_i + 1 < clusters.size(); ++layer_i) {
+
+            std::cout << "Computing distances for layer: " << layer_i << std::endl;
+
+            size_t i = 0;
+
             distances[layer_i] = boost::copy_range<std::vector<DistanceMatrix> >(
                 clusters[layer_i] | boost::adaptors::transformed([&](const Cluster& cl) {
-                return computeDistanceMatrix(point_to_point_planner, cl, clusters[layer_i-1]);
+
+                std::cout << "Cluster : " << (i++) << std::endl;
+
+                return computeDistanceMatrix(point_to_point_planner, cl, clusters[layer_i+1]);
             }));
         }
 
@@ -370,40 +380,40 @@ clustering::visit_clusters_naive(const std::vector<std::vector<Cluster>> &cluste
     return visit_order;
 };
 
-
-std::vector<std::vector<double>> clustering::computeDistanceMatrix(
+DistanceMatrix clustering::computeDistanceMatrix(
     PointToPointPlanner &point_to_point_planner,
     const Cluster& cluster,
     const std::vector<Cluster> &parent_clusters,
     double planningTimePerPair) {
 
-    std::vector<ompl::base::ScopedStatePtr> states;
-    states.reserve(cluster.members.size());
-
+    // For convenience, we copy over the parent cluster indices of the members.
+    std::vector<size_t> state_ids;
+    state_ids.reserve(cluster.members.size());
     for (const auto& m : cluster.members) {
-        states.push_back(parent_clusters[m.first].representative);
+        assert(m.first < parent_clusters.size());
+        state_ids.push_back(m.first);
     }
 
-    std::vector<std::vector<double>> output(states.size());
+    clustering::DistanceMatrix output;
 
-    for (size_t i : boost::irange<size_t>(0,states.size())) {
-        output[i].resize(states.size());
-        output[i][i] = 0.0;
+    for (size_t i : boost::irange<size_t>(0,state_ids.size())) {
+        output[std::make_pair(state_ids[i],state_ids[i])] = 0.0;
         for (size_t j = 0; j < i; ++j) {
-            auto ptp = point_to_point_planner.planToOmplState(planningTimePerPair,states[i]->get(),states[j]->get());
-            output[i][j] = ptp ? ptp->length() : INFINITY;
-            output[j][i] = output[i][j];
-            std::cout << "Planning from " << i << " to " << j << ": " << output[j][i] << std::endl;
 
+            auto ptp = point_to_point_planner.planToOmplState(
+                planningTimePerPair,
+                parent_clusters[state_ids[i]].representative->get(),
+                parent_clusters[state_ids[j]].representative->get());
+
+            output[std::make_pair(state_ids[i],state_ids[j])] = ptp ? ptp->length() : INFINITY;
+            output[std::make_pair(state_ids[j],state_ids[i])] = ptp ? ptp->length() : INFINITY;
+            std::cout << "Planning from " << state_ids[i] << " to " << state_ids[i];
         }
     }
 
     return output;
 
 }
-
-
-
 
 //
 //std::vector<size_t>

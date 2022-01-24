@@ -21,6 +21,7 @@ in
                 jsoncpp
                 catkin
                 cmake
+                cling
                 eigen-conversions
                 pythonPackages.numpy 
                 pythonPackages.notebook
