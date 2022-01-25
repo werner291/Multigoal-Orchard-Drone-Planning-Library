@@ -525,6 +525,12 @@ TEST_F(ClusteringTests, test_full_wall) {
     spawn_wall(planning_scene_diff);
 
     auto apples = apples_around_wall();
+
+    std::cout << "Planning for apples:" << std::endl;
+    for (const auto& apple : apples) {
+        std::cout << "    " << apple.center << std::endl;
+    }
+
     spawnApplesInPlanningScene(0.1, apples, planning_scene_diff);
 
     scene->setPlanningSceneDiffMsg(planning_scene_diff);

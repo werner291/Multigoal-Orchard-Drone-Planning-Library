@@ -125,7 +125,7 @@ catkin_package(
 ###########
 
 set(SHARED_SRC
-                src/BetweenMoveItStatesInformedSampler.cpp
+        src/BetweenMoveItStatesInformedSampler.cpp
         src/BetweenMoveItStatesInformedSampler.h
         src/BulletContinuousMotionValidator.cpp
         src/BulletContinuousMotionValidator.h
@@ -189,8 +189,6 @@ set(SHARED_SRC
         src/preorder_strategy/preorder_strategy.cpp
         src/preorder_strategy/preorder_strategy.h
         src/procedural_tree_generation.cpp
-        src/representative_states.cpp
-        src/representative_states.h
         src/SamplerWrapper.cpp
         src/SamplerWrapper.h
         src/UnionGoalSampleableRegion.cpp

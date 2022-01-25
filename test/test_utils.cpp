@@ -34,11 +34,11 @@ void spawn_wall(moveit_msgs::PlanningScene &planning_scene_diff) {
     wallCollision.id = "wall";
     wallCollision.header.frame_id = "world";
     wallCollision.primitive_poses.resize(1);
-    tf::poseEigenToMsg(Eigen::Isometry3d(Eigen::Translation3d(0.0, 0.0, 5.0)), wallCollision.primitive_poses.back());
+    tf::poseEigenToMsg(Eigen::Isometry3d(Eigen::Translation3d(0.0, 0.0, 0.0)), wallCollision.primitive_poses.back());
 
     shape_msgs::SolidPrimitive primitive;
     primitive.type = primitive.BOX;
-    primitive.dimensions = {0.1, 200.0, 10.0};
+    primitive.dimensions = {0.1, 10.0, 200.0};
     wallCollision.primitives.push_back(primitive);
     planning_scene_diff.world.collision_objects.push_back(wallCollision);
 }
@@ -48,16 +48,16 @@ std::vector<Apple> apples_around_wall() {
 
     // TODO Change this back.
 
-    for (int i = 8; i <= 10; ++i) {
+    for (int i = 0; i <= 5; ++i) {
         apples.push_back({
-                                 Eigen::Vector3d(0.5, (double) i, 5.0),
+                                 Eigen::Vector3d(0.5, (double) i, 0.0),
                                  Eigen::Vector3d(1.0, 0.0, 0.0),
                          });
     }
 
-    for (int i = 10; i >= 8; --i) {
+    for (int i = 5; i >= 0; --i) {
         apples.push_back({
-                                 Eigen::Vector3d(-0.5, (double) i, 5.0),
+                                 Eigen::Vector3d(-0.5, (double) i, 0.0),
                                  Eigen::Vector3d(-1.0, 0.0, 0.0),
                          });
     }
