@@ -5,6 +5,8 @@
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <random>
+#include <boost/fusion/include/flatten.hpp>
+#include <boost/range/combine.hpp>
 
 #include "test_utils.h"
 #include "../src/LeavesCollisionChecker.h"
@@ -13,6 +15,7 @@
 #include "../src/multigoal/ClusterTable.h"
 #include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 #include "../src/DroneStateConstraintSampler.h"
+#include "../src/general_utilities.h"
 
 /**
  * \brief This produces a set of monotonically increasing x-coordinates spaced with a smooth, wave-like pattern
@@ -218,7 +221,7 @@ TEST(ClusteringSubroutineTests, generate_combinations_test) {
 
     auto itr = expected.begin();
 
-    clustering::generate_combinations<size_t, size_t>(elements, 0, [&](std::vector<size_t>::const_iterator first,
+    generate_combinations<size_t, size_t>(elements, 0, [&](std::vector<size_t>::const_iterator first,
         std::vector<size_t>::const_iterator last,
                                                                        const size_t &super_value) {
         EXPECT_NE(itr, expected.end());
@@ -319,124 +322,111 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
     EXPECT_EQ(all_goals, goals_visited);
 
 }
-
-TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
-
-    double start_pos = -201.0;
-
-    struct PotentialGoal { double v; size_t goal_id; };
-    typedef clustering::GenericCluster<double> Cluster;
-
-    std::set<size_t> all_goals;
-
-    std::vector<PotentialGoal> points;
-    for (int x = -200; x <= 200; x += 1) {
-
-        size_t goal_i = static_cast<unsigned long>(x /* * 9 / 10 */ +  1000);
-
-        points.push_back({(double) x, goal_i});
-
-        all_goals.insert(goal_i);
-    }
-
-    std::vector<std::vector<Cluster>> hierarchy;
-    {
-        hierarchy.emplace_back(/*empty*/);
-
-        for (size_t idx = 0; idx < points.size(); ++idx) {
-            hierarchy.back().push_back({
-                                               points[idx].v, {{idx, 1.0}}, {points[idx].goal_id}
-                                       });
-        }
-
-        while (hierarchy.back().size() > 1) {
-            std::vector<Cluster> new_layer;
-
-            for (size_t idx = 0; idx < hierarchy.back().size(); idx += 5) {
-
-                size_t range_end = std::min(idx + 5, hierarchy.back().size());
-                size_t middle = idx + (range_end - idx) / 2;
-
-                Cluster new_cluster;
-
-                new_cluster.representative = hierarchy.back()[middle].representative;
-
-                for (size_t inner_idx = idx; inner_idx < range_end; ++inner_idx) {
-                    new_cluster.members[inner_idx] = 1.0;
-                    new_cluster.goals_reachable.insert(hierarchy.back()[inner_idx].goals_reachable.begin(),
-                                                       hierarchy.back()[inner_idx].goals_reachable.end());
-                }
-
-                new_layer.push_back(std::move(new_cluster));
-            }
-
-            std::set<size_t> reachable_in_layer;
-            for (const auto &item : new_layer) {
-                reachable_in_layer.insert(item.goals_reachable.begin(), item.goals_reachable.end());
-            }
-            EXPECT_EQ(all_goals, reachable_in_layer);
-
-            hierarchy.push_back(std::move(new_layer));
-
-        }
-
-        std::reverse(hierarchy.begin(), hierarchy.end());
-    }
-
-    auto traversal_order = clustering::determine_visitation_order<double>(
-            start_pos,
-            hierarchy,
-            [&](const auto& a, const auto& b, size_t t, size_t cluster_i) {
-
-                const auto layer = hierarchy[t];
-
-                const auto repr_a = std::holds_alternative<double>(a) ? std::get<double>(a) : layer[std::get<size_t>(
-                        a)].representative;
-
-                const auto repr_b = std::holds_alternative<double>(b) ? std::get<double>(b) : layer[std::get<size_t>(
-                        b)].representative;
-
-                return std::abs(repr_a-repr_b);
-            }
-    );
-
-    auto resulting_path = boost::copy_range<std::vector<PotentialGoal>>(
-            traversal_order | boost::adaptors::transformed([&](size_t i) { return points[i]; })
-            );
 //
-//    EXPECT_EQ(points.size(), hierarchy.back().size());
+//TEST(ClusteringSubroutineTests, order_proposal_multigoal_hierarchical) {
 //
-//    for (const auto& point_idx : previous_layer_order) {
+//    double start_pos = -201.0;
 //
-//        std::cout <<  "l: " << point_idx.subcluster_index
-//        << " s: " << point_idx.goals_to_visit.size()
-//        << " v: " << points[point_idx.subcluster_index].v << std::endl;
+//    struct PotentialGoal { double v; size_t goal_id; };
+//    typedef clustering::GenericCluster<double> Cluster;
 //
-//        EXPECT_EQ(1, point_idx.goals_to_visit.size());
+//    std::set<size_t> all_goals;
 //
-//        resulting_path.push_back(points[point_idx.subcluster_index]);
+//    std::vector<PotentialGoal> points;
+//    for (int x = -200; x <= 200; x += 1) {
+//
+//        size_t goal_i = static_cast<unsigned long>(x /* * 9 / 10 */ +  1000);
+//
+//        points.push_back({(double) x, goal_i});
+//
+//        all_goals.insert(goal_i);
 //    }
-
-    std::set<size_t> goals_reached;
-
-    for (size_t i = 0; i + 1 < resulting_path.size(); ++i) {
-        EXPECT_LT(resulting_path[i].v, resulting_path[i + 1].v);
-    }
-
-    for (const auto &item: resulting_path) {
-        std::cout << "Goal reached: " << item.goal_id << std::endl;
-        EXPECT_EQ(goals_reached.find(item.goal_id), goals_reached.end());
-        goals_reached.insert(item.goal_id);
-    }
-
-    EXPECT_EQ(all_goals, goals_reached);
-
-    for (auto goal_i : all_goals) {
-        if (goals_reached.count(goal_i) == 0)
-            std::cout << "Goal missed: " << goal_i << std::endl;
-    }
-
-}
+//
+//    std::vector<std::vector<Cluster>> hierarchy;
+//    {
+//        hierarchy.emplace_back(/*empty*/);
+//
+//        for (size_t idx = 0; idx < points.size(); ++idx) {
+//            hierarchy.back().push_back({
+//                                               points[idx].v, {{idx, 1.0}}, {points[idx].goal_id}
+//                                       });
+//        }
+//
+//        while (hierarchy.back().size() > 1) {
+//            std::vector<Cluster> new_layer;
+//
+//            for (size_t idx = 0; idx < hierarchy.back().size(); idx += 5) {
+//
+//                size_t range_end = std::min(idx + 5, hierarchy.back().size());
+//                size_t middle = idx + (range_end - idx) / 2;
+//
+//                Cluster new_cluster;
+//
+//                new_cluster.representative = hierarchy.back()[middle].representative;
+//
+//                for (size_t inner_idx = idx; inner_idx < range_end; ++inner_idx) {
+//                    new_cluster.members[inner_idx] = 1.0;
+//                    new_cluster.goals_reachable.insert(hierarchy.back()[inner_idx].goals_reachable.begin(),
+//                                                       hierarchy.back()[inner_idx].goals_reachable.end());
+//                }
+//
+//                new_layer.push_back(std::move(new_cluster));
+//            }
+//
+//            std::set<size_t> reachable_in_layer;
+//            for (const auto &item : new_layer) {
+//                reachable_in_layer.insert(item.goals_reachable.begin(), item.goals_reachable.end());
+//            }
+//            EXPECT_EQ(all_goals, reachable_in_layer);
+//
+//            hierarchy.push_back(std::move(new_layer));
+//
+//        }
+//
+//        std::reverse(hierarchy.begin(), hierarchy.end());
+//    }
+//
+//    auto traversal_order = clustering::determine_visitation_order<double>(
+//            start_pos,
+//            hierarchy,
+//            [&](const auto& a, const auto& b, size_t t, size_t cluster_i) {
+//
+//                const auto layer = hierarchy[t];
+//
+//                const auto repr_a = std::holds_alternative<double>(a) ? std::get<double>(a) : layer[std::get<size_t>(
+//                        a)].representative;
+//
+//                const auto repr_b = std::holds_alternative<double>(b) ? std::get<double>(b) : layer[std::get<size_t>(
+//                        b)].representative;
+//
+//                return std::abs(repr_a-repr_b);
+//            }
+//    );
+//
+//    auto resulting_path = boost::copy_range<std::vector<PotentialGoal>>(
+//            traversal_order | boost::adaptors::transformed([&](size_t i) { return points[i]; })
+//            );
+//
+//    std::set<size_t> goals_reached;
+//
+//    for (size_t i = 0; i + 1 < resulting_path.size(); ++i) {
+//        EXPECT_LT(resulting_path[i].v, resulting_path[i + 1].v);
+//    }
+//
+//    for (const auto &item: resulting_path) {
+//        std::cout << "Goal reached: " << item.goal_id << std::endl;
+//        EXPECT_EQ(goals_reached.find(item.goal_id), goals_reached.end());
+//        goals_reached.insert(item.goal_id);
+//    }
+//
+//    EXPECT_EQ(all_goals, goals_reached);
+//
+//    for (auto goal_i : all_goals) {
+//        if (goals_reached.count(goal_i) == 0)
+//            std::cout << "Goal missed: " << goal_i << std::endl;
+//    }
+//
+//}
 
 TEST_F(ClusteringTests, distance_matrix_test) {
 
@@ -504,6 +494,23 @@ TEST_F(ClusteringTests, distance_matrix_test) {
     }
 }
 
+void check_cluster_members_in_dm(const clustering::Cluster& cluster, const clustering::DistanceMatrix& dm) {
+    // For every pair of cluster members, the distance matrix should have an entry.
+    for (const auto &a : cluster.members) {
+        for (const auto &b : cluster.members) {
+            EXPECT_NE(0,dm.count(std::make_pair(a.first, b.first)));
+        }
+    }
+}
+
+std::unordered_set<size_t> visited_goals_in_clusters(const std::vector<clustering::Cluster> clusters) {
+    std::unordered_set<size_t> visited_goals;
+    for (auto cl:clusters) {
+        visited_goals.insert(cl.goals_reachable.begin(), cl.goals_reachable.end());
+    }
+    return visited_goals;
+}
+
 /// In this test, the planning scene consists of a single, tall and thin wall.
 /// Apples are arranged in a line on both sides; the line extends to the end of the wall on one side.
 ///
@@ -513,9 +520,6 @@ TEST_F(ClusteringTests, distance_matrix_test) {
 /// Note: This case is highly adversarial to the Euclidean nearest-neighbours algorithm since it would try
 /// to traverse the wall many times.
 TEST_F(ClusteringTests, test_full_wall) {
-
-    std::unordered_set<size_t> s;
-    EXPECT_EQ(s.find(5), s.end());
 
     planning_scene::PlanningScenePtr scene = std::make_shared<planning_scene::PlanningScene>(drone);
     scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
@@ -567,53 +571,16 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     std::cout << "Distance matrices computed." << std::endl;
 
-    std::ofstream fout;
-    fout.open("../analysis/cluster_pts.txt");
-    assert(fout.is_open());
+    dump_clusters(clusters, state_space);
 
-    for (size_t level_id = 0; level_id < clusters.size(); level_id++) {
-        auto level = clusters[level_id];
-        std::unordered_set<size_t> visited_goals;
+    // Check that all goals are reachable at every level. (Should be possible with the wall test)
+    for (size_t level_id = 0; level_id + 1 < clusters.size(); level_id++) {
+         EXPECT_EQ(visited_goals_in_clusters(clusters[level_id]).size(), goals.size());
 
-        fout << "========= Level =========" << std::endl;
-
-        for (size_t cluster_id = 0; cluster_id < level.size(); cluster_id++) {
-            const auto& cluster = level[cluster_id];
-            visited_goals.insert(cluster.goals_reachable.begin(), cluster.goals_reachable.end());
-
-            moveit::core::RobotState st(drone);
-            state_space->copyToRobotState(st, cluster.representative->get());
-
-            st.update(true);
-
-            fout << st.getVariablePosition(0) << ", "
-                 << st.getVariablePosition(1) << ", "
-                 << st.getVariablePosition(2) << std::endl;
-
-            for (const auto &item : cluster.members) {
-                fout << item.first << ",";
-            }
-            fout << std::endl;
-
-            if (level_id + 1 < clusters.size()) {
-                for (const auto &a : cluster.members) {
-                    for (const auto &b : cluster.members) {
-                        EXPECT_NE(
-                            distanceMatrices[level_id][cluster_id].find(std::make_pair(a.first, b.first)),
-                            distanceMatrices[level_id][cluster_id].end()
-                        );
-                    }
-                }
-            }
-
-            EXPECT_LE(cluster.members.size(), clustering::DEFAULT_CLUSTER_SIZE);
-
-
+        for (auto pair : boost::combine(clusters[level_id], distanceMatrices[level_id])) {
+            check_cluster_members_in_dm(pair.get<0>(), pair.get<1>());
         }
-
-        EXPECT_EQ(visited_goals.size(), goals.size());
     }
-    fout.close();
 
     auto start_state = std::make_shared<ompl::base::ScopedState<ompl::base::StateSpace> >(si);
     EXPECT_EQ(0, goal_samples[0].goal_idx);
@@ -621,49 +588,9 @@ TEST_F(ClusteringTests, test_full_wall) {
     start_state->get()->as<DroneStateSpace::StateType>()->values[0] -= 1.0; // Engineer it so it's close to one of the goals, but not on it.
     start_state->get()->as<DroneStateSpace::StateType>()->values[1] -= 1.0;
 
-    //                // Distance function. Either looks up the representative of a cluster based on index,
-    //                // or uses the given reference point directly.
-    //                auto distance = [&](const std::variant<P, size_t> &a,
-    //                                    const std::variant<P, size_t> &b) {
-    //                    const auto repr_a = std::holds_alternative<P>(a) ? std::get<P>(a) : layer[std::get<size_t>(
-    //                            a)].representative;
-    //                    const auto repr_b = std::holds_alternative<P>(b) ? std::get<P>(b) : layer[std::get<size_t>(
-    //                            b)].representative;
-    //                    return distanceFn(repr_a, repr_b);
-    //                };
-
-    auto distance_straight = [&](const auto& a, const auto& b, size_t layer_i, size_t _in_cluster_i) {
-        const auto layer = clusters[layer_i];
-
-        const auto repr_a = std::holds_alternative<ompl::base::ScopedStatePtr>(a) ? std::get<ompl::base::ScopedStatePtr>(a) : layer[std::get<size_t>(
-                a)].representative;
-
-        const auto repr_b = std::holds_alternative<ompl::base::ScopedStatePtr>(b) ? std::get<ompl::base::ScopedStatePtr>(b) : layer[std::get<size_t>(
-                b)].representative;
-
-        return repr_a->distance(repr_b->get());
-    };
-
-    auto distance = [&](const auto& a, const auto& b, size_t layer_i, size_t in_cluster_i) {
-
-        if (std::holds_alternative<ompl::base::ScopedStatePtr>(a) || std::holds_alternative<ompl::base::ScopedStatePtr>(b)) {
-            return distance_straight(a, b, layer_i, in_cluster_i);
-        } else {
-            auto key = std::make_pair(std::get<size_t>(a),std::get<size_t>(b));
-
-            EXPECT_NE(clusters[layer_i-1][in_cluster_i].members.find(key.first),
-                      clusters[layer_i-1][in_cluster_i].members.end());
-
-            EXPECT_NE(clusters[layer_i-1][in_cluster_i].members.find(key.second),
-                      clusters[layer_i-1][in_cluster_i].members.end());
-
-            EXPECT_NE(distanceMatrices[layer_i-1][in_cluster_i].find(key),distanceMatrices[layer_i][in_cluster_i].end());
-
-            return distanceMatrices[layer_i-1][in_cluster_i][key];
-        }
-    };
-
-    auto ordering = clustering::determine_visitation_order<ompl::base::ScopedStatePtr>(start_state,clusters,distance);
+    auto ordering = clustering::determine_visitation_order(
+            start_state,clusters,
+            clustering::InClusterPrecomputedDistanceMetricWithFallback(clusters, distanceMatrices));
 
     std::unordered_set<size_t> visited_goals;
     for (const auto &item: ordering) {

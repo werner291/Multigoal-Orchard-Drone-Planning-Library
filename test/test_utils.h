@@ -4,6 +4,7 @@
 
 #include "../src/ompl_custom.h"
 #include "../src/procedural_tree_generation.h"
+#include "../src/multigoal/ClusterTable.h"
 
 /**
  * By default, MoveIt's random state generation doesn't randomize the translation
@@ -28,9 +29,13 @@ void spawn_wall(moveit_msgs::PlanningScene& planning_scene_diff);
 /**
  * Spawn apples in a roughly U-shaped pattern, wrapping around one edge of the wall from
  * spawn_wall(...). The optimal visitation order is thus identical to the returned order.
- *
- * TODO: The coordinates here are suspicious. Are these really as specified?
  */
 std::vector<Apple> apples_around_wall();
+
+/**
+ * Dump the clusters to a file.
+ */
+void dump_clusters(const std::vector<std::vector<clustering::Cluster>> clusters,
+                   const std::shared_ptr<DroneStateSpace> state_space);
 
 #endif //NEW_PLANNERS_TEST_UTILS_H

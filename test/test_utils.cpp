@@ -1,8 +1,11 @@
-#include "../src/BulletContinuousMotionValidator.h"
 #include <gtest/gtest.h>
+#include <eigen_conversions/eigen_msg.h>
+#include <fstream>
+
 #include "test_utils.h"
 #include "../src/experiment_utils.h"
-#include <eigen_conversions/eigen_msg.h>
+#include "../src/multigoal/ClusterTable.h"
+#include "../src/BulletContinuousMotionValidator.h"
 
 std::shared_ptr<moveit::core::RobotState> genRandomState(const std::shared_ptr<moveit::core::RobotModel> &drone) {
     auto st1 = std::make_shared<moveit::core::RobotState>(drone);
@@ -62,4 +65,39 @@ std::vector<Apple> apples_around_wall() {
                          });
     }
     return apples;
+}
+
+void dump_clusters(const std::vector<std::vector<clustering::Cluster>> clusters,
+                   const std::shared_ptr<DroneStateSpace> state_space) {
+
+    std::ofstream fout;
+    fout.open("../analysis/cluster_pts.txt");
+    assert(fout.is_open());
+
+    for (size_t level_id = 0; level_id < clusters.size(); level_id++) {
+        auto level = clusters[level_id];
+        std::unordered_set<size_t> visited_goals;
+
+        fout << "========= Level =========" << std::endl;
+
+        for (size_t cluster_id = 0; cluster_id < level.size(); cluster_id++) {
+            const auto& cluster = level[cluster_id];
+            visited_goals.insert(cluster.goals_reachable.begin(), cluster.goals_reachable.end());
+
+            moveit::core::RobotState st(state_space->getRobotModel());
+            state_space->copyToRobotState(st, cluster.representative->get());
+
+            st.update(true);
+
+            fout << st.getVariablePosition(0) << ", "
+                << st.getVariablePosition(1) << ", "
+                << st.getVariablePosition(2) << std::endl;
+
+            for (const auto &item : cluster.members) {
+                fout << item.first << ",";
+            }
+            fout << std::endl;
+        }
+    }
+    fout.close();
 }
