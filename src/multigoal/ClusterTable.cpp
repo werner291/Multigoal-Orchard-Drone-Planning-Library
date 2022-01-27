@@ -415,7 +415,7 @@ DistanceMatrix clustering::computeDistanceMatrix(
 
 }
 
-std::vector<size_t> determine_visitation_order(const ompl::base::ScopedStatePtr &start_pos,
+std::vector<size_t> clustering::determine_visitation_order(const ompl::base::ScopedStatePtr &start_pos,
                                                const ClusterHierarchy &hierarchy,
                                                const ClusterDistanceFn &distanceFn) {
 
