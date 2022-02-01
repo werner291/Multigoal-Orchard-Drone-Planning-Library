@@ -406,6 +406,8 @@ std::unordered_set<size_t> visited_goals_in_clusters(const std::vector<clusterin
     return visited_goals;
 }
 
+
+
 /// In this test, the planning scene consists of a single, tall and thin wall.
 /// Apples are arranged in a line on both sides; the line extends to the end of the wall on one side.
 ///
@@ -416,25 +418,38 @@ std::unordered_set<size_t> visited_goals_in_clusters(const std::vector<clusterin
 /// to traverse the wall many times.
 TEST_F(ClusteringTests, test_full_wall) {
 
-    planning_scene::PlanningScenePtr scene = std::make_shared<planning_scene::PlanningScene>(drone);
-    scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+#define PUBLISH_RVIZ
 
-    moveit_msgs::PlanningScene planning_scene_diff;
+    auto[scene,apples] = createWallApplePlanningScene(drone);
 
-    spawn_wall(planning_scene_diff);
+#ifdef PUBLISH_RVIZ
 
-    auto apples = apples_around_wall();
+    int zero = 0;
+    ros::init(zero, nullptr, "full_wall_test");
+    ros::AsyncSpinner spinner(1);
+    spinner.start();
 
-    std::cout << "Planning for apples:" << std::endl;
-    for (const auto& apple : apples) {
-        std::cout << "    " << apple.center << std::endl;
+    ros::NodeHandle node_handle;
+
+
+
+//
+//    moveit_visual_tools::MoveItVisualTools visual_tools("panda_link0");
+//    visual_tools.deleteAllMarkers();
+
+    ros::Publisher planning_scene_diff_publisher = node_handle.advertise<moveit_msgs::PlanningScene>("/planning_scene", 1);
+    while (planning_scene_diff_publisher.getNumSubscribers() == 0) {
+        ros::Duration(0.5).sleep();
     }
+    moveit_msgs::PlanningScene scene_msg;
+    scene->getPlanningSceneMsg(scene_msg);
+    planning_scene_diff_publisher.publish(scene_msg);
 
-    spawnApplesInPlanningScene(0.1, apples, planning_scene_diff);
+    ros::Duration(0.5).sleep();
 
-    scene->setPlanningSceneDiffMsg(planning_scene_diff);
-    scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
-    scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+
+    exit(0);
+#endif
 
     auto si = initSpaceInformation(scene, drone, state_space);
 

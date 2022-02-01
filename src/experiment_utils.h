@@ -2,16 +2,17 @@
 #ifndef NEW_PLANNERS_EXPERIMENT_UTILS_H
 #define NEW_PLANNERS_EXPERIMENT_UTILS_H
 
-#include "procedural_tree_generation.h"
+#include <json/json.h>
+#include <moveit/collision_detection/collision_detector_allocator.h>
+#include <moveit/ompl_interface/parameterization/model_based_state_space.h>
+#include <ompl/base/OptimizationObjective.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/rrt/RRT.h>
-#include <json/json.h>
-#include <ompl/base/OptimizationObjective.h>
-#include <moveit/ompl_interface/parameterization/model_based_state_space.h>
-#include <moveit/collision_detection/collision_detector_allocator.h>
-#include "multigoal/MetricTwoOpt.h"
+
 #include "SamplerWrapper.h"
+#include "multigoal/MetricTwoOpt.h"
 #include "planning_scene_diff_message.h"
+#include "procedural_tree_generation.h"
 
 struct StateProjection {
     ompl_interface::ModelBasedStateSpace *state_space;

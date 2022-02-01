@@ -88,5 +88,12 @@ rec {
 	moveit_ros_occupancy_map_monitor = mkMoveItPackage { name = "ROS_Occupancy_map_monitor"; subdir = "moveit_ros/occupancy_map_monitor"; internal_deps = [ moveit_core ]; };
 	moveit_move_group = mkMoveItPackage { name = "Move_Group"; subdir = "moveit_ros/move_group"; internal_deps = [ moveit_core moveit_kinematics moveit_ros_planning ]; };
 	moveit_kinematics = mkMoveItPackage { name = "Kinematics"; subdir = "moveit_kinematics"; internal_deps = [ moveit_core moveit_ros_planning ]; };
-	moveit_ros_manipulation = mkMoveItPackage { name = "Kinematics"; subdir = "moveit_ros/manipulation"; internal_deps = [ moveit_core moveit_ros_planning moveit_move_group ]; };
+	moveit_ros_robot_interaction = mkMoveItPackage { name = "Robot Interaction"; subdir = "moveit_ros/robot_"; internal_deps = [ moveit_core moveit_ros_planning moveit_move_group ]; };
+	moveit_ros_manipulation = mkMoveItPackage { name = "Manipulation"; subdir = "moveit_ros/manipulation"; internal_deps = [ moveit_core moveit_ros_planning moveit_move_group ]; };
+	moveit_ros_visualization = mkMoveItPackage { name = "Visualization"; subdir = "moveit_ros/visualization"; internal_deps = [ moveit_core moveit_ros_perception pkgs.glew ]; };
+	moveit_ros_perception = mkMoveItPackage { name = "Perception"; subdir = "moveit_ros/perception"; internal_deps = [
+	    moveit_core pkgs.glew pkgs.freeglut pkgs.rosPackages.noetic.cv-bridge moveit_ros_occupancy_map_monitor moveit_ros_planning
+	    pkgs.rosPackages.noetic.nodelet
+	    moveit_ros_planning_interface
+	    ]; };
 }

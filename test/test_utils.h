@@ -38,4 +38,14 @@ std::vector<Apple> apples_around_wall();
 void dump_clusters(const std::vector<std::vector<clustering::Cluster>> clusters,
                    const std::shared_ptr<DroneStateSpace> state_space);
 
+struct WallAppleScene {
+    planning_scene::PlanningScenePtr scene;
+    std::vector<Apple> apples;
+};
+
+/**
+ * Build a MoveIt planning scene using the outputs of `spawn_wall` and `apples_around_wall`
+ */
+WallAppleScene createWallApplePlanningScene(const moveit::core::RobotModelConstPtr& drone);
+
 #endif //NEW_PLANNERS_TEST_UTILS_H

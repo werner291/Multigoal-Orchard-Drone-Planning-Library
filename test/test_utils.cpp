@@ -1,11 +1,24 @@
-#include <gtest/gtest.h>
+#include <boost/fusion/include/flatten.hpp>
+#include <boost/range/combine.hpp>
 #include <eigen_conversions/eigen_msg.h>
 #include <fstream>
+#include <gtest/gtest.h>
+#include <moveit/collision_detection/collision_detector_allocator.h>
+#include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
+#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
+#include <ompl/geometric/planners/informedtrees/AITstar.h>
+#include <ompl/geometric/planners/prm/PRMstar.h>
+#include <random>
 
-#include "test_utils.h"
-#include "../src/experiment_utils.h"
-#include "../src/multigoal/ClusterTable.h"
 #include "../src/BulletContinuousMotionValidator.h"
+#include "../src/DroneStateConstraintSampler.h"
+#include "../src/LeavesCollisionChecker.h"
+#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
+#include "../src/experiment_utils.h"
+#include "../src/general_utilities.h"
+#include "../src/multigoal/ClusterTable.h"
+#include "../src/multigoal/approach_table.h"
+#include "test_utils.h"
 
 std::shared_ptr<moveit::core::RobotState> genRandomState(const std::shared_ptr<moveit::core::RobotModel> &drone) {
     auto st1 = std::make_shared<moveit::core::RobotState>(drone);
@@ -100,4 +113,20 @@ void dump_clusters(const std::vector<std::vector<clustering::Cluster>> clusters,
         }
     }
     fout.close();
+}
+
+WallAppleScene createWallApplePlanningScene(const moveit::core::RobotModelConstPtr& drone) {
+
+    auto scene = std::make_shared<planning_scene::PlanningScene>(drone);
+    scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+
+    auto apples = apples_around_wall();
+    moveit_msgs::PlanningScene planning_scene_diff;
+    spawn_wall(planning_scene_diff);
+    spawnApplesInPlanningScene(0.1, apples, planning_scene_diff);
+    scene->setPlanningSceneDiffMsg(planning_scene_diff);
+    scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
+
+    return {scene,apples};
+
 }
