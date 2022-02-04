@@ -98,4 +98,6 @@ std::vector<std::vector<PtpSpec>>
 genPointToPointSpecs(const moveit::core::RobotModelPtr &drone, const Json::Value &trees_data, std::mt19937 &gen,
                      size_t pairsPerTree);
 
+visualization_msgs::MarkerArray markers_for_state(const moveit::core::RobotState& state);
+
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

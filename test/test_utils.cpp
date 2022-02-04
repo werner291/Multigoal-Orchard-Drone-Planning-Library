@@ -64,14 +64,14 @@ std::vector<Apple> apples_around_wall() {
 
     // TODO Change this back.
 
-    for (int i = 0; i <= 5; ++i) {
+    for (int i = 3; i <= 5; i += 2) {
         apples.push_back({
                                  Eigen::Vector3d(0.5, (double) i, 0.0),
                                  Eigen::Vector3d(1.0, 0.0, 0.0),
                          });
     }
 
-    for (int i = 5; i >= 0; --i) {
+    for (int i = 5; i >= 3; i -= 2) {
         apples.push_back({
                                  Eigen::Vector3d(-0.5, (double) i, 0.0),
                                  Eigen::Vector3d(-1.0, 0.0, 0.0),
@@ -84,7 +84,7 @@ void dump_clusters(const std::vector<std::vector<clustering::Cluster>> clusters,
                    const std::shared_ptr<DroneStateSpace> state_space) {
 
     std::ofstream fout;
-    fout.open("../analysis/cluster_pts.txt");
+    fout.open("analysis/cluster_pts.txt");
     assert(fout.is_open());
 
     for (size_t level_id = 0; level_id < clusters.size(); level_id++) {
@@ -108,6 +108,11 @@ void dump_clusters(const std::vector<std::vector<clustering::Cluster>> clusters,
 
             for (const auto &item : cluster.members) {
                 fout << item.first << ",";
+            }
+            fout << std::endl;
+
+            for (const auto &item : cluster.goals_reachable) {
+                fout << item << ",";
             }
             fout << std::endl;
         }

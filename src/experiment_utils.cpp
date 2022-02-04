@@ -1,14 +1,17 @@
 
-#include "../src/experiment_utils.h"
-#include <ompl/geometric/planners/prm/PRMstar.h>
-#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
+#include <boost/range/combine.hpp>
 #include <cstddef>
 #include <moveit/collision_detection/collision_detector_allocator.h>
+#include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
+#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
+#include <ompl/geometric/planners/prm/PRMstar.h>
+#include <geometric_shapes/shape_operations.h>
+#include <eigen_conversions/eigen_msg.h>
+
 #include "../src/BulletContinuousMotionValidator.h"
 #include "experiment_utils.h"
 #include "json_utils.h"
 #include "planning_scene_diff_message.h"
-#include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 
 robot_state::RobotState genStartState(const moveit::core::RobotModelConstPtr &drone) {
     robot_state::RobotState start_state(drone);
@@ -182,3 +185,42 @@ std::vector<std::vector<PtpSpec>> genPointToPointSpecs(const moveit::core::Robot
     return ptp_specs;
 }
 
+visualization_msgs::MarkerArray markers_for_state(const moveit::core::RobotState& state) {
+
+    auto lms = state.getRobotModel()->getLinkModelsWithCollisionGeometry();
+
+    visualization_msgs::MarkerArray ma;
+
+    for (auto lm : lms) {
+
+        Eigen::Isometry3d xfm = state.getGlobalLinkTransform(lm);
+
+        assert(lm->getCollisionOriginTransforms().size() == lm->getShapes().size());
+
+        for (const auto &[shape_transform, shape] : boost::combine(lm->getCollisionOriginTransforms(),
+                                                                   lm->getShapes()))
+        {
+            visualization_msgs::Marker mk;
+
+            if (!shapes::constructMarkerFromShape(shape.get(),mk)) {
+                ROS_WARN("Failed to construct marker.");
+            }
+
+            tf::poseEigenToMsg(xfm * shape_transform, mk.pose);
+
+            mk.header.frame_id = "world";
+
+            mk.id = ma.markers.size();
+
+            mk.color.r = 255;
+            mk.color.g = 255;
+            mk.color.b = 255;
+            mk.color.a = 255;
+
+            ma.markers.push_back(mk);
+        }
+    }
+
+    return ma;
+
+}

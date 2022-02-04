@@ -406,8 +406,6 @@ std::unordered_set<size_t> visited_goals_in_clusters(const std::vector<clusterin
     return visited_goals;
 }
 
-
-
 /// In this test, the planning scene consists of a single, tall and thin wall.
 /// Apples are arranged in a line on both sides; the line extends to the end of the wall on one side.
 ///
@@ -418,38 +416,26 @@ std::unordered_set<size_t> visited_goals_in_clusters(const std::vector<clusterin
 /// to traverse the wall many times.
 TEST_F(ClusteringTests, test_full_wall) {
 
-#define PUBLISH_RVIZ
+//#define PUBLISH_RVIZ
 
     auto[scene,apples] = createWallApplePlanningScene(drone);
 
-#ifdef PUBLISH_RVIZ
-
-    int zero = 0;
-    ros::init(zero, nullptr, "full_wall_test");
-    ros::AsyncSpinner spinner(1);
-    spinner.start();
-
-    ros::NodeHandle node_handle;
-
-
-
+//#ifdef PUBLISH_RVIZ
 //
-//    moveit_visual_tools::MoveItVisualTools visual_tools("panda_link0");
-//    visual_tools.deleteAllMarkers();
-
-    ros::Publisher planning_scene_diff_publisher = node_handle.advertise<moveit_msgs::PlanningScene>("/planning_scene", 1);
-    while (planning_scene_diff_publisher.getNumSubscribers() == 0) {
-        ros::Duration(0.5).sleep();
-    }
-    moveit_msgs::PlanningScene scene_msg;
-    scene->getPlanningSceneMsg(scene_msg);
-    planning_scene_diff_publisher.publish(scene_msg);
-
-    ros::Duration(0.5).sleep();
-
-
-    exit(0);
-#endif
+//    int zero = 0;
+//    ros::init(zero, nullptr, "full_wall_test");
+//    ros::AsyncSpinner spinner(1);
+//    spinner.start();
+//    ros::NodeHandle node_handle;
+//
+//    ros::Publisher planning_scene_diff_publisher = node_handle.advertise<moveit_msgs::PlanningScene>("/planning_scene", 1);
+//    while (planning_scene_diff_publisher.getNumSubscribers() == 0) {
+//        ros::Duration(0.5).sleep();
+//    }
+//    moveit_msgs::PlanningScene scene_msg;
+//    scene->getPlanningSceneMsg(scene_msg);
+//    planning_scene_diff_publisher.publish(scene_msg);
+//#endif
 
     auto si = initSpaceInformation(scene, drone, state_space);
 
@@ -487,8 +473,27 @@ TEST_F(ClusteringTests, test_full_wall) {
     for (size_t level_id = 0; level_id + 1 < clusters.size(); level_id++) {
          EXPECT_EQ(visited_goals_in_clusters(clusters[level_id]).size(), goals.size());
 
+         // Check to make sure that the distance matrices provide a distance for every pair of cluster members.
         for (auto pair : boost::combine(clusters[level_id], distanceMatrices[level_id])) {
             check_cluster_members_in_dm(pair.get<0>(), pair.get<1>());
+        }
+    }
+
+    // On every layer, ensure that every item on the previous layer is in at least one cluster.
+    for (size_t level_id = clusters.size(); level_id + 1 < clusters.size(); level_id++) {
+        std::unordered_set<size_t> previous_layer_members_found;
+
+        for (const auto& cl: clusters[level_id]) {
+            for (const auto& [mem_id, dist]: cl.members) {
+                previous_layer_members_found.insert(mem_id);
+            }
+        }
+
+        ASSERT_EQ(previous_layer_members_found.size(), clusters[level_id+1].size());
+
+        for (size_t i = 0; i < clusters[level_id+1].size(); ++i) {
+            EXPECT_NE(previous_layer_members_found.find(i),
+                      previous_layer_members_found.end());
         }
     }
 
@@ -523,4 +528,41 @@ TEST_F(ClusteringTests, test_full_wall) {
     for (size_t i = 0; i < ordering.size(); ++i) {
         EXPECT_EQ(goal_samples[ordering[i]].goal_idx, i);
     }
+
+//    #ifdef PUBLISH_RVIZ
+//    ros::Publisher cluster_marker_publisher = node_handle.advertise<visualization_msgs::MarkerArray>("/clusters_markers", 1);
+//    while (cluster_marker_publisher.getNumSubscribers() == 0) {
+//        ros::Duration(0.5).sleep();
+//    }
+//    size_t layer_i = 0;
+//
+//    while (true) {
+//
+//        layer_i = (layer_i + 1 ) % clusters.size();
+//
+//        visualization_msgs::MarkerArray ma;
+//        for (const auto& cluster : clusters[layer_i]) {
+//            moveit::core::RobotState st(drone);
+//            state_space->copyToRobotState(st, cluster.representative->get());
+//
+//            visualization_msgs::MarkerArray state_markers = markers_for_state(st);
+//            for (auto marker : state_markers.markers) {
+//                marker.id = ma.markers.size();
+//                ma.markers.push_back(marker);
+//            }
+//        }
+//
+//        cluster_marker_publisher.publish(ma);
+//
+//        ros::Duration(0.5).sleep();
+//
+//        {
+//            visualization_msgs::MarkerArray delete_all;
+//            visualization_msgs::Marker delete_all_marker;
+//            delete_all_marker.action = visualization_msgs::Marker::DELETEALL;
+//            delete_all.markers.push_back(delete_all_marker);
+//            cluster_marker_publisher.publish(delete_all);
+//        }
+//    }
+//    #endif
 }
