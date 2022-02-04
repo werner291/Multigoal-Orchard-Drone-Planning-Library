@@ -398,6 +398,18 @@ void check_cluster_members_in_dm(const clustering::Cluster& cluster, const clust
     }
 }
 
+void check_cluster_distance_matrix_hierarchy(const clustering::ClusterHierarchy& clusters,
+                                             const std::vector<std::vector<clustering::DistanceMatrix>>& distanceMatrices) {
+    // Check that all goals are reachable at every level. (Should be possible with the wall test)
+    for (size_t level_id = 0; level_id + 1 < clusters.size(); level_id++) {
+
+        // Check to make sure that the distance matrices provide a distance for every pair of cluster members.
+        for (auto pair : boost::combine(clusters[level_id], distanceMatrices[level_id])) {
+            check_cluster_members_in_dm(pair.get<0>(), pair.get<1>());
+        }
+    }
+}
+
 std::unordered_set<size_t> visited_goals_in_clusters(const std::vector<clustering::Cluster> clusters) {
     std::unordered_set<size_t> visited_goals;
     for (auto cl:clusters) {
@@ -449,7 +461,6 @@ TEST_F(ClusteringTests, test_full_wall) {
     assert(goal_samples.size() >= goals.size() * SAMPLES_PER_GOAL);
 
     for (const auto &sample: goal_samples) {
-        std::cout << sample.goal_idx << std::endl;
         EXPECT_TRUE(si->isValid(sample.state->get()));
     }
 
@@ -469,15 +480,11 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     dump_clusters(clusters, state_space);
 
-    // Check that all goals are reachable at every level. (Should be possible with the wall test)
     for (size_t level_id = 0; level_id + 1 < clusters.size(); level_id++) {
-         EXPECT_EQ(visited_goals_in_clusters(clusters[level_id]).size(), goals.size());
-
-         // Check to make sure that the distance matrices provide a distance for every pair of cluster members.
-        for (auto pair : boost::combine(clusters[level_id], distanceMatrices[level_id])) {
-            check_cluster_members_in_dm(pair.get<0>(), pair.get<1>());
-        }
+        EXPECT_EQ(visited_goals_in_clusters(clusters[level_id]).size(), goals.size());
     }
+
+    check_cluster_distance_matrix_hierarchy(clusters, distanceMatrices);
 
     // On every layer, ensure that every item on the previous layer is in at least one cluster.
     for (size_t level_id = clusters.size(); level_id + 1 < clusters.size(); level_id++) {
@@ -503,9 +510,21 @@ TEST_F(ClusteringTests, test_full_wall) {
     start_state->get()->as<DroneStateSpace::StateType>()->values[0] -= 1.0; // Engineer it so it's close to one of the goals, but not on it.
     start_state->get()->as<DroneStateSpace::StateType>()->values[1] -= 1.0;
 
-    auto ordering = clustering::determine_visitation_order(
+    auto ordering_layers = clustering::determine_visitation_order(
             start_state,clusters,
             clustering::InClusterPrecomputedDistanceMetricWithFallback(clusters, distanceMatrices));
+
+    std::ofstream order_file("analysis/ordering.txt");
+    for (const auto& layer: ordering_layers) {
+        for (const auto& item: layer) {
+            order_file << item << ",";
+        }
+        order_file << std::endl;
+    }
+    order_file.close();
+
+    auto ordering = ordering_layers.back();
+
 
     std::unordered_set<size_t> visited_goals;
     for (const auto &item: ordering) {

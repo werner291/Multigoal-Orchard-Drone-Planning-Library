@@ -73,6 +73,12 @@ std::vector<size_t> nearestK(const ompl::NearestNeighborsGNAT<size_t>& gnat,
     return nearby_samples;
 }
 
+class PreselectionStrategy {
+
+    virtual void select_around(size_t focus, const ompl::NearestNeighborsGNAT<size_t>& gnat, size_t layer) = 0;
+
+};
+
 std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &point_to_point_planner,
                                                            const std::vector<StateAtGoal> &goal_samples,
                                                            double threshold,
@@ -98,49 +104,39 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
 
         std::cout << "Attempting to connect to " << nearby_samples.size() << " neighbours." << std::endl;
 
-        size_t successes = 0;;
+        std::vector<std::pair<size_t,double>> candidate_members;
 
         // Try to connect to nearby sub-clusters.
         for (const auto &nearby_sample: nearby_samples) {
 
             // Filter out the cluster itself.
-            if (nearby_sample == cluster) { continue;
-//             else if (nearby_sample < cluster) {
-//                 // We've already seen this one, so just look up if we can connect to it.
-//                 auto itr = new_clusters[nearby_sample].members.find(cluster);
-//                 if (itr != new_clusters[nearby_sample].members.end()) {
-//                     // Yes, a path has already been planned to this representative, so just look it up.
-//                     // As a bonus, this makes the connections symmetric.
-//                     new_cluster.add_reachable(clusters, nearby_sample, itr->second);
-//                     successes++;
-//                 } else { // Else, it was probably unreachable.
-//                     std::cout << "Cache lookup failed." << std::endl;
-//                 }
+            if (nearby_sample == cluster) {
+                continue;
             } else {
                 // The expensive part: Try to plan from representative to representative.
                 auto ptp = point_to_point_planner.planToOmplState(time_per_ptp,
                                                                   clusters[cluster].representative->get(),
                                                                   clusters[nearby_sample].representative->get());
 
-                std::cout << "Attempting to connect to number " << nearby_sample << std::endl;
-
                 // If successful, store this as a cluster member.
                 if (ptp) {
-                    new_cluster.add_reachable(clusters, nearby_sample, ptp->length());
-                    std::cout << "Connected to number " << nearby_sample << std::endl;
-
-                } else {
-                    std::cout << "planning failed" << std::endl;
+                    candidate_members.emplace_back(nearby_sample, ptp->length());
                 }
             }
         }
 
-        std::cout << "planning succeeded to:";
-        for (auto m:new_cluster.members) {
-            std::cout << m.first << ",";
-        }
-        std::cout << std::endl;
 
+        double mean = 0.0;
+        for (auto&[_,distance]: candidate_members) mean += distance;
+        mean /= candidate_members.size();
+
+        for (auto&[id,distance]: candidate_members) {
+            if (distance <= mean*1.5) {
+                new_cluster.add_reachable(clusters, id, distance);
+            }
+        }
+
+        std::cout << "Accepted " << new_cluster.members.size() << " out of " << candidate_members.size() << std::endl;
 
         new_clusters.push_back(new_cluster);
     }
@@ -279,15 +275,13 @@ std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clus
     return new_clusters;
 }
 
-
-std::vector<std::vector<Cluster>>
-clustering::buildClusters(PointToPointPlanner &point_to_point_planner, const std::vector<StateAtGoal> &goal_samples) {
+std::vector<std::vector<Cluster>> clustering::buildClusters(PointToPointPlanner &point_to_point_planner,
+                                                            const std::vector<StateAtGoal> &goal_samples) {
 
     double threshold = 0.1;
     double growFactor = 1.2;
 
     // Start by building singleton clusters: one for every goal sample.
-    // TODO: Idea: don't copy the clusters this much, just build a hierarchy of references.
     std::vector<std::vector<Cluster>> cluster_hierarchy = {buildTrivialClusters(goal_samples)};
 
     size_t max_iters = 500;
@@ -415,11 +409,13 @@ DistanceMatrix clustering::computeDistanceMatrix(
 
 }
 
-std::vector<size_t> clustering::determine_visitation_order(const ompl::base::ScopedStatePtr &start_pos,
+std::vector<std::vector<size_t>> clustering::determine_visitation_order(const ompl::base::ScopedStatePtr &start_pos,
                                                const ClusterHierarchy &hierarchy,
                                                const ClusterDistanceFn &distanceFn) {
 
     assert(hierarchy[0].size() == 1);
+
+    std::vector<std::vector<size_t>> per_layer_orders;
 
     // Base case: hierarchy is guaranteed to have exactly one cluster at the top.
     std::vector<clustering::Visitation> previous_layer_order = {
@@ -504,13 +500,15 @@ std::vector<size_t> clustering::determine_visitation_order(const ompl::base::Sco
         }
 
         previous_layer_order = layer_order;
+
+        per_layer_orders.push_back(
+                boost::copy_range<std::vector<size_t>>(
+                        layer_order | boost::adaptors::transformed([](const auto &elt){
+                    return elt.subcluster_index;
+                })));
     }
 
-    // Strip the goal visitation information and just return the indices as a vector.
-    return boost::copy_range<std::vector<size_t>>(
-            previous_layer_order | boost::adaptors::transformed([](const auto &elt) {
-                return elt.subcluster_index;
-            }));
+    return per_layer_orders;
 }
 
 //

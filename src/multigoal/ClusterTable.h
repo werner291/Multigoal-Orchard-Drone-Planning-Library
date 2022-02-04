@@ -250,7 +250,7 @@ namespace clustering {
      *
      * @return A vector of indices into the most detailed level of the hierarchy, indicative of visitation order.
      */
-    std::vector<size_t> determine_visitation_order(const ompl::base::ScopedStatePtr &start_pos,
+    std::vector<std::vector<size_t>> determine_visitation_order(const ompl::base::ScopedStatePtr &start_pos,
                                                    const ClusterHierarchy &hierarchy,
                                                    const ClusterDistanceFn &distanceFn);
 
