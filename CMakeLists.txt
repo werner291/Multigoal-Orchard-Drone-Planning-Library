@@ -178,6 +178,12 @@ set(SHARED_SRC
         src/multigoal/RandomizedTwoOpt.h
         src/multigoal/random_order.cpp
         src/multigoal/random_order.h
+        src/multigoal/clustering_preselection.cpp
+        src/multigoal/clustering_preselection.h
+        src/multigoal/visitation_order_strategy.cpp
+        src/multigoal/visitation_order_strategy.h
+        src/multigoal/in_cluster_distances.cpp
+        src/multigoal/in_cluster_distances.h
         #        src/multigoal/SubtourMovingPlanner.cpp
         #        src/multigoal/SubtourMovingPlanner.h
         src/multigoal/uknn.cpp

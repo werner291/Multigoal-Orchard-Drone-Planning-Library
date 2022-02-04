@@ -16,6 +16,9 @@
 #include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 #include "../src/DroneStateConstraintSampler.h"
 #include "../src/general_utilities.h"
+#include "../src/multigoal/gen_visitations.h"
+#include "../src/multigoal/in_cluster_distances.h"
+#include "../src/multigoal/visitation_order_strategy.h"
 
 /**
  * \brief This produces a set of monotonically increasing x-coordinates spaced with a smooth, wave-like pattern
@@ -147,8 +150,10 @@ TEST_F(ClusteringTests, DISABLED_test_cluster_sinespacing) {
     auto sampler = std::make_shared<InformedGaussian>(state_space.get(), 2.5);
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
+    clustering::NearestKPreselection preselect;
+
     // Expand the (singleton) clusters, connecting them to others within range.
-   clusters = clustering::create_cluster_candidates(ptp, samples, 3.5, clusters, 11, 0.1);
+    clusters = clustering::create_cluster_candidates(ptp, samples, clusters, preselect, 0.1);
 
     // Assert member symmetry.
     for (size_t cluster_id = 0; cluster_id < clusters.size(); cluster_id++) {
@@ -399,7 +404,7 @@ void check_cluster_members_in_dm(const clustering::Cluster& cluster, const clust
 }
 
 void check_cluster_distance_matrix_hierarchy(const clustering::ClusterHierarchy& clusters,
-                                             const std::vector<std::vector<clustering::DistanceMatrix>>& distanceMatrices) {
+                                             const clustering::DistanceMatrixHierarchy& distanceMatrices) {
     // Check that all goals are reachable at every level. (Should be possible with the wall test)
     for (size_t level_id = 0; level_id + 1 < clusters.size(); level_id++) {
 
@@ -470,11 +475,13 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
-    auto clusters = clustering::buildClusters(ptp, goal_samples);
+    clustering::NearestKPreselection preselection;
+
+    auto clusters = clustering::buildClusters(ptp, goal_samples, preselection);
 
     std::cout << "Clusters built." << std::endl;
 
-    auto distanceMatrices = clustering::computeAllDistances(ptp, clusters);
+    auto distanceMatrices = computeAllDistances(ptp, clusters);
 
     std::cout << "Distance matrices computed." << std::endl;
 
@@ -524,7 +531,6 @@ TEST_F(ClusteringTests, test_full_wall) {
     order_file.close();
 
     auto ordering = ordering_layers.back();
-
 
     std::unordered_set<size_t> visited_goals;
     for (const auto &item: ordering) {

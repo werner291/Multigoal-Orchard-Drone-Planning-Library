@@ -3,6 +3,9 @@
 #include <boost/range/irange.hpp>
 
 #include "ClusterTable.h"
+#include "gen_visitations.h"
+#include "clustering_preselection.h"
+#include "in_cluster_distances.h"
 
 using namespace clustering;
 
@@ -55,35 +58,10 @@ ompl::NearestNeighborsGNAT<size_t> buildLayerGNAT(const std::vector<Cluster> &cl
     return gnat;
 }
 
-std::vector<size_t> search_r_try_n(const ompl::NearestNeighborsGNAT<size_t>& gnat,
-                                   size_t around,
-                                   double radius,
-                                   size_t n) {
-    std::vector<size_t> nearby_samples;
-    gnat.nearestR(around, radius, nearby_samples);
-    truncate(nearby_samples, n);
-    return nearby_samples;
-}
-
-std::vector<size_t> nearestK(const ompl::NearestNeighborsGNAT<size_t>& gnat,
-                                   size_t around,
-                                   size_t n) {
-    std::vector<size_t> nearby_samples;
-    gnat.nearestK(around, n, nearby_samples);
-    return nearby_samples;
-}
-
-class PreselectionStrategy {
-
-    virtual void select_around(size_t focus, const ompl::NearestNeighborsGNAT<size_t>& gnat, size_t layer) = 0;
-
-};
-
 std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &point_to_point_planner,
                                                            const std::vector<StateAtGoal> &goal_samples,
-                                                           double threshold,
                                                            const std::vector<Cluster> &clusters,
-                                                           const size_t max_cluster_size,
+                                                           const PreselectionStrategy &preselect,
                                                            double time_per_ptp) {
 
     // Build a GNAT to perform large-scale NN-lookups.
@@ -98,9 +76,7 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
         // The new cluster
         auto new_cluster = Cluster::new_around(clusters, cluster);
 
-        // Find which sub-clusters are near this sub-cluster by checking distance to the representative.
-        auto nearby_samples = nearestK(gnat, cluster, max_cluster_size);
-//         auto nearby_samples = search_r_try_n(gnat, cluster, threshold, max_cluster_size);
+        auto nearby_samples = preselect.select_around(cluster, gnat, 0);
 
         std::cout << "Attempting to connect to " << nearby_samples.size() << " neighbours." << std::endl;
 
@@ -156,30 +132,6 @@ std::vector<Cluster> clustering::buildTrivialClusters(const std::vector<StateAtG
     return clusters;
 }
 
- std::vector<std::vector<DistanceMatrix>> clustering::computeAllDistances(PointToPointPlanner &point_to_point_planner, const ClusterHierarchy& clusters) {
-
-     assert(clusters.size() >= 1);
-
-        std::vector<std::vector<DistanceMatrix>> distances(clusters.size()-1);
-
-        for (size_t layer_i = 0; layer_i + 1 < clusters.size(); ++layer_i) {
-
-            std::cout << "Computing distances for layer: " << layer_i << std::endl;
-
-            size_t i = 0;
-
-            distances[layer_i] = boost::copy_range<std::vector<DistanceMatrix> >(
-                clusters[layer_i] | boost::adaptors::transformed([&](const Cluster& cl) {
-
-                std::cout << "Cluster : " << (i++) << std::endl;
-
-                return computeDistanceMatrix(point_to_point_planner, cl, clusters[layer_i+1]);
-            }));
-        }
-
-        return distances;
-    }
-
 std::vector<double> clustering::computeDensities(const std::vector<Cluster> &new_clusters) {
     std::vector<double> densities;
     densities.reserve(new_clusters.size());
@@ -198,14 +150,6 @@ std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clus
                                                 std::vector<double> densities) {
 
     std::cout << "Selecting from " << clusters.size() << " candidates." << std::endl;
-
-//     for (auto cl : clusters) {
-//         std::cout << "Cluster with members: ";
-//         for (auto m:cl.members) {
-//             std::cout << m.first << ",";
-//         }
-//         std::cout << std::endl;
-//     }
 
     struct InQueue {
         size_t cluster_id;
@@ -276,7 +220,8 @@ std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clus
 }
 
 std::vector<std::vector<Cluster>> clustering::buildClusters(PointToPointPlanner &point_to_point_planner,
-                                                            const std::vector<StateAtGoal> &goal_samples) {
+                                                            const std::vector<StateAtGoal> &goal_samples,
+                                                            const PreselectionStrategy& preselect) {
 
     double threshold = 0.1;
     double growFactor = 1.2;
@@ -292,8 +237,10 @@ std::vector<std::vector<Cluster>> clustering::buildClusters(PointToPointPlanner 
         std::cout << "Threshold: " << threshold << " Top: " << cluster_hierarchy.back().size() << std::endl;
 
         // Expand the clusters to connect them to neighbouring clusters
-        auto new_clusters = create_cluster_candidates(point_to_point_planner, goal_samples, threshold,
-                                                      cluster_hierarchy.back());
+        auto new_clusters = create_cluster_candidates(point_to_point_planner,
+                                                      goal_samples,
+                                                      cluster_hierarchy.back(),
+                                                      preselect);
 
         auto densities = computeDensities(new_clusters);
 
@@ -317,199 +264,6 @@ std::vector<std::vector<Cluster>> clustering::buildClusters(PointToPointPlanner 
     return cluster_hierarchy;
 }
 
-std::vector<size_t>
-clustering::visit_clusters_naive(const std::vector<std::vector<Cluster>> &cluster_hierarchy,
-                                 const std::vector<StateAtGoal> &goal_samples,
-                                 const ompl::base::State *start_state,
-                                 const ompl::base::SpaceInformation &si) {
-
-    std::vector<size_t> visit_order;
-
-    struct StackFrame {
-        size_t level;
-        size_t in_level;
-    };
-
-    std::set<size_t> goals_visited;
-
-    std::vector<StackFrame> stack;
-    for (size_t i = 0; i < cluster_hierarchy.back().size(); ++i) {
-        stack.push_back({cluster_hierarchy.size() - 1,
-                         i
-                        });
-    }
-
-    while (!stack.empty()) {
-
-        StackFrame frame = stack.back();
-        stack.pop_back();
-
-        const Cluster &cluster = cluster_hierarchy[frame.level][frame.in_level];
-
-        std::vector<size_t> additional_reachable_goals;
-
-        std::set_difference(
-                cluster.goals_reachable.begin(), cluster.goals_reachable.end(),
-                goals_visited.begin(), goals_visited.end(),
-                std::back_inserter(additional_reachable_goals)
-        );
-
-        if (!additional_reachable_goals.empty()) {
-
-            if (frame.level == 0) {
-                assert(additional_reachable_goals.size() == 1);
-                visit_order.push_back(frame.in_level);
-                goals_visited.insert(additional_reachable_goals.begin(), additional_reachable_goals.end());
-            } else {
-                for (const auto &item: cluster.members) {
-                    stack.push_back({
-                                            frame.level - 1,
-                                            item.first
-                                    });
-                }
-            }
-        }
-    }
-
-    return visit_order;
-};
-
-DistanceMatrix clustering::computeDistanceMatrix(
-    PointToPointPlanner &point_to_point_planner,
-    const Cluster& cluster,
-    const std::vector<Cluster> &parent_clusters,
-    double planningTimePerPair) {
-
-    // For convenience, we copy over the parent cluster indices of the members.
-    std::vector<size_t> state_ids;
-    state_ids.reserve(cluster.members.size());
-    for (const auto& m : cluster.members) {
-        assert(m.first < parent_clusters.size());
-        state_ids.push_back(m.first);
-    }
-
-    clustering::DistanceMatrix output;
-
-    for (size_t i : boost::irange<size_t>(0,state_ids.size())) {
-        output[std::make_pair(state_ids[i],state_ids[i])] = 0.0;
-        for (size_t j = 0; j < i; ++j) {
-
-            auto ptp = point_to_point_planner.planToOmplState(
-                planningTimePerPair,
-                parent_clusters[state_ids[i]].representative->get(),
-                parent_clusters[state_ids[j]].representative->get());
-
-            output[std::make_pair(state_ids[i],state_ids[j])] = ptp ? ptp->length() : INFINITY;
-            output[std::make_pair(state_ids[j],state_ids[i])] = ptp ? ptp->length() : INFINITY;
-            std::cout << "Planning from " << state_ids[i] << " to " << state_ids[i];
-        }
-    }
-
-    return output;
-
-}
-
-std::vector<std::vector<size_t>> clustering::determine_visitation_order(const ompl::base::ScopedStatePtr &start_pos,
-                                               const ClusterHierarchy &hierarchy,
-                                               const ClusterDistanceFn &distanceFn) {
-
-    assert(hierarchy[0].size() == 1);
-
-    std::vector<std::vector<size_t>> per_layer_orders;
-
-    // Base case: hierarchy is guaranteed to have exactly one cluster at the top.
-    std::vector<clustering::Visitation> previous_layer_order = {
-            {0, hierarchy[0][0].goals_reachable}
-    };
-
-    // Step case: go layer-by-layer down the hierarchy.
-    for (size_t layer_i = 1; layer_i < hierarchy.size(); ++layer_i) {
-
-        std::cout << "Ordering on layer " << layer_i << std::endl;
-
-        // Build up a visitation order.
-        std::vector<clustering::Visitation> layer_order;
-
-        // Get a reference to the current layer of the hierarchy...
-        const std::vector<Cluster> &layer = hierarchy[layer_i];
-        // And the lower LOD layer that we just came through.
-        const std::vector<Cluster> &previous_layer = hierarchy[layer_i - 1];
-
-        // In the previous step, we determined an order in which to visit the clusters.
-        // We will now do so, in that order.
-        for (size_t visit_i = 0; visit_i < previous_layer_order.size(); ++visit_i) {
-
-            // We're looking for the optimal order in which to traverse the cluster members.
-            clustering::VisitationOrderSolution sub_layer_best_solution{
-                    {}, INFINITY, {}
-            };
-
-            // The ordering is aware of entry-and-exit-points.
-            // For the first in the sequence, that's the starting position of the robot.
-            auto entry_point = start_pos;
-            if (visit_i > 0) {
-                // On subsequent sub-clusters, we use the previous cluster's representative as a reference point.
-                entry_point = layer[previous_layer_order[visit_i - 1].subcluster_index].representative;
-            }
-
-            // Same for the exit point, except that we don't have a specified end point for the global sequence,
-            // so it's only relevant if we know we'll be visiting another cluster after this.
-            std::optional<ompl::base::ScopedStatePtr> exit_point;
-            if (visit_i + 1 < previous_layer_order.size()) {
-                exit_point = layer[previous_layer_order[visit_i + 1].subcluster_index].representative;
-            }
-
-            // Get the cluster members and put them in a vector.
-            auto members_vec = boost::copy_range<std::vector<size_t>>(
-                    previous_layer[previous_layer_order[visit_i].subcluster_index].members
-                    | boost::adaptors::map_keys);
-
-            // Distance function. Either looks up the representative of a cluster based on index,
-            // or uses the given reference point directly.
-            auto distance = [&](const StateOrClusterRef &a, const StateOrClusterRef &b) {
-                return distanceFn.distance(a, b, layer_i, previous_layer_order[visit_i].subcluster_index);
-            };
-
-            // Look up a cluster's reachable goal identifiers.
-            // Note the explicit return type: if not, the set is de-referenced, then a reference
-            // is returned to that temporary copy, causing a use-after-free bug.
-            auto lookup_reachable = [&](const size_t &a) -> const std::set<size_t> & {
-                return layer[a].goals_reachable;
-            };
-
-            // Go through every possible permutation of the clusters and keep track of the best.
-            clustering::generate_visitations<ompl::base::ScopedStatePtr, size_t>(
-                    entry_point, members_vec, previous_layer_order[visit_i].goals_to_visit, exit_point,
-                    distance,
-                    lookup_reachable,
-                    [&](auto soln) {
-                        if (soln.is_better_than(sub_layer_best_solution)) {
-                            sub_layer_best_solution = soln;
-                        }
-                    });
-
-            // Concatenate to the total solution for this abstraction layer.
-            for (const auto &visit: sub_layer_best_solution.visit_order) {
-                layer_order.push_back({
-                                              // Note: generate_visitations produces a vector of indices into the vector given to it,
-                                              // so we need to perform a lookup to translate to cluster layer indices.
-                                              members_vec[visit.subcluster_index],
-                                              visit.goals_to_visit
-                                      });
-            }
-        }
-
-        previous_layer_order = layer_order;
-
-        per_layer_orders.push_back(
-                boost::copy_range<std::vector<size_t>>(
-                        layer_order | boost::adaptors::transformed([](const auto &elt){
-                    return elt.subcluster_index;
-                })));
-    }
-
-    return per_layer_orders;
-}
 
 //
 //std::vector<size_t>
@@ -565,10 +319,9 @@ MultiGoalPlanResult ClusterBasedPlanner::plan(const GoalSet &goals, const ompl::
 
     auto goal_samples = takeInitialSamples(goals, point_to_point_planner.getPlanner()->getSpaceInformation(), 50);
     auto gnat = buildGoalSampleGnat(goal_samples);
-    auto clusters = buildClusters(point_to_point_planner, goal_samples);
+//    auto clusters = buildClusters(point_to_point_planner, goal_samples);
 
     // Use a branch-and-bound strategy that is guided using the cluster hierarchy to rapidly lower the bound as much as possible.
-
 
 
     return {};
@@ -580,11 +333,6 @@ std::string ClusterBasedPlanner::getName() {
     return "ClusterBasedPlanner";
 }
 
-bool clustering::VisitationOrderSolution::is_better_than(const VisitationOrderSolution &sln) const {
-    return goals_visited.size() > sln.goals_visited.size() ||
-           (goals_visited.size() == sln.goals_visited.size() && cost < sln.cost);
-}
-
 void Cluster::add_reachable(const std::vector<Cluster> &parent_layer, size_t which, double distance) {
     members[which] = distance;
     goals_reachable.insert(parent_layer[which].goals_reachable.begin(),
@@ -593,49 +341,4 @@ void Cluster::add_reachable(const std::vector<Cluster> &parent_layer, size_t whi
 
 Cluster Cluster::new_around(const std::vector<Cluster> &parent_layer, size_t parent) {
     return {parent_layer[parent].representative, {{parent, 0.0}}, parent_layer[parent].goals_reachable};
-}
-
-StraightDistanceMetric::StraightDistanceMetric(const ClusterHierarchy &clusters) : clusters(clusters) {}
-
-double StraightDistanceMetric::distance(const StateOrClusterRef &a,
-                                        const StateOrClusterRef &b,
-                                        size_t layer_id,
-                                        size_t cluster_id) const  {
-    const auto layer = clusters[layer_id];
-
-    const auto repr_a = std::holds_alternative<ompl::base::ScopedStatePtr>(a) ? std::get<ompl::base::ScopedStatePtr>(a) : layer[std::get<size_t>(
-            a)].representative;
-
-    const auto repr_b = std::holds_alternative<ompl::base::ScopedStatePtr>(b) ? std::get<ompl::base::ScopedStatePtr>(b) : layer[std::get<size_t>(
-            b)].representative;
-
-    return repr_a->distance(repr_b->get());
-}
-
-InClusterPrecomputedDistanceMetricWithFallback::InClusterPrecomputedDistanceMetricWithFallback(
-        const StraightDistanceMetric &fallback,
-        const std::vector<std::vector<DistanceMatrix>>& distanceMatrix)
-        : fallback(fallback), distanceMatrices(distanceMatrix) {}
-
-InClusterPrecomputedDistanceMetricWithFallback::InClusterPrecomputedDistanceMetricWithFallback(
-        const ClusterHierarchy& clusters,
-        const std::vector<std::vector<DistanceMatrix>>& distanceMatrix)
-        : fallback(clusters), distanceMatrices(distanceMatrix) {}
-
-double InClusterPrecomputedDistanceMetricWithFallback::distance(const StateOrClusterRef &a,
-                                                                const StateOrClusterRef &b,
-                                                                size_t layer_id,
-                                                                size_t cluster_id) const {
-
-    if (std::holds_alternative<ompl::base::ScopedStatePtr>(a) || std::holds_alternative<ompl::base::ScopedStatePtr>(b)) {
-        return fallback.distance(a, b, layer_id, cluster_id);
-    } else {
-        auto key = std::make_pair(std::get<size_t>(a),std::get<size_t>(b));
-
-        auto entry = distanceMatrices[layer_id-1][cluster_id].find(key);
-
-        assert(entry != distanceMatrices[layer_id][cluster_id].end());
-
-        return entry->second;
-    }
 }

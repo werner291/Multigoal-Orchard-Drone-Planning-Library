@@ -7,6 +7,7 @@
 #include <variant>
 #include <boost/range/adaptors.hpp>
 #include <boost/range/adaptor/transformed.hpp>
+#include <Eigen/Geometry>
 
 template<typename T>
 std::vector<size_t> index_vector(const std::vector<T> &v) {
