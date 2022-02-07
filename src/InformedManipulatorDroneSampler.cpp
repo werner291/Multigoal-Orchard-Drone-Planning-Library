@@ -6,6 +6,8 @@
 #include <unsupported/Eigen/EulerAngles>
 
 double InformedManipulatorDroneSampler::getInformedMeasure(const ompl::base::Cost& currentCost) const{
+    ROS_ERROR("Not implemented.");
+    return NAN;
 }
 
     bool InformedManipulatorDroneSampler::hasInformedMeasure() const {
@@ -16,6 +18,7 @@ double InformedManipulatorDroneSampler::getInformedMeasure(const ompl::base::Cos
                                const ompl::base::Cost& minCost,
                                const ompl::base::Cost& maxCost) {
         ROS_ERROR("Not implemented.");
+        return false;
     }
 
     bool InformedManipulatorDroneSampler::sampleUniform(ompl::base::State* statePtr,

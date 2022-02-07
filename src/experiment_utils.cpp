@@ -197,16 +197,15 @@ visualization_msgs::MarkerArray markers_for_state(const moveit::core::RobotState
 
         assert(lm->getCollisionOriginTransforms().size() == lm->getShapes().size());
 
-        for (const auto &[shape_transform, shape] : boost::combine(lm->getCollisionOriginTransforms(),
-                                                                   lm->getShapes()))
+        for (const auto shape_xform : boost::combine(lm->getCollisionOriginTransforms(),lm->getShapes()))
         {
             visualization_msgs::Marker mk;
 
-            if (!shapes::constructMarkerFromShape(shape.get(),mk)) {
+            if (!shapes::constructMarkerFromShape(shape_xform.get<1>().get(),mk)) {
                 ROS_WARN("Failed to construct marker.");
             }
 
-            tf::poseEigenToMsg(xfm * shape_transform, mk.pose);
+            tf::poseEigenToMsg(xfm * shape_xform.get<0>(), mk.pose);
 
             mk.header.frame_id = "world";
 
