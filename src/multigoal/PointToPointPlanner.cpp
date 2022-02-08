@@ -68,8 +68,13 @@ PointToPointPlanner::planToOmplState(double maxTime, const ompl::base::State *st
 
     assert(planner_->getSpaceInformation()->isValid(goal));
 
-    auto gs = std::make_shared<ompl::base::GoalState>(planner_->getSpaceInformation());
-    gs->setState(goal);
-    return planToOmplGoal(maxTime, start, gs);
+    if (planner_->getSpaceInformation()->distance(start, goal) < 1.0e-10) {
+        return {ompl::geometric::PathGeometric(planner_->getSpaceInformation(), start, goal)};
+    } else {
+
+        auto gs = std::make_shared<ompl::base::GoalState>(planner_->getSpaceInformation());
+        gs->setState(goal);
+        return planToOmplGoal(maxTime, start, gs);
+    }
 }
 
