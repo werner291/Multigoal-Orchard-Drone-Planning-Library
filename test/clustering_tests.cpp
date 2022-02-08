@@ -5,19 +5,14 @@
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <random>
-#include <boost/fusion/include/flatten.hpp>
 #include <boost/range/combine.hpp>
 
 #include "test_utils.h"
 #include "../src/LeavesCollisionChecker.h"
 #include "../src/multigoal/approach_table.h"
 #include "../src/experiment_utils.h"
-#include "../src/multigoal/ClusterTable.h"
 #include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 #include "../src/DroneStateConstraintSampler.h"
-#include "../src/general_utilities.h"
-#include "../src/multigoal/gen_visitations.h"
-#include "../src/multigoal/in_cluster_distances.h"
 #include "../src/multigoal/visitation_order_strategy.h"
 
 /**
@@ -151,9 +146,10 @@ TEST_F(ClusteringTests, DISABLED_test_cluster_sinespacing) {
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
     clustering::NearestKPreselection preselect;
+    clustering::SelectAllCandidates postselect;
 
     // Expand the (singleton) clusters, connecting them to others within range.
-    clusters = clustering::create_cluster_candidates(ptp, samples, clusters, preselect, 0.1);
+    clusters = clustering::create_cluster_candidates(ptp, samples, clusters, preselect, postselect, 0, 0.1);
 
     // Assert member symmetry.
     for (size_t cluster_id = 0; cluster_id < clusters.size(); cluster_id++) {
@@ -308,7 +304,7 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
                 }
             });
 
-    const std::vector<clustering::Visitation> known_optimal{
+    const std::vector<clustering::Visitation> known_optimal {
             {0, {1, 2}},
             {3, {3, 4}},
             {4, {6}},
@@ -415,12 +411,29 @@ void check_cluster_distance_matrix_hierarchy(const clustering::ClusterHierarchy&
     }
 }
 
-std::unordered_set<size_t> visited_goals_in_clusters(const std::vector<clustering::Cluster> clusters) {
+std::unordered_set<size_t> visited_goals_in_clusters(const std::vector<clustering::Cluster>& clusters) {
     std::unordered_set<size_t> visited_goals;
     for (auto cl:clusters) {
         visited_goals.insert(cl.goals_reachable.begin(), cl.goals_reachable.end());
     }
     return visited_goals;
+}
+
+/**
+ * This function checks whether the provided clusters are non-overlapping.
+ * Note that this may not always be the case, depending on the clustering method...
+ */
+void check_clusters_exclusive(const std::vector<clustering::Cluster>& clusters) {
+
+    std::unordered_set<size_t> found_member_ids;
+
+    for (const auto& cluster: clusters) {
+        for (const auto& [mem_id, dist]: cluster.members) {
+            EXPECT_EQ(0,found_member_ids.count(mem_id));
+            found_member_ids.insert(mem_id);
+        }
+    }
+
 }
 
 /// In this test, the planning scene consists of a single, tall and thin wall.
@@ -476,8 +489,9 @@ TEST_F(ClusteringTests, test_full_wall) {
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
     clustering::NearestKPreselection preselection;
+    clustering::SelectByExponentialRadius postselection({0.1, 1.5});
 
-    auto clusters = clustering::buildClusters(ptp, goal_samples, preselection);
+    auto clusters = clustering::buildClusters(ptp, goal_samples, preselection, postselection);
 
     std::cout << "Clusters built." << std::endl;
 
@@ -540,11 +554,11 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     EXPECT_EQ(ordering.size(), goals.size());
 
-    for (size_t i = 0; i < ordering.size(); ++i) {
+    for (unsigned long i : ordering) {
         moveit::core::RobotState st(drone);
-        state_space->copyToRobotState(st, goal_samples[ordering[i]].state->get());
+        state_space->copyToRobotState(st, goal_samples[i].state->get());
 
-        std::cout << goal_samples[ordering[i]].goal_idx << " - "
+        std::cout << goal_samples[i].goal_idx << " - "
                   << st.getVariablePosition(0) << ", "
                   << st.getVariablePosition(1) << ", "
                   << st.getVariablePosition(2) << std::endl;

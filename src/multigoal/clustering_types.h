@@ -50,6 +50,9 @@ namespace clustering {
 
     typedef std::vector<std::vector<Cluster>> ClusterHierarchy;
 
+
+    std::unordered_map<size_t, double>
+    select_cluster_members(const std::vector<std::pair<size_t, double>> &candidate_members, const size_t level);
 }
 
 #endif //NEW_PLANNERS_CLUSTERING_TYPES_H

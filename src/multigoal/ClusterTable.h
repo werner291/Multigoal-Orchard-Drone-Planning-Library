@@ -29,7 +29,9 @@ namespace clustering {
                                                    const std::vector<StateAtGoal> &goal_samples,
                                                    const std::vector<Cluster> &clusters,
                                                    const PreselectionStrategy &preselect,
-                                                   double time_per_ptp = 0.2);
+                                                   const PostSelectionStrategy &postselect,
+                                                   size_t level,
+                                                   double time_per_ptp);
 
     std::vector<double> computeDensities(const std::vector<Cluster> &new_clusters);
 
@@ -50,9 +52,9 @@ namespace clustering {
      */
     std::vector<size_t> select_clusters(const std::vector<Cluster> &clusters, std::vector<double> densities);
 
-    ClusterHierarchy buildClusters(PointToPointPlanner &point_to_point_planner,
-                                   const std::vector<StateAtGoal> &goal_samples,
-                                   const PreselectionStrategy& preselect);
+    std::vector<std::vector<Cluster>>
+    buildClusters(PointToPointPlanner &point_to_point_planner, const std::vector<StateAtGoal> &goal_samples,
+                  const PreselectionStrategy &preselect, const PostSelectionStrategy &postselect);
 
     /**
      * The cluster-based planner is an attempt to provide a heuristic method to solve the multi-goal planning problem.

@@ -58,25 +58,39 @@ ompl::NearestNeighborsGNAT<size_t> buildLayerGNAT(const std::vector<Cluster> &cl
     return gnat;
 }
 
+std::unordered_map<size_t, double> clustering::select_cluster_members(
+        const std::vector<std::pair<size_t, double>> &candidate_members,
+        const size_t level) {
+    double mean = 0.0;
+    for (auto&[_,distance]: candidate_members) mean += distance;
+    mean /= (double) candidate_members.size();
+
+    std::unordered_map<size_t, double> selection;
+
+    for (auto [id,distance]: candidate_members) {
+        if (distance <= mean*1.5) {
+            selection.insert({id, distance});
+        }
+    }
+    return selection;
+}
+
 std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &point_to_point_planner,
                                                            const std::vector<StateAtGoal> &goal_samples,
                                                            const std::vector<Cluster> &clusters,
                                                            const PreselectionStrategy &preselect,
+                                                           const PostSelectionStrategy &postselect,
+                                                           size_t level,
                                                            double time_per_ptp) {
 
     // Build a GNAT to perform large-scale NN-lookups.
     auto gnat = buildLayerGNAT(clusters);
 
-    // We keep a list of new clusters to return.
-    std::vector<Cluster> new_clusters;
-
-    // There is one candidate for every sub-cluster in the previous layer.
-    for (size_t cluster = 0; cluster < clusters.size(); cluster++) {
-
+    return boost::copy_range<std::vector<Cluster>>(boost::irange<size_t>(0, clusters.size()) | boost::adaptors::transformed([&](size_t cluster){
         // The new cluster
         auto new_cluster = Cluster::new_around(clusters, cluster);
 
-        auto nearby_samples = preselect.select_around(cluster, gnat, 0);
+        auto nearby_samples = preselect.select_around(cluster, gnat, level);
 
         std::cout << "Attempting to connect to " << nearby_samples.size() << " neighbours." << std::endl;
 
@@ -84,41 +98,26 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
 
         // Try to connect to nearby sub-clusters.
         for (const auto &nearby_sample: nearby_samples) {
-
-            // Filter out the cluster itself.
-            if (nearby_sample == cluster) {
-                continue;
-            } else {
-                // The expensive part: Try to plan from representative to representative.
-                auto ptp = point_to_point_planner.planToOmplState(time_per_ptp,
+            // The expensive part: Try to plan from representative to representative.
+            if (auto ptp = point_to_point_planner.planToOmplState(time_per_ptp,
                                                                   clusters[cluster].representative->get(),
-                                                                  clusters[nearby_sample].representative->get());
-
+                                                                  clusters[nearby_sample].representative->get())) {
                 // If successful, store this as a cluster member.
-                if (ptp) {
-                    candidate_members.emplace_back(nearby_sample, ptp->length());
-                }
+                candidate_members.emplace_back(nearby_sample, ptp->length());
             }
         }
 
-
-        double mean = 0.0;
-        for (auto&[_,distance]: candidate_members) mean += distance;
-        mean /= candidate_members.size();
-
-        for (auto&[id,distance]: candidate_members) {
-            if (distance <= mean*1.5) {
-                new_cluster.add_reachable(clusters, id, distance);
-            }
+        for (auto& [mid, dist] : postselect.select_cluster_members(candidate_members, level)) {
+            new_cluster.add_reachable(clusters, mid, dist);
         }
 
-        std::cout << "Accepted " << new_cluster.members.size() << " out of " << candidate_members.size() << std::endl;
-
-        new_clusters.push_back(new_cluster);
-    }
-
-    return new_clusters;
+        return new_cluster;
+    }));
 }
+
+
+
+
 
 std::vector<Cluster> clustering::buildTrivialClusters(const std::vector<StateAtGoal> &goal_samples) {
     std::vector<Cluster> clusters(goal_samples.size());
@@ -219,12 +218,9 @@ std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clus
     return new_clusters;
 }
 
-std::vector<std::vector<Cluster>> clustering::buildClusters(PointToPointPlanner &point_to_point_planner,
-                                                            const std::vector<StateAtGoal> &goal_samples,
-                                                            const PreselectionStrategy& preselect) {
-
-    double threshold = 0.1;
-    double growFactor = 1.2;
+std::vector<std::vector<Cluster>>
+clustering::buildClusters(PointToPointPlanner &point_to_point_planner, const std::vector<StateAtGoal> &goal_samples,
+                          const PreselectionStrategy &preselect, const PostSelectionStrategy &postselect) {
 
     // Start by building singleton clusters: one for every goal sample.
     std::vector<std::vector<Cluster>> cluster_hierarchy = {buildTrivialClusters(goal_samples)};
@@ -232,15 +228,15 @@ std::vector<std::vector<Cluster>> clustering::buildClusters(PointToPointPlanner 
     size_t max_iters = 500;
 
     while (cluster_hierarchy.back().size() > 1 && --max_iters > 0) {
-        threshold *= growFactor;
-
-        std::cout << "Threshold: " << threshold << " Top: " << cluster_hierarchy.back().size() << std::endl;
 
         // Expand the clusters to connect them to neighbouring clusters
         auto new_clusters = create_cluster_candidates(point_to_point_planner,
                                                       goal_samples,
                                                       cluster_hierarchy.back(),
-                                                      preselect);
+                                                      preselect,
+                                                      postselect,
+                                                      cluster_hierarchy.size(),
+                                                      0.2);
 
         auto densities = computeDensities(new_clusters);
 
@@ -263,55 +259,6 @@ std::vector<std::vector<Cluster>> clustering::buildClusters(PointToPointPlanner 
 
     return cluster_hierarchy;
 }
-
-
-//
-//std::vector<size_t>
-//    clustering::visit_clusters(const std::vector<std::vector<Cluster>> &cluster_hierarchy,
-//                           const std::vector<StateAtGoal> &goal_samples,
-//                           const ompl::base::State* start_state,
-//                           const ompl::base::SpaceInformation& si) {
-//
-//    std::set<size_t> goals_reachable;
-//    for (const auto &cluster : cluster_hierarchy[0])
-//        goals_reachable.insert(cluster.goals_reachable.begin(),
-//                               cluster.goals_reachable.end());
-//
-//    std::vector<size_t> visit_order = index_vector(cluster_hierarchy[0]);
-//
-//    std::random_device rand;
-//    std::mt19937 rng(rand());
-//
-//    std::shuffle(visit_order.begin(), visit_order.end(), rng);
-//
-//    size_t visit_n = visit_order.size() - std::min(std::geometric_distribution<size_t>(0.5)(rng),visit_order.size());
-//
-//    double cost_estimate = si.distance(start_state, goal_samples[cluster_hierarchy[0][visit_order.front()].representative_sample_id].state->get());
-//
-//    std::set<size_t> goals_visited;
-//
-//    for (size_t visit_i = 1; visit_i < visit_n; visit_i++) {
-//        goals_visited.insert(cluster_hierarchy[0][visit_order[visit_i]].goals_reachable.begin(),
-//                             cluster_hierarchy[0][visit_order[visit_i]].goals_reachable.end());
-//    }
-//
-//    for (size_t visit_i = 1; visit_i < visit_n; visit_i++) {
-//
-//        // TODO: This'll do for now and hopefully give some results already, but perhaps we can actually compute
-//        //       this distance since we have relatively few states. It might actually already have been planned
-//        //       during the clustering stage; can we be smarter about this?
-//
-//        cost_estimate += goal_samples[cluster_hierarchy[0][visit_i - 1].representative_sample_id].state->distance(
-//                goal_samples[cluster_hierarchy[0][visit_i].representative_sample_id].state->get()
-//                );
-//
-//    }
-//
-//    double cost_per_target = cost_estimate / (double) goals_visited.size();
-//    double proportion_visited = (double) goals_visited.size() / (double) goals_reachable.size();
-//    double solution_badness = cost_per_target * (1.0/proportion_visited);
-//
-//}
 
 MultiGoalPlanResult ClusterBasedPlanner::plan(const GoalSet &goals, const ompl::base::State *start_state,
                                               PointToPointPlanner &point_to_point_planner,
