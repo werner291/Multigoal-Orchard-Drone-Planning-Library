@@ -134,10 +134,10 @@ TEST_F(ClusteringTests, DISABLED_test_cluster_sinespacing) {
     auto samples = makeLineOfSampleClusters(si);
 
     // Build singleton clusters out of each goal.
-    auto clusters = clustering::buildTrivialClusters(samples);
+    auto trivial_clusters = clustering::buildTrivialClusters(samples);
 
     // There should be a cluster for each
-    EXPECT_EQ(clusters.size(), samples.size());
+    EXPECT_EQ(trivial_clusters.size(), samples.size());
 
     // Construct a PointToPointPlanner to be used while expanding the clusters.
     auto prms = std::make_shared<ompl::geometric::AITstar>(si);
@@ -147,9 +147,10 @@ TEST_F(ClusteringTests, DISABLED_test_cluster_sinespacing) {
 
     clustering::NearestKPreselection preselect;
     clustering::SelectAllCandidates postselect;
+    clustering::InverseDistanceFromCenterDensityStrategy density_strategy;
 
     // Expand the (singleton) clusters, connecting them to others within range.
-    clusters = clustering::create_cluster_candidates(ptp, samples, clusters, preselect, postselect, 0, 0.1);
+    auto clusters = clustering::create_cluster_candidates(ptp, samples, trivial_clusters, preselect, postselect, 0, 0.1);
 
     // Assert member symmetry.
     for (size_t cluster_id = 0; cluster_id < clusters.size(); cluster_id++) {
@@ -181,7 +182,7 @@ TEST_F(ClusteringTests, DISABLED_test_cluster_sinespacing) {
     EXPECT_EQ(20, count_niners);
 
     // Compute the initial density of all clusters
-    auto densities = inverseDistanceFromCenterDensity(clusters);
+    auto densities = density_strategy.computeForLayer(clusters, trivial_clusters);
 
     // Select representatives for the next round.
     auto selections = select_clusters(clusters, densities);
@@ -488,10 +489,11 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
-    clustering::NearestKPreselection preselection;
-    clustering::SelectByExponentialRadius postselection({0.1, 1.5});
+    clustering::SearchRTryN preselection({0.1,1.5}, 10);
+    clustering::SelectByExponentialRadius postselect_exprad({0.1, 1.5});
+    clustering::InverseDistanceFromCenterDensityStrategy density_strategy;
 
-    auto clusters = clustering::buildClusters(ptp, goal_samples, preselection, postselection, <#initializer#>);
+    auto clusters = clustering::buildClusters(ptp, goal_samples, preselection, postselect_exprad, density_strategy);
 
     std::cout << "Clusters built." << std::endl;
 

@@ -250,8 +250,9 @@ catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
        test/clustering_tests.cpp
 #        test/collision_checking_test.cpp
        test/ptp_tests.cpp
-        ${SHARED_SRC}
         )
+target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared)
+
 
 #target_link_libraries(${PROJECT_NAME}_tests ${CATKIN_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib)
 
