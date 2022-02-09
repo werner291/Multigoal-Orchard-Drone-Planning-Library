@@ -18,10 +18,14 @@ std::vector<size_t> clustering::SearchRTryN::select_around(size_t focus,
                                                            const ompl::NearestNeighborsGNAT<size_t> &gnat,
                                                            size_t layer) const {
     std::vector<size_t> nearby_samples;
-    gnat.nearestR(focus, radius.get(layer), nearby_samples);
+    double d = radius.get(layer);
+//    std::cout << "d: " << d << " layer: " << layer << std::endl;
+    gnat.nearestR(focus, d, nearby_samples);
     truncate(nearby_samples, n);
     return nearby_samples;
 }
+
+clustering::SearchRTryN::SearchRTryN(const clustering::LayerRadius &radius, size_t n) : radius(radius), n(n) {}
 
 std::unordered_map<size_t, double>
 clustering::SelectByMean::select_cluster_members(const std::vector<std::pair<size_t, double>> &candidate_members,
@@ -67,4 +71,8 @@ std::unordered_map<size_t, double>
 clustering::SelectAllCandidates::select_cluster_members(const std::vector<std::pair<size_t, double>> &candidate_members,
                                                         size_t level) const {
     return boost::copy_range<std::unordered_map<size_t, double> >(candidate_members);
+}
+
+std::string clustering::SelectAllCandidates::getName() const {
+    return "Keep all.";
 }

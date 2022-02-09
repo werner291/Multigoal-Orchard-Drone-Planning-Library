@@ -73,9 +73,12 @@ namespace clustering {
     class SearchRTryN : public PreselectionStrategy {
 
         LayerRadius radius;
+    public:
+        SearchRTryN(const LayerRadius &radius, size_t n);
+
+    private:
         size_t n;
     public:
-        SearchRTryN(double startRadius, double expansionFactor, size_t n = 5);
 
     public:
         [[nodiscard]] std::vector<size_t> select_around(size_t focus, const ompl::NearestNeighborsGNAT<size_t> &gnat, size_t level) const override;
@@ -153,9 +156,7 @@ namespace clustering {
         select_cluster_members(const std::vector<std::pair<size_t, double>> &candidate_members,
                                size_t level) const override;
 
-        [[nodiscard]] virtual std::string getName() {
-            return "Keep all.";
-        }
+        [[nodiscard]] virtual std::string getName() const override;
     };
 }
 

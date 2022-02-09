@@ -111,13 +111,11 @@ std::vector<Cluster> clustering::create_cluster_candidates(PointToPointPlanner &
             new_cluster.add_reachable(clusters, mid, dist);
         }
 
+        std::cout << "Successfully reached: " << new_cluster.members.size() << "." << std::endl;
+
         return new_cluster;
     }));
 }
-
-
-
-
 
 std::vector<Cluster> clustering::buildTrivialClusters(const std::vector<StateAtGoal> &goal_samples) {
     std::vector<Cluster> clusters(goal_samples.size());
@@ -225,9 +223,9 @@ clustering::buildClusters(PointToPointPlanner &point_to_point_planner, const std
     // Start by building singleton clusters: one for every goal sample.
     std::vector<std::vector<Cluster>> cluster_hierarchy = {buildTrivialClusters(goal_samples)};
 
-    size_t max_iters = 500;
+    size_t iters = 0;
 
-    while (cluster_hierarchy.back().size() > 1 && --max_iters > 0) {
+    while (cluster_hierarchy.back().size() > 1 && iters < 500) {
 
         // Expand the clusters to connect them to neighbouring clusters
         auto new_clusters = create_cluster_candidates(point_to_point_planner,
@@ -235,7 +233,7 @@ clustering::buildClusters(PointToPointPlanner &point_to_point_planner, const std
                                                       cluster_hierarchy.back(),
                                                       preselect,
                                                       postselect,
-                                                      cluster_hierarchy.size(),
+                                                      iters,
                                                       0.2);
 
         auto densities = computeDensities(new_clusters);
@@ -249,6 +247,8 @@ clustering::buildClusters(PointToPointPlanner &point_to_point_planner, const std
                 cluster_hierarchy.back().push_back(new_clusters[item]);
             }
         }
+
+        iters += 1;
     }
 
     std::reverse(cluster_hierarchy.begin(), cluster_hierarchy.end());

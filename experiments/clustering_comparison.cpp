@@ -30,24 +30,25 @@ int main(int argc, char **argv) {
 
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
-    clustering::NearestKPreselection preselection;
+    clustering::SearchRTryN preselection({0.1,1.5}, 10);
+
     clustering::SelectByExponentialRadius postselect_exprad({0.1, 1.5});
     clustering::SelectByMean postselect_mean(1.5);
+    clustering::SelectAllCandidates postselect_all;
 
-    clustering::PostSelectionStrategy* post_selections[2] = {&postselect_exprad, &postselect_mean};
+    clustering::PostSelectionStrategy* post_selections[] = {&postselect_exprad,/*,&postselect_mean &postselect_all,*/};
 
     Json::Value clusters_json;
 
     for (size_t i : boost::irange(0,1)) {
         for (clustering::PostSelectionStrategy *postselect: post_selections) {
+            std::cout << "Iteration " << i << " post select: " << postselect->getName() << std::endl;
 
             auto clusters = clustering::buildClusters(ptp, goal_samples, preselection, *postselect);
 
             Json::Value entry;
 
             entry["postselection"] = postselect->getName();
-
-            std::cout << "Iteration " << i << " post select: " << postselect->getName() << std::endl;
 
             for (const auto &layer: clusters) {
                 Json::Value layer_json;
