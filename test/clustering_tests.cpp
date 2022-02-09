@@ -181,7 +181,7 @@ TEST_F(ClusteringTests, DISABLED_test_cluster_sinespacing) {
     EXPECT_EQ(20, count_niners);
 
     // Compute the initial density of all clusters
-    auto densities = computeDensities(clusters);
+    auto densities = inverseDistanceFromCenterDensity(clusters);
 
     // Select representatives for the next round.
     auto selections = select_clusters(clusters, densities);
@@ -491,7 +491,7 @@ TEST_F(ClusteringTests, test_full_wall) {
     clustering::NearestKPreselection preselection;
     clustering::SelectByExponentialRadius postselection({0.1, 1.5});
 
-    auto clusters = clustering::buildClusters(ptp, goal_samples, preselection, postselection);
+    auto clusters = clustering::buildClusters(ptp, goal_samples, preselection, postselection, <#initializer#>);
 
     std::cout << "Clusters built." << std::endl;
 

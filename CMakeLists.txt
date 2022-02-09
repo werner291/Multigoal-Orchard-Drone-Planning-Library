@@ -199,6 +199,8 @@ add_library(${PROJECT_NAME}_shared
         src/multigoal/visitation_order_strategy.h
         src/multigoal/in_cluster_distances.cpp
         src/multigoal/in_cluster_distances.h
+        src/multigoal/clustering_density.cpp
+        src/multigoal/clustering_density.h
         #        src/multigoal/SubtourMovingPlanner.cpp
         #        src/multigoal/SubtourMovingPlanner.h
         src/multigoal/uknn.cpp

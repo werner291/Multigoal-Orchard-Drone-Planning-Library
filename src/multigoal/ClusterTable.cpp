@@ -6,6 +6,7 @@
 #include "gen_visitations.h"
 #include "clustering_preselection.h"
 #include "in_cluster_distances.h"
+#include "clustering_density.h"
 
 using namespace clustering;
 
@@ -129,19 +130,6 @@ std::vector<Cluster> clustering::buildTrivialClusters(const std::vector<StateAtG
     return clusters;
 }
 
-std::vector<double> clustering::computeDensities(const std::vector<Cluster> &new_clusters) {
-    std::vector<double> densities;
-    densities.reserve(new_clusters.size());
-
-    for (const auto &cluster: new_clusters) {
-        double density = 0.0;
-        for (const auto &item: cluster.members) {
-            if (item.second > 0.0) { density += 1.0 / item.second; }
-        }
-        densities.push_back(density);
-    }
-    return densities;
-}
 
 std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clusters,
                                                 std::vector<double> densities) {
@@ -194,7 +182,7 @@ std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clus
         } else {
             assert(!cluster_visited[current_cluster.cluster_id]);
             cluster_visited[current_cluster.cluster_id] = true;
-//             std::cout << "Accepted:" << current_cluster.cluster_id << std::endl;
+             std::cout << "Accepted:" << current_cluster.cluster_id << " density: " << current_cluster.density_at_insertion << std::endl;
 
             new_clusters.push_back(current_cluster.cluster_id);
 
@@ -218,10 +206,13 @@ std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clus
 
 std::vector<std::vector<Cluster>>
 clustering::buildClusters(PointToPointPlanner &point_to_point_planner, const std::vector<StateAtGoal> &goal_samples,
-                          const PreselectionStrategy &preselect, const PostSelectionStrategy &postselect) {
+                          const PreselectionStrategy &preselect, const PostSelectionStrategy &postselect,
+                          const DensityStrategy &densityStrategy) {
 
     // Start by building singleton clusters: one for every goal sample.
-    std::vector<std::vector<Cluster>> cluster_hierarchy = {buildTrivialClusters(goal_samples)};
+    std::vector<std::vector<Cluster>> cluster_hierarchy = {
+            buildTrivialClusters(goal_samples)
+    };
 
     size_t iters = 0;
 
@@ -236,7 +227,7 @@ clustering::buildClusters(PointToPointPlanner &point_to_point_planner, const std
                                                       iters,
                                                       0.2);
 
-        auto densities = computeDensities(new_clusters);
+        auto densities = densityStrategy.computeForLayer(new_clusters, cluster_hierarchy.back());
 
         auto selection = select_clusters(new_clusters, densities);
 

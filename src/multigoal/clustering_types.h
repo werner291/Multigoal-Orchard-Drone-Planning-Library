@@ -29,7 +29,7 @@ namespace clustering {
         // or to sub-clusters on higher levels of the hierarchy.
         std::map<size_t, double> members;
         // A sorted set of goal indices that are reachable through a goal sample within this cluster sub-hierarchy.
-        std::set <size_t> goals_reachable;
+        std::set<size_t> goals_reachable;
 
         /**
          * Mark a given goal as reachable, performing some internal bookkeeping.

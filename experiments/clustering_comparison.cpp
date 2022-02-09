@@ -36,29 +36,38 @@ int main(int argc, char **argv) {
     clustering::SelectByMean postselect_mean(1.5);
     clustering::SelectAllCandidates postselect_all;
 
+    clustering::InverseDistanceFromCenterDensityStrategy density_strategy;
+    clustering::GoalWeightedInverseDistanceFromCenterDensityStrategy gw_density_strategy;
+
     clustering::PostSelectionStrategy* post_selections[] = {&postselect_exprad,/*,&postselect_mean &postselect_all,*/};
+    clustering::DensityStrategy* density_strategies[] = {&density_strategy,&gw_density_strategy/* &postselect_all,*/};
 
     Json::Value clusters_json;
 
     for (size_t i : boost::irange(0,1)) {
         for (clustering::PostSelectionStrategy *postselect: post_selections) {
-            std::cout << "Iteration " << i << " post select: " << postselect->getName() << std::endl;
+            for (clustering::DensityStrategy *densityfn: density_strategies) {
 
-            auto clusters = clustering::buildClusters(ptp, goal_samples, preselection, *postselect);
+                std::cout << "Iteration " << i << " post select: " << postselect->getName() << std::endl;
 
-            Json::Value entry;
+                auto clusters = clustering::buildClusters(ptp, goal_samples, preselection, *postselect,
+                                                          *densityfn);
 
-            entry["postselection"] = postselect->getName();
+                Json::Value entry;
 
-            for (const auto &layer: clusters) {
-                Json::Value layer_json;
-                for (const auto &cluster: layer) {
-                    layer_json.append(toJSON(cluster));
+                entry["postselection"] = postselect->getName();
+                entry["density"] = densityfn->getName();
+
+                for (const auto &layer: clusters) {
+                    Json::Value layer_json;
+                    for (const auto &cluster: layer) {
+                        layer_json.append(toJSON(cluster));
+                    }
+                    entry["hierarchy"].append(layer_json);
                 }
-                entry["hierarchy"].append(layer_json);
-            }
 
-            clusters_json.append(entry);
+                clusters_json.append(entry);
+            }
         }
     }
 
