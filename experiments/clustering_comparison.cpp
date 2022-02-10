@@ -5,6 +5,8 @@
 #include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 #include "../src/json_utils.h"
 
+
+
 int main(int argc, char **argv) {
 
     // Worth considering: https://www.researchgate.net/publication/220895309_Speeding-Up_Hierarchical_Agglomerative_Clustering_in_Presence_of_Expensive_Metrics

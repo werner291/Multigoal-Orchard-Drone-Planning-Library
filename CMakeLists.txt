@@ -216,6 +216,8 @@ add_library(${PROJECT_NAME}_shared
         src/SamplerWrapper.h
         src/UnionGoalSampleableRegion.cpp
         src/UnionGoalSampleableRegion.h
+        src/agglomerative_clustering.cpp
+        src/agglomerative_clustering.h
         )
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})

@@ -447,26 +447,26 @@ void check_clusters_exclusive(const std::vector<clustering::Cluster>& clusters) 
 /// to traverse the wall many times.
 TEST_F(ClusteringTests, test_full_wall) {
 
-//#define PUBLISH_RVIZ
+#define PUBLISH_RVIZ
 
     auto[scene,apples] = createWallApplePlanningScene(drone);
 
-//#ifdef PUBLISH_RVIZ
-//
-//    int zero = 0;
-//    ros::init(zero, nullptr, "full_wall_test");
-//    ros::AsyncSpinner spinner(1);
-//    spinner.start();
-//    ros::NodeHandle node_handle;
-//
-//    ros::Publisher planning_scene_diff_publisher = node_handle.advertise<moveit_msgs::PlanningScene>("/planning_scene", 1);
-//    while (planning_scene_diff_publisher.getNumSubscribers() == 0) {
-//        ros::Duration(0.5).sleep();
-//    }
-//    moveit_msgs::PlanningScene scene_msg;
-//    scene->getPlanningSceneMsg(scene_msg);
-//    planning_scene_diff_publisher.publish(scene_msg);
-//#endif
+#ifdef PUBLISH_RVIZ
+
+    int zero = 0;
+    ros::init(zero, nullptr, "full_wall_test");
+    ros::AsyncSpinner spinner(1);
+    spinner.start();
+    ros::NodeHandle node_handle;
+
+    ros::Publisher planning_scene_diff_publisher = node_handle.advertise<moveit_msgs::PlanningScene>("/planning_scene", 1);
+    while (planning_scene_diff_publisher.getNumSubscribers() == 0) {
+        ros::Duration(0.5).sleep();
+    }
+    moveit_msgs::PlanningScene scene_msg;
+    scene->getPlanningSceneMsg(scene_msg);
+    planning_scene_diff_publisher.publish(scene_msg);
+#endif
 
     auto si = initSpaceInformation(scene, drone, state_space);
 
