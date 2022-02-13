@@ -120,11 +120,26 @@ catkin_package(
         #  DEPENDS system_lib
 )
 
+include_directories(
+        # include
+        ${catkin_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIRS}
+        ${FCL_INCLUDE_DIRS}
+        ${JSONCPP_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIRS}
+        ${GTEST_INCLUDE_DIRS}
+)
+
+link_libraries(${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib)
+
 ###########
 ## Build ##
 ###########
 
-set(SHARED_SRC
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_library(${PROJECT_NAME}_shared
         src/BetweenMoveItStatesInformedSampler.cpp
         src/BetweenMoveItStatesInformedSampler.h
         src/BulletContinuousMotionValidator.cpp
@@ -184,6 +199,8 @@ set(SHARED_SRC
         src/multigoal/visitation_order_strategy.h
         src/multigoal/in_cluster_distances.cpp
         src/multigoal/in_cluster_distances.h
+        src/multigoal/clustering_density.cpp
+        src/multigoal/clustering_density.h
         #        src/multigoal/SubtourMovingPlanner.cpp
         #        src/multigoal/SubtourMovingPlanner.h
         src/multigoal/uknn.cpp
@@ -199,39 +216,31 @@ set(SHARED_SRC
         src/SamplerWrapper.h
         src/UnionGoalSampleableRegion.cpp
         src/UnionGoalSampleableRegion.h
+        src/agglomerative_clustering.cpp
+        src/agglomerative_clustering.h
         )
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-include_directories(
-        # include
-        ${catkin_INCLUDE_DIRS}
-        ${EIGEN3_INCLUDE_DIRS}
-        ${FCL_INCLUDE_DIRS}
-        ${JSONCPP_INCLUDE_DIRS}
-        ${Boost_INCLUDE_DIRS}
-        ${GTEST_INCLUDE_DIRS}
-)
 
-link_libraries(${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ## Visualization node
-add_executable(${PROJECT_NAME}_vizualized src/run_vizualized.cpp ${SHARED_SRC})
+add_executable(${PROJECT_NAME}_vizualized src/run_vizualized.cpp)
 
-add_executable(${PROJECT_NAME}_benchmark src/run_benchmarked.cpp ${SHARED_SRC} experiments/bnb_comparison.cpp)
+add_executable(${PROJECT_NAME}_benchmark src/run_benchmarked.cpp experiments/bnb_comparison.cpp)
 
-add_executable(${PROJECT_NAME}_at_benchmark experiments/at_benchmark.cpp ${SHARED_SRC})
+add_executable(${PROJECT_NAME}_at_benchmark experiments/at_benchmark.cpp)
 
-add_executable(${PROJECT_NAME}_ptp_correlation experiments/ptp_correlation.cpp ${SHARED_SRC})
+add_executable(${PROJECT_NAME}_ptp_correlation experiments/ptp_correlation.cpp)
 
-add_executable(${PROJECT_NAME}_euclidean_tsp experiments/euclidean_tsp.cpp ${SHARED_SRC})
+add_executable(${PROJECT_NAME}_euclidean_tsp experiments/euclidean_tsp.cpp)
 
-add_executable(${PROJECT_NAME}_generate_tree_data src/generate_tree_data.cpp ${SHARED_SRC})
+add_executable(${PROJECT_NAME}_clustering experiments/clustering_comparison.cpp test/test_utils.cpp)
+target_link_libraries(${PROJECT_NAME}_clustering ${PROJECT_NAME}_shared)
+
+
+add_executable(${PROJECT_NAME}_generate_tree_data src/generate_tree_data.cpp)
 
 catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
         test/test_utils.h
@@ -243,8 +252,9 @@ catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
        test/clustering_tests.cpp
 #        test/collision_checking_test.cpp
        test/ptp_tests.cpp
-        ${SHARED_SRC}
         )
+target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared)
+
 
 #target_link_libraries(${PROJECT_NAME}_tests ${CATKIN_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib)
 

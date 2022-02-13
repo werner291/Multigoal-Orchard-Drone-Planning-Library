@@ -5,19 +5,14 @@
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <random>
-#include <boost/fusion/include/flatten.hpp>
 #include <boost/range/combine.hpp>
 
 #include "test_utils.h"
 #include "../src/LeavesCollisionChecker.h"
 #include "../src/multigoal/approach_table.h"
 #include "../src/experiment_utils.h"
-#include "../src/multigoal/ClusterTable.h"
 #include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 #include "../src/DroneStateConstraintSampler.h"
-#include "../src/general_utilities.h"
-#include "../src/multigoal/gen_visitations.h"
-#include "../src/multigoal/in_cluster_distances.h"
 #include "../src/multigoal/visitation_order_strategy.h"
 
 /**
@@ -139,10 +134,10 @@ TEST_F(ClusteringTests, DISABLED_test_cluster_sinespacing) {
     auto samples = makeLineOfSampleClusters(si);
 
     // Build singleton clusters out of each goal.
-    auto clusters = clustering::buildTrivialClusters(samples);
+    auto trivial_clusters = clustering::buildTrivialClusters(samples);
 
     // There should be a cluster for each
-    EXPECT_EQ(clusters.size(), samples.size());
+    EXPECT_EQ(trivial_clusters.size(), samples.size());
 
     // Construct a PointToPointPlanner to be used while expanding the clusters.
     auto prms = std::make_shared<ompl::geometric::AITstar>(si);
@@ -151,9 +146,11 @@ TEST_F(ClusteringTests, DISABLED_test_cluster_sinespacing) {
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
     clustering::NearestKPreselection preselect;
+    clustering::SelectAllCandidates postselect;
+    clustering::InverseDistanceFromCenterDensityStrategy density_strategy;
 
     // Expand the (singleton) clusters, connecting them to others within range.
-    clusters = clustering::create_cluster_candidates(ptp, samples, clusters, preselect, 0.1);
+    auto clusters = clustering::create_cluster_candidates(ptp, samples, trivial_clusters, preselect, postselect, 0, 0.1);
 
     // Assert member symmetry.
     for (size_t cluster_id = 0; cluster_id < clusters.size(); cluster_id++) {
@@ -185,7 +182,7 @@ TEST_F(ClusteringTests, DISABLED_test_cluster_sinespacing) {
     EXPECT_EQ(20, count_niners);
 
     // Compute the initial density of all clusters
-    auto densities = computeDensities(clusters);
+    auto densities = density_strategy.computeForLayer(clusters, trivial_clusters);
 
     // Select representatives for the next round.
     auto selections = select_clusters(clusters, densities);
@@ -308,7 +305,7 @@ TEST(ClusteringSubroutineTests, order_proposal_multigoal) {
                 }
             });
 
-    const std::vector<clustering::Visitation> known_optimal{
+    const std::vector<clustering::Visitation> known_optimal {
             {0, {1, 2}},
             {3, {3, 4}},
             {4, {6}},
@@ -415,12 +412,29 @@ void check_cluster_distance_matrix_hierarchy(const clustering::ClusterHierarchy&
     }
 }
 
-std::unordered_set<size_t> visited_goals_in_clusters(const std::vector<clustering::Cluster> clusters) {
+std::unordered_set<size_t> visited_goals_in_clusters(const std::vector<clustering::Cluster>& clusters) {
     std::unordered_set<size_t> visited_goals;
     for (auto cl:clusters) {
         visited_goals.insert(cl.goals_reachable.begin(), cl.goals_reachable.end());
     }
     return visited_goals;
+}
+
+/**
+ * This function checks whether the provided clusters are non-overlapping.
+ * Note that this may not always be the case, depending on the clustering method...
+ */
+void check_clusters_exclusive(const std::vector<clustering::Cluster>& clusters) {
+
+    std::unordered_set<size_t> found_member_ids;
+
+    for (const auto& cluster: clusters) {
+        for (const auto& [mem_id, dist]: cluster.members) {
+            EXPECT_EQ(0,found_member_ids.count(mem_id));
+            found_member_ids.insert(mem_id);
+        }
+    }
+
 }
 
 /// In this test, the planning scene consists of a single, tall and thin wall.
@@ -433,26 +447,26 @@ std::unordered_set<size_t> visited_goals_in_clusters(const std::vector<clusterin
 /// to traverse the wall many times.
 TEST_F(ClusteringTests, test_full_wall) {
 
-//#define PUBLISH_RVIZ
+#define PUBLISH_RVIZ
 
     auto[scene,apples] = createWallApplePlanningScene(drone);
 
-//#ifdef PUBLISH_RVIZ
-//
-//    int zero = 0;
-//    ros::init(zero, nullptr, "full_wall_test");
-//    ros::AsyncSpinner spinner(1);
-//    spinner.start();
-//    ros::NodeHandle node_handle;
-//
-//    ros::Publisher planning_scene_diff_publisher = node_handle.advertise<moveit_msgs::PlanningScene>("/planning_scene", 1);
-//    while (planning_scene_diff_publisher.getNumSubscribers() == 0) {
-//        ros::Duration(0.5).sleep();
-//    }
-//    moveit_msgs::PlanningScene scene_msg;
-//    scene->getPlanningSceneMsg(scene_msg);
-//    planning_scene_diff_publisher.publish(scene_msg);
-//#endif
+#ifdef PUBLISH_RVIZ
+
+    int zero = 0;
+    ros::init(zero, nullptr, "full_wall_test");
+    ros::AsyncSpinner spinner(1);
+    spinner.start();
+    ros::NodeHandle node_handle;
+
+    ros::Publisher planning_scene_diff_publisher = node_handle.advertise<moveit_msgs::PlanningScene>("/planning_scene", 1);
+    while (planning_scene_diff_publisher.getNumSubscribers() == 0) {
+        ros::Duration(0.5).sleep();
+    }
+    moveit_msgs::PlanningScene scene_msg;
+    scene->getPlanningSceneMsg(scene_msg);
+    planning_scene_diff_publisher.publish(scene_msg);
+#endif
 
     auto si = initSpaceInformation(scene, drone, state_space);
 
@@ -475,9 +489,11 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);
 
-    clustering::NearestKPreselection preselection;
+    clustering::SearchRTryN preselection({0.1,1.5}, 10);
+    clustering::SelectByExponentialRadius postselect_exprad({0.1, 1.5});
+    clustering::InverseDistanceFromCenterDensityStrategy density_strategy;
 
-    auto clusters = clustering::buildClusters(ptp, goal_samples, preselection);
+    auto clusters = clustering::buildClusters(ptp, goal_samples, preselection, postselect_exprad, density_strategy);
 
     std::cout << "Clusters built." << std::endl;
 
@@ -540,11 +556,11 @@ TEST_F(ClusteringTests, test_full_wall) {
 
     EXPECT_EQ(ordering.size(), goals.size());
 
-    for (size_t i = 0; i < ordering.size(); ++i) {
+    for (unsigned long i : ordering) {
         moveit::core::RobotState st(drone);
-        state_space->copyToRobotState(st, goal_samples[ordering[i]].state->get());
+        state_space->copyToRobotState(st, goal_samples[i].state->get());
 
-        std::cout << goal_samples[ordering[i]].goal_idx << " - "
+        std::cout << goal_samples[i].goal_idx << " - "
                   << st.getVariablePosition(0) << ", "
                   << st.getVariablePosition(1) << ", "
                   << st.getVariablePosition(2) << std::endl;

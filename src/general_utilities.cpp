@@ -141,12 +141,11 @@ Eigen::Quaterniond sampleInformedQuaternion(const Eigen::Quaterniond& qa,
         Eigen::Vector4d p2 = cross_three(up,fw,p1);
 
         // Assemble the vectors into a matrix
-        Eigen::Matrix4d xf {
-                {fw.x(),p1.x(),p2.x(),up.x()},
-                {fw.y(),p1.y(),p2.y(),up.y()},
-                {fw.z(),p1.z(),p2.z(),up.z()},
-                {fw.w(),p1.w(),p2.w(),up.w()},
-        };
+        Eigen::Matrix4d xf;
+        xf <<   fw.x(),p1.x(),p2.x(),up.x(),
+                fw.y(),p1.y(),p2.y(),up.y(),
+                fw.z(),p1.z(),p2.z(),up.z(),
+                fw.w(),p1.w(),p2.w(),up.w();
 
         // Use the matrix to transform our sample into the coordinate frame centered onto the two quaternions.
         result_vec = xf * on_sphere;

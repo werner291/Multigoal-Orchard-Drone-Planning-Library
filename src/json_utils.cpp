@@ -305,3 +305,42 @@ Json::Value ptpSpecsToJson(const std::vector<std::vector<PtpSpec>> &specs) {
 
     return specs_json;
 }
+
+Json::Value toJSON(const double& d) {
+    return Json::Value(d);
+}
+
+
+template<typename T>
+Json::Value vectorToJSON(const std::vector<T> v) {
+    Json::Value json;
+
+    for (const auto& value: v) {
+        json.append(toJSON(value));
+    }
+
+    return json;
+
+}
+
+Json::Value toJSON(const ompl::base::ScopedStatePtr& state) {
+    return vectorToJSON(state->reals());
+}
+
+Json::Value toJSON(const clustering::Cluster& cluster) {
+
+    Json::Value cluster_json;
+
+    cluster_json["representative"] = toJSON(cluster.representative);
+
+    for (auto pair: cluster.members) {
+        cluster_json["members"][std::to_string(pair.first)] = pair.second;
+    }
+
+    for (auto goal_id: cluster.goals_reachable) {
+        cluster_json["goals_reachable"].append((int)goal_id);
+    }
+
+    return cluster_json;
+
+}

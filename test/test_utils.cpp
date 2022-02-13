@@ -64,14 +64,14 @@ std::vector<Apple> apples_around_wall() {
 
     // TODO Change this back.
 
-    for (int i = 3; i <= 5; i += 2) {
+    for (int i = -1; i <= 5; i += 2) {
         apples.push_back({
                                  Eigen::Vector3d(0.5, (double) i, 0.0),
                                  Eigen::Vector3d(1.0, 0.0, 0.0),
                          });
     }
 
-    for (int i = 5; i >= 3; i -= 2) {
+    for (int i = 5; i >= -1; i -= 2) {
         apples.push_back({
                                  Eigen::Vector3d(-0.5, (double) i, 0.0),
                                  Eigen::Vector3d(-1.0, 0.0, 0.0),

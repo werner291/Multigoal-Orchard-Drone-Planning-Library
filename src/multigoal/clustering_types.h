@@ -29,7 +29,7 @@ namespace clustering {
         // or to sub-clusters on higher levels of the hierarchy.
         std::map<size_t, double> members;
         // A sorted set of goal indices that are reachable through a goal sample within this cluster sub-hierarchy.
-        std::set <size_t> goals_reachable;
+        std::set<size_t> goals_reachable;
 
         /**
          * Mark a given goal as reachable, performing some internal bookkeeping.
@@ -50,6 +50,9 @@ namespace clustering {
 
     typedef std::vector<std::vector<Cluster>> ClusterHierarchy;
 
+
+    std::unordered_map<size_t, double>
+    select_cluster_members(const std::vector<std::pair<size_t, double>> &candidate_members, const size_t level);
 }
 
 #endif //NEW_PLANNERS_CLUSTERING_TYPES_H

@@ -11,6 +11,7 @@
 #include "clustering_types.h"
 #include "in_cluster_distances.h"
 #include "clustering_preselection.h"
+#include "clustering_density.h"
 
 namespace clustering {
 
@@ -29,9 +30,11 @@ namespace clustering {
                                                    const std::vector<StateAtGoal> &goal_samples,
                                                    const std::vector<Cluster> &clusters,
                                                    const PreselectionStrategy &preselect,
-                                                   double time_per_ptp = 0.2);
+                                                   const PostSelectionStrategy &postselect,
+                                                   size_t level,
+                                                   double time_per_ptp);
 
-    std::vector<double> computeDensities(const std::vector<Cluster> &new_clusters);
+    std::vector<double> inverseDistanceFromCenterDensity(const std::vector<Cluster> &new_clusters);
 
     /**
      * Taking a vector of clusters as input, this algorithm will select a subset of the available clusters,
@@ -50,9 +53,10 @@ namespace clustering {
      */
     std::vector<size_t> select_clusters(const std::vector<Cluster> &clusters, std::vector<double> densities);
 
-    ClusterHierarchy buildClusters(PointToPointPlanner &point_to_point_planner,
-                                   const std::vector<StateAtGoal> &goal_samples,
-                                   const PreselectionStrategy& preselect);
+    std::vector<std::vector<Cluster>>
+    buildClusters(PointToPointPlanner &point_to_point_planner, const std::vector<StateAtGoal> &goal_samples,
+                  const PreselectionStrategy &preselect, const PostSelectionStrategy &postselect,
+                  const DensityStrategy &densityStrategy);
 
     /**
      * The cluster-based planner is an attempt to provide a heuristic method to solve the multi-goal planning problem.

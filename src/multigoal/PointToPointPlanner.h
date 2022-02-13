@@ -6,6 +6,8 @@
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 #include <ompl/base/goals/GoalState.h>
 #include <ompl/base/Planner.h>
+#include <optional>
+
 #include "../InformedRobotStateSampler.h"
 #include "../DroneStateSampler.h"
 #include "../SamplerWrapper.h"
