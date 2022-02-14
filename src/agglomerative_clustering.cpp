@@ -1,13 +1,14 @@
 
 #include "agglomerative_clustering.h"
 #include <boost/range/adaptor/transformed.hpp>
+#include <boost/range/irange.hpp>
 
 agglomerative_clustering::AgglomerativeClustering::AgglomerativeClustering(
         const std::vector<ompl::base::ScopedStatePtr> &toCluster, const PointToPointPlanner &ptp)
         : next_node_id(0), ptp(ptp) {
     _nodes = boost::copy_range<std::vector<TreeNode>>(
             toCluster | boost::adaptors::transformed([&](const ompl::base::ScopedStatePtr &state) {
-                return TreeNode{next_node_id++, state, {}};
+                return std::make_pair(next_node_id++,std::make_shared<TreeNode>(state, {}));
             })
     );
 }
@@ -25,19 +26,35 @@ bool agglomerative_clustering::AgglomerativeClustering::iterate() {
 void agglomerative_clustering::AgglomerativeClustering::merge_pair(CandidatePair pair) {
     assert(pair.is_tight());
 
+
+
+    size_t new_node_id = next_node_id++;
+
+    for (size_t pivot_i : boost::irange<size_t>(0,_pivots.size())) {
+        if (auto path = ptp.planToOmplState(0.2,pair.midpoint->get(), _pivots[pivot_i]->get())) {
+            pivot_distances[pivot_i][new_node_id] = path->length();
+        } else {
+            pivot_distances[pivot_i][new_node_id] = INFINITY;
+        }
+    }
+
+    for (const auto& [node_id, node] : _nodes) {
+
+        double distance = INFINITY;
+        for (size_t pivot_i : boost::irange<size_t>(0,_pivots.size())) {
+            distance = std::min(distance, pivot_distances[pivot_i][new_node_id]+pivot_distances[pivot_i][node_id]);
+        }
+
+        _candidate_pairs.push({
+                                      {node_id, new_node_id},
+                                      distance,
+                                      {}
+        });
+    }
+
+    _nodes[new_node_id] = { pair.midpoint, {{_nodes[pair.pair.first],_nodes[pair.pair.second]}} };
     _nodes.erase(pair.pair.first);
     _nodes.erase(pair.pair.second);
-
-    _nodes.insert({
-                         next_node_id++,
-                         {
-                                 pair.midpoint,
-                                 {pair.pair}
-                         }
-                 });
-
-    // How to update the candidate pairs? TODO
-    assert(false);
 }
 
 agglomerative_clustering::AgglomerativeClustering::CandidatePair
@@ -46,7 +63,7 @@ agglomerative_clustering::AgglomerativeClustering::extract_next_valid_candidate(
     CandidatePair candidate;
 
     do {
-        auto candidate = _candidate_pairs.top();
+        candidate = _candidate_pairs.top();
         _candidate_pairs.pop();
     } while (isNotClosed(candidate));
 
@@ -148,3 +165,6 @@ void agglomerative_clustering::AgglomerativeClustering::compute_pivot_distance_m
 }
 
 
+agglomerative_clustering::AgglomerativeClustering::TreeNode::TreeNode(const ompl::base::ScopedStatePtr &representative,
+                                                                      const std::optional<std::pair<std::shared_ptr<TreeNode>, std::shared_ptr<TreeNode>>> &children)
+        : representative(representative), children(children) {}

@@ -20,7 +20,7 @@ namespace agglomerative_clustering {
         // Keeps track of the next node ID that can be assigned uniquely.
         size_t next_node_id;
         // How to plan from state-to-state.
-        const PointToPointPlanner& ptp;
+        PointToPointPlanner ptp;
 
     public:
         /**
@@ -31,6 +31,9 @@ namespace agglomerative_clustering {
             // All cluster members are supposed to be reachable from it.
             ompl::base::ScopedStatePtr representative;
 
+            TreeNode(const ompl::base::ScopedStatePtr &representative,
+                     const std::optional<std::pair<std::shared_ptr<TreeNode>, std::shared_ptr<TreeNode>>> &children);
+
             // Child nodes, which are empty for leaf nodes.
             std::optional<std::pair<std::shared_ptr<TreeNode>,std::shared_ptr<TreeNode>>> children;
         };
@@ -40,13 +43,13 @@ namespace agglomerative_clustering {
          */
         struct CandidatePair {
             // IDs of the nodes to be combined.
-            const std::pair<size_t,size_t> pair;
+            std::pair<size_t,size_t> pair;
             // An upper bound on the path-planning distance between the node's representatives.
-            const double upper_distance_bound;
+            double upper_distance_bound;
             // If available, a state from with both node representatives are reachable,
             // forming a rough center point of the hypothetical cluster to be formed.
             // May be null, in which case the `upper_distance_bound` is not a tight bound.
-            const ompl::base::ScopedStatePtr midpoint;
+            ompl::base::ScopedStatePtr midpoint;
 
             /**
              * Whether `upper_distance_bound` is a tight bound obtained by an actual planner,
@@ -68,7 +71,7 @@ namespace agglomerative_clustering {
     private:
         /// Keeps track of all nodes that can be combined.
         /// Algorithm is done once this is a singleton.
-        std::unordered_map<size_t,TreeNode> _nodes;
+        std::unordered_map<size_t,std::shared_ptr<TreeNode>> _nodes;
 
         /// Queue of candidate nodes to combine, ordered by distance upper bound.
         /// Note: uses lazy deletion: check candidates returned for whether that node is still open!
@@ -77,7 +80,7 @@ namespace agglomerative_clustering {
         /// A set of reference states that enable us to skip a lot of expensive, exact distance computations.
         std::vector<ompl::base::ScopedStatePtr> _pivots;
 
-        std::vector<std::unordered_map<size_t, double>> pivot_distances(k_pivots);
+        std::vector<std::unordered_map<size_t, double>> pivot_distances;
 
     public:
         AgglomerativeClustering(
