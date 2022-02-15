@@ -63,7 +63,7 @@ namespace agglomerative_clustering {
              * Whether `upper_distance_bound` is a tight bound obtained by an actual planner,
              * or merely an upper bound based on pivot distances.
              */
-            bool is_tight() const {
+            [[nodiscard]] bool is_tight() const {
                 // midpoint is available if and only if this pair was planned for.
                 return midpoint.has_value();
             }
@@ -215,8 +215,7 @@ namespace agglomerative_clustering {
             return distance;
         }
 
-        bool isClosed(
-                const CandidatePair &candidate) const {
+        bool isClosed(const CandidatePair &candidate) const {
             return _nodes.count(candidate.pair.first) == 0 || _nodes.count(candidate.pair.second) == 0;
         }
 

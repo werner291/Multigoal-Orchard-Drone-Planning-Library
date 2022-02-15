@@ -25,8 +25,8 @@ TEST(EnhancedHACTest, hac_test) {
 
     for (size_t i : boost::irange(0,1000)) {
 
-        points.push_back(rng.uniformReal(-10.0, -9.0));
-        points.push_back(rng.uniformReal(  9.0, 10.0));
+        points.push_back(rng.uniformReal(-100.0, -9.0));
+        points.push_back(rng.uniformReal(  9.0, 100.0));
 
     }
 
@@ -43,6 +43,8 @@ TEST(EnhancedHACTest, hac_test) {
     };
 
     AgglomerativeClustering<double> clustering(distance, points, 20);
+
+    std::cout << "Expensive calls: " << expensive_calls << " (n^2 = " << std::pow(points.size(),2) << ")" << std::endl;
 
     AgglomerativeClustering<double>::TreeNode result = clustering.run();
 
