@@ -15,12 +15,22 @@ namespace agglomerative_clustering {
      * Enhanced agglomerative clustering algorithm based on:
      * https://www.researchgate.net/publication/220895309_Speeding-Up_Hierarchical_Agglomerative_Clustering_in_Presence_of_Expensive_Metrics
      */
+    template<typename P>
     class AgglomerativeClustering {
 
         // Keeps track of the next node ID that can be assigned uniquely.
         size_t next_node_id;
+
         // How to plan from state-to-state.
-        PointToPointPlanner ptp;
+        struct DistanceResult {
+            double distance;
+            P midpoint;
+        };
+        std::function<DistanceResult(const P&, const P&)> distance_expensive;
+
+    public:
+        AgglomerativeClustering(const std::function<double(const P &, const P &)> &distanceExpensive):
+            distance_expensive(distanceExpensive) {}
 
     public:
         /**
@@ -29,9 +39,9 @@ namespace agglomerative_clustering {
         struct TreeNode {
             // A state that represents the rough center of the cluster.
             // All cluster members are supposed to be reachable from it.
-            ompl::base::ScopedStatePtr representative;
+            P representative;
 
-            TreeNode(const ompl::base::ScopedStatePtr &representative,
+            TreeNode(const P &representative,
                      const std::optional<std::pair<std::shared_ptr<TreeNode>, std::shared_ptr<TreeNode>>> &children);
 
             // Child nodes, which are empty for leaf nodes.
@@ -49,7 +59,7 @@ namespace agglomerative_clustering {
             // If available, a state from with both node representatives are reachable,
             // forming a rough center point of the hypothetical cluster to be formed.
             // May be null, in which case the `upper_distance_bound` is not a tight bound.
-            ompl::base::ScopedStatePtr midpoint;
+            P midpoint;
 
             /**
              * Whether `upper_distance_bound` is a tight bound obtained by an actual planner,
@@ -83,9 +93,6 @@ namespace agglomerative_clustering {
         std::vector<std::unordered_map<size_t, double>> pivot_distances;
 
     public:
-        AgglomerativeClustering(
-                const std::vector<ompl::base::ScopedStatePtr> &toCluster,
-                const PointToPointPlanner &ptp);
 
         /**
          * Pulls the head of the queue, repeating and discarding pairs
@@ -113,9 +120,6 @@ namespace agglomerative_clustering {
          */
         void pick_pivots(size_t n);
 
-        /**
-         *
-         */
         void compute_pivot_distance_matrix();
 
         /**
@@ -130,7 +134,17 @@ namespace agglomerative_clustering {
 
         bool iterate();
 
+        TreeNode run() {
+            while (!iterate()) {
+                // nothing, the loop guard does all the work.
+            }
+
+            return _nodes.begin()->second;
+        }
+
         bool isNotClosed(const CandidatePair &candidate) const;
+
+        void insert_and_plan_to_pivots(CandidatePair &pair, size_t new_node_id);
     };
 
 }

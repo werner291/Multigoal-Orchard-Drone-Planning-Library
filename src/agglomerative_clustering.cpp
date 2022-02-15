@@ -5,7 +5,7 @@
 
 agglomerative_clustering::AgglomerativeClustering::AgglomerativeClustering(
         const std::vector<ompl::base::ScopedStatePtr> &toCluster, const PointToPointPlanner &ptp)
-        : next_node_id(0), ptp(ptp) {
+        : next_node_id(0), distance_expensive(ptp) {
     _nodes = boost::copy_range<std::vector<TreeNode>>(
             toCluster | boost::adaptors::transformed([&](const ompl::base::ScopedStatePtr &state) {
                 return std::make_pair(next_node_id++,std::make_shared<TreeNode>(state, {}));
@@ -17,26 +17,19 @@ bool agglomerative_clustering::AgglomerativeClustering::iterate() {
 
     assert(_nodes.size() >= 2);
 
-    merge_pair(CandidatePair());
+    merge_pair(find_closest_pair());
 
     return _nodes.size() == 1;
 
 }
 
 void agglomerative_clustering::AgglomerativeClustering::merge_pair(CandidatePair pair) {
+
     assert(pair.is_tight());
-
-
 
     size_t new_node_id = next_node_id++;
 
-    for (size_t pivot_i : boost::irange<size_t>(0,_pivots.size())) {
-        if (auto path = ptp.planToOmplState(0.2,pair.midpoint->get(), _pivots[pivot_i]->get())) {
-            pivot_distances[pivot_i][new_node_id] = path->length();
-        } else {
-            pivot_distances[pivot_i][new_node_id] = INFINITY;
-        }
-    }
+    insert_and_plan_to_pivots(pair, new_node_id);
 
     for (const auto& [node_id, node] : _nodes) {
 
@@ -52,7 +45,20 @@ void agglomerative_clustering::AgglomerativeClustering::merge_pair(CandidatePair
         });
     }
 
-    _nodes[new_node_id] = { pair.midpoint, {{_nodes[pair.pair.first],_nodes[pair.pair.second]}} };
+
+}
+
+void agglomerative_clustering::AgglomerativeClustering::insert_and_plan_to_pivots(
+        agglomerative_clustering::AgglomerativeClustering::CandidatePair &pair, size_t new_node_id) {
+    for (size_t pivot_i : boost::irange<size_t>(0, _pivots.size())) {
+        if (auto path = distance_expensive.planToOmplState(0.2, pair.midpoint->get(), _pivots[pivot_i]->get())) {
+            pivot_distances[pivot_i][new_node_id] = path->length();
+        } else {
+            pivot_distances[pivot_i][new_node_id] = INFINITY;
+        }
+    }
+
+    _nodes[new_node_id] = {pair.midpoint, {{_nodes[pair.pair.first], _nodes[pair.pair.second]}} };
     _nodes.erase(pair.pair.first);
     _nodes.erase(pair.pair.second);
 }
@@ -90,11 +96,11 @@ agglomerative_clustering::AgglomerativeClustering::find_closest_pair() {
 }
 
 void agglomerative_clustering::AgglomerativeClustering::tighten_and_enqueue(size_t a, size_t b) {
-    if (auto path = ptp.planToOmplState(0.2, _nodes[a].representative, _nodes[b].representative)) {
+    if (auto path = distance_expensive.planToOmplState(0.2, _nodes[a].representative, _nodes[b].representative)) {
         auto midpoint = std::make_shared<ompl::base::ScopedState<ompl::base::StateSpace>>(
-                ptp.getPlanner()->getSpaceInformation());
-        ptp->getPlanner()->getSpaceInformation()->copyState(midpoint->get(), path->getState(path->getNumStates() / 2));
-        _candidate_pairs.emplace({a, b}, ptp->length(), midpoint);
+                distance_expensive.getPlanner()->getSpaceInformation());
+        distance_expensive->getPlanner()->getSpaceInformation()->copyState(midpoint->get(), path->getState(path->getNumStates() / 2));
+        _candidate_pairs.emplace({a, b}, distance_expensive->length(), midpoint);
     } else {
         ROS_WARN("Cannot plan between candidate pair.");
     }
@@ -129,8 +135,6 @@ void agglomerative_clustering::AgglomerativeClustering::computeInitialEstimates(
 
     pick_pivots(k_pivots);
 
-
-
     for (const auto&[node_i, _]: _nodes) {
         for (const auto&[node_j, _]: _nodes) {
             if (node_j >= node_i) continue;
@@ -139,11 +143,7 @@ void agglomerative_clustering::AgglomerativeClustering::computeInitialEstimates(
                 distance_bound = std::min(distance_bound,
                                           pivot_distances[pivot_i][node_i] + pivot_distances[pivot_j][node_i]);
             }
-            _candidate_pairs.push({
-                                         {node_i, node_j},
-                                         distance_bound,
-                                         {}
-                                 });
+            _candidate_pairs.push({{node_i, node_j},distance_bound,{}});
         }
     }
 
@@ -151,11 +151,12 @@ void agglomerative_clustering::AgglomerativeClustering::computeInitialEstimates(
 }
 
 void agglomerative_clustering::AgglomerativeClustering::compute_pivot_distance_matrix() {
+    // TODO: Somehow reformulate this as insert-and-plan-to-pivots?
     for (size_t pivot_i: boost:irange(0, k_pivots)) {
         auto pivot = _pivots[pivot_i];
 
         for (const auto&[node_id, node]: _nodes) {
-            if (auto path = ptp.planToOmplState(0.2, pivot->get(), node.represenattive->get())) {
+            if (auto path = distance_expensive.planToOmplState(0.2, pivot->get(), node.represenattive->get())) {
                 pivot_distances[pivot_i][node_id] = path->length();
             } else {
                 pivot_distances[pivot_i][node_id] = INFINITY;
