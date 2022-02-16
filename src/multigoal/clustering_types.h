@@ -53,6 +53,9 @@ namespace clustering {
 
     std::unordered_map<size_t, double>
     select_cluster_members(const std::vector<std::pair<size_t, double>> &candidate_members, const size_t level);
+
+    double cluster_filtered_density(const std::vector<bool> &cluster_visited, const Cluster &cluster,
+                                    const std::vector<Cluster> &parent_layer);
 }
 
 #endif //NEW_PLANNERS_CLUSTERING_TYPES_H

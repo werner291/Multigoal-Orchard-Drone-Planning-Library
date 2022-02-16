@@ -185,7 +185,7 @@ TEST_F(ClusteringTests, DISABLED_test_cluster_sinespacing) {
     auto densities = density_strategy.computeForLayer(clusters, trivial_clusters);
 
     // Select representatives for the next round.
-    auto selections = select_clusters(clusters, densities);
+    auto selections = select_clusters(clusters, trivial_clusters);
 
     // Make sure we have some.
     EXPECT_FALSE(selections.empty());
@@ -447,7 +447,7 @@ void check_clusters_exclusive(const std::vector<clustering::Cluster>& clusters) 
 /// to traverse the wall many times.
 TEST_F(ClusteringTests, test_full_wall) {
 
-#define PUBLISH_RVIZ
+//#define PUBLISH_RVIZ
 
     auto[scene,apples] = createWallApplePlanningScene(drone);
 

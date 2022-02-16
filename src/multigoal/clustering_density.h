@@ -5,12 +5,11 @@
 
 namespace clustering {
     class DensityStrategy {
-        [[nodiscard]] virtual double computeForCluster(const Cluster& new_cluster,
-                                         const std::vector<Cluster> &previous_layer) const = 0;
 
     public:
-        [[nodiscard]] virtual std::vector<double> computeForLayer(const std::vector<Cluster> &new_clusters,
-                                                    const std::vector<Cluster> &previous_layer) const;
+        [[nodiscard]] virtual double computeForCluster(const Cluster& new_cluster, const std::vector<Cluster> &previous_layer) const = 0;
+
+        [[nodiscard]] virtual std::vector<double> computeForLayer(const std::vector<Cluster> &new_clusters, const std::vector<Cluster> &previous_layer) const;
 
         [[nodiscard]] virtual std::string getName() const = 0;
     };

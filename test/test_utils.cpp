@@ -64,14 +64,14 @@ std::vector<Apple> apples_around_wall() {
 
     // TODO Change this back.
 
-    for (int i = -1; i <= 5; i += 2) {
+    for (int i = 0; i <= 5; i += 1) {
         apples.push_back({
                                  Eigen::Vector3d(0.5, (double) i, 0.0),
                                  Eigen::Vector3d(1.0, 0.0, 0.0),
                          });
     }
 
-    for (int i = 5; i >= -1; i -= 2) {
+    for (int i = 5; i >= 0; i -= 1) {
         apples.push_back({
                                  Eigen::Vector3d(-0.5, (double) i, 0.0),
                                  Eigen::Vector3d(-1.0, 0.0, 0.0),
@@ -87,14 +87,12 @@ void dump_clusters(const std::vector<std::vector<clustering::Cluster>> clusters,
     fout.open("analysis/cluster_pts.txt");
     assert(fout.is_open());
 
-    for (size_t level_id = 0; level_id < clusters.size(); level_id++) {
-        auto level = clusters[level_id];
+    for (auto level : clusters) {
         std::unordered_set<size_t> visited_goals;
 
         fout << "========= Level =========" << std::endl;
 
-        for (size_t cluster_id = 0; cluster_id < level.size(); cluster_id++) {
-            const auto& cluster = level[cluster_id];
+        for (auto & cluster : level) {
             visited_goals.insert(cluster.goals_reachable.begin(), cluster.goals_reachable.end());
 
             moveit::core::RobotState st(state_space->getRobotModel());

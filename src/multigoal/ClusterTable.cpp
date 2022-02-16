@@ -1,6 +1,7 @@
 
 #include <random>
 #include <boost/range/irange.hpp>
+#include <boost/range/numeric.hpp>
 
 #include "ClusterTable.h"
 #include "gen_visitations.h"
@@ -131,27 +132,24 @@ std::vector<Cluster> clustering::buildTrivialClusters(const std::vector<StateAtG
 }
 
 
-std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clusters,
-                                                std::vector<double> densities) {
+std::vector<size_t>
+clustering::select_clusters(const std::vector<Cluster> &clusters, const std::vector<Cluster> &parent_layer) {
 
     std::cout << "Selecting from " << clusters.size() << " candidates." << std::endl;
 
-    struct InQueue {
-        size_t cluster_id;
-        double density_at_insertion;
+    struct InQueue { size_t cluster_id; double density_at_insertion;
+
+        // Queue by density first.
+        bool operator<(const InQueue &rhs) const {
+            return density_at_insertion < rhs.density_at_insertion;
+        }
     };
 
-    // Build a priority queue that returns the cluster index with highest density first.
-    auto cmp = [&](const InQueue &a, const InQueue &b) {
-        return a.density_at_insertion < b.density_at_insertion;
-    };
+    std::priority_queue<InQueue> by_density;
 
-    std::priority_queue<InQueue, std::vector<InQueue>, decltype(cmp)> by_density(cmp);
-    std::vector<bool> cluster_visited(densities.size());
-
-    for (size_t i = 0; i < densities.size(); ++i) {
-        by_density.push({i, densities[i]});
-        cluster_visited[i] = false;
+    std::vector<bool> cluster_visited(clusters.size(),false);
+    for (auto cluster_id : boost::irange<size_t>(0,clusters.size())) {
+        by_density.push({cluster_id, cluster_filtered_density(cluster_visited, clusters[cluster_id], parent_layer)});
     }
 
     std::vector<size_t> new_clusters;
@@ -162,46 +160,46 @@ std::vector<size_t> clustering::select_clusters(const std::vector<Cluster> &clus
         // Take the remaining cluster with the highest density.
         // This is a global maximum, hence also a local maximum.
         InQueue current_cluster = by_density.top();
+        by_density.pop();
 
-//         std::cout << "Looking at cluster " << current_cluster.cluster_id << std::endl;
-
-        // If the cluster has been visited, it is already a part of one of the new clusters.
-        // If the density at insertion doesn't match, perform lazy deletion since we'll be
-        // running into this cluster again later in the correct order.
-        if (cluster_visited[current_cluster.cluster_id] ||
-            densities[current_cluster.cluster_id] != current_cluster.density_at_insertion) {
-            // Do nothing.
-
-            if (densities[current_cluster.cluster_id] != current_cluster.density_at_insertion) {
-//                 std::cout << "Rejected by lazy-deletion." << std::endl;
-            } else {
-//                 std::cout << "Pruned a cluster." << std::endl;
-            }
-
-
+        if (cluster_visited[current_cluster.cluster_id]) {
+            // Do nothing, discard this cluster.
         } else {
-            assert(!cluster_visited[current_cluster.cluster_id]);
-            cluster_visited[current_cluster.cluster_id] = true;
-             std::cout << "Accepted:" << current_cluster.cluster_id << " density: " << current_cluster.density_at_insertion << std::endl;
+            // Re-compute the density to check whether it has changed.
+            double density = cluster_filtered_density(cluster_visited,
+                                                      clusters[current_cluster.cluster_id],
+                                                      parent_layer);
 
-            new_clusters.push_back(current_cluster.cluster_id);
+            if (density == current_cluster.density_at_insertion) {
+                // No change! We can proceed.
 
-            for (const auto &member: clusters[current_cluster.cluster_id].members) {
-                cluster_visited[member.first] = true;
-//                 if (member.first != current_cluster.cluster_id)
-//                     std::cout << "Marked a member cluster as visited:" << member.first << std::endl;
-                // FIXME Should update the SECOND ORDER densities
-//                 densities[member.first] -= 1.0 / member.second;
-//                 by_density.push({member.first, densities[member.first]});
+                cluster_visited[current_cluster.cluster_id] = true;
+                std::cout << "Accepted:" << current_cluster.cluster_id << " density: " << current_cluster.density_at_insertion << std::endl;
+
+                new_clusters.push_back(current_cluster.cluster_id);
+
+                for (const auto &member: clusters[current_cluster.cluster_id].members) {
+                    cluster_visited[member.first] = true;
+                }
+
+            } else {
+                // It has! Put it back in the queue...
+                // This will happen at most once per member.
+                by_density.push({current_cluster.cluster_id, density});
             }
         }
-
-        by_density.pop();
     }
 
     std::cout << "Selected: " << new_clusters.size() << std::endl;
 
     return new_clusters;
+}
+
+double clustering::cluster_filtered_density(const std::vector<bool> &cluster_visited, const Cluster &cluster,
+                                            const std::vector<Cluster> &parent_layer) {
+    return boost::accumulate(cluster.members | boost::adaptors::transformed([&](const auto& pair){
+                return cluster_visited[pair.first] ? 0.0 : ((double)parent_layer[pair.first].goals_reachable.size() / pair.second);
+            }), 0.0);
 }
 
 std::vector<std::vector<Cluster>>
@@ -229,7 +227,7 @@ clustering::buildClusters(PointToPointPlanner &point_to_point_planner, const std
 
         auto densities = densityStrategy.computeForLayer(new_clusters, cluster_hierarchy.back());
 
-        auto selection = select_clusters(new_clusters, densities);
+        auto selection = select_clusters(new_clusters, cluster_hierarchy.back());
 
         if (selection.size() < cluster_hierarchy.back().size()) {
             cluster_hierarchy.emplace_back(/*empty*/);

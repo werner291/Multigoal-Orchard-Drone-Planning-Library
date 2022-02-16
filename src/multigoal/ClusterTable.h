@@ -51,7 +51,7 @@ namespace clustering {
      * @param densities The local density of each cluster.
      * @return A vector of indices into `clusters`, forming the selected subset.
      */
-    std::vector<size_t> select_clusters(const std::vector<Cluster> &clusters, std::vector<double> densities);
+    std::vector<size_t> select_clusters(const std::vector<Cluster> &clusters, const std::vector<Cluster> &parent_layer);
 
     std::vector<std::vector<Cluster>>
     buildClusters(PointToPointPlanner &point_to_point_planner, const std::vector<StateAtGoal> &goal_samples,
