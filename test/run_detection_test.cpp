@@ -76,7 +76,7 @@ TEST(RunDetectionTests, run_detection_test) {
             if (path) {
                 std::shared_ptr<CandidatePath> cp(new CandidatePath({from_goal_id, to_goal_id}, *path));
                 paths.insert(cp);
-                paths_starting_at_goals[from_goal_id].insert(cp);
+                //paths_starting_at_goals[from_goal_id].insert(cp);
                 // TODO Do the symmetric case too.
                 // Maybe a pass-by case?
             }
@@ -90,13 +90,13 @@ TEST(RunDetectionTests, run_detection_test) {
                 // Could make that a simple collision check, if we're going for ones that are close to each other anyway.
                 auto connection = ptp.planToOmplState(0.05, paths[path_a].path.getStates().back(),paths[path_b].path.getStates().back());
 
-                if (connection) {
-                    CandidatePath path = paths[path_a];
-                    path.path.append(*connection);
-                    path.path.append(paths[path_b].path);
-                    path.goals_visited.insert(paths[path_b].goals_visited.begin(), paths[path_b].goals_visited.end());
-                    paths.insert(path);
-                }
+//                if (connection) {
+//                    CandidatePath path = paths[path_a];
+//                    path.path.append(*connection);
+//                    path.path.append(paths[path_b].path);
+//                    path.goals_visited.insert(paths[path_b].goals_visited.begin(), paths[path_b].goals_visited.end());
+//                    paths.insert(path);
+//                }
             }
         }
     }

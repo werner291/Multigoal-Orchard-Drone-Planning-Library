@@ -253,7 +253,8 @@ catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
 #        test/collision_checking_test.cpp
        test/ptp_tests.cpp
         test/enhanced_hac_test.cpp
-        test/run_detection_test.cpp
+#        test/run_detection_test.cpp
+        test/mesh_loading.cpp
         )
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared)
 
