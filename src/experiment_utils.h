@@ -100,4 +100,14 @@ genPointToPointSpecs(const moveit::core::RobotModelPtr &drone, const Json::Value
 
 visualization_msgs::MarkerArray markers_for_state(const moveit::core::RobotState& state);
 
+struct DroneAndStateSpace {
+    moveit::core::RobotModelPtr robot;
+    std::shared_ptr<DroneStateSpace> state_space;
+};
+
+planning_scene::PlanningScenePtr setupPlanningScene(const moveit_msgs::PlanningScene &planning_scene_message,
+                                                    moveit::core::RobotModelPtr &drone);
+
+std::vector<Apple> apples_from_connected_components(shape_msgs::Mesh apples_mesh);
+
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

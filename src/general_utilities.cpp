@@ -1,5 +1,7 @@
 #include <Eigen/Geometry>
 #include <ompl/util/RandomNumbers.h>
+#include <shape_msgs/Mesh.h>
+#include "general_utilities.h"
 
 /**
  * Given two vector4's, produce a third vector perpendicular to the inputs.
@@ -164,4 +166,37 @@ double quat_dist(const Eigen::Quaterniond& qs1, const Eigen::Quaterniond& qs2) {
     if (dq > 1.0 - MAX_QUATERNION_NORM_ERROR)
         return 0.0;
     return acos(dq);
+}
+
+std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::Mesh &mesh) {
+    std::unordered_map<size_t, std::vector<size_t>> connected_components;
+    auto connected_component_ids = index_vector(mesh.vertices);
+    for (const auto &vertex_id : connected_component_ids) {
+        connected_components.insert({vertex_id,{vertex_id}});
+    }
+
+    for (const auto &triangle : mesh.triangles) {
+        for (size_t i : {0,1}) {
+
+            size_t ccidA = connected_component_ids[triangle.vertex_indices[i]];
+            size_t ccidB = connected_component_ids[triangle.vertex_indices[i+1]];
+
+            if (ccidA != ccidB) {
+
+                for (const auto &in_ccb : connected_components[ccidB]) {
+                    connected_components[ccidA].push_back(in_ccb);
+                    connected_component_ids[in_ccb] = ccidA;
+                }
+
+                connected_components.erase(ccidB);
+            }
+
+        }
+    }
+
+    std::vector<std::vector<size_t>> result;
+    for (auto [_id,contents] : connected_components) {
+        result.push_back(std::move(contents));
+    }
+    return result;
 }

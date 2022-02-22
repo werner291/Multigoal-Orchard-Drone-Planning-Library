@@ -130,7 +130,7 @@ include_directories(
         ${GTEST_INCLUDE_DIRS}
 )
 
-link_libraries(${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib)
+link_libraries(${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib tbb)
 
 ###########
 ## Build ##
@@ -235,6 +235,9 @@ add_executable(${PROJECT_NAME}_at_benchmark experiments/at_benchmark.cpp)
 add_executable(${PROJECT_NAME}_ptp_correlation experiments/ptp_correlation.cpp)
 
 add_executable(${PROJECT_NAME}_euclidean_tsp experiments/euclidean_tsp.cpp)
+
+add_executable(${PROJECT_NAME}_ptp_comparison experiments/ptp_comparison.cpp)
+target_link_libraries(${PROJECT_NAME}_ptp_comparison ${PROJECT_NAME}_shared)
 
 add_executable(${PROJECT_NAME}_clustering experiments/clustering_comparison.cpp test/test_utils.cpp)
 target_link_libraries(${PROJECT_NAME}_clustering ${PROJECT_NAME}_shared)

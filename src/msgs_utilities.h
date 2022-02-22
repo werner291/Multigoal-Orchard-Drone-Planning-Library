@@ -16,4 +16,9 @@ visualization_msgs::Marker
 buildApproachTableVisualization(const moveit::core::RobotModelConstPtr &robot,
                                 multigoal::GoalApproachTable &approach_table);
 
+shape_msgs::Mesh meshMsgFromResource(const std::string &resource);
+
+void addColoredMeshCollisionShape(moveit_msgs::PlanningScene &planning_scene_message, const Eigen::Vector3f &rgb,
+                                  const std::string &id, const shape_msgs::Mesh &mesh);
+
 #endif //NEW_PLANNERS_BUILD_REQUEST_H

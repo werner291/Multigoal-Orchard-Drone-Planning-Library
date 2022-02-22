@@ -1,4 +1,10 @@
 
+#include "../src/planning_scene_diff_message.h"
+#include "../src/msgs_utilities.h"
+#include <ompl/geometric/planners/rrt/SORRTstar.h>
+#include "../src/experiment_utils.h"
+#include <moveit/ompl_interface/parameterization/model_based_state_space.h>
+#include <ompl/base/Planner.h>
 #include <boost/range/combine.hpp>
 #include <cstddef>
 #include <moveit/collision_detection/collision_detector_allocator.h>
@@ -12,6 +18,8 @@
 #include "experiment_utils.h"
 #include "json_utils.h"
 #include "planning_scene_diff_message.h"
+#include "general_utilities.h"
+
 
 robot_state::RobotState genStartState(const moveit::core::RobotModelConstPtr &drone) {
     robot_state::RobotState start_state(drone);
@@ -222,4 +230,31 @@ visualization_msgs::MarkerArray markers_for_state(const moveit::core::RobotState
 
     return ma;
 
+}
+
+planning_scene::PlanningScenePtr
+setupPlanningScene(const moveit_msgs::PlanningScene &planning_scene_message,
+                   moveit::core::RobotModelPtr &drone) {
+    auto scene = std::make_shared<planning_scene::PlanningScene>(drone);
+    scene->setPlanningSceneDiffMsg(planning_scene_message);
+    // Diff message apparently can't handle partial ACM updates?
+    scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
+    scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
+    scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+    return scene;
+}
+
+std::vector<Apple> apples_from_connected_components(shape_msgs::Mesh apples_mesh) {
+    auto connected_components = connected_vertex_components(apples_mesh);
+
+    return boost::copy_range<std::vector<Apple>>(
+            connected_components |
+            boost::adaptors::transformed([&](const auto &members) {
+                Eigen::AlignedBox3d bb;
+                for (const auto &vertex_id : members) {
+                    bb.extend(Eigen::Vector3d(apples_mesh.vertices[vertex_id].x,apples_mesh.vertices[vertex_id].y,apples_mesh.vertices[vertex_id].z));
+                }
+                return Apple {bb.center(),Eigen::Vector3d(0.0,0.0,0.0)};
+            })
+    );
 }

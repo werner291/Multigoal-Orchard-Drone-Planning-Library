@@ -1,54 +1,18 @@
 
 #include <gtest/gtest.h>
 #include <moveit/planning_scene/planning_scene.h>
-#include <geometric_shapes/shape_operations.h>
 #include <geometric_shapes/shapes.h>
 #include "../src/experiment_utils.h"
+#include "../src/msgs_utilities.h"
+#include "../src/general_utilities.h"
 
-shape_msgs::Mesh meshMsgFromResource(const std::string &resource) {
-    std::shared_ptr<shapes::Mesh> mesh_shape(shapes::createMeshFromResource(
-            resource));
-    shape_msgs::Mesh mesh;
-    shapes::ShapeMsg mesh_msg;
-    shapes::constructMsgFromShape(mesh_shape.get(), mesh_msg);
-    return boost::get<shape_msgs::Mesh>(mesh_msg);
-}
 
-void addColoredMeshCollisionShape(moveit_msgs::PlanningScene &planning_scene_message, const std::string &resource,
-                                  const Eigen::Vector3f &rgb, const std::string &id) {
-
-    moveit_msgs::CollisionObject tree_obj;
-    tree_obj.id = id;
-    tree_obj.header.frame_id = "world";
-    tree_obj.meshes.push_back(meshMsgFromResource(resource));
-
-    planning_scene_message.world.collision_objects.push_back(tree_obj);
-
-    moveit_msgs::ObjectColor oc;
-    oc.id = id;
-    oc.color.r = rgb[0];
-    oc.color.g = rgb[1];
-    oc.color.b = rgb[2];
-    oc.color.a = 1.0;
-    planning_scene_message.object_colors.push_back(oc);
-}
 
 TEST(SceneTestRviz, test_rviz) {
 
     auto drone = loadRobotModel();
 
-    moveit_msgs::PlanningScene planning_scene_message;
-
-    addColoredMeshCollisionShape(planning_scene_message,
-                                 "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/appletree_trunk.dae",
-                                 {0.5, 0.2, 0.1}, "trunk");
-    addColoredMeshCollisionShape(planning_scene_message,
-                                 "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/appletree_apples.dae",
-                                 {1.0, 0.0, 0.0}, "apples");
-    addColoredMeshCollisionShape(planning_scene_message,
-                                 "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/appletree_leaves.dae",
-                                 {0.1, 0.7, 0.1}, "leaves");
-
+    auto [planning_scene_message,apples] = createMeshBasedAppleTreePlanningSceneMessage();
 
     int zero = 0;
     ros::init(zero,nullptr,"model_test");
@@ -64,13 +28,41 @@ TEST(SceneTestRviz, test_rviz) {
 
     topic.publish(planning_scene_message);
 
+    auto apples_topic = nh.advertise<visualization_msgs::MarkerArray>("/planning_scene_apple_positions", 10);
+    while (apples_topic.getNumSubscribers() == 0) ros::Duration(0.5).sleep();
+
+    visualization_msgs::MarkerArray ma;
+
+    for (const auto &item : apples) {
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = "world";
+        marker.header.stamp = ros::Time();
+        marker.ns = "apples";
+        marker.id = ma.markers.size();
+        marker.type = visualization_msgs::Marker::SPHERE;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.position.x = item.center.x();
+        marker.pose.position.y = item.center.y();
+        marker.pose.position.z = item.center.z();
+        marker.pose.orientation.x = 0.0;
+        marker.pose.orientation.y = 0.0;
+        marker.pose.orientation.z = 0.0;
+        marker.pose.orientation.w = 1.0;
+        marker.scale.x = 0.1;
+        marker.scale.y = 0.1;
+        marker.scale.z = 0.1;
+        marker.color.a = 1.0; // Don't forget to set the alpha!
+        marker.color.r = 1.0;
+        marker.color.g = 0.0;
+        marker.color.b = 1.0;
+        ma.markers.push_back(marker);
+    }
+
+    apples_topic.publish(ma);
+
 //    planning_scene::PlanningScenePtr scene = std::make_shared<planning_scene::PlanningScene>(drone);
 //    scene->getWorldNonConst()->mesh
 
-
-
-//
-//
 //    scene->setPlanningSceneDiffMsg(createPlanningSceneDiff(treeFlattened, leafVertices, appleRadius, apples));
 //
 //    // Diff message apparently can't handle partial ACM updates?

@@ -8,6 +8,7 @@
 #include <boost/range/adaptors.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <Eigen/Geometry>
+#include <shape_msgs/Mesh.h>
 
 template<typename T>
 std::vector<size_t> index_vector(const std::vector<T> &v) {
@@ -95,5 +96,7 @@ void generate_combinations
         std::swap(visitable[elements_fixed], visitable[swap_with]);
     }
 }
+
+std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::Mesh& mesh);
 
 #endif //NEW_PLANNERS_GENERAL_UTLITIES_CPP

@@ -93,6 +93,6 @@ public:
 std::shared_ptr<ompl::base::SpaceInformation>
 initSpaceInformation(const planning_scene::PlanningScenePtr &scene,
                      const moveit::core::RobotModelPtr &robot,
-                     std::shared_ptr<DroneStateSpace> &state_space);
+                     const std::shared_ptr<DroneStateSpace> &state_space);
 
 #endif //NEW_PLANNERS_OMPL_CUSTOM_H

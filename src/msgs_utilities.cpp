@@ -1,3 +1,8 @@
+#include "../src/experiment_utils.h"
+#include <geometric_shapes/shapes.h>
+#include <geometric_shapes/shape_operations.h>
+#include <moveit/planning_scene/planning_scene.h>
+#include <gtest/gtest.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <fcl/fcl.h>
 #include "ompl_custom.h"
@@ -79,4 +84,32 @@ buildApproachTableVisualization(const moveit::core::RobotModelConstPtr &robot,
         }
     }
     return mrk;
+}
+
+shape_msgs::Mesh meshMsgFromResource(const std::string &resource) {
+    std::shared_ptr<shapes::Mesh> mesh_shape(shapes::createMeshFromResource(
+            resource));
+    shape_msgs::Mesh mesh;
+    shapes::ShapeMsg mesh_msg;
+    shapes::constructMsgFromShape(mesh_shape.get(), mesh_msg);
+    return boost::get<shape_msgs::Mesh>(mesh_msg);
+}
+
+void addColoredMeshCollisionShape(moveit_msgs::PlanningScene &planning_scene_message, const Eigen::Vector3f &rgb,
+                                  const std::string &id, const shape_msgs::Mesh &mesh) {
+
+    moveit_msgs::CollisionObject tree_obj;
+    tree_obj.id = id;
+    tree_obj.header.frame_id = "world";
+    tree_obj.meshes.push_back(mesh);
+
+    planning_scene_message.world.collision_objects.push_back(tree_obj);
+
+    moveit_msgs::ObjectColor oc;
+    oc.id = id;
+    oc.color.r = rgb[0];
+    oc.color.g = rgb[1];
+    oc.color.b = rgb[2];
+    oc.color.a = 1.0;
+    planning_scene_message.object_colors.push_back(oc);
 }

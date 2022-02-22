@@ -2,6 +2,12 @@
 // Created by werner on 18-08-21.
 //
 
+#include "../src/msgs_utilities.h"
+#include "../src/experiment_utils.h"
+#include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
+#include <moveit/ompl_interface/parameterization/model_based_state_space.h>
+#include <ompl/geometric/planners/rrt/SORRTstar.h>
+#include <ompl/base/Planner.h>
 #include <std_msgs/ColorRGBA.h>
 #include "planning_scene_diff_message.h"
 
@@ -183,4 +189,26 @@ createPlanningSceneDiff(const std::vector<DetachedTreeNode> &treeFlattened,
     spawnFloorInPlanningScene(planning_scene_diff);
     planning_scene_diff.is_diff = true;
     return planning_scene_diff;
+}
+
+
+
+AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage() {
+    moveit_msgs::PlanningScene planning_scene_message;
+    planning_scene_message.is_diff = true;
+
+    addColoredMeshCollisionShape(planning_scene_message,
+                                 {0.5, 0.2, 0.1}, "trunk",
+                                 meshMsgFromResource("file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/appletree_trunk.dae"));
+
+    const shape_msgs::Mesh apples = meshMsgFromResource(
+            "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/appletree_apples.dae");
+
+    addColoredMeshCollisionShape(planning_scene_message,{1.0, 0.0, 0.0}, "apples", apples);
+
+    addColoredMeshCollisionShape(planning_scene_message,
+                                 {0.1, 0.7, 0.1}, "leaves",
+                                 meshMsgFromResource("file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/appletree_leaves.dae"));
+
+    return {planning_scene_message, apples_from_connected_components(apples)};
 }
