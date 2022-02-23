@@ -97,8 +97,18 @@ void generate_combinations
     }
 }
 
+/**
+ * Discovers the connected components of the mesh.
+ * Output is a vector of vectors of vertex indices.
+ * Each vector is a connected components.
+ */
 std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::Mesh& mesh);
 
-std::vector<shape_msgs::Mesh> convex_decomposition(const shape_msgs::Mesh &mesh, const double concavity);
+/**
+ * Perform a convex decomposition of the given mesh using the HACD library.
+ *
+ * @param concavity Lower values give more accurate results, at the cost of higher number of parts.
+ */
+std::vector<shape_msgs::Mesh> convex_decomposition(const shape_msgs::Mesh &mesh, const double concavity = 2.0);
 
 #endif //NEW_PLANNERS_GENERAL_UTILITIES_CPP

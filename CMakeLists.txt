@@ -133,6 +133,7 @@ include_directories(
         ${BULLET_INCLUDE_DIRS}
 )
 
+# Note: the HACD library is included Bullet's "extra" libraries
 link_libraries(${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} ${BULLET_LIBRARIES} HACD jsoncpp_lib tbb)
 
 ###########
