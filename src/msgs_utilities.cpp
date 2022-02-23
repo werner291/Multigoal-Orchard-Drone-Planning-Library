@@ -102,6 +102,10 @@ void addColoredMeshCollisionShape(moveit_msgs::PlanningScene &planning_scene_mes
     tree_obj.id = id;
     tree_obj.header.frame_id = "world";
     tree_obj.meshes.push_back(mesh);
+    tree_obj.pose.orientation.x = 0;
+    tree_obj.pose.orientation.y = 0;
+    tree_obj.pose.orientation.z = 0;
+    tree_obj.pose.orientation.w = 1;
 
     planning_scene_message.world.collision_objects.push_back(tree_obj);
 

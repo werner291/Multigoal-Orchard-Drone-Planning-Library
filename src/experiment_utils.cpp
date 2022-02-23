@@ -1,8 +1,8 @@
 
-#include "../src/planning_scene_diff_message.h"
-#include "../src/msgs_utilities.h"
+#include <boost/range/adaptor/transformed.hpp>
+#include <ompl/geometric/planners/informedtrees/AITstar.h>
+#include <execution>
 #include <ompl/geometric/planners/rrt/SORRTstar.h>
-#include "../src/experiment_utils.h"
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 #include <ompl/base/Planner.h>
 #include <boost/range/combine.hpp>
@@ -14,12 +14,13 @@
 #include <geometric_shapes/shape_operations.h>
 #include <eigen_conversions/eigen_msg.h>
 
+#include "../src/planning_scene_diff_message.h"
+#include "../src/msgs_utilities.h"
 #include "../src/BulletContinuousMotionValidator.h"
 #include "experiment_utils.h"
 #include "json_utils.h"
 #include "planning_scene_diff_message.h"
 #include "general_utilities.h"
-
 
 robot_state::RobotState genStartState(const moveit::core::RobotModelConstPtr &drone) {
     robot_state::RobotState start_state(drone);
@@ -257,4 +258,38 @@ std::vector<Apple> apples_from_connected_components(shape_msgs::Mesh apples_mesh
                 return Apple {bb.center(),Eigen::Vector3d(0.0,0.0,0.0)};
             })
     );
+}
+
+
+std::vector<PointToPointPair>
+samplePlanningPairs(const planning_scene::PlanningScenePtr &scene, const moveit::core::RobotModelPtr &drone,
+                    const std::vector<Apple> &apples, const size_t num_samples) {
+
+    ompl_interface::ModelBasedStateSpaceSpecification spec(drone, "whole_body");
+    auto state_space = std::make_shared<DroneStateSpace>(spec);
+    state_space->setup();
+
+    std::default_random_engine rng;
+
+    auto si = initSpaceInformation(scene, drone, state_space);
+    auto goals = constructAppleGoals(si, apples);
+
+    auto del_state = [state_space = state_space](ompl::base::State *st) { state_space->freeState(st); };
+
+    return boost::copy_range<std::vector<PointToPointPair>>(
+            boost::irange<size_t>(0, num_samples) |
+            boost::adaptors::transformed(
+                    [apples = apples, state_space = state_space, &rng, &del_state, &goals, &si](size_t i) {
+
+                        auto[target_i, target_j] = generateIndexPairNoReplacement(rng, apples.size());
+
+                        std::shared_ptr<ompl::base::State> from_state(state_space->allocState(), del_state);
+                        goals[target_i]->sampleGoal(from_state.get());
+
+                        std::shared_ptr<ompl::base::State> to_state(state_space->allocState(), del_state);
+                        goals[target_j]->sampleGoal(to_state.get());
+
+                        return PointToPointPair{target_i, from_state, target_j, to_state};
+
+                    }));
 }

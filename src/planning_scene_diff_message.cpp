@@ -1,15 +1,13 @@
-//
-// Created by werner on 18-08-21.
-//
+#include <std_msgs/ColorRGBA.h>
+
+#include <bullet/HACD/hacdHACD.h>
 
 #include "../src/msgs_utilities.h"
 #include "../src/experiment_utils.h"
-#include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
-#include <moveit/ompl_interface/parameterization/model_based_state_space.h>
-#include <ompl/geometric/planners/rrt/SORRTstar.h>
-#include <ompl/base/Planner.h>
-#include <std_msgs/ColorRGBA.h>
+
+
 #include "planning_scene_diff_message.h"
+#include "general_utilities.h"
 
 void createTrunkInPlanningSceneMessage(const std::vector<DetachedTreeNode> &tree_flattened,
                                        moveit_msgs::PlanningScene &planning_scene) {
@@ -197,9 +195,13 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage() {
     moveit_msgs::PlanningScene planning_scene_message;
     planning_scene_message.is_diff = true;
 
-    addColoredMeshCollisionShape(planning_scene_message,
-                                 {0.5, 0.2, 0.1}, "trunk",
-                                 meshMsgFromResource("file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/appletree_trunk.dae"));
+    const shape_msgs::Mesh mesh = meshMsgFromResource(
+            "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/appletree_trunk.dae");
+
+    const std::vector<shape_msgs::Mesh> decomposition = convex_decomposition(mesh, 2.0);
+    for (auto convex: decomposition | boost::adaptors::indexed(0)) {
+        addColoredMeshCollisionShape(planning_scene_message,{0.5, 0.2, 0.1}, "trunk" + std::to_string(convex.index()),convex.value());
+    }
 
     const shape_msgs::Mesh apples = meshMsgFromResource(
             "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/appletree_apples.dae");

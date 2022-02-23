@@ -110,4 +110,16 @@ planning_scene::PlanningScenePtr setupPlanningScene(const moveit_msgs::PlanningS
 
 std::vector<Apple> apples_from_connected_components(shape_msgs::Mesh apples_mesh);
 
+struct PointToPointPair {
+    size_t from_target;
+    std::shared_ptr<ompl::base::State> from_state;
+
+    size_t to_target;
+    std::shared_ptr<ompl::base::State> to_state;
+};
+
+std::vector<PointToPointPair>
+samplePlanningPairs(const planning_scene::PlanningScenePtr &scene, const moveit::core::RobotModelPtr &drone,
+                    const std::vector<Apple> &apples, const size_t num_samples);
+
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

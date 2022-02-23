@@ -1,6 +1,6 @@
 
-#ifndef NEW_PLANNERS_GENERAL_UTLITIES_CPP
-#define NEW_PLANNERS_GENERAL_UTLITIES_CPP
+#ifndef NEW_PLANNERS_GENERAL_UTILITIES_CPP
+#define NEW_PLANNERS_GENERAL_UTILITIES_CPP
 
 #include <vector>
 #include <ompl/base/ScopedState.h>
@@ -99,4 +99,6 @@ void generate_combinations
 
 std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::Mesh& mesh);
 
-#endif //NEW_PLANNERS_GENERAL_UTLITIES_CPP
+std::vector<shape_msgs::Mesh> convex_decomposition(const shape_msgs::Mesh &mesh, const double concavity);
+
+#endif //NEW_PLANNERS_GENERAL_UTILITIES_CPP

@@ -21,6 +21,8 @@ bool StateValidityChecker::isValid(const ompl::base::State *state) const {
     // We rely on the sampler producing states that are  valid in all other aspects, so here we just check collision.
     collision_detection::CollisionResult result;
     collision_detection::CollisionRequest request;
+    request.verbose = true;
+    request.contacts = true;
     scene_->checkCollision(request, result, robot_state);
 
     return !result.collision;

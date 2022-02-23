@@ -4,55 +4,26 @@
 #include <ompl/geometric/planners/rrt/SORRTstar.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
-#include <boost/range/adaptor/transformed.hpp>
+#include <boost/range/combine.hpp>
 #include "../src/experiment_utils.h"
 
-struct PointToPointPair {
-    size_t from_target;
-    std::shared_ptr<ompl::base::State> from_state;
-
-    size_t to_target;
-    std::shared_ptr<ompl::base::State> to_state;
-};
-
-std::vector<PointToPointPair>
-samplePlanningPairs(const planning_scene::PlanningScenePtr &scene, const moveit::core::RobotModelPtr &drone,
-                    const std::vector<Apple> &apples, const size_t num_samples) {
-
-    ompl_interface::ModelBasedStateSpaceSpecification spec(drone, "whole_body");
-    auto state_space = std::make_shared<DroneStateSpace>(spec);
-    state_space->setup();
-
-    std::default_random_engine rng;
-
-    auto si = initSpaceInformation(scene, drone, state_space);
-    auto goals = constructAppleGoals(si, apples);
-
-    auto del_state = [state_space = state_space](ompl::base::State *st) { state_space->freeState(st); };
-
-    return boost::copy_range<std::vector<PointToPointPair>>(
-            boost::irange<size_t>(0, num_samples) |
-            boost::adaptors::transformed(
-                    [apples = apples, state_space = state_space, &rng, &del_state, &goals, &si](size_t i) {
-
-                        auto[target_i, target_j] = generateIndexPairNoReplacement(rng, apples.size());
-
-                        std::shared_ptr<ompl::base::State> from_state(state_space->allocState(), del_state);
-                        goals[target_i]->sampleGoal(from_state.get());
-
-                        std::shared_ptr<ompl::base::State> to_state(state_space->allocState(), del_state);
-                        goals[target_j]->sampleGoal(to_state.get());
-
-                        return PointToPointPair{target_i, from_state, target_j, to_state};
-
-                    }));
-}
 
 int main(int argc, char **argv) {
 
     auto drone = loadRobotModel();
 
+    ros::init(argc, argv, "planning_test_debug");
+    ros::NodeHandle nh;
+    ros::AsyncSpinner spinner(4);
+
     auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage();
+
+    auto scene_topic = nh.advertise<moveit_msgs::PlanningScene>("/debug_scene", 10, true);
+    while (scene_topic.getNumSubscribers() == 0) {
+        ros::Duration(0.1).sleep();
+    }
+    scene_topic.publish(scene_msg);
+
     auto scene = setupPlanningScene(scene_msg, drone);
 
     std::function<ompl::base::PlannerPtr(const ompl::base::SpaceInformationPtr &)> planner_allocators[] = {
@@ -61,12 +32,47 @@ int main(int argc, char **argv) {
             [](const auto &si) -> ompl::base::PlannerPtr { return std::make_shared<ompl::geometric::AITstar>(si); }
     };
 
+    const std::string planner_names[] = {"RRTstar","PRMstar","AITstar"};
+
     auto planning_pairs = samplePlanningPairs(scene, drone, apples, 10);
 
-    std::vector<double> path_lengths(planning_pairs.size());
+    {
+        ros::init(argc, argv, "planning_test_debug");
+        ros::NodeHandle nh;
+        ros::AsyncSpinner spinner(4);
+        spinner.start();
+
+        ompl_interface::ModelBasedStateSpaceSpecification spec(drone, "whole_body");
+        auto state_space = std::make_shared<DroneStateSpace>(spec);
+
+        auto scene_topic = nh.advertise<moveit_msgs::PlanningScene>("/debug_scene", 10, true);
+        while (scene_topic.getNumSubscribers() == 0) {
+            ros::Duration(0.1).sleep();
+        }
+        scene_topic.publish(scene_msg);
+
+        auto rs_topic = nh.advertise<visualization_msgs::MarkerArray>("/debug_state", 10, true);
+        while (rs_topic.getNumSubscribers() == 0) {
+            ros::Duration(0.1).sleep();
+        }
+        while (true) {
+            for (const auto &ptp: planning_pairs) {
+                moveit::core::RobotState moveit_state(drone);
+                state_space->copyToRobotState(moveit_state, ptp.from_state.get());
+                moveit_state.update(true);
+                rs_topic.publish(markers_for_state(moveit_state));
+                ros::Duration(2.0).sleep();
+            };
+        }
+    }
+
+    std::vector<std::vector<double>> path_lengths(planning_pairs.size());
 
     std::transform(std::execution::par, planning_pairs.begin(), planning_pairs.end(), path_lengths.begin(),
                   [&](const PointToPointPair &pair) {
+
+        std::vector<double> lengths;
+
         for (const auto &planner_allocator: planner_allocators) {
             ompl_interface::ModelBasedStateSpaceSpecification spec(drone, "whole_body");
             auto state_space = std::make_shared<DroneStateSpace>(spec);
@@ -78,15 +84,34 @@ int main(int argc, char **argv) {
             pdef->setStartAndGoalStates(pair.from_state.get(), pair.to_state.get());
 
             planner->setProblemDefinition(pdef);
-            planner->solve(5.0);
+
+            if (planner->solve(5.0) == ompl::base::PlannerStatus::EXACT_SOLUTION) {
+                lengths.push_back(pdef->getSolutionPath()->length());
+            } else {
+                lengths.push_back(std::numeric_limits<double>::infinity());
+            }
         }
-        return 0.0;
+
+        return lengths;
     });
 
-    for (const auto &item : path_lengths) {
-        std::cout << "Length " << item;
+    Json::Value value;
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "ArgumentSelectionDefects" // Seems to trigger a false positive
+    for (const auto &[pair,lengths] : boost::combine(planning_pairs,path_lengths)) {
+#pragma clang diagnostic pop
+        Json::Value run_json;
+        run_json["euclidean_distance"] = (apples[pair.from_target].center - apples[pair.to_target].center).norm();
+        for (const auto &[length,planner_name] : boost::combine(boost::get<0>(lengths), planner_names)) {
+            run_json["attempts"][boost::get<0>(planner_name)] = (float) length;
+        }
     }
-    std::cout << std::endl;
+
+    std::ofstream ofs;
+    ofs.open("analysis/ptp_comparison.json");
+    ofs << value;
+    ofs.close();
 
 
 }

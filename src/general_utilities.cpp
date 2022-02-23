@@ -1,6 +1,8 @@
 #include <Eigen/Geometry>
 #include <ompl/util/RandomNumbers.h>
 #include <shape_msgs/Mesh.h>
+#include <bullet/HACD/hacdHACD.h>
+#include <boost/range/irange.hpp>
 #include "general_utilities.h"
 
 /**
@@ -199,4 +201,61 @@ std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::M
         result.push_back(std::move(contents));
     }
     return result;
+}
+
+std::vector<shape_msgs::Mesh> convex_decomposition(const shape_msgs::Mesh &mesh, const double concavity) {
+
+    HACD::HACD hacd;
+
+    auto points = boost::copy_range<std::vector<HACD::Vec3<double>>>(mesh.vertices | boost::adaptors::transformed([](const auto& pt){
+        return HACD::Vec3(pt.x, pt.y, pt.z);
+    }));
+
+    auto triangles = boost::copy_range<std::vector<HACD::Vec3<long>>>(mesh.triangles | boost::adaptors::transformed([](const auto& tr){
+        return HACD::Vec3((long)tr.vertex_indices[0], (long)tr.vertex_indices[1], (long)tr.vertex_indices[2]);
+    }));
+
+    // TODO: Mesh may be non-manifold. Is that a problem? Need to test.
+
+    hacd.SetPoints(points.data());
+    hacd.SetNPoints(points.size());
+
+    hacd.SetTriangles(triangles.data());
+    hacd.SetNTriangles(triangles.size());
+
+    hacd.SetConcavity(concavity);
+    hacd.Compute();
+
+    return boost::copy_range<std::vector<shape_msgs::Mesh>>(boost::irange<size_t>(0,hacd.GetNClusters()) | boost::adaptors::transformed([&](size_t ch_i) {
+        shape_msgs::Mesh sub_mesh;
+
+        std::vector<HACD::Vec3<double>> ch_points(hacd.GetNPointsCH(ch_i));
+        std::vector<HACD::Vec3<long>> ch_triangles(hacd.GetNTrianglesCH(ch_i));
+        hacd.GetCH(ch_i, ch_points.data(), ch_triangles.data());
+
+        sub_mesh.vertices = boost::copy_range<std::vector<geometry_msgs::Point>>(ch_points | boost::adaptors::transformed([](const auto& pt){
+            geometry_msgs::Point ros_pt;
+            ros_pt.x = pt.X();
+            ros_pt.y = pt.Y();
+            ros_pt.z = pt.Z();
+            return ros_pt;
+        }));
+
+        sub_mesh.triangles = boost::copy_range<std::vector<shape_msgs::MeshTriangle>>(ch_triangles | boost::adaptors::transformed([](const auto& pt){
+            shape_msgs::MeshTriangle tri;
+            tri.vertex_indices[0] = pt.X();
+            tri.vertex_indices[1] = pt.Y();
+            tri.vertex_indices[2] = pt.Z();
+            return tri;
+        }));
+
+        for (const auto &tri : sub_mesh.triangles) {
+            assert(tri.vertex_indices[0] < sub_mesh.vertices.size());
+            assert(tri.vertex_indices[1] < sub_mesh.vertices.size());
+            assert(tri.vertex_indices[2] < sub_mesh.vertices.size());
+        }
+
+        return sub_mesh;
+    }));
+
 }

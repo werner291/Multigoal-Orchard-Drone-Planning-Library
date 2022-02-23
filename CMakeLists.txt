@@ -28,6 +28,8 @@ find_package(fcl REQUIRED)
 
 find_package(Boost REQUIRED)
 
+find_package(Bullet REQUIRED)
+
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -128,9 +130,10 @@ include_directories(
         ${JSONCPP_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
         ${GTEST_INCLUDE_DIRS}
+        ${BULLET_INCLUDE_DIRS}
 )
 
-link_libraries(${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib tbb)
+link_libraries(${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} ${BULLET_LIBRARIES} HACD jsoncpp_lib tbb)
 
 ###########
 ## Build ##
