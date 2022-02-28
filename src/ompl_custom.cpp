@@ -113,8 +113,8 @@ const Eigen::Vector3d &DroneEndEffectorNearTarget::getTarget() const {
 }
 
 std::shared_ptr<ompl::base::SpaceInformation>
-initSpaceInformation(const planning_scene::PlanningScenePtr &scene,
-                     const moveit::core::RobotModelPtr &robot,
+initSpaceInformation(const planning_scene::PlanningSceneConstPtr &scene,
+                     const moveit::core::RobotModelConstPtr &robot,
                      const std::shared_ptr<DroneStateSpace> &state_space) {
 
     auto si = std::make_shared<ompl::base::SpaceInformation>(state_space);

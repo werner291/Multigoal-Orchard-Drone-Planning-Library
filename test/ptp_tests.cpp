@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <moveit/collision_detection/collision_detector_allocator.h>
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 #include <moveit/planning_scene/planning_scene.h>

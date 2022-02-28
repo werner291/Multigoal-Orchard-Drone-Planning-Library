@@ -1,8 +1,6 @@
 
 #include <boost/range/adaptor/transformed.hpp>
-#include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include <execution>
-#include <ompl/geometric/planners/rrt/SORRTstar.h>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 #include <ompl/base/Planner.h>
 #include <boost/range/combine.hpp>
@@ -16,10 +14,8 @@
 
 #include "../src/planning_scene_diff_message.h"
 #include "../src/msgs_utilities.h"
-#include "../src/BulletContinuousMotionValidator.h"
 #include "experiment_utils.h"
 #include "json_utils.h"
-#include "planning_scene_diff_message.h"
 #include "general_utilities.h"
 
 robot_state::RobotState genStartState(const moveit::core::RobotModelConstPtr &drone) {
@@ -262,7 +258,8 @@ std::vector<Apple> apples_from_connected_components(shape_msgs::Mesh apples_mesh
 
 
 std::vector<PointToPointPair>
-samplePlanningPairs(const planning_scene::PlanningScenePtr &scene, const moveit::core::RobotModelPtr &drone,
+samplePlanningPairs(const planning_scene::PlanningSceneConstPtr &scene,
+                    const moveit::core::RobotModelConstPtr &drone,
                     const std::vector<Apple> &apples, const size_t num_samples) {
 
     ompl_interface::ModelBasedStateSpaceSpecification spec(drone, "whole_body");

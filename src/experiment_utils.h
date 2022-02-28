@@ -119,7 +119,9 @@ struct PointToPointPair {
 };
 
 std::vector<PointToPointPair>
-samplePlanningPairs(const planning_scene::PlanningScenePtr &scene, const moveit::core::RobotModelPtr &drone,
-                    const std::vector<Apple> &apples, const size_t num_samples);
+samplePlanningPairs(const planning_scene::PlanningSceneConstPtr &scene,
+                    const moveit::core::RobotModelConstPtr &drone,
+                    const std::vector<Apple> &apples,
+                    const size_t num_samples);
 
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H
