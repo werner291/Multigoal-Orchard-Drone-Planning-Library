@@ -36,8 +36,8 @@ void InformedGaussian::setStartAndGoal(const ompl::base::State *start,
                                        const std::shared_ptr<ompl::base::GoalSampleableRegion> &goal) {
     if (!underlying_sampler_) {
         underlying_sampler_.reset(
-                new ExpandingHyperspheroidBasedSampler(ss_, std::make_shared<DroneStateSampler>(ss_), start, goal,
-                                                       stddev_));
+                new MakeshiftExponentialSampler(ss_, std::make_shared<DroneStateSampler>(ss_), start, goal,
+                                                stddev_));
     } else {
         underlying_sampler_->goalRegion = goal;
         underlying_sampler_->start_state = start;

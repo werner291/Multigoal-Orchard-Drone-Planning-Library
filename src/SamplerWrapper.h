@@ -46,7 +46,7 @@ public:
 
 class InformedGaussian : public SamplerWrapper {
 
-    std::shared_ptr<ExpandingHyperspheroidBasedSampler> underlying_sampler_;
+    std::shared_ptr<MakeshiftExponentialSampler> underlying_sampler_;
     double stddev_;
 
 public:

@@ -231,7 +231,7 @@ visualization_msgs::MarkerArray markers_for_state(const moveit::core::RobotState
 
 planning_scene::PlanningScenePtr
 setupPlanningScene(const moveit_msgs::PlanningScene &planning_scene_message,
-                   moveit::core::RobotModelPtr &drone) {
+                   const moveit::core::RobotModelPtr &drone) {
     auto scene = std::make_shared<planning_scene::PlanningScene>(drone);
     scene->setPlanningSceneDiffMsg(planning_scene_message);
     // Diff message apparently can't handle partial ACM updates?

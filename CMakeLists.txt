@@ -131,10 +131,21 @@ include_directories(
         ${Boost_INCLUDE_DIRS}
         ${GTEST_INCLUDE_DIRS}
         ${BULLET_INCLUDE_DIRS}
+        /home/werner/workspace/or-tools_Ubuntu-20.04-64bit_v9.2.9972/include
 )
 
 # Note: the HACD library is included Bullet's "extra" libraries
-link_libraries(${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} ${BULLET_LIBRARIES} HACD jsoncpp_lib tbb)
+link_libraries(
+        ${catkin_LIBRARIES}
+        ${EIGEN_LIBRARIES}
+        ${FCL_LIBRARIES}
+        ${Boost_LIBRARIES}
+        ${BULLET_LIBRARIES}
+        HACD
+        jsoncpp_lib
+        tbb
+        /home/werner/workspace/or-tools_Ubuntu-20.04-64bit_v9.2.9972/lib/libortools.so
+)
 
 ###########
 ## Build ##
@@ -220,9 +231,11 @@ add_library(${PROJECT_NAME}_shared
         src/SamplerWrapper.h
         src/UnionGoalSampleableRegion.cpp
         src/UnionGoalSampleableRegion.h
+        src/greatcircle.h
+        src/greatcircle.cpp
 #        src/agglomerative_clustering.cpp
         src/agglomerative_clustering.h
-        )
+        src/traveling_salesman.h src/traveling_salesman.cpp)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
@@ -242,6 +255,15 @@ add_executable(${PROJECT_NAME}_euclidean_tsp experiments/euclidean_tsp.cpp)
 
 add_executable(${PROJECT_NAME}_ptp_comparison experiments/ptp_comparison.cpp)
 target_link_libraries(${PROJECT_NAME}_ptp_comparison ${PROJECT_NAME}_shared)
+
+add_executable(${PROJECT_NAME}_prmstar_keep_or_clear experiments/prmstar_keep_or_clear.cpp)
+target_link_libraries(${PROJECT_NAME}_prmstar_keep_or_clear ${PROJECT_NAME}_shared)
+
+add_executable(${PROJECT_NAME}_greatcircle_correlation experiments/greatcircle_correlation.cpp)
+target_link_libraries(${PROJECT_NAME}_greatcircle_correlation ${PROJECT_NAME}_shared)
+
+add_executable(${PROJECT_NAME}_preorder_experiment experiments/preorder_experiment.cpp)
+target_link_libraries(${PROJECT_NAME}_preorder_experiment ${PROJECT_NAME}_shared)
 
 add_executable(${PROJECT_NAME}_clustering experiments/clustering_comparison.cpp test/test_utils.cpp)
 target_link_libraries(${PROJECT_NAME}_clustering ${PROJECT_NAME}_shared)

@@ -40,10 +40,10 @@ int main(int argc, char **argv) {
             std::chrono::milliseconds(1000),
             std::chrono::milliseconds(2000),
             std::chrono::milliseconds(5000),
-            std::chrono::milliseconds(10000),
+//            std::chrono::milliseconds(10000),
     };
 
-    auto planning_pairs = samplePlanningPairs(setupPlanningScene(scene_msg, drone), drone, apples, 50);
+    auto planning_pairs = samplePlanningPairs(setupPlanningScene(scene_msg, drone), drone, apples, 200);
 
     struct PlanAttempt {
         std::string planner_name;

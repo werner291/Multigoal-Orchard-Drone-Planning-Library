@@ -106,7 +106,7 @@ struct DroneAndStateSpace {
 };
 
 planning_scene::PlanningScenePtr setupPlanningScene(const moveit_msgs::PlanningScene &planning_scene_message,
-                                                    moveit::core::RobotModelPtr &drone);
+                                                    const moveit::core::RobotModelPtr &drone);
 
 std::vector<Apple> apples_from_connected_components(shape_msgs::Mesh apples_mesh);
 

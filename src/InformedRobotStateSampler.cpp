@@ -54,7 +54,7 @@
 //        t_(1.0)
 //{}
 
-void ExpandingHyperspheroidBasedSampler::sample(ompl::base::State *state) {
+void MakeshiftExponentialSampler::sample(ompl::base::State *state) {
 
     ompl::base::ScopedState goal_sample(this->goalRegion->getSpaceInformation());
     goalRegion->sampleGoal(goal_sample.get());
@@ -67,27 +67,27 @@ void ExpandingHyperspheroidBasedSampler::sample(ompl::base::State *state) {
 
 }
 
-void ExpandingHyperspheroidBasedSampler::sampleUniform(ompl::base::State *state) {
+void MakeshiftExponentialSampler::sampleUniform(ompl::base::State *state) {
     sample(state);
 }
 
-void ExpandingHyperspheroidBasedSampler::sampleUniformNear(ompl::base::State *state,
-                                                           const ompl::base::State *near,
-                                                           double distance) {
+void MakeshiftExponentialSampler::sampleUniformNear(ompl::base::State *state,
+                                                    const ompl::base::State *near,
+                                                    double distance) {
     throw ompl::Exception("Not implemented");
 }
 
-void ExpandingHyperspheroidBasedSampler::sampleGaussian(ompl::base::State *state,
-                                                        const ompl::base::State *mean,
-                                                        double stdDev) {
+void MakeshiftExponentialSampler::sampleGaussian(ompl::base::State *state,
+                                                 const ompl::base::State *mean,
+                                                 double stdDev) {
     throw ompl::Exception("Not implemented");
 }
 
-ExpandingHyperspheroidBasedSampler::ExpandingHyperspheroidBasedSampler(const ompl::base::StateSpace *space,
-                                                                       std::shared_ptr<ompl::base::StateSampler> uniformSampler,
-                                                                       const ompl::base::State *startState,
-                                                                       std::shared_ptr<const ompl::base::GoalSampleableRegion> goalRegion,
-                                                                       double stddev)
+MakeshiftExponentialSampler::MakeshiftExponentialSampler(const ompl::base::StateSpace *space,
+                                                         std::shared_ptr<ompl::base::StateSampler> uniformSampler,
+                                                         const ompl::base::State *startState,
+                                                         std::shared_ptr<const ompl::base::GoalSampleableRegion> goalRegion,
+                                                         double stddev)
         : StateSampler(space),
           uniformSampler(std::move(uniformSampler)),
           start_state(startState),

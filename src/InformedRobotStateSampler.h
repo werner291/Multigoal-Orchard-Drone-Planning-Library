@@ -10,14 +10,14 @@
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 #include <ompl/base/goals/GoalSampleableRegion.h>
 
-class ExpandingHyperspheroidBasedSampler : public ompl::base::StateSampler {
+class MakeshiftExponentialSampler : public ompl::base::StateSampler {
 public:
 
-    ExpandingHyperspheroidBasedSampler(const ompl::base::StateSpace *space,
-                                       std::shared_ptr<ompl::base::StateSampler> uniformSampler,
-                                       const ompl::base::State *startState,
-                                       std::shared_ptr<const ompl::base::GoalSampleableRegion> goalRegion,
-                                       double stddev);
+    MakeshiftExponentialSampler(const ompl::base::StateSpace *space,
+                                std::shared_ptr<ompl::base::StateSampler> uniformSampler,
+                                const ompl::base::State *startState,
+                                std::shared_ptr<const ompl::base::GoalSampleableRegion> goalRegion,
+                                double stddev);
 
     void sample(ompl::base::State *state);
 
