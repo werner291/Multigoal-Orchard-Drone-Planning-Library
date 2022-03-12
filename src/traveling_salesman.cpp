@@ -2,11 +2,99 @@
 #include "traveling_salesman.h"
 
 #include <boost/range/algorithm/min_element.hpp>
+#include <utility>
+
+
+double ordering_heuristic_cost(const std::vector<size_t> &ordering, const std::vector<Apple> &apples,
+                                const DistanceHeuristics& dh) {
+
+    double d = dh.start_to_apple(apples[ordering[0]]);
+
+    for (const size_t i : boost::irange<size_t>(1,apples.size())) {
+        d += dh.apple_to_apple(apples[ordering[i-1]],apples[ordering[i]]);
+    }
+
+    return d;
+}
+
+double GreatcircleDistanceHeuristics::apple_to_apple(const Apple &apple_a, const Apple &apple_b) const {
+    return gcm.measure(apple_a.center, apple_b.center);
+}
+
+double GreatcircleDistanceHeuristics::start_to_apple(const Apple &apple) const {
+    return gcm.measure(apple.center, start_end_effector_pos);
+}
+
+std::string GreatcircleDistanceHeuristics::name() {
+    return "greatcircle";
+}
+
+GreatcircleDistanceHeuristics::GreatcircleDistanceHeuristics(Eigen::Vector3d startEndEffectorPos,
+                                                             GreatCircleMetric gcm)
+        : start_end_effector_pos(std::move(startEndEffectorPos)), gcm(std::move(gcm)) {}
+
+double EuclideanDistanceHeuristics::apple_to_apple(const Apple &apple_a, const Apple &apple_b) const {
+    return (apple_a.center - apple_b.center).norm();
+}
+
+double EuclideanDistanceHeuristics::start_to_apple(const Apple &apple) const {
+    return (apple.center - start_end_effector_pos).norm();
+}
+
+std::string EuclideanDistanceHeuristics::name() {
+    return "euclidean";
+}
+
+EuclideanDistanceHeuristics::EuclideanDistanceHeuristics(Eigen::Vector3d startEndEffectorPos) : start_end_effector_pos(std::move(
+        startEndEffectorPos)) {}
+
+std::string GreedyOrderingStrategy::name() const{
+    return "greedy";
+}
 
 std::vector<size_t>
-apple_ordering_from_metric_ortools(const std::vector<Apple> &apples,
-                                   const std::function<double(const Apple&)>& state_to_apple_distance_fn,
-                                   const std::function<double(const Apple&, const Apple&)>& apple_to_apple_distance_fn) {
+GreedyOrderingStrategy::apple_ordering(const std::vector<Apple> &apples, const DistanceHeuristics &distance) const {
+
+    size_t first_apple = *boost::range::min_element(boost::irange<size_t>(1,apples.size()), [&](const auto a, const auto b) {
+        return distance.start_to_apple(apples[a]) < distance.start_to_apple(apples[b]);
+    });
+
+    std::vector<bool> visited(apples.size(), false);
+    visited[first_apple] = true;
+
+    std::vector<size_t> ordering { first_apple };
+    ordering.reserve(apples.size());
+
+    while (ordering.size() < apples.size()) {
+
+        size_t next = 0;
+        double next_distance = INFINITY;
+
+        for (const size_t i : boost::irange<size_t>(0,apples.size())) {
+
+            double candidate_distance = distance.apple_to_apple(apples[ordering.back()], apples[i]);
+
+            if (!visited[i] && candidate_distance < next_distance) {
+                next = i;
+                next_distance = candidate_distance;
+            }
+        }
+
+        visited[next] = true;
+        ordering.push_back(next);
+
+    }
+
+    return ordering;
+}
+
+std::string ORToolsOrderingStrategy::name() const{
+    return "OR-tools";
+}
+
+
+std::vector<size_t> ORToolsOrderingStrategy::apple_ordering(const std::vector<Apple> &apples,
+                                                            const DistanceHeuristics &distance) const {
 
     // First, we build an (N+2)^2 square symmetric distance matrix.
     std::vector<std::vector<int64_t>> distance_matrix(apples.size() + 2, std::vector<int64_t>(apples.size() + 2));
@@ -15,14 +103,14 @@ apple_ordering_from_metric_ortools(const std::vector<Apple> &apples,
     // where distance_matrix[i][j] contains the distance between apples[i] and apples[j].
     for (size_t i : boost::irange<size_t>(0,apples.size())) {
         for (size_t j : boost::irange<size_t>(0,apples.size())) {
-            distance_matrix[i][j] = (int64_t) (apple_to_apple_distance_fn(apples[i],apples[j]) * 1000.0);
+            distance_matrix[i][j] = (int64_t) (distance.apple_to_apple(apples[i],apples[j]) * 1000.0);
         }
     }
 
     // The distance_matrix[N] column contains the distance between the start state and the apple.
     // Also, the distance_matrix[..][N] row is built by symmetry.
     for (size_t i : boost::irange<size_t>(0,apples.size())) {
-        distance_matrix[i][apples.size()] = (int64_t) (state_to_apple_distance_fn(apples[i]) * 1000.0);;
+        distance_matrix[i][apples.size()] = (int64_t) (distance.start_to_apple(apples[i]) * 1000.0);;
         distance_matrix[apples.size()][i] = distance_matrix[i][apples.size()];
     }
 
@@ -67,57 +155,4 @@ apple_ordering_from_metric_ortools(const std::vector<Apple> &apples,
     }
 
     return ordering;
-
-}
-
-std::vector<size_t> apple_ordering_from_metric_greedy(const std::vector<Apple> &apples,
-                                                      const std::function<double(const Apple &)> &state_to_apple_distance_fn,
-                                                      const std::function<double(const Apple &, const Apple &)> &apple_to_apple_distance_fn) {
-
-    size_t first_apple = *boost::range::min_element(boost::irange<size_t>(1,apples.size()), [&](const auto a, const auto b) {
-        return state_to_apple_distance_fn(apples[a]) < state_to_apple_distance_fn(apples[b]);
-    });
-
-    std::vector<bool> visited(apples.size(), false);
-    visited[first_apple] = true;
-
-    std::vector<size_t> ordering { first_apple };
-    ordering.reserve(apples.size());
-
-    while (ordering.size() < apples.size()) {
-
-        size_t next = 0;
-        double next_distance = INFINITY;
-
-        for (const size_t i : boost::irange<size_t>(0,apples.size())) {
-
-            double candidate_distance = apple_to_apple_distance_fn(apples[ordering.back()], apples[i]);
-
-            if (!visited[i] && candidate_distance < next_distance) {
-                next = i;
-                next_distance = candidate_distance;
-            }
-        }
-
-        visited[next] = true;
-        ordering.push_back(next);
-
-    }
-
-    return ordering;
-
-
-}
-
-double ordering_heuristic_cost(const std::vector<size_t> &ordering, const std::vector<Apple> &apples,
-                               const std::function<double(const Apple &)> &state_to_apple_distance_fn,
-                               const std::function<double(const Apple &, const Apple &)> &apple_to_apple_distance_fn) {
-
-    double d = state_to_apple_distance_fn(apples[ordering[0]]);
-
-    for (const size_t i : boost::irange<size_t>(1,apples.size())) {
-        d += apple_to_apple_distance_fn(apples[ordering[i-1]],apples[ordering[i]]);
-    }
-
-    return d;
 }

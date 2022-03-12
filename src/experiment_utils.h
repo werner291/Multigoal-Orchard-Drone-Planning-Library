@@ -124,4 +124,12 @@ samplePlanningPairs(const planning_scene::PlanningSceneConstPtr &scene,
                     const std::vector<Apple> &apples,
                     const size_t num_samples);
 
+std::optional<ompl::geometric::PathGeometric>
+planFromStateToState(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
+                     ompl::base::State *a, ompl::base::State *b, double duration);
+
+std::optional<ompl::geometric::PathGeometric>
+planFromStateToApple(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
+                     ompl::base::State *a, const Apple &b, double duration);
+
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

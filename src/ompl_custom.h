@@ -72,8 +72,8 @@ public:
 private:
 
     // Just for statistics, doesn't affect functionality, so it's mutable.
-    mutable size_t samples_yielded;
-    mutable size_t samples_tried;
+    mutable size_t samples_yielded = 0;
+    mutable size_t samples_tried = 0;
 
 public:
     size_t getSamplesYielded() const;

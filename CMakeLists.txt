@@ -235,7 +235,10 @@ add_library(${PROJECT_NAME}_shared
         src/greatcircle.cpp
 #        src/agglomerative_clustering.cpp
         src/agglomerative_clustering.h
-        src/traveling_salesman.h src/traveling_salesman.cpp)
+        src/traveling_salesman.h
+        src/traveling_salesman.cpp
+        src/probe_retreat_move.cpp
+        src/probe_retreat_move.h)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
@@ -265,6 +268,9 @@ target_link_libraries(${PROJECT_NAME}_greatcircle_correlation ${PROJECT_NAME}_sh
 add_executable(${PROJECT_NAME}_preorder_experiment experiments/preorder_experiment.cpp)
 target_link_libraries(${PROJECT_NAME}_preorder_experiment ${PROJECT_NAME}_shared)
 
+add_executable(${PROJECT_NAME}_probe_retreat_move experiments/probe_retreat_move.cpp)
+target_link_libraries(${PROJECT_NAME}_probe_retreat_move ${PROJECT_NAME}_shared)
+
 add_executable(${PROJECT_NAME}_clustering experiments/clustering_comparison.cpp test/test_utils.cpp)
 target_link_libraries(${PROJECT_NAME}_clustering ${PROJECT_NAME}_shared)
 
@@ -275,14 +281,9 @@ catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
         test/test_utils.h
         test/test_utils.cpp
         test/informed_sampler_test.cpp
-#        #test/BulletContinuousMotionValidatorTest.cpp
-#        test/JsonTests.cpp
-#        #        test/MoveitPathLengthObjectiveTest.cpp
-       test/clustering_tests.cpp
-#        test/collision_checking_test.cpp
-       test/ptp_tests.cpp
+        test/clustering_tests.cpp
+        test/ptp_tests.cpp
         test/enhanced_hac_test.cpp
-#        test/run_detection_test.cpp
         test/mesh_loading.cpp
         )
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared)

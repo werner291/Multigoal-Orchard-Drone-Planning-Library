@@ -1,6 +1,7 @@
 
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include <fstream>
+#include <ompl/geometric/planners/prm/PRMstar.h>
 #include "../src/experiment_utils.h"
 #include "../src/thread_pool.hpp"
 #include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
@@ -21,7 +22,8 @@ int main(int argc, char **argv) {
     thread_pool pool(std::thread::hardware_concurrency());
 
     struct PlanResult {
-        double result_length;
+        double state_to_state_distance;
+        double state_to_goal_distance;
         double euclidean_distance;
         double greatcircle_distance;
     };
@@ -33,29 +35,52 @@ int main(int argc, char **argv) {
             auto state_space = std::make_shared<DroneStateSpace>(spec);
             state_space->setup();
             auto si = initSpaceInformation(setupPlanningScene(scene_msg, drone), drone, state_space);
-            auto planner = std::make_shared<ompl::geometric::AITstar>(si);
+            
+
             auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
 
-            auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner->getSpaceInformation());
-            pdef->setOptimizationObjective(objective);
-            pdef->setStartAndGoalStates(pair.from_state.get(), pair.to_state.get());
 
-            planner->setProblemDefinition(pdef);
+            double euclidean_distance = (apples[pair.from_target].center - apples[pair.to_target].center).norm();
+            double gcm_distance = gsm.measure(apples[pair.from_target].center, apples[pair.to_target].center);
 
-            if (planner->solve(ompl::base::timedPlannerTerminationCondition(1.0)) ==
-                ompl::base::PlannerStatus::EXACT_SOLUTION) {
-                return {
-                        pdef->getSolutionPath()->length(),
-                        (apples[pair.from_target].center - apples[pair.to_target].center).norm(),
-                        gsm.measure(apples[pair.from_target].center, apples[pair.to_target].center)
-                };
-            } else {
-                return {
-                        INFINITY,
-                        (apples[pair.from_target].center - apples[pair.to_target].center).norm(),
-                        gsm.measure(apples[pair.from_target].center, apples[pair.to_target].center)
-                };
+            double state_to_state_distance = INFINITY;
+
+            {
+                auto planner = std::make_shared<ompl::geometric::PRMstar>(si);
+
+                auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner->getSpaceInformation());
+                pdef->setOptimizationObjective(objective);
+                pdef->setStartAndGoalStates(pair.from_state.get(), pair.to_state.get());
+                planner->setProblemDefinition(pdef);
+                if (planner->solve(ompl::base::timedPlannerTerminationCondition(2.0)) ==
+                    ompl::base::PlannerStatus::EXACT_SOLUTION) {
+                    state_to_state_distance = pdef->getSolutionPath()->length();
+                }
             }
+
+            double state_to_goal_distance = INFINITY;
+
+            {
+                // FIXME: Use the right planner when bug 885 in OMPL gets fixed.
+                auto planner = std::make_shared<ompl::geometric::PRMstar>(si);
+
+                auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner->getSpaceInformation());
+                pdef->setOptimizationObjective(objective);
+                pdef->addStartState(pair.from_state.get());
+                pdef->setGoal(std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, apples[pair.to_target].center));
+                planner->setProblemDefinition(pdef);
+                if (planner->solve(ompl::base::timedPlannerTerminationCondition(2.0)) ==
+                    ompl::base::PlannerStatus::EXACT_SOLUTION) {
+                    state_to_goal_distance = pdef->getSolutionPath()->length();
+                }
+            }
+
+            return {
+                    state_to_state_distance,
+                    state_to_goal_distance,
+                    euclidean_distance,
+                    gcm_distance
+            };
         }));
     }
     
@@ -63,7 +88,8 @@ int main(int argc, char **argv) {
     for (auto &item : results) {
         Json::Value pair_json;
         const PlanResult &result = item.get();
-        pair_json["result_distance"] = result.result_length;
+        pair_json["state_to_state_trajectory_length"] = result.state_to_state_distance;
+        pair_json["state_to_goal_trajectory_length"] = result.state_to_goal_distance;
         pair_json["euclidean_distance"] = result.euclidean_distance;
         pair_json["greatcircle_distance"] = result.greatcircle_distance;
         json.append(pair_json);
