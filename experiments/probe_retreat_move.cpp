@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage();
 
     std::shuffle(apples.begin(), apples.end(), std::mt19937(std::random_device()()));
-    apples.resize(10);
+//    apples.resize(50);
 
     moveit::core::RobotState start_state(drone);
 
@@ -62,14 +62,14 @@ int main(int argc, char** argv) {
     ompl::base::ScopedState start(si);
     state_space->copyToOMPLState(start.get(), start_state);
 
-    Eigen::Vector3d sphere_center(0.0,0.0,2.0);
+    SphereShell shell({0.0,0.0,2.0}, 4.0);
 
     auto result_path = plan_probe_retreat_slide(
             apples_in_order,
             start.get(),
             si,
             [&](const Apple &a, ompl::base::State *result) {
-                state_space->copyToOMPLState(result, state_outside_tree(drone, a, sphere_center, 4.0));
+                state_space->copyToOMPLState(result, shell.state_on_shell(drone, a));
             },
             [&](ompl::base::State *a, ompl::base::State *b) -> std::optional<ompl::geometric::PathGeometric> {
 
@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 
                 ompl::base::ScopedState ss(si);
 
-                for (const auto &ri: sphericalInterpolatedPath(ra, rb, sphere_center)) {
+                for (const auto &ri: shell.path_on_shell(drone, a, b)) {
                     state_space->copyToOMPLState(ss.get(), ri);
                     path.append(ss.get());
                 }
