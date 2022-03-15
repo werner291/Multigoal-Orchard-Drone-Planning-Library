@@ -1,33 +1,40 @@
 
+#include <boost/range/irange.hpp>
+#include <ompl/geometric/PathSimplifier.h>
 #include "probe_retreat_move.h"
 
 
-ompl::geometric::PathGeometric plan_probe_retreat_slide(const std::vector<Apple>& apples_in_order,
-                                                        const ompl::base::State* initial_state,
-                                                        const ompl::base::SpaceInformationPtr& si,
-                                                        const std::function<void(const Apple& apple, ompl::base::State*)>& state_outside_tree,
-                                                        const std::function<std::optional<ompl::geometric::PathGeometric>(ompl::base::State*, ompl::base::State*)>& plan_state_to_state,
-                                                        const std::function<std::optional<ompl::geometric::PathGeometric>(ompl::base::State*, const Apple& apple)>& plan_state_to_apple) {
+ompl::geometric::PathGeometric
+plan_probe_retreat_slide(const std::vector<Apple> &apples_in_order, const ompl::base::State *initial_state,
+                         const ompl::base::SpaceInformationPtr &si,
+                         const std::function<void(const Apple &apple, ompl::base::State *)> &state_outside_tree,
+                         const std::function<std::optional<ompl::geometric::PathGeometric>(ompl::base::State *,
+                                                                                           ompl::base::State *)> &plan_state_to_state,
+                         const std::function<std::optional<ompl::geometric::PathGeometric>(ompl::base::State *,
+                                                                                           const Apple &apple)> &plan_state_to_apple,
+                         bool simplify) {
+
+
+    std::vector<ompl::geometric::PathGeometric> approaches;
+    for (const Apple& apple : apples_in_order) {
+        ompl::base::ScopedState state_outside_tree_for_apple(si);
+        state_outside_tree(apple, state_outside_tree_for_apple.get());
+        if (auto approach = plan_state_to_apple(state_outside_tree_for_apple.get(), apple)) {
+            approaches.push_back(*approach);
+        }
+    }
 
     ompl::geometric::PathGeometric full_path(si, initial_state);
 
-    for (const Apple& apple : apples_in_order) {
+    for (size_t approach_idx : boost::irange<size_t>(1,approaches.size())) {
+        ompl::geometric::PathGeometric apple_to_apple(approaches[approach_idx-1]);
+        apple_to_apple.reverse();
+        apple_to_apple.append(*plan_state_to_state(approaches[approach_idx-1].getState(0),approaches[approach_idx].getState(0)));
+        apple_to_apple.append(approaches[approach_idx]);
 
-        ompl::base::ScopedState state_outside_tree_for_apple(si);
-        state_outside_tree(apple, state_outside_tree_for_apple.get());
+        if (simplify) { ompl::geometric::PathSimplifier(si).simplifyMax(apple_to_apple); }
 
-        const auto to_approach = plan_state_to_state(full_path.getStates().back(), state_outside_tree_for_apple.get());
-        full_path.append(*to_approach);
-
-        auto probing_path = plan_state_to_apple(full_path.getStates().back(), apple);
-
-        if (to_approach.has_value() && probing_path.has_value()) {
-            full_path.append(*probing_path);
-            probing_path->reverse();
-            full_path.append(*probing_path);
-            assert(si->distance(state_outside_tree_for_apple.get(), probing_path->getStates().back()) < 0.01);
-        }
-
+        full_path.append(apple_to_apple);
     }
 
     return full_path;
@@ -78,16 +85,14 @@ sphericalInterpolatedPath(const moveit::core::RobotState &ra, const moveit::core
 
     Eigen::Vector3d normal = ra_ray.cross(rb_ray).normalized();
     double angle = acos(ra_ray.dot(rb_ray) / (ra_ray.norm() * rb_ray.norm()));
-
-
-    const size_t num_states = 20;
+    const auto num_states = (size_t) (2.0 * angle);
 
     std::vector<moveit::core::RobotState> path;
     path.push_back(ra);
 
-    for (size_t state_i = 1; state_i < num_states; state_i++) {
+    for (size_t state_i = 0; state_i < num_states; state_i++) {
 
-        double t = (double) state_i / (double) num_states;
+        double t = (double) (state_i+1) / (double) (num_states+2);
 
         moveit::core::RobotState ri(ra.getRobotModel());
         ra.interpolate(rb, t, ri);
@@ -95,7 +100,7 @@ sphericalInterpolatedPath(const moveit::core::RobotState &ra, const moveit::core
         Eigen::Vector3d base_center = sphere_center + Eigen::AngleAxisd(angle * t, normal) * ra_ray;
         ri.setVariablePosition(0, base_center.x());
         ri.setVariablePosition(1, base_center.y());
-        ri.setVariablePosition(2, base_center.z());
+        ri.setVariablePosition(2, std::max(base_center.z(),0.5));
         ri.update(true);
 
         path.push_back(ri);

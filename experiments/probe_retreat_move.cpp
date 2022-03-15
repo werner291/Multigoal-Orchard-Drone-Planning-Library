@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
             apples_in_order,
             start.get(),
             si,
-            [&](const Apple& a, ompl::base::State *result) {
+            [&](const Apple &a, ompl::base::State *result) {
                 state_space->copyToOMPLState(result, state_outside_tree(drone, a, sphere_center, 4.0));
             },
             [&](ompl::base::State *a, ompl::base::State *b) -> std::optional<ompl::geometric::PathGeometric> {
@@ -82,18 +82,18 @@ int main(int argc, char** argv) {
 
                 ompl::base::ScopedState ss(si);
 
-                for (const auto& ri : sphericalInterpolatedPath(ra,rb,sphere_center)) {
+                for (const auto &ri: sphericalInterpolatedPath(ra, rb, sphere_center)) {
                     state_space->copyToOMPLState(ss.get(), ri);
                     path.append(ss.get());
                 }
 
                 return {path};
             },
-            [&](ompl::base::State *a, const Apple& apple) -> std::optional<ompl::geometric::PathGeometric> {
+            [&](ompl::base::State *a, const Apple &apple) -> std::optional<ompl::geometric::PathGeometric> {
                 auto planner = std::make_shared<ompl::geometric::PRMstar>(si);
 
-                return planFromStateToApple(*planner, objective, a, apple, 2.0);
-            });
+                return planFromStateToApple(*planner, objective, a, apple, 1.0);
+            }, true);
 
     result_path.interpolate();
 
