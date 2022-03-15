@@ -238,7 +238,7 @@ add_library(${PROJECT_NAME}_shared
         src/traveling_salesman.h
         src/traveling_salesman.cpp
         src/probe_retreat_move.cpp
-        src/probe_retreat_move.h)
+        src/probe_retreat_move.h src/moveit_conversions.cpp src/moveit_conversions.h)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
@@ -285,6 +285,7 @@ catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
         test/ptp_tests.cpp
         test/enhanced_hac_test.cpp
         test/mesh_loading.cpp
+        test/probe_retreat_move_tests.cpp
         )
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared)
 

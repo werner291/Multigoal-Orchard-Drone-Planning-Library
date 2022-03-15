@@ -11,6 +11,7 @@
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <geometric_shapes/shape_operations.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <ompl/geometric/PathSimplifier.h>
 
 #include "../src/planning_scene_diff_message.h"
 #include "../src/msgs_utilities.h"
@@ -315,8 +316,14 @@ planFromStateToApple(ompl::base::Planner &planner, const ompl::base::Optimizatio
     pdef->addStartState(a);
     pdef->setGoal(std::make_shared<DroneEndEffectorNearTarget>(planner.getSpaceInformation(), 0.05, b.center));
     planner.setProblemDefinition(pdef);
+    
     if (planner.solve(ompl::base::timedPlannerTerminationCondition(duration)) == ompl::base::PlannerStatus::EXACT_SOLUTION) {
-        return {*pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>()};
+
+        ompl::geometric::PathGeometric path = *pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+
+        ompl::geometric::PathSimplifier(planner.getSpaceInformation()).simplifyMax(path);
+
+        return {path};
     } else {
         return {};
     }

@@ -57,7 +57,6 @@ int main(int argc, char** argv) {
     state_space->setup();
     auto si = initSpaceInformation(setupPlanningScene(scene_msg, drone), drone, state_space);
     // FIXME see https://github.com/ompl/ompl/issues/885 auto planner = std::make_shared<ompl::geometric::AITstar>(si);
-    auto planner = std::make_shared<ompl::geometric::PRMstar>(si);
     auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
 
     ompl::base::ScopedState start(si);
@@ -70,12 +69,29 @@ int main(int argc, char** argv) {
             start.get(),
             si,
             [&](const Apple& a, ompl::base::State *result) {
-                state_space->copyToOMPLState(result, state_outside_tree(drone, a, sphere_center));
+                state_space->copyToOMPLState(result, state_outside_tree(drone, a, sphere_center, 4.0));
             },
             [&](ompl::base::State *a, ompl::base::State *b) -> std::optional<ompl::geometric::PathGeometric> {
-                return planFromStateToState(*planner, objective, a, b, 2.0);
+
+                ompl::geometric::PathGeometric path(si, a);
+
+                moveit::core::RobotState ra(drone);
+                state_space->copyToRobotState(ra, a);
+                moveit::core::RobotState rb(drone);
+                state_space->copyToRobotState(rb, b);
+
+                ompl::base::ScopedState ss(si);
+
+                for (const auto& ri : sphericalInterpolatedPath(ra,rb,sphere_center)) {
+                    state_space->copyToOMPLState(ss.get(), ri);
+                    path.append(ss.get());
+                }
+
+                return {path};
             },
             [&](ompl::base::State *a, const Apple& apple) -> std::optional<ompl::geometric::PathGeometric> {
+                auto planner = std::make_shared<ompl::geometric::PRMstar>(si);
+
                 return planFromStateToApple(*planner, objective, a, apple, 2.0);
             });
 
@@ -86,7 +102,6 @@ int main(int argc, char** argv) {
     ros::init(argc,argv,"probe_retreat_move");
 
     ros::NodeHandle nh;
-
 
     moveit_msgs::RobotTrajectory trasj_msg;
 
