@@ -2,17 +2,26 @@
 #ifndef NEW_PLANNERS_PROBE_RETREAT_MOVE_H
 #define NEW_PLANNERS_PROBE_RETREAT_MOVE_H
 
-#include <Eigen/Core>
-#include <ompl/base/State.h>
-#include <ompl/geometric/PathGeometric.h>
-#include <ompl/base/ScopedState.h>
-#include "procedural_tree_generation.h"
-#include "multigoal/PointToPointPlanner.h"
+#include "SphereShell.h"
 
-moveit::core::RobotState
-state_outside_tree(const moveit::core::RobotModelPtr &drone, const Apple &a, const Eigen::Vector3d &sphere_center,
-                   double sphere_radius);
+ompl::geometric::PathGeometric retreat_travel_probe(
+        std::shared_ptr<ompl::base::SpaceInformation> &si,
+        OMPLSphereShellWrapper &shell,
+        const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches,
+        size_t retreat_idx,
+        size_t approach_idx,
+        bool simplify);
 
-std::vector<moveit::core::RobotState> sphericalInterpolatedPath(const moveit::core::RobotState& ra, const moveit::core::RobotState& rb, const Eigen::Vector3d& sphere_center);
+std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> planApproaches(
+        const std::vector<Apple> &apples_in_order,
+        const ompl::base::OptimizationObjectivePtr &objective,
+        OMPLSphereShellWrapper &shell,
+        const std::shared_ptr<ompl::base::SpaceInformation> &si);
+
+ompl::geometric::PathGeometric planFullPath(
+        std::shared_ptr<ompl::base::SpaceInformation> &si,
+        ompl::base::State* start,
+        OMPLSphereShellWrapper &shell,
+        const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches);
 
 #endif //NEW_PLANNERS_PROBE_RETREAT_MOVE_H

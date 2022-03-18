@@ -117,3 +117,12 @@ void addColoredMeshCollisionShape(moveit_msgs::PlanningScene &planning_scene_mes
     oc.color.a = 1.0;
     planning_scene_message.object_colors.push_back(oc);
 }
+
+moveit_msgs::DisplayTrajectory robotTrajectoryToDisplayTrajectory(const robot_trajectory::RobotTrajectory &moveit_trajectory) {
+    moveit_msgs::DisplayTrajectory msg;
+    msg.model_id = moveit_trajectory.getRobotModel()->getName();
+    msg.trajectory.resize(1);
+    moveit_trajectory.getRobotTrajectoryMsg(msg.trajectory[0]);
+    moveit::core::robotStateToRobotStateMsg(moveit_trajectory.getFirstWayPoint(), msg.trajectory_start);
+    return msg;
+}

@@ -64,3 +64,18 @@ std::vector<moveit::core::RobotState> SphereShell::path_on_shell(const moveit::c
 
 }
 
+OMPLSphereShellWrapper::OMPLSphereShellWrapper(SphereShell shell, ompl::base::SpaceInformationPtr si) :
+        shell(std::move(shell)), si(std::move(si)) {}
+
+ompl::base::ScopedStatePtr OMPLSphereShellWrapper::state_on_shell(const Apple &apple) {
+    auto st = std::make_shared<ompl::base::ScopedState<>>(si);
+    auto state_space = std::static_pointer_cast<ompl_interface::ModelBasedStateSpace>(si->getStateSpace());
+    state_space->copyToOMPLState(st->get(), shell.state_on_shell(state_space->getRobotModel(), apple));
+    return st;
+}
+
+ompl::geometric::PathGeometric OMPLSphereShellWrapper::path_on_shell(const Apple &a, const Apple &b) {
+    return omplPathFromMoveitTrajectory(shell.path_on_shell(si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->getRobotModel(),a,b),si);
+}
+
+

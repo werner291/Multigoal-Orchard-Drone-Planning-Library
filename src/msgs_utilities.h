@@ -4,6 +4,7 @@
 #define NEW_PLANNERS_BUILD_REQUEST_H
 
 #include <moveit_msgs/Constraints.h>
+#include <moveit_msgs/DisplayTrajectory.h>
 #include "procedural_tree_generation.h"
 #include "multigoal/approach_table.h"
 
@@ -20,5 +21,7 @@ shape_msgs::Mesh meshMsgFromResource(const std::string &resource);
 
 void addColoredMeshCollisionShape(moveit_msgs::PlanningScene &planning_scene_message, const Eigen::Vector3f &rgb,
                                   const std::string &id, const shape_msgs::Mesh &mesh);
+
+moveit_msgs::DisplayTrajectory robotTrajectoryToDisplayTrajectory(const robot_trajectory::RobotTrajectory &moveit_trajectory);
 
 #endif //NEW_PLANNERS_BUILD_REQUEST_H

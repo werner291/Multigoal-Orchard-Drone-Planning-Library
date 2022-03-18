@@ -1,74 +1,66 @@
 
 #include <ompl/geometric/PathSimplifier.h>
+#include <boost/range/irange.hpp>
+#include <ompl/geometric/planners/prm/PRMstar.h>
 #include "probe_retreat_move.h"
+#include "experiment_utils.h"
 
+ompl::geometric::PathGeometric retreat_travel_probe(
+        std::shared_ptr<ompl::base::SpaceInformation> &si,
+        OMPLSphereShellWrapper &shell,
+        const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches,
+        size_t retreat_idx,
+        size_t approach_idx,
+        bool simplify) {
 
-moveit::core::RobotState
-state_outside_tree(const moveit::core::RobotModelPtr &drone, const Apple &a, const Eigen::Vector3d &sphere_center,
-                   double sphere_radius) {
-    moveit::core::RobotState st(drone);
+    ompl::geometric::PathGeometric appleToApple(approaches[retreat_idx].second);
 
-    Eigen::Vector3d default_facing(0.0, 1.0, 0.0);
-    Eigen::Vector3d required_facing = (sphere_center - a.center).normalized();
-    Eigen::Vector3d base_facing = (Eigen::Vector3d(required_facing.x(), required_facing.y(), 0.0)).normalized();
+    appleToApple.reverse();
 
-    double yaw = copysign(acos(default_facing.dot(base_facing)), default_facing.cross(base_facing).z());
+    appleToApple.append(shell.path_on_shell(approaches[retreat_idx].first, approaches[retreat_idx].first));
 
-    Eigen::Quaterniond qd(Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()));
+    appleToApple.append(approaches[approach_idx].second);
 
-    st.setVariablePositions({
-                                    0.0, 0.0, 0.0,      // Position off the side of the tree
-                                    qd.x(), qd.y(), qd.z(), qd.w(),// Identity rotation
-                                    0.0, 0.0, 0.0, 0.0  // Arm straight out
-                            });
-
-    st.update(true);
-
-    Eigen::Vector3d apple_on_sphere = (a.center - sphere_center).normalized() * sphere_radius + sphere_center;
-    if (apple_on_sphere.z() < 0.5) apple_on_sphere.z() = 0.5;
-
-    Eigen::Vector3d offset = (apple_on_sphere) - st.getGlobalLinkTransform("end_effector").translation();
-
-    st.setVariablePosition(0, offset.x());
-    st.setVariablePosition(1, offset.y());
-    st.setVariablePosition(2, offset.z());
-
-    st.update(true);
-
-    return st;
-}
-
-std::vector<moveit::core::RobotState>
-sphericalInterpolatedPath(const moveit::core::RobotState &ra, const moveit::core::RobotState &rb,
-                          const Eigen::Vector3d &sphere_center) {
-
-    Eigen::Vector3d ra_ray = (ra.getGlobalLinkTransform("base_link").translation() - sphere_center);
-    Eigen::Vector3d rb_ray = (rb.getGlobalLinkTransform("base_link").translation() - sphere_center);
-
-    Eigen::Vector3d normal = ra_ray.cross(rb_ray).normalized();
-    double angle = acos(ra_ray.dot(rb_ray) / (ra_ray.norm() * rb_ray.norm()));
-    const auto num_states = (size_t) (2.0 * angle);
-
-    std::vector<moveit::core::RobotState> path;
-    path.push_back(ra);
-
-    for (size_t state_i = 0; state_i < num_states; state_i++) {
-
-        double t = (double) (state_i+1) / (double) (num_states+2);
-
-        moveit::core::RobotState ri(ra.getRobotModel());
-        ra.interpolate(rb, t, ri);
-
-        Eigen::Vector3d base_center = sphere_center + Eigen::AngleAxisd(angle * t, normal) * ra_ray;
-        ri.setVariablePosition(0, base_center.x());
-        ri.setVariablePosition(1, base_center.y());
-        ri.setVariablePosition(2, std::max(base_center.z(),0.5));
-        ri.update(true);
-
-        path.push_back(ri);
+    if (simplify) {
+        ompl::geometric::PathSimplifier(si).simplifyMax(appleToApple);
     }
 
-    path.push_back(rb);
+    return appleToApple;
+}
 
-    return path;
+ompl::geometric::PathGeometric planFullPath(
+        std::shared_ptr<ompl::base::SpaceInformation> &si,
+        ompl::base::State *start,
+        OMPLSphereShellWrapper &shell,
+        const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches) {
+
+
+    ompl::geometric::PathGeometric fullPath(si, start);
+    for (size_t approachIdx: boost::irange<size_t>(0, approaches.size()-1)) {
+        fullPath.append(retreat_travel_probe(si, shell, approaches, approachIdx, approachIdx + 1, true));
+    }
+    fullPath.interpolate();
+
+    return fullPath;
+}
+
+std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> planApproaches(
+        const std::vector<Apple> &apples_in_order,
+        const ompl::base::OptimizationObjectivePtr &objective,
+        OMPLSphereShellWrapper &shell,
+        const std::shared_ptr<ompl::base::SpaceInformation> &si) {
+
+    std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> approaches;
+
+    for (const Apple &apple: apples_in_order) {
+
+        auto state_outside = shell.state_on_shell(apple);
+
+        auto planner = std::make_shared<ompl::geometric::PRMstar>(si);
+        if (auto approach = planFromStateToApple(*planner, objective, state_outside->get(), apple, 1.0)) {
+            approaches.emplace_back(apple, *approach);
+        }
+    }
+
+    return approaches;
 }

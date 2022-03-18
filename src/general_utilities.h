@@ -111,4 +111,12 @@ std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::M
  */
 std::vector<shape_msgs::Mesh> convex_decomposition(const shape_msgs::Mesh &mesh, const double concavity = 2.0);
 
+template<typename V>
+std::vector<V> vectorByOrdering(const std::vector<V> &original, const std::vector<size_t> &ordering) {
+    std::vector<V> result;
+    result.reserve(ordering.size());
+    for (const size_t i : ordering) result.push_back(original[i]);
+    return result;
+}
+
 #endif //NEW_PLANNERS_GENERAL_UTILITIES_CPP

@@ -17,3 +17,20 @@ ompl::geometric::PathGeometric omplPathFromMoveitTrajectory(const std::vector<mo
 
     return result;
 }
+
+robot_trajectory::RobotTrajectory omplPathToRobotTrajectory(const moveit::core::RobotModelPtr &drone,
+                                                            const std::shared_ptr<ompl_interface::ModelBasedStateSpace> &state_space,
+                                                            ompl::geometric::PathGeometric &result_path) {
+
+    robot_trajectory::RobotTrajectory traj(drone);
+
+    double t = 0.0;
+    for (const auto state : result_path.getStates()) {
+        moveit::core::RobotState moveit_state(drone);
+        state_space->copyToRobotState(moveit_state, state);
+        traj.addSuffixWayPoint(moveit_state, t);
+        t += 0.1;
+    }
+
+    return traj;
+}

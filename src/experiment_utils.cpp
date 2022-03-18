@@ -328,3 +328,36 @@ planFromStateToApple(ompl::base::Planner &planner, const ompl::base::Optimizatio
         return {};
     }
 }
+
+void dumpToROS(const moveit_msgs::PlanningScene &scene_msg, const robot_trajectory::RobotTrajectory &moveit_trajectory) {
+
+    int argc = 0;
+
+    ros::init(argc, nullptr, "probe_retreat_move");
+
+    ros::NodeHandle nh;
+
+    moveit_msgs::DisplayTrajectory msg = robotTrajectoryToDisplayTrajectory(moveit_trajectory);
+
+    auto traj = nh.advertise<moveit_msgs::DisplayTrajectory>("/trajectory_thingy", 1, true);
+    traj.publish(msg);
+
+    auto scene = nh.advertise<moveit_msgs::PlanningScene>("/planning_scene", 1, true);
+    scene.publish(scene_msg);
+
+    std::cout << "ready" << std::endl;
+
+    ros::spin();
+}
+
+moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelPtr &drone) {
+    moveit::core::RobotState start_state(drone);
+
+    start_state.setVariablePositions({
+                                             3.0, 3.0, 1.5,      // Position off the side of the tree
+                                             0.0, 0.0, 0.0, 1.0, // Identity rotation
+                                             0.0, 0.0, 0.0, 0.0  // Arm straight out
+                                     });
+    start_state.update(true);
+    return start_state;
+}

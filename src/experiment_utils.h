@@ -31,6 +31,8 @@ struct LeafCollisions {
 
 robot_state::RobotState genStartState(const moveit::core::RobotModelConstPtr &drone);
 
+moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelPtr &drone);
+
 struct Experiment {
     std::shared_ptr<MultiGoalPlanner> meta_planner;
     std::shared_ptr<ompl::base::Planner> ptp_planner;
@@ -131,5 +133,7 @@ planFromStateToState(ompl::base::Planner &planner, const ompl::base::Optimizatio
 std::optional<ompl::geometric::PathGeometric>
 planFromStateToApple(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
                      ompl::base::State *a, const Apple &b, double duration);
+
+void dumpToROS(const moveit_msgs::PlanningScene &scene_msg, const robot_trajectory::RobotTrajectory &moveit_trajectory);
 
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H
