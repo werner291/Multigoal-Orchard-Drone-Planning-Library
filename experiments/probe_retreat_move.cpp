@@ -4,8 +4,11 @@
 #include "../src/probe_retreat_move.h"
 #include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 #include "../src/traveling_salesman.h"
+#include "../src/SphereShell.h"
+#include "../src/moveit_conversions.h"
 #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <moveit/robot_state/conversions.h>
+#include <ompl/geometric/PathSimplifier.h>
 
 robot_trajectory::RobotTrajectory
 omplPathToRobotTrajectory(const moveit::core::RobotModelPtr &drone,
@@ -25,6 +28,16 @@ omplPathToRobotTrajectory(const moveit::core::RobotModelPtr &drone,
     return traj;
 }
 
+
+moveit_msgs::DisplayTrajectory
+robotTrajectoryToDisplayTrajectory(const robot_trajectory::RobotTrajectory &moveit_trajectory) {
+    moveit_msgs::DisplayTrajectory msg;
+    msg.model_id = moveit_trajectory.getRobotModel()->getName();
+    msg.trajectory.resize(1);
+    moveit_trajectory.getRobotTrajectoryMsg(msg.trajectory[0]);
+    moveit::core::robotStateToRobotStateMsg(moveit_trajectory.getFirstWayPoint(), msg.trajectory_start);
+    return msg;
+}
 
 int main(int argc, char** argv) {
 
@@ -64,52 +77,48 @@ int main(int argc, char** argv) {
 
     Eigen::Vector3d sphere_center(0.0,0.0,2.0);
 
-    auto result_path = plan_probe_retreat_slide(
-            apples_in_order,
-            start.get(),
-            si,
-            [&](const Apple &a, ompl::base::State *result) {
-                state_space->copyToOMPLState(result, state_outside_tree(drone, a, sphere_center, 4.0));
-            },
-            [&](ompl::base::State *a, ompl::base::State *b) -> std::optional<ompl::geometric::PathGeometric> {
+    const ompl::base::State *initialState = start.get();
 
-                ompl::geometric::PathGeometric path(si, a);
+    SphereShell shell(sphere_center, 4);
 
-                moveit::core::RobotState ra(drone);
-                state_space->copyToRobotState(ra, a);
-                moveit::core::RobotState rb(drone);
-                state_space->copyToRobotState(rb, b);
+    std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> approaches;
+    for (const Apple &apple: apples_in_order) {
 
-                ompl::base::ScopedState ss(si);
+        ompl::base::ScopedState stateOutsideTreeForApple(si);
+        state_space->copyToOMPLState(stateOutsideTreeForApple.get(), shell.state_on_shell(drone, apple));
 
-                for (const auto &ri: sphericalInterpolatedPath(ra, rb, sphere_center)) {
-                    state_space->copyToOMPLState(ss.get(), ri);
-                    path.append(ss.get());
-                }
+        auto planner = std::make_shared<ompl::geometric::PRMstar>(si);
+        if (auto approach = planFromStateToApple(*planner, objective, stateOutsideTreeForApple.get(), apple, 1.0)) {
+            approaches.emplace_back(apple, *approach);
+        }
+    }
 
-                return {path};
-            },
-            [&](ompl::base::State *a, const Apple &apple) -> std::optional<ompl::geometric::PathGeometric> {
-                auto planner = std::make_shared<ompl::geometric::PRMstar>(si);
+    ompl::geometric::PathGeometric fullPath(si, initialState);
 
-                return planFromStateToApple(*planner, objective, a, apple, 1.0);
-            }, true);
+    for (size_t approachIdx: boost::irange<size_t>(1, approaches.size())) {
+        ompl::geometric::PathGeometric appleToApple(approaches[approachIdx - 1].second);
+        appleToApple.reverse();
 
-    result_path.interpolate();
+        appleToApple.append(
+                omplPathFromMoveitTrajectory(shell.path_on_shell(drone,approaches[approachIdx - 1].first,approaches[approachIdx - 1].first),si)
+                );
 
-    auto moveit_trajectory = omplPathToRobotTrajectory(drone, state_space, result_path);
+        appleToApple.append(approaches[approachIdx].second);
+
+        ompl::geometric::PathSimplifier(si).simplifyMax(appleToApple);
+
+        fullPath.append(appleToApple);
+    }
+
+    fullPath.interpolate();
+
+    auto moveit_trajectory = omplPathToRobotTrajectory(drone, state_space, fullPath);
 
     ros::init(argc,argv,"probe_retreat_move");
 
     ros::NodeHandle nh;
 
-    moveit_msgs::RobotTrajectory trasj_msg;
-
-    moveit_msgs::DisplayTrajectory msg;
-    msg.model_id = drone->getName();
-    msg.trajectory.resize(1);
-    moveit_trajectory.getRobotTrajectoryMsg(msg.trajectory[0]);
-    moveit::core::robotStateToRobotStateMsg(moveit_trajectory.getFirstWayPoint(), msg.trajectory_start);
+    moveit_msgs::DisplayTrajectory msg = robotTrajectoryToDisplayTrajectory(moveit_trajectory);
 
     auto traj = nh.advertise<moveit_msgs::DisplayTrajectory>("/trajectory_thingy", 1, true);
     traj.publish(msg);
