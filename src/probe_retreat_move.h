@@ -18,6 +18,11 @@ std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> planApproaches(
         OMPLSphereShellWrapper &shell,
         const std::shared_ptr<ompl::base::SpaceInformation> &si);
 
+void optimizeExit(const Apple &apple, ompl::geometric::PathGeometric& path,
+                  const ompl::base::OptimizationObjectivePtr &objective,
+                  OMPLSphereShellWrapper &shell,
+                  const std::shared_ptr<ompl::base::SpaceInformation> &si);
+
 ompl::geometric::PathGeometric planFullPath(
         std::shared_ptr<ompl::base::SpaceInformation> &si,
         ompl::base::State* start,

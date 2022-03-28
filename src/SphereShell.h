@@ -12,6 +12,12 @@
 class SphereShell {
 
     Eigen::Vector3d center;
+public:
+    const Eigen::Vector3d &getCenter() const;
+
+    double getRadius() const;
+
+private:
     double radius;
 
 public:
@@ -21,15 +27,20 @@ public:
 
     [[nodiscard]] std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a, const Apple &b) const;
 
+    [[nodiscard]] Eigen::Vector3d applePositionOnSphere(const Apple &a) const;
 };
 
 class OMPLSphereShellWrapper {
     SphereShell shell;
+public:
+    const SphereShell &getShell() const;
+
+private:
     ompl::base::SpaceInformationPtr si;
 public:
     OMPLSphereShellWrapper(SphereShell shell, ompl::base::SpaceInformationPtr si);
 
-    ompl::base::ScopedStatePtr state_on_shell(const Apple& apple);
+    ompl::base::ScopedStatePtr state_on_shell(const Apple& apple) const;
 
     ompl::geometric::PathGeometric path_on_shell(const Apple& a, const Apple& b);
 

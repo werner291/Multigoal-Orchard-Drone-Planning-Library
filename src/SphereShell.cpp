@@ -25,8 +25,8 @@ moveit::core::RobotState SphereShell::state_on_shell(const moveit::core::RobotMo
 
     st.update(true);
 
-    Eigen::Vector3d apple_on_sphere = (a.center - center).normalized() * radius + center;
-    if (apple_on_sphere.z() < 0.5) apple_on_sphere.z() = 0.5;
+    Eigen::Vector3d apple_on_sphere = applePositionOnSphere(a);
+//    if (apple_on_sphere.z() < 0.5) apple_on_sphere.z() = 0.5; // FIXME This is problematic... Need to guarantee minimum distance from the tree AND the ground.
 
     Eigen::Vector3d offset = (apple_on_sphere) - st.getGlobalLinkTransform("end_effector").translation();
 
@@ -37,6 +37,10 @@ moveit::core::RobotState SphereShell::state_on_shell(const moveit::core::RobotMo
     st.update(true);
 
     return st;
+}
+
+Eigen::Vector3d SphereShell::applePositionOnSphere(const Apple &a) const {
+    return (a.center - center).normalized() * radius + center;
 }
 
 std::vector<moveit::core::RobotState> SphereShell::path_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a, const Apple &b) const {
@@ -64,10 +68,18 @@ std::vector<moveit::core::RobotState> SphereShell::path_on_shell(const moveit::c
 
 }
 
+const Eigen::Vector3d &SphereShell::getCenter() const {
+    return center;
+}
+
+double SphereShell::getRadius() const {
+    return radius;
+}
+
 OMPLSphereShellWrapper::OMPLSphereShellWrapper(SphereShell shell, ompl::base::SpaceInformationPtr si) :
         shell(std::move(shell)), si(std::move(si)) {}
 
-ompl::base::ScopedStatePtr OMPLSphereShellWrapper::state_on_shell(const Apple &apple) {
+ompl::base::ScopedStatePtr OMPLSphereShellWrapper::state_on_shell(const Apple &apple) const {
     auto st = std::make_shared<ompl::base::ScopedState<>>(si);
     auto state_space = std::static_pointer_cast<ompl_interface::ModelBasedStateSpace>(si->getStateSpace());
     state_space->copyToOMPLState(st->get(), shell.state_on_shell(state_space->getRobotModel(), apple));
@@ -76,6 +88,10 @@ ompl::base::ScopedStatePtr OMPLSphereShellWrapper::state_on_shell(const Apple &a
 
 ompl::geometric::PathGeometric OMPLSphereShellWrapper::path_on_shell(const Apple &a, const Apple &b) {
     return omplPathFromMoveitTrajectory(shell.path_on_shell(si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->getRobotModel(),a,b),si);
+}
+
+const SphereShell &OMPLSphereShellWrapper::getShell() const {
+    return shell;
 }
 
 

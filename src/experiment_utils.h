@@ -134,6 +134,4 @@ std::optional<ompl::geometric::PathGeometric>
 planFromStateToApple(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
                      ompl::base::State *a, const Apple &b, double duration);
 
-void dumpToROS(const moveit_msgs::PlanningScene &scene_msg, const robot_trajectory::RobotTrajectory &moveit_trajectory);
-
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

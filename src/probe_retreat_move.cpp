@@ -4,6 +4,7 @@
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include "probe_retreat_move.h"
 #include "experiment_utils.h"
+#include "EndEffectorOnShellGoal.h"
 
 ompl::geometric::PathGeometric retreat_travel_probe(
         std::shared_ptr<ompl::base::SpaceInformation> &si,
@@ -63,4 +64,25 @@ std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> planApproaches(
     }
 
     return approaches;
+}
+
+void optimizeExit(const Apple &apple,
+                  ompl::geometric::PathGeometric &path,
+                  const ompl::base::OptimizationObjectivePtr &objective,
+                  OMPLSphereShellWrapper &shell,
+                  const std::shared_ptr<ompl::base::SpaceInformation> &si) {
+
+    auto shellGoal = std::make_shared<EndEffectorOnShellGoal>(si, shell, apple.center);
+
+    ompl::geometric::PathSimplifier simplifier(si, shellGoal);
+
+    path.reverse();
+
+    for (size_t i = 0; i < 10; ++i) {
+        simplifier.findBetterGoal(path, 0.1);
+        simplifier.simplify(path, 0.1);
+    }
+
+    path.reverse();
+
 }
