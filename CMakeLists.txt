@@ -242,7 +242,7 @@ add_library(${PROJECT_NAME}_shared
         src/moveit_conversions.cpp
         src/moveit_conversions.h
         src/SphereShell.cpp
-        src/SphereShell.h src/EndEffectorOnShellGoal.cpp src/EndEffectorOnShellGoal.h)
+        src/SphereShell.h src/EndEffectorOnShellGoal.cpp src/EndEffectorOnShellGoal.h src/ros_utilities.cpp src/ros_utilities.h)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
