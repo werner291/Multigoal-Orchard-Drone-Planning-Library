@@ -15,9 +15,7 @@ TEST(ProbeRetreatMoveTests, state_outside_tree) {
 
     auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage();
 
-    Eigen::Vector3d sphere_center(0.0,0.0,2.2);
-
-    const SphereShell sphereShell(sphere_center, 4.0);
+    const SphereShell sphereShell(SPHERE_CENTER, SPHERE_RADIUS);
 
 
     for (const Apple &apple: apples) {
@@ -44,9 +42,7 @@ TEST(ProbeRetreatMoveTests, spherical_path) {
 
     auto drone = loadRobotModel();
 
-    Eigen::Vector3d sphere_center(0.0,0.0,2.02);
-
-    const SphereShell sphereShell(sphere_center, 4.0);
+    const SphereShell sphereShell(SPHERE_CENTER, SPHERE_RADIUS);
 
     Apple apple_a {Eigen::Vector3d(0.5, 0.2, 2.2), Eigen::Vector3d(0.0, 0.0, 0.0)};
     Apple apple_b {Eigen::Vector3d(0.33, -1.2, 2.2), Eigen::Vector3d(0.0, 0.0, 0.0)};
@@ -54,14 +50,14 @@ TEST(ProbeRetreatMoveTests, spherical_path) {
     auto ra = sphereShell.state_on_shell(drone, apple_a);
     auto rb = sphereShell.state_on_shell(drone, apple_b);
 
-    EXPECT_NEAR((ra.getGlobalLinkTransform("end_effector").translation() - sphere_center).norm(),
-                (rb.getGlobalLinkTransform("end_effector").translation() - sphere_center).norm(),
+    EXPECT_NEAR((ra.getGlobalLinkTransform("end_effector").translation() - SPHERE_CENTER).norm(),
+                (rb.getGlobalLinkTransform("end_effector").translation() - SPHERE_CENTER).norm(),
                 0.01);
 
     auto path = sphereShell.path_on_shell(drone, apple_a, apple_b);
 
     for (const auto &ri : path) {
-        EXPECT_GT((ra.getGlobalLinkTransform("end_effector").translation() - sphere_center).norm(), 2.5);
+        EXPECT_GT((ra.getGlobalLinkTransform("end_effector").translation() - SPHERE_CENTER).norm(), SPHERE_RADIUS);
     }
 
 }
@@ -77,8 +73,8 @@ TEST(ProbeRetreatMoveTests, optimize_exit) {
     auto state_space = std::make_shared<DroneStateSpace>(ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"));
     auto si = initSpaceInformation(setupPlanningScene(scene_msg, drone), drone, state_space);
     auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
-    const Eigen::Vector3d sphere_center(0.0,0.0,2.2);
-    const SphereShell sphereShell(sphere_center, 1.9);
+
+    const SphereShell sphereShell(SPHERE_CENTER, SPHERE_RADIUS);
 
     OMPLSphereShellWrapper shell(sphereShell, si);
     auto approaches = planApproaches(apples, objective, shell, si);

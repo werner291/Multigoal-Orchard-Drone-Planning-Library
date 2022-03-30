@@ -1,21 +1,14 @@
-#include <boost/fusion/include/flatten.hpp>
-#include <boost/range/combine.hpp>
 #include <eigen_conversions/eigen_msg.h>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <moveit/collision_detection/collision_detector_allocator.h>
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
-#include <ompl/geometric/planners/informedtrees/AITstar.h>
-#include <ompl/geometric/planners/prm/PRMstar.h>
 #include <random>
 
-#include "../src/BulletContinuousMotionValidator.h"
 #include "../src/DroneStateConstraintSampler.h"
 #include "../src/LeavesCollisionChecker.h"
-#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 #include "../src/experiment_utils.h"
-#include "../src/general_utilities.h"
 #include "../src/multigoal/ClusterTable.h"
 #include "../src/multigoal/approach_table.h"
 #include "test_utils.h"

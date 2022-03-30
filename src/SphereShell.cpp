@@ -49,8 +49,10 @@ std::vector<moveit::core::RobotState> SphereShell::path_on_shell(const moveit::c
     Eigen::Vector3d rb_ray = b.center - center;
 
     Eigen::Vector3d normal = ra_ray.cross(rb_ray).normalized();
-    double angle = acos(ra_ray.dot(rb_ray) / (ra_ray.norm() * rb_ray.norm()));
-    const auto num_states = (size_t) (2.0 * angle);
+    double angle_cos = ra_ray.dot(rb_ray) / (ra_ray.norm() * rb_ray.norm());
+    double angle = acos(std::clamp(angle_cos, -1.0, 1.0)); // Rounding errors sometimes cause the cosine to be slightly outside the valid range.
+    assert(!isnan(angle));
+    const auto num_states = (size_t) (2.0 * angle) + 1;
 
     std::vector<moveit::core::RobotState> path;
     path.reserve(num_states + 1);

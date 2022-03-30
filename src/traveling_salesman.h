@@ -13,8 +13,8 @@
 class DistanceHeuristics {
 public:
     [[nodiscard]] virtual std::string name() = 0;
-    [[nodiscard]] virtual double start_to_apple(const Apple &) const = 0;
-    [[nodiscard]] virtual double apple_to_apple(const Apple &, const Apple &) const = 0;
+    [[nodiscard]] virtual double first_distance(const Apple &) const = 0;
+    [[nodiscard]] virtual double between_distance(const Apple &, const Apple &) const = 0;
 };
 
 class EuclideanDistanceHeuristics : public DistanceHeuristics {
@@ -26,9 +26,9 @@ public:
 
     std::string name() override;
 
-    [[nodiscard]] double start_to_apple(const Apple &apple) const override;
+    [[nodiscard]] double first_distance(const Apple &apple) const override;
 
-    [[nodiscard]] double apple_to_apple(const Apple &apple_a, const Apple &apple_b) const override;
+    [[nodiscard]] double between_distance(const Apple &apple_a, const Apple &apple_b) const override;
 };
 
 class GreatcircleDistanceHeuristics : public DistanceHeuristics {
@@ -42,9 +42,9 @@ public:
 
     std::string name() override;
 
-    [[nodiscard]] double start_to_apple(const Apple &apple) const override;
+    [[nodiscard]] double first_distance(const Apple &apple) const override;
 
-    [[nodiscard]] double apple_to_apple(const Apple &apple_a, const Apple &apple_b) const override;
+    [[nodiscard]] double between_distance(const Apple &apple_a, const Apple &apple_b) const override;
 };
 
 class OrderingStrategy {
