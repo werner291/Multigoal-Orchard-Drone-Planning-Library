@@ -69,7 +69,19 @@ int main(int argc, char **argv) {
     for (const auto &[approach_type, approaches, color] : orderings) {
         publisher_handles.push_back(dumpApproaches(drone, state_space, si, approaches, nh, "/approaches_"+approach_type));
 
-        auto apples_after_approach = approaches | ranges::views::transform([](auto pair) {return pair.first;}) | ranges::to_vector;
+        auto apples_after_approach = approaches | ranges::views::transform([&](auto pair) {
+            moveit::core::RobotState rs(drone);
+
+            state_space->copyToRobotState(rs, pair.second.getState(0));
+
+            rs.update(true);
+
+            return Apple {
+                rs.getGlobalLinkTransform("end_effector").translation(),
+                {0.0,0.0,0.0}
+            };
+
+        }) | ranges::to_vector;
 
         auto approaches_by_gcd = vectorByOrdering(approaches , ORToolsOrderingStrategy().apple_ordering(apples_after_approach, gdh));
 
