@@ -122,6 +122,12 @@ moveit_msgs::DisplayTrajectory robotTrajectoryToDisplayTrajectory(const robot_tr
     moveit_msgs::DisplayTrajectory msg;
     msg.model_id = moveit_trajectory.getRobotModel()->getName();
     msg.trajectory.resize(1);
+
+    for (size_t i = 0; i < moveit_trajectory.getWayPointCount(); ++i) {
+        std::cout << "From start: " << moveit_trajectory.getWayPointDurationFromStart(i) << std::endl;
+//        moveit_trajectory.getWayPoint(i).printStateInfo();
+    }
+
     moveit_trajectory.getRobotTrajectoryMsg(msg.trajectory[0]);
     moveit::core::robotStateToRobotStateMsg(moveit_trajectory.getFirstWayPoint(), msg.trajectory_start);
     return msg;

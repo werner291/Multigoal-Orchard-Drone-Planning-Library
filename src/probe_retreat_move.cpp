@@ -17,8 +17,14 @@ ompl::geometric::PathGeometric retreat_travel_probe(
     ompl::geometric::PathGeometric appleToApple(approaches[retreat_idx].second);
 
     appleToApple.reverse();
+// FIXME bug here?
+    const ompl::geometric::PathGeometric &pathOnShell = shell.path_on_shell(approaches[retreat_idx].first,
+                                                                            approaches[approach_idx].first);
 
-    appleToApple.append(shell.path_on_shell(approaches[retreat_idx].first, approaches[retreat_idx].first));
+    std::cout << "Shell path length:" << pathOnShell.length() << std::endl;
+
+
+    appleToApple.append(pathOnShell);
 
     appleToApple.append(approaches[approach_idx].second);
 
@@ -38,9 +44,15 @@ ompl::geometric::PathGeometric planFullPath(
 
     ompl::geometric::PathGeometric fullPath(si, start);
     for (size_t approachIdx: boost::irange<size_t>(0, approaches.size()-1)) {
-        fullPath.append(retreat_travel_probe(si, shell, approaches, approachIdx, approachIdx + 1, true));
+        const ompl::geometric::PathGeometric &retreatTravelProbe = retreat_travel_probe(si, shell, approaches,
+                                                                                        approachIdx, approachIdx + 1,
+                                                                                        true);
+        
+        std::cout << "RTP path length:" << retreatTravelProbe.length() << std::endl;
+        
+        fullPath.append(retreatTravelProbe);
     }
-    fullPath.interpolate();
+//    fullPath.interpolate();
 
     return fullPath;
 }
@@ -74,13 +86,20 @@ void optimizeExit(const Apple &apple,
 
     auto shellGoal = std::make_shared<EndEffectorOnShellGoal>(si, shell, apple.center);
 
+
+
     ompl::geometric::PathSimplifier simplifier(si, shellGoal);
 
     path.reverse();
 
+    ompl::geometric::PathGeometric backup = path;
     for (size_t i = 0; i < 10; ++i) {
         simplifier.findBetterGoal(path, 0.1);
         simplifier.simplify(path, 0.1);
+
+        if (backup.length() < path.length()) {
+            path = backup;
+        }
     }
 
     path.reverse();

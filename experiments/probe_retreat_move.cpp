@@ -67,6 +67,13 @@ int main(int argc, char **argv) {
     };
 
     for (const auto &[approach_type, approaches, color] : orderings) {
+
+        std::cout << approach_type << std::endl;
+
+        for (const auto &approach : approaches) {
+            std::cout << "Approach length: " << approach.second.length() << std::endl;
+        }
+
         publisher_handles.push_back(dumpApproaches(drone, state_space, si, approaches, nh, "/approaches_"+approach_type));
 
         auto apples_after_approach = approaches | ranges::views::transform([&](auto pair) {
