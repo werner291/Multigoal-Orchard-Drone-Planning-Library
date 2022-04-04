@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 
     auto drone = loadRobotModel();
 
-    auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage();
+    auto[scene_msg, apples, SPHERE_CENTER, SPHERE_RADIUS] = createMeshBasedAppleTreePlanningSceneMessage("appletree");
 
     int zero = 0;
     ros::init(zero, nullptr, "probe_retreat_move");

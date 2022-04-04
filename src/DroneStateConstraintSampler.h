@@ -41,7 +41,7 @@ public:
 
     const std::string &getName() const override;
 
-    static void randomizeUprightWithBase(moveit::core::RobotState &state);
+    static void randomizeUprightWithBase(moveit::core::RobotState &state, double translation_bound);
 
     static void moveEndEffectorToGoal(moveit::core::RobotState &state, double tolerance,
                                       const Eigen::Vector3d &target);

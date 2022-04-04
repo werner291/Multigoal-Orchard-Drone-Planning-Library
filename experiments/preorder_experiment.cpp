@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
 
     Eigen::Vector3d start_end_effector_pos = start_state.getGlobalLinkTransform("end_effector").translation();
 
-    auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage();
+    auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage(appletree);
 
     // FIXME remove this at some point
     std::shuffle(apples.begin(), apples.end(), std::mt19937(std::random_device()()));

@@ -1,10 +1,7 @@
-#include <std_msgs/ColorRGBA.h>
-
 #include <bullet/HACD/hacdHACD.h>
 
 #include "../src/msgs_utilities.h"
 #include "../src/experiment_utils.h"
-
 
 #include "planning_scene_diff_message.h"
 #include "general_utilities.h"
@@ -189,14 +186,12 @@ createPlanningSceneDiff(const std::vector<DetachedTreeNode> &treeFlattened,
     return planning_scene_diff;
 }
 
-
-
-AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage() {
+AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::string &model_name) {
     moveit_msgs::PlanningScene planning_scene_message;
     planning_scene_message.is_diff = true;
 
     const shape_msgs::Mesh mesh = meshMsgFromResource(
-            "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/appletree_trunk.dae");
+            "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/"+model_name+"_trunk.dae");
 
     const std::vector<shape_msgs::Mesh> decomposition = convex_decomposition(mesh, 2.0);
     for (auto convex: decomposition | boost::adaptors::indexed(0)) {
@@ -204,13 +199,13 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage() {
     }
 
     const shape_msgs::Mesh apples = meshMsgFromResource(
-            "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/appletree_apples.dae");
+            "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/"+model_name+"_apples.dae");
 
     addColoredMeshCollisionShape(planning_scene_message,{1.0, 0.0, 0.0}, "apples", apples);
 
     addColoredMeshCollisionShape(planning_scene_message,
                                  {0.1, 0.7, 0.1}, "leaves",
-                                 meshMsgFromResource("file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/appletree_leaves.dae"));
+                                 meshMsgFromResource("file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/"+model_name+"_leaves.dae"));
 
-    return {planning_scene_message, apples_from_connected_components(apples)};
+    return {planning_scene_message, apples_from_connected_components(apples), {0.0,0.0,2.2}, 1.8};
 }

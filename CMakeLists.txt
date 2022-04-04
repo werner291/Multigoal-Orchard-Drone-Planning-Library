@@ -242,12 +242,13 @@ add_library(${PROJECT_NAME}_shared
         src/moveit_conversions.cpp
         src/moveit_conversions.h
         src/SphereShell.cpp
-        src/SphereShell.h src/EndEffectorOnShellGoal.cpp src/EndEffectorOnShellGoal.h src/ros_utilities.cpp src/ros_utilities.h)
+        src/SphereShell.h
+        src/EndEffectorOnShellGoal.cpp
+        src/EndEffectorOnShellGoal.h
+        src/ros_utilities.cpp
+        src/ros_utilities.h)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
-
-
-
 
 ## Visualization node
 add_executable(${PROJECT_NAME}_vizualized src/run_vizualized.cpp)
@@ -275,9 +276,11 @@ target_link_libraries(${PROJECT_NAME}_preorder_experiment ${PROJECT_NAME}_shared
 add_executable(${PROJECT_NAME}_probe_retreat_move experiments/probe_retreat_move.cpp)
 target_link_libraries(${PROJECT_NAME}_probe_retreat_move ${PROJECT_NAME}_shared)
 
+add_executable(${PROJECT_NAME}_approach_planning experiments/approach_planning.cpp)
+target_link_libraries(${PROJECT_NAME}_approach_planning ${PROJECT_NAME}_shared)
+
 add_executable(${PROJECT_NAME}_clustering experiments/clustering_comparison.cpp test/test_utils.cpp)
 target_link_libraries(${PROJECT_NAME}_clustering ${PROJECT_NAME}_shared)
-
 
 add_executable(${PROJECT_NAME}_generate_tree_data src/generate_tree_data.cpp)
 

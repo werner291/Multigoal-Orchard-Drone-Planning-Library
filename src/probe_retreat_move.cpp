@@ -23,7 +23,6 @@ ompl::geometric::PathGeometric retreat_travel_probe(
 
     std::cout << "Shell path length:" << pathOnShell.length() << std::endl;
 
-
     appleToApple.append(pathOnShell);
 
     appleToApple.append(approaches[approach_idx].second);
@@ -70,7 +69,7 @@ std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> planApproaches(
         auto state_outside = shell.state_on_shell(apple);
 
         auto planner = std::make_shared<ompl::geometric::PRMstar>(si);
-        if (auto approach = planFromStateToApple(*planner, objective, state_outside->get(), apple, 1.0)) {
+        if (auto approach = planFromStateToApple(*planner, objective, state_outside->get(), apple, 1.0, true)) {
             approaches.emplace_back(apple, *approach);
         }
     }

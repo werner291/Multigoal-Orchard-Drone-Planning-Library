@@ -11,12 +11,12 @@
 #include <moveit/ompl_interface/detail/state_validity_checker.h>
 #include "DroneStateSampler.h"
 
-DroneStateSampler::DroneStateSampler(const ompl::base::StateSpace *space)
-        : StateSampler(space) {}
+DroneStateSampler::DroneStateSampler(const ompl::base::StateSpace *space, double translationBound)
+        : StateSampler(space), translation_bound(translationBound) {}
 
 void DroneStateSampler::sampleUniform(ompl::base::State *state) {
     moveit::core::RobotState st(space_->as<DroneStateSpace>()->getRobotModel());
-    DroneStateConstraintSampler::randomizeUprightWithBase(st);
+    DroneStateConstraintSampler::randomizeUprightWithBase(st, translation_bound);
     space_->as<DroneStateSpace>()->copyToOMPLState(state, st);
 }
 

@@ -12,7 +12,7 @@ TEST(SceneTestRviz, test_rviz) {
 
     auto drone = loadRobotModel();
 
-    auto [planning_scene_message,apples] = createMeshBasedAppleTreePlanningSceneMessage();
+    auto [planning_scene_message,apples] = createMeshBasedAppleTreePlanningSceneMessage(appletree);
 
     int zero = 0;
     ros::init(zero,nullptr,"model_test");

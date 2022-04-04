@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
     auto drone = loadRobotModel();
 
-    auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage();
+    auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage(appletree);
 
     auto alloc_objective = [](const auto &si) -> ompl::base::OptimizationObjectivePtr {
         return std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);

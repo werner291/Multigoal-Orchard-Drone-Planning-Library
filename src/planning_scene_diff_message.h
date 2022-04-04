@@ -18,11 +18,12 @@ moveit_msgs::PlanningScene createPlanningSceneDiff(const std::vector<DetachedTre
 struct AppleTreePlanningScene {
     moveit_msgs::PlanningScene scene_msg;
     std::vector<Apple> apples;
+    Eigen::Vector3d sphere_center;
+    double sphere_radius;
 };
 
-AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage();
+AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::string &model_name);
 
-const Eigen::Vector3d SPHERE_CENTER(0.0, 0.0, 2.2);
-const double SPHERE_RADIUS = 1.8;
+
 
 #endif //NEW_PLANNERS_PLANNING_SCENE_DIFF_MESSAGE_H

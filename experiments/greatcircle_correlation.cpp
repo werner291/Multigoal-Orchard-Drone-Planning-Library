@@ -10,7 +10,7 @@
 int main(int argc, char **argv) {
 
     auto drone = loadRobotModel();
-    auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage();
+    auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage(appletree);
 
     auto planning_pairs = samplePlanningPairs(setupPlanningScene(scene_msg, drone), drone, apples, 500);
 

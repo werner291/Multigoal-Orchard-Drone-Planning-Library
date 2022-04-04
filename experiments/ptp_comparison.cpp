@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 
     auto drone = loadRobotModel();
 
-    auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage();
+    auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage(appletree);
 
     const std::function<ompl::base::PlannerPtr(const ompl::base::SpaceInformationPtr &)> planner_allocators[] = {
             [](const auto &si) -> ompl::base::PlannerPtr { return std::make_shared<ompl::geometric::RRTstar>(si); },

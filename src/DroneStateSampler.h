@@ -11,8 +11,10 @@
 
 class DroneStateSampler : public ompl::base::StateSampler {
 
+    double translation_bound;
+
 public:
-    explicit DroneStateSampler(const ompl::base::StateSpace *space);
+    explicit DroneStateSampler(const ompl::base::StateSpace *space, double translationBound = 10.0);
 
     void sampleUniform(ompl::base::State *state) override;
 

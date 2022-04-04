@@ -32,10 +32,11 @@ public:
 
 class DroneStateSpace : public ompl_interface::ModelBasedStateSpace {
 
+    double translation_bound;
     const std::string param_type_ = "custom";
 public:
-    explicit DroneStateSpace(const ompl_interface::ModelBasedStateSpaceSpecification &spec)
-            : ModelBasedStateSpace(spec) {}
+    explicit DroneStateSpace(const ompl_interface::ModelBasedStateSpaceSpecification &spec, double translation_bound = 20.0)
+            : ModelBasedStateSpace(spec), translation_bound(translation_bound) {}
 
     unsigned int validSegmentCount(const ompl::base::State *state1, const ompl::base::State *state2) const override {
         return (int) std::ceil(this->distance(state1, state2) / 0.2);
@@ -46,7 +47,7 @@ public:
     }
 
     [[nodiscard]] ompl::base::StateSamplerPtr allocDefaultStateSampler() const override {
-        return std::make_shared<DroneStateSampler>(this);
+        return std::make_shared<DroneStateSampler>(this, translation_bound);
     }
 
 };

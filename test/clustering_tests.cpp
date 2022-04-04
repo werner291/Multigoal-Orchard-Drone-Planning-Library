@@ -56,7 +56,7 @@ protected:
         std::vector<clustering::StateAtGoal> samples;
 
         moveit::core::RobotState st(drone);
-        DroneStateConstraintSampler::randomizeUprightWithBase(st);
+        DroneStateConstraintSampler::randomizeUprightWithBase(st, 20.0);
 
         for (int i = -100; i < 100; ++i) {
 
@@ -337,7 +337,7 @@ TEST_F(ClusteringTests, distance_matrix_test) {
     std::vector<clustering::Cluster> context_cluster;
 
     moveit::core::RobotState st(drone);
-    DroneStateConstraintSampler::randomizeUprightWithBase(st);
+    DroneStateConstraintSampler::randomizeUprightWithBase(st, 20.0);
 
     clustering::Cluster collective {
         std::make_shared<ompl::base::ScopedState<>>(si),

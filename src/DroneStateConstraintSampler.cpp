@@ -33,7 +33,7 @@ bool DroneStateConstraintSampler::sample(moveit::core::RobotState &state,
 
     for (int i = 0; i < max_attempts; i++) {
 
-        randomizeUprightWithBase(state);
+        randomizeUprightWithBase(state, 20.0);
 
         if (ee_target_) {
             moveEndEffectorToGoal(state, ee_target_->radius, ee_target_->target);
@@ -71,15 +71,15 @@ void DroneStateConstraintSampler::moveEndEffectorToGoal(moveit::core::RobotState
     }
 }
 
-void DroneStateConstraintSampler::randomizeUprightWithBase(moveit::core::RobotState &state) {
+void DroneStateConstraintSampler::randomizeUprightWithBase(moveit::core::RobotState &state, double translation_bound) {
     state.setToRandomPositions();
     double *pos = state.getVariablePositions();
 
     random_numbers::RandomNumberGenerator rng;
 
-    pos[0] = rng.uniformReal(-20.0, 20.0);
-    pos[1] = rng.uniformReal(-20.0, 20.0);
-    pos[2] = rng.uniformReal(0, 20.0);
+    pos[0] = rng.uniformReal(-translation_bound, translation_bound);
+    pos[1] = rng.uniformReal(-translation_bound, translation_bound);
+    pos[2] = rng.uniformReal(0, translation_bound);
 
     Eigen::Quaterniond q(Eigen::AngleAxisd(rng.uniformReal(-M_PI, M_PI), Eigen::Vector3d::UnitZ()));
     pos[3] = q.x();

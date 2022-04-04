@@ -119,8 +119,8 @@ TEST(InformedManipulatorDroneSampler, test_random_state_pairs_upright) {
 
     for (size_t i : boost::irange(0,1000)) {
 
-        DroneStateConstraintSampler::randomizeUprightWithBase(st1);
-        DroneStateConstraintSampler::randomizeUprightWithBase(st2);
+        DroneStateConstraintSampler::randomizeUprightWithBase(st1, 20.0);
+        DroneStateConstraintSampler::randomizeUprightWithBase(st2, 20.0);
 
         double distance = st1.distance(st2);
 

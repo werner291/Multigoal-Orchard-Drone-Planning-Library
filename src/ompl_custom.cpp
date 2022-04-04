@@ -63,7 +63,7 @@ void DroneEndEffectorNearTarget::sampleGoal(ompl::base::State *state) const {
     size_t attempts_this_time = 0;
 
     do {
-        DroneStateConstraintSampler::randomizeUprightWithBase(st);
+        DroneStateConstraintSampler::randomizeUprightWithBase(st, 20.0);
         DroneStateConstraintSampler::moveEndEffectorToGoal(st, radius, target);
         state_space->as<DroneStateSpace>()->copyToOMPLState(state, st);
         samples_tried += 1;

@@ -13,7 +13,7 @@ TEST(ProbeRetreatMoveTests, state_outside_tree) {
 
     auto drone = loadRobotModel();
 
-    auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage();
+    auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage(appletree);
 
     const SphereShell sphereShell(SPHERE_CENTER, SPHERE_RADIUS);
 
@@ -66,7 +66,7 @@ TEST(ProbeRetreatMoveTests, optimize_exit) {
 
     auto drone = loadRobotModel();
 
-    auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage();
+    auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage(appletree);
 
     apples = apples | ranges::views::take(10) | ranges::to_vector;
 

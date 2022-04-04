@@ -309,7 +309,7 @@ planFromStateToState(ompl::base::Planner &planner, const ompl::base::Optimizatio
 
 std::optional<ompl::geometric::PathGeometric>
 planFromStateToApple(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
-                     ompl::base::State *a, const Apple &b, double duration) {
+                     ompl::base::State *a, const Apple &b, double duration, bool simplify) {
 
     auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner.getSpaceInformation());
     pdef->setOptimizationObjective(objective);
@@ -321,7 +321,9 @@ planFromStateToApple(ompl::base::Planner &planner, const ompl::base::Optimizatio
 
         ompl::geometric::PathGeometric path = *pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
-        ompl::geometric::PathSimplifier(planner.getSpaceInformation()).simplifyMax(path);
+        if (simplify) {
+            ompl::geometric::PathSimplifier(planner.getSpaceInformation()).simplifyMax(path);
+        }
 
         return {path};
     } else {
