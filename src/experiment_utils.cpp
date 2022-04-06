@@ -18,6 +18,7 @@
 #include "experiment_utils.h"
 #include "json_utils.h"
 #include "general_utilities.h"
+#include "DroneStateConstraintSampler.h"
 
 robot_state::RobotState genStartState(const moveit::core::RobotModelConstPtr &drone) {
     robot_state::RobotState start_state(drone);
@@ -340,5 +341,26 @@ moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelPtr &dro
                                              0.0, 0.0, 0.0, 0.0  // Arm straight out
                                      });
     start_state.update(true);
+    return start_state;
+}
+
+moveit::core::RobotState randomStateOutsideTree(const moveit::core::RobotModelPtr &drone) {
+    moveit::core::RobotState start_state(drone);
+
+    DroneStateConstraintSampler::randomizeUprightWithBase(start_state, 0.0);
+
+    ompl::RNG rng;
+
+    double random_t = rng.uniformReal(-M_PI, M_PI);
+    double height = rng.uniformReal(0.5, 2.0);
+
+    double radius = 4.0;
+
+    start_state.setVariablePosition(0, cos(random_t)*radius);
+    start_state.setVariablePosition(1, sin(random_t)*radius);
+    start_state.setVariablePosition(2, height);
+
+    start_state.update(true);
+
     return start_state;
 }

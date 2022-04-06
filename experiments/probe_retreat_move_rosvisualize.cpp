@@ -3,7 +3,7 @@
 #include <moveit/robot_state/conversions.h>
 
 #include "../src/experiment_utils.h"
-#include "../src/probe_retreat_move.h"
+#include "../src/probe_retreat_move_rosvisualize.h"
 #include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 #include "../src/traveling_salesman.h"
 #include "../src/general_utilities.h"
@@ -12,6 +12,7 @@
 
 #include <range/v3/all.hpp>
 #include <boost/format.hpp>
+
 
 int main(int argc, char **argv) {
 
@@ -35,7 +36,7 @@ int main(int argc, char **argv) {
             GreatCircleMetric(SPHERE_CENTER));
 
     auto state_space = std::make_shared<DroneStateSpace>(
-            ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"));
+            ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"), 10.0);
     auto si = initSpaceInformation(setupPlanningScene(scene_msg, drone), drone, state_space);
     auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
 

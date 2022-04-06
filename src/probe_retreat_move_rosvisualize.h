@@ -1,6 +1,6 @@
 
-#ifndef NEW_PLANNERS_PROBE_RETREAT_MOVE_H
-#define NEW_PLANNERS_PROBE_RETREAT_MOVE_H
+#ifndef NEW_PLANNERS_PROBE_RETREAT_MOVE_ROSVISUALIZE_H
+#define NEW_PLANNERS_PROBE_RETREAT_MOVE_ROSVISUALIZE_H
 
 #include "SphereShell.h"
 
@@ -29,4 +29,4 @@ ompl::geometric::PathGeometric planFullPath(
         OMPLSphereShellWrapper &shell,
         const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches);
 
-#endif //NEW_PLANNERS_PROBE_RETREAT_MOVE_H
+#endif //NEW_PLANNERS_PROBE_RETREAT_MOVE_ROSVISUALIZE_H

@@ -1,11 +1,15 @@
 
-#include <ompl/geometric/planners/prm/PRMstar.h>
 #include <ompl/geometric/PathSimplifier.h>
+#include <ompl/base/terminationconditions/CostConvergenceTerminationCondition.h>
+#include <ompl/geometric/planners/informedtrees/BITstar.h>
+#include <ompl/geometric/planners/rrt/RRTstar.h>
 
 #include "../src/experiment_utils.h"
 #include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 #include "../src/SphereShell.h"
 #include "../src/ros_utilities.h"
+
+
 
 int main(int argc, char **argv) {
 
@@ -42,7 +46,7 @@ int main(int argc, char **argv) {
 
         auto stateOutside = shell.state_on_shell(apple);
 
-        auto planner = std::make_shared<ompl::geometric::PRMstar>(si);
+        auto planner = std::make_shared<ompl::geometric::RRTstar>(si);
 
         ompl::base::State *a = stateOutside->get();
         auto pdef = std::make_shared<ompl::base::ProblemDefinition>((*planner).getSpaceInformation());
@@ -50,6 +54,7 @@ int main(int argc, char **argv) {
         pdef->addStartState(a);
         pdef->setGoal(
                 std::make_shared<DroneEndEffectorNearTarget>((*planner).getSpaceInformation(), 0.05, apple.center));
+
         (*planner).setProblemDefinition(pdef);
 
         if ((*planner).solve(ompl::base::timedPlannerTerminationCondition(1.0)) ==
@@ -57,10 +62,11 @@ int main(int argc, char **argv) {
 
             ompl::geometric::PathGeometric path = *pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
+            std::cout << "Approach planning finished: " << path.length() << std::endl;
+
             path.interpolate();
 
             approaches.emplace_back(apple, path);
-        } else {
         }
     }
 

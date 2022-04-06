@@ -2,7 +2,7 @@
 #include <ompl/geometric/PathSimplifier.h>
 #include <boost/range/irange.hpp>
 #include <ompl/geometric/planners/prm/PRMstar.h>
-#include "probe_retreat_move.h"
+#include "probe_retreat_move_rosvisualize.h"
 #include "experiment_utils.h"
 #include "EndEffectorOnShellGoal.h"
 

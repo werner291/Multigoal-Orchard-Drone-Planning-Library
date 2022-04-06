@@ -4,7 +4,7 @@
 #include <range/v3/view/take.hpp>
 #include <range/v3/range/conversion.hpp>
 #include "../src/experiment_utils.h"
-#include "../src/probe_retreat_move.h"
+#include "../src/probe_retreat_move_rosvisualize.h"
 #include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 
 #include <range/v3/all.hpp>

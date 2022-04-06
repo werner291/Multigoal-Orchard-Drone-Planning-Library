@@ -153,6 +153,8 @@ link_libraries(
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#SET(CMAKE_CXX_FLAGS_DEBUG "-O0")
+#SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
 add_library(${PROJECT_NAME}_shared
         src/BetweenMoveItStatesInformedSampler.cpp
@@ -238,7 +240,7 @@ add_library(${PROJECT_NAME}_shared
         src/traveling_salesman.h
         src/traveling_salesman.cpp
         src/probe_retreat_move.cpp
-        src/probe_retreat_move.h
+        src/probe_retreat_move_rosvisualize.h
         src/moveit_conversions.cpp
         src/moveit_conversions.h
         src/SphereShell.cpp
@@ -273,8 +275,11 @@ target_link_libraries(${PROJECT_NAME}_greatcircle_correlation ${PROJECT_NAME}_sh
 add_executable(${PROJECT_NAME}_preorder_experiment experiments/preorder_experiment.cpp)
 target_link_libraries(${PROJECT_NAME}_preorder_experiment ${PROJECT_NAME}_shared)
 
-add_executable(${PROJECT_NAME}_probe_retreat_move experiments/probe_retreat_move.cpp)
-target_link_libraries(${PROJECT_NAME}_probe_retreat_move ${PROJECT_NAME}_shared)
+add_executable(${PROJECT_NAME}_probe_retreat_move_rosvisualize experiments/probe_retreat_move_rosvisualize.cpp)
+target_link_libraries(${PROJECT_NAME}_probe_retreat_move_rosvisualize ${PROJECT_NAME}_shared)
+
+add_executable(${PROJECT_NAME}_probe_retreat_move_statistics experiments/probe_retreat_move_statistics.cpp)
+target_link_libraries(${PROJECT_NAME}_probe_retreat_move_statistics ${PROJECT_NAME}_shared)
 
 add_executable(${PROJECT_NAME}_approach_planning experiments/approach_planning.cpp)
 target_link_libraries(${PROJECT_NAME}_approach_planning ${PROJECT_NAME}_shared)
