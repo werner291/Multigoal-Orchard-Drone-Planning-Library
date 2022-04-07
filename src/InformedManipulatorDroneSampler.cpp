@@ -55,13 +55,7 @@ bool sampleBetweenUpright(const moveit::core::RobotState& a,
     moveit::core::RobotState& result,
     double maxDist) {
 
-        if (!isfinite(maxDist)) {
-            maxDist = 500.0; //  I dunno... need to pick a better value, maybe?
-        }
-
-        //         std::cout << "maxDist: " << maxDist << std::endl;
-
-        result = a;
+        assert(isfinite(maxDist));
 
         // Get an RNG for sampling
         ompl::RNG rng;

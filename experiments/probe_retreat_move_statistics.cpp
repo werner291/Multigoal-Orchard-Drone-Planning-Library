@@ -3,10 +3,11 @@
 #include <moveit/robot_state/conversions.h>
 
 #include "../src/experiment_utils.h"
-#include "../src/probe_retreat_move_rosvisualize.h"
+#include "../src/probe_retreat_move.h"
 #include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 #include "../src/traveling_salesman.h"
 #include "../src/general_utilities.h"
+#include "../src/SphereShell.h"
 
 #include <range/v3/all.hpp>
 #include <ompl/geometric/planners/prm/PRMstar.h>
@@ -21,10 +22,7 @@ int main(int argc, char **argv) {
 
     moveit::core::RobotState start_state = stateOutsideTree(drone);
 
-//    std::shuffle(apples.begin(), apples.end(), std::mt19937(std::random_device()()));
-//    apples.resize(5);
-
-
+    apples = vectorByOrdering(apples, DIFFICULT_APPLES);
 
     std::mutex statistics_mtx;
     Json::Value statistics;
@@ -46,8 +44,8 @@ int main(int argc, char **argv) {
         auto state_space = std::make_shared<DroneStateSpace>(
                 ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"), 10.0);
         auto si = initSpaceInformation(setupPlanningScene(scene_msg, drone), drone, state_space);
-        auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
 
+        auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
 
         const SphereShell sphereShell(SPHERE_CENTER, 1.8);
 
@@ -91,9 +89,7 @@ int main(int argc, char **argv) {
                 approaches_exit_optimized.emplace_back(apple, *initial_attempt);
 
             } else {
-
                 apple_stats = Json::nullValue;
-
             }
 
             run_stats["approach_stats"].append(apple_stats);
@@ -114,29 +110,8 @@ int main(int argc, char **argv) {
         };
 
         for (const auto &[approach_type, approaches]: orderings) {
-
-            auto apples_after_approach = approaches | ranges::views::transform([&](auto pair) {
-                moveit::core::RobotState rs(drone);
-
-                state_space->copyToRobotState(rs, pair.second.getState(0));
-
-                rs.update(true);
-
-                return Apple{
-                        rs.getGlobalLinkTransform("end_effector").translation(),
-                        {0.0, 0.0, 0.0}
-                };
-
-            }) | ranges::to_vector;
-
-            auto approaches_by_gcd = vectorByOrdering(approaches,
-                                                      ORToolsOrderingStrategy().apple_ordering(apples_after_approach,
-                                                                                               gdh));
-
-            auto fullPath = planFullPath(si, start.get(), shell, approaches_by_gcd);
-
+            auto fullPath = planFullPath(si, start.get(), shell, optimizeApproachOrder(gdh, *state_space, approaches));
             run_stats["full_paths"][approach_type] = fullPath.length();
-
         }
 
         run_stats["apples_visited"] = (int) approaches_naive.size();
@@ -150,7 +125,7 @@ int main(int argc, char **argv) {
     statistics["apples_total"] = (int) apples.size();
 
     std::ofstream of;
-    of.open("analysis/approach_stats.json");
+    of.open("analysis/approach_stats_difficult.json");
     of << statistics;
     of.close();
 

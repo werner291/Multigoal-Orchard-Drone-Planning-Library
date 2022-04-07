@@ -14,8 +14,7 @@ ompl::geometric::PathGeometric omplPathFromMoveitTrajectory(const std::vector<mo
                                                             const ompl::base::SpaceInformationPtr &si);
 
 robot_trajectory::RobotTrajectory
-omplPathToRobotTrajectory(const moveit::core::RobotModelPtr &drone,
-                          const std::shared_ptr<ompl_interface::ModelBasedStateSpace> &state_space,
-                          ompl::geometric::PathGeometric &result_path);
+omplPathToRobotTrajectory(const ompl_interface::ModelBasedStateSpace &state_space,
+                          const ompl::geometric::PathGeometric &result_path);
 
 #endif //NEW_PLANNERS_MOVEIT_CONVERSIONS_H

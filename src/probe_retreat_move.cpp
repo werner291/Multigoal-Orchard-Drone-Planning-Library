@@ -2,9 +2,11 @@
 #include <ompl/geometric/PathSimplifier.h>
 #include <boost/range/irange.hpp>
 #include <ompl/geometric/planners/prm/PRMstar.h>
-#include "probe_retreat_move_rosvisualize.h"
+#include <range/v3/view/transform.hpp>
+#include "probe_retreat_move.h"
 #include "experiment_utils.h"
 #include "EndEffectorOnShellGoal.h"
+#include "general_utilities.h"
 
 ompl::geometric::PathGeometric retreat_travel_probe(
         std::shared_ptr<ompl::base::SpaceInformation> &si,
@@ -80,7 +82,7 @@ std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> planApproaches(
 void optimizeExit(const Apple &apple,
                   ompl::geometric::PathGeometric &path,
                   const ompl::base::OptimizationObjectivePtr &objective,
-                  OMPLSphereShellWrapper &shell,
+                  const OMPLSphereShellWrapper &shell,
                   const std::shared_ptr<ompl::base::SpaceInformation> &si) {
 
     auto shellGoal = std::make_shared<EndEffectorOnShellGoal>(si, shell, apple.center);
@@ -103,4 +105,34 @@ void optimizeExit(const Apple &apple,
 
     path.reverse();
 
+}
+
+Apple appleFromApproach(const ompl_interface::ModelBasedStateSpace &state_space,
+                        const ompl::geometric::PathGeometric &approach_path) {
+
+    moveit::core::RobotState rs(state_space.getRobotModel());
+
+    state_space.copyToRobotState(rs, approach_path.getState(0));
+
+    rs.update(true);
+
+    return Apple {
+            rs.getGlobalLinkTransform("end_effector").translation(),
+            {0.0, 0.0, 0.0}
+    };
+}
+
+std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> optimizeApproachOrder(
+        const GreatcircleDistanceHeuristics &gdh,
+        const ompl_interface::ModelBasedStateSpace &state_space,
+        const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches
+) {
+
+    auto apples_after_approach = approaches | ranges::views::transform([&](auto pair) {
+        return appleFromApproach(state_space, pair.second);
+    }) | ranges::to_vector;
+
+    return vectorByOrdering(approaches,
+                            ORToolsOrderingStrategy().apple_ordering(apples_after_approach,
+                                                                     gdh));
 }

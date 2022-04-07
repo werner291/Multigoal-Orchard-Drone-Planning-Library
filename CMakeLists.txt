@@ -240,7 +240,7 @@ add_library(${PROJECT_NAME}_shared
         src/traveling_salesman.h
         src/traveling_salesman.cpp
         src/probe_retreat_move.cpp
-        src/probe_retreat_move_rosvisualize.h
+        src/probe_retreat_move.h
         src/moveit_conversions.cpp
         src/moveit_conversions.h
         src/SphereShell.cpp
@@ -248,7 +248,7 @@ add_library(${PROJECT_NAME}_shared
         src/EndEffectorOnShellGoal.cpp
         src/EndEffectorOnShellGoal.h
         src/ros_utilities.cpp
-        src/ros_utilities.h)
+        src/ros_utilities.h src/ExperimentVisualTools.h src/ExperimentVisualTools.cpp)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 

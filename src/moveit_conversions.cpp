@@ -1,6 +1,7 @@
 
 #include <ompl/base/ScopedState.h>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
+#include <boost/range/irange.hpp>
 #include "moveit_conversions.h"
 
 ompl::geometric::PathGeometric omplPathFromMoveitTrajectory(const std::vector<moveit::core::RobotState> &trajectory,
@@ -18,16 +19,16 @@ ompl::geometric::PathGeometric omplPathFromMoveitTrajectory(const std::vector<mo
     return result;
 }
 
-robot_trajectory::RobotTrajectory omplPathToRobotTrajectory(const moveit::core::RobotModelPtr &drone,
-                                                            const std::shared_ptr<ompl_interface::ModelBasedStateSpace> &state_space,
-                                                            ompl::geometric::PathGeometric &result_path) {
+robot_trajectory::RobotTrajectory
+omplPathToRobotTrajectory(const ompl_interface::ModelBasedStateSpace &state_space,
+                          const ompl::geometric::PathGeometric &result_path) {
 
-    robot_trajectory::RobotTrajectory traj(drone);
+    robot_trajectory::RobotTrajectory traj(state_space.getRobotModel());
 
     double t = 0.0;
-    for (const auto state : result_path.getStates()) {
-        moveit::core::RobotState moveit_state(drone);
-        state_space->copyToRobotState(moveit_state, state);
+    for (size_t i : boost::irange<size_t>(0,result_path.getStateCount())) {
+        moveit::core::RobotState moveit_state(state_space.getRobotModel());
+        state_space.copyToRobotState(moveit_state, result_path.getState(i));
         traj.addSuffixWayPoint(moveit_state, t);
         t += 0.1;
     }

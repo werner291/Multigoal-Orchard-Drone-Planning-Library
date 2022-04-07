@@ -22,6 +22,8 @@ struct AppleTreePlanningScene {
     double sphere_radius;
 };
 
+const std::initializer_list<size_t> DIFFICULT_APPLES {80, 79, 88, 76, 78, 3, 62, 21, 11, 16};
+
 AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::string &model_name);
 
 
