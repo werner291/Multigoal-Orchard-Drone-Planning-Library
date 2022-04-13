@@ -309,15 +309,8 @@ planFromStateToState(ompl::base::Planner &planner, const ompl::base::Optimizatio
 }
 
 std::optional<ompl::geometric::PathGeometric>
-planFromStateToApple(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
-                     ompl::base::State *a, const Apple &b, double duration, bool simplify) {
-
-    auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner.getSpaceInformation());
-    pdef->setOptimizationObjective(objective);
-    pdef->addStartState(a);
-    pdef->setGoal(std::make_shared<DroneEndEffectorNearTarget>(planner.getSpaceInformation(), 0.05, b.center));
-    planner.setProblemDefinition(pdef);
-    
+planExactForPdef(ompl::base::Planner &planner, double duration, bool simplify,
+                 const std::shared_ptr<ompl::base::ProblemDefinition> &pdef) {
     if (planner.solve(ompl::base::timedPlannerTerminationCondition(duration)) == ompl::base::PlannerStatus::EXACT_SOLUTION) {
 
         ompl::geometric::PathGeometric path = *pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
@@ -330,6 +323,32 @@ planFromStateToApple(ompl::base::Planner &planner, const ompl::base::Optimizatio
     } else {
         return {};
     }
+}
+
+std::optional<ompl::geometric::PathGeometric>
+planToGoal(ompl::base::Planner &planner,
+           const ompl::base::OptimizationObjectivePtr &objective,
+           const ompl::base::State *a,
+           double duration,
+           bool simplify,
+           const std::shared_ptr<DroneEndEffectorNearTarget> &goal) {
+    
+    auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner.getSpaceInformation());
+    pdef->setOptimizationObjective(objective);
+    pdef->addStartState(a);
+    pdef->setGoal(goal);
+    planner.setProblemDefinition(pdef);
+
+    return planExactForPdef(planner, duration, simplify, pdef);
+}
+
+std::optional<ompl::geometric::PathGeometric>
+planFromStateToApple(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
+                     ompl::base::State *a, const Apple &b, double duration, bool simplify) {
+
+    return planToGoal(planner, objective, a, duration, simplify,
+                      std::make_shared<DroneEndEffectorNearTarget>(planner.getSpaceInformation(), 0.05, b.center));
+
 }
 
 moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelPtr &drone) {

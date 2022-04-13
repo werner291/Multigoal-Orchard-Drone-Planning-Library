@@ -134,6 +134,8 @@ std::optional<ompl::geometric::PathGeometric>
 planFromStateToApple(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
                      ompl::base::State *a, const Apple &b, double duration, bool simplify);
 
-
+std::optional<ompl::geometric::PathGeometric>
+planExactForPdef(ompl::base::Planner &planner, double duration, bool simplify,
+                 const std::shared_ptr<ompl::base::ProblemDefinition> &pdef);
 
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

@@ -2,7 +2,7 @@
 #include <ompl/geometric/PathSimplifier.h>
 #include <boost/range/irange.hpp>
 #include <ompl/geometric/planners/prm/PRMstar.h>
-#include <range/v3/view/transform.hpp>
+#include <range/v3/view/for_each.hpp>
 #include "probe_retreat_move.h"
 #include "experiment_utils.h"
 #include "EndEffectorOnShellGoal.h"
@@ -58,32 +58,28 @@ ompl::geometric::PathGeometric planFullPath(
     return fullPath;
 }
 
-std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> planApproaches(
-        const std::vector<Apple> &apples_in_order,
-        const ompl::base::OptimizationObjectivePtr &objective,
-        OMPLSphereShellWrapper &shell,
-        const std::shared_ptr<ompl::base::SpaceInformation> &si) {
+//std::vector<std::pair<Apple, ompl::geometric::PathGeometric>>
+//planApproaches(const std::vector<Apple> &apples_in_order, const ompl::base::OptimizationObjectivePtr &objective,
+//               OMPLSphereShellWrapper &shell, const std::shared_ptr<ompl::base::SpaceInformation> &si, bool simplify) {
+//
+//    return apples_in_order
+//        | ranges::views::for_each([&](const Apple& apple) { return planApproachForApple(apple, objective, shell, si, simplify);})
+//        | ranges::to_vector;
+//}
 
-    std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> approaches;
-
-    for (const Apple &apple: apples_in_order) {
-
-        auto state_outside = shell.state_on_shell(apple);
-
-        auto planner = std::make_shared<ompl::geometric::PRMstar>(si);
-        if (auto approach = planFromStateToApple(*planner, objective, state_outside->get(), apple, 1.0, true)) {
-            approaches.emplace_back(apple, *approach);
-        }
-    }
-
-    return approaches;
+ompl::geometric::PathGeometric optimize(ompl::geometric::PathGeometric path,
+                                        const ompl::base::OptimizationObjectivePtr &objective,
+                                        const std::shared_ptr<ompl::base::SpaceInformation> &si) {
+    ompl::geometric::PathSimplifier simplifier(si);
+    simplifier.simplifyMax(path);
+    return path;
 }
 
-void optimizeExit(const Apple &apple,
-                  ompl::geometric::PathGeometric &path,
-                  const ompl::base::OptimizationObjectivePtr &objective,
-                  const OMPLSphereShellWrapper &shell,
-                  const std::shared_ptr<ompl::base::SpaceInformation> &si) {
+ompl::geometric::PathGeometric optimizeExit(const Apple &apple,
+                                            ompl::geometric::PathGeometric path,
+                                            const ompl::base::OptimizationObjectivePtr &objective,
+                                            const OMPLSphereShellWrapper &shell,
+                                            const std::shared_ptr<ompl::base::SpaceInformation> &si) {
 
     auto shellGoal = std::make_shared<EndEffectorOnShellGoal>(si, shell, apple.center);
 
@@ -104,6 +100,8 @@ void optimizeExit(const Apple &apple,
     }
 
     path.reverse();
+
+    return path;
 
 }
 

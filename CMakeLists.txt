@@ -248,7 +248,10 @@ add_library(${PROJECT_NAME}_shared
         src/EndEffectorOnShellGoal.cpp
         src/EndEffectorOnShellGoal.h
         src/ros_utilities.cpp
-        src/ros_utilities.h src/ExperimentVisualTools.h src/ExperimentVisualTools.cpp)
+        src/ros_utilities.h
+        src/ExperimentVisualTools.h
+        src/ExperimentVisualTools.cpp
+        src/functional_optional.h)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
@@ -275,11 +278,8 @@ target_link_libraries(${PROJECT_NAME}_greatcircle_correlation ${PROJECT_NAME}_sh
 add_executable(${PROJECT_NAME}_preorder_experiment experiments/preorder_experiment.cpp)
 target_link_libraries(${PROJECT_NAME}_preorder_experiment ${PROJECT_NAME}_shared)
 
-add_executable(${PROJECT_NAME}_probe_retreat_move_rosvisualize experiments/probe_retreat_move_rosvisualize.cpp)
-target_link_libraries(${PROJECT_NAME}_probe_retreat_move_rosvisualize ${PROJECT_NAME}_shared)
-
-add_executable(${PROJECT_NAME}_probe_retreat_move_statistics experiments/probe_retreat_move_statistics.cpp)
-target_link_libraries(${PROJECT_NAME}_probe_retreat_move_statistics ${PROJECT_NAME}_shared)
+add_executable(${PROJECT_NAME}_probe_retreat_move experiments/probe_retreat_move.cpp)
+target_link_libraries(${PROJECT_NAME}_probe_retreat_move ${PROJECT_NAME}_shared)
 
 add_executable(${PROJECT_NAME}_approach_planning experiments/approach_planning.cpp)
 target_link_libraries(${PROJECT_NAME}_approach_planning ${PROJECT_NAME}_shared)
