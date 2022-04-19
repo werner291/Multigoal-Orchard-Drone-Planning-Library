@@ -86,7 +86,9 @@ void ExperimentVisualTools::dumpApproaches(const std::shared_ptr<ompl::base::Spa
     ompl::geometric::PathGeometric combined_path(si);
 
     for (const auto &approach: approaches) {
-        combined_path.append(approach.second);
+        ompl::geometric::PathGeometric approach_copy(approach.second);
+        approach_copy.interpolate();
+        combined_path.append(approach_copy);
     }
 
     publishPath(si, topic_name, combined_path);

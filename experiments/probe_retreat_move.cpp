@@ -11,6 +11,7 @@
 #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <moveit/robot_state/conversions.h>
 #include <range/v3/all.hpp>
+#include <ompl/geometric/planners/rrt/RRTstar.h>
 
 #define VISUALIZE 1
 
@@ -40,7 +41,8 @@ planApproachesForApple(const std::shared_ptr<ompl::base::SpaceInformation> &si,
 
     auto pdef = mkProblemDefinitionForApproach(si, objective, apple, shell);
 
-    auto planner = make_shared<ompl::geometric::PRMstar>(si);
+    auto planner = make_shared<ompl::geometric::RRTstar>(si);
+//    auto planner = make_shared<ompl::geometric::PRMstar>(si);
     planner->setProblemDefinition(pdef);
 
     if (auto naive = planExactForPdef(*planner, 1.0, false, pdef)) {
@@ -79,7 +81,7 @@ int main(int argc, char **argv) {
 
     thread_pool pool(4);
 
-    const int NUM_RUNS = 2;
+    const int NUM_RUNS = 1;
 
     const std::string approach_names[] {
             "naive", "optimized", "exit_optimized"
@@ -98,7 +100,6 @@ int main(int argc, char **argv) {
     std::for_each(std::execution::par, ints.begin(), ints.end(),
             [&, apples = apples, scene_msg = scene_msg, SPHERE_CENTER = SPHERE_CENTER, SPHERE_RADIUS = SPHERE_RADIUS](
                     int run_i) {
-
 
                     auto state_space = std::make_shared<DroneStateSpace>(ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"), 10.0);
                     auto si = initSpaceInformation(setupPlanningScene(scene_msg, drone), drone, state_space);
