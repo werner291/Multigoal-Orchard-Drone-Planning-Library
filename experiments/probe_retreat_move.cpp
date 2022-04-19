@@ -35,13 +35,13 @@ mkProblemDefinitionForApproach(const ob::SpaceInformationPtr &si,
 
 std::optional<std::array<og::PathGeometric, 3>>
 planApproachesForApple(const std::shared_ptr<ompl::base::SpaceInformation> &si,
-                       const std::shared_ptr<ManipulatorDroneMoveitPathLengthObjective> &objective,
-                       const Apple &apple,
-                       OMPLSphereShellWrapper &shell) {
+                       const std::shared_ptr<ManipulatorDroneMoveitPathLengthObjective> &objective, const Apple &apple,
+                       OMPLSphereShellWrapper &shell,
+                       const std::function<std::shared_ptr<ompl::geometric::RRTstar>(const std::shared_ptr<ompl::base::SpaceInformation> &)> &allocPlanner) {
 
     auto pdef = mkProblemDefinitionForApproach(si, objective, apple, shell);
 
-    auto planner = make_shared<ompl::geometric::RRTstar>(si);
+    auto planner = allocPlanner(si);
 //    auto planner = make_shared<ompl::geometric::PRMstar>(si);
     planner->setProblemDefinition(pdef);
 
@@ -72,16 +72,16 @@ int main(int argc, char **argv) {
     auto[scene_msg, apples, SPHERE_CENTER, SPHERE_RADIUS] =
     createMeshBasedAppleTreePlanningSceneMessage("appletree");
 
-    apples = vectorByOrdering(apples, DIFFICULT_APPLES);
+//    apples = vectorByOrdering(apples, DIFFICULT_APPLES);
 
 #if VISUALIZE
     ExperimentVisualTools evt;
     evt.publishPlanningScene(scene_msg);
 #endif
 
-    thread_pool pool(4);
+    thread_pool pool(8);
 
-    const int NUM_RUNS = 1;
+    const int NUM_RUNS = 10;
 
     const std::string approach_names[] {
             "naive", "optimized", "exit_optimized"
@@ -105,12 +105,16 @@ int main(int argc, char **argv) {
                     auto si = initSpaceInformation(setupPlanningScene(scene_msg, drone), drone, state_space);
                     auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
 
+                    auto allocPlanner = [](const shared_ptr<ompl::base::SpaceInformation> &si) {
+                        return make_shared<ompl::geometric::RRTstar>(si);
+                    };
+
                     OMPLSphereShellWrapper shell(SphereShell(SPHERE_CENTER, SPHERE_RADIUS), si);
 
                     auto approaches =
                             apples |
                             views::transform([&](auto apple) {
-                                return planApproachesForApple(si, objective, apple, shell);
+                                return planApproachesForApple(si, objective, apple, shell, allocPlanner);
                             }) | to_vector;
 
                     moveit::core::RobotState start_state = stateOutsideTree(drone);

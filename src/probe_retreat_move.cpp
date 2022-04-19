@@ -3,6 +3,7 @@
 #include <boost/range/irange.hpp>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <range/v3/view/for_each.hpp>
+#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include "probe_retreat_move.h"
 #include "experiment_utils.h"
 #include "EndEffectorOnShellGoal.h"
@@ -13,8 +14,7 @@ ompl::geometric::PathGeometric retreat_travel_probe(
         OMPLSphereShellWrapper &shell,
         const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches,
         size_t retreat_idx,
-        size_t approach_idx,
-        bool simplify) {
+        size_t approach_idx) {
 
     ompl::geometric::PathGeometric appleToApple(approaches[retreat_idx].second);
 
@@ -29,10 +29,6 @@ ompl::geometric::PathGeometric retreat_travel_probe(
 
     appleToApple.append(approaches[approach_idx].second);
 
-    if (simplify) {
-        ompl::geometric::PathSimplifier(si).simplifyMax(appleToApple);
-    }
-
     return appleToApple;
 }
 
@@ -45,12 +41,14 @@ ompl::geometric::PathGeometric planFullPath(
 
     ompl::geometric::PathGeometric fullPath(si, start);
     for (size_t approachIdx: boost::irange<size_t>(0, approaches.size()-1)) {
-        const ompl::geometric::PathGeometric &retreatTravelProbe = retreat_travel_probe(si, shell, approaches,
-                                                                                        approachIdx, approachIdx + 1,
-                                                                                        true);
+
+        auto retreatTravelProbe = retreat_travel_probe(si, shell, approaches, approachIdx, approachIdx + 1);
         
-        std::cout << "RTP path length:" << retreatTravelProbe.length() << std::endl;
-        
+
+        auto optimized = retreatTravelProbe = optimize(retreatTravelProbe, std::make_shared<ompl::base::PathLengthOptimizationObjective>(si), si);
+
+        std::cout << "RTP path length:" << retreatTravelProbe.length() << " Optimized:" << retreatTravelProbe.length() << std::endl;
+
         fullPath.append(retreatTravelProbe);
     }
 //    fullPath.interpolate();
@@ -67,12 +65,21 @@ ompl::geometric::PathGeometric planFullPath(
 //        | ranges::to_vector;
 //}
 
-ompl::geometric::PathGeometric optimize(ompl::geometric::PathGeometric path,
+ompl::geometric::PathGeometric optimize(const ompl::geometric::PathGeometric& path,
                                         const ompl::base::OptimizationObjectivePtr &objective,
                                         const std::shared_ptr<ompl::base::SpaceInformation> &si) {
+
+    ompl::geometric::PathGeometric new_path(path);
+
     ompl::geometric::PathSimplifier simplifier(si);
-    simplifier.simplifyMax(path);
-    return path;
+    simplifier.simplifyMax(new_path);
+
+    if (path.length() < new_path.length()) {
+        std::cout << "Optimization failed: " << path.length() << " vs " << new_path.length() << std::endl;
+        return path;
+    } else {
+        return new_path;
+    }
 }
 
 ompl::geometric::PathGeometric optimizeExit(const Apple &apple,
