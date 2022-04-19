@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
             auto approach_type = approach_names[approach_index];
 
             auto state_space = std::make_shared<DroneStateSpace>(
-                    ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"), 10.0);
+                    ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"), 5.0);
             auto si = initSpaceInformation(setupPlanningScene(scene_msg, drone), drone, state_space);
 
             run_stats[approach_type]["final_path_length"] = result.full_paths[approach_index].length();
