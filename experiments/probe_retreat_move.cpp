@@ -27,8 +27,9 @@ mkProblemDefinitionForApproach(const ob::SpaceInformationPtr &si,
                                const OMPLSphereShellWrapper &shell) {
     auto pdef = make_shared<ompl::base::ProblemDefinition>(si);
     pdef->setOptimizationObjective(objective);
-    const auto stateOutside = shell.state_on_shell(apple);
-    pdef->addStartState(*stateOutside);
+    ob::ScopedState stateOutside(si);
+    shell.state_on_shell(apple, stateOutside.get());
+    pdef->addStartState(stateOutside);
     pdef->setGoal(make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center));
     return pdef;
 }
@@ -50,8 +51,6 @@ planApproachesForApple(const std::shared_ptr<ompl::base::SpaceInformation> &si,
     if (auto naive = planExactForPdef(*planner, 1.0, false, pdef)) {
 
         assert(naive->check());
-
-        std::cout << "Hello" << std::endl;
 
         auto simplified = optimize(*naive, objective, si);
         auto exit_optimized = optimizeExit(apple, simplified, objective, shell, si);
@@ -116,7 +115,7 @@ int main(int argc, char **argv) {
                         return make_shared<ompl::geometric::RRTstar>(si);
                     };
 
-                    OMPLSphereShellWrapper shell(SphereShell(SPHERE_CENTER, SPHERE_RADIUS), si);
+                    OMPLSphereShellWrapper shell(std::make_shared<SphereShell>(SPHERE_CENTER, SPHERE_RADIUS), si);
 
                     auto approaches =
                             apples |
