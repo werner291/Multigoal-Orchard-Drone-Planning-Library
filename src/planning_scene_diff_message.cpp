@@ -207,5 +207,5 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
                                  {0.1, 0.7, 0.1}, "leaves",
                                  meshMsgFromResource("file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/"+model_name+"_leaves.dae"));
 
-    return {planning_scene_message, apples_from_connected_components(apples), {0.0,0.0,2.2}, 1.8};
+    return {planning_scene_message, apples_from_connected_components(apples), {0.0,0.0,2.1}, 1.9};
 }

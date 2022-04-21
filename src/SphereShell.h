@@ -9,13 +9,24 @@
 #include "procedural_tree_generation.h"
 #include "moveit_conversions.h"
 
-class SphereShell {
+class CollisionFreeShell {
+
+public:
+    [[nodiscard]] virtual moveit::core::RobotState state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a) const = 0;
+
+    [[nodiscard]] virtual std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a, const Apple &b) const = 0;
+
+    [[nodiscard]] virtual Eigen::Vector3d applePositionOnShell(const Apple &a) const = 0;
+
+};
+
+class SphereShell : public CollisionFreeShell {
 
     Eigen::Vector3d center;
 public:
-    const Eigen::Vector3d &getCenter() const;
+    [[nodiscard]] const Eigen::Vector3d &getCenter() const;
 
-    double getRadius() const;
+    [[nodiscard]] double getRadius() const;
 
 private:
     double radius;
@@ -23,24 +34,47 @@ private:
 public:
     SphereShell(Eigen::Vector3d center, double radius);
 
-    [[nodiscard]] moveit::core::RobotState state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a) const;
+    [[nodiscard]] moveit::core::RobotState state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a) const override;
 
-    [[nodiscard]] std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a, const Apple &b) const;
+    [[nodiscard]] std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a, const Apple &b) const override;
 
-    [[nodiscard]] Eigen::Vector3d applePositionOnSphere(const Apple &a) const;
+    [[nodiscard]] Eigen::Vector3d applePositionOnShell(const Apple &a) const override;
+};
+
+class CylinderShell : public CollisionFreeShell {
+
+    Eigen::Vector2d center;
+public:
+    CylinderShell(const Eigen::Vector2d &center, double radius);
+
+private:
+    double radius;
+public:
+    [[nodiscard]] const Eigen::Vector2d &getCenter() const;
+
+    [[nodiscard]] double getRadius() const;
+
+private:
+
+public:
+
+    [[nodiscard]] moveit::core::RobotState state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a) const override;
+
+    [[nodiscard]] std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a, const Apple &b) const override;
+
+    [[nodiscard]] Eigen::Vector3d applePositionOnShell(const Apple &a) const override;
 };
 
 class OMPLSphereShellWrapper {
-    SphereShell shell;
-public:
-    const SphereShell &getShell() const;
-
-private:
+    std::shared_ptr<CollisionFreeShell> shell;
     ompl::base::SpaceInformationPtr si;
 public:
-    OMPLSphereShellWrapper(SphereShell shell, ompl::base::SpaceInformationPtr si);
+    [[nodiscard]] std::shared_ptr<CollisionFreeShell> getShell() const;
 
-    ompl::base::ScopedStatePtr state_on_shell(const Apple& apple) const;
+public:
+    OMPLSphereShellWrapper(std::shared_ptr<CollisionFreeShell> shell, ompl::base::SpaceInformationPtr si);
+
+    void state_on_shell(const Apple& apple, ompl::base::State* st) const;
 
     ompl::geometric::PathGeometric path_on_shell(const Apple& a, const Apple& b);
 

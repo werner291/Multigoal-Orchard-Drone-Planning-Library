@@ -5,6 +5,7 @@
 #include <ros/node_handle.h>
 #include <range/v3/view/enumerate.hpp>
 #include <ompl/geometric/PathGeometric.h>
+#include <moveit/robot_trajectory/robot_trajectory.h>
 #include "procedural_tree_generation.h"
 
 
@@ -27,6 +28,8 @@ public:
 
     void publishPath(const std::shared_ptr<ompl::base::SpaceInformation> &si, const std::string &topic_name,
                      const ompl::geometric::PathGeometric &combined_path);
+
+    void publishTrajectory(const std::string &topic_name, const robot_trajectory::RobotTrajectory &moveit_trajectory);
 };
 
 #endif //NEW_PLANNERS_EXPERIMENTVISUALTOOLS_H

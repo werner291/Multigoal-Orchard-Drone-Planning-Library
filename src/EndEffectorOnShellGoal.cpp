@@ -24,7 +24,7 @@ void EndEffectorOnShellGoal::sampleGoal(ompl::base::State *st) const {
             focus.z() + rng.gaussian(0.0, 0.5)
     );
 
-    si_->copyState(st, sphereShell.state_on_shell({moved_focus,{0.0,0.0,0.0}})->get());
+    sphereShell.state_on_shell({moved_focus,{0.0,0.0,0.0}}, st);
 }
 
 unsigned int EndEffectorOnShellGoal::maxSampleCount() const {
@@ -37,5 +37,5 @@ double EndEffectorOnShellGoal::distanceGoal(const ompl::base::State *st) const {
     state_space->copyToRobotState(rs, st);
     Eigen::Vector3d ee_pos = rs.getGlobalLinkTransform("end_effector").translation();
 
-    return std::abs((ee_pos - sphereShell.getShell().getCenter()).norm() - sphereShell.getShell().getRadius());
+    return (sphereShell.getShell()->applePositionOnShell({ee_pos,{0.0,0.0,0.0}}) - ee_pos).norm();
 }

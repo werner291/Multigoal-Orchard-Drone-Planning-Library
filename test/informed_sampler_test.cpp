@@ -141,7 +141,7 @@ TEST(InformedManipulatorDroneSampler, test_random_state_goal_pairs_upright) {
 
     auto drone = loadRobotModel();
 
-    moveit::core::RobotState st1(drone),sample(drone);
+    moveit::core::RobotState st1(drone), st2(drone), sample(drone);
 
     ompl::RNG rng;
 
@@ -149,14 +149,17 @@ TEST(InformedManipulatorDroneSampler, test_random_state_goal_pairs_upright) {
 
         DroneStateConstraintSampler::randomizeUprightWithBase(st1, 20.0);
 
-
-
+        Eigen::Vector3d target(
+            rng.uniformReal(-10.0, 10.0),
+            rng.uniformReal(-10.0, 10.0),
+            rng.uniformReal(0.5, 10.0)
+        );
 
         double distance = st1.distance(st2);
 
         double maxDist = distance * rng.uniformReal(1.0,10.0);
 
-        sampleBetweenUpright(st1,st2,sample,maxDist);
+//        sampleBetweenUpright(st1,st2,sample,maxDist);
 
         EXPECT_LT(st1.distance(sample)+sample.distance(st2),maxDist+0.01);
 

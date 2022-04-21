@@ -45,7 +45,14 @@ planApproachesForApple(const std::shared_ptr<ompl::base::SpaceInformation> &si,
 //    auto planner = make_shared<ompl::geometric::PRMstar>(si);
     planner->setProblemDefinition(pdef);
 
+    std::cout << "Ready for planning" << std::endl;
+
     if (auto naive = planExactForPdef(*planner, 1.0, false, pdef)) {
+
+        assert(naive->check());
+
+        std::cout << "Hello" << std::endl;
+
         auto simplified = optimize(*naive, objective, si);
         auto exit_optimized = optimizeExit(apple, simplified, objective, shell, si);
         return {{*naive, simplified, exit_optimized}};

@@ -103,6 +103,12 @@ void ExperimentVisualTools::publishPath(const std::shared_ptr<ompl::base::SpaceI
             combined_path
             );
 
+    publishTrajectory(topic_name, moveit_trajectory);
+
+}
+
+void ExperimentVisualTools::publishTrajectory(const std::string &topic_name,
+                                              const robot_trajectory::RobotTrajectory &moveit_trajectory) {
     moveit_msgs::DisplayTrajectory msg = robotTrajectoryToDisplayTrajectory(moveit_trajectory);
 
     auto traj = nh.advertise<moveit_msgs::DisplayTrajectory>(topic_name, 1, true);

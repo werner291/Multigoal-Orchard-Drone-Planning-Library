@@ -5,7 +5,6 @@
 #include <range/v3/view/for_each.hpp>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include "probe_retreat_move.h"
-#include "experiment_utils.h"
 #include "EndEffectorOnShellGoal.h"
 #include "general_utilities.h"
 
@@ -19,9 +18,11 @@ ompl::geometric::PathGeometric retreat_travel_probe(
     ompl::geometric::PathGeometric appleToApple(approaches[retreat_idx].second);
 
     appleToApple.reverse();
-// FIXME bug here?
+
     const ompl::geometric::PathGeometric &pathOnShell = shell.path_on_shell(approaches[retreat_idx].first,
                                                                             approaches[approach_idx].first);
+
+    assert(pathOnShell.check());
 
     std::cout << "Shell path length:" << pathOnShell.length() << std::endl;
 
@@ -56,15 +57,6 @@ ompl::geometric::PathGeometric planFullPath(
     return fullPath;
 }
 
-//std::vector<std::pair<Apple, ompl::geometric::PathGeometric>>
-//planApproaches(const std::vector<Apple> &apples_in_order, const ompl::base::OptimizationObjectivePtr &objective,
-//               OMPLSphereShellWrapper &shell, const std::shared_ptr<ompl::base::SpaceInformation> &si, bool simplify) {
-//
-//    return apples_in_order
-//        | ranges::views::for_each([&](const Apple& apple) { return planApproachForApple(apple, objective, shell, si, simplify);})
-//        | ranges::to_vector;
-//}
-
 ompl::geometric::PathGeometric optimize(const ompl::geometric::PathGeometric& path,
                                         const ompl::base::OptimizationObjectivePtr &objective,
                                         const std::shared_ptr<ompl::base::SpaceInformation> &si) {
@@ -89,8 +81,6 @@ ompl::geometric::PathGeometric optimizeExit(const Apple &apple,
                                             const std::shared_ptr<ompl::base::SpaceInformation> &si) {
 
     auto shellGoal = std::make_shared<EndEffectorOnShellGoal>(si, shell, apple.center);
-
-
 
     ompl::geometric::PathSimplifier simplifier(si, shellGoal);
 
