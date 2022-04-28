@@ -17,6 +17,8 @@ double ordering_heuristic_cost(const std::vector<size_t> &ordering, const std::v
     return d;
 }
 
+
+
 double GreatcircleDistanceHeuristics::between_distance(const Apple &apple_a, const Apple &apple_b) const {
     return gcm.measure(apple_a.center, apple_b.center);
 }
@@ -96,39 +98,50 @@ std::string ORToolsOrderingStrategy::name() const{
 std::vector<size_t> ORToolsOrderingStrategy::apple_ordering(const std::vector<Apple> &apples,
                                                             const DistanceHeuristics &distance) const {
 
+    return tsp_open_end([&](size_t i) {
+        return distance.first_distance(apples[i]);
+    }, [&](size_t i, size_t j) {
+        return distance.between_distance(apples[i], apples[j]);
+    }, apples.size());
+
+}
+
+std::vector<size_t> tsp_open_end(const std::function<double(size_t)> &from_start, const std::function<double(size_t, size_t)> &between,
+             size_t n) {
+
     // First, we build an (N+2)^2 square symmetric distance matrix.
-    std::vector<std::vector<int64_t>> distance_matrix(apples.size() + 2, std::vector<int64_t>(apples.size() + 2));
+    std::vector<std::vector<int64_t>> distance_matrix(n + 2, std::vector<int64_t>(n + 2));
 
     // The top-left NxN part of the matrix is filled with apple-to-apple distances,
     // where distance_matrix[i][j] contains the distance between apples[i] and apples[j].
-    for (size_t i : boost::irange<size_t>(0,apples.size())) {
-        for (size_t j : boost::irange<size_t>(0,apples.size())) {
-            distance_matrix[i][j] = (int64_t) (distance.between_distance(apples[i], apples[j]) * 1000.0);
+    for (size_t i : boost::irange<size_t>(0,n)) {
+        for (size_t j : boost::irange<size_t>(0,n)) {
+            distance_matrix[i][j] = (int64_t) (between(i,j) * 1000.0);
         }
     }
 
     // The distance_matrix[N] column contains the distance between the start state and the apple.
     // Also, the distance_matrix[..][N] row is built by symmetry.
-    for (size_t i : boost::irange<size_t>(0,apples.size())) {
-        distance_matrix[i][apples.size()] = (int64_t) (distance.first_distance(apples[i]) * 1000.0);;
-        distance_matrix[apples.size()][i] = distance_matrix[i][apples.size()];
+    for (size_t i : boost::irange<size_t>(0,n)) {
+        distance_matrix[i][n] = (int64_t) (from_start(i) * 1000.0);;
+        distance_matrix[n][i] = distance_matrix[i][n];
     }
 
-    size_t start_state_index = apples.size();
+    size_t start_state_index = n;
 
     // Traveling from the start state to itself is free.
     distance_matrix[start_state_index][start_state_index] = 0;
 
-    size_t end_state_index = apples.size()+1;
+    size_t end_state_index = n+1;
 
     // We add a "dummy" node to visit as the required end position, with a 0-cost edge to every other node.
-    for (size_t i : boost::irange<size_t>(0,apples.size()+2)) {
+    for (size_t i : boost::irange<size_t>(0,n+2)) {
         distance_matrix[i][end_state_index] = 0;
         distance_matrix[end_state_index][i] = 0;
     }
 
     // This allows us to translate OR-tools internal indices into the indices of the table above.
-    operations_research::RoutingIndexManager manager((int) apples.size()+2, 1,
+    operations_research::RoutingIndexManager manager((int) n+2, 1,
                                                      { operations_research::RoutingIndexManager::NodeIndex {(int) start_state_index } },
                                                      { operations_research::RoutingIndexManager::NodeIndex {(int) end_state_index } });
 

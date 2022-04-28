@@ -8,15 +8,6 @@
 #include <optional>
 #include <functional>
 
-template<typename R, typename V>
-std::optional<R> transform_optional(std::optional<V> o, std::function<R(V)>& fn) {
-    if (o) {
-        return {fn(*o)};
-    } else {
-        return {};
-    }
-}
-
 //template<typename R, typename V>
 //std::optional<R> transform_optional(std::optional<V>& o, std::function<R(V&)> fn) {
 //    if (o) {

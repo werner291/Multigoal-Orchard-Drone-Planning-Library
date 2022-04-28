@@ -73,4 +73,6 @@ double ordering_heuristic_cost(const std::vector<size_t>& ordering,
                                const std::vector<Apple>& apples,
                                const DistanceHeuristics& dh);
 
+std::vector<size_t> tsp_open_end(const std::function<double(size_t)> &from_start, const std::function<double(size_t,size_t)> & between, size_t n);
+
 #endif //NEW_PLANNERS_TRAVELING_SALESMAN_H

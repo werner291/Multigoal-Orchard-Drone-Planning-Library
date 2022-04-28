@@ -9,6 +9,9 @@
 #include <boost/range/adaptor/transformed.hpp>
 #include <Eigen/Geometry>
 #include <shape_msgs/Mesh.h>
+#include <range/v3/view/zip.hpp>
+#include <range/v3/view/drop_last.hpp>
+#include <range/v3/view/drop.hpp>
 
 template<typename T>
 std::vector<size_t> index_vector(const std::vector<T> &v) {
@@ -117,6 +120,12 @@ std::vector<V> vectorByOrdering(const std::vector<V> &original, const std::vecto
     result.reserve(ordering.size());
     for (const size_t i : ordering) result.push_back(original[i]);
     return result;
+}
+
+template<typename Rng>
+auto pairwise(Rng range) {
+    return ranges::views::zip(range | ranges::views::drop_last(1),
+                              range | ranges::views::drop(1));
 }
 
 #endif //NEW_PLANNERS_GENERAL_UTILITIES_CPP

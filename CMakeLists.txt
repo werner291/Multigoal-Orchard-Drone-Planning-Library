@@ -237,6 +237,8 @@ add_library(${PROJECT_NAME}_shared
         src/greatcircle.cpp
 #        src/agglomerative_clustering.cpp
         src/agglomerative_clustering.h
+        src/prm_multigoal.cpp
+        src/prm_multigoal.h
         src/traveling_salesman.h
         src/traveling_salesman.cpp
         src/probe_retreat_move.cpp
@@ -251,7 +253,11 @@ add_library(${PROJECT_NAME}_shared
         src/ros_utilities.h
         src/ExperimentVisualTools.h
         src/ExperimentVisualTools.cpp
-        src/functional_optional.h)
+        src/functional_optional.h
+        src/prm_multigoal.cpp
+        src/prm_multigoal.h
+        src/robot_path.cpp
+        src/robot_path.h)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
@@ -280,6 +286,9 @@ target_link_libraries(${PROJECT_NAME}_preorder_experiment ${PROJECT_NAME}_shared
 
 add_executable(${PROJECT_NAME}_probe_retreat_move experiments/probe_retreat_move.cpp)
 target_link_libraries(${PROJECT_NAME}_probe_retreat_move ${PROJECT_NAME}_shared)
+
+add_executable(${PROJECT_NAME}_prm_multigoal_experiment experiments/prm_multigoal_experiment.cpp)
+target_link_libraries(${PROJECT_NAME}_prm_multigoal_experiment ${PROJECT_NAME}_shared)
 
 add_executable(${PROJECT_NAME}_approach_planning experiments/approach_planning.cpp)
 target_link_libraries(${PROJECT_NAME}_approach_planning ${PROJECT_NAME}_shared)

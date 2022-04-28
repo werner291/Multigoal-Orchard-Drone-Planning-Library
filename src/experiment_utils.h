@@ -31,7 +31,7 @@ struct LeafCollisions {
 
 robot_state::RobotState genStartState(const moveit::core::RobotModelConstPtr &drone);
 
-moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelPtr &drone);
+moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelConstPtr &drone);
 
 struct Experiment {
     std::shared_ptr<MultiGoalPlanner> meta_planner;

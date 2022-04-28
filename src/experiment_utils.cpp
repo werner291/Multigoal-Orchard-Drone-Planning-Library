@@ -309,8 +309,11 @@ planFromStateToState(ompl::base::Planner &planner, const ompl::base::Optimizatio
 }
 
 std::optional<ompl::geometric::PathGeometric>
-planExactForPdef(ompl::base::Planner &planner, double duration, bool simplify,
+planExactForPdef(ompl::base::Planner &planner,
+                 double duration,
+                 bool simplify,
                  const std::shared_ptr<ompl::base::ProblemDefinition> &pdef) {
+
     if (planner.solve(ompl::base::timedPlannerTerminationCondition(duration)) == ompl::base::PlannerStatus::EXACT_SOLUTION) {
 
         ompl::geometric::PathGeometric path = *pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
@@ -319,7 +322,10 @@ planExactForPdef(ompl::base::Planner &planner, double duration, bool simplify,
             ompl::geometric::PathSimplifier(planner.getSpaceInformation()).simplifyMax(path);
         }
 
+        assert(path.check());
+
         return {path};
+
     } else {
         return {};
     }
@@ -351,7 +357,7 @@ planFromStateToApple(ompl::base::Planner &planner, const ompl::base::Optimizatio
 
 }
 
-moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelPtr &drone) {
+moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelConstPtr &drone) {
     moveit::core::RobotState start_state(drone);
 
     start_state.setVariablePositions({
@@ -359,6 +365,7 @@ moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelPtr &dro
                                              0.0, 0.0, 0.0, 1.0, // Identity rotation
                                              0.0, 0.0, 0.0, 0.0  // Arm straight out
                                      });
+
     start_state.update(true);
     return start_state;
 }

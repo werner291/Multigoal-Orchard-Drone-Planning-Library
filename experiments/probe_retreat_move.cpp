@@ -2,29 +2,46 @@
 #include "../src/probe_retreat_move.h"
 #include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
 #include "../src/general_utilities.h"
-#include "../src/msgs_utilities.h"
 #include "../src/thread_pool.hpp"
-#include "../src/ExperimentVisualTools.h"
 #include "../src/functional_optional.h"
+#include "../src/robot_path.h"
 
-#include <execution>
 #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <moveit/robot_state/conversions.h>
 #include <range/v3/all.hpp>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 
-#define VISUALIZE 1
+#define VISUALIZE 0
 
 using namespace ranges;
 using namespace std;
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
-shared_ptr<ompl::base::ProblemDefinition>
-mkProblemDefinitionForApproach(const ob::SpaceInformationPtr &si,
-                               const ob::OptimizationObjectivePtr &objective,
-                               const Apple &apple,
-                               const OMPLSphereShellWrapper &shell) {
+typedef std::array<og::PathGeometric, 3> ApproachesToApple;
+
+ApproachesToApple planForOptimizations(const shared_ptr<ompl::base::SpaceInformation> &si,
+                                       const shared_ptr<ManipulatorDroneMoveitPathLengthObjective> &objective,
+                                       const Apple &apple, const OMPLSphereShellWrapper &shell,
+                                       std::optional<ompl::geometric::PathGeometric> naive) {
+
+    auto simplified = optimize(*naive, objective, si);
+
+    auto exit_optimized = optimizeExit(apple, simplified, objective, shell, si);
+
+    array<og::PathGeometric, 3> optimizationLevels{
+            *naive, simplified, exit_optimized
+    };
+
+    return optimizationLevels;
+}
+
+ob::ProblemDefinitionPtr mkProblemDefinitionForApproach(
+        const ob::SpaceInformationPtr &si,
+        const ob::OptimizationObjectivePtr &objective,
+        const Apple &apple,
+        const OMPLSphereShellWrapper &shell) {
+
     auto pdef = make_shared<ompl::base::ProblemDefinition>(si);
     pdef->setOptimizationObjective(objective);
     ob::ScopedState stateOutside(si);
@@ -32,41 +49,156 @@ mkProblemDefinitionForApproach(const ob::SpaceInformationPtr &si,
     pdef->addStartState(stateOutside);
     pdef->setGoal(make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center));
     return pdef;
+
 }
 
-std::optional<std::array<og::PathGeometric, 3>>
+std::optional<ApproachesToApple>
 planApproachesForApple(const std::shared_ptr<ompl::base::SpaceInformation> &si,
                        const std::shared_ptr<ManipulatorDroneMoveitPathLengthObjective> &objective, const Apple &apple,
                        OMPLSphereShellWrapper &shell,
-                       const std::function<std::shared_ptr<ompl::geometric::RRTstar>(const std::shared_ptr<ompl::base::SpaceInformation> &)> &allocPlanner) {
-
-    auto pdef = mkProblemDefinitionForApproach(si, objective, apple, shell);
+                       const ompl::base::PlannerAllocator &allocPlanner) {
 
     auto planner = allocPlanner(si);
-//    auto planner = make_shared<ompl::geometric::PRMstar>(si);
+
+    auto pdef = mkProblemDefinitionForApproach(si, objective, apple, shell);
     planner->setProblemDefinition(pdef);
 
-    std::cout << "Ready for planning" << std::endl;
-
     if (auto naive = planExactForPdef(*planner, 1.0, false, pdef)) {
-
-        assert(naive->check());
-
-        auto simplified = optimize(*naive, objective, si);
-        auto exit_optimized = optimizeExit(apple, simplified, objective, shell, si);
-        return {{*naive, simplified, exit_optimized}};
+        return {planForOptimizations(si, objective, apple, shell, *naive)};
     } else {
         return {};
     }
 }
 
+
 vector<pair<Apple, og::PathGeometric>>
-appleApproachPairs(const vector<Apple> &apples, const vector<std::optional<array<og::PathGeometric, 3>>> &approaches,
+appleApproachPairs(const vector<Apple> &apples,
+                   const vector<std::optional<array<og::PathGeometric, 3>>> &approaches,
                    size_t approach_index) {
+
     return views::zip(apples, approaches)
            | views::filter([](auto it) { return it.second.has_value(); })
            | views::transform([&](auto it) { return std::make_pair(it.first, (*it.second)[approach_index]); })
            | to_vector;
+}
+
+og::PathGeometric copyPathWithSpaceInformation(const ob::SpaceInformationPtr &si, const og::PathGeometric &to_copy) {
+    og::PathGeometric copy(si);
+    copy = to_copy;
+    return copy;
+}
+
+struct RunResult {
+    std::vector<std::optional<std::array<RobotPath, 3>>> apple_approaches;
+    std::vector<RobotPath> full_paths;
+};
+
+RunResult planpaths(const planning_scene::PlanningScenePtr &scene,
+                    const std::shared_ptr<SphereShell> &shell,
+                    const std::vector<Apple> &apples) {
+
+    auto state_space = std::make_shared<DroneStateSpace>(
+            ompl_interface::ModelBasedStateSpaceSpecification(scene->getRobotModel(), "whole_body"), 10.0);
+    auto si = initSpaceInformation(scene, scene->getRobotModel(), state_space);
+    auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
+
+    auto allocPlanner = [](const shared_ptr<ompl::base::SpaceInformation> &si) {
+        return make_shared<ompl::geometric::RRTstar>(si);
+    };
+
+    OMPLSphereShellWrapper ompl_shell(shell, si);
+
+    auto approaches =
+            apples |
+            views::transform([&](const Apple &apple) {
+                return planApproachesForApple(si, objective, apple, ompl_shell, allocPlanner);
+            }) | to_vector;
+
+    moveit::core::RobotState start_state = stateOutsideTree(scene->getRobotModel());
+
+    GreatcircleDistanceHeuristics gdh(start_state.getGlobalLinkTransform("end_effector").translation(),
+                                      GreatCircleMetric(shell->getCenter()));
+
+    ompl::base::ScopedState start(si);
+    state_space->copyToOMPLState(start.get(), start_state);
+
+    auto full_paths = views::iota(0, 3)
+                      | views::transform([&](auto nm_i) {
+        auto approach_pairs = appleApproachPairs(apples, approaches, nm_i);
+        auto optimized_pairs = optimizeApproachOrder(gdh, *state_space, approach_pairs);
+        auto path_ompl = planFullPath(si, start.get(), ompl_shell, optimized_pairs);
+        return omplPathToRobotPath(path_ompl);
+    }) | to_vector;
+
+    // Don't forget to convert these to RobotPath
+    auto approaches_moveit = approaches | views::transform([&](auto it) -> std::optional<std::array<RobotPath, 3> > {
+        if (it.has_value()) {
+            array<RobotPath, 3> result{
+                    omplPathToRobotPath((*it)[0]),
+                    omplPathToRobotPath((*it)[1]),
+                    omplPathToRobotPath((*it)[2])
+            };
+            return {result};
+        } else {
+            return {};
+        }
+    }) | to_vector;
+
+    return {
+            approaches_moveit,
+            full_paths
+    };
+}
+
+Json::Value collectRunStats(const string approach_names[3], const RunResult &result) {
+    Json::Value run_stats;
+
+    for (size_t approach_index: boost::irange(0, 3)) {
+
+        auto approach_type = approach_names[approach_index];
+
+        run_stats[approach_type]["final_path_length"] = result.full_paths[approach_index].length();
+
+        for (const auto &item: result.apple_approaches) {
+            if (item) {
+                run_stats[approach_type]["approach_lengths"].append((*item)[approach_index].length());
+            } else {
+                run_stats[approach_type]["approach_lengths"].append(NAN);
+            }
+        }
+    }
+    return run_stats;
+}
+
+vector<RunResult>
+parallelPlanRuns(const moveit::core::RobotModelPtr &drone,
+                 const moveit_msgs::PlanningScene &scene_msg,
+                 const vector<Apple> &apples,
+                 const size_t NUM_RUNS,
+                 const shared_ptr<SphereShell> &shell) {
+
+    mutex result_mutex;
+    vector<RunResult> results;
+    thread_pool pool(4);
+
+    for (size_t run_i = 0; run_i < NUM_RUNS; ++run_i) {
+        pool.push_task([&]() {
+            auto paths = planpaths(
+                    setupPlanningScene(scene_msg, drone),
+                    shell,
+                    apples
+            );
+
+            {
+                scoped_lock lock(result_mutex);
+                cout << "Run done " << run_i << endl;
+                results.push_back(paths);
+            }
+        });
+    }
+
+    pool.wait_for_tasks();
+    return results;
 }
 
 int main(int argc, char **argv) {
@@ -75,115 +207,45 @@ int main(int argc, char **argv) {
     auto drone = loadRobotModel();
 
     // Load the apple tree model with some metadata.
-    auto[scene_msg, apples, SPHERE_CENTER, SPHERE_RADIUS] =
-    createMeshBasedAppleTreePlanningSceneMessage("appletree");
+    auto [scene_msg, apples, SPHERE_CENTER, SPHERE_RADIUS] =
+            createMeshBasedAppleTreePlanningSceneMessage("appletree");
 
-//    apples = vectorByOrdering(apples, DIFFICULT_APPLES);
+    apples = vectorByOrdering(apples, DIFFICULT_APPLES);
 
 #if VISUALIZE
     ExperimentVisualTools evt;
     evt.publishPlanningScene(scene_msg);
 #endif
 
-    thread_pool pool(8);
+    const int NUM_RUNS = 40;
 
-    const int NUM_RUNS = 10;
-
-    const std::string approach_names[] {
+    const std::string approach_names[]{
             "naive", "optimized", "exit_optimized"
     };
 
-    struct RunResult {
-        std::vector<std::optional<std::array<og::PathGeometric, 3>>> apple_approaches;
-        std::vector<og::PathGeometric> full_paths;
-    };
+    auto ints = boost::irange(0, NUM_RUNS);
 
-    auto ints = boost::irange(0,NUM_RUNS);
-
-    std::mutex result_mutex;
-    std::vector<RunResult> results;
-
-    std::for_each(std::execution::par, ints.begin(), ints.end(),
-            [&, apples = apples, scene_msg = scene_msg, SPHERE_CENTER = SPHERE_CENTER, SPHERE_RADIUS = SPHERE_RADIUS](
-                    int run_i) {
-
-                    auto state_space = std::make_shared<DroneStateSpace>(ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"), 10.0);
-                    auto si = initSpaceInformation(setupPlanningScene(scene_msg, drone), drone, state_space);
-                    auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
-
-                    auto allocPlanner = [](const shared_ptr<ompl::base::SpaceInformation> &si) {
-                        return make_shared<ompl::geometric::RRTstar>(si);
-                    };
-
-                    OMPLSphereShellWrapper shell(std::make_shared<SphereShell>(SPHERE_CENTER, SPHERE_RADIUS), si);
-
-                    auto approaches =
-                            apples |
-                            views::transform([&](auto apple) {
-                                return planApproachesForApple(si, objective, apple, shell, allocPlanner);
-                            }) | to_vector;
-
-                    moveit::core::RobotState start_state = stateOutsideTree(drone);
-
-                    GreatcircleDistanceHeuristics gdh(start_state.getGlobalLinkTransform("end_effector").translation(),
-                                                      GreatCircleMetric(SPHERE_CENTER));
-
-                    ompl::base::ScopedState start(si);
-                    state_space->copyToOMPLState(start.get(), start_state);
-
-                    auto full_paths = views::iota(0, 3)
-                                      | views::transform([&](auto nm_i) {
-                        auto approach_pairs = appleApproachPairs(apples, approaches, nm_i);
-                        auto optimized_pairs = optimizeApproachOrder(gdh, *state_space, approach_pairs);
-                        return planFullPath(si, start.get(), shell, optimized_pairs);
-                    }) | to_vector;
-
-                    std::cout << "Run done" << std::endl;
-
-                    std::scoped_lock lock(result_mutex);
-                    results.push_back({
-                            approaches, full_paths
-                    });
-            });
+    vector<RunResult> results = parallelPlanRuns(drone, scene_msg, apples, NUM_RUNS,
+                                                 make_shared<SphereShell>(SPHERE_CENTER, SPHERE_RADIUS));
 
     Json::Value statistics;
 
     for (auto pair: views::enumerate(results)) {
 
         size_t run_i = pair.first;
-        auto& result = pair.second;
-
-        Json::Value run_stats;
-
-        for (size_t approach_index: boost::irange(0, 3)) {
-
-            auto approach_pairs = appleApproachPairs(apples, result.apple_approaches, approach_index);
-            auto approach_type = approach_names[approach_index];
-
-            auto state_space = std::make_shared<DroneStateSpace>(
-                    ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"), 5.0);
-            auto si = initSpaceInformation(setupPlanningScene(scene_msg, drone), drone, state_space);
-
-            run_stats[approach_type]["final_path_length"] = result.full_paths[approach_index].length();
-
-            for (const auto &item : result.apple_approaches) {
-                if (item) {
-                    run_stats[approach_type]["approach_lengths"].append((*item)[approach_index].length());
-                } else {
-                    run_stats[approach_type]["approach_lengths"].append(NAN);
-                }
-            }
+        auto &result = pair.second;
 
 #if VISUALIZE
+        for (size_t approach_index: boost::irange(0, 3)) {
+            auto approach_pairs = appleApproachPairs(apples, result.apple_approaches, approach_index);
             evt.dumpProjections(approach_pairs, "/apple_to_sphere_projections_" + approach_type + "_" + to_string(run_i));
             evt.dumpApproaches(si, approach_pairs, "/approaches_" + approach_type + "_" + to_string(run_i));
             evt.publishPath(si, "/trajectory_" + approach_type + "_" + to_string(run_i), result.full_paths[approach_index]);
             ros::spinOnce();
+        }
 #endif // VISUALIZE
 
-        }
-
-        statistics.append(run_stats);
+        statistics.append(collectRunStats(approach_names, result));
 
     }
 
