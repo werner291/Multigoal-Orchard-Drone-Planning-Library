@@ -239,6 +239,8 @@ add_library(${PROJECT_NAME}_shared
         src/agglomerative_clustering.h
         src/prm_multigoal.cpp
         src/prm_multigoal.h
+#        src/local_optimize_multigoal.cpp
+#        src/local_optimize_multigoal.h
         src/traveling_salesman.h
         src/traveling_salesman.cpp
         src/probe_retreat_move.cpp
@@ -301,12 +303,13 @@ add_executable(${PROJECT_NAME}_generate_tree_data src/generate_tree_data.cpp)
 catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
         test/test_utils.h
         test/test_utils.cpp
-        test/informed_sampler_test.cpp
-        test/clustering_tests.cpp
-        test/ptp_tests.cpp
-        test/enhanced_hac_test.cpp
-        test/mesh_loading.cpp
-        test/probe_retreat_move_tests.cpp
+#        test/informed_sampler_test.cpp
+#        test/clustering_tests.cpp
+#        test/ptp_tests.cpp
+#        test/enhanced_hac_test.cpp
+#        test/mesh_loading.cpp
+#        test/probe_retreat_move_tests.cpp
+        test/tsp_tests.cpp
         )
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared)
 

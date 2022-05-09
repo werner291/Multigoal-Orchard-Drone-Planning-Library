@@ -13,6 +13,7 @@
 #include "multigoal/MetricTwoOpt.h"
 #include "planning_scene_diff_message.h"
 #include "procedural_tree_generation.h"
+#include "robot_path.h"
 
 struct StateProjection {
     ompl_interface::ModelBasedStateSpace *state_space;
@@ -137,5 +138,17 @@ planFromStateToApple(ompl::base::Planner &planner, const ompl::base::Optimizatio
 std::optional<ompl::geometric::PathGeometric>
 planExactForPdef(ompl::base::Planner &planner, double duration, bool simplify,
                  const std::shared_ptr<ompl::base::ProblemDefinition> &pdef);
+
+struct MultiApplePlanResult {
+
+    struct AppleVisit {
+        size_t apple_id;
+        size_t path_state_index;
+    };
+
+    RobotPath path;
+    std::vector<AppleVisit> apple_visits;
+
+};
 
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

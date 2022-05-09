@@ -12,6 +12,8 @@ struct RobotPath {
     std::vector<moveit::core::RobotState> waypoints;
 
     [[nodiscard]] double length() const;
+
+    void append(const RobotPath &other);
 };
 
 RobotPath omplPathToRobotPath(const ompl::geometric::PathGeometric& ompl_path);

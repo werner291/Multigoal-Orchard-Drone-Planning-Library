@@ -11,6 +11,10 @@ double RobotPath::length() const {
     }), 0.0);
 }
 
+void RobotPath::append(const RobotPath &other) {
+    waypoints.insert(waypoints.end(), other.waypoints.begin(), other.waypoints.end());
+}
+
 RobotPath omplPathToRobotPath(const ompl::geometric::PathGeometric& ompl_path) {
     RobotPath path;
 

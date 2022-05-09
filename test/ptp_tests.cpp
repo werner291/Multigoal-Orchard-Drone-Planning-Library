@@ -10,7 +10,7 @@
 #include "../src/experiment_utils.h"
 #include "test_utils.h"
 
-TEST(PTPTest, through_wall_local_adversarial) {
+
 
     auto drone = loadRobotModel();
 

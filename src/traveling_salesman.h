@@ -75,4 +75,9 @@ double ordering_heuristic_cost(const std::vector<size_t>& ordering,
 
 std::vector<size_t> tsp_open_end(const std::function<double(size_t)> &from_start, const std::function<double(size_t,size_t)> & between, size_t n);
 
+std::vector<std::pair<size_t, size_t>> tsp_open_end_grouped(
+        const std::function<double(std::pair<size_t, size_t>)> &from_start,
+        const std::function<double(std::pair<size_t, size_t>, std::pair<size_t, size_t>)> &between,
+        const std::vector<size_t>& sizes);
+
 #endif //NEW_PLANNERS_TRAVELING_SALESMAN_H
