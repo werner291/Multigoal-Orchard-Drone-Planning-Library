@@ -266,7 +266,7 @@ add_library(${PROJECT_NAME}_shared
 ## Visualization node
 add_executable(${PROJECT_NAME}_vizualized src/run_vizualized.cpp)
 
-add_executable(${PROJECT_NAME}_benchmark src/run_benchmarked.cpp experiments/bnb_comparison.cpp)
+add_executable(${PROJECT_NAME}_benchmark src/run_benchmarked.cpp)
 
 add_executable(${PROJECT_NAME}_at_benchmark experiments/at_benchmark.cpp)
 
