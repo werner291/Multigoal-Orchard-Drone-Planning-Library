@@ -295,6 +295,9 @@ target_link_libraries(${PROJECT_NAME}_prm_multigoal_experiment ${PROJECT_NAME}_s
 add_executable(${PROJECT_NAME}_approach_planning experiments/approach_planning.cpp)
 target_link_libraries(${PROJECT_NAME}_approach_planning ${PROJECT_NAME}_shared)
 
+add_executable(${PROJECT_NAME}_knn experiments/knn.cpp)
+target_link_libraries(${PROJECT_NAME}_knn ${PROJECT_NAME}_shared)
+
 add_executable(${PROJECT_NAME}_clustering experiments/clustering_comparison.cpp test/test_utils.cpp)
 target_link_libraries(${PROJECT_NAME}_clustering ${PROJECT_NAME}_shared)
 
