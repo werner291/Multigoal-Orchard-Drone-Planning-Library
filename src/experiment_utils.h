@@ -14,6 +14,7 @@
 #include "planning_scene_diff_message.h"
 #include "procedural_tree_generation.h"
 #include "robot_path.h"
+#include "ManipulatorDroneMoveitPathLengthObjective.h"
 
 struct StateProjection {
     ompl_interface::ModelBasedStateSpace *state_space;
@@ -109,7 +110,15 @@ struct DroneAndStateSpace {
 };
 
 planning_scene::PlanningScenePtr setupPlanningScene(const moveit_msgs::PlanningScene &planning_scene_message,
-                                                    const moveit::core::RobotModelPtr &drone);
+                                                    const moveit::core::RobotModelConstPtr &drone);
+
+struct ExperimentPlanningContext {
+    std::shared_ptr<DroneStateSpace> state_space;
+    ompl::base::SpaceInformationPtr si;
+    ompl::base::OptimizationObjectivePtr objective;
+};
+
+ExperimentPlanningContext loadContext(const moveit::core::RobotModelConstPtr& drone, const moveit_msgs::PlanningScene& scene_msg);
 
 std::vector<Apple> apples_from_connected_components(shape_msgs::Mesh apples_mesh);
 

@@ -233,7 +233,7 @@ visualization_msgs::MarkerArray markers_for_state(const moveit::core::RobotState
 
 planning_scene::PlanningScenePtr
 setupPlanningScene(const moveit_msgs::PlanningScene &planning_scene_message,
-                   const moveit::core::RobotModelPtr &drone) {
+                   const moveit::core::RobotModelConstPtr &drone) {
     auto scene = std::make_shared<planning_scene::PlanningScene>(drone);
     scene->setPlanningSceneDiffMsg(planning_scene_message);
     // Diff message apparently can't handle partial ACM updates?
@@ -357,6 +357,7 @@ planFromStateToApple(ompl::base::Planner &planner, const ompl::base::Optimizatio
 
 }
 
+[[deprecated("use randomStateOutsideTree instead")]]
 moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelConstPtr &drone) {
     moveit::core::RobotState start_state(drone);
 
@@ -368,6 +369,26 @@ moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelConstPtr
 
     start_state.update(true);
     return start_state;
+}
+
+ExperimentPlanningContext loadContext(const moveit::core::RobotModelConstPtr &drone, const moveit_msgs::PlanningScene &scene_msg) {
+    ExperimentPlanningContext context;
+
+    // initialize the state space and such
+    auto state_space = std::make_shared<DroneStateSpace>(
+            ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"), TRANSLATION_BOUND);
+
+    auto scene = setupPlanningScene(scene_msg, drone);
+    auto si = initSpaceInformation(scene, scene->getRobotModel(), state_space);
+
+    auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
+
+    return {
+            state_space,
+            si,
+            objective
+    };
+
 }
 
 moveit::core::RobotState randomStateOutsideTree(const moveit::core::RobotModelPtr &drone) {
