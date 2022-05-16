@@ -46,72 +46,74 @@ int main(int argc, char **argv) {
     mutex result_mutex;
     Json::Value statistics;
 
-    auto cartesian = ranges::views::cartesian_product(run_indices, ks, distance_fns) | to_vector;
-
-    for (auto [run_i,k,distance_fn]: cartesian) {
-
-        pool.push_task([&,run_i = run_i,k=k,distance_fn=distance_fn]() {
-
-            // Send all the parameters to cout
-            cout << "run_i: " << run_i << " k: " << k << endl;
-
-            // initialize the state space and such
-            ExperimentPlanningContext context;
-
-            auto scene = setupPlanningScene(scene_info.scene_msg, drone);
-            auto si = initSpaceInformation(scene, scene->getRobotModel(), stateSpace);
-            auto objective = make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
-
-            auto start_state_moveit = stateOutsideTree(drone);
-
-            ompl::base::ScopedState<> start_state(si);
-
-            stateSpace->copyToOMPLState(start_state.get(), start_state_moveit);
-
-            // Create the planner
-            auto prm = std::make_shared<ompl::geometric::PRMstar>(si);
-
-            NewKnnPlanner planner(distance_fn, k);
-
-            auto goals = scene_info.apples | views::transform([&,si=si](auto&& apple) {
-
-                auto goal = std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center);
-
-                return std::static_pointer_cast<ompl::base::Goal>(goal);
+    auto planner_allocators =
+            ranges::views::cartesian_product(distance_fns, ks) |
+            views::transform([&](auto tuple) {
+                return std::make_shared<NewKnnPlanner>(get<0>(tuple), get<1>(tuple));;
             }) | to_vector;
 
-            // TODO: Double-check if stuff is being optimized here...
-            NewMultiGoalPlanner::PlanResult result = planner.plan(
-                    si, start_state.get(), goals,
-                    [&,objective=objective](const ompl::base::State *a, const ompl::base::GoalPtr b) -> std::optional<og::PathGeometric> {
-                        return planToGoal(*prm, objective, a, PLAN_TIME_PER_APPLE_SECONDS, true, b);
-                    },
-                    [&,objective=objective](const ompl::base::State *a, const ompl::base::State *b) -> std::optional<og::PathGeometric> {
-                        return planFromStateToState(*prm, objective, a, b, PLAN_TIME_PER_APPLE_SECONDS);
-                    });
+    for (int run_i : run_indices) {
+        auto start_state_moveit = stateOutsideTree(drone);
 
-            size_t goals_visited = result.segments_.size();
+        for (const auto& planner: planner_allocators) {
+            pool.push_task([&,run_i = run_i,planner=planner]() {
 
-            ompl::geometric::PathGeometric full_path(si);
-            for (const auto &segment: result.segments_) {
-                full_path.append(segment.path_);
-            }
+                // initialize the state space and such
+                ExperimentPlanningContext context;
 
-            RobotPath full_path_moveit = omplPathToRobotPath(full_path);
+                auto scene = setupPlanningScene(scene_info.scene_msg, drone);
+                auto si = initSpaceInformation(scene, scene->getRobotModel(), stateSpace);
+                auto objective = make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
 
-            {
-                scoped_lock lock(result_mutex);
+                ompl::base::ScopedState<> start_state(si);
 
-                Json::Value run_stats;
+                stateSpace->copyToOMPLState(start_state.get(), start_state_moveit);
 
-                run_stats["run_i"] = run_i;
-                run_stats["final_path_length"] = full_path_moveit.length();
-                run_stats["goals_visited"] = (int) goals_visited;
-                statistics["path_lengths"].append(run_stats);
+                auto goals = scene_info.apples | views::transform([&,si=si](auto&& apple) {
 
-                cout << "Done " << statistics["path_lengths"].size() << " out of " << cartesian.size() << endl;
-            }
-        });
+                    auto goal = std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center);
+
+                    return std::static_pointer_cast<ompl::base::Goal>(goal);
+                }) | to_vector;
+
+                auto state_to_goal = [&,objective=objective](const ompl::base::State *a, const ompl::base::GoalPtr b) -> std::optional<og::PathGeometric> {
+                    auto prm = std::make_shared<ompl::geometric::PRMstar>(si);
+                    return planToGoal(*prm, objective, a, PLAN_TIME_PER_APPLE_SECONDS, true, b);
+                };
+
+                auto state_to_state = [&,objective=objective](const ompl::base::State *a, const ompl::base::State *b) -> std::optional<og::PathGeometric> {
+                    auto prm = std::make_shared<ompl::geometric::PRMstar>(si);
+                    return planFromStateToState(*prm, objective, a, b, PLAN_TIME_PER_APPLE_SECONDS);
+                };
+
+                // TODO: Double-check if stuff is being optimized here...
+                NewMultiGoalPlanner::PlanResult result = planner->plan(
+                        si, start_state.get(), goals,state_to_goal,state_to_state
+                );
+
+                size_t goals_visited = result.segments_.size();
+
+                ompl::geometric::PathGeometric full_path(si);
+                for (const auto &segment: result.segments_) {
+                    full_path.append(segment.path_);
+                }
+
+                RobotPath full_path_moveit = omplPathToRobotPath(full_path);
+
+                {
+                    scoped_lock lock(result_mutex);
+
+                    Json::Value run_stats;
+
+                    run_stats["run_i"] = run_i;
+                    run_stats["final_path_length"] = full_path_moveit.length();
+                    run_stats["goals_visited"] = (int) goals_visited;
+                    statistics["path_lengths"].append(run_stats);
+
+                    cout << "Done " << statistics["path_lengths"].size() << " out of " << (run_indices.size() * planner_allocators.size()) << endl;
+                }
+            });
+        }
     }
 
     pool.wait_for_tasks();
