@@ -83,7 +83,7 @@ NewKnnPlanner::PlanResult NewKnnPlanner::plan(const ompl::base::SpaceInformation
     return PlanResult { segments };
 }
 
-NewKnnPlanner::NewKnnPlanner(const shared_ptr<OmplDistanceHeuristics> &distanceHeuristics, size_t k) : distance_heuristics_(distanceHeuristics), k(k) {
+NewKnnPlanner::NewKnnPlanner(const shared_ptr<const OmplDistanceHeuristics> &distanceHeuristics, size_t k) : distance_heuristics_(distanceHeuristics), k(k) {
 
 }
 

@@ -11,7 +11,7 @@ class NewKnnPlanner : public NewMultiGoalPlanner {
 
     const size_t START_STATE_REF = SIZE_MAX;
 
-    const std::shared_ptr<OmplDistanceHeuristics> distance_heuristics_;
+    const std::shared_ptr<const OmplDistanceHeuristics> distance_heuristics_;
 
 private:
     size_t k;
@@ -27,7 +27,7 @@ private:
     buildGNAT(const ompl::base::State *start, const std::vector<ompl::base::GoalPtr> &goals) const;
 
 public:
-    NewKnnPlanner(const std::shared_ptr<OmplDistanceHeuristics> &distanceHeuristics, size_t k);
+    NewKnnPlanner(const std::shared_ptr<const OmplDistanceHeuristics> &distanceHeuristics, size_t k);
 
     PlanResult plan(const ompl::base::SpaceInformationPtr& si,
                     const ompl::base::State* start,

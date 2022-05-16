@@ -10,9 +10,9 @@
 class OmplDistanceHeuristics {
 
 public:
-    virtual double state_to_goal(const ompl::base::State *, const ompl::base::Goal *) = 0;
+    virtual double state_to_goal(const ompl::base::State *, const ompl::base::Goal *) const = 0;
 
-    virtual double goal_to_goal(const ompl::base::Goal *, const ompl::base::Goal *) = 0;
+    virtual double goal_to_goal(const ompl::base::Goal *, const ompl::base::Goal *) const = 0;
 
 };
 
@@ -24,9 +24,9 @@ public:
 
 private:
 
-    double state_to_goal(const ompl::base::State *a, const ompl::base::Goal *b) override;
+    double state_to_goal(const ompl::base::State *a, const ompl::base::Goal *b) const override;
 
-    double goal_to_goal(const ompl::base::Goal *a, const ompl::base::Goal *b) override;
+    double goal_to_goal(const ompl::base::Goal *a, const ompl::base::Goal *b) const override;
 
 };
 
@@ -39,9 +39,9 @@ public:
 
 private:
 
-    double state_to_goal(const ompl::base::State *a, const ompl::base::Goal *b) override;
+    double state_to_goal(const ompl::base::State *a, const ompl::base::Goal *b) const override;
 
-    double goal_to_goal(const ompl::base::Goal *a, const ompl::base::Goal *b) override;
+    double goal_to_goal(const ompl::base::Goal *a, const ompl::base::Goal *b) const override;
 
 };
 

@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 
     GreatCircleMetric gc_metric(scene_info.sphere_center);
 
-    std::shared_ptr<OmplDistanceHeuristics> distance_fns[2] = {
+    const std::shared_ptr<const OmplDistanceHeuristics> distance_fns[2] = {
         std::make_shared<GreatCircleOmplDistanceHeuristics>(gc_metric, stateSpace),
         std::make_shared<EuclideanOmplDistanceHeuristics>(stateSpace),
     };
@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
                 auto goal = std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center);
 
                 return std::static_pointer_cast<ompl::base::Goal>(goal);
-            });
+            }) | to_vector;
 
             // TODO: Double-check if stuff is being optimized here...
             NewMultiGoalPlanner::PlanResult result = planner.plan(
