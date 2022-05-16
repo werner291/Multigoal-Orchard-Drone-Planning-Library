@@ -295,7 +295,7 @@ samplePlanningPairs(const planning_scene::PlanningSceneConstPtr &scene,
 
 std::optional<ompl::geometric::PathGeometric>
 planFromStateToState(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
-                     ompl::base::State *a, ompl::base::State *b, double duration) {
+                     const ompl::base::State *a, const ompl::base::State *b, double duration) {
 
     auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner.getSpaceInformation());
     pdef->setOptimizationObjective(objective);
@@ -337,7 +337,7 @@ planToGoal(ompl::base::Planner &planner,
            const ompl::base::State *a,
            double duration,
            bool simplify,
-           const std::shared_ptr<DroneEndEffectorNearTarget> &goal) {
+           const ompl::base::GoalPtr &goal) {
     
     auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner.getSpaceInformation());
     pdef->setOptimizationObjective(objective);

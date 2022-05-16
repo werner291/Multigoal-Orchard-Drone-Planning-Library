@@ -239,8 +239,6 @@ add_library(${PROJECT_NAME}_shared
         src/agglomerative_clustering.h
         src/prm_multigoal.cpp
         src/prm_multigoal.h
-#        src/local_optimize_multigoal.cpp
-#        src/local_optimize_multigoal.h
         src/traveling_salesman.h
         src/traveling_salesman.cpp
         src/probe_retreat_move.cpp
@@ -259,7 +257,9 @@ add_library(${PROJECT_NAME}_shared
         src/prm_multigoal.cpp
         src/prm_multigoal.h
         src/robot_path.cpp
-        src/robot_path.h)
+        src/robot_path.h
+        src/NewMultiGoalPlanner.cpp
+        src/NewMultiGoalPlanner.h src/NewKnnPlanner.cpp src/NewKnnPlanner.h src/DistanceHeuristics.cpp src/DistanceHeuristics.h)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 

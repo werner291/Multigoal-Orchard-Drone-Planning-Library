@@ -138,7 +138,7 @@ samplePlanningPairs(const planning_scene::PlanningSceneConstPtr &scene,
 
 std::optional<ompl::geometric::PathGeometric>
 planFromStateToState(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
-                     ompl::base::State *a, ompl::base::State *b, double duration);
+                     const ompl::base::State *a, const ompl::base::State *b, double duration);
 
 std::optional<ompl::geometric::PathGeometric>
 planFromStateToApple(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
@@ -147,6 +147,14 @@ planFromStateToApple(ompl::base::Planner &planner, const ompl::base::Optimizatio
 std::optional<ompl::geometric::PathGeometric>
 planExactForPdef(ompl::base::Planner &planner, double duration, bool simplify,
                  const std::shared_ptr<ompl::base::ProblemDefinition> &pdef);
+
+std::optional<ompl::geometric::PathGeometric>
+planToGoal(ompl::base::Planner &planner,
+           const ompl::base::OptimizationObjectivePtr &objective,
+           const ompl::base::State *a,
+           double duration,
+           bool simplify,
+           const ompl::base::GoalPtr &goal);
 
 struct MultiApplePlanResult {
 

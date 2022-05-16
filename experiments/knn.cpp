@@ -3,6 +3,7 @@
 #include "../src/thread_pool.hpp"
 #include "../src/greatcircle.h"
 #include "../src/probe_retreat_move.h"
+#include "../src/NewKnnPlanner.h"
 #include <range/v3/all.hpp>
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
@@ -12,136 +13,14 @@ using namespace ranges;
 using namespace std;
 namespace og = ompl::geometric;
 
-class NewMultiGoalPlanner {
-
-public:
-    struct PathSegment {
-        size_t to_goal_id_;
-        ompl::geometric::PathGeometric path_;
-    };
-
-    struct PlanResult {
-        std::vector<PathSegment> segments_;
-    };
-
-    typedef const std::function<std::optional<og::PathGeometric>(const ompl::base::State *, const ompl::base::Goal *)> StateToGoalFn;
-    typedef const std::function<std::optional<og::PathGeometric>(const ompl::base::State *, const ompl::base::State *)> StateToStateFn;
-
-    virtual PlanResult plan(const ompl::base::SpaceInformationPtr& si,
-                            const ompl::base::State* start,
-                            const std::vector<ompl::base::Goal*> &goals,
-                            StateToGoalFn plan_state_to_goal,
-                            StateToStateFn plan_state_to_state) = 0;
-};
-
-class NewKnnPlanner : public NewMultiGoalPlanner {
-
-    const size_t START_STATE_REF = SIZE_MAX;
-
-    std::function<double(const ompl::base::State* , const ompl::base::Goal* )> state_to_goal_heuristic_distance_;
-public:
-    NewKnnPlanner(
-            const function<double(const ompl::base::State *, const ompl::base::Goal *)> &stateToGoalHeuristicDistance,
-            const function<double(const ompl::base::Goal *, const ompl::base::Goal *)> &goalToGoalHeuristicDistance,
-            size_t k) : state_to_goal_heuristic_distance_(stateToGoalHeuristicDistance),
-                        goal_to_goal_heuristic_distance_(goalToGoalHeuristicDistance), k(k) {}
-
-private:
-    std::function<double(const ompl::base::Goal* , const ompl::base::Goal* )> goal_to_goal_heuristic_distance_;
-    size_t k;
-
-    typedef std::pair<size_t,const ompl::base::Goal *> GoalIdAndGoal;
-
-    typedef std::variant<
-            const ompl::base::State *,
-            GoalIdAndGoal
-    > StateOrGoal;
-
-
-public:
-    ompl::NearestNeighborsGNAT<StateOrGoal>
-    buildGNAT(const ompl::base::State *start, const vector<ompl::base::Goal *> &goals) const {
-
-        ompl::NearestNeighborsGNAT<StateOrGoal> gnat;
-
-        gnat.setDistanceFunction([&](const StateOrGoal& a, const StateOrGoal& b) -> double {
-            if (a.index() == 0) {
-                assert(b.index() == 1);
-                return state_to_goal_heuristic_distance_(get<const ompl::base::State *>(a), get<GoalIdAndGoal>(b).second);
-            }
-
-            if (b.index() == 0) {
-                assert(a.index() == 1);
-                return state_to_goal_heuristic_distance_(get<const ompl::base::State *>(b), get<GoalIdAndGoal>(a).second);
-            }
-
-            return goal_to_goal_heuristic_distance_(get<GoalIdAndGoal>(a).second, get<GoalIdAndGoal>(b).second);
-        });
-
-        gnat.add(goals | views::enumerate | views::transform([&](auto&& pair) -> StateOrGoal {
-            return {std::make_pair(pair.first, pair.second)};
-        }) | to_vector);
-
-        return gnat;
-    }
-
-    PlanResult plan(const ompl::base::SpaceInformationPtr& si,
-                    const ompl::base::State* start,
-                    const std::vector<ompl::base::Goal*> &goals,
-                    StateToGoalFn plan_state_to_goal,
-                    StateToStateFn plan_state_to_state) override {
-
-        auto gnat = buildGNAT(start, goals);
-
-        std::vector<PathSegment> segments;
-
-        size_t goals_visited = 0;
-
-        ompl::base::State* last_state;
-
-        while (gnat.size() > 0) {
-
-            std::vector<StateOrGoal> nearest_k;
-
-            // Find the k nearest apples.
-            gnat.nearestK({last_state}, k, nearest_k);
-
-            std::vector<pair<StateOrGoal ,og::PathGeometric>> paths;
-
-            // For all, plan a path
-            for (auto &apple: nearest_k) {
-
-                if (auto result = plan_state_to_goal(last_state, get<GoalIdAndGoal>(apple).second)) {
-                    paths.emplace_back(apple,result.value());
-                }
-            }
-
-            if (paths.empty()) {
-                gnat.remove(nearest_k[0]);
-            } else {
-                // Pick the shortest path
-                auto shortest = paths[0];
-                for (auto &path: paths) {
-                    if (path.second.length() < shortest.second.length()) {
-                        shortest = path;
-                    }
-                }
-                gnat.remove(shortest.first);
-                segments.push_back({get<GoalIdAndGoal>(shortest.first).first, shortest.second});
-                last_state = shortest.second.getState(shortest.second.getStateCount() - 1);
-
-                goals_visited += 1;
-            }
-        }
-
-        return PlanResult { segments };
-    }
-};
-
 int main(int argc, char **argv) {
 
     // Load the drone model
     auto drone = loadRobotModel();
+
+    // initialize the state space and such
+    auto stateSpace = make_shared<DroneStateSpace>(
+            ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"), TRANSLATION_BOUND);
 
     // Load the apple tree model with some metadata.
     auto scene_info = createMeshBasedAppleTreePlanningSceneMessage("appletree");
@@ -157,9 +36,10 @@ int main(int argc, char **argv) {
     const double PLAN_TIME_PER_APPLE_SECONDS = 5.0;
 
     GreatCircleMetric gc_metric(scene_info.sphere_center);
-    std::function<double(Eigen::Vector3d ,Eigen::Vector3d )> distance_fns[2] = {
-        [&](const Eigen::Vector3d & a, const Eigen::Vector3d & b) { return gc_metric.measure(a, b); },
-        [&](const Eigen::Vector3d & a, const Eigen::Vector3d & b) { return (a - b).norm(); },
+
+    std::shared_ptr<OmplDistanceHeuristics> distance_fns[2] = {
+        std::make_shared<GreatCircleOmplDistanceHeuristics>(gc_metric, stateSpace),
+        std::make_shared<EuclideanOmplDistanceHeuristics>(stateSpace),
     };
 
     // Mutex
@@ -176,23 +56,51 @@ int main(int argc, char **argv) {
             cout << "run_i: " << run_i << " k: " << k << endl;
 
             // initialize the state space and such
-            const auto& [state_space, si, objective] = loadContext(drone, scene_info.scene_msg);
+            ExperimentPlanningContext context;
+
+            auto scene = setupPlanningScene(scene_info.scene_msg, drone);
+            auto si = initSpaceInformation(scene, scene->getRobotModel(), stateSpace);
+            auto objective = make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
 
             auto start_state_moveit = stateOutsideTree(drone);
 
             ompl::base::ScopedState<> start_state(si);
 
-            state_space->copyToOMPLState(start_state.get(), start_state_moveit);
+            stateSpace->copyToOMPLState(start_state.get(), start_state_moveit);
 
-            NewKnnPlanner planner
+            // Create the planner
+            auto prm = std::make_shared<ompl::geometric::PRMstar>(si);
 
+            NewKnnPlanner planner(distance_fn, k);
 
+            auto goals = scene_info.apples | views::transform([&,si=si](auto&& apple) {
+
+                auto goal = std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center);
+
+                return std::static_pointer_cast<ompl::base::Goal>(goal);
+            });
+
+            // TODO: Double-check if stuff is being optimized here...
+            NewMultiGoalPlanner::PlanResult result = planner.plan(
+                    si, start_state.get(), goals,
+                    [&,objective=objective](const ompl::base::State *a, const ompl::base::GoalPtr b) -> std::optional<og::PathGeometric> {
+                        return planToGoal(*prm, objective, a, PLAN_TIME_PER_APPLE_SECONDS, true, b);
+                    },
+                    [&,objective=objective](const ompl::base::State *a, const ompl::base::State *b) -> std::optional<og::PathGeometric> {
+                        return planFromStateToState(*prm, objective, a, b, PLAN_TIME_PER_APPLE_SECONDS);
+                    });
+
+            size_t goals_visited = result.segments_.size();
+
+            ompl::geometric::PathGeometric full_path(si);
+            for (const auto &segment: result.segments_) {
+                full_path.append(segment.path_);
+            }
 
             RobotPath full_path_moveit = omplPathToRobotPath(full_path);
 
             {
                 scoped_lock lock(result_mutex);
-
 
                 Json::Value run_stats;
 
