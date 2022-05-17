@@ -5,10 +5,14 @@
 #include "../src/thread_pool.hpp"
 #include "../src/functional_optional.h"
 #include "../src/robot_path.h"
+#include "../src/NewMultiGoalPlanner.h"
+#include "../src/DistanceHeuristics.h"
 
 #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <moveit/robot_state/conversions.h>
 #include <range/v3/all.hpp>
+#include <utility>
+#include <utility>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 
 #define VISUALIZE 0
@@ -82,73 +86,11 @@ appleApproachPairs(const vector<Apple> &apples,
            | to_vector;
 }
 
-og::PathGeometric copyPathWithSpaceInformation(const ob::SpaceInformationPtr &si, const og::PathGeometric &to_copy) {
-    og::PathGeometric copy(si);
-    copy = to_copy;
-    return copy;
-}
-
 struct RunResult {
     std::vector<std::optional<std::array<RobotPath, 3>>> apple_approaches;
     std::vector<RobotPath> full_paths;
 };
 
-RunResult planpaths(const planning_scene::PlanningScenePtr &scene,
-                    const std::shared_ptr<SphereShell> &shell,
-                    const std::vector<Apple> &apples) {
-
-    auto state_space = std::make_shared<DroneStateSpace>(
-            ompl_interface::ModelBasedStateSpaceSpecification(scene->getRobotModel(), "whole_body"), 10.0);
-    auto si = initSpaceInformation(scene, scene->getRobotModel(), state_space);
-    auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
-
-    auto allocPlanner = [](const shared_ptr<ompl::base::SpaceInformation> &si) {
-        return make_shared<ompl::geometric::RRTstar>(si);
-    };
-
-    OMPLSphereShellWrapper ompl_shell(shell, si);
-
-    auto approaches =
-            apples |
-            views::transform([&](const Apple &apple) {
-                return planApproachesForApple(si, objective, apple, ompl_shell, allocPlanner);
-            }) | to_vector;
-
-    moveit::core::RobotState start_state = stateOutsideTree(scene->getRobotModel());
-
-    GreatcircleDistanceHeuristics gdh(start_state.getGlobalLinkTransform("end_effector").translation(),
-                                      GreatCircleMetric(shell->getCenter()));
-
-    ompl::base::ScopedState start(si);
-    state_space->copyToOMPLState(start.get(), start_state);
-
-    auto full_paths = views::iota(0, 3)
-                      | views::transform([&](auto nm_i) {
-        auto approach_pairs = appleApproachPairs(apples, approaches, nm_i);
-        auto optimized_pairs = optimizeApproachOrder(gdh, *state_space, approach_pairs);
-        auto path_ompl = planFullPath(si, start.get(), ompl_shell, optimized_pairs);
-        return omplPathToRobotPath(path_ompl);
-    }) | to_vector;
-
-    // Don't forget to convert these to RobotPath
-    auto approaches_moveit = approaches | views::transform([&](auto it) -> std::optional<std::array<RobotPath, 3> > {
-        if (it.has_value()) {
-            array<RobotPath, 3> result{
-                    omplPathToRobotPath((*it)[0]),
-                    omplPathToRobotPath((*it)[1]),
-                    omplPathToRobotPath((*it)[2])
-            };
-            return {result};
-        } else {
-            return {};
-        }
-    }) | to_vector;
-
-    return {
-            approaches_moveit,
-            full_paths
-    };
-}
 
 Json::Value collectRunStats(const string approach_names[3], const RunResult &result) {
     Json::Value run_stats;
@@ -168,37 +110,6 @@ Json::Value collectRunStats(const string approach_names[3], const RunResult &res
         }
     }
     return run_stats;
-}
-
-vector<RunResult>
-parallelPlanRuns(const moveit::core::RobotModelPtr &drone,
-                 const moveit_msgs::PlanningScene &scene_msg,
-                 const vector<Apple> &apples,
-                 const size_t NUM_RUNS,
-                 const shared_ptr<SphereShell> &shell) {
-
-    mutex result_mutex;
-    vector<RunResult> results;
-    thread_pool pool(4);
-
-    for (size_t run_i = 0; run_i < NUM_RUNS; ++run_i) {
-        pool.push_task([&]() {
-            auto paths = planpaths(
-                    setupPlanningScene(scene_msg, drone),
-                    shell,
-                    apples
-            );
-
-            {
-                scoped_lock lock(result_mutex);
-                cout << "Run done " << run_i << endl;
-                results.push_back(paths);
-            }
-        });
-    }
-
-    pool.wait_for_tasks();
-    return results;
 }
 
 int main(int argc, char **argv) {
@@ -224,9 +135,6 @@ int main(int argc, char **argv) {
     };
 
     auto ints = boost::irange(0, NUM_RUNS);
-
-    vector<RunResult> results = parallelPlanRuns(drone, scene_msg, apples, NUM_RUNS,
-                                                 make_shared<SphereShell>(SPHERE_CENTER, SPHERE_RADIUS));
 
     Json::Value statistics;
 

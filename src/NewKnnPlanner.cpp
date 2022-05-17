@@ -33,9 +33,11 @@ NewKnnPlanner::buildGNAT(const ompl::base::State *start, const vector <ompl::bas
     return gnat;
 }
 
-NewKnnPlanner::PlanResult NewKnnPlanner::plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
-                               const std::vector <ompl::base::GoalPtr> &goals, StateToGoalFn plan_state_to_goal,
-                               StateToStateFn plan_state_to_state) {
+NewKnnPlanner::PlanResult NewKnnPlanner::plan(
+        const ompl::base::SpaceInformationPtr &si,
+        const ompl::base::State *start,
+        const std::vector <ompl::base::GoalPtr> &goals,
+        SingleGoalPlannerMethods& methods) {
 
     auto gnat = buildGNAT(start, goals);
 
@@ -57,7 +59,7 @@ NewKnnPlanner::PlanResult NewKnnPlanner::plan(const ompl::base::SpaceInformation
         // For all, plan a path
         for (auto &apple: nearest_k) {
 
-            if (auto result = plan_state_to_goal(last_state, goals[get<GoalIdAndGoal>(apple).first])) {
+            if (auto result = methods.state_to_goal(last_state, goals[get<GoalIdAndGoal>(apple).first])) {
                 paths.emplace_back(apple,result.value());
             }
         }

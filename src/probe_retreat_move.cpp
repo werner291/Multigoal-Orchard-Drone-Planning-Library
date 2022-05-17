@@ -40,6 +40,7 @@ ompl::geometric::PathGeometric planFullPath(
         const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches) {
 
 
+    // FIXME there's a bug in here, I think.
     ompl::geometric::PathGeometric fullPath(si, start);
     for (size_t approachIdx: boost::irange<size_t>(0, approaches.size()-1)) {
 
@@ -100,6 +101,20 @@ ompl::geometric::PathGeometric optimizeExit(const Apple &apple,
 
     return path;
 
+}
+
+[[nodiscard]] ompl::geometric::PathGeometric optimizeExit(const ompl::base::Goal* goal,
+                                                          const ompl::geometric::PathGeometric& path,
+                                                          const ompl::base::OptimizationObjectivePtr &objective,
+                                                          const OMPLSphereShellWrapper &shell,
+                                                          const std::shared_ptr<ompl::base::SpaceInformation> &si) {
+    return optimizeExit(
+            Apple { goal->as<DroneEndEffectorNearTarget>()->getTarget(), {0.0,0.0,0.0} },
+            path,
+            objective,
+            shell,
+            si
+    );
 }
 
 Apple appleFromApproach(const ompl_interface::ModelBasedStateSpace &state_space,

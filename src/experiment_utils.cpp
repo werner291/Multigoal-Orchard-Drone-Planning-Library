@@ -1,4 +1,14 @@
 
+#include <utility>
+#include <fstream>
+#include <ompl/datastructures/NearestNeighborsGNAT.h>
+#include <range/v3/all.hpp>
+#include "../src/SingleGoalPlannerMethods.h"
+#include "../src/NewKnnPlanner.h"
+#include "../src/probe_retreat_move.h"
+#include "../src/greatcircle.h"
+#include "../src/thread_pool.hpp"
+#include "../src/experiment_utils.h"
 #include <boost/range/adaptor/transformed.hpp>
 #include <execution>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
@@ -410,4 +420,14 @@ moveit::core::RobotState randomStateOutsideTree(const moveit::core::RobotModelPt
     start_state.update(true);
 
     return start_state;
+}
+
+std::vector<ompl::base::GoalPtr> constructNewAppleGoals(
+        const std::shared_ptr<ompl::base::SpaceInformation> &si,
+        const std::vector<Apple> &apples) {
+
+    return apples | ranges::views::transform([&,si=si](auto&& apple) {
+                        auto goal = std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center);
+                        return std::static_pointer_cast<ompl::base::Goal>(goal);
+                    }) | ranges::to_vector;
 }

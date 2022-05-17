@@ -6,8 +6,10 @@
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/base/ScopedState.h>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
+#include <ompl/base/Goal.h>
 #include "procedural_tree_generation.h"
 #include "moveit_conversions.h"
+#include "ompl_custom.h"
 
 class CollisionFreeShell {
 
@@ -77,6 +79,10 @@ public:
     void state_on_shell(const Apple& apple, ompl::base::State* st) const;
 
     ompl::geometric::PathGeometric path_on_shell(const Apple& a, const Apple& b);
+
+    void state_on_shell(const ompl::base::Goal* apple, ompl::base::State* st) const;
+
+    ompl::geometric::PathGeometric path_on_shell(const ompl::base::Goal* a, const ompl::base::Goal* b);
 
 
 };

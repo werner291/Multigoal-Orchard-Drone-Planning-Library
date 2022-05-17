@@ -57,6 +57,8 @@ moveit::core::RobotModelPtr loadRobotModel();
 std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>>
 constructAppleGoals(const std::shared_ptr<ompl::base::SpaceInformation> &si, const std::vector<Apple> &apples);
 
+std::vector<ompl::base::GoalPtr> constructNewAppleGoals(const std::shared_ptr<ompl::base::SpaceInformation> &si, const std::vector<Apple> &apples);
+
 /**
  *
  * Pick a pair of distinct integers between `0` and `collection_size` (excluded) uniformly at random.

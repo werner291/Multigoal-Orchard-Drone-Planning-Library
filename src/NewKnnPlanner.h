@@ -32,8 +32,7 @@ public:
     PlanResult plan(const ompl::base::SpaceInformationPtr& si,
                     const ompl::base::State* start,
                     const std::vector<ompl::base::GoalPtr> &goals,
-                    StateToGoalFn plan_state_to_goal,
-                    StateToStateFn plan_state_to_state) override;
+                    SingleGoalPlannerMethods& methods) override;
 };
 
 

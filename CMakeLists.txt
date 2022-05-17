@@ -259,7 +259,7 @@ add_library(${PROJECT_NAME}_shared
         src/robot_path.cpp
         src/robot_path.h
         src/NewMultiGoalPlanner.cpp
-        src/NewMultiGoalPlanner.h src/NewKnnPlanner.cpp src/NewKnnPlanner.h src/DistanceHeuristics.cpp src/DistanceHeuristics.h)
+        src/NewMultiGoalPlanner.h src/NewKnnPlanner.cpp src/NewKnnPlanner.h src/DistanceHeuristics.cpp src/DistanceHeuristics.h src/SingleGoalPlannerMethods.cpp src/SingleGoalPlannerMethods.h src/ShellPathPlanner.cpp src/ShellPathPlanner.h)
 
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 

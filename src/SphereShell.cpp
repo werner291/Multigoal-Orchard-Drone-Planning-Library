@@ -184,3 +184,18 @@ std::shared_ptr<CollisionFreeShell> OMPLSphereShellWrapper::getShell() const {
     return shell;
 }
 
+void OMPLSphereShellWrapper::state_on_shell(const ompl::base::Goal *apple, ompl::base::State *st) const {
+    return state_on_shell(
+            Apple { apple->as<DroneEndEffectorNearTarget>()->getTarget(), {0.0,0.0,0.0} },
+            st
+    );
+}
+
+ompl::geometric::PathGeometric
+OMPLSphereShellWrapper::path_on_shell(const ompl::base::Goal *a, const ompl::base::Goal *b) {
+    return path_on_shell(
+            Apple { a->as<DroneEndEffectorNearTarget>()->getTarget(), {0.0,0.0,0.0} },
+            Apple { b->as<DroneEndEffectorNearTarget>()->getTarget(), {0.0,0.0,0.0} }
+    );
+}
+
