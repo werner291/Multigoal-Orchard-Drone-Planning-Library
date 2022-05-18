@@ -16,7 +16,7 @@ public:
     };
 
     struct PlanResult {
-        std::vector<PathSegment> segments_;
+        std::vector<PathSegment> segments;
 
         double length() const;
     };

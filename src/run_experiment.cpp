@@ -28,7 +28,7 @@ ompl::base::SpaceInformationPtr loadSpaceInformation(
 Json::Value toJson(const NewMultiGoalPlanner::PlanResult& result) {
     Json::Value run_stats;
     run_stats["final_path_length"] = result.length();
-    run_stats["goals_visited"] = (int) result.segments_.size();
+    run_stats["goals_visited"] = (int) result.segments.size();
     return run_stats;
 }
 

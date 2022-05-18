@@ -1,39 +1,13 @@
-#include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
 #include "prm_multigoal.h"
 #include "DronePathLengthObjective.h"
 #include "ompl_custom.h"
-#include "planning_scene_diff_message.h"
 #include "traveling_salesman.h"
 #include "probe_retreat_move.h"
 
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/astar_search.hpp>
 #include <range/v3/all.hpp>
-
-struct AStarFoundGoal {
-};  // exception for termination
-
-// visitor that terminates when we find the goal
-// V is the vertex type
-template<typename V>
-class AStarGoalVisitor : public boost::default_astar_visitor {
-public:
-    AStarGoalVisitor(const V &goal) : goal_(goal) {
-    }
-
-    // G is the graph type
-    template<typename G>
-    void examine_vertex(const V &u, const G & /*unused*/) {
-        if (u == goal_)
-            throw AStarFoundGoal();
-    }
-
-private:
-    V goal_;
-};
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -99,10 +73,6 @@ public:
         return same_component;
     }
 
-    ob::State *get_state(Vertex v) {
-        return stateProperty_[v];
-    }
-
 };
 
 struct AppleIdVertexPair {
@@ -114,16 +84,15 @@ struct AppleIdVertexPair {
 /// Then, return only the ones where the connection succeeded.
 /// Use rangev3 where possible
 std::vector<AppleIdVertexPair> createGoalVertices(PRMCustom &prm,
-                                                 const std::vector<Apple> &apples,
+                                                 const std::vector<ompl::base::GoalPtr> &apples,
                                                  PRMCustom::Vertex start,
                                                  const ompl::base::SpaceInformationPtr &si,
                                                  int samples_per_goal) {
 
     using namespace ranges;
 
-    auto connect_coal = [&](const Apple &apple) {
-        DroneEndEffectorNearTarget goal(si, 0.05, apple.center);
-        return prm.tryConnectGoal(goal, samples_per_goal);
+    auto connect_coal = [&](const ompl::base::GoalPtr &goal) {
+        return prm.tryConnectGoal(*goal->as<ompl::base::GoalSampleableRegion>(), samples_per_goal);
     };
 
     auto goal_vertices = apples
@@ -147,92 +116,26 @@ std::vector<AppleIdVertexPair> createGoalVertices(PRMCustom &prm,
 
 }
 
-/**
- * Create the NxN path matrix for the given set of vertices.
- *
- * If all vertices are in the same component, then all paths will be valid.
- *
- * @param prm The PRM that contains the vertices
- * @param vertices The vertices to plan between.
- * @return A path matrix.
- */
-PathMatrix pathMatrix(std::shared_ptr<PRMCustom> &prm, const std::vector<PRMCustom::Vertex> &vertices) {
 
-    // Note: it should be possible to be faster than A* if we use an algorithm
-    // that takes advantage of the fact that we're trying to compute multiple paths.
-
-    return vertices | ranges::views::transform([&](PRMCustom::Vertex v) {
-        return vertices | ranges::views::transform([&](PRMCustom::Vertex u) {
-            return prm->path_distance(v, u);
-        }) | ranges::to_vector;
-    }) | ranges::to_vector;
-}
-
-std::vector<size_t> tsp_path_matrix(const ob::ScopedState<> &start_state_ompl,
-                                    std::shared_ptr<PRMCustom> &prm,
-                                    const std::vector<ob::PathPtr> &paths_from_start,
-                                    const std::vector<std::vector<ob::PathPtr>> &paths) {
-
-    assert(paths_from_start.size() == paths.size());
-
-    return tsp_open_end(
-            [&](size_t i) {return paths_from_start[i]->length();},
-            [&](size_t i, size_t j) {return paths[i][j]->length();},
-            paths_from_start.size()
-    );
-}
-
-
-std::vector<ob::PathPtr> getPathsFromStart(PRMCustom &prm, PRMCustom::Vertex start_state_node,
-                                           const std::vector<PRMCustom::Vertex> &goalVertices) {
-    return goalVertices | views::transform([&](PRMCustom::Vertex goal_vertex) {
-        return prm.path_distance(start_state_node, goal_vertex);
-    }) | to_vector;
-}
-
-// Should consider using pointers here
-std::vector<og::PathGeometric> ordering_to_path_segments(const std::vector<ob::PathPtr> &paths_from_start,
-                                                         const PathMatrix &paths,
-                                                         const std::vector<size_t> &ordering) {
-
-    std::vector<og::PathGeometric> path_segments;
-
-    path_segments.push_back(*paths_from_start[ordering[0]]->as<og::PathGeometric>());
-
-    for (size_t i = 1; i < ordering.size(); ++i) {
-        auto path = *paths[ordering[i - 1]][ordering[i]]->as<og::PathGeometric>();
-        path_segments.push_back(path);
-    }
-
-    return path_segments;
-
-}
-
-MultiApplePlanResult
-planByApples(const moveit::core::RobotState &start_state, const planning_scene::PlanningSceneConstPtr &scene,
-             const std::vector<Apple> &apples, double prm_build_time, bool optimize_segments, size_t samplesPerGoal) {
-
-    auto state_space = std::make_shared<DroneStateSpace>(
-            ompl_interface::ModelBasedStateSpaceSpecification(scene->getRobotModel(), "whole_body"), TRANSLATION_BOUND);
-    auto si = initSpaceInformation(scene, scene->getRobotModel(), state_space);
-    auto objective = std::make_shared<DronePathLengthObjective>(si);
-
-    ob::ScopedState start_state_ompl(si);
-    state_space->copyToOMPLState(start_state_ompl.get(), start_state);
+NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(
+        const ompl::base::SpaceInformationPtr &si,
+        const ompl::base::State *start,
+        const std:: vector<ompl::base::GoalPtr> &goals,
+        SingleGoalPlannerMethods &ptp) {
 
     std::cout << "Creating PRM" << std::endl;
     auto prm = std::make_shared<PRMCustom>(si);
 
     auto pdef = std::make_shared<ob::ProblemDefinition>(si);
-//    pdef->setOptimizationObjective(objective);
+    pdef->setOptimizationObjective(ptp.getOptimizationObjective());
     prm->setProblemDefinition(pdef);
 
     prm->constructRoadmap(ob::timedPlannerTerminationCondition(prm_build_time));
 
     std::cout << "Planning..." << std::endl;
-    auto start_state_node = prm->insert_state(start_state_ompl.get());
+    auto start_state_node = prm->insert_state(start);
 
-    auto goalVertices = createGoalVertices(*prm, apples, start_state_node, si, samplesPerGoal);
+    auto goalVertices = createGoalVertices(*prm, goals, start_state_node, si, samplesPerGoal);
 
     auto vertices_only = goalVertices | views::transform([&](auto v) { return v.vertex; }) | to_vector;
 
@@ -240,11 +143,11 @@ planByApples(const moveit::core::RobotState &start_state, const planning_scene::
             [&](auto pair) {
                 auto path = prm->path_distance(start_state_node, goalVertices[pair.first].vertex[pair.second]);
                 return path ? path->length() : std::numeric_limits<double>::infinity();
-                },
+            },
             [&](auto pair_i, auto pair_j) {
                 auto path = prm->path_distance(goalVertices[pair_i.first].vertex[pair_i.second], goalVertices[pair_j.first].vertex[pair_j.second]);
                 return path ? path->length() : std::numeric_limits<double>::infinity();
-                },
+            },
             goalVertices | views::transform([&](auto v) { return v.vertex.size(); }) | to_vector
     );
 
@@ -260,22 +163,20 @@ planByApples(const moveit::core::RobotState &start_state, const planning_scene::
 
     if (optimize_segments) {
         path_segments |= actions::transform([&](auto &path) {
-            return optimize(path, objective, si);
+            return optimize(path, ptp.getOptimizationObjective(), si);
         });
     }
 
-    auto moveit_segments = path_segments | views::transform([&](auto &path) {
-        return omplPathToRobotPath(path);
-    });
-
-    std::vector<MultiApplePlanResult::AppleVisit> apple_visits;
-    RobotPath fullPath;
+    PlanResult result;
 
     for (const auto &[segment, order_entry]: views::zip(path_segments, ordering)) {
-        fullPath.append(omplPathToRobotPath(segment));
-        apple_visits.push_back(MultiApplePlanResult::AppleVisit { goalVertices[order_entry.first].apple_id, fullPath.waypoints.size() - 1 });
+        result.segments.push_back({
+            goalVertices[order_entry.first].apple_id, segment
+        });
     }
 
-    return { fullPath, apple_visits };
-
+    return result;
 }
+
+MultigoalPrmStar::MultigoalPrmStar(double prmBuildTime, size_t samplesPerGoal, bool optimizeSegments) : prm_build_time(
+        prmBuildTime), samplesPerGoal(samplesPerGoal), optimize_segments(optimizeSegments) {}

@@ -46,7 +46,7 @@ NewMultiGoalPlanner::PlanResult ShellPathPlanner::assembleFullPath(
        NewMultiGoalPlanner::PlanResult &result,
        ompl::geometric::PathGeometric &initial_approach) const {
 
-    result.segments_.push_back({approaches[ordering[0]].first, initial_approach});
+    result.segments.push_back({approaches[ordering[0]].first, initial_approach});
 
     for (size_t i = 1; i < ordering.size(); ++i) {
 
@@ -61,7 +61,7 @@ NewMultiGoalPlanner::PlanResult ShellPathPlanner::assembleFullPath(
                 approaches[ordering[i]]
                 );
 
-        result.segments_.push_back({
+        result.segments.push_back({
             approaches[ordering[0]].first,
             segment_path
         });
