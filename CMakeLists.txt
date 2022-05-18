@@ -268,8 +268,6 @@ add_executable(${PROJECT_NAME}_vizualized src/run_vizualized.cpp)
 
 add_executable(${PROJECT_NAME}_benchmark src/run_benchmarked.cpp)
 
-add_executable(${PROJECT_NAME}_at_benchmark experiments/at_benchmark.cpp)
-
 add_executable(${PROJECT_NAME}_ptp_correlation experiments/ptp_correlation.cpp)
 
 add_executable(${PROJECT_NAME}_euclidean_tsp experiments/euclidean_tsp.cpp)
