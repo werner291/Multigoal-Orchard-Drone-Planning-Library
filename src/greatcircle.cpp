@@ -1,5 +1,5 @@
 #include <utility>
-#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
+#include "../src/DronePathLengthObjective.h"
 #include "greatcircle.h"
 
 GreatCircleMetric::GreatCircleMetric(Eigen::Vector3d sphereCenter) : sphere_center(std::move(sphereCenter)) {}

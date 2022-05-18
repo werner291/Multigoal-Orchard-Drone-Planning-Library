@@ -3,7 +3,7 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
 #include "prm_multigoal.h"
-#include "ManipulatorDroneMoveitPathLengthObjective.h"
+#include "DronePathLengthObjective.h"
 #include "ompl_custom.h"
 #include "planning_scene_diff_message.h"
 #include "traveling_salesman.h"
@@ -215,7 +215,7 @@ planByApples(const moveit::core::RobotState &start_state, const planning_scene::
     auto state_space = std::make_shared<DroneStateSpace>(
             ompl_interface::ModelBasedStateSpaceSpecification(scene->getRobotModel(), "whole_body"), TRANSLATION_BOUND);
     auto si = initSpaceInformation(scene, scene->getRobotModel(), state_space);
-    auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
+    auto objective = std::make_shared<DronePathLengthObjective>(si);
 
     ob::ScopedState start_state_ompl(si);
     state_space->copyToOMPLState(start_state_ompl.get(), start_state);

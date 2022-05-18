@@ -7,7 +7,7 @@
 #include "../src/planning_scene_diff_message.h"
 #include "../src/traveling_salesman.h"
 #include "../src/experiment_utils.h"
-#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
+#include "../src/DronePathLengthObjective.h"
 
 struct PlanningResult {
     ompl::geometric::PathGeometric path;
@@ -17,7 +17,7 @@ struct PlanningResult {
 PlanningResult planOneByOneInOrder(const std::vector<Apple> &apples, const std::vector<size_t> &ordering_euclidean,
                                                    const std::shared_ptr<ompl::base::SpaceInformation> &si,
                                                    const std::shared_ptr<ompl::base::Planner> &planner,
-                                                   const std::shared_ptr<ManipulatorDroneMoveitPathLengthObjective> &objective,
+                                                   const std::shared_ptr<DronePathLengthObjective> &objective,
                                                    const ompl::base::State *start_state) {
 
     ompl::geometric::PathGeometric path(si, start_state);
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
 
             // FIXME see https://github.com/ompl/ompl/issues/885 auto planner = std::make_shared<ompl::geometric::AITstar>(si);
             auto planner = std::make_shared<ompl::geometric::PRMstar>(si);
-            auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
+            auto objective = std::make_shared<DronePathLengthObjective>(si);
 
             ompl::base::ScopedState start(si);
             state_space->copyToOMPLState(start.get(), start_state);

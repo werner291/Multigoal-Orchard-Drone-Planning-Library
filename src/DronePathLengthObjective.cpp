@@ -1,15 +1,15 @@
 
-#include "ManipulatorDroneMoveitPathLengthObjective.h"
+#include "DronePathLengthObjective.h"
 #include "InformedManipulatorDroneSampler.h"
 
-ManipulatorDroneMoveitPathLengthObjective::ManipulatorDroneMoveitPathLengthObjective(const ompl::base::SpaceInformationPtr &si)
+DronePathLengthObjective::DronePathLengthObjective(const ompl::base::SpaceInformationPtr &si)
         : PathLengthOptimizationObjective(si) {
 
 
 
         }
 
-ompl::base::InformedSamplerPtr ManipulatorDroneMoveitPathLengthObjective::allocInformedStateSampler(
+ompl::base::InformedSamplerPtr DronePathLengthObjective::allocInformedStateSampler(
      const ompl::base::ProblemDefinitionPtr &probDefn, unsigned int maxNumberCalls) const
  {
      return

@@ -391,7 +391,7 @@ ExperimentPlanningContext loadContext(const moveit::core::RobotModelConstPtr &dr
     auto scene = setupPlanningScene(scene_msg, drone);
     auto si = initSpaceInformation(scene, scene->getRobotModel(), state_space);
 
-    auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
+    auto objective = std::make_shared<DronePathLengthObjective>(si);
 
     return {
             state_space,

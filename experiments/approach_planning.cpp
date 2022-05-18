@@ -5,7 +5,7 @@
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 
 #include "../src/experiment_utils.h"
-#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
+#include "../src/DronePathLengthObjective.h"
 #include "../src/SphereShell.h"
 #include "../src/ros_utilities.h"
 
@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     auto state_space = std::make_shared<DroneStateSpace>(
             ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"), 5.0);
     auto si = initSpaceInformation(setupPlanningScene(scene_msg, drone), drone, state_space);
-    auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
+    auto objective = std::make_shared<DronePathLengthObjective>(si);
 
     const SphereShell sphereShell(SPHERE_CENTER, 1.8);
 

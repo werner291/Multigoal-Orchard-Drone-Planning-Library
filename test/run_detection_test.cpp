@@ -6,7 +6,7 @@
 #include "../src/experiment_utils.h"
 #include "test_utils.h"
 #include "../src/multigoal/goals_gnat.h"
-#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
+#include "../src/DronePathLengthObjective.h"
 
 TEST(RunDetectionTests, run_detection_test) {
 

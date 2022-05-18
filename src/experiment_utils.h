@@ -14,7 +14,7 @@
 #include "planning_scene_diff_message.h"
 #include "procedural_tree_generation.h"
 #include "robot_path.h"
-#include "ManipulatorDroneMoveitPathLengthObjective.h"
+#include "DronePathLengthObjective.h"
 
 struct StateProjection {
     ompl_interface::ModelBasedStateSpace *state_space;

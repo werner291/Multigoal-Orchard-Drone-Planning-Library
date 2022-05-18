@@ -2,7 +2,7 @@
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include "../src/experiment_utils.h"
 #include "../test/test_utils.h"
-#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
+#include "../src/DronePathLengthObjective.h"
 #include "../src/json_utils.h"
 
 
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
     auto goal_samples = clustering::takeInitialSamples(goals, si, SAMPLES_PER_GOAL);
 
     auto prms = std::make_shared<ompl::geometric::AITstar>(si);
-    auto pathLengthObjective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
+    auto pathLengthObjective = std::make_shared<DronePathLengthObjective>(si);
     auto sampler = std::make_shared<InformedGaussian>(state_space.get(), 2.5);
 
     PointToPointPlanner ptp(prms, pathLengthObjective, sampler);

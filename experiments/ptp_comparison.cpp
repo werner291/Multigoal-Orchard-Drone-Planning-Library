@@ -8,7 +8,7 @@
 #include "../src/thread_pool.hpp"
 
 #include "../src/experiment_utils.h"
-#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
+#include "../src/DronePathLengthObjective.h"
 
 
 int main(int argc, char **argv) {
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     const std::function<ompl::base::OptimizationObjectivePtr(
             const ompl::base::SpaceInformationPtr &)> objective_allocators[] = {
             [](const auto &si) -> ompl::base::OptimizationObjectivePtr {
-                return std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
+                return std::make_shared<DronePathLengthObjective>(si);
             },
     };
 

@@ -11,7 +11,7 @@
 #include "../src/LeavesCollisionChecker.h"
 #include "../src/multigoal/approach_table.h"
 #include "../src/experiment_utils.h"
-#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
+#include "../src/DronePathLengthObjective.h"
 #include "../src/DroneStateConstraintSampler.h"
 #include "../src/multigoal/visitation_order_strategy.h"
 

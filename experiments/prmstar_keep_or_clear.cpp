@@ -5,7 +5,7 @@
 #include "../src/thread_pool.hpp"
 
 #include "../src/experiment_utils.h"
-#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
+#include "../src/DronePathLengthObjective.h"
 
 
 double planFromStateToState(const PointToPointPair &pair, std::shared_ptr<ompl::geometric::PRMstar> &planner,
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
     auto[scene_msg, apples] = createMeshBasedAppleTreePlanningSceneMessage(appletree);
 
     auto alloc_objective = [](const auto &si) -> ompl::base::OptimizationObjectivePtr {
-        return std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
+        return std::make_shared<DronePathLengthObjective>(si);
     };
 
 //    const std::chrono::milliseconds planning_times[] = {

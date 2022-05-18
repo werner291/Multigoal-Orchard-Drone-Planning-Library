@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <range/v3/range/conversion.hpp>
 #include "../src/experiment_utils.h"
-#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
+#include "../src/DronePathLengthObjective.h"
 #include "../src/SphereShell.h"
 #include "../src/ExperimentVisualTools.h"
 

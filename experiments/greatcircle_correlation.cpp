@@ -4,7 +4,7 @@
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include "../src/experiment_utils.h"
 #include "../src/thread_pool.hpp"
-#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
+#include "../src/DronePathLengthObjective.h"
 #include "../src/greatcircle.h"
 #include "../src/probe_retreat_move.h"
 
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
             state_space->setup();
             auto si = initSpaceInformation(setupPlanningScene(scene.scene_msg, drone), drone, state_space);
 
-            auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(si);
+            auto objective = std::make_shared<DronePathLengthObjective>(si);
 
             double euclidean_distance = (scene.apples[pair.from_target].center - scene.apples[pair.to_target].center).norm();
             double gcm_distance = gsm.measure(scene.apples[pair.from_target].center, scene.apples[pair.to_target].center);

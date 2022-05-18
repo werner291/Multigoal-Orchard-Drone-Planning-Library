@@ -6,7 +6,7 @@
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
 
-#include "../src/ManipulatorDroneMoveitPathLengthObjective.h"
+#include "../src/DronePathLengthObjective.h"
 #include "../src/experiment_utils.h"
 #include "test_utils.h"
 

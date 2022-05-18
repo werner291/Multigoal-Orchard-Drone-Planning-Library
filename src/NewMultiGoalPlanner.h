@@ -1,4 +1,6 @@
 
+#ifndef NEW_MULTI_GOAL_PLANNER_H
+#define NEW_MULTI_GOAL_PLANNER_H
 
 #include <cstddef>
 #include <ompl/geometric/PathGeometric.h>
@@ -15,6 +17,8 @@ public:
 
     struct PlanResult {
         std::vector<PathSegment> segments_;
+
+        double length() const;
     };
 
     virtual PlanResult plan(const ompl::base::SpaceInformationPtr& si,
@@ -22,3 +26,5 @@ public:
                             const std::vector<ompl::base::GoalPtr> &goals,
                             SingleGoalPlannerMethods& methods) = 0;
 };
+
+#endif // NEW_MULTI_GOAL_PLANNER_H
