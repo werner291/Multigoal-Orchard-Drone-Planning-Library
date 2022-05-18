@@ -4,6 +4,7 @@
 
 #include <variant>
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
+#include <json/value.h>
 #include "NewMultiGoalPlanner.h"
 #include "DistanceHeuristics.h"
 
@@ -13,7 +14,6 @@ class NewKnnPlanner : public NewMultiGoalPlanner {
 
     const std::shared_ptr<const OmplDistanceHeuristics> distance_heuristics_;
 
-private:
     size_t k;
 
     typedef std::pair<size_t,const ompl::base::Goal*> GoalIdAndGoal;
@@ -33,6 +33,8 @@ public:
                     const ompl::base::State* start,
                     const std::vector<ompl::base::GoalPtr> &goals,
                     SingleGoalPlannerMethods& methods) override;
+
+    [[nodiscard]] Json::Value parameters() const override;
 };
 
 

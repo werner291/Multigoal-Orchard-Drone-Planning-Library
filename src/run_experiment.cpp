@@ -62,7 +62,7 @@ void run_planner_experiment(const vector<NewMultiGoalPlannerAllocatorFn> &alloca
     // Load the apple tree model with some metadata.
     auto scene_info = createMeshBasedAppleTreePlanningSceneMessage("appletree");
 
-    const size_t NUM_RUNS = 1;
+    const size_t NUM_RUNS = 100;
 
     const auto run_indices = ranges::views::iota(0, (int) NUM_RUNS);
 

@@ -180,3 +180,11 @@ NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(
 
 MultigoalPrmStar::MultigoalPrmStar(double prmBuildTime, size_t samplesPerGoal, bool optimizeSegments) : prm_build_time(
         prmBuildTime), samplesPerGoal(samplesPerGoal), optimize_segments(optimizeSegments) {}
+
+Json::Value MultigoalPrmStar::parameters() const {
+    Json::Value params;
+    params["prm_build_time"] = prm_build_time;
+    params["samples_per_goal"] = (int) samplesPerGoal;
+    params["optimize_segments"] = optimize_segments;
+    return params;
+}

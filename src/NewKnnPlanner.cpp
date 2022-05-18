@@ -89,3 +89,13 @@ NewKnnPlanner::NewKnnPlanner(const shared_ptr<const OmplDistanceHeuristics> &dis
 
 }
 
+Json::Value NewKnnPlanner::parameters() const {
+    Json::Value params;
+
+    params["k"] = (int) k;
+    params["distance_heuristics"] = distance_heuristics_->name();
+
+    return params;
+
+}
+

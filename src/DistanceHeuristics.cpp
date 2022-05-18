@@ -1,6 +1,8 @@
 
 #include "DistanceHeuristics.h"
 
+#include <utility>
+
 double EuclideanOmplDistanceHeuristics::state_to_goal(const ompl::base::State *a, const ompl::base::Goal *b) const {
     moveit::core::RobotState sta(state_space_->getRobotModel());
 
@@ -15,8 +17,12 @@ double EuclideanOmplDistanceHeuristics::goal_to_goal(const ompl::base::Goal *a, 
     return (a->as<DroneEndEffectorNearTarget>()->getTarget() - b->as<DroneEndEffectorNearTarget>()->getTarget()).norm();
 }
 
-EuclideanOmplDistanceHeuristics::EuclideanOmplDistanceHeuristics(const std::shared_ptr<DroneStateSpace> &stateSpace)
-        : state_space_(stateSpace) {}
+EuclideanOmplDistanceHeuristics::EuclideanOmplDistanceHeuristics(std::shared_ptr<DroneStateSpace> stateSpace)
+        : state_space_(std::move(stateSpace)) {}
+
+std::string EuclideanOmplDistanceHeuristics::name() const {
+    return "Euclidean";
+}
 
 double GreatCircleOmplDistanceHeuristics::state_to_goal(const ompl::base::State *a, const ompl::base::Goal *b) const {
     moveit::core::RobotState sta(state_space_->getRobotModel());
@@ -32,6 +38,10 @@ double GreatCircleOmplDistanceHeuristics::goal_to_goal(const ompl::base::Goal *a
     return gcm.measure(a->as<DroneEndEffectorNearTarget>()->getTarget(), b->as<DroneEndEffectorNearTarget>()->getTarget());
 }
 
-GreatCircleOmplDistanceHeuristics::GreatCircleOmplDistanceHeuristics(const GreatCircleMetric &gcm,
-                                                                     const std::shared_ptr<DroneStateSpace> &stateSpace)
-        : gcm(gcm), state_space_(stateSpace) {}
+GreatCircleOmplDistanceHeuristics::GreatCircleOmplDistanceHeuristics(GreatCircleMetric gcm,
+                                                                     std::shared_ptr<DroneStateSpace> stateSpace)
+        : gcm(std::move(gcm)), state_space_(std::move(stateSpace)) {}
+
+std::string GreatCircleOmplDistanceHeuristics::name() const {
+    return "GreatCircle";
+}

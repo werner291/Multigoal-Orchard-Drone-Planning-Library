@@ -14,19 +14,21 @@ public:
 
     virtual double goal_to_goal(const ompl::base::Goal *, const ompl::base::Goal *) const = 0;
 
+    [[nodiscard]] virtual std::string name() const = 0;
 };
 
 class EuclideanOmplDistanceHeuristics : public OmplDistanceHeuristics {
 
     std::shared_ptr<DroneStateSpace> state_space_;
-public:
-    EuclideanOmplDistanceHeuristics(const std::shared_ptr<DroneStateSpace> &stateSpace);
 
-private:
+public:
+    EuclideanOmplDistanceHeuristics(std::shared_ptr<DroneStateSpace> stateSpace);
 
     double state_to_goal(const ompl::base::State *a, const ompl::base::Goal *b) const override;
 
     double goal_to_goal(const ompl::base::Goal *a, const ompl::base::Goal *b) const override;
+
+    [[nodiscard]] std::string name() const override;
 
 };
 
@@ -34,14 +36,15 @@ class GreatCircleOmplDistanceHeuristics : public OmplDistanceHeuristics {
 
     GreatCircleMetric gcm;
     std::shared_ptr<DroneStateSpace> state_space_;
-public:
-    GreatCircleOmplDistanceHeuristics(const GreatCircleMetric &gcm, const std::shared_ptr<DroneStateSpace> &stateSpace);
 
-private:
+public:
+    GreatCircleOmplDistanceHeuristics(GreatCircleMetric gcm, std::shared_ptr<DroneStateSpace> stateSpace);
 
     double state_to_goal(const ompl::base::State *a, const ompl::base::Goal *b) const override;
 
     double goal_to_goal(const ompl::base::Goal *a, const ompl::base::Goal *b) const override;
+
+    [[nodiscard]] std::string name() const override;
 
 };
 

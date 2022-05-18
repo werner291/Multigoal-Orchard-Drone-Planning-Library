@@ -62,6 +62,8 @@ public:
             const OMPLSphereShellWrapper &ompl_shell,
             const ompl::base::GoalPtr &goal) const;
 
+    Json::Value parameters() const override;
+
 };
 
 #endif //NEW_PLANNERS_SHELLPATHPLANNER_H

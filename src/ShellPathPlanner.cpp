@@ -169,3 +169,12 @@ std::optional<ompl::geometric::PathGeometric> ShellPathPlanner::planApproachForG
 
     return approach_path;
 }
+
+Json::Value ShellPathPlanner::parameters() const {
+    Json::Value result;
+
+    result["distance_heuristics"] = distance_heuristics->name();
+    result["apply_shellstate_optimization"] = apply_shellstate_optimization;
+
+    return result;
+}

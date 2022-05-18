@@ -28,6 +28,8 @@ public:
                     const std:: vector<ompl::base::GoalPtr> &goals,
                     SingleGoalPlannerMethods &methods) override;
 
+    Json::Value parameters() const override;
+
 };
 
 #endif //NEW_PLANNERS_PRM_MULTIGOAL_H
