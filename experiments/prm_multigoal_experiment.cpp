@@ -14,7 +14,7 @@ using namespace ranges;
 int main(int argc, char **argv) {
 
     const auto samples_per_goal = ranges::views::iota(1,3);
-    const double plan_times_seconds[] = {1.0, 2.0, 5.0, 10.0, 15.0/*, 20.0*/};
+    const double plan_times_seconds[] = {1.0, 2.0, 5.0, 10.0, 15.0, 20.0, 30.0, 60.0};
     const bool optimize_segments_options[] = {false,true};
 
     auto allocators = ranges::views::cartesian_product(samples_per_goal, plan_times_seconds, optimize_segments_options)
@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
         };
     }) | to_vector;
 
-    run_planner_experiment(allocators, "analysis/prm_multigoal_experiment.json");
+    run_planner_experiment(allocators, "analysis/prm_multigoal_experiment.json", 50);
 
     return 0;
 }

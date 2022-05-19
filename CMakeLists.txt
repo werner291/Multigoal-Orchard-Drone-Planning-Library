@@ -186,8 +186,6 @@ add_library(${PROJECT_NAME}_shared
         src/msgs_utilities.h
         src/multigoal/approach_table.cpp
         src/multigoal/approach_table.h
-        src/multigoal/AT2Opt.cpp
-        src/multigoal/AT2Opt.h
         src/multigoal/ATNN.cpp
         src/multigoal/ATNN.h
         src/multigoal/ATRandom.cpp
@@ -264,9 +262,6 @@ add_library(${PROJECT_NAME}_shared
 #message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
 
 ## Visualization node
-add_executable(${PROJECT_NAME}_vizualized src/run_vizualized.cpp)
-
-add_executable(${PROJECT_NAME}_benchmark src/run_benchmarked.cpp)
 
 add_executable(${PROJECT_NAME}_ptp_correlation experiments/ptp_correlation.cpp)
 
@@ -296,16 +291,12 @@ target_link_libraries(${PROJECT_NAME}_approach_planning ${PROJECT_NAME}_shared)
 add_executable(${PROJECT_NAME}_knn experiments/knn.cpp)
 target_link_libraries(${PROJECT_NAME}_knn ${PROJECT_NAME}_shared)
 
-add_executable(${PROJECT_NAME}_clustering experiments/clustering_comparison.cpp test/test_utils.cpp)
-target_link_libraries(${PROJECT_NAME}_clustering ${PROJECT_NAME}_shared)
-
 add_executable(${PROJECT_NAME}_generate_tree_data src/generate_tree_data.cpp)
 
 catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
         test/test_utils.h
         test/test_utils.cpp
 #        test/informed_sampler_test.cpp
-#        test/clustering_tests.cpp
 #        test/ptp_tests.cpp
 #        test/enhanced_hac_test.cpp
 #        test/mesh_loading.cpp

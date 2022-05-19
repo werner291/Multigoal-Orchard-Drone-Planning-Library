@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
         }
     };
 
-    run_planner_experiment(allocators,"analysis/shellpath.json");
+    run_planner_experiment(allocators, "analysis/shellpath.json", 100);
 
 }
 

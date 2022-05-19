@@ -35,17 +35,16 @@ Json::Value toJson(const NewMultiGoalPlanner::PlanResult& result) {
 NewMultiGoalPlanner::PlanResult runPlanner(
         const shared_ptr<DroneStateSpace> &stateSpace,
         const AppleTreePlanningScene &scene_info,
-        ompl::base::ScopedState<> &start_state,
-        const NewMultiGoalPlannerAllocatorFn &planner_allocator) {
+        const ompl::base::ScopedState<> &start_state,
+        const std::shared_ptr<NewMultiGoalPlanner> &planner) {
 
     auto si = loadSpaceInformation(stateSpace, scene_info);
     auto goals = constructNewAppleGoals(si, scene_info.apples);
     auto objective = std::make_shared<DronePathLengthObjective>(si);
 
-    // TODO: Double-check if stuff is being optimized here...
     SingleGoalPlannerMethods ptp(5.0, si, objective);
 
-    return planner_allocator(scene_info, stateSpace)->plan(si, start_state.get(), goals, ptp);
+    return planner->plan(si, start_state.get(), goals, ptp);
 }
 
 ompl::base::ScopedState<> genStartState(const shared_ptr<DroneStateSpace> &stateSpace) {
@@ -55,16 +54,15 @@ ompl::base::ScopedState<> genStartState(const shared_ptr<DroneStateSpace> &state
     return start_state;
 }
 
-void run_planner_experiment(const vector<NewMultiGoalPlannerAllocatorFn> &allocators, const std::string& results_path) {
+void run_planner_experiment(vector<NewMultiGoalPlannerAllocatorFn> allocators, const std::string &results_path,
+                            const int num_runs) {
 
     auto stateSpace = loadStateSpace();
 
     // Load the apple tree model with some metadata.
     auto scene_info = createMeshBasedAppleTreePlanningSceneMessage("appletree");
 
-    const size_t NUM_RUNS = 100;
-
-    const auto run_indices = ranges::views::iota(0, (int) NUM_RUNS);
+    const auto run_indices = ranges::views::iota(0, (int) num_runs);
 
     thread_pool pool(8);
     std::vector<std::future<Json::Value>> future_results;
@@ -72,9 +70,17 @@ void run_planner_experiment(const vector<NewMultiGoalPlannerAllocatorFn> &alloca
     for (int run_i : run_indices) {
         auto start_state = genStartState(stateSpace);
 
+        std::shuffle(allocators.begin(), allocators.end(), std::mt19937(std::random_device()()));
+
         for (const auto& planner_allocator: allocators) {
-            future_results.push_back(pool.submit([&, planner_allocator=planner_allocator]() -> Json::Value {
-                return toJson(runPlanner(stateSpace, scene_info, start_state,planner_allocator));
+            future_results.push_back(pool.submit([&, planner_allocator=planner_allocator,run_i=run_i,start_state=start_state]() -> Json::Value {
+                auto start_time = ompl::time::now();
+                auto planner = planner_allocator(scene_info, stateSpace);
+                auto plan_result = toJson(runPlanner(stateSpace, scene_info, start_state, planner));
+                plan_result["run_time"] = ompl::time::seconds(ompl::time::now() - start_time);
+                plan_result["run_index"] = run_i;
+                plan_result["planner_params"] = planner->parameters();
+                return plan_result;
             }));
         }
     }
