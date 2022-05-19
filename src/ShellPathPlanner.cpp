@@ -178,3 +178,7 @@ Json::Value ShellPathPlanner::parameters() const {
 
     return result;
 }
+
+std::string ShellPathPlanner::name() const {
+    return "ShellPathPlanner";
+}

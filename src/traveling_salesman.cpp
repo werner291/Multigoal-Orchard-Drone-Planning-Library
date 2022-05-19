@@ -208,6 +208,8 @@ std::vector<std::pair<size_t, size_t>> tsp_open_end_grouped(
 
     size_t n = index_lookup.size();
 
+    std::cout << "Building TSP distance matrix." << std::endl;
+
     const auto &[distance_matrix, start_state_index, end_state_index] =
             mkOpenEndedDistanceMatrix(
                     [&](size_t i) {
@@ -217,6 +219,8 @@ std::vector<std::pair<size_t, size_t>> tsp_open_end_grouped(
                         return between(index_lookup[i], index_lookup[j]);
                     },
                     n);
+
+    std::cout << "Solving the routing problem..." << std::endl;
 
     // This allows us to translate OR-tools internal indices into the indices of the table above.
     operations_research::RoutingIndexManager manager((int) n+2, 1,

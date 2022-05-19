@@ -28,7 +28,10 @@ public:
                     const std:: vector<ompl::base::GoalPtr> &goals,
                     SingleGoalPlannerMethods &methods) override;
 
-    Json::Value parameters() const override;
+    [[nodiscard]] Json::Value parameters() const override;
+
+    [[nodiscard]] std::string name() const override;
+
 
 };
 

@@ -35,6 +35,8 @@ public:
                     SingleGoalPlannerMethods& methods) override;
 
     [[nodiscard]] Json::Value parameters() const override;
+
+    std::string name() const override;
 };
 
 

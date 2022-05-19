@@ -28,6 +28,8 @@ public:
                             SingleGoalPlannerMethods& methods) = 0;
 
     virtual Json::Value parameters() const = 0;
+
+    virtual std::string name() const = 0;
 };
 
 #endif // NEW_MULTI_GOAL_PLANNER_H

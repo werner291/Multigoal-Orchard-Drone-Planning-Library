@@ -99,3 +99,7 @@ Json::Value NewKnnPlanner::parameters() const {
 
 }
 
+string NewKnnPlanner::name() const {
+    return "NewKnnPlanner";
+}
+

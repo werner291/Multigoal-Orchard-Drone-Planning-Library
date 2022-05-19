@@ -64,6 +64,8 @@ public:
 
     Json::Value parameters() const override;
 
+    std::string name() const override;
+
 };
 
 #endif //NEW_PLANNERS_SHELLPATHPLANNER_H

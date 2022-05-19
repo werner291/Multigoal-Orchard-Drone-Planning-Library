@@ -123,7 +123,7 @@ NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(
         const std:: vector<ompl::base::GoalPtr> &goals,
         SingleGoalPlannerMethods &ptp) {
 
-    std::cout << "Creating PRM" << std::endl;
+    std::cout << "Creating PRM ( budget: " << prm_build_time << "s)" << std::endl;
     auto prm = std::make_shared<PRMCustom>(si);
 
     auto pdef = std::make_shared<ob::ProblemDefinition>(si);
@@ -132,12 +132,18 @@ NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(
 
     prm->constructRoadmap(ob::timedPlannerTerminationCondition(prm_build_time));
 
-    std::cout << "Planning..." << std::endl;
+    std::cout << "Inserting start/goal states into PRM..." << std::endl;
+
     auto start_state_node = prm->insert_state(start);
 
     auto goalVertices = createGoalVertices(*prm, goals, start_state_node, si, samplesPerGoal);
 
     auto vertices_only = goalVertices | views::transform([&](auto v) { return v.vertex; }) | to_vector;
+
+    std::cout << "PRM with " << prm->getRoadmap().m_vertices.size() << " vertices and "
+              << prm->getRoadmap().m_edges.size() << " edges" << std::endl;
+
+    std::cout << "Solving TSP..." << std::endl;
 
     auto ordering = tsp_open_end_grouped(
             [&](auto pair) {
@@ -151,6 +157,8 @@ NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(
             goalVertices | views::transform([&](auto v) { return v.vertex.size(); }) | to_vector
     );
 
+    std::cout << "Building final path" << std::endl;
+
     std::vector<og::PathGeometric> path_segments;
 
     path_segments.push_back(*(prm->path_distance(start_state_node,
@@ -161,7 +169,9 @@ NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(
                                                      goalVertices[ordering[i].first].vertex[ordering[i].second])->as<og::PathGeometric>()));
     }
 
+
     if (optimize_segments) {
+        std::cout << "Optimizing..." << std::endl;
         path_segments |= actions::transform([&](auto &path) {
             return optimize(path, ptp.getOptimizationObjective(), si);
         });
@@ -187,4 +197,8 @@ Json::Value MultigoalPrmStar::parameters() const {
     params["samples_per_goal"] = (int) samplesPerGoal;
     params["optimize_segments"] = optimize_segments;
     return params;
+}
+
+std::string MultigoalPrmStar::name() const {
+    return "Multigoal PRM*";
 }

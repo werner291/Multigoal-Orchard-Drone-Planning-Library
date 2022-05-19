@@ -15,7 +15,7 @@ typedef std::function<std::shared_ptr<NewMultiGoalPlanner>(
         const std::shared_ptr<DroneStateSpace>& stateSpace)>
         NewMultiGoalPlannerAllocatorFn;
 
-void run_planner_experiment(std::vector<NewMultiGoalPlannerAllocatorFn> allocators,
+void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn>& allocators,
                             const std::string &results_path,
                             const int num_runs);
 
