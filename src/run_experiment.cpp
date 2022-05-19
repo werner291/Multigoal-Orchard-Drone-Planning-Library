@@ -53,7 +53,7 @@ void run_planner_experiment(const vector<NewMultiGoalPlannerAllocatorFn>& alloca
 
     Json::Value statistics;
 
-    unsigned int concurrency = 1;//std::thread::hardware_concurrency();
+    unsigned int concurrency = std::thread::hardware_concurrency();
 
     for (size_t thread_id = 0; thread_id < concurrency; ++thread_id) {
         threads.emplace_back([&, thread_id=thread_id, allocators=allocators]() {
