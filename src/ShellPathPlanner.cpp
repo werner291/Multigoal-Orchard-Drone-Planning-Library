@@ -5,6 +5,7 @@
 #include "ShellPathPlanner.h"
 #include "traveling_salesman.h"
 #include "probe_retreat_move.h"
+#include "DronePathLengthObjective.h"
 
 #include <utility>
 
@@ -60,6 +61,8 @@ NewMultiGoalPlanner::PlanResult ShellPathPlanner::assembleFullPath(
                 approaches[ordering[i - 1]],
                 approaches[ordering[i]]
                 );
+
+        segment_path = optimize(segment_path, std::make_shared<DronePathLengthObjective>(si), si);
 
         result.segments.push_back({
             approaches[ordering[0]].first,

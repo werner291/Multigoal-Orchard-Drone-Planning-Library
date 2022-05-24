@@ -1,0 +1,7802 @@
+[
+	{
+		"final_path_length" : 1442.9077176944556,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.386815816999999,
+		"start_state" : 45
+	},
+	{
+		"final_path_length" : 1446.9775191643193,
+		"goals_visited" : 153,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.575782769,
+		"start_state" : 34
+	},
+	{
+		"final_path_length" : 1364.286175410002,
+		"goals_visited" : 156,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.040727338,
+		"start_state" : 31
+	},
+	{
+		"final_path_length" : 1485.8452507146467,
+		"goals_visited" : 156,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.100510477,
+		"start_state" : 33
+	},
+	{
+		"final_path_length" : 1411.7754524323852,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.572191959000001,
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 1417.5153346087934,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.921645265999999,
+		"start_state" : 41
+	},
+	{
+		"final_path_length" : 1212.3904621215006,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.559925436999997,
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 1266.6687520560217,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.548501672,
+		"start_state" : 21
+	},
+	{
+		"final_path_length" : 1293.7768367257418,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.613063556999997,
+		"start_state" : 39
+	},
+	{
+		"final_path_length" : 1215.9957340652793,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.888349359000003,
+		"start_state" : 21
+	},
+	{
+		"final_path_length" : 1336.3721043314622,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.716566418999999,
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 1197.4181333997706,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.627255231999996,
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 1360.148403733197,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.193625642000001,
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 1012.8688443014571,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.62591442600001,
+		"start_state" : 41
+	},
+	{
+		"final_path_length" : 1027.5153378201928,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.145863644,
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 1010.3196437665856,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 167.956904829,
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 1109.478940814002,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 90.584909014999994,
+		"start_state" : 23
+	},
+	{
+		"final_path_length" : 1133.4346580357378,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.772285390999997,
+		"start_state" : 42
+	},
+	{
+		"final_path_length" : 1342.9201350477936,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.024028958000002,
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 1447.3826864820674,
+		"goals_visited" : 153,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.557416157999999,
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 928.09200588793544,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.34247735700001,
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 905.34713421749689,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.56053531499998,
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 1269.3023479792682,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.104835954000002,
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 915.40236158321864,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.07810701599999,
+		"start_state" : 21
+	},
+	{
+		"final_path_length" : 988.88345985934814,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.22598810400001,
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 941.38751743854675,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.30016839299998,
+		"start_state" : 34
+	},
+	{
+		"final_path_length" : 1266.1636277084599,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.423376616999999,
+		"start_state" : 27
+	},
+	{
+		"final_path_length" : 922.4465565398566,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 343.65404567100001,
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 1143.1955621923571,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.620621248000006,
+		"start_state" : 42
+	},
+	{
+		"final_path_length" : 1100.264461120101,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.992402163999998,
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 921.28895721830111,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.02953631700001,
+		"start_state" : 31
+	},
+	{
+		"final_path_length" : 975.68352653761247,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.93697650199999,
+		"start_state" : 43
+	},
+	{
+		"final_path_length" : 1352.606604735756,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.310183489000003,
+		"start_state" : 26
+	},
+	{
+		"final_path_length" : 1327.004568860998,
+		"goals_visited" : 148,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.843902945,
+		"start_state" : 37
+	},
+	{
+		"final_path_length" : 1249.8053117929639,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.537215838000002,
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 935.1625145124209,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.25983502299999,
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 1030.8806716329175,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.13075715599999,
+		"start_state" : 24
+	},
+	{
+		"final_path_length" : 1387.5538966987808,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 26.483741306999999,
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 1083.1529574254862,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 90.435639279,
+		"start_state" : 44
+	},
+	{
+		"final_path_length" : 1355.4338561119791,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 54.401981356,
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 848.52369421511708,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.40855978299999,
+		"start_state" : 44
+	},
+	{
+		"final_path_length" : 1116.7141312049944,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.364445325000005,
+		"start_state" : 37
+	},
+	{
+		"final_path_length" : 1067.8974847366976,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.76576867200001,
+		"start_state" : 20
+	},
+	{
+		"final_path_length" : 1603.7339511924295,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 20.706626769,
+		"start_state" : 48
+	},
+	{
+		"final_path_length" : 1008.7156964981176,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.426299992,
+		"start_state" : 44
+	},
+	{
+		"final_path_length" : 1116.4825091156238,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.356821135000004,
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 1499.410471074337,
+		"goals_visited" : 153,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.644506847999999,
+		"start_state" : 43
+	},
+	{
+		"final_path_length" : 1343.1429194094619,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.343570864,
+		"start_state" : 30
+	},
+	{
+		"final_path_length" : 1490.5349284304214,
+		"goals_visited" : 157,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.586210704999999,
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 1380.9961955665901,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.751731874000001,
+		"start_state" : 30
+	},
+	{
+		"final_path_length" : 1060.4195389352637,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.33692425199999,
+		"start_state" : 27
+	},
+	{
+		"final_path_length" : 1340.521126984657,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 24.823104560000001,
+		"start_state" : 21
+	},
+	{
+		"final_path_length" : 832.77477153480868,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.64389691199995,
+		"start_state" : 43
+	},
+	{
+		"final_path_length" : 1372.2923191039438,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 37.404404913,
+		"start_state" : 48
+	},
+	{
+		"final_path_length" : 1127.6661316589154,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 87.787708452999993,
+		"start_state" : 49
+	},
+	{
+		"final_path_length" : 835.9472161760068,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.36829361399998,
+		"start_state" : 20
+	},
+	{
+		"final_path_length" : 943.68483913023658,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.75569839600001,
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 1044.6319989961985,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.18707971200001,
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 929.64638239966075,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.306969423,
+		"start_state" : 30
+	},
+	{
+		"final_path_length" : 1099.5271439870469,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 87.466534246999998,
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 1127.3100544616759,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.742227576000005,
+		"start_state" : 24
+	},
+	{
+		"final_path_length" : 1095.8987114508052,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 87.702374993000006,
+		"start_state" : 46
+	},
+	{
+		"final_path_length" : 995.88415233765011,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 176.80457693299999,
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 1205.1222036553227,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 38.801685044000003,
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 1142.9779340291184,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.402221800999996,
+		"start_state" : 41
+	},
+	{
+		"final_path_length" : 1377.4624712358038,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.960555386999999,
+		"start_state" : 38
+	},
+	{
+		"final_path_length" : 1146.5901557357029,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.929515726999995,
+		"start_state" : 26
+	},
+	{
+		"final_path_length" : 912.85663239332814,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 333.92514873599998,
+		"start_state" : 49
+	},
+	{
+		"final_path_length" : 1007.1491130834012,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 169.23038545,
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 1137.4844786986559,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.466118624999993,
+		"start_state" : 32
+	},
+	{
+		"final_path_length" : 1276.9417659809881,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 21.964795348999999,
+		"start_state" : 23
+	},
+	{
+		"final_path_length" : 846.80220298840936,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 834.58800249900003,
+		"start_state" : 23
+	},
+	{
+		"final_path_length" : 839.33331615511952,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 832.93185261099995,
+		"start_state" : 41
+	},
+	{
+		"final_path_length" : 1212.6618491777617,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.227579183000003,
+		"start_state" : 28
+	},
+	{
+		"final_path_length" : 1005.7875652127087,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 167.74297700400001,
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 922.21819931146024,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.08566902899997,
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 990.28896876166664,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 167.93504641499999,
+		"start_state" : 38
+	},
+	{
+		"final_path_length" : 842.22160071752558,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.22351527599994,
+		"start_state" : 22
+	},
+	{
+		"final_path_length" : 851.95176007040948,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 832.87893882499998,
+		"start_state" : 29
+	},
+	{
+		"final_path_length" : 1188.1671056140788,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 38.772329863000003,
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 916.27573945452548,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 333.88067515099999,
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 1000.364961336407,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.003704634,
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 820.67770060249018,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 834.80167058999996,
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 1140.2625002313459,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.678690035000002,
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 1279.266817871217,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.399155029999999,
+		"start_state" : 35
+	},
+	{
+		"final_path_length" : 815.91995577314151,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.00347714600002,
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 985.41352689173993,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 169.91885131699999,
+		"start_state" : 25
+	},
+	{
+		"final_path_length" : 1214.8115331930205,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.599097493000002,
+		"start_state" : 40
+	},
+	{
+		"final_path_length" : 1228.9944854565126,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 38.104236065999999,
+		"start_state" : 24
+	},
+	{
+		"final_path_length" : 1038.5801410910751,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.57638290599999,
+		"start_state" : 48
+	},
+	{
+		"final_path_length" : 1092.740761617473,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 87.966764033999993,
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 924.86349591703458,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 335.76623035799997,
+		"start_state" : 49
+	},
+	{
+		"final_path_length" : 1268.4935991574205,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 38.507327490999998,
+		"start_state" : 38
+	},
+	{
+		"final_path_length" : 1029.8528436343418,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.386187492,
+		"start_state" : 28
+	},
+	{
+		"final_path_length" : 1398.0051910811308,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.544879917000003,
+		"start_state" : 28
+	},
+	{
+		"final_path_length" : 1036.5047561985828,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 167.99301575199999,
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 1154.6384001387539,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.360957967999994,
+		"start_state" : 41
+	},
+	{
+		"final_path_length" : 1286.8180347932232,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.349376399000001,
+		"start_state" : 45
+	},
+	{
+		"final_path_length" : 819.88072681524011,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.03504018700005,
+		"start_state" : 24
+	},
+	{
+		"final_path_length" : 912.44478774213826,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.51786624599998,
+		"start_state" : 20
+	},
+	{
+		"final_path_length" : 845.60994019763223,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.18377518099999,
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 1191.8860454423263,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.895333106000002,
+		"start_state" : 46
+	},
+	{
+		"final_path_length" : 939.04220780683522,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.22608990600003,
+		"start_state" : 32
+	},
+	{
+		"final_path_length" : 1303.305908233385,
+		"goals_visited" : 153,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.475744524,
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 857.34994161289853,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.50183018099995,
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 949.34993754859556,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.55137545700001,
+		"start_state" : 46
+	},
+	{
+		"final_path_length" : 1167.6282263892085,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.847631680999996,
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 985.65274008453196,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.33636634699999,
+		"start_state" : 23
+	},
+	{
+		"final_path_length" : 845.46298059768867,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 834.82836398899997,
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 1156.2790305538604,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.047818182,
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 1017.4075604905146,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.14315363,
+		"start_state" : 38
+	},
+	{
+		"final_path_length" : 1234.8071488953212,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.845001521,
+		"start_state" : 35
+	},
+	{
+		"final_path_length" : 1373.9881638731845,
+		"goals_visited" : 157,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.62751227,
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 950.1730950356515,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.31326882299999,
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 1325.9535273848408,
+		"goals_visited" : 156,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.957684775000001,
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 1447.7101393740286,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.430711177999999,
+		"start_state" : 25
+	},
+	{
+		"final_path_length" : 1519.8532932681167,
+		"goals_visited" : 152,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.560952933999999,
+		"start_state" : 47
+	},
+	{
+		"final_path_length" : 1507.0694791968513,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.234482929999999,
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 1033.6971610137809,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.74517916900001,
+		"start_state" : 30
+	},
+	{
+		"final_path_length" : 1353.8980888095307,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.090172533999997,
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 1099.7363105676955,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.253565980999994,
+		"start_state" : 24
+	},
+	{
+		"final_path_length" : 1155.062634261755,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.390168392999996,
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 1090.4172661167258,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.663113499999994,
+		"start_state" : 29
+	},
+	{
+		"final_path_length" : 1008.6316828824816,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.21185299000001,
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 1380.5020063160339,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.907089699,
+		"start_state" : 32
+	},
+	{
+		"final_path_length" : 1208.3391811835709,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 102.595383473,
+		"start_state" : 37
+	},
+	{
+		"final_path_length" : 1272.6898489307323,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.310782347,
+		"start_state" : 49
+	},
+	{
+		"final_path_length" : 854.35255404505392,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 832.85994236800002,
+		"start_state" : 28
+	},
+	{
+		"final_path_length" : 922.42247516148655,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.021584039,
+		"start_state" : 47
+	},
+	{
+		"final_path_length" : 1199.087177000021,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 38.143853436000001,
+		"start_state" : 37
+	},
+	{
+		"final_path_length" : 1239.7578468074694,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 51.768946958000001,
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 894.35146542901259,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.016323973,
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 1007.3115387772386,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 169.608132982,
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 1362.9689967462573,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 35.728022549999999,
+		"start_state" : 23
+	},
+	{
+		"final_path_length" : 914.1566880001335,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 333.97943823200001,
+		"start_state" : 24
+	},
+	{
+		"final_path_length" : 842.15884068193486,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 834.85019568999996,
+		"start_state" : 49
+	},
+	{
+		"final_path_length" : 812.76006058098335,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.03065129699996,
+		"start_state" : 21
+	},
+	{
+		"final_path_length" : 981.62789331284478,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 169.571293639,
+		"start_state" : 36
+	},
+	{
+		"final_path_length" : 1186.8762532157259,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.329947137999994,
+		"start_state" : 34
+	},
+	{
+		"final_path_length" : 1266.7402320962779,
+		"goals_visited" : 152,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 21.782401248999999,
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 913.33054508948635,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.02642707699999,
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 931.96697937496936,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 335.69358919299998,
+		"start_state" : 25
+	},
+	{
+		"final_path_length" : 1600.2866419896413,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.22090206,
+		"start_state" : 40
+	},
+	{
+		"final_path_length" : 916.6389558965451,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.71204985600002,
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 1343.9022687186837,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.389102106999999,
+		"start_state" : 35
+	},
+	{
+		"final_path_length" : 852.19077302610015,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.22464674299999,
+		"start_state" : 27
+	},
+	{
+		"final_path_length" : 1381.9969881661593,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.347694853,
+		"start_state" : 27
+	},
+	{
+		"final_path_length" : 1345.4158721457532,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.795321482999999,
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 1185.0266839526212,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.751405825000006,
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 1209.3683914234314,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 38.370563633000003,
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 928.98802787571958,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.52822798800003,
+		"start_state" : 22
+	},
+	{
+		"final_path_length" : 1307.676317368004,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 38.814037872999997,
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 1017.6423607234861,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.92829512,
+		"start_state" : 28
+	},
+	{
+		"final_path_length" : 1103.6467437838312,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.005679461,
+		"start_state" : 27
+	},
+	{
+		"final_path_length" : 1239.5872499978711,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.642872070999999,
+		"start_state" : 28
+	},
+	{
+		"final_path_length" : 842.13673885126718,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.42237353600001,
+		"start_state" : 48
+	},
+	{
+		"final_path_length" : 915.90542705999871,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.30799535199998,
+		"start_state" : 48
+	},
+	{
+		"final_path_length" : 836.75989973187609,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 836.01854275799997,
+		"start_state" : 44
+	},
+	{
+		"final_path_length" : 1229.417879702037,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.450012604000001,
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 1082.2887538919897,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.432381243999998,
+		"start_state" : 26
+	},
+	{
+		"final_path_length" : 1406.9967040316656,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.363555632000001,
+		"start_state" : 39
+	},
+	{
+		"final_path_length" : 1383.5890330760778,
+		"goals_visited" : 157,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.251450683000002,
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 986.67670311401662,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.05987913999999,
+		"start_state" : 49
+	},
+	{
+		"final_path_length" : 862.68232024106385,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.18286933399997,
+		"start_state" : 43
+	},
+	{
+		"final_path_length" : 832.56172392208464,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.44225004099997,
+		"start_state" : 26
+	},
+	{
+		"final_path_length" : 1380.2037946149626,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.170537031999999,
+		"start_state" : 44
+	},
+	{
+		"final_path_length" : 1194.6116163641846,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.643450880000003,
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 929.82426800807252,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.10217940400003,
+		"start_state" : 37
+	},
+	{
+		"final_path_length" : 1088.3298657995199,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.559853083999997,
+		"start_state" : 34
+	},
+	{
+		"final_path_length" : 843.80123496749411,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.29070868700001,
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 1378.6473501338407,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.043283512000002,
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 1443.9189534064287,
+		"goals_visited" : 152,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.564979677,
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 1012.2289327627107,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.32329380100001,
+		"start_state" : 42
+	},
+	{
+		"final_path_length" : 1335.9197844122548,
+		"goals_visited" : 152,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.439221291999999,
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 1560.837213991653,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.468095133999999,
+		"start_state" : 38
+	},
+	{
+		"final_path_length" : 931.7525961205298,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.28152627200001,
+		"start_state" : 20
+	},
+	{
+		"final_path_length" : 1022.9809463572313,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.63274622,
+		"start_state" : 29
+	},
+	{
+		"final_path_length" : 1139.0636426348497,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.985320676000001,
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 1203.4542872708496,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.626753292000004,
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 838.66643148044045,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.81439443800002,
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 836.90351974576208,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.55651701399995,
+		"start_state" : 40
+	},
+	{
+		"final_path_length" : 1031.0795466370269,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.80588392300001,
+		"start_state" : 44
+	},
+	{
+		"final_path_length" : 952.85947635734681,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.33352583300001,
+		"start_state" : 44
+	},
+	{
+		"final_path_length" : 1405.2548444063605,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.417122249999998,
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 912.08999332127678,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.54478482799999,
+		"start_state" : 43
+	},
+	{
+		"final_path_length" : 989.5937868261052,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.47312667899999,
+		"start_state" : 32
+	},
+	{
+		"final_path_length" : 1322.8814241205262,
+		"goals_visited" : 147,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.504019896999999,
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 1300.1598873551816,
+		"goals_visited" : 153,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.460967635999999,
+		"start_state" : 46
+	},
+	{
+		"final_path_length" : 945.83437719442281,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.01106662500001,
+		"start_state" : 41
+	},
+	{
+		"final_path_length" : 924.90559030697591,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.35824375200002,
+		"start_state" : 42
+	},
+	{
+		"final_path_length" : 917.05540034977707,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.41865748599997,
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 918.84954087774349,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.74636773999998,
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 930.72176920683103,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.75346731399998,
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 1396.8454563187158,
+		"goals_visited" : 156,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.415913133,
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 846.00067517218361,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 836.01569727100002,
+		"start_state" : 45
+	},
+	{
+		"final_path_length" : 931.16361261191935,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.25658163600002,
+		"start_state" : 30
+	},
+	{
+		"final_path_length" : 903.15288803199758,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.485581744,
+		"start_state" : 39
+	},
+	{
+		"final_path_length" : 866.51789326130745,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.37964863699995,
+		"start_state" : 42
+	},
+	{
+		"final_path_length" : 934.11851008152576,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.41645623699998,
+		"start_state" : 21
+	},
+	{
+		"final_path_length" : 1138.7278914540907,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.580750288000004,
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 1521.0080117879909,
+		"goals_visited" : 157,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 18.961552390000001,
+		"start_state" : 22
+	},
+	{
+		"final_path_length" : 1189.8784537373263,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 38.427480349,
+		"start_state" : 31
+	},
+	{
+		"final_path_length" : 957.45659904019317,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.36915609900001,
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 1528.7177767719718,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.139574268000001,
+		"start_state" : 21
+	},
+	{
+		"final_path_length" : 1234.108029622088,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.699257111999998,
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 1238.562132776826,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.731759885999999,
+		"start_state" : 25
+	},
+	{
+		"final_path_length" : 919.34138598420634,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.75114328699999,
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 1192.9998257778841,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 38.484992378000001,
+		"start_state" : 41
+	},
+	{
+		"final_path_length" : 1002.2329300430143,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 169.942316783,
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 1292.8042782042412,
+		"goals_visited" : 156,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.030968673,
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 1006.7267516474803,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 167.83411074099999,
+		"start_state" : 41
+	},
+	{
+		"final_path_length" : 1346.0895773428331,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 37.206729400999997,
+		"start_state" : 34
+	},
+	{
+		"final_path_length" : 836.55405718027146,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.69298946799995,
+		"start_state" : 36
+	},
+	{
+		"final_path_length" : 1178.0078842379683,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.300865928999997,
+		"start_state" : 33
+	},
+	{
+		"final_path_length" : 928.57242895061211,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.29362903999998,
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 1171.5405894567323,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.418647519000004,
+		"start_state" : 29
+	},
+	{
+		"final_path_length" : 1060.8948216435024,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 167.76432437099999,
+		"start_state" : 45
+	},
+	{
+		"final_path_length" : 845.87951117478985,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.38472704799995,
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 1103.0981633043161,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 87.419870853999996,
+		"start_state" : 35
+	},
+	{
+		"final_path_length" : 1073.3227296259206,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.381351921000004,
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 1017.2430016938613,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 169.91037886500001,
+		"start_state" : 22
+	},
+	{
+		"final_path_length" : 1210.3889989868899,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.459605890999995,
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 820.95098099547022,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 832.99073763199999,
+		"start_state" : 49
+	},
+	{
+		"final_path_length" : 819.69591513571925,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.79200157000002,
+		"start_state" : 25
+	},
+	{
+		"final_path_length" : 901.33257131308017,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 340.207183853,
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 1206.2021756039867,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 38.787327605999998,
+		"start_state" : 42
+	},
+	{
+		"final_path_length" : 997.22156730934387,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.91955618200001,
+		"start_state" : 42
+	},
+	{
+		"final_path_length" : 853.64558707986464,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 834.75699507399997,
+		"start_state" : 24
+	},
+	{
+		"final_path_length" : 1330.768046591033,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.562768307999999,
+		"start_state" : 38
+	},
+	{
+		"final_path_length" : 1399.2893767061021,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.555674924000002,
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 901.26374314779434,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 335.80716541800001,
+		"start_state" : 45
+	},
+	{
+		"final_path_length" : 842.95782508136676,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 834.960258329,
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 829.43839165765201,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 834.72025793,
+		"start_state" : 29
+	},
+	{
+		"final_path_length" : 1197.3766860733424,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.561934390999994,
+		"start_state" : 22
+	},
+	{
+		"final_path_length" : 844.70810791086058,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.16876794500001,
+		"start_state" : 47
+	},
+	{
+		"final_path_length" : 1413.2883846711393,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.652903825000003,
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 929.30871482985447,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 351.74173995500001,
+		"start_state" : 25
+	},
+	{
+		"final_path_length" : 1144.4793357737813,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.927606007999998,
+		"start_state" : 48
+	},
+	{
+		"final_path_length" : 1116.2491153661958,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.795356995000006,
+		"start_state" : 45
+	},
+	{
+		"final_path_length" : 831.87734015419744,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 834.92452572699995,
+		"start_state" : 27
+	},
+	{
+		"final_path_length" : 921.22120319427586,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.21465885399999,
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 1117.0828961963332,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 107.96269802499999,
+		"start_state" : 20
+	},
+	{
+		"final_path_length" : 1488.0581110339815,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.820266852000003,
+		"start_state" : 37
+	},
+	{
+		"final_path_length" : 1192.8060284646356,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.584146661000005,
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 1268.4821023913462,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.648406031999997,
+		"start_state" : 27
+	},
+	{
+		"final_path_length" : 1332.9601452772961,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.742800375000002,
+		"start_state" : 28
+	},
+	{
+		"final_path_length" : 1021.5787761415659,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.526268843,
+		"start_state" : 35
+	},
+	{
+		"final_path_length" : 880.51229561634079,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 836.28246395999997,
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 835.2577463832323,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.53322204599999,
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 1365.602307530459,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 37.792915567999998,
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 1304.1111779039907,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.144384828,
+		"start_state" : 45
+	},
+	{
+		"final_path_length" : 1316.7892238472741,
+		"goals_visited" : 156,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.556641344999999,
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 1330.8918231624823,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.472257334999998,
+		"start_state" : 43
+	},
+	{
+		"final_path_length" : 1214.9332401044717,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.889257094000001,
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 951.14961698215313,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.92008036599998,
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 923.8450567934002,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.69181305699999,
+		"start_state" : 26
+	},
+	{
+		"final_path_length" : 822.25924054447944,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.58995207299995,
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 1026.6425608790933,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.198987346,
+		"start_state" : 26
+	},
+	{
+		"final_path_length" : 1434.7989380344709,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.908722591999997,
+		"start_state" : 21
+	},
+	{
+		"final_path_length" : 1124.9292438737059,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.541494838000006,
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 915.7203542816884,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 335.87917029300002,
+		"start_state" : 46
+	},
+	{
+		"final_path_length" : 1075.9391359669303,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.713821155999995,
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 1365.4864532266897,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 37.485541007000002,
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 1320.6979233229135,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.403124693999999,
+		"start_state" : 29
+	},
+	{
+		"final_path_length" : 1338.6976392050337,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.379823735000002,
+		"start_state" : 33
+	},
+	{
+		"final_path_length" : 1137.2632725445139,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.166310029000002,
+		"start_state" : 39
+	},
+	{
+		"final_path_length" : 842.2887562073571,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.44867137699998,
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 819.01577949031685,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.61792368199997,
+		"start_state" : 41
+	},
+	{
+		"final_path_length" : 924.86235654988764,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.41218931399999,
+		"start_state" : 35
+	},
+	{
+		"final_path_length" : 1351.5269633503112,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.537743855000002,
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 995.81067088451687,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.682843496,
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 874.27420592276383,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 836.22253544700004,
+		"start_state" : 35
+	},
+	{
+		"final_path_length" : 1335.9964121511027,
+		"goals_visited" : 156,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.792109492000002,
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 1135.2607051890825,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 91.402953292999996,
+		"start_state" : 21
+	},
+	{
+		"final_path_length" : 1263.8026955150278,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 43.406174919000001,
+		"start_state" : 33
+	},
+	{
+		"final_path_length" : 926.36849172957625,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.40414347299998,
+		"start_state" : 27
+	},
+	{
+		"final_path_length" : 913.75610236969214,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.48725850699998,
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 1293.7727665418463,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.478771293999998,
+		"start_state" : 48
+	},
+	{
+		"final_path_length" : 896.83254506964477,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.29532819899998,
+		"start_state" : 35
+	},
+	{
+		"final_path_length" : 1005.1040185475749,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.28119746600001,
+		"start_state" : 37
+	},
+	{
+		"final_path_length" : 1116.3916897125516,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.369483818999996,
+		"start_state" : 30
+	},
+	{
+		"final_path_length" : 1592.9875398666254,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 20.990068491999999,
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 933.84935656120695,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 338.34825401900002,
+		"start_state" : 40
+	},
+	{
+		"final_path_length" : 1212.92946613756,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.794489083000002,
+		"start_state" : 25
+	},
+	{
+		"final_path_length" : 1172.7584747225749,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.887004365999999,
+		"start_state" : 27
+	},
+	{
+		"final_path_length" : 1534.8169709723311,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 20.110772394000001,
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 842.48365235081303,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.22178916500002,
+		"start_state" : 38
+	},
+	{
+		"final_path_length" : 1297.2191900812456,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.472441406000002,
+		"start_state" : 42
+	},
+	{
+		"final_path_length" : 896.39263866358635,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.41535399899999,
+		"start_state" : 39
+	},
+	{
+		"final_path_length" : 1207.9565174581501,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.571272817000001,
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 1013.7986447832252,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.26556003499999,
+		"start_state" : 22
+	},
+	{
+		"final_path_length" : 1306.5260129198177,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.567195669,
+		"start_state" : 20
+	},
+	{
+		"final_path_length" : 830.47527425326848,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 838.27333633700005,
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 1362.6285349325017,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.832886273,
+		"start_state" : 36
+	},
+	{
+		"final_path_length" : 814.11810313892943,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.80818502800003,
+		"start_state" : 46
+	},
+	{
+		"final_path_length" : 956.31237154101154,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.33679306599998,
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 824.64517928431007,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.54634276499996,
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 940.38154990576743,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.25704236000001,
+		"start_state" : 44
+	},
+	{
+		"final_path_length" : 984.7570897542596,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.16272110599999,
+		"start_state" : 34
+	},
+	{
+		"final_path_length" : 1453.4683685565913,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.402982358999999,
+		"start_state" : 36
+	},
+	{
+		"final_path_length" : 1562.1572311759223,
+		"goals_visited" : 156,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 20.380386744999999,
+		"start_state" : 44
+	},
+	{
+		"final_path_length" : 898.05070353383246,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 335.87142681300003,
+		"start_state" : 29
+	},
+	{
+		"final_path_length" : 850.74548301022844,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.23850453,
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 1001.6106470787198,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.06033493199999,
+		"start_state" : 29
+	},
+	{
+		"final_path_length" : 1088.6636383412263,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 87.813520288999996,
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 1597.8985861463339,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.447486263999998,
+		"start_state" : 26
+	},
+	{
+		"final_path_length" : 1091.2201075398605,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 91.093669351000003,
+		"start_state" : 25
+	},
+	{
+		"final_path_length" : 1268.8881481587455,
+		"goals_visited" : 151,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.132718693000001,
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 897.4193750396571,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.81238763699997,
+		"start_state" : 32
+	},
+	{
+		"final_path_length" : 1327.0040294837431,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.914395614,
+		"start_state" : 32
+	},
+	{
+		"final_path_length" : 924.33224343867437,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.56415584199999,
+		"start_state" : 45
+	},
+	{
+		"final_path_length" : 840.89449521898507,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.29963230299995,
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 983.95871888659485,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.164000157,
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 1177.7330828141121,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.043875976999999,
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 812.32131914877846,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.45696447700004,
+		"start_state" : 23
+	},
+	{
+		"final_path_length" : 991.65527678216358,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.28276545,
+		"start_state" : 35
+	},
+	{
+		"final_path_length" : 1376.7669704314271,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.945704911999997,
+		"start_state" : 20
+	},
+	{
+		"final_path_length" : 870.76945375966352,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.93766015400001,
+		"start_state" : 21
+	},
+	{
+		"final_path_length" : 830.68445928712629,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.459433612,
+		"start_state" : 33
+	},
+	{
+		"final_path_length" : 991.8729361535527,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 181.033216912,
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 933.42555970417402,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.272306808,
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 843.55640226487117,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.88992643200004,
+		"start_state" : 37
+	},
+	{
+		"final_path_length" : 1025.731643285184,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.98809598899999,
+		"start_state" : 48
+	},
+	{
+		"final_path_length" : 1598.4009641125426,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.952555926999999,
+		"start_state" : 35
+	},
+	{
+		"final_path_length" : 1114.2510137714016,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.698754815000001,
+		"start_state" : 38
+	},
+	{
+		"final_path_length" : 1263.2593194170572,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.985522947,
+		"start_state" : 20
+	},
+	{
+		"final_path_length" : 988.25229359089872,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.713460349,
+		"start_state" : 39
+	},
+	{
+		"final_path_length" : 994.60069044806664,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.21579494400001,
+		"start_state" : 40
+	},
+	{
+		"final_path_length" : 976.35787000912512,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.69556857399999,
+		"start_state" : 21
+	},
+	{
+		"final_path_length" : 1240.0260234270536,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.300592305000002,
+		"start_state" : 44
+	},
+	{
+		"final_path_length" : 1265.6538778082859,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.053061529000004,
+		"start_state" : 39
+	},
+	{
+		"final_path_length" : 1160.27659371708,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.695810379999998,
+		"start_state" : 47
+	},
+	{
+		"final_path_length" : 923.94577271610069,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.48563535599999,
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 1111.6079392751069,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.432429968999998,
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 1299.0234957277521,
+		"goals_visited" : 152,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.377010478999999,
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 1103.1249065858465,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.420494485000006,
+		"start_state" : 36
+	},
+	{
+		"final_path_length" : 933.99291007967179,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.33150007500001,
+		"start_state" : 24
+	},
+	{
+		"final_path_length" : 1103.5321208679347,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.362744380999999,
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 953.6992252991123,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.51647185799999,
+		"start_state" : 23
+	},
+	{
+		"final_path_length" : 1021.0486544738598,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.85003720700001,
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 911.52094485591022,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.38981105599999,
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 1032.4145858633276,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.43184910799999,
+		"start_state" : 49
+	},
+	{
+		"final_path_length" : 914.0826739868296,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.644065157,
+		"start_state" : 26
+	},
+	{
+		"final_path_length" : 845.87906290840431,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.130927939,
+		"start_state" : 39
+	},
+	{
+		"final_path_length" : 830.08453389560418,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.70546157000001,
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 1247.9239002401223,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.416088922,
+		"start_state" : 32
+	},
+	{
+		"final_path_length" : 951.4702262214164,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.32686494699999,
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 858.64010250899787,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.76991123000005,
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 1283.4164156311872,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 87.302248613000003,
+		"start_state" : 49
+	},
+	{
+		"final_path_length" : 1385.3717747742646,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.656492255000003,
+		"start_state" : 25
+	},
+	{
+		"final_path_length" : 1039.1168245042486,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.18393273300001,
+		"start_state" : 47
+	},
+	{
+		"final_path_length" : 917.13501467522497,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.28962303499998,
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 846.16943301868787,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.79004611799996,
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 1025.4214743917205,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.31429092900001,
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 1166.2140005402339,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.89158012,
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 1015.7594802162557,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.10933396999999,
+		"start_state" : 20
+	},
+	{
+		"final_path_length" : 1261.5765490962269,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.377146083,
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 999.8791865822742,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.60917248600001,
+		"start_state" : 21
+	},
+	{
+		"final_path_length" : 1224.0651763898318,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.293248298000002,
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 914.34916126208111,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.52684310900003,
+		"start_state" : 38
+	},
+	{
+		"final_path_length" : 844.00822974527466,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.46395912100002,
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 1023.5346533589797,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.28277753200001,
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 1155.3464948156445,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.853869095999997,
+		"start_state" : 38
+	},
+	{
+		"final_path_length" : 1156.4180017949807,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 90.487029174,
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 1014.8690789510269,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.95862479799999,
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 1160.8333668699536,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.383635044000002,
+		"start_state" : 30
+	},
+	{
+		"final_path_length" : 1023.4367719333269,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.834144807,
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 1236.3746963123506,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 42.569685028999999,
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 1361.7113339965213,
+		"goals_visited" : 157,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.513291958,
+		"start_state" : 33
+	},
+	{
+		"final_path_length" : 837.76810908923676,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 836.05610994300002,
+		"start_state" : 31
+	},
+	{
+		"final_path_length" : 1035.1118480538671,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 173.01317468799999,
+		"start_state" : 34
+	},
+	{
+		"final_path_length" : 918.81466553202767,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.68945847499998,
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 1269.5516987007129,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 38.998804499000002,
+		"start_state" : 47
+	},
+	{
+		"final_path_length" : 1123.4590066614633,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.234365620000005,
+		"start_state" : 22
+	},
+	{
+		"final_path_length" : 1391.2069817834133,
+		"goals_visited" : 149,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.813950519999999,
+		"start_state" : 41
+	},
+	{
+		"final_path_length" : 1419.8667474411736,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.900079716,
+		"start_state" : 47
+	},
+	{
+		"final_path_length" : 1214.981664765528,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.970860074000001,
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 1270.6400254694324,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.118493280000003,
+		"start_state" : 43
+	},
+	{
+		"final_path_length" : 1027.9951948117887,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.54117797699999,
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 1042.1328079488137,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.337187382,
+		"start_state" : 31
+	},
+	{
+		"final_path_length" : 1336.6482854494391,
+		"goals_visited" : 153,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.432844955,
+		"start_state" : 45
+	},
+	{
+		"final_path_length" : 1007.786112496158,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.559818127,
+		"start_state" : 24
+	},
+	{
+		"final_path_length" : 1183.366190947331,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.711161817999994,
+		"start_state" : 44
+	},
+	{
+		"final_path_length" : 1188.0630508883639,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.765998269999997,
+		"start_state" : 43
+	},
+	{
+		"final_path_length" : 848.25022571916577,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.73903711599996,
+		"start_state" : 32
+	},
+	{
+		"final_path_length" : 830.4329020556379,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 834.225632873,
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 801.89262153099207,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.85914593200005,
+		"start_state" : 32
+	},
+	{
+		"final_path_length" : 828.08919899206114,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.65150284399999,
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 826.70527245615222,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.80785018799997,
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 1097.8792124211918,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.102981176,
+		"start_state" : 40
+	},
+	{
+		"final_path_length" : 949.32984324577296,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.47031441299998,
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 1098.5779788338148,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.280005811999999,
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 848.94871575381308,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 836.33328646099994,
+		"start_state" : 30
+	},
+	{
+		"final_path_length" : 1366.7767357045252,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.562105116000001,
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 903.00896341434736,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.88097400599997,
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 1121.4561641567004,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.696227243999999,
+		"start_state" : 28
+	},
+	{
+		"final_path_length" : 1444.2946203289896,
+		"goals_visited" : 152,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 21.113383941999999,
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 1403.8571056931612,
+		"goals_visited" : 153,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 26.739421972999999,
+		"start_state" : 40
+	},
+	{
+		"final_path_length" : 1439.083255497329,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.637626332000004,
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 939.06600890503967,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 338.35102290499998,
+		"start_state" : 47
+	},
+	{
+		"final_path_length" : 1092.4887461482242,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.432782952,
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 1493.1037488181928,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.445717258999998,
+		"start_state" : 27
+	},
+	{
+		"final_path_length" : 1104.3629942182156,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.091263338000005,
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 1022.8865701323633,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.37583359499999,
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 1074.9449724382914,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.521395252000005,
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 1432.0966004350917,
+		"goals_visited" : 152,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.620915215,
+		"start_state" : 37
+	},
+	{
+		"final_path_length" : 1335.2142201568611,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.217102740000001,
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 852.99183017197095,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 856.72906222300003,
+		"start_state" : 34
+	},
+	{
+		"final_path_length" : 1327.3336945753797,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 37.266882676000002,
+		"start_state" : 40
+	},
+	{
+		"final_path_length" : 1175.918165401438,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.298578223000007,
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 1160.7906486068662,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.395084713000003,
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 1297.5401846942248,
+		"goals_visited" : 153,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.734647931000001,
+		"start_state" : 41
+	},
+	{
+		"final_path_length" : 1010.4609258598676,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.74907452599999,
+		"start_state" : 46
+	},
+	{
+		"final_path_length" : 1478.4934131206364,
+		"goals_visited" : 152,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.83390807,
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 935.70844757067619,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.72409259800003,
+		"start_state" : 33
+	},
+	{
+		"final_path_length" : 1422.9030288197309,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.831245201000002,
+		"start_state" : 49
+	},
+	{
+		"final_path_length" : 1567.3082895712332,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.795966492000002,
+		"start_state" : 24
+	},
+	{
+		"final_path_length" : 846.17982717646419,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.95632960199998,
+		"start_state" : 48
+	},
+	{
+		"final_path_length" : 925.98842735691915,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.37687278099997,
+		"start_state" : 48
+	},
+	{
+		"final_path_length" : 842.36681291079969,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.82912415299995,
+		"start_state" : 34
+	},
+	{
+		"final_path_length" : 996.61435406480041,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 172.01037954500001,
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 944.81037227496302,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 335.062646556,
+		"start_state" : 36
+	},
+	{
+		"final_path_length" : 994.92900162494539,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.98912681499999,
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 1565.1479520508326,
+		"goals_visited" : 157,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.746258108999999,
+		"start_state" : 32
+	},
+	{
+		"final_path_length" : 1005.2827547851871,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.533631775,
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 1387.3598287382717,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.710444092000003,
+		"start_state" : 44
+	},
+	{
+		"final_path_length" : 1026.9531065951635,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.143456582,
+		"start_state" : 32
+	},
+	{
+		"final_path_length" : 1588.9942273664103,
+		"goals_visited" : 157,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.466413720999999,
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 1342.5010598638914,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.844654812000002,
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 1006.7025363558862,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.73975272600001,
+		"start_state" : 26
+	},
+	{
+		"final_path_length" : 1369.631851878248,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.748552432,
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 1110.4384968878408,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 88.968093299000003,
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 940.19817120883283,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.76214222099998,
+		"start_state" : 38
+	},
+	{
+		"final_path_length" : 1361.6858876153915,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 35.825435210999999,
+		"start_state" : 24
+	},
+	{
+		"final_path_length" : 992.34525983213541,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.34250465900001,
+		"start_state" : 46
+	},
+	{
+		"final_path_length" : 1056.5530400891082,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 167.98843517899999,
+		"start_state" : 25
+	},
+	{
+		"final_path_length" : 1242.4740287231277,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 37.974567467999996,
+		"start_state" : 46
+	},
+	{
+		"final_path_length" : 1281.5570106568955,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.000284694999998,
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 913.6427247339717,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.710160669,
+		"start_state" : 28
+	},
+	{
+		"final_path_length" : 1160.8746644113473,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.823587493000005,
+		"start_state" : 36
+	},
+	{
+		"final_path_length" : 1411.8180450606494,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 18.983945155000001,
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 1295.099059194456,
+		"goals_visited" : 157,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 21.561451101999999,
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 1245.2268094291467,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 52.319325399999997,
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 984.57572149249165,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 174.02452566900001,
+		"start_state" : 30
+	},
+	{
+		"final_path_length" : 930.80967189830528,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.41432056600001,
+		"start_state" : 22
+	},
+	{
+		"final_path_length" : 1244.405259137204,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.445012405999996,
+		"start_state" : 26
+	},
+	{
+		"final_path_length" : 1209.1605353268119,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.367706122999998,
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 1359.9983114071208,
+		"goals_visited" : 151,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 20.228068209,
+		"start_state" : 30
+	},
+	{
+		"final_path_length" : 837.91670266836593,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.349313661,
+		"start_state" : 25
+	},
+	{
+		"final_path_length" : 1287.210485606138,
+		"goals_visited" : 157,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 24.404748943000001,
+		"start_state" : 47
+	},
+	{
+		"final_path_length" : 825.3223869782322,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.292709919,
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 859.79371600597096,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.53139225500001,
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 1233.9531280774152,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.601659605000002,
+		"start_state" : 22
+	},
+	{
+		"final_path_length" : 1039.0062753640325,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.693777305,
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 1510.2581985385609,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.128962807000001,
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 1086.4535953966217,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.579253292000004,
+		"start_state" : 20
+	},
+	{
+		"final_path_length" : 831.62182596505613,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.13975420600002,
+		"start_state" : 36
+	},
+	{
+		"final_path_length" : 1279.7805464270293,
+		"goals_visited" : 156,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.569956296000001,
+		"start_state" : 42
+	},
+	{
+		"final_path_length" : 864.09958585411255,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.06186863699998,
+		"start_state" : 46
+	},
+	{
+		"final_path_length" : 1424.4844769830083,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.968974840000001,
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 1395.5188332410435,
+		"goals_visited" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 20.927437825999998,
+		"start_state" : 23
+	},
+	{
+		"final_path_length" : 1367.1635897338645,
+		"goals_visited" : 152,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 25.376020889999999,
+		"start_state" : 24
+	},
+	{
+		"final_path_length" : 1543.6401555994842,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 20.088592741999999,
+		"start_state" : 46
+	},
+	{
+		"final_path_length" : 1353.4130178296132,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 24.796828204000001,
+		"start_state" : 48
+	},
+	{
+		"final_path_length" : 1018.0977772007589,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.55836092000001,
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 1237.2487179517777,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.113523246,
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 945.63927584338478,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.53636538000001,
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 945.81682405256925,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.44921981599998,
+		"start_state" : 29
+	},
+	{
+		"final_path_length" : 1070.2917946463915,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.32751042800001,
+		"start_state" : 23
+	},
+	{
+		"final_path_length" : 1335.2369555323121,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 21.622532590999999,
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 1542.7320931775696,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.445723699999999,
+		"start_state" : 29
+	},
+	{
+		"final_path_length" : 937.45803579796109,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.412746293,
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 925.60881025926767,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.41912980799998,
+		"start_state" : 34
+	},
+	{
+		"final_path_length" : 997.00418651901271,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.12456820700001,
+		"start_state" : 33
+	},
+	{
+		"final_path_length" : 1003.0634169663911,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.158344693,
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 1342.9735133244255,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.212682839000003,
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 1019.2612395867891,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.79406097899999,
+		"start_state" : 33
+	},
+	{
+		"final_path_length" : 983.16238315981991,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.29278647500001,
+		"start_state" : 40
+	},
+	{
+		"final_path_length" : 1202.2176206421464,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.541143034000001,
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 971.15908512611134,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.12093874300001,
+		"start_state" : 47
+	},
+	{
+		"final_path_length" : 1566.2875548243001,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.69673581,
+		"start_state" : 20
+	},
+	{
+		"final_path_length" : 997.6465287800529,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.64575830499999,
+		"start_state" : 27
+	},
+	{
+		"final_path_length" : 1007.2726710655274,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.215890188,
+		"start_state" : 39
+	},
+	{
+		"final_path_length" : 824.1789631177553,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.25996489500005,
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 926.94900214214135,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.85601266200001,
+		"start_state" : 31
+	},
+	{
+		"final_path_length" : 1239.0342980486137,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.689370021000002,
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 1331.2234280490059,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.836274424999999,
+		"start_state" : 35
+	},
+	{
+		"final_path_length" : 1213.5292355116712,
+		"goals_visited" : 157,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.336375232999998,
+		"start_state" : 36
+	},
+	{
+		"final_path_length" : 1192.1177314485215,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.491199856000001,
+		"start_state" : 40
+	},
+	{
+		"final_path_length" : 1194.0615112176172,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.132756772,
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 1281.0669110423275,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 41.378955245999997,
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 1148.4336224081972,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.170880843999996,
+		"start_state" : 31
+	},
+	{
+		"final_path_length" : 1038.0355623464452,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.14458389500001,
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 1400.1642833440956,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.705886309999997,
+		"start_state" : 29
+	},
+	{
+		"final_path_length" : 1294.1322262946171,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.116252543000002,
+		"start_state" : 34
+	},
+	{
+		"final_path_length" : 1107.6671386561268,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.935831794999999,
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 832.7243009299691,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.23308397999995,
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 1156.6157980406654,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 90.619360275999995,
+		"start_state" : 43
+	},
+	{
+		"final_path_length" : 1461.1983318631392,
+		"goals_visited" : 152,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.946479909000001,
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 1023.2293703386218,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.81803061100001,
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 935.12533821776299,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 338.31212800499998,
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 1530.8530010966097,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 20.737841807999999,
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 1044.8275266805394,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.572669268,
+		"start_state" : 43
+	},
+	{
+		"final_path_length" : 919.09304718212491,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.018593248,
+		"start_state" : 33
+	},
+	{
+		"final_path_length" : 840.43295170850797,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.67586129699998,
+		"start_state" : 42
+	},
+	{
+		"final_path_length" : 812.30014807885266,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.65039584299996,
+		"start_state" : 37
+	},
+	{
+		"final_path_length" : 918.75398515393965,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 340.44691775899997,
+		"start_state" : 40
+	},
+	{
+		"final_path_length" : 1189.6604627280144,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.948527683999998,
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 1593.9666224413597,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 20.132138450999999,
+		"start_state" : 28
+	},
+	{
+		"final_path_length" : 1104.14812759862,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.484090839999993,
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 1355.8368754491928,
+		"goals_visited" : 157,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.697238644000002,
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 1291.5733137547904,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.553837961999999,
+		"start_state" : 34
+	},
+	{
+		"final_path_length" : 1117.9788359558017,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.419077969,
+		"start_state" : 33
+	},
+	{
+		"final_path_length" : 841.6987242756768,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 834.005839864,
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 1192.2958967408244,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.888928014000001,
+		"start_state" : 45
+	},
+	{
+		"final_path_length" : 852.317974438482,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.87048098699995,
+		"start_state" : 40
+	},
+	{
+		"final_path_length" : 922.82010995734038,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.58617307499998,
+		"start_state" : 23
+	},
+	{
+		"final_path_length" : 1313.1156962353782,
+		"goals_visited" : 160,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.884379138,
+		"start_state" : 22
+	},
+	{
+		"final_path_length" : 1352.0967051958237,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.072369266999999,
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 1182.3349975159508,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.825515640999996,
+		"start_state" : 23
+	},
+	{
+		"final_path_length" : 930.82904153113793,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.600225846,
+		"start_state" : 36
+	},
+	{
+		"final_path_length" : 826.34071228331618,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.76112803000001,
+		"start_state" : 47
+	},
+	{
+		"final_path_length" : 807.78123545387302,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.56691943600003,
+		"start_state" : 31
+	},
+	{
+		"final_path_length" : 939.35929265904304,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.49775840699999,
+		"start_state" : 41
+	},
+	{
+		"final_path_length" : 825.16408472830767,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.42484711199995,
+		"start_state" : 39
+	},
+	{
+		"final_path_length" : 1364.3674801288682,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.896177934000001,
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 1576.3127548414118,
+		"goals_visited" : 157,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.657415500999999,
+		"start_state" : 39
+	},
+	{
+		"final_path_length" : 1343.4845407681903,
+		"goals_visited" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.418279019,
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 1050.5931839366644,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.23039264299999,
+		"start_state" : 36
+	},
+	{
+		"final_path_length" : 1080.3594743015119,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.559564695000006,
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 1033.1673236595079,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.55778515399999,
+		"start_state" : 45
+	},
+	{
+		"final_path_length" : 846.16400460394345,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 834.918034272,
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 826.19242930577934,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.42463884999995,
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 924.45880114516251,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.41498351000001,
+		"start_state" : 43
+	},
+	{
+		"final_path_length" : 1354.1588685211964,
+		"goals_visited" : 155,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 24.535868504,
+		"start_state" : 49
+	},
+	{
+		"final_path_length" : 1322.7005227237007,
+		"goals_visited" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.288692751999999,
+		"start_state" : 26
+	},
+	{
+		"final_path_length" : 1345.4533193273219,
+		"goals_visited" : 152,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 20.977939037999999,
+		"start_state" : 42
+	},
+	{
+		"final_path_length" : 827.58712035105737,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.25911243899998,
+		"start_state" : 35
+	},
+	{
+		"final_path_length" : 1344.5532325559016,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.727278850000001,
+		"start_state" : 22
+	},
+	{
+		"final_path_length" : 1145.8006891504936,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 85.714211867000003,
+		"start_state" : 46
+	},
+	{
+		"final_path_length" : 833.11377679529937,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.56106602600005,
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 1155.9819199961794,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.103469716999996,
+		"start_state" : 31
+	},
+	{
+		"final_path_length" : 1215.071876770774,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.258017443,
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 840.27363065160625,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.60423267600004,
+		"start_state" : 26
+	},
+	{
+		"final_path_length" : 1557.2979425994017,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.832046775999999,
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 1377.661133983913,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 37.176517036,
+		"start_state" : 31
+	},
+	{
+		"final_path_length" : 1208.4724580454797,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.122445264000007,
+		"start_state" : 48
+	},
+	{
+		"final_path_length" : 831.40178333720223,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.50881808700001,
+		"start_state" : 33
+	},
+	{
+		"final_path_length" : 991.18145430262882,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.495832028,
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 1325.4360242885441,
+		"goals_visited" : 157,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 23.035478371,
+		"start_state" : 39
+	},
+	{
+		"final_path_length" : 1375.3065309936103,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.794561631999997,
+		"start_state" : 43
+	},
+	{
+		"final_path_length" : 1143.4366168061795,
+		"goals_visited" : 164,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.842184271999997,
+		"start_state" : 32
+	},
+	{
+		"final_path_length" : 929.62332319039353,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.143074759,
+		"start_state" : 27
+	},
+	{
+		"final_path_length" : 920.99876350757359,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.28946975700001,
+		"start_state" : 42
+	},
+	{
+		"final_path_length" : 906.18191697981422,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 337.42812227799999,
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 998.78418544955355,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.051181555,
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 1321.8720753527771,
+		"goals_visited" : 161,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 36.308954098000001,
+		"start_state" : 36
+	},
+	{
+		"final_path_length" : 1126.9468792546568,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 89.165000092,
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 1262.3321467914595,
+		"goals_visited" : 152,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.242048954000001,
+		"start_state" : 25
+	},
+	{
+		"final_path_length" : 818.23030908446185,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 832.96435273899999,
+		"start_state" : 30
+	},
+	{
+		"final_path_length" : 896.89726763986175,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 335.97836527300001,
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 910.90052819935238,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.119357304,
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 843.07776843620513,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.36556903899998,
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 1304.909227237875,
+		"goals_visited" : 163,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 40.270427122999997,
+		"start_state" : 30
+	},
+	{
+		"final_path_length" : 1030.0766831787391,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 171.72976155200001,
+		"start_state" : 31
+	},
+	{
+		"final_path_length" : 863.9927555883196,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.45906203200002,
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 1312.8642909995626,
+		"goals_visited" : 153,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 22.350097507000001,
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 1117.2729302367998,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 87.988710002000005,
+		"start_state" : 47
+	},
+	{
+		"final_path_length" : 1006.1621873432382,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.64767325099999,
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 1159.1803138129555,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.5,
+		"run_time" : 86.432580798000004,
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 1428.930612756209,
+		"goals_visited" : 151,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.069657896999999,
+		"start_state" : 31
+	},
+	{
+		"final_path_length" : 1041.1951541671283,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.05685070800001,
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 1049.9804406641806,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.22422049799999,
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 861.21469562333107,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.50901149799995,
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 1552.3357177454377,
+		"goals_visited" : 154,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 21.003832581000001,
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 1500.571003839915,
+		"goals_visited" : 158,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 19.446379477000001,
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 981.39029522651219,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.35468209199999,
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 904.45294199059208,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.14729433700001,
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 1176.0777257595098,
+		"goals_visited" : 159,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 38.530232986000001,
+		"start_state" : 29
+	},
+	{
+		"final_path_length" : 853.89376739229965,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.61023845499994,
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 842.97282989524945,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.85475617899999,
+		"start_state" : 38
+	},
+	{
+		"final_path_length" : 1284.2618220103718,
+		"goals_visited" : 162,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.20000000000000001,
+		"run_time" : 39.232438680999998,
+		"start_state" : 23
+	},
+	{
+		"final_path_length" : 928.53794326310958,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.17675012199999,
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 843.91225451007097,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.46469454700002,
+		"start_state" : 45
+	},
+	{
+		"final_path_length" : 976.79222699869752,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.19465713299999,
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 924.65013562019431,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.55419017499997,
+		"start_state" : 28
+	},
+	{
+		"final_path_length" : 1012.4784277284328,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 168.13234544900001,
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 896.57249707915707,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.77794123000001,
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 1468.4129294756715,
+		"goals_visited" : 152,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 0.10000000000000001,
+		"run_time" : 20.274177430999998,
+		"start_state" : 49
+	},
+	{
+		"final_path_length" : 845.76844352387047,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.85948860300005,
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 845.65717078461716,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 836.18471443600004,
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 806.2039501788895,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.19641808300003,
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 970.0648266866383,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 334.35469145000002,
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 1019.5526154740838,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 1,
+		"run_time" : 170.77154808700001,
+		"start_state" : 37
+	},
+	{
+		"final_path_length" : 819.41787612569794,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 835.05113002400003,
+		"start_state" : 28
+	},
+	{
+		"final_path_length" : 914.35293770921635,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 336.23654297100001,
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 905.75256344499962,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 2,
+		"run_time" : 333.94930721999998,
+		"start_state" : 37
+	},
+	{
+		"final_path_length" : 849.84738504788004,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : false,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 833.54239259300005,
+		"start_state" : 22
+	},
+	{
+		"final_path_length" : 824.32085156272478,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 834.76439406999998,
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 806.14791403233914,
+		"goals_visited" : 165,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"distance_heuristics" : "GreatCircle"
+		},
+		"ptp_planning_time" : 5,
+		"run_time" : 834.80124286,
+		"start_state" : 20
+	}
+]
