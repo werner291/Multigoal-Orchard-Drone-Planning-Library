@@ -97,7 +97,7 @@ ShellPathPlanner::planFirstApproach(const ompl::base::State *start, SingleGoalPl
 
     auto start_to_shell = methods.state_to_state(
             start,
-            approach_path.getState(approach_path.getStateCount())
+            approach_path.getState(0)
     );
 
     if (start_to_shell) {

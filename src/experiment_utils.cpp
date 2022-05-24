@@ -333,8 +333,6 @@ planExactForPdef(ompl::base::Planner &planner,
             ompl::geometric::PathSimplifier(planner.getSpaceInformation()).simplifyMax(path);
         }
 
-        assert(path.check());
-
         return {path};
 
     } else {

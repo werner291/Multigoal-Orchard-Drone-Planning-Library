@@ -38,7 +38,7 @@ std::vector<NewMultiGoalPlannerAllocatorFn> mkPlannerAllocators() {
 
 int main(int argc, char **argv) {
 
-    run_planner_experiment(mkPlannerAllocators(), "analysis/knn_results.json", 100);
+    run_planner_experiment(mkPlannerAllocators(), "analysis/knn_results.json", 100, { 0.1, 0.2, 0.5, 1.0, 2.0 });
 
     return 0;
 

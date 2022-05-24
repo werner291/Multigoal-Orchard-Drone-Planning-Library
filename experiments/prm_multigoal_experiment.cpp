@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
         };
     }) | to_vector;
 
-    run_planner_experiment(allocators, "analysis/prm_multigoal_experiment.json", 50);
+    run_planner_experiment(allocators, "analysis/prm_multigoal_experiment.json", 50, {5});
 
     return 0;
 }

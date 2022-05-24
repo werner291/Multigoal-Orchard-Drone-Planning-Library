@@ -39,9 +39,8 @@ ompl::base::ScopedState<> genStartState(const shared_ptr<DroneStateSpace> &state
     return start_state;
 }
 
-void run_planner_experiment(const vector<NewMultiGoalPlannerAllocatorFn>& allocators,
-                            const std::string &results_path,
-                            const int num_runs) {
+void run_planner_experiment(const vector<NewMultiGoalPlannerAllocatorFn> &allocators, const std::string &results_path,
+                            const int num_runs, const std::vector<double> ptp_planning_times_seconds) {
 
     auto stateSpace = loadStateSpace();
 
@@ -55,41 +54,65 @@ void run_planner_experiment(const vector<NewMultiGoalPlannerAllocatorFn>& alloca
 
     unsigned int concurrency = std::thread::hardware_concurrency();
 
+    auto start_states =
+            ranges::views::iota(0, num_runs)
+            | ranges::views::transform([&](const auto &i) { return std::make_pair(i,genStartState(stateSpace)); });
+
+    auto tasks = ranges::views::cartesian_product(
+            allocators,
+            ptp_planning_times_seconds,
+            start_states
+            ) | ranges::to_vector;
+
+    std::shuffle(tasks.begin(), tasks.end(), std::mt19937(std::random_device()()));
+
+    size_t num_tasks = tasks.size();
+    size_t current_task = 0;
+
     for (size_t thread_id = 0; thread_id < concurrency; ++thread_id) {
-        threads.emplace_back([&, thread_id=thread_id, allocators=allocators]() {
+        threads.emplace_back([&]() {
 
             auto si = loadSpaceInformation(stateSpace, scene_info);
 
-            for (size_t run_i = thread_id; run_i < num_runs; run_i += concurrency) {
+            while (true) {
 
-                auto start_state = genStartState(stateSpace);
+                size_t thread_current_task;
 
-                for (const auto& planner_allocator : allocators) {
-                    auto planner = planner_allocator(scene_info, stateSpace);
-                    auto goals = constructNewAppleGoals(si, scene_info.apples);
-                    auto objective = make_shared<DronePathLengthObjective>(si);
-
-                    SingleGoalPlannerMethods ptp(5.0, si, objective);
-
-                    auto start_time = ompl::time::now();
-                    auto result = planner->plan(si, start_state.get(), goals, ptp);
-                    auto run_time = ompl::time::seconds(ompl::time::now() - start_time);
-
-                    auto plan_result = toJson(result);
-                    plan_result["run_time"] = run_time;
-                    plan_result["run_index"] = (int) run_i;
-                    plan_result["planner_params"] = planner->parameters();
-                    plan_result["planner_name"] = planner->name();
-
-                    {
-                        std::lock_guard<std::mutex> lock(mut);
-                        statistics.append(plan_result);
-
+                {
+                    std::lock_guard<std::mutex> lock(mut);
+                    if (current_task >= num_tasks) {
+                        return;
                     }
+                    thread_current_task = current_task++;
                 }
 
-                std::cout << "Completed run " << run_i << " out of " << num_runs << std::endl;
+                const auto& [planner_allocator, ptp_planning_time, start_state_pair] = tasks[current_task - 1];
+                const auto& [run_i, start_state] = start_state_pair;
 
+                std::cout << "Starting planning run with PTP time " << ptp_planning_time;
+
+                auto planner = planner_allocator(scene_info, stateSpace);
+                auto goals = constructNewAppleGoals(si, scene_info.apples);
+                auto objective = make_shared<DronePathLengthObjective>(si);
+
+                SingleGoalPlannerMethods ptp(ptp_planning_time, si, objective);
+
+                auto start_time = ompl::time::now();
+                auto result = planner->plan(si, start_state.get(), goals, ptp);
+                auto run_time = ompl::time::seconds(ompl::time::now() - start_time);
+
+                auto plan_result = toJson(result);
+                plan_result["run_time"] = run_time;
+                plan_result["start_state"] = (int) run_i;
+                plan_result["planner_params"] = planner->parameters();
+                plan_result["planner_name"] = planner->name();
+                plan_result["ptp_planning_time"] = ptp_planning_time;
+
+                {
+                    std::lock_guard<std::mutex> lock(mut);
+                    statistics.append(plan_result);
+                    std::cout << "Completed run " << statistics.size() << " out of " << tasks.size() << std::endl;
+                }
             }
         });
     }
