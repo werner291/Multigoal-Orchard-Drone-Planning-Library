@@ -22,10 +22,10 @@ int main(int argc, char **argv) {
             }
     };
 
-    ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
+    ompl::msg::setLogLevel(ompl::msg::LOG_ERROR);
 
     run_planner_experiment(allocators, "analysis/shellpath.json", 50, {
-        0.1, 0.2, 0.5, 1.0, 2.0, 5.0
+        0.0
     });
 
 }
