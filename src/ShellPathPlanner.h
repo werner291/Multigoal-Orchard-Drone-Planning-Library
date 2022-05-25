@@ -11,25 +11,27 @@ class ShellPathPlanner : public NewMultiGoalPlanner {
 
     std::shared_ptr<CollisionFreeShell> shell;
     std::shared_ptr<OmplDistanceHeuristics> distance_heuristics;
+    std::shared_ptr<SingleGoalPlannerMethods> methods;
     bool apply_shellstate_optimization;
 
 
 public:
     ShellPathPlanner(std::shared_ptr<CollisionFreeShell> shell,
                      bool applyShellstateOptimization,
-                     std::shared_ptr<OmplDistanceHeuristics> distanceHeuristics);
+                     std::shared_ptr<OmplDistanceHeuristics> distanceHeuristics,
+                     std::shared_ptr<SingleGoalPlannerMethods> methods);
 
     PlanResult plan(const ompl::base::SpaceInformationPtr &si,
                     const ompl::base::State *start,
-                    const std::vector<ompl::base::GoalPtr> &goals,
-                    SingleGoalPlannerMethods &methods) override;
+                    const std::vector<ompl::base::GoalPtr> &goals) override;
 
     PlanResult assembleFullPath(
             const ompl::base::SpaceInformationPtr &si,
             const std::vector<ompl::base::GoalPtr> &goals,
             OMPLSphereShellWrapper &ompl_shell,
             const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches,
-            const std::vector<size_t> &ordering, PlanResult &result,
+            const std::vector<size_t> &ordering,
+            PlanResult &result,
             ompl::geometric::PathGeometric &initial_approach) const;
 
     ompl::geometric::PathGeometric retreat_move_probe(
@@ -40,9 +42,8 @@ public:
             const std::pair<size_t, ompl::geometric::PathGeometric> &approach_a,
             const std::pair<size_t, ompl::geometric::PathGeometric> &approach_b) const;
 
-    static std::optional<ompl::geometric::PathGeometric> planFirstApproach(
+    std::optional<ompl::geometric::PathGeometric> planFirstApproach(
             const ompl::base::State *start,
-            SingleGoalPlannerMethods &methods,
             ompl::geometric::PathGeometric &approach_path);
 
     std::vector<size_t> computeApproachOrdering(
@@ -53,12 +54,10 @@ public:
     std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> planApproaches(
             const ompl::base::SpaceInformationPtr &si,
             const std::vector<ompl::base::GoalPtr> &goals,
-            SingleGoalPlannerMethods &methods,
             const OMPLSphereShellWrapper &ompl_shell) const;
 
     std::optional<ompl::geometric::PathGeometric> planApproachForGoal(
             const ompl::base::SpaceInformationPtr &si,
-            SingleGoalPlannerMethods &methods,
             const OMPLSphereShellWrapper &ompl_shell,
             const ompl::base::GoalPtr &goal) const;
 

@@ -16,6 +16,8 @@ class NewKnnPlanner : public NewMultiGoalPlanner {
 
     size_t k;
 
+    const std::shared_ptr<SingleGoalPlannerMethods> methods;
+
     typedef std::pair<size_t,const ompl::base::Goal*> GoalIdAndGoal;
 
     typedef std::variant<
@@ -27,12 +29,13 @@ class NewKnnPlanner : public NewMultiGoalPlanner {
     buildGNAT(const ompl::base::State *start, const std::vector<ompl::base::GoalPtr> &goals) const;
 
 public:
-    NewKnnPlanner(const std::shared_ptr<const OmplDistanceHeuristics> &distanceHeuristics, size_t k);
+    NewKnnPlanner(const std::shared_ptr<const OmplDistanceHeuristics> &distanceHeuristics,
+                  size_t k,
+                  const std::shared_ptr<SingleGoalPlannerMethods> methods);
 
     PlanResult plan(const ompl::base::SpaceInformationPtr& si,
                     const ompl::base::State* start,
-                    const std::vector<ompl::base::GoalPtr> &goals,
-                    SingleGoalPlannerMethods& methods) override;
+                    const std::vector<ompl::base::GoalPtr> &goals) override;
 
     [[nodiscard]] Json::Value parameters() const override;
 

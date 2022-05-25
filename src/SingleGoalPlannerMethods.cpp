@@ -6,8 +6,8 @@
 
 std::optional <ompl::geometric::PathGeometric>
 SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::base::GoalPtr b) {
-    auto prm = std::make_shared<ompl::geometric::PRMstar>(si);
-    auto result = planToGoal(*prm, optimization_objective, a, timePerAppleSeconds, false, b);
+    auto ompl_planner = alloc(si);
+    auto result = planToGoal(*ompl_planner, optimization_objective, a, timePerAppleSeconds, false, b);
     if (result) {
         *result = optimize(*result, optimization_objective, si);
     }
@@ -16,10 +16,8 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
 
 std::optional <ompl::geometric::PathGeometric>
 SingleGoalPlannerMethods::state_to_state(const ompl::base::State *a, const ompl::base::State *b) {
-    auto objective = std::make_shared<DronePathLengthObjective>(si);
-    auto prm = std::make_shared<ompl::geometric::PRMstar>(si);
-
-    auto result = planFromStateToState(*prm, objective, a, b, timePerAppleSeconds);
+    auto ompl_planner = alloc(si);
+    auto result = planFromStateToState(*ompl_planner, optimization_objective, a, b, timePerAppleSeconds);
     if (result) {
         *result = optimize(*result, optimization_objective, si);
     }

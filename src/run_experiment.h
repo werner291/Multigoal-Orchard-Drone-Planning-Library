@@ -12,12 +12,11 @@
 
 typedef std::function<std::shared_ptr<NewMultiGoalPlanner>(
         const AppleTreePlanningScene& scene_info,
-        const std::shared_ptr<DroneStateSpace>& stateSpace)>
+        const ompl::base::SpaceInformationPtr&)>
         NewMultiGoalPlannerAllocatorFn;
 
 void run_planner_experiment(const std::vector <NewMultiGoalPlannerAllocatorFn> &allocators,
                             const std::string &results_path,
-                            const int num_runs,
-                            const std::vector<double> ptp_planning_times_seconds);
+                            const int num_runs);
 
 #endif //NEW_PLANNERS_RUN_EXPERIMENT_H

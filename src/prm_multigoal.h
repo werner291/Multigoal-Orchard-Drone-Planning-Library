@@ -24,9 +24,9 @@ public:
     MultigoalPrmStar(double prmBuildTime, size_t samplesPerGoal, bool optimizeSegments);
 
 public:
-    PlanResult plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
-                    const std:: vector<ompl::base::GoalPtr> &goals,
-                    SingleGoalPlannerMethods &methods) override;
+    PlanResult plan(const ompl::base::SpaceInformationPtr &si,
+                    const ompl::base::State *start,
+                    const std:: vector<ompl::base::GoalPtr> &goals) override;
 
     [[nodiscard]] Json::Value parameters() const override;
 

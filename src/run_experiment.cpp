@@ -39,8 +39,9 @@ ompl::base::ScopedState<> genStartState(const shared_ptr<DroneStateSpace> &state
     return start_state;
 }
 
-void run_planner_experiment(const vector<NewMultiGoalPlannerAllocatorFn> &allocators, const std::string &results_path,
-                            const int num_runs, const std::vector<double> ptp_planning_times_seconds) {
+void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &allocators,
+                            const std::string &results_path,
+                            const int num_runs) {
 
     auto stateSpace = loadStateSpace();
 
@@ -60,7 +61,6 @@ void run_planner_experiment(const vector<NewMultiGoalPlannerAllocatorFn> &alloca
 
     auto tasks = ranges::views::cartesian_product(
             allocators,
-            ptp_planning_times_seconds,
             start_states
             ) | ranges::to_vector;
 
@@ -86,19 +86,15 @@ void run_planner_experiment(const vector<NewMultiGoalPlannerAllocatorFn> &alloca
                     thread_current_task = current_task++;
                 }
 
-                const auto& [planner_allocator, ptp_planning_time, start_state_pair] = tasks[current_task - 1];
+                const auto& [planner_allocator, start_state_pair] = tasks[current_task - 1];
                 const auto& [run_i, start_state] = start_state_pair;
 
-                std::cout << "Starting planning run with PTP time " << ptp_planning_time;
-
-                auto planner = planner_allocator(scene_info, stateSpace);
+                auto planner = planner_allocator(scene_info, si);
                 auto goals = constructNewAppleGoals(si, scene_info.apples);
                 auto objective = make_shared<DronePathLengthObjective>(si);
 
-                SingleGoalPlannerMethods ptp(ptp_planning_time, si, objective);
-
                 auto start_time = ompl::time::now();
-                auto result = planner->plan(si, start_state.get(), goals, ptp);
+                auto result = planner->plan(si, start_state.get(), goals);
                 auto run_time = ompl::time::seconds(ompl::time::now() - start_time);
 
                 auto plan_result = toJson(result);
@@ -106,7 +102,6 @@ void run_planner_experiment(const vector<NewMultiGoalPlannerAllocatorFn> &alloca
                 plan_result["start_state"] = (int) run_i;
                 plan_result["planner_params"] = planner->parameters();
                 plan_result["planner_name"] = planner->name();
-                plan_result["ptp_planning_time"] = ptp_planning_time;
 
                 {
                     std::lock_guard<std::mutex> lock(mut);

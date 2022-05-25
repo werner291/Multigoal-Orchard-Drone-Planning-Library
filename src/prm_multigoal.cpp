@@ -120,14 +120,15 @@ std::vector<AppleIdVertexPair> createGoalVertices(PRMCustom &prm,
 NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(
         const ompl::base::SpaceInformationPtr &si,
         const ompl::base::State *start,
-        const std:: vector<ompl::base::GoalPtr> &goals,
-        SingleGoalPlannerMethods &ptp) {
+        const std:: vector<ompl::base::GoalPtr> &goals) {
 
     std::cout << "Creating PRM ( budget: " << prm_build_time << "s)" << std::endl;
     auto prm = std::make_shared<PRMCustom>(si);
 
+    auto objective = std::make_shared<DronePathLengthObjective>(si);
+
     auto pdef = std::make_shared<ob::ProblemDefinition>(si);
-    pdef->setOptimizationObjective(ptp.getOptimizationObjective());
+    pdef->setOptimizationObjective(objective);
     prm->setProblemDefinition(pdef);
 
     prm->constructRoadmap(ob::timedPlannerTerminationCondition(prm_build_time));
@@ -173,7 +174,7 @@ NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(
     if (optimize_segments) {
         std::cout << "Optimizing..." << std::endl;
         path_segments |= actions::transform([&](auto &path) {
-            return optimize(path, ptp.getOptimizationObjective(), si);
+            return optimize(path, objective, si);
         });
     }
 

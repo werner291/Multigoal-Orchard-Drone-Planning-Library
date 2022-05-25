@@ -24,8 +24,7 @@ public:
 
     virtual PlanResult plan(const ompl::base::SpaceInformationPtr& si,
                             const ompl::base::State* start,
-                            const std::vector<ompl::base::GoalPtr> &goals,
-                            SingleGoalPlannerMethods& methods) = 0;
+                            const std::vector<ompl::base::GoalPtr> &goals) = 0;
 
     virtual Json::Value parameters() const = 0;
 

@@ -10,24 +10,24 @@
 #include <utility>
 
 ShellPathPlanner::ShellPathPlanner(std::shared_ptr<CollisionFreeShell> shell, bool applyShellstateOptimization,
-                                   std::shared_ptr<OmplDistanceHeuristics> distanceHeuristics) :
+                                   std::shared_ptr<OmplDistanceHeuristics> distanceHeuristics,
+                                   std::shared_ptr<SingleGoalPlannerMethods> methods) :
         shell(std::move(shell)),
         apply_shellstate_optimization(applyShellstateOptimization),
-        distance_heuristics(std::move(distanceHeuristics)) {}
+        distance_heuristics(std::move(distanceHeuristics)), methods(methods) {}
 
 NewMultiGoalPlanner::PlanResult ShellPathPlanner::plan(
         const ompl::base::SpaceInformationPtr &si,
         const ompl::base::State *start,
-        const std::vector<ompl::base::GoalPtr> &goals,
-        SingleGoalPlannerMethods &methods) {
+        const std::vector<ompl::base::GoalPtr> &goals) {
 
     OMPLSphereShellWrapper ompl_shell(shell, si);
 
-    auto approaches = planApproaches(si, goals, methods, ompl_shell);
+    auto approaches = planApproaches(si, goals, ompl_shell);
 
     auto ordering = computeApproachOrdering(start, goals, approaches);
 
-    auto first_approach = planFirstApproach(start, methods, approaches[ordering[0]].second);
+    auto first_approach = planFirstApproach(start, approaches[ordering[0]].second);
 
     PlanResult result {{}};
 
@@ -95,10 +95,10 @@ ShellPathPlanner::retreat_move_probe(const std::vector<ompl::base::GoalPtr> &goa
 }
 
 std::optional<ompl::geometric::PathGeometric>
-ShellPathPlanner::planFirstApproach(const ompl::base::State *start, SingleGoalPlannerMethods &methods,
+ShellPathPlanner::planFirstApproach(const ompl::base::State *start,
                                     ompl::geometric::PathGeometric &approach_path) {
 
-    auto start_to_shell = methods.state_to_state(
+    auto start_to_shell = methods->state_to_state(
             start,
             approach_path.getState(0)
     );
@@ -132,13 +132,12 @@ std::vector<size_t> ShellPathPlanner::computeApproachOrdering(
 std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> ShellPathPlanner::planApproaches(
         const ompl::base::SpaceInformationPtr &si,
         const std::vector<ompl::base::GoalPtr> &goals,
-        SingleGoalPlannerMethods &methods,
         const OMPLSphereShellWrapper &ompl_shell) const {
 
     std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> approaches;
 
     for (const auto& [goal_i, goal] : goals | ranges::views::enumerate) {
-        if (auto approach = planApproachForGoal(si, methods, ompl_shell, goal)) {
+        if (auto approach = planApproachForGoal(si, ompl_shell, goal)) {
             approaches.emplace_back(
                     goal_i,
                     *approach
@@ -151,20 +150,19 @@ std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> ShellPathPlanner:
 
 std::optional<ompl::geometric::PathGeometric> ShellPathPlanner::planApproachForGoal(
         const ompl::base::SpaceInformationPtr &si,
-        SingleGoalPlannerMethods &methods,
         const OMPLSphereShellWrapper &ompl_shell,
         const ompl::base::GoalPtr &goal) const {
 
     ompl::base::ScopedState shell_state(si);
     ompl_shell.state_on_shell(goal.get(), shell_state.get());
 
-    auto approach_path = methods.state_to_goal(shell_state.get(), goal);
+    auto approach_path = methods->state_to_goal(shell_state.get(), goal);
 
     if (apply_shellstate_optimization && approach_path) {
         *approach_path = optimizeExit(
                 goal.get(),
                 *approach_path,
-                methods.getOptimizationObjective(),
+                std::make_shared<DronePathLengthObjective>(si),
                 ompl_shell,
                 si
         );

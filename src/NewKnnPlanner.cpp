@@ -36,8 +36,7 @@ NewKnnPlanner::buildGNAT(const ompl::base::State *start, const vector <ompl::bas
 NewKnnPlanner::PlanResult NewKnnPlanner::plan(
         const ompl::base::SpaceInformationPtr &si,
         const ompl::base::State *start,
-        const std::vector <ompl::base::GoalPtr> &goals,
-        SingleGoalPlannerMethods& methods) {
+        const std::vector <ompl::base::GoalPtr> &goals) {
 
     auto gnat = buildGNAT(start, goals);
 
@@ -59,7 +58,7 @@ NewKnnPlanner::PlanResult NewKnnPlanner::plan(
         // For all, plan a path
         for (auto &apple: nearest_k) {
 
-            if (auto result = methods.state_to_goal(last_state, goals[get<GoalIdAndGoal>(apple).first])) {
+            if (auto result = methods->state_to_goal(last_state, goals[get<GoalIdAndGoal>(apple).first])) {
                 paths.emplace_back(apple,result.value());
             }
         }
@@ -85,7 +84,9 @@ NewKnnPlanner::PlanResult NewKnnPlanner::plan(
     return PlanResult { segments };
 }
 
-NewKnnPlanner::NewKnnPlanner(const shared_ptr<const OmplDistanceHeuristics> &distanceHeuristics, size_t k) : distance_heuristics_(distanceHeuristics), k(k) {
+NewKnnPlanner::NewKnnPlanner(const shared_ptr<const OmplDistanceHeuristics> &distanceHeuristics, size_t k,
+                             const std::shared_ptr<SingleGoalPlannerMethods> methods)
+        : distance_heuristics_(distanceHeuristics), k(k), methods(methods) {
 
 }
 
