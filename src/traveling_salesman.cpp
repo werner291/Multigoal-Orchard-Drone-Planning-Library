@@ -122,9 +122,12 @@ std::tuple<Int64DistanceMatrix, size_t, size_t> mkOpenEndedDistanceMatrix(const 
 
     // The top-left NxN part of the matrix is filled with apple-to-apple distances,
     // where distance_matrix[i][j] contains the distance between apples[i] and apples[j].
+    // Distance matrix is assumed symmetric
     for (size_t i : boost::irange<size_t>(0,n)) {
-        for (size_t j : boost::irange<size_t>(0,n)) {
+        for (size_t j : boost::irange<size_t>(i,n)) {
             distance_matrix[i][j] = (int64_t) (between(i,j) * 1000.0);
+            // Lower triangle is filled by symmetry
+            distance_matrix[j][i] = distance_matrix[i][j];
         }
     }
 

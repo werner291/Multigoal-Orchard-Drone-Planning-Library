@@ -13,8 +13,8 @@ using namespace ranges;
 
 int main(int argc, char **argv) {
 
-    const auto samples_per_goal = ranges::views::iota(1,3);
-    const double plan_times_seconds[] = {1.0, 2.0,5.0, 10.0, 15.0, 20.0, 30.0, 60.0};
+    const auto samples_per_goal = ranges::views::iota(1,4);
+    const double plan_times_seconds[] = {1.0, 2.0, 5.0, 10.0, 15.0, 20.0};//, 30.0, 60.0};
     const bool optimize_segments_options[] = {false,true};
 
     auto allocators = ranges::views::cartesian_product(plan_times_seconds, samples_per_goal, optimize_segments_options)
@@ -25,7 +25,9 @@ int main(int argc, char **argv) {
         };
     }) | to_vector;
 
-    run_planner_experiment(allocators, "analysis/prm_multigoal_experiment.json", 50, {5});
+    ompl::msg::setLogLevel(ompl::msg::LOG_ERROR);
+
+    run_planner_experiment(allocators, "analysis/prm_multigoal_experiment.json", 20, {0.0});
 
     return 0;
 }
