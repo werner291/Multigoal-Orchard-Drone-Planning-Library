@@ -176,6 +176,7 @@ Json::Value ShellPathPlanner::parameters() const {
 
     result["distance_heuristics"] = distance_heuristics->name();
     result["apply_shellstate_optimization"] = apply_shellstate_optimization;
+    result["ptp"] = methods->parameters();
 
     return result;
 }

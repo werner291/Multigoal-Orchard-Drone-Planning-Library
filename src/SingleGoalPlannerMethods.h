@@ -6,6 +6,7 @@
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/base/Goal.h>
 #include <ompl/base/Planner.h>
+#include <jsoncpp/json/value.h>
 
 class SingleGoalPlannerMethods {
 
@@ -32,6 +33,8 @@ public:
     std::optional<ompl::geometric::PathGeometric> state_to_goal(const ompl::base::State *a, const ompl::base::GoalPtr b);
 
     std::optional<ompl::geometric::PathGeometric> state_to_state(const ompl::base::State *a, const ompl::base::State *b);
+
+    Json::Value parameters() const;
 
 };
 

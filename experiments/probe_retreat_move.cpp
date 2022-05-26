@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
             auto ptp = std::make_shared<SingleGoalPlannerMethods>(
                 std::get<1>(tuple), si,
                 std::make_shared<DronePathLengthObjective>(si),
-                [](ompl::base::SpaceInformationPtr si) {
+                [](const ompl::base::SpaceInformationPtr& si) {
                     return std::make_shared<ompl::geometric::PRM>(si);
                 });
 

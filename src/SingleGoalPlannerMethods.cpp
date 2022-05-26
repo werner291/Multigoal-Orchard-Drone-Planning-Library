@@ -27,3 +27,9 @@ SingleGoalPlannerMethods::state_to_state(const ompl::base::State *a, const ompl:
 const ompl::base::OptimizationObjectivePtr &SingleGoalPlannerMethods::getOptimizationObjective() const {
     return optimization_objective;
 }
+
+Json::Value SingleGoalPlannerMethods::parameters() const {
+    Json::Value params;
+    params["timePerAppleSeconds"] = timePerAppleSeconds;
+    return params;
+}
