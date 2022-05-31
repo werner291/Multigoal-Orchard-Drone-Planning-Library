@@ -4,3 +4,9 @@
 [submodule "ompl"]
 	path = ompl
 	url = https://github.com/ompl/ompl.git
+[submodule "analysis/ompl"]
+	path = analysis/ompl
+	url = https://github.com/ompl/ompl.git
+[submodule "moveit"]
+	path = moveit
+	url = https://github.com/ros-planning/moveit.git

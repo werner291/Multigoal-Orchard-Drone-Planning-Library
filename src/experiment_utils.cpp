@@ -352,6 +352,7 @@ planToGoal(ompl::base::Planner &planner,
     pdef->setOptimizationObjective(objective);
     pdef->addStartState(a);
     pdef->setGoal(goal);
+
     planner.setProblemDefinition(pdef);
 
     return planExactForPdef(planner, duration, simplify, pdef);

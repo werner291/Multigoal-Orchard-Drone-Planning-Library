@@ -4,7 +4,6 @@
 
 #include "test_utils.h"
 #include "../src/experiment_utils.h"
-#include "../src/MoveitPathLengthObjective.h"
 
 TEST(MoveitPathLengthObjectiveTest, TestInformedSampler) {
 
@@ -12,6 +11,10 @@ TEST(MoveitPathLengthObjectiveTest, TestInformedSampler) {
     ompl_interface::ModelBasedStateSpaceSpecification spec(robot, "whole_body");
     auto state_space = std::make_shared<DroneStateSpace>(spec);
     auto space_information = std::make_shared<ompl::base::SpaceInformation>(state_space);
+
+    space_information->setStateValidityChecker([&](const ompl::base::State *state) {
+        return true; // Always valid
+    });
 
     auto pdef = std::make_shared<ompl::base::ProblemDefinition>(space_information);
 
@@ -29,28 +32,28 @@ TEST(MoveitPathLengthObjectiveTest, TestInformedSampler) {
     double costLowerBoundEstimate = INFINITY;
     for (size_t i = 0; i < 10000; ++i) {
         goal->sampleGoal(goal_sample.get());
-//        costLowerBoundEstimate = std::min(costLowerBoundEstimate, state_space->distance(start, goal));
+        costLowerBoundEstimate = std::min(costLowerBoundEstimate, state_space->distance(start.get(), goal_sample.get()));
     }
 
     pdef->addStartState(start);
-    auto objective = std::make_shared<ManipulatorDroneMoveitPathLengthObjective>(space_information);
+    auto objective = std::make_shared<DronePathLengthObjective>(space_information);
     pdef->setOptimizationObjective(objective);
     pdef->setGoal(goal);
 
     auto informed_sampler = pdef->getOptimizationObjective()->allocInformedStateSampler(pdef, 1);
 
-    assert(informed_sampler->hasInformedMeasure());
-
-    informed_sampler->getInformedMeasure(ompl::base::Cost(rng.uniformReal(0.0, 100.0)));
-    informed_sampler->getInformedMeasure(objective->identityCost());
-    informed_sampler->getInformedMeasure(objective->infiniteCost());
-
     for (size_t i = 0; i < 100; ++i) {
 
         ompl::base::ScopedState sample(space_information);
-        informed_sampler->sampleUniform(sample.get(),)
+        const ompl::base::Cost &maxCost = ompl::base::Cost(costLowerBoundEstimate * rng.uniformReal(1.0, 5.0));
+        informed_sampler->sampleUniform(sample.get(), maxCost);
 
-//        ompl::base::Cost(rng.uniformReal(0.0, 100.0))
+        double pathLowerBound = objective->combineCosts(
+                objective->motionCost(start.get(), sample.get()),
+                objective->costToGo(sample.get(), goal.get())
+        ).value();
+
+        ASSERT_LE(pathLowerBound,maxCost.value());
 
     }
 

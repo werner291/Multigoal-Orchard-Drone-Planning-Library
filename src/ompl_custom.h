@@ -50,6 +50,8 @@ public:
         return std::make_shared<DroneStateSampler>(this, translation_bound);
     }
 
+    [[nodiscard]] double getMeasure() const override;
+
 };
 
 class InverseClearanceIntegralObjectiveOMPL : public ompl::base::StateCostIntegralObjective {

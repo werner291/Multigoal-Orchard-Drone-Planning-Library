@@ -1,28 +1,29 @@
-#include "InformedManipulatorDroneSampler.h"
+#include "InformedBetweenTwoDroneStatesSampler.h"
 #include "ompl_custom.h"
+#include "DroneStateConstraintSampler.h"
 #include <ompl/base/goals/GoalState.h>
 #include <boost/range/combine.hpp>
 #include <Eigen/Geometry>
 #include <unsupported/Eigen/EulerAngles>
 
-double InformedManipulatorDroneSampler::getInformedMeasure(const ompl::base::Cost& currentCost) const{
+double InformedBetweenTwoDroneStatesSampler::getInformedMeasure(const ompl::base::Cost& currentCost) const{
     ROS_ERROR("Not implemented.");
     return NAN;
 }
 
-    bool InformedManipulatorDroneSampler::hasInformedMeasure() const {
+    bool InformedBetweenTwoDroneStatesSampler::hasInformedMeasure() const {
         return false;
     }
 
-    bool InformedManipulatorDroneSampler::sampleUniform(ompl::base::State* statePtr,
-                               const ompl::base::Cost& minCost,
-                               const ompl::base::Cost& maxCost) {
+    bool InformedBetweenTwoDroneStatesSampler::sampleUniform(ompl::base::State* statePtr,
+                                                             const ompl::base::Cost& minCost,
+                                                             const ompl::base::Cost& maxCost) {
         ROS_ERROR("Not implemented.");
         return false;
     }
 
-    bool InformedManipulatorDroneSampler::sampleUniform(ompl::base::State* statePtr,
-                               const ompl::base::Cost& maxCost) {
+    bool InformedBetweenTwoDroneStatesSampler::sampleUniform(ompl::base::State* statePtr,
+                                                             const ompl::base::Cost& maxCost) {
 
         auto space = probDefn_->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>();
 
@@ -39,9 +40,9 @@ double InformedManipulatorDroneSampler::getInformedMeasure(const ompl::base::Cos
     }
 
 
-InformedManipulatorDroneSampler::InformedManipulatorDroneSampler(const ompl::base::ProblemDefinitionPtr& probDefn, unsigned int maxNumberCalls): ompl::base::InformedSampler(probDefn, maxNumberCalls),
-st1(probDefn->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>()->getRobotModel()),
-st2(probDefn->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>()->getRobotModel())
+InformedBetweenTwoDroneStatesSampler::InformedBetweenTwoDroneStatesSampler(const ompl::base::ProblemDefinitionPtr& probDefn, unsigned int maxNumberCalls): ompl::base::InformedSampler(probDefn, maxNumberCalls),
+                                                                                                                                                           st1(probDefn->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>()->getRobotModel()),
+                                                                                                                                                           st2(probDefn->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>()->getRobotModel())
 {
     auto space = probDefn_->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>();
 
@@ -110,23 +111,31 @@ bool sampleBetweenUpright(const moveit::core::RobotState& a,
 
                 case moveit::core::JointModel::JointType::FLOATING: {
 
+                    double phs_sample[3];
                     double linear_weight = rng.uniform01();
 
-                    ompl::ProlateHyperspheroid phs(3, pos_a, pos_b);
+                    if (wiggle_room > 0.0) {
 
-                    double d = std::sqrt(
-                        std::pow(pos_a[0]-pos_b[0],2) +
-                        std::pow(pos_a[1]-pos_b[1],2) +
-                        std::pow(pos_a[2]-pos_b[2],2)
-                      );
+                        ompl::ProlateHyperspheroid phs(3, pos_a, pos_b);
 
-                    phs.setTransverseDiameter(d + wiggle_room * w * linear_weight);
+                        double d = std::sqrt(
+                                std::pow(pos_a[0] - pos_b[0], 2) +
+                                std::pow(pos_a[1] - pos_b[1], 2) +
+                                std::pow(pos_a[2] - pos_b[2], 2)
+                        );
 
-                    double phs_sample[3];
+                        phs.setTransverseDiameter(d + wiggle_room * w * linear_weight);
 
-                    // See https://stackoverflow.com/a/28523089 for the shared_ptr hackery.
-                    rng.uniformProlateHyperspheroid(std::shared_ptr<ompl::ProlateHyperspheroid>(
-                        std::shared_ptr<ompl::ProlateHyperspheroid>(), &phs), phs_sample);
+
+                        // See https://stackoverflow.com/a/28523089 for the shared_ptr hackery.
+                        rng.uniformProlateHyperspheroid(std::shared_ptr<ompl::ProlateHyperspheroid>(
+                                std::shared_ptr<ompl::ProlateHyperspheroid>(), &phs), phs_sample);
+                    } else {
+                        // Just do random linear interpolation.
+                        phs_sample[0] = rng.uniformReal(std::min(pos_a[0], pos_b[0]), std::max(pos_a[0], pos_b[0]));
+                        phs_sample[1] = rng.uniformReal(std::min(pos_a[1], pos_b[1]), std::max(pos_a[1], pos_b[1]));
+                        phs_sample[2] = rng.uniformReal(std::min(pos_a[2], pos_b[2]), std::max(pos_a[2], pos_b[2]));
+                    }
 
                     Eigen::EulerAnglesXYZd ra = Eigen::Quaterniond(pos_a[6], pos_a[3], pos_a[4], pos_a[5]);
                     Eigen::EulerAnglesXYZd rb = Eigen::Quaterniond(pos_b[6], pos_b[3], pos_b[4], pos_b[5]);
@@ -171,3 +180,52 @@ bool sampleBetweenUpright(const moveit::core::RobotState& a,
         return true;
 
       }
+
+double InformedBetweenDroneStateAndTargetSampler::getInformedMeasure(const ompl::base::Cost &currentCost) const {
+    return NAN;
+}
+
+bool InformedBetweenDroneStateAndTargetSampler::hasInformedMeasure() const {
+    return false;
+}
+
+bool
+InformedBetweenDroneStateAndTargetSampler::sampleUniform(ompl::base::State *statePtr, const ompl::base::Cost &minCost,
+                                                         const ompl::base::Cost &maxCost) {
+
+
+
+    return this->sampleUniform(statePtr, maxCost); // Ignore minCost.
+}
+
+bool
+InformedBetweenDroneStateAndTargetSampler::sampleUniform(ompl::base::State *statePtr, const ompl::base::Cost &maxCost) {
+
+    moveit::core::RobotState st2(this->st1);
+
+    DroneStateConstraintSampler::randomizeUprightWithBase(st2, 0.0);
+    DroneStateConstraintSampler::moveEndEffectorToGoal(st2, 0.0 /* TODO check this tolerance */, this->target);
+
+    moveit::core::RobotState result(st1.getRobotModel());
+
+    bool success = sampleBetweenUpright(st1, st2, result, maxCost.value());
+
+    if (success) probDefn_->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>()->copyToOMPLState(statePtr, result);
+
+    return success;
+
+}
+
+InformedBetweenDroneStateAndTargetSampler::InformedBetweenDroneStateAndTargetSampler(
+        const ompl::base::ProblemDefinitionPtr &probDefn, unsigned int maxNumberCalls) : ompl::base::InformedSampler(probDefn, maxNumberCalls),
+                                                                                         st1(probDefn->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>()->getRobotModel()),
+                                                                                         target(probDefn->getGoal()->as<DroneEndEffectorNearTarget>()->getTarget()) {
+
+    probDefn
+        ->getSpaceInformation()
+        ->getStateSpace()
+        ->as<DroneStateSpace>()
+                ->copyToRobotState(st1, probDefn_->getStartState(0));
+
+    st1.update(true);
+}

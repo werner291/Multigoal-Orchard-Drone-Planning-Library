@@ -53,7 +53,7 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
 
     Json::Value statistics;
 
-    unsigned int concurrency = std::thread::hardware_concurrency();
+    unsigned int concurrency = 1;//std::thread::hardware_concurrency();
 
     auto start_states =
             ranges::views::iota(0, num_runs)
@@ -85,6 +85,8 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
                     }
                     thread_current_task = current_task++;
                 }
+
+                std::cout << "Starting task " << thread_current_task << " of " << num_tasks << std::endl;
 
                 const auto& [planner_allocator, start_state_pair] = tasks[current_task - 1];
                 const auto& [run_i, start_state] = start_state_pair;

@@ -93,7 +93,7 @@ double DroneEndEffectorNearTarget::distanceGoal(const ompl::base::State *state) 
 }
 
 unsigned int DroneEndEffectorNearTarget::maxSampleCount() const {
-    return INT_MAX;
+    return 100; // TODO: make this configurable
 }
 
 size_t DroneEndEffectorNearTarget::getSamplesYielded() const {
@@ -125,3 +125,27 @@ initSpaceInformation(const planning_scene::PlanningSceneConstPtr &scene,
     return si;
 }
 
+double DroneStateSpace::getMeasure() const {
+
+    double measure = 0.0;
+
+    for (auto jm : this->getRobotModel()->getActiveJointModels()) {
+        switch (jm->getType()) {
+            case moveit::core::JointModel::REVOLUTE:
+            case moveit::core::JointModel::PRISMATIC:
+                measure += jm->getVariableBounds()[0].min_position_ - jm->getVariableBounds()[0].max_position_;
+                break;
+            case moveit::core::JointModel::FLOATING:
+                measure += translation_bound*translation_bound*translation_bound/2.0 + 2.0*M_PI;
+                break;
+            case moveit::core::JointModel::FIXED:
+                // do nothing.
+                break;
+            default:
+                throw std::runtime_error("Unsupported joint type");
+        }
+    }
+
+    return measure;
+
+}
