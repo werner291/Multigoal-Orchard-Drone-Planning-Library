@@ -12,24 +12,24 @@
 #include "multigoal/approach_table.h"
 
 
-geometry_msgs::Point pointMsg(const Eigen::Vector3d &ee_pt) {
-    geometry_msgs::Point pt;
+geometry_msgs::msg::Point pointMsg(const Eigen::Vector3d &ee_pt) {
+    geometry_msgs::msg::Point pt;
     pt.x = ee_pt.x();
     pt.y = ee_pt.y();
     pt.z = ee_pt.z();
     return pt;
 }
 
-geometry_msgs::Vector3 eigenVectorMsg(const Eigen::Vector3d &ee_pt) {
-    geometry_msgs::Vector3 v3;
+geometry_msgs::msg::Vector3 eigenVectorMsg(const Eigen::Vector3d &ee_pt) {
+    geometry_msgs::msg::Vector3 v3;
     v3.x = ee_pt.x();
     v3.y = ee_pt.y();
     v3.z = ee_pt.z();
     return v3;
 }
 
-geometry_msgs::Quaternion eigenQuaternionMsg(const Eigen::Quaterniond &q) {
-    geometry_msgs::Quaternion msg;
+geometry_msgs::msg::Quaternion eigenQuaternionMsg(const Eigen::Quaterniond &q) {
+    geometry_msgs::msg::Quaternion msg;
     msg.x = q.x();
     msg.y = q.y();
     msg.z = q.z();
@@ -37,8 +37,8 @@ geometry_msgs::Quaternion eigenQuaternionMsg(const Eigen::Quaterniond &q) {
     return msg;
 }
 
-std_msgs::ColorRGBA colorMsgRGBA(const Eigen::Vector4f &ee_pt) {
-    std_msgs::ColorRGBA msg;
+std_msgs::msg::ColorRGBA colorMsgRGBA(const Eigen::Vector4f &ee_pt) {
+    std_msgs::msg::ColorRGBA msg;
     msg.r = ee_pt[0];
     msg.g = ee_pt[1];
     msg.b = ee_pt[2];
@@ -47,7 +47,7 @@ std_msgs::ColorRGBA colorMsgRGBA(const Eigen::Vector4f &ee_pt) {
 }
 
 
-visualization_msgs::Marker
+visualization_msgs::msg::Marker
 buildApproachTableVisualization(const moveit::core::RobotModelConstPtr &robot,
                                 multigoal::GoalApproachTable &approach_table) {
 
@@ -55,9 +55,9 @@ buildApproachTableVisualization(const moveit::core::RobotModelConstPtr &robot,
     std::mt19937 gen(rd());
     std::normal_distribution<float> color_range(0.0, 1.0);
 
-    visualization_msgs::Marker mrk;
+    visualization_msgs::msg::Marker mrk;
     mrk.header.frame_id = robot->getModelFrame();
-    mrk.type = visualization_msgs::Marker::LINE_LIST;
+    mrk.type = visualization_msgs::msg::Marker::LINE_LIST;
     mrk.action = 0; // Add/Modify
     mrk.pose.orientation = eigenQuaternionMsg(Eigen::Quaterniond::Identity());
     mrk.pose.position = pointMsg(Eigen::Vector3d(0.0, 0.0, 0.0));
@@ -86,19 +86,19 @@ buildApproachTableVisualization(const moveit::core::RobotModelConstPtr &robot,
     return mrk;
 }
 
-shape_msgs::Mesh meshMsgFromResource(const std::string &resource) {
+shape_msgs::msg::Mesh meshMsgFromResource(const std::string &resource) {
     std::shared_ptr<shapes::Mesh> mesh_shape(shapes::createMeshFromResource(
             resource));
-    shape_msgs::Mesh mesh;
+    shape_msgs::msg::Mesh mesh;
     shapes::ShapeMsg mesh_msg;
     shapes::constructMsgFromShape(mesh_shape.get(), mesh_msg);
-    return boost::get<shape_msgs::Mesh>(mesh_msg);
+    return boost::get<shape_msgs::msg::Mesh>(mesh_msg);
 }
 
-void addColoredMeshCollisionShape(moveit_msgs::PlanningScene &planning_scene_message, const Eigen::Vector3f &rgb,
-                                  const std::string &id, const shape_msgs::Mesh &mesh) {
+void addColoredMeshCollisionShape(moveit_msgs::msg::PlanningScene &planning_scene_message, const Eigen::Vector3f &rgb,
+                                  const std::string &id, const shape_msgs::msg::Mesh &mesh) {
 
-    moveit_msgs::CollisionObject tree_obj;
+    moveit_msgs::msg::CollisionObject tree_obj;
     tree_obj.id = id;
     tree_obj.header.frame_id = "world";
     tree_obj.meshes.push_back(mesh);
@@ -109,7 +109,7 @@ void addColoredMeshCollisionShape(moveit_msgs::PlanningScene &planning_scene_mes
 
     planning_scene_message.world.collision_objects.push_back(tree_obj);
 
-    moveit_msgs::ObjectColor oc;
+    moveit_msgs::msg::ObjectColor oc;
     oc.id = id;
     oc.color.r = rgb[0];
     oc.color.g = rgb[1];
@@ -118,17 +118,3 @@ void addColoredMeshCollisionShape(moveit_msgs::PlanningScene &planning_scene_mes
     planning_scene_message.object_colors.push_back(oc);
 }
 
-moveit_msgs::DisplayTrajectory robotTrajectoryToDisplayTrajectory(const robot_trajectory::RobotTrajectory &moveit_trajectory) {
-    moveit_msgs::DisplayTrajectory msg;
-    msg.model_id = moveit_trajectory.getRobotModel()->getName();
-    msg.trajectory.resize(1);
-//
-//    for (size_t i = 0; i < moveit_trajectory.getWayPointCount(); ++i) {
-//        std::cout << "From start: " << moveit_trajectory.getWayPointDurationFromStart(i) << std::endl;
-////        moveit_trajectory.getWayPoint(i).printStateInfo();
-//    }
-
-    moveit_trajectory.getRobotTrajectoryMsg(msg.trajectory[0]);
-    moveit::core::robotStateToRobotStateMsg(moveit_trajectory.getFirstWayPoint(), msg.trajectory_start);
-    return msg;
-}

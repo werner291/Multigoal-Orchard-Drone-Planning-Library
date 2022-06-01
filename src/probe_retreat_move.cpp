@@ -8,56 +8,6 @@
 #include "EndEffectorOnShellGoal.h"
 #include "general_utilities.h"
 
-ompl::geometric::PathGeometric retreat_travel_probe(
-        std::shared_ptr<ompl::base::SpaceInformation> &si,
-        OMPLSphereShellWrapper &shell,
-        const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches,
-        size_t retreat_idx,
-        size_t approach_idx) {
-
-    ompl::geometric::PathGeometric appleToApple(approaches[retreat_idx].second);
-
-    appleToApple.reverse();
-
-    const ompl::geometric::PathGeometric &pathOnShell = shell.path_on_shell(approaches[retreat_idx].first,
-                                                                            approaches[approach_idx].first);
-
-    assert(pathOnShell.check());
-
-    std::cout << "Shell path length:" << pathOnShell.length() << std::endl;
-
-    appleToApple.append(pathOnShell);
-
-    appleToApple.append(approaches[approach_idx].second);
-
-    return appleToApple;
-}
-
-ompl::geometric::PathGeometric planFullPath(
-        std::shared_ptr<ompl::base::SpaceInformation> &si,
-        ompl::base::State *start,
-        OMPLSphereShellWrapper &shell,
-        const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches) {
-
-
-    // FIXME there's a bug in here, I think.
-    ompl::geometric::PathGeometric fullPath(si, start);
-    for (size_t approachIdx: boost::irange<size_t>(0, approaches.size()-1)) {
-
-        auto retreatTravelProbe = retreat_travel_probe(si, shell, approaches, approachIdx, approachIdx + 1);
-        
-
-        auto optimized = retreatTravelProbe = optimize(retreatTravelProbe, std::make_shared<ompl::base::PathLengthOptimizationObjective>(si), si);
-
-        std::cout << "RTP path length:" << retreatTravelProbe.length() << " Optimized:" << retreatTravelProbe.length() << std::endl;
-
-        fullPath.append(retreatTravelProbe);
-    }
-//    fullPath.interpolate();
-
-    return fullPath;
-}
-
 ompl::geometric::PathGeometric optimize(const ompl::geometric::PathGeometric& path,
                                         const ompl::base::OptimizationObjectivePtr &objective,
                                         const std::shared_ptr<ompl::base::SpaceInformation> &si) {
@@ -117,32 +67,3 @@ ompl::geometric::PathGeometric optimizeExit(const Apple &apple,
     );
 }
 
-Apple appleFromApproach(const ompl_interface::ModelBasedStateSpace &state_space,
-                        const ompl::geometric::PathGeometric &approach_path) {
-
-    moveit::core::RobotState rs(state_space.getRobotModel());
-
-    state_space.copyToRobotState(rs, approach_path.getState(0));
-
-    rs.update(true);
-
-    return Apple {
-            rs.getGlobalLinkTransform("end_effector").translation(),
-            {0.0, 0.0, 0.0}
-    };
-}
-
-std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> optimizeApproachOrder(
-        const GreatcircleDistanceHeuristics &gdh,
-        const ompl_interface::ModelBasedStateSpace &state_space,
-        const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches
-) {
-
-    auto apples_after_approach = approaches | ranges::views::transform([&](auto pair) {
-        return appleFromApproach(state_space, pair.second);
-    }) | ranges::to_vector;
-
-    return vectorByOrdering(approaches,
-                            ORToolsOrderingStrategy().apple_ordering(apples_after_approach,
-                                                                     gdh));
-}

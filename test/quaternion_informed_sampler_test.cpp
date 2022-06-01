@@ -3,7 +3,6 @@
 #include <random_numbers/random_numbers.h>
 #include "../src/experiment_utils.h"
 #include "../src/general_utilities.h"
-#include "../src/BetweenMoveItStatesInformedSampler.h"
 #include "../src/InformedBetweenTwoDroneStatesSampler.h"
 #include "../src/DroneStateConstraintSampler.h"
 

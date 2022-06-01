@@ -12,9 +12,8 @@
 
 class BulletContinuousMotionValidator : public ompl::base::MotionValidator {
 
-    planning_scene::PlanningSceneConstPtr rb_scene_;
     moveit::core::RobotModelConstPtr rb_robot_;
-
+    planning_scene::PlanningSceneConstPtr rb_scene_;
 
 public:
     BulletContinuousMotionValidator(ompl::base::SpaceInformation *si,

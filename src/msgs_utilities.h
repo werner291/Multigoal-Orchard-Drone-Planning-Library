@@ -3,44 +3,48 @@
 #ifndef NEW_PLANNERS_BUILD_REQUEST_H
 #define NEW_PLANNERS_BUILD_REQUEST_H
 
-#include <moveit_msgs/Constraints.h>
-#include <moveit_msgs/DisplayTrajectory.h>
+#include <moveit_msgs/msg/constraints.h>
+#include <moveit_msgs/msg/display_trajectory.h>
+#include <moveit_msgs/msg/planning_scene.h>
+#include <rclcpp/serialization.hpp>
+#include <std_msgs/msg/color_rgba.h>
 #include "procedural_tree_generation.h"
 #include "multigoal/approach_table.h"
 #include <fstream>
 
-geometry_msgs::Point pointMsg(const Eigen::Vector3d &ee_pt);
+geometry_msgs::msg::Point pointMsg(const Eigen::Vector3d &ee_pt);
 
-std_msgs::ColorRGBA colorMsgRGBA(const Eigen::Vector4f &ee_pt);
+std_msgs::msg::ColorRGBA colorMsgRGBA(const Eigen::Vector4f &ee_pt);
 
 [[maybe_unused]]
-visualization_msgs::Marker
+visualization_msgs::msg::Marker
 buildApproachTableVisualization(const moveit::core::RobotModelConstPtr &robot,
                                 multigoal::GoalApproachTable &approach_table);
 
-shape_msgs::Mesh meshMsgFromResource(const std::string &resource);
+shape_msgs::msg::Mesh meshMsgFromResource(const std::string &resource);
 
-void addColoredMeshCollisionShape(moveit_msgs::PlanningScene &planning_scene_message, const Eigen::Vector3f &rgb,
-                                  const std::string &id, const shape_msgs::Mesh &mesh);
+void addColoredMeshCollisionShape(moveit_msgs::msg::PlanningScene &planning_scene_message,
+                                  const Eigen::Vector3f &rgb,
+                                  const std::string &id,
+                                  const shape_msgs::msg::Mesh &mesh);
 
-moveit_msgs::DisplayTrajectory robotTrajectoryToDisplayTrajectory(const robot_trajectory::RobotTrajectory &moveit_trajectory);
-
-template<typename Msg>
-void save_ros_msg(const std::string& filename, const Msg& msg) {
+void save_ros_msg(const std::string& filename, const moveit_msgs::msg::PlanningScene& msg) {
     // Write to File
     std::ofstream ofs(filename, std::ios::out|std::ios::binary);
 
-    uint32_t serial_size = ros::serialization::serializationLength(msg);
-    boost::shared_array<uint8_t> obuffer(new uint8_t[serial_size]);
+    rclcpp::Serialization<moveit_msgs::msg::PlanningScene> serializer;
 
-    ros::serialization::OStream ostream(obuffer.get(), serial_size);
-    ros::serialization::serialize(ostream, msg);
-    ofs.write((char*) obuffer.get(), serial_size);
+    rclcpp::SerializedMessage serialized_msg_;
+
+    serializer.serialize_message(&msg, &serialized_msg_);
+
+    ofs.write((char*)serialized_msg_.get_rcl_serialized_message().buffer, serialized_msg_.get_rcl_serialized_message().buffer_length);
+
     ofs.close();
 }
 
-template<typename Msg>
-std::optional<Msg> read_ros_msg(const std::string& filename){
+
+std::optional<moveit_msgs::msg::PlanningScene> read_ros_msg(const std::string& filename){
     // Read from File to msg_scan_
     std::ifstream ifs(filename, std::ios::in|std::ios::binary);
 
@@ -48,19 +52,11 @@ std::optional<Msg> read_ros_msg(const std::string& filename){
         return std::nullopt;
     }
 
-    ifs.seekg (0, std::ios::end);
-    std::streampos end = ifs.tellg();
-    ifs.seekg (0, std::ios::beg);
-    std::streampos begin = ifs.tellg();
+    moveit_msgs::msg::PlanningScene msg;
 
-    uint32_t file_size = end-begin;
-    boost::shared_array<uint8_t> ibuffer(new uint8_t[file_size]);
-    ifs.read((char*) ibuffer.get(), file_size);
-    ros::serialization::IStream istream(ibuffer.get(), file_size);
+    static rclcpp::Serialization<moveit_msgs::msg::PlanningScene> serializer;
+    serializer.deserialize_message()
 
-    Msg msg;
-
-    ros::serialization::deserialize(istream, msg);
     ifs.close();
 
     return {msg};

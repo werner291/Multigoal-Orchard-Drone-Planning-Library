@@ -8,10 +8,11 @@
 #include <boost/range/adaptors.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <Eigen/Geometry>
-#include <shape_msgs/Mesh.h>
+#include <shape_msgs/msg/mesh.h>
 #include <range/v3/view/zip.hpp>
 #include <range/v3/view/drop_last.hpp>
 #include <range/v3/view/drop.hpp>
+#include <shape_msgs/msg/mesh.hpp>
 
 template<typename T>
 std::vector<size_t> index_vector(const std::vector<T> &v) {
@@ -105,14 +106,14 @@ void generate_combinations
  * Output is a vector of vectors of vertex indices.
  * Each vector is a connected components.
  */
-std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::Mesh& mesh);
+std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::msg::Mesh& mesh);
 
 /**
  * Perform a convex decomposition of the given mesh using the HACD library.
  *
  * @param concavity Lower values give more accurate results, at the cost of higher number of parts.
  */
-std::vector<shape_msgs::Mesh> convex_decomposition(const shape_msgs::Mesh &mesh, const double concavity = 2.0);
+std::vector<shape_msgs::msg::Mesh> convex_decomposition(const shape_msgs::msg::Mesh &mesh, const double concavity = 2.0);
 
 template<typename V>
 std::vector<V> vectorByOrdering(const std::vector<V> &original, const std::vector<size_t> &ordering) {

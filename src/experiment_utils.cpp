@@ -7,7 +7,6 @@
 #include "../src/NewKnnPlanner.h"
 #include "../src/probe_retreat_move.h"
 #include "../src/greatcircle.h"
-#include "../src/thread_pool.hpp"
 #include "../src/experiment_utils.h"
 #include <boost/range/adaptor/transformed.hpp>
 #include <execution>
@@ -20,7 +19,6 @@
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <geometric_shapes/shape_operations.h>
-#include <eigen_conversions/eigen_msg.h>
 #include <ompl/geometric/PathSimplifier.h>
 
 #include "../src/planning_scene_diff_message.h"
@@ -29,21 +27,6 @@
 #include "json_utils.h"
 #include "general_utilities.h"
 #include "DroneStateConstraintSampler.h"
-
-robot_state::RobotState genStartState(const moveit::core::RobotModelConstPtr &drone) {
-    robot_state::RobotState start_state(drone);
-    start_state.setToDefaultValues();
-
-    std::vector<double> positions {
-        -10.0, -10.0, 10.0,
-        0.0, 0.0, 0.0, 1.0,
-        0.0, 0.0, 0.0, 0.0
-    };
-
-    start_state.setJointGroupPositions(drone->getJointModelGroup("whole_body"), positions);
-    start_state.update(true);
-    return start_state;
-}
 
 
 TreePlanningScene buildPlanningScene(int numberOfApples, moveit::core::RobotModelPtr &drone) {
@@ -60,13 +43,9 @@ TreePlanningScene buildPlanningScene(int numberOfApples, moveit::core::RobotMode
     // Diff message apparently can't handle partial ACM updates?
     scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
     scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
-    scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+    scene->allocateCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
 
     return {apples, leafVertices, scene};
-}
-
-Eigen::Vector3d goalProjection(const ompl::base::Goal *goal) {
-    return goal->as<DroneEndEffectorNearTarget>()->getTarget();
 }
 
 std::vector<LeafCollisions> collectLeafCollisionStats(const LeavesCollisionChecker &leavesCollisionChecker,
@@ -111,13 +90,6 @@ std::vector<LeafCollisions> collectLeafCollisionStats(const LeavesCollisionCheck
     return stats;
 }
 
-Eigen::Vector3d StateProjection::operator()(const ompl::base::State *state) const {
-    moveit::core::RobotState st(state_space->getRobotModel());
-    state_space->copyToRobotState(st, state);
-    st.update(true);
-    return st.getGlobalLinkTransform("end_effector").translation();
-}
-
 moveit::core::RobotModelPtr loadRobotModel() {
 
     auto urdf = std::make_shared<urdf::Model>();
@@ -157,7 +129,7 @@ constructPlanningScene(const TreeSceneData &tsd, const moveit::core::RobotModelC
     // Diff message apparently can't handle partial ACM updates?
     scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
     scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
-    scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+    scene->allocateCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
 
     return scene;
 }
@@ -203,11 +175,11 @@ std::vector<std::vector<PtpSpec>> genPointToPointSpecs(const moveit::core::Robot
     return ptp_specs;
 }
 
-visualization_msgs::MarkerArray markers_for_state(const moveit::core::RobotState& state) {
+visualization_msgs::msg::MarkerArray markers_for_state(const moveit::core::RobotState& state) {
 
     auto lms = state.getRobotModel()->getLinkModelsWithCollisionGeometry();
 
-    visualization_msgs::MarkerArray ma;
+    visualization_msgs::msg::MarkerArray ma;
 
     for (auto lm : lms) {
 
@@ -217,7 +189,7 @@ visualization_msgs::MarkerArray markers_for_state(const moveit::core::RobotState
 
         for (const auto shape_xform : boost::combine(lm->getCollisionOriginTransforms(),lm->getShapes()))
         {
-            visualization_msgs::Marker mk;
+            visualization_msgs::msg::Marker mk;
 
             if (!shapes::constructMarkerFromShape(shape_xform.get<1>().get(),mk)) {
                 ROS_WARN("Failed to construct marker.");
@@ -243,7 +215,7 @@ visualization_msgs::MarkerArray markers_for_state(const moveit::core::RobotState
 }
 
 planning_scene::PlanningScenePtr
-setupPlanningScene(const moveit_msgs::PlanningScene &planning_scene_message,
+setupPlanningScene(const moveit_msgs::msg::PlanningScene &planning_scene_message,
                    const moveit::core::RobotModelConstPtr &drone) {
     auto scene = std::make_shared<planning_scene::PlanningScene>(drone);
     scene->setPlanningSceneDiffMsg(planning_scene_message);
@@ -254,7 +226,7 @@ setupPlanningScene(const moveit_msgs::PlanningScene &planning_scene_message,
     return scene;
 }
 
-std::vector<Apple> apples_from_connected_components(shape_msgs::Mesh apples_mesh) {
+std::vector<Apple> apples_from_connected_components(shape_msgs::msg::Mesh apples_mesh) {
     auto connected_components = connected_vertex_components(apples_mesh);
 
     return boost::copy_range<std::vector<Apple>>(
@@ -381,7 +353,7 @@ moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelConstPtr
     return start_state;
 }
 
-ExperimentPlanningContext loadContext(const moveit::core::RobotModelConstPtr &drone, const moveit_msgs::PlanningScene &scene_msg) {
+ExperimentPlanningContext loadContext(const moveit::core::RobotModelConstPtr &drone, const moveit_msgs::msg::PlanningScene &scene_msg) {
     ExperimentPlanningContext context;
 
     // initialize the state space and such

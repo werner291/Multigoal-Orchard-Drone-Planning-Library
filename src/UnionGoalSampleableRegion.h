@@ -5,6 +5,7 @@
 #ifndef NEW_PLANNERS_UNIONGOALSAMPLEABLEREGION_H
 #define NEW_PLANNERS_UNIONGOALSAMPLEABLEREGION_H
 
+#include <optional>
 #include <ompl/base/goals/GoalSampleableRegion.h>
 
 /**

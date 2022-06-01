@@ -16,7 +16,7 @@ DroneStateSampler::DroneStateSampler(const ompl::base::StateSpace *space, double
 
 void DroneStateSampler::sampleUniform(ompl::base::State *state) {
     moveit::core::RobotState st(space_->as<DroneStateSpace>()->getRobotModel());
-    DroneStateConstraintSampler::randomizeUprightWithBase(st, translation_bound);
+    randomizeUprightWithBase(st, translation_bound);
     space_->as<DroneStateSpace>()->copyToOMPLState(state, st);
 }
 
@@ -57,5 +57,5 @@ void DroneStateSampler::sampleUniformNear(ompl::base::State *state, const ompl::
 }
 
 void DroneStateSampler::sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) {
-    ROS_ERROR("Not implemented DroneStateSampler::sampleGaussian");
+    throw std::logic_error("Not implemented DroneStateSampler::sampleGaussian");
 }

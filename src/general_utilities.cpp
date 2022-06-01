@@ -1,6 +1,6 @@
 #include <Eigen/Geometry>
 #include <ompl/util/RandomNumbers.h>
-#include <shape_msgs/Mesh.h>
+#include <shape_msgs/msg/mesh.h>
 #include <bullet/HACD/hacdHACD.h>
 #include <boost/range/irange.hpp>
 #include "general_utilities.h"
@@ -170,7 +170,7 @@ double quat_dist(const Eigen::Quaterniond& qs1, const Eigen::Quaterniond& qs2) {
     return acos(dq);
 }
 
-std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::Mesh &mesh) {
+std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::msg::Mesh &mesh) {
     std::unordered_map<size_t, std::vector<size_t>> connected_components;
     auto connected_component_ids = index_vector(mesh.vertices);
     for (const auto &vertex_id : connected_component_ids) {
@@ -203,7 +203,7 @@ std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::M
     return result;
 }
 
-std::vector<shape_msgs::Mesh> convex_decomposition(const shape_msgs::Mesh &mesh, const double concavity) {
+std::vector<shape_msgs::msg::Mesh> convex_decomposition(const shape_msgs::msg::Mesh &mesh, const double concavity) {
 
     HACD::HACD hacd;
 
@@ -226,23 +226,23 @@ std::vector<shape_msgs::Mesh> convex_decomposition(const shape_msgs::Mesh &mesh,
     hacd.SetConcavity(concavity);
     hacd.Compute();
 
-    return boost::copy_range<std::vector<shape_msgs::Mesh>>(boost::irange<size_t>(0,hacd.GetNClusters()) | boost::adaptors::transformed([&](size_t ch_i) {
-        shape_msgs::Mesh sub_mesh;
+    return boost::copy_range<std::vector<shape_msgs::msg::Mesh>>(boost::irange<size_t>(0,hacd.GetNClusters()) | boost::adaptors::transformed([&](size_t ch_i) {
+        shape_msgs::msg::Mesh sub_mesh;
 
         std::vector<HACD::Vec3<double>> ch_points(hacd.GetNPointsCH(ch_i));
         std::vector<HACD::Vec3<long>> ch_triangles(hacd.GetNTrianglesCH(ch_i));
         hacd.GetCH(ch_i, ch_points.data(), ch_triangles.data());
 
-        sub_mesh.vertices = boost::copy_range<std::vector<geometry_msgs::Point>>(ch_points | boost::adaptors::transformed([](const auto& pt){
-            geometry_msgs::Point ros_pt;
+        sub_mesh.vertices = boost::copy_range<std::vector<geometry_msgs::msg::Point>>(ch_points | boost::adaptors::transformed([](const auto& pt){
+            geometry_msgs::msg::Point ros_pt;
             ros_pt.x = pt.X();
             ros_pt.y = pt.Y();
             ros_pt.z = pt.Z();
             return ros_pt;
         }));
 
-        sub_mesh.triangles = boost::copy_range<std::vector<shape_msgs::MeshTriangle>>(ch_triangles | boost::adaptors::transformed([](const auto& pt){
-            shape_msgs::MeshTriangle tri;
+        sub_mesh.triangles = boost::copy_range<std::vector<shape_msgs::msg::MeshTriangle>>(ch_triangles | boost::adaptors::transformed([](const auto& pt){
+            shape_msgs::msg::MeshTriangle tri;
             tri.vertex_indices[0] = pt.X();
             tri.vertex_indices[1] = pt.Y();
             tri.vertex_indices[2] = pt.Z();

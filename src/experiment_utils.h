@@ -16,22 +16,11 @@
 #include "robot_path.h"
 #include "DronePathLengthObjective.h"
 
-struct StateProjection {
-    ompl_interface::ModelBasedStateSpace *state_space;
-
-    Eigen::Vector3d operator()(const ompl::base::State *state) const;
-};
-
-
-Eigen::Vector3d goalProjection(const ompl::base::Goal *goal);;
-
 struct LeafCollisions {
     double t;
     size_t new_contacts;
     size_t removed_contacts;
 };
-
-robot_state::RobotState genStartState(const moveit::core::RobotModelConstPtr &drone);
 
 moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelConstPtr &drone);
 
@@ -104,14 +93,14 @@ std::vector<std::vector<PtpSpec>>
 genPointToPointSpecs(const moveit::core::RobotModelPtr &drone, const Json::Value &trees_data, std::mt19937 &gen,
                      size_t pairsPerTree);
 
-visualization_msgs::MarkerArray markers_for_state(const moveit::core::RobotState& state);
+visualization_msgs::msg::MarkerArray markers_for_state(const moveit::core::RobotState& state);
 
 struct DroneAndStateSpace {
     moveit::core::RobotModelPtr robot;
     std::shared_ptr<DroneStateSpace> state_space;
 };
 
-planning_scene::PlanningScenePtr setupPlanningScene(const moveit_msgs::PlanningScene &planning_scene_message,
+planning_scene::PlanningScenePtr setupPlanningScene(const moveit_msgs::msg::PlanningScene &planning_scene_message,
                                                     const moveit::core::RobotModelConstPtr &drone);
 
 struct ExperimentPlanningContext {
@@ -120,9 +109,9 @@ struct ExperimentPlanningContext {
     ompl::base::OptimizationObjectivePtr objective;
 };
 
-ExperimentPlanningContext loadContext(const moveit::core::RobotModelConstPtr& drone, const moveit_msgs::PlanningScene& scene_msg);
+ExperimentPlanningContext loadContext(const moveit::core::RobotModelConstPtr& drone, const moveit_msgs::msg::PlanningScene& scene_msg);
 
-std::vector<Apple> apples_from_connected_components(shape_msgs::Mesh apples_mesh);
+std::vector<Apple> apples_from_connected_components(shape_msgs::msg::Mesh apples_mesh);
 
 struct PointToPointPair {
     size_t from_target;

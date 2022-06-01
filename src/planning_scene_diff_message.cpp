@@ -1,4 +1,5 @@
 #include <bullet/HACD/hacdHACD.h>
+#include <rclcpp/serialization.hpp>
 
 #include "../src/msgs_utilities.h"
 #include "../src/experiment_utils.h"
@@ -7,22 +8,22 @@
 #include "general_utilities.h"
 
 void createTrunkInPlanningSceneMessage(const std::vector<DetachedTreeNode> &tree_flattened,
-                                       moveit_msgs::PlanningScene &planning_scene) {
-    moveit_msgs::CollisionObject collision_object;
+                                       moveit_msgs::msg::PlanningScene &planning_scene) {
+    moveit_msgs::msg::CollisionObject collision_object;
 
     collision_object.id = "trunk";
     collision_object.header.frame_id = "world";
 
     for (const auto &tree_node: tree_flattened) {
-        shape_msgs::SolidPrimitive primitive;
+        shape_msgs::msg::SolidPrimitive primitive;
         primitive.type = primitive.CYLINDER;
         primitive.dimensions.resize(2);
-        primitive.dimensions[shape_msgs::SolidPrimitive::CYLINDER_RADIUS] = tree_node.radius;
-        primitive.dimensions[shape_msgs::SolidPrimitive::CYLINDER_HEIGHT] = tree_node.length;
+        primitive.dimensions[shape_msgs::msg::SolidPrimitive::CYLINDER_RADIUS] = tree_node.radius;
+        primitive.dimensions[shape_msgs::msg::SolidPrimitive::CYLINDER_HEIGHT] = tree_node.length;
 
         collision_object.primitives.push_back(primitive);
 
-        geometry_msgs::Pose pose;
+        geometry_msgs::msg::Pose pose;
 
         Eigen::Vector3d position = tree_node.root_at_absolute.translation();
         Eigen::Quaterniond quat(tree_node.root_at_absolute.rotation());
@@ -43,7 +44,7 @@ void createTrunkInPlanningSceneMessage(const std::vector<DetachedTreeNode> &tree
 
     planning_scene.world.collision_objects.push_back(collision_object);
 
-    moveit_msgs::ObjectColor col;
+    moveit_msgs::msg::ObjectColor col;
     col.id = "trunk";
     col.color.a = 1.0;
     col.color.r = 0.5;
@@ -54,14 +55,14 @@ void createTrunkInPlanningSceneMessage(const std::vector<DetachedTreeNode> &tree
 
 
 void spawnLeavesInPlanningScene(const std::vector<Eigen::Vector3d> &leafVertices,
-                                moveit_msgs::PlanningScene &planningScene) {
-    moveit_msgs::CollisionObject leavesCollision;
+                                moveit_msgs::msg::PlanningScene &planningScene) {
+    moveit_msgs::msg::CollisionObject leavesCollision;
     leavesCollision.id = "leaves";
     leavesCollision.header.frame_id = "world";
 
-    shape_msgs::Mesh mesh;
+    shape_msgs::msg::Mesh mesh;
     for (const auto &vtx: leafVertices) {
-        geometry_msgs::Point pt;
+        geometry_msgs::msg::Point pt;
         pt.x = vtx.x();
         pt.y = vtx.y();
         pt.z = vtx.z();
@@ -69,7 +70,7 @@ void spawnLeavesInPlanningScene(const std::vector<Eigen::Vector3d> &leafVertices
     }
 
     for (size_t i = 0; i < mesh.vertices.size(); i += 3) {
-        shape_msgs::MeshTriangle tri;
+        shape_msgs::msg::MeshTriangle tri;
         tri.vertex_indices[0] = i;
         tri.vertex_indices[1] = i + 1;
         tri.vertex_indices[2] = i + 2;
@@ -77,7 +78,7 @@ void spawnLeavesInPlanningScene(const std::vector<Eigen::Vector3d> &leafVertices
     }
 
     leavesCollision.meshes.push_back(mesh);
-    geometry_msgs::Pose pose;
+    geometry_msgs::msg::Pose pose;
     pose.position.x = 0;
     pose.position.y = 0;
     pose.position.z = 0;
@@ -93,7 +94,7 @@ void spawnLeavesInPlanningScene(const std::vector<Eigen::Vector3d> &leafVertices
 
     planningScene.world.collision_objects.push_back(leavesCollision);
 
-    moveit_msgs::ObjectColor leavesColor;
+    moveit_msgs::msg::ObjectColor leavesColor;
     leavesColor.id = "leaves";
     leavesColor.color.a = 1.0;
     leavesColor.color.r = 0.0;
@@ -103,14 +104,14 @@ void spawnLeavesInPlanningScene(const std::vector<Eigen::Vector3d> &leafVertices
 }
 
 void spawnApplesInPlanningScene(const double appleRadius, const std::vector<Apple> &apples,
-                                moveit_msgs::PlanningScene &planning_scene_diff) {
-    moveit_msgs::CollisionObject leavesCollision;
+                                moveit_msgs::msg::PlanningScene &planning_scene_diff) {
+    moveit_msgs::msg::CollisionObject leavesCollision;
     leavesCollision.id = "apples";
     leavesCollision.header.frame_id = "world";
 
     for (const auto &apple: apples) {
 
-        geometry_msgs::Pose pose;
+        geometry_msgs::msg::Pose pose;
         pose.position.x = apple.center.x();
         pose.position.y = apple.center.y();
         pose.position.z = apple.center.z();
@@ -121,16 +122,16 @@ void spawnApplesInPlanningScene(const double appleRadius, const std::vector<Appl
         leavesCollision.primitive_poses.push_back(pose);
 
 
-        shape_msgs::SolidPrimitive primitive;
+        shape_msgs::msg::SolidPrimitive primitive;
         primitive.type = primitive.SPHERE;
         primitive.dimensions.resize(1);
-        primitive.dimensions[shape_msgs::SolidPrimitive::SPHERE_RADIUS] = appleRadius;
+        primitive.dimensions[shape_msgs::msg::SolidPrimitive::SPHERE_RADIUS] = appleRadius;
         leavesCollision.primitives.push_back(primitive);
     }
 
     planning_scene_diff.world.collision_objects.push_back(leavesCollision);
 
-    moveit_msgs::ObjectColor applesColor;
+    moveit_msgs::msg::ObjectColor applesColor;
     applesColor.id = "apples";
     applesColor.color.a = 1.0;
     applesColor.color.r = 1.0;
@@ -139,12 +140,12 @@ void spawnApplesInPlanningScene(const double appleRadius, const std::vector<Appl
     planning_scene_diff.object_colors.push_back(applesColor);
 }
 
-void spawnFloorInPlanningScene(moveit_msgs::PlanningScene &planning_scene_diff) {
-    moveit_msgs::CollisionObject floorCollision;
+void spawnFloorInPlanningScene(moveit_msgs::msg::PlanningScene &planning_scene_diff) {
+    moveit_msgs::msg::CollisionObject floorCollision;
     floorCollision.id = "floor";
     floorCollision.header.frame_id = "world";
 
-    geometry_msgs::Pose pose;
+    geometry_msgs::msg::Pose pose;
     pose.position.x = 0;
     pose.position.y = 0;
     pose.position.z = -0.5;
@@ -154,17 +155,17 @@ void spawnFloorInPlanningScene(moveit_msgs::PlanningScene &planning_scene_diff) 
     pose.orientation.w = 1;
     floorCollision.primitive_poses.push_back(pose);
 
-    shape_msgs::SolidPrimitive primitive;
+    shape_msgs::msg::SolidPrimitive primitive;
     primitive.type = primitive.BOX;
     primitive.dimensions.resize(3);
-    primitive.dimensions[shape_msgs::SolidPrimitive::BOX_X] = 10.0;
-    primitive.dimensions[shape_msgs::SolidPrimitive::BOX_Y] = 10.0;
-    primitive.dimensions[shape_msgs::SolidPrimitive::BOX_Z] = 1.0;
+    primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_X] = 10.0;
+    primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Y] = 10.0;
+    primitive.dimensions[shape_msgs::msg::SolidPrimitive::BOX_Z] = 1.0;
     floorCollision.primitives.push_back(primitive);
 
     planning_scene_diff.world.collision_objects.push_back(floorCollision);
 
-    moveit_msgs::ObjectColor color;
+    moveit_msgs::msg::ObjectColor color;
     color.id = "floor";
     color.color.a = 1.0;
     color.color.r = 0.3;
@@ -173,11 +174,11 @@ void spawnFloorInPlanningScene(moveit_msgs::PlanningScene &planning_scene_diff) 
     planning_scene_diff.object_colors.push_back(color);
 }
 
-moveit_msgs::PlanningScene
+moveit_msgs::msg::PlanningScene
 createPlanningSceneDiff(const std::vector<DetachedTreeNode> &treeFlattened,
                         const std::vector<Eigen::Vector3d> &leafVertices,
                         const double appleRadius, const std::vector<Apple> &apples) {
-    moveit_msgs::PlanningScene planning_scene_diff;
+    moveit_msgs::msg::PlanningScene planning_scene_diff;
     createTrunkInPlanningSceneMessage(treeFlattened, planning_scene_diff);
     spawnLeavesInPlanningScene(leafVertices, planning_scene_diff);
     spawnApplesInPlanningScene(appleRadius, apples, planning_scene_diff);
@@ -190,9 +191,9 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
 
     const std::string cache_filename ="scene_cached_" + model_name + ".msg";
 
-    auto cached_scene_info = read_ros_msg<moveit_msgs::PlanningScene>(cache_filename);
+    auto cached_scene_info = read_ros_msg<moveit_msgs::msg::PlanningScene>(cache_filename);
     
-    moveit_msgs::PlanningScene planning_scene_message;
+    moveit_msgs::msg::PlanningScene planning_scene_message;
     
     if (!cached_scene_info) {
 
@@ -201,18 +202,18 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
         planning_scene_message.is_diff = true;
 
         {
-            const shape_msgs::Mesh mesh = meshMsgFromResource(
+            const shape_msgs::msg::Mesh mesh = meshMsgFromResource(
                     "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/" + model_name +
                     "_trunk.dae");
 
-            const std::vector<shape_msgs::Mesh> decomposition = convex_decomposition(mesh, 2.0);
+            const std::vector<shape_msgs::msg::Mesh> decomposition = convex_decomposition(mesh, 2.0);
             for (auto convex: decomposition | boost::adaptors::indexed(0)) {
                 addColoredMeshCollisionShape(planning_scene_message, {0.5, 0.2, 0.1},
                                              "trunk" + std::to_string(convex.index()), convex.value());
             }
         }
 
-        const shape_msgs::Mesh apples = meshMsgFromResource(
+        const shape_msgs::msg::Mesh apples = meshMsgFromResource(
                 "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/" + model_name +
                 "_apples.dae");
 
@@ -224,16 +225,16 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
                                              "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/" +
                                              model_name + "_leaves.dae"));
 
-        save_ros_msg(cache_filename, planning_scene_message);
+//        save_ros_msg(cache_filename, planning_scene_message);
 
-        std::cout << "Cached scene info for " << model_name << std::endl;
+        std::cout << "Cached scene info for " << to_yaml(planning_scene_message) << std::endl;
 
     } else {
         std::cout << "Loaded cached scene info for " << model_name << std::endl;
         planning_scene_message = *cached_scene_info;
     }
 
-    shape_msgs::Mesh apples;
+    shape_msgs::msg::Mesh apples;
     for (const auto &collision_shape: planning_scene_message.world.collision_objects) {
         if (collision_shape.id == "apples") {
             apples = collision_shape.meshes[0];

@@ -15,7 +15,7 @@ double BulletContinuousMotionValidator::estimateMaximumRotation(const moveit::co
     for (const auto &jm: st1.getRobotModel()->getJointModels()) {
         switch (jm->getType()) {
             case moveit::core::JointModel::UNKNOWN:
-                ROS_ERROR("Cannot compute maximum rotation with unknown joint type.");
+                throw std::runtime_error("Cannot compute maximum rotation with unknown joint type.");
                 break;
             case moveit::core::JointModel::PRISMATIC:
             case moveit::core::JointModel::FIXED:

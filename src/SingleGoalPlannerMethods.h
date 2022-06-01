@@ -7,6 +7,7 @@
 #include <ompl/base/Goal.h>
 #include <ompl/base/Planner.h>
 #include <jsoncpp/json/value.h>
+#include <optional>
 
 class SingleGoalPlannerMethods {
 

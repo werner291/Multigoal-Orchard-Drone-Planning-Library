@@ -1,67 +1,49 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.8)
 project(new_planners)
 
-find_package(catkin
-        REQUIRED
-        COMPONENTS
-        moveit_core
-        moveit_ros_planning
-        moveit_ros_planning_interface
-        moveit_planners_ompl
-        moveit_visual_tools
-        rviz_visual_tools
-        roscpp
-        geometry_msgs
-        moveit_msgs
-        eigen_conversions
-        ompl
-        urdf
-        )
-
-#find_package(GTest REQUIRED)
+#if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+#    add_compile_options(-Wall -Wextra -Wpedantic)
+#endif()
 
 ## System dependencies are found with CMake's conventions
 find_package(Eigen3 REQUIRED)
-
 find_package(jsoncpp REQUIRED)
-
 find_package(fcl REQUIRED)
-
 find_package(Boost REQUIRED)
-
 find_package(Bullet REQUIRED)
+find_package(ompl REQUIRED)
+find_package(range-v3 REQUIRED)
 
-catkin_package(
-        #  INCLUDE_DIRS include
-        #  LIBRARIES new_planners
-        #  CATKIN_DEPENDS other_catkin_pkg
-        #  DEPENDS system_lib
-)
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(moveit_core REQUIRED)
+find_package(moveit_msgs REQUIRED)
+find_package(moveit_ros_planning REQUIRED)
+find_package(moveit_planners_ompl REQUIRED)
+find_package(shape_msgs REQUIRED)
 
 include_directories(
-        # include
-        ${catkin_INCLUDE_DIRS}
         ${EIGEN3_INCLUDE_DIRS}
         ${FCL_INCLUDE_DIRS}
         ${JSONCPP_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
         ${GTEST_INCLUDE_DIRS}
         ${BULLET_INCLUDE_DIRS}
-        /home/werner/workspace/or-tools_Ubuntu-20.04-64bit_v9.2.9972/include
+        ${OMPL_INCLUDE_DIRS}
+        or-tools_Ubuntu-21.10-64bit_v9.3.10497/include
 )
 
 # Note: the HACD library is included Bullet's "extra" libraries
 link_libraries(
-        ${catkin_LIBRARIES}
         ${EIGEN_LIBRARIES}
         ${FCL_LIBRARIES}
         ${Boost_LIBRARIES}
         ${BULLET_LIBRARIES}
         HACD
         jsoncpp_lib
-        tbb
+#        tbb
         ompl
-        /home/werner/workspace/or-tools_Ubuntu-20.04-64bit_v9.2.9972/lib/libortools.so
+        or-tools_Ubuntu-21.10-64bit_v9.3.10497/lib/libortools.so
 )
 
 ###########
@@ -74,8 +56,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
 add_library(${PROJECT_NAME}_shared
-        src/BetweenMoveItStatesInformedSampler.cpp
-        src/BetweenMoveItStatesInformedSampler.h
         src/BulletContinuousMotionValidator.cpp
         src/BulletContinuousMotionValidator.h
         src/ClearanceDecreaseMinimizationObjective.cpp
@@ -107,8 +87,8 @@ add_library(${PROJECT_NAME}_shared
         src/multigoal/ATNN.h
         src/multigoal/ATRandom.cpp
         src/multigoal/ATRandom.h
-        src/multigoal/ClusterTable.cpp
-        src/multigoal/ClusterTable.h
+#        src/multigoal/ClusterTable.cpp
+#        src/multigoal/ClusterTable.h
         src/multigoal/goals_gnat.cpp
         src/multigoal/goals_gnat.h
         src/multigoal/knn.cpp
@@ -147,7 +127,7 @@ add_library(${PROJECT_NAME}_shared
         src/greatcircle.h
         src/greatcircle.cpp
 #        src/agglomerative_clustering.cpp
-        src/agglomerative_clustering.h
+#        src/agglomerative_clustering.h
         src/prm_multigoal.cpp
         src/prm_multigoal.h
         src/traveling_salesman.h
@@ -162,8 +142,8 @@ add_library(${PROJECT_NAME}_shared
         src/EndEffectorOnShellGoal.h
         src/ros_utilities.cpp
         src/ros_utilities.h
-        src/ExperimentVisualTools.h
-        src/ExperimentVisualTools.cpp
+#        src/ExperimentVisualTools.h
+#        src/ExperimentVisualTools.cpp
         src/functional_optional.h
         src/prm_multigoal.cpp
         src/prm_multigoal.h
@@ -184,54 +164,53 @@ add_library(${PROJECT_NAME}_shared
         src/MyBitStar.cpp
         src/MyBitStar.h)
 
-#message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
-
-## Visualization node
-
-add_executable(${PROJECT_NAME}_ptp_correlation experiments/ptp_correlation.cpp)
-
-add_executable(${PROJECT_NAME}_euclidean_tsp experiments/euclidean_tsp.cpp)
-
-add_executable(${PROJECT_NAME}_ptp_comparison experiments/ptp_comparison.cpp)
-target_link_libraries(${PROJECT_NAME}_ptp_comparison ${PROJECT_NAME}_shared)
-
-add_executable(${PROJECT_NAME}_prmstar_keep_or_clear experiments/prmstar_keep_or_clear.cpp)
-target_link_libraries(${PROJECT_NAME}_prmstar_keep_or_clear ${PROJECT_NAME}_shared)
-
-add_executable(${PROJECT_NAME}_greatcircle_correlation experiments/greatcircle_correlation.cpp)
-target_link_libraries(${PROJECT_NAME}_greatcircle_correlation ${PROJECT_NAME}_shared)
-
-add_executable(${PROJECT_NAME}_preorder_experiment experiments/preorder_experiment.cpp)
-target_link_libraries(${PROJECT_NAME}_preorder_experiment ${PROJECT_NAME}_shared)
-
-add_executable(${PROJECT_NAME}_probe_retreat_move experiments/probe_retreat_move.cpp)
-target_link_libraries(${PROJECT_NAME}_probe_retreat_move ${PROJECT_NAME}_shared)
-
-add_executable(${PROJECT_NAME}_prm_multigoal_experiment experiments/prm_multigoal_experiment.cpp)
-target_link_libraries(${PROJECT_NAME}_prm_multigoal_experiment ${PROJECT_NAME}_shared)
-
-add_executable(${PROJECT_NAME}_approach_planning experiments/approach_planning.cpp)
-target_link_libraries(${PROJECT_NAME}_approach_planning ${PROJECT_NAME}_shared)
-
-add_executable(${PROJECT_NAME}_knn experiments/knn.cpp)
-target_link_libraries(${PROJECT_NAME}_knn ${PROJECT_NAME}_shared)
-
-add_executable(${PROJECT_NAME}_generate_tree_data src/generate_tree_data.cpp)
-
-catkin_add_gtest(${PROJECT_NAME}_tests test/test.cpp
-        test/test_utils.h
-        test/test_utils.cpp
-        test/MoveItPathLengthObjectiveTest.cpp
-#        test/ptp_tests.cpp
-#        test/enhanced_hac_test.cpp
-#        test/mesh_loading.cpp
-#        test/probe_retreat_move_tests.cpp
-        test/tsp_tests.cpp
+ament_target_dependencies(${PROJECT_NAME}_shared
+        "moveit_core"
+        "moveit_msgs"
+        "shape_msgs"
+        "moveit_planners_ompl"
+        "rclcpp"
         )
-target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared)
 
-
-#target_link_libraries(${PROJECT_NAME}_tests ${CATKIN_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib)
-
-#include(GoogleTest)
-gtest_discover_tests(${PROJECT_NAME}_tests)
+#
+##message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
+#
+### Visualization node
+#
+#add_executable(${PROJECT_NAME}_ptp_correlation experiments/ptp_correlation.cpp)
+#
+#add_executable(${PROJECT_NAME}_euclidean_tsp experiments/euclidean_tsp.cpp)
+#
+#add_executable(${PROJECT_NAME}_ptp_comparison experiments/ptp_comparison.cpp)
+#target_link_libraries(${PROJECT_NAME}_ptp_comparison ${PROJECT_NAME}_shared)
+#
+#add_executable(${PROJECT_NAME}_prmstar_keep_or_clear experiments/prmstar_keep_or_clear.cpp)
+#target_link_libraries(${PROJECT_NAME}_prmstar_keep_or_clear ${PROJECT_NAME}_shared)
+#
+#add_executable(${PROJECT_NAME}_greatcircle_correlation experiments/greatcircle_correlation.cpp)
+#target_link_libraries(${PROJECT_NAME}_greatcircle_correlation ${PROJECT_NAME}_shared)
+#
+#add_executable(${PROJECT_NAME}_preorder_experiment experiments/preorder_experiment.cpp)
+#target_link_libraries(${PROJECT_NAME}_preorder_experiment ${PROJECT_NAME}_shared)
+#
+#add_executable(${PROJECT_NAME}_probe_retreat_move experiments/probe_retreat_move.cpp)
+#target_link_libraries(${PROJECT_NAME}_probe_retreat_move ${PROJECT_NAME}_shared)
+#
+#add_executable(${PROJECT_NAME}_prm_multigoal_experiment experiments/prm_multigoal_experiment.cpp)
+#target_link_libraries(${PROJECT_NAME}_prm_multigoal_experiment ${PROJECT_NAME}_shared)
+#
+#add_executable(${PROJECT_NAME}_approach_planning experiments/approach_planning.cpp)
+#target_link_libraries(${PROJECT_NAME}_approach_planning ${PROJECT_NAME}_shared)
+#
+#add_executable(${PROJECT_NAME}_knn experiments/knn.cpp)
+#target_link_libraries(${PROJECT_NAME}_knn ${PROJECT_NAME}_shared)
+#
+#add_executable(${PROJECT_NAME}_generate_tree_data src/generate_tree_data.cpp)
+#
+##target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared)
+#
+#
+##target_link_libraries(${PROJECT_NAME}_tests ${CATKIN_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib)
+#
+##include(GoogleTest)
+##gtest_discover_tests(${PROJECT_NAME}_tests)

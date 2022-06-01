@@ -24,8 +24,7 @@ std::shared_ptr<fcl::CollisionGeometryd> collisionGeometryFromShape(const shapes
     switch (shape->type) {
 
         case shapes::UNKNOWN_SHAPE:
-            ROS_ERROR("Unknown shape.");
-            return {nullptr};
+            throw std::logic_error("Unknown shape.");
         case shapes::SPHERE:
             return std::make_shared<fcl::Sphered>(
                     std::dynamic_pointer_cast<const shapes::Sphere>(shape)->radius);
@@ -49,15 +48,11 @@ std::shared_ptr<fcl::CollisionGeometryd> collisionGeometryFromShape(const shapes
                     std::dynamic_pointer_cast<const shapes::Plane>(shape)->c,
                     std::dynamic_pointer_cast<const shapes::Plane>(shape)->d);
         case shapes::MESH:
-            ROS_ERROR("Not implemented");
-            return {nullptr};
         case shapes::OCTREE:
-            ROS_ERROR("Not implemented");
-            return {nullptr};
+            throw std::logic_error("Not implemented");
     }
 
-    ROS_ERROR("Control should not reach this point.");
-    return {nullptr};
+    throw std::logic_error("Control should not reach this point.");
 }
 
 std::set<size_t> LeavesCollisionChecker::checkLeafCollisions(moveit::core::RobotState &state) const {

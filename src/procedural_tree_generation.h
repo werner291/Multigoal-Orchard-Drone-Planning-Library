@@ -9,7 +9,7 @@ static const float BRANCH_ANGULAR_RANGE = 0.7;
 
 static const float BRANCH_RADIUS_REDUCTION_FACTOR = 0.9;
 
-#include <moveit_msgs/PlanningScene.h>
+#include <moveit_msgs/msg/planning_scene.h>
 #include <Eigen/Geometry>
 #include <random>
 
