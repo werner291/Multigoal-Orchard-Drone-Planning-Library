@@ -28,23 +28,24 @@ void addColoredMeshCollisionShape(moveit_msgs::msg::PlanningScene &planning_scen
                                   const std::string &id,
                                   const shape_msgs::msg::Mesh &mesh);
 
-void save_ros_msg(const std::string& filename, const moveit_msgs::msg::PlanningScene& msg) {
+template<typename Msg>
+void save_ros_msg(const std::string& filename, const Msg& msg) {
     // Write to File
     std::ofstream ofs(filename, std::ios::out|std::ios::binary);
 
-    rclcpp::Serialization<moveit_msgs::msg::PlanningScene> serializer;
+    rclcpp::Serialization<Msg> serializer;
 
     rclcpp::SerializedMessage serialized_msg_;
 
     serializer.serialize_message(&msg, &serialized_msg_);
 
-    ofs.write((char*)serialized_msg_.get_rcl_serialized_message().buffer, serialized_msg_.get_rcl_serialized_message().buffer_length);
+    ofs.write((char*)serialized_msg_.get_rcl_serialized_message().buffer, (long) serialized_msg_.get_rcl_serialized_message().buffer_length);
 
     ofs.close();
 }
 
-
-std::optional<moveit_msgs::msg::PlanningScene> read_ros_msg(const std::string& filename){
+template<typename Msg>
+std::optional<Msg> read_ros_msg(const std::string& filename){
     // Read from File to msg_scan_
     std::ifstream ifs(filename, std::ios::in|std::ios::binary);
 
@@ -52,10 +53,20 @@ std::optional<moveit_msgs::msg::PlanningScene> read_ros_msg(const std::string& f
         return std::nullopt;
     }
 
-    moveit_msgs::msg::PlanningScene msg;
 
-    static rclcpp::Serialization<moveit_msgs::msg::PlanningScene> serializer;
-    serializer.deserialize_message()
+    std::streamsize size = ifs.tellg();
+    ifs.seekg(0, std::ios::beg);
+
+    rclcpp::SerializedMessage serialized_msg_;
+    serialized_msg_.reserve(size);
+
+    ifs.read((char*)serialized_msg_.get_rcl_serialized_message().buffer, size);
+
+    Msg msg;
+
+    static rclcpp::Serialization<Msg> serializer;
+
+    serializer.deserialize_message(&serialized_msg_, &msg);
 
     ifs.close();
 

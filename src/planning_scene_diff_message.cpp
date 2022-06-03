@@ -7,6 +7,8 @@
 #include "planning_scene_diff_message.h"
 #include "general_utilities.h"
 
+const std::string PREFIX = "file:///home/werner/ws_moveit2/src/motion-planning-around-apple-trees/3d-models/";
+
 void createTrunkInPlanningSceneMessage(const std::vector<DetachedTreeNode> &tree_flattened,
                                        moveit_msgs::msg::PlanningScene &planning_scene) {
     moveit_msgs::msg::CollisionObject collision_object;
@@ -201,9 +203,10 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
 
         planning_scene_message.is_diff = true;
 
+        
         {
             const shape_msgs::msg::Mesh mesh = meshMsgFromResource(
-                    "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/" + model_name +
+                    PREFIX + model_name +
                     "_trunk.dae");
 
             const std::vector<shape_msgs::msg::Mesh> decomposition = convex_decomposition(mesh, 2.0);
@@ -214,7 +217,7 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
         }
 
         const shape_msgs::msg::Mesh apples = meshMsgFromResource(
-                "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/" + model_name +
+                PREFIX + model_name +
                 "_apples.dae");
 
         addColoredMeshCollisionShape(planning_scene_message, {1.0, 0.0, 0.0}, "apples", apples);
@@ -222,7 +225,7 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
         addColoredMeshCollisionShape(planning_scene_message,
                                      {0.1, 0.7, 0.1}, "leaves",
                                      meshMsgFromResource(
-                                             "file:///home/werner/workspace/motion-planning-around-apple-trees/3d-models/" +
+                                             PREFIX +
                                              model_name + "_leaves.dae"));
 
 //        save_ros_msg(cache_filename, planning_scene_message);

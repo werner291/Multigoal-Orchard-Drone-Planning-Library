@@ -3,7 +3,6 @@
 #include "../src/planning_scene_diff_message.h"
 #include "../src/experiment_utils.h"
 #include "../src/prm_multigoal.h"
-#include "../src/thread_pool.hpp"
 #include "../src/run_experiment.h"
 
 #include <range/v3/all.hpp>

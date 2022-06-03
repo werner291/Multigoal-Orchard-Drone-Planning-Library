@@ -175,45 +175,6 @@ std::vector<std::vector<PtpSpec>> genPointToPointSpecs(const moveit::core::Robot
     return ptp_specs;
 }
 
-visualization_msgs::msg::MarkerArray markers_for_state(const moveit::core::RobotState& state) {
-
-    auto lms = state.getRobotModel()->getLinkModelsWithCollisionGeometry();
-
-    visualization_msgs::msg::MarkerArray ma;
-
-    for (auto lm : lms) {
-
-        Eigen::Isometry3d xfm = state.getGlobalLinkTransform(lm);
-
-        assert(lm->getCollisionOriginTransforms().size() == lm->getShapes().size());
-
-        for (const auto shape_xform : boost::combine(lm->getCollisionOriginTransforms(),lm->getShapes()))
-        {
-            visualization_msgs::msg::Marker mk;
-
-            if (!shapes::constructMarkerFromShape(shape_xform.get<1>().get(),mk)) {
-                ROS_WARN("Failed to construct marker.");
-            }
-
-            tf::poseEigenToMsg(xfm * shape_xform.get<0>(), mk.pose);
-
-            mk.header.frame_id = "world";
-
-            mk.id = ma.markers.size();
-
-            mk.color.r = 255;
-            mk.color.g = 255;
-            mk.color.b = 255;
-            mk.color.a = 255;
-
-            ma.markers.push_back(mk);
-        }
-    }
-
-    return ma;
-
-}
-
 planning_scene::PlanningScenePtr
 setupPlanningScene(const moveit_msgs::msg::PlanningScene &planning_scene_message,
                    const moveit::core::RobotModelConstPtr &drone) {
@@ -222,7 +183,7 @@ setupPlanningScene(const moveit_msgs::msg::PlanningScene &planning_scene_message
     // Diff message apparently can't handle partial ACM updates?
     scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
     scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
-    scene->setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
+    scene->allocateCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
     return scene;
 }
 
@@ -376,7 +337,7 @@ ExperimentPlanningContext loadContext(const moveit::core::RobotModelConstPtr &dr
 moveit::core::RobotState randomStateOutsideTree(const moveit::core::RobotModelPtr &drone) {
     moveit::core::RobotState start_state(drone);
 
-    DroneStateConstraintSampler::randomizeUprightWithBase(start_state, 0.0);
+    randomizeUprightWithBase(start_state, 0.0);
 
     ompl::RNG rng;
 

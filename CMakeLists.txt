@@ -30,7 +30,7 @@ include_directories(
         ${GTEST_INCLUDE_DIRS}
         ${BULLET_INCLUDE_DIRS}
         ${OMPL_INCLUDE_DIRS}
-        or-tools_Ubuntu-21.10-64bit_v9.3.10497/include
+        /home/werner/ws_moveit2/src/motion-planning-around-apple-trees/or-tools_Ubuntu-21.10-64bit_v9.3.10497/include
 )
 
 # Note: the HACD library is included Bullet's "extra" libraries
@@ -39,11 +39,11 @@ link_libraries(
         ${FCL_LIBRARIES}
         ${Boost_LIBRARIES}
         ${BULLET_LIBRARIES}
+        ${OMPL_LIBRARIES}
         HACD
         jsoncpp_lib
-#        tbb
-        ompl
-        or-tools_Ubuntu-21.10-64bit_v9.3.10497/lib/libortools.so
+        tbb
+        /home/werner/ws_moveit2/src/motion-planning-around-apple-trees/or-tools_Ubuntu-21.10-64bit_v9.3.10497/lib/libortools.so
 )
 
 ###########
@@ -87,8 +87,6 @@ add_library(${PROJECT_NAME}_shared
         src/multigoal/ATNN.h
         src/multigoal/ATRandom.cpp
         src/multigoal/ATRandom.h
-#        src/multigoal/ClusterTable.cpp
-#        src/multigoal/ClusterTable.h
         src/multigoal/goals_gnat.cpp
         src/multigoal/goals_gnat.h
         src/multigoal/knn.cpp
@@ -140,9 +138,7 @@ add_library(${PROJECT_NAME}_shared
         src/SphereShell.h
         src/EndEffectorOnShellGoal.cpp
         src/EndEffectorOnShellGoal.h
-        src/ros_utilities.cpp
-        src/ros_utilities.h
-#        src/ExperimentVisualTools.h
+        #        src/ExperimentVisualTools.h
 #        src/ExperimentVisualTools.cpp
         src/functional_optional.h
         src/prm_multigoal.cpp
@@ -164,13 +160,9 @@ add_library(${PROJECT_NAME}_shared
         src/MyBitStar.cpp
         src/MyBitStar.h)
 
-ament_target_dependencies(${PROJECT_NAME}_shared
-        "moveit_core"
-        "moveit_msgs"
-        "shape_msgs"
-        "moveit_planners_ompl"
-        "rclcpp"
-        )
+set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "rclcpp" "ompl")
+
+ament_target_dependencies(${PROJECT_NAME}_shared ${AMENT_DEPS})
 
 #
 ##message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
@@ -192,12 +184,15 @@ ament_target_dependencies(${PROJECT_NAME}_shared
 #
 #add_executable(${PROJECT_NAME}_preorder_experiment experiments/preorder_experiment.cpp)
 #target_link_libraries(${PROJECT_NAME}_preorder_experiment ${PROJECT_NAME}_shared)
-#
-#add_executable(${PROJECT_NAME}_probe_retreat_move experiments/probe_retreat_move.cpp)
-#target_link_libraries(${PROJECT_NAME}_probe_retreat_move ${PROJECT_NAME}_shared)
-#
-#add_executable(${PROJECT_NAME}_prm_multigoal_experiment experiments/prm_multigoal_experiment.cpp)
-#target_link_libraries(${PROJECT_NAME}_prm_multigoal_experiment ${PROJECT_NAME}_shared)
+
+add_executable(${PROJECT_NAME}_probe_retreat_move experiments/probe_retreat_move.cpp)
+target_link_libraries(${PROJECT_NAME}_probe_retreat_move ${PROJECT_NAME}_shared)
+ament_target_dependencies(${PROJECT_NAME}_probe_retreat_move ${AMENT_DEPS})
+
+add_executable(${PROJECT_NAME}_prm_multigoal_experiment experiments/prm_multigoal_experiment.cpp)
+target_link_libraries(${PROJECT_NAME}_prm_multigoal_experiment ${PROJECT_NAME}_shared)
+ament_target_dependencies(${PROJECT_NAME}_prm_multigoal_experiment ${AMENT_DEPS})
+
 #
 #add_executable(${PROJECT_NAME}_approach_planning experiments/approach_planning.cpp)
 #target_link_libraries(${PROJECT_NAME}_approach_planning ${PROJECT_NAME}_shared)

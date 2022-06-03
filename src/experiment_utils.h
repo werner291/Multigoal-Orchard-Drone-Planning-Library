@@ -93,8 +93,6 @@ std::vector<std::vector<PtpSpec>>
 genPointToPointSpecs(const moveit::core::RobotModelPtr &drone, const Json::Value &trees_data, std::mt19937 &gen,
                      size_t pairsPerTree);
 
-visualization_msgs::msg::MarkerArray markers_for_state(const moveit::core::RobotState& state);
-
 struct DroneAndStateSpace {
     moveit::core::RobotModelPtr robot;
     std::shared_ptr<DroneStateSpace> state_space;

@@ -5,7 +5,7 @@
 #include "../src/ShellPathPlanner.h"
 #include "../src/run_experiment.h"
 
-#include <moveit_visual_tools/moveit_visual_tools.h>
+//#include <moveit_visual_tools/moveit_visual_tools.h>
 #include <range/v3/view/cartesian_product.hpp>
 #include <range/v3/view/transform.hpp>
 #include "../src/MyBitStar.h"
