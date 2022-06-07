@@ -228,7 +228,7 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
                                              PREFIX +
                                              model_name + "_leaves.dae"));
 
-//        save_ros_msg(cache_filename, planning_scene_message);
+        save_ros_msg(cache_filename, planning_scene_message);
 
         std::cout << "Cached scene info for " << to_yaml(planning_scene_message) << std::endl;
 

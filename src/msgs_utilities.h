@@ -54,11 +54,13 @@ std::optional<Msg> read_ros_msg(const std::string& filename){
     }
 
 
+    ifs.seekg(0, std::ios::end);
     std::streamsize size = ifs.tellg();
     ifs.seekg(0, std::ios::beg);
 
     rclcpp::SerializedMessage serialized_msg_;
     serialized_msg_.reserve(size);
+    serialized_msg_.get_rcl_serialized_message().buffer_length = size;
 
     ifs.read((char*)serialized_msg_.get_rcl_serialized_message().buffer, size);
 
