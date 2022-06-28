@@ -25,11 +25,15 @@ NewMultiGoalPlanner::PlanResult ShellPathPlanner::plan(
 
     auto approaches = planApproaches(si, goals, ompl_shell);
 
+    PlanResult result {{}};
+
+    if (approaches.empty()) {
+        return result;
+    }
+
     auto ordering = computeApproachOrdering(start, goals, approaches);
 
     auto first_approach = planFirstApproach(start, approaches[ordering[0]].second);
-
-    PlanResult result {{}};
 
     if (!first_approach) {
         return result;
@@ -62,7 +66,11 @@ NewMultiGoalPlanner::PlanResult ShellPathPlanner::assembleFullPath(
                 approaches[ordering[i]]
                 );
 
+        auto start = std::chrono::steady_clock::now();
         segment_path = optimize(segment_path, std::make_shared<DronePathLengthObjective>(si), si);
+        auto end = std::chrono::steady_clock::now();
+        std::cout << "segment optimization took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+                  << "ms" << std::endl;
 
         result.segments.push_back({
             approaches[ordering[0]].first,
@@ -143,6 +151,8 @@ std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> ShellPathPlanner:
                     *approach
             );
         }
+
+        std::cout << "Planned approach for goal " << goal_i << std::endl;
     }
 
     return approaches;
