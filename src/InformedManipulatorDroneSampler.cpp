@@ -212,7 +212,9 @@ InformedBetweenDroneStateAndTargetSampler::sampleUniform(ompl::base::State *stat
 
     moveit::core::RobotState result(st1.getRobotModel());
 
-    bool success = sampleBetweenUpright(st1, st2, result, maxCost.value());
+
+// TODO remove the magic number here...
+    bool success = sampleBetweenUpright(st1, st2, result, isfinite(maxCost.value()) ? maxCost.value() : 100.0 * st1.distance(st2));
 
     if (success)
         probDefn_->getSpaceInformation()->getStateSpace()->as<DroneStateSpace>()->copyToOMPLState(statePtr, result);
