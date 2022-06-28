@@ -2,7 +2,7 @@
 
 #include "../src/planning_scene_diff_message.h"
 #include "../src/experiment_utils.h"
-#include "../src/prm_multigoal.h"
+#include "../src/MultigoalPrmStar.h"
 #include "../src/run_experiment.h"
 
 #include <range/v3/all.hpp>
@@ -39,7 +39,12 @@ int main(int argc, char **argv) {
 
     ompl::msg::setLogLevel(ompl::msg::LOG_ERROR);
 
-    run_planner_experiment(allocators, "analysis/prm_multigoal_experiment.json", 50);
+    run_planner_experiment(
+            allocators,
+            "analysis/prm_multigoal_experiment.json",
+            50,
+            std::thread::hardware_concurrency()
+            );
 
     return 0;
 }

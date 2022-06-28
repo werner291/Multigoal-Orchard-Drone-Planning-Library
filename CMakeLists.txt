@@ -126,8 +126,8 @@ add_library(${PROJECT_NAME}_shared
         src/greatcircle.cpp
 #        src/agglomerative_clustering.cpp
 #        src/agglomerative_clustering.h
-        src/prm_multigoal.cpp
-        src/prm_multigoal.h
+        src/MultigoalPrmStar.cpp
+        src/MultigoalPrmStar.h
         src/traveling_salesman.h
         src/traveling_salesman.cpp
         src/probe_retreat_move.cpp
@@ -141,8 +141,8 @@ add_library(${PROJECT_NAME}_shared
         #        src/ExperimentVisualTools.h
 #        src/ExperimentVisualTools.cpp
         src/functional_optional.h
-        src/prm_multigoal.cpp
-        src/prm_multigoal.h
+        src/MultigoalPrmStar.cpp
+        src/MultigoalPrmStar.h
         src/robot_path.cpp
         src/robot_path.h
         src/NewMultiGoalPlanner.cpp
@@ -158,7 +158,10 @@ add_library(${PROJECT_NAME}_shared
         src/run_experiment.cpp
         src/run_experiment.h
         src/MyBitStar.cpp
-        src/MyBitStar.h)
+        src/MyBitStar.h
+#        src/MultigoalLazyPrmStar.cpp
+#        src/MultigoalLazyPrmStar.h
+        )
 
 set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "rclcpp" "ompl")
 
@@ -207,5 +210,12 @@ ament_target_dependencies(${PROJECT_NAME}_prm_multigoal_experiment ${AMENT_DEPS}
 #
 ##target_link_libraries(${PROJECT_NAME}_tests ${CATKIN_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib)
 #
-##include(GoogleTest)
-##gtest_discover_tests(${PROJECT_NAME}_tests)
+include(GoogleTest)
+
+add_executable(${PROJECT_NAME}_tests
+        test/test.cpp
+        test/MoveItPathLengthObjectiveTest.cpp
+        )
+target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
+ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})
+gtest_discover_tests(${PROJECT_NAME}_tests)

@@ -2,8 +2,8 @@
 // Created by werner on 26-4-22.
 //
 
-#ifndef NEW_PLANNERS_PRM_MULTIGOAL_H
-#define NEW_PLANNERS_PRM_MULTIGOAL_H
+#ifndef NEW_PLANNERS_MULTIGOALPRMSTAR_H
+#define NEW_PLANNERS_MULTIGOALPRMSTAR_H
 
 #include <moveit/planning_scene/planning_scene.h>
 #include "robot_path.h"
@@ -35,4 +35,4 @@ public:
 
 };
 
-#endif //NEW_PLANNERS_PRM_MULTIGOAL_H
+#endif //NEW_PLANNERS_MULTIGOALPRMSTAR_H

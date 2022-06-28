@@ -15,8 +15,8 @@ typedef std::function<std::shared_ptr<NewMultiGoalPlanner>(
         const ompl::base::SpaceInformationPtr&)>
         NewMultiGoalPlannerAllocatorFn;
 
-void run_planner_experiment(const std::vector <NewMultiGoalPlannerAllocatorFn> &allocators,
-                            const std::string &results_path,
-                            const int num_runs);
+void
+run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &allocators, const std::string &results_path,
+                       const int num_runs, unsigned int nworkers);
 
 #endif //NEW_PLANNERS_RUN_EXPERIMENT_H

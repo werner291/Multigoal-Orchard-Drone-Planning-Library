@@ -675,6 +675,10 @@ using namespace ompl::base;
         if (hasExactSolution_) {
             // Start at vertex in the goal
             curVertex = curGoalVertex_;
+
+            OMPL_DEBUG("Cur goal vertex: %u", curGoalVertex_->hasParent());
+
+
         } else if (!hasExactSolution_ && graphPtr_->getTrackApproximateSolutions()) {
             // Start at the vertex closest to the goal
             curVertex = graphPtr_->closestVertexToGoal();
@@ -692,7 +696,7 @@ using namespace ompl::base;
         for (/*Already allocated & initialized*/; !curVertex->isRoot(); curVertex = curVertex->getParent()) {
 #ifdef BITSTAR_DEBUG
 
-            OMPL_DEBUG("Log.");
+            OMPL_DEBUG("Cur vertex: %u", curVertex->hasParent());
 
             // Check the case where the chain ends incorrectly.
             if (curVertex->hasParent() == false)
@@ -844,8 +848,12 @@ using namespace ompl::base;
             // Mark that we have a solution
             hasExactSolution_ = true;
 
+            OMPL_DEBUG("New solution! Parent: %u,", newBestGoal->hasParent());
+
             // Store the current goal
             curGoalVertex_ = newBestGoal;
+
+            OMPL_DEBUG("--Cur goal vertex: %u", curGoalVertex_->hasParent());
 
             // Update the best cost:
             bestCost_ = newCost;

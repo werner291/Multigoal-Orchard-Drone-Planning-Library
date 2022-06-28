@@ -74,7 +74,7 @@ void MakeshiftExponentialSampler::sampleUniform(ompl::base::State *state) {
 void MakeshiftExponentialSampler::sampleUniformNear(ompl::base::State *state,
                                                     const ompl::base::State *near,
                                                     double distance) {
-    throw ompl::Exception("Not implemented");
+    uniformSampler->sampleUniformNear(state, near, distance);
 }
 
 void MakeshiftExponentialSampler::sampleGaussian(ompl::base::State *state,
@@ -93,5 +93,5 @@ MakeshiftExponentialSampler::MakeshiftExponentialSampler(const ompl::base::State
           start_state(startState),
           goalRegion(std::move(goalRegion)),
           stddev_(stddev) {
-    std::cout << "New sampler" << std::endl;
+//    std::cout << "New sampler" << std::endl;
 }

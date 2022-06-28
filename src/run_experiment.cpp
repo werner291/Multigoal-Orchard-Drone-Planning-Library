@@ -6,12 +6,10 @@
 
 using namespace std;
 
-std::shared_ptr<DroneStateSpace> loadStateSpace() {
-    // Load the drone model
-    auto drone = loadRobotModel();
+std::shared_ptr<DroneStateSpace> loadStateSpace(const moveit::core::RobotModelPtr &model) {
 
     // initialize the state space and such
-    auto stateSpace = make_shared<DroneStateSpace>(ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"), TRANSLATION_BOUND);
+    auto stateSpace = make_shared<DroneStateSpace>(ompl_interface::ModelBasedStateSpaceSpecification(model, "whole_body"), TRANSLATION_BOUND);
 
     return stateSpace;
 }
@@ -38,11 +36,14 @@ ompl::base::ScopedState<> genStartState(const shared_ptr<DroneStateSpace> &state
     return start_state;
 }
 
-void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &allocators,
-                            const std::string &results_path,
-                            const int num_runs) {
+void
+run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &allocators,
+                       const std::string &results_path,
+                       const int num_runs,
+                       const unsigned int nworkers) {
 
-    auto stateSpace = loadStateSpace();
+    auto drone = loadRobotModel();
+    auto stateSpace = loadStateSpace(drone);
 
     // Load the apple tree model with some metadata.
     auto scene_info = createMeshBasedAppleTreePlanningSceneMessage("appletree");
@@ -51,8 +52,6 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
     std::mutex mut;
 
     Json::Value statistics;
-
-    unsigned int concurrency = 1;//std::thread::hardware_concurrency();
 
     auto start_states =
             ranges::views::iota(0, num_runs)
@@ -68,10 +67,13 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
     size_t num_tasks = tasks.size();
     size_t current_task = 0;
 
-    for (size_t thread_id = 0; thread_id < concurrency; ++thread_id) {
+    for (size_t thread_id = 0; thread_id < nworkers; ++thread_id) {
         threads.emplace_back([&]() {
 
-            auto si = loadSpaceInformation(stateSpace, scene_info);
+            // Keeping this local.
+            auto threadLocalStateSpace = loadStateSpace(drone);
+
+            auto si = loadSpaceInformation(threadLocalStateSpace, scene_info);
 
             while (true) {
 
@@ -79,19 +81,23 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
 
                 {
                     std::lock_guard<std::mutex> lock(mut);
-                    if (current_task >= num_tasks) {
+                    thread_current_task = current_task++;
+                    if (thread_current_task >= num_tasks) {
                         return;
                     }
-                    thread_current_task = current_task++;
                 }
 
                 std::cout << "Starting task " << thread_current_task << " of " << num_tasks << std::endl;
 
-                const auto& [planner_allocator, start_state_pair] = tasks[current_task - 1];
+                const auto& [planner_allocator, start_state_pair] = tasks[thread_current_task];
                 const auto& [run_i, start_state] = start_state_pair;
 
                 auto planner = planner_allocator(scene_info, si);
                 auto goals = constructNewAppleGoals(si, scene_info.apples);
+
+                std::cout << "Total apples" << goals.size() << std::endl;
+
+                exit(0);
                 auto objective = make_shared<DronePathLengthObjective>(si);
 
                 auto start_time = ompl::time::now();

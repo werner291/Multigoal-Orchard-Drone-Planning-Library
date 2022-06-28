@@ -1,7 +1,7 @@
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
-#include "prm_multigoal.h"
+#include "MultigoalPrmStar.h"
 #include "DronePathLengthObjective.h"
 #include "ompl_custom.h"
 #include "traveling_salesman.h"
