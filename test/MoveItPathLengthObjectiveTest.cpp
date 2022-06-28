@@ -2,7 +2,6 @@
 #include <gtest/gtest.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 
-#include "test_utils.h"
 #include "../src/experiment_utils.h"
 
 TEST(MoveitPathLengthObjectiveTest, TestInformedSampler) {
@@ -23,17 +22,16 @@ TEST(MoveitPathLengthObjectiveTest, TestInformedSampler) {
 
     ompl::RNG rng;
 
+    Eigen::Vector3d tgt = Eigen::Vector3d(rng.uniformReal(-1.0, 1.0),
+                                          rng.uniformReal(-1.0, 1.0),
+                                          rng.uniformReal(-1.0, 1.0));
+
+    std::cout << "Target: " << tgt.x() << ", " << tgt.y() << ", " << tgt.z() << std::endl;
+
     auto goal = std::make_shared<DroneEndEffectorNearTarget>(space_information, 0.0,
-                                                             Eigen::Vector3d(rng.uniformReal(-1.0, 1.0),
-                                                                             rng.uniformReal(-1.0, 1.0),
-                                                                             rng.uniformReal(-1.0, 1.0)));
+                                                             tgt);
 
     ompl::base::ScopedState goal_sample(space_information);
-    double costLowerBoundEstimate = INFINITY;
-    for (size_t i = 0; i < 10000; ++i) {
-        goal->sampleGoal(goal_sample.get());
-        costLowerBoundEstimate = std::min(costLowerBoundEstimate, state_space->distance(start.get(), goal_sample.get()));
-    }
 
     pdef->addStartState(start);
     auto objective = std::make_shared<DronePathLengthObjective>(space_information);
@@ -42,18 +40,30 @@ TEST(MoveitPathLengthObjectiveTest, TestInformedSampler) {
 
     auto informed_sampler = pdef->getOptimizationObjective()->allocInformedStateSampler(pdef, 1);
 
-    for (size_t i = 0; i < 100; ++i) {
+    for (size_t i = 0; i < 1000; ++i) {
 
         ompl::base::ScopedState sample(space_information);
-        const ompl::base::Cost &maxCost = ompl::base::Cost(costLowerBoundEstimate * rng.uniformReal(1.0, 5.0));
-        informed_sampler->sampleUniform(sample.get(), maxCost);
+        const ompl::base::Cost &maxCost = ompl::base::Cost(objective->costToGo(start.get(), goal.get()).value() + 10.0);//* rng.uniformReal(1.0, 5.0));
 
+        bool success = informed_sampler->sampleUniform(sample.get(), maxCost);
+
+        auto c2go = objective->costToGo(sample.get(), goal.get());
         double pathLowerBound = objective->combineCosts(
                 objective->motionCost(start.get(), sample.get()),
-                objective->costToGo(sample.get(), goal.get())
+                c2go
         ).value();
 
-        ASSERT_LE(pathLowerBound,maxCost.value());
+        ASSERT_TRUE(success);
+
+        ASSERT_LE(pathLowerBound, maxCost.value());
+
+        moveit::core::RobotState robot_state(state_space->getRobotModel());
+        state_space->copyToRobotState(robot_state, sample.get());
+
+        Eigen::Vector3d trs = robot_state.getGlobalLinkTransform("base_link").translation();
+        std::cout << "Sample: " << trs.x() << ", " << trs.y() << ", " << trs.z() << std::endl;
+
+
 
     }
 
