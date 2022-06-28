@@ -75,7 +75,11 @@ bool sampleBetweenUpright(const moveit::core::RobotState &a,
     // The distance between a and b limits how much sampling freedom we have.
     // Max with 0.0 since AIT* gets a bit over-enthusiastic with the maxCost requests.
     // I'd return false, but then this line https://github.com/ompl/ompl/blob/96eb89e51d84bbc75093409ce186e6826c93ec5a/src/ompl/geometric/planners/informedtrees/aitstar/src/ImplicitGraph.cpp#L339 gets stuck.
-    double wiggle_room = std::max(0.0, maxDist - a.distance(b));
+    double wiggle_room = maxDist - a.distance(b);
+
+    if (wiggle_room < 0.0) {
+        return false;
+    }
 
     // Loop through all the joint models with the weight previously-assigned to them.
     for (const auto &w_jm: boost::combine(weights, a.getRobotModel()->getActiveJointModels())) {
