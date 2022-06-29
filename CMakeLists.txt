@@ -30,20 +30,19 @@ include_directories(
         ${GTEST_INCLUDE_DIRS}
         ${BULLET_INCLUDE_DIRS}
         ${OMPL_INCLUDE_DIRS}
-        /home/werner/ws_moveit2/src/motion-planning-around-apple-trees/or-tools_Ubuntu-21.10-64bit_v9.3.10497/include
+        ortools/include
 )
 
-# Note: the HACD library is included Bullet's "extra" libraries
 link_libraries(
         ${EIGEN_LIBRARIES}
         ${FCL_LIBRARIES}
         ${Boost_LIBRARIES}
         ${BULLET_LIBRARIES}
         ${OMPL_LIBRARIES}
-        HACD
+        HACD # Note: the HACD library is included Bullet's "extra" libraries
         jsoncpp_lib
         tbb
-        /home/werner/ws_moveit2/src/motion-planning-around-apple-trees/or-tools_Ubuntu-21.10-64bit_v9.3.10497/lib/libortools.so
+        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
 )
 
 ###########
