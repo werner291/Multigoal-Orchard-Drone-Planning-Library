@@ -78,18 +78,10 @@ add_library(${PROJECT_NAME}_shared
         src/DronePathLengthObjective.h
         src/msgs_utilities.cpp
         src/msgs_utilities.h
-#        src/multigoal/goals_gnat.cpp
-#        src/multigoal/goals_gnat.h
-#        src/multigoal/multi_goal_planners.cpp
-#        src/multigoal/multi_goal_planners.h
-#        src/multigoal/PointToPointPlanner.cpp
-#        src/multigoal/PointToPointPlanner.h
         src/ompl_custom.cpp
         src/ompl_custom.h
         src/planning_scene_diff_message.cpp
         src/planning_scene_diff_message.h
-#        src/preorder_strategy/preorder_strategy.cpp
-#        src/preorder_strategy/preorder_strategy.h
         src/procedural_tree_generation.cpp
         src/SamplerWrapper.cpp
         src/SamplerWrapper.h
@@ -97,8 +89,6 @@ add_library(${PROJECT_NAME}_shared
         src/UnionGoalSampleableRegion.h
         src/greatcircle.h
         src/greatcircle.cpp
-#        src/agglomerative_clustering.cpp
-#        src/agglomerative_clustering.h
         src/MultigoalPrmStar.cpp
         src/MultigoalPrmStar.h
         src/traveling_salesman.h
@@ -111,8 +101,6 @@ add_library(${PROJECT_NAME}_shared
         src/SphereShell.h
         src/EndEffectorOnShellGoal.cpp
         src/EndEffectorOnShellGoal.h
-        #        src/ExperimentVisualTools.h
-#        src/ExperimentVisualTools.cpp
         src/MultigoalPrmStar.cpp
         src/MultigoalPrmStar.h
         src/robot_path.cpp
@@ -129,11 +117,8 @@ add_library(${PROJECT_NAME}_shared
         src/ShellPathPlanner.h
         src/run_experiment.cpp
         src/run_experiment.h
-        src/MyBitStar.cpp
-        src/MyBitStar.h
-#        src/MultigoalLazyPrmStar.cpp
-#        src/MultigoalLazyPrmStar.h
-        src/DirectApproachVariantSampler.cpp src/DirectApproachVariantSampler.h)
+        src/DirectApproachVariantSampler.cpp
+        src/DirectApproachVariantSampler.h)
 
 set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "rclcpp" "ompl")
 
