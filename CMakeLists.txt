@@ -57,8 +57,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(${PROJECT_NAME}_shared
         src/BulletContinuousMotionValidator.cpp
         src/BulletContinuousMotionValidator.h
-        src/ClearanceDecreaseMinimizationObjective.cpp
-        src/ClearanceDecreaseMinimizationObjective.h
         src/DroneStateConstraintSampler.cpp
         src/DroneStateSampler.cpp
         src/DroneStateSampler.h
@@ -115,7 +113,6 @@ add_library(${PROJECT_NAME}_shared
         src/EndEffectorOnShellGoal.h
         #        src/ExperimentVisualTools.h
 #        src/ExperimentVisualTools.cpp
-        src/functional_optional.h
         src/MultigoalPrmStar.cpp
         src/MultigoalPrmStar.h
         src/robot_path.cpp
