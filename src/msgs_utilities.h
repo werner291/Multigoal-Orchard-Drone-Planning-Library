@@ -1,25 +1,17 @@
 
-
 #ifndef NEW_PLANNERS_BUILD_REQUEST_H
 #define NEW_PLANNERS_BUILD_REQUEST_H
 
-#include <moveit_msgs/msg/constraints.h>
-#include <moveit_msgs/msg/display_trajectory.h>
-#include <moveit_msgs/msg/planning_scene.h>
+#include <moveit_msgs/msg/constraints.hpp>
+#include <moveit_msgs/msg/display_trajectory.hpp>
+#include <moveit_msgs/msg/planning_scene.hpp>
 #include <rclcpp/serialization.hpp>
-#include <std_msgs/msg/color_rgba.h>
-#include "procedural_tree_generation.h"
-#include "multigoal/approach_table.h"
+#include <std_msgs/msg/color_rgba.hpp>
 #include <fstream>
+#include <shape_msgs/msg/mesh.hpp>
+#include <optional>
 
-geometry_msgs::msg::Point pointMsg(const Eigen::Vector3d &ee_pt);
-
-std_msgs::msg::ColorRGBA colorMsgRGBA(const Eigen::Vector4f &ee_pt);
-
-[[maybe_unused]]
-visualization_msgs::msg::Marker
-buildApproachTableVisualization(const moveit::core::RobotModelConstPtr &robot,
-                                multigoal::GoalApproachTable &approach_table);
+#include "procedural_tree_generation.h"
 
 shape_msgs::msg::Mesh meshMsgFromResource(const std::string &resource);
 

@@ -10,11 +10,11 @@
 #include <ompl/geometric/planners/rrt/RRT.h>
 
 #include "SamplerWrapper.h"
-#include "multigoal/MetricTwoOpt.h"
 #include "planning_scene_diff_message.h"
 #include "procedural_tree_generation.h"
 #include "robot_path.h"
 #include "DronePathLengthObjective.h"
+#include "ompl_custom.h"
 
 struct LeafCollisions {
     double t;
@@ -23,14 +23,6 @@ struct LeafCollisions {
 };
 
 moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelConstPtr &drone);
-
-struct Experiment {
-    std::shared_ptr<MultiGoalPlanner> meta_planner;
-    std::shared_ptr<ompl::base::Planner> ptp_planner;
-    std::shared_ptr<ompl::base::OptimizationObjective> optimization_objective;
-    std::shared_ptr<SamplerWrapper> sampler;
-    std::chrono::milliseconds time_budget;
-};
 
 struct TreePlanningScene {
     std::vector<Apple> apples;

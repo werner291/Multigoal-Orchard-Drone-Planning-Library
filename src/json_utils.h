@@ -8,21 +8,9 @@
 #include "procedural_tree_generation.h"
 #include "LeavesCollisionChecker.h"
 #include "ompl_custom.h"
-#include "multigoal/multi_goal_planners.h"
-#include "multigoal/PointToPointPlanner.h"
 #include "experiment_utils.h"
-#include "multigoal/clustering_types.h"
-
-std::vector<LeafCollisions> collectLeafCollisionStats(const LeavesCollisionChecker &leavesCollisionChecker,
-                                                      const robot_trajectory::RobotTrajectory &trajectory);
 
 Json::Value toJSON(const LeafCollisions &leaf_collisions);
-
-Json::Value buildRunStatistics(const std::shared_ptr<LeavesCollisionChecker> &leavesCollisionChecker,
-                               const Experiment &experiment,
-                               const MultiGoalPlanResult &result,
-                               const std::chrono::milliseconds elapsed,
-                               const moveit::core::RobotModelPtr &robot);
 
 Json::Value toJSON(const Eigen::Vector3d &v);
 
@@ -50,8 +38,5 @@ std::vector<std::vector<PtpSpec>> ptpSpecsFromJson(const moveit::core::RobotMode
                                                    const Json::Value &stats);
 
 Json::Value ptpSpecsToJson(const std::vector<std::vector<PtpSpec>> &specs);
-
-Json::Value toJSON(const clustering::Cluster& cluster);
-
 
 #endif //NEW_PLANNERS_JSON_UTILS_H

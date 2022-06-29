@@ -9,16 +9,7 @@
 #include "InverseClearanceIntegralObjective.h"
 #include <moveit/robot_state/conversions.h>
 #include "msgs_utilities.h"
-#include "multigoal/approach_table.h"
 
-
-geometry_msgs::msg::Point pointMsg(const Eigen::Vector3d &ee_pt) {
-    geometry_msgs::msg::Point pt;
-    pt.x = ee_pt.x();
-    pt.y = ee_pt.y();
-    pt.z = ee_pt.z();
-    return pt;
-}
 
 geometry_msgs::msg::Vector3 eigenVectorMsg(const Eigen::Vector3d &ee_pt) {
     geometry_msgs::msg::Vector3 v3;
@@ -37,54 +28,6 @@ geometry_msgs::msg::Quaternion eigenQuaternionMsg(const Eigen::Quaterniond &q) {
     return msg;
 }
 
-std_msgs::msg::ColorRGBA colorMsgRGBA(const Eigen::Vector4f &ee_pt) {
-    std_msgs::msg::ColorRGBA msg;
-    msg.r = ee_pt[0];
-    msg.g = ee_pt[1];
-    msg.b = ee_pt[2];
-    msg.a = ee_pt[3];
-    return msg;
-}
-
-
-visualization_msgs::msg::Marker
-buildApproachTableVisualization(const moveit::core::RobotModelConstPtr &robot,
-                                multigoal::GoalApproachTable &approach_table) {
-
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::normal_distribution<float> color_range(0.0, 1.0);
-
-    visualization_msgs::msg::Marker mrk;
-    mrk.header.frame_id = robot->getModelFrame();
-    mrk.type = visualization_msgs::msg::Marker::LINE_LIST;
-    mrk.action = 0; // Add/Modify
-    mrk.pose.orientation = eigenQuaternionMsg(Eigen::Quaterniond::Identity());
-    mrk.pose.position = pointMsg(Eigen::Vector3d(0.0, 0.0, 0.0));
-    mrk.scale = eigenVectorMsg(Eigen::Vector3d(0.02, 1.0, 1.0));
-
-    for (const auto &target_approaches: approach_table) {
-
-        Eigen::Vector3f rgb(abs(color_range(gen)), abs(color_range(gen)), abs(color_range(gen)));
-        rgb.normalize();
-
-        Eigen::Vector4f color(rgb.x(), rgb.y(), rgb.z(), 1.0);
-
-        for (const ompl::base::ScopedStatePtr &state: target_approaches) {
-            auto rs = std::make_shared<moveit::core::RobotState>(robot);
-            rs->setVariablePositions(state->get()->as<DroneStateSpace::StateType>()->values);
-            rs->update(true);
-
-            mrk.points.push_back(pointMsg(rs->getGlobalLinkTransform("end_effector").translation()));
-            mrk.points.push_back(pointMsg(rs->getGlobalLinkTransform("base_link").translation()));
-
-            mrk.colors.push_back(colorMsgRGBA(color));
-            mrk.colors.push_back(colorMsgRGBA(color));
-
-        }
-    }
-    return mrk;
-}
 
 shape_msgs::msg::Mesh meshMsgFromResource(const std::string &resource) {
     std::shared_ptr<shapes::Mesh> mesh_shape(shapes::createMeshFromResource(

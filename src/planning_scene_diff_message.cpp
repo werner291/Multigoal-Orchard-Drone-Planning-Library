@@ -1,5 +1,6 @@
 #include <bullet/HACD/hacdHACD.h>
 #include <rclcpp/serialization.hpp>
+#include <rclcpp/serialized_message.hpp>
 
 #include "../src/msgs_utilities.h"
 #include "../src/experiment_utils.h"

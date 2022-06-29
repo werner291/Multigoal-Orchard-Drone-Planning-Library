@@ -1,0 +1,14 @@
+//
+// Created by werner on 29-6-22.
+//
+
+#ifndef NEW_PLANNERS_DIRECTAPPROACHVARIANTSAMPLER_H
+#define NEW_PLANNERS_DIRECTAPPROACHVARIANTSAMPLER_H
+
+
+class DirectApproachVariantSampler {
+
+};
+
+
+#endif //NEW_PLANNERS_DIRECTAPPROACHVARIANTSAMPLER_H

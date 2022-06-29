@@ -80,42 +80,18 @@ add_library(${PROJECT_NAME}_shared
         src/DronePathLengthObjective.h
         src/msgs_utilities.cpp
         src/msgs_utilities.h
-        src/multigoal/approach_table.cpp
-        src/multigoal/approach_table.h
-        src/multigoal/ATNN.cpp
-        src/multigoal/ATNN.h
-        src/multigoal/ATRandom.cpp
-        src/multigoal/ATRandom.h
-        src/multigoal/goals_gnat.cpp
-        src/multigoal/goals_gnat.h
-        src/multigoal/knn.cpp
-        src/multigoal/knn.h
-        src/multigoal/MetricTwoOpt.cpp
-        src/multigoal/MetricTwoOpt.h
-        src/multigoal/multi_goal_planners.cpp
-        src/multigoal/multi_goal_planners.h
-        src/multigoal/PointToPointPlanner.cpp
-        src/multigoal/PointToPointPlanner.h
-        src/multigoal/RandomizedTwoOpt.cpp
-        src/multigoal/RandomizedTwoOpt.h
-        src/multigoal/random_order.cpp
-        src/multigoal/random_order.h
-        src/multigoal/clustering_preselection.cpp
-        src/multigoal/clustering_preselection.h
-        src/multigoal/visitation_order_strategy.cpp
-        src/multigoal/visitation_order_strategy.h
-        src/multigoal/in_cluster_distances.cpp
-        src/multigoal/in_cluster_distances.h
-        src/multigoal/clustering_density.cpp
-        src/multigoal/clustering_density.h
-        src/multigoal/uknn.cpp
-        src/multigoal/uknn.h
+#        src/multigoal/goals_gnat.cpp
+#        src/multigoal/goals_gnat.h
+#        src/multigoal/multi_goal_planners.cpp
+#        src/multigoal/multi_goal_planners.h
+#        src/multigoal/PointToPointPlanner.cpp
+#        src/multigoal/PointToPointPlanner.h
         src/ompl_custom.cpp
         src/ompl_custom.h
         src/planning_scene_diff_message.cpp
         src/planning_scene_diff_message.h
-        src/preorder_strategy/preorder_strategy.cpp
-        src/preorder_strategy/preorder_strategy.h
+#        src/preorder_strategy/preorder_strategy.cpp
+#        src/preorder_strategy/preorder_strategy.h
         src/procedural_tree_generation.cpp
         src/SamplerWrapper.cpp
         src/SamplerWrapper.h
@@ -160,7 +136,7 @@ add_library(${PROJECT_NAME}_shared
         src/MyBitStar.h
 #        src/MultigoalLazyPrmStar.cpp
 #        src/MultigoalLazyPrmStar.h
-        )
+        src/DirectApproachVariantSampler.cpp src/DirectApproachVariantSampler.h)
 
 set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "rclcpp" "ompl")
 
