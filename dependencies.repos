@@ -1,0 +1,13 @@
+repositories:
+  moveit_visual_tools:
+    type: git
+    url: https://github.com/ros-planning/moveit_visual_tools
+    version: ros2
+  moveit2:
+    type: git
+    url: https://github.com/ros-planning/moveit2
+    version: ros2
+  ompl:
+    type: git
+    url: https://github.com/werner291/ompl
+    version: ros2
