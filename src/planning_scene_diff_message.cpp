@@ -8,8 +8,6 @@
 #include "planning_scene_diff_message.h"
 #include "general_utilities.h"
 
-const std::string PREFIX = "file:///home/werner/ws_moveit2/src/motion-planning-around-apple-trees/3d-models/";
-
 void createTrunkInPlanningSceneMessage(const std::vector<DetachedTreeNode> &tree_flattened,
                                        moveit_msgs::msg::PlanningScene &planning_scene) {
     moveit_msgs::msg::CollisionObject collision_object;
@@ -192,23 +190,27 @@ createPlanningSceneDiff(const std::vector<DetachedTreeNode> &treeFlattened,
 
 AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::string &model_name) {
 
-    const std::string cache_filename ="scene_cached_" + model_name + ".msg";
+    const std::string cache_filename = "scene_cached_" + model_name + ".msg";
 
     auto cached_scene_info = read_ros_msg<moveit_msgs::msg::PlanningScene>(cache_filename);
-    
+
     moveit_msgs::msg::PlanningScene planning_scene_message;
-    
+
     if (!cached_scene_info) {
 
         std::cout << "Creating planning scene message for " << model_name << std::endl;
 
         planning_scene_message.is_diff = true;
 
-        
-        {
-            const shape_msgs::msg::Mesh mesh = meshMsgFromResource(
-                    PREFIX + model_name +
-                    "_trunk.dae");
+        std::stringstream prefix_stream;
+        prefix_stream << "file://";
+        prefix_stream << MYSOURCE_ROOT;
+        prefix_stream << "/3d-models/";
+        prefix_stream << model_name;
+        std::string prefix = prefix_stream.str();
+
+                {
+            const shape_msgs::msg::Mesh mesh = meshMsgFromResource(prefix + "_trunk.dae");
 
             const std::vector<shape_msgs::msg::Mesh> decomposition = convex_decomposition(mesh, 2.0);
             for (auto convex: decomposition | boost::adaptors::indexed(0)) {
@@ -217,17 +219,15 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
             }
         }
 
-        const shape_msgs::msg::Mesh apples = meshMsgFromResource(
-                PREFIX + model_name +
-                "_apples.dae");
+        const shape_msgs::msg::Mesh apples = meshMsgFromResource(prefix + "_apples.dae");
 
         addColoredMeshCollisionShape(planning_scene_message, {1.0, 0.0, 0.0}, "apples", apples);
 
-        addColoredMeshCollisionShape(planning_scene_message,
-                                     {0.1, 0.7, 0.1}, "leaves",
-                                     meshMsgFromResource(
-                                             PREFIX +
-                                             model_name + "_leaves.dae"));
+        addColoredMeshCollisionShape(
+                planning_scene_message,
+                {0.1, 0.7, 0.1},
+                "leaves",
+                meshMsgFromResource(prefix + "_leaves.dae"));
 
         save_ros_msg(cache_filename, planning_scene_message);
 
@@ -245,6 +245,6 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
             break;
         }
     }
-    
-    return {planning_scene_message, apples_from_connected_components(apples), {0.0,0.0,2.1}, 1.9};
+
+    return {planning_scene_message, apples_from_connected_components(apples), {0.0, 0.0, 2.1}, 1.9};
 }

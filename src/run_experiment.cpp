@@ -9,20 +9,21 @@ using namespace std;
 std::shared_ptr<DroneStateSpace> loadStateSpace(const moveit::core::RobotModelPtr &model) {
 
     // initialize the state space and such
-    auto stateSpace = make_shared<DroneStateSpace>(ompl_interface::ModelBasedStateSpaceSpecification(model, "whole_body"), TRANSLATION_BOUND);
+    auto stateSpace = make_shared<DroneStateSpace>(
+            ompl_interface::ModelBasedStateSpaceSpecification(model, "whole_body"), TRANSLATION_BOUND);
 
     return stateSpace;
 }
 
 ompl::base::SpaceInformationPtr loadSpaceInformation(
         const std::shared_ptr<DroneStateSpace> &stateSpace,
-        const AppleTreePlanningScene& scene_info) {
+        const AppleTreePlanningScene &scene_info) {
     auto scene = setupPlanningScene(scene_info.scene_msg, stateSpace->getRobotModel());
     auto si = initSpaceInformation(scene, scene->getRobotModel(), stateSpace);
     return si;
 }
 
-Json::Value toJson(const NewMultiGoalPlanner::PlanResult& result) {
+Json::Value toJson(const NewMultiGoalPlanner::PlanResult &result) {
     Json::Value run_stats;
     run_stats["final_path_length"] = result.length();
     run_stats["goals_visited"] = (int) result.segments.size();
@@ -55,12 +56,12 @@ run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &alloca
 
     auto start_states =
             ranges::views::iota(0, num_runs)
-            | ranges::views::transform([&](const auto &i) { return std::make_pair(i,genStartState(stateSpace)); });
+            | ranges::views::transform([&](const auto &i) { return std::make_pair(i, genStartState(stateSpace)); });
 
     auto tasks = ranges::views::cartesian_product(
             allocators,
             start_states
-            ) | ranges::to_vector;
+    ) | ranges::to_vector;
 
     std::shuffle(tasks.begin(), tasks.end(), std::mt19937(std::random_device()()));
 
@@ -89,15 +90,12 @@ run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &alloca
 
                 std::cout << "Starting task " << thread_current_task << " of " << num_tasks << std::endl;
 
-                const auto& [planner_allocator, start_state_pair] = tasks[thread_current_task];
-                const auto& [run_i, start_state] = start_state_pair;
+                const auto &[planner_allocator, start_state_pair] = tasks[thread_current_task];
+                const auto &[run_i, start_state] = start_state_pair;
 
                 auto planner = planner_allocator(scene_info, si);
                 auto goals = constructNewAppleGoals(si, scene_info.apples);
 
-                std::cout << "Total apples" << goals.size() << std::endl;
-
-                exit(0);
                 auto objective = make_shared<DronePathLengthObjective>(si);
 
                 auto start_time = ompl::time::now();
@@ -119,7 +117,7 @@ run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &alloca
         });
     }
 
-    for (auto& thread : threads) {
+    for (auto &thread: threads) {
         thread.join();
     }
 

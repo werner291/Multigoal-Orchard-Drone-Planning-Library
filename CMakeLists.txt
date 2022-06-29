@@ -118,7 +118,9 @@ add_library(${PROJECT_NAME}_shared
         src/run_experiment.cpp
         src/run_experiment.h
         src/DirectApproachVariantSampler.cpp
-        src/DirectApproachVariantSampler.h)
+        src/DirectApproachVariantSampler.h src/TimedCostConvergenceTerminationCondition.cpp src/TimedCostConvergenceTerminationCondition.h)
+
+target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
 set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "rclcpp" "ompl")
 

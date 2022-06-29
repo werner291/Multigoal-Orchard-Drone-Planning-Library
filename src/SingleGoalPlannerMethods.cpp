@@ -1,12 +1,14 @@
 #include <ompl/geometric/planners/prm/PRMstar.h>
+#include <ompl/base/terminationconditions/CostConvergenceTerminationCondition.h>
 #include "SingleGoalPlannerMethods.h"
 #include "DronePathLengthObjective.h"
 #include "experiment_utils.h"
 #include "probe_retreat_move.h"
 #include "DroneStateConstraintSampler.h"
+#include "TimedCostConvergenceTerminationCondition.h"
 
-std::optional <ompl::geometric::PathGeometric>
-SingleGoalPlannerMethods::attempt_lucky_shot(const ompl::base::State *a, const ompl::base::GoalPtr& b) {
+std::optional<ompl::geometric::PathGeometric>
+SingleGoalPlannerMethods::attempt_lucky_shot(const ompl::base::State *a, const ompl::base::GoalPtr &b) {
     moveit::core::RobotState robot_state(si->getStateSpace()->as<DroneStateSpace>()->getRobotModel());
 
     si->getStateSpace()->as<DroneStateSpace>()->copyToRobotState(robot_state, a);
@@ -42,8 +44,7 @@ SingleGoalPlannerMethods::attempt_lucky_shot(const ompl::base::State *a, const o
 }
 
 
-
-std::optional <ompl::geometric::PathGeometric>
+std::optional<ompl::geometric::PathGeometric>
 SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::base::GoalPtr b) {
 
     if (tryLuckyShots) {
@@ -62,7 +63,7 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
                     a,
                     std::dynamic_pointer_cast<ompl::base::GoalSampleableRegion>(b),
                     0.5
-                    );
+            );
         });
     }
 
@@ -80,27 +81,10 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
 
     ompl::geometric::PathGeometric result(si);
 
-    std::vector<double> qualities = {};
-
-    std::mutex mtx;
-
-    auto accessibleTerminationCondition = ompl::base::PlannerTerminationCondition([qualities, ompl_planner, &mtx]() mutable {
-        std::lock_guard lock(mtx);
-
-        qualities.push_back(ompl_planner->as<AccessiblePRM>()->best_cost());
-
-        if (qualities.size() > 10) {
-            qualities.erase(qualities.begin());
-        }
-
-        return (qualities.size() == 10 && isfinite(qualities.back()) && qualities.front() == qualities.back());
-
-//        return false;
-    });
-
     auto ptc = useCostConvergence ? plannerOrTerminationCondition(
             ompl::base::timedPlannerTerminationCondition(timePerAppleSeconds),
-            accessibleTerminationCondition) : ompl::base::timedPlannerTerminationCondition(timePerAppleSeconds);
+            TimedConversionTerminationCondition(*pdef, ompl::time::seconds(0.025), true)
+    ) : ompl::base::timedPlannerTerminationCondition(timePerAppleSeconds);
 
     if (planner.solve(ptc) ==
         ompl::base::PlannerStatus::EXACT_SOLUTION) {
@@ -115,7 +99,8 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
 
 
     auto end_time = std::chrono::steady_clock::now();
-    std::cout << "Planning took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
+    std::cout << "Planning took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
               << "ms" << std::endl;
 
     result = optimize(result, optimization_objective, si);
@@ -127,7 +112,7 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
     return result;
 }
 
-std::optional <ompl::geometric::PathGeometric>
+std::optional<ompl::geometric::PathGeometric>
 SingleGoalPlannerMethods::state_to_state(const ompl::base::State *a, const ompl::base::State *b) {
 
     auto ompl_planner = alloc(si);
