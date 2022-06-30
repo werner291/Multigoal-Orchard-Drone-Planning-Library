@@ -1,11 +1,8 @@
-//
-// Created by werner on 29-6-22.
-//
 
 #ifndef NEW_PLANNERS_TIMEDCOSTCONVERGENCETERMINATIONCONDITION_H
 #define NEW_PLANNERS_TIMEDCOSTCONVERGENCETERMINATIONCONDITION_H
 
-#include <ompl-1.5/ompl/base/PlannerTerminationCondition.h>
+#include <ompl/base/PlannerTerminationCondition.h>
 
 #include <utility>
 

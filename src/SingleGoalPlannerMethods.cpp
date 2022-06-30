@@ -22,7 +22,6 @@ SingleGoalPlannerMethods::attempt_lucky_shot(const ompl::base::State *a, const o
     si->getStateSpace()->as<DroneStateSpace>()->copyToOMPLState(state.get(), robot_state);
 
     if (!si->isValid(state.get())) {
-        std::cout << "Lucky shot failed (Goal state bad.)" << std::endl;
         return std::nullopt;
     }
 
@@ -30,13 +29,9 @@ SingleGoalPlannerMethods::attempt_lucky_shot(const ompl::base::State *a, const o
 
         ompl::geometric::PathGeometric path(si, a, state.get());
 
-        std::cout << "Lucky shot succeeded." << std::endl;
-
         return {path};
 
     } else {
-
-        std::cout << "Lucky shot failed. (Motion invalid)" << std::endl;
 
         return {};
 
@@ -50,7 +45,6 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
     if (tryLuckyShots) {
         auto result = attempt_lucky_shot(a, b);
         if (result) {
-            std::cout << "Lucky shot succeeded" << std::endl;
             return result;
         }
     }
@@ -91,17 +85,11 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
 
         result = *pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
     } else {
-
-        std::cout << "Planning failed." << std::endl;
-
         return {};
     }
 
 
     auto end_time = std::chrono::steady_clock::now();
-    std::cout << "Planning took "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
-              << "ms" << std::endl;
 
     result = optimize(result, optimization_objective, si);
 

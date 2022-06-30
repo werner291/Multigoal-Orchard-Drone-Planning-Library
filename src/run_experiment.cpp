@@ -1,6 +1,11 @@
 
 #include "run_experiment.h"
 #include "experiment_utils.h"
+#include "probe_retreat_move.h"
+#include "NewMultiGoalPlanner.h"
+#include "DistanceHeuristics.h"
+#include "ShellPathPlanner.h"
+#include "MultigoalPrmStar.h"
 #include <range/v3/all.hpp>
 #include <fstream>
 
@@ -125,6 +130,99 @@ run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &alloca
     ofs.open(results_path);
     ofs << statistics;
     ofs.close();
+}
+
+std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators() {
+
+    bool applyShellstateOptimization[] = {true, false};
+    bool useImprovisedInformedSampler[] = {false, true};
+    bool tryLuckyShots[] = {false, true};
+    bool useCostConvergence[] = {false, true};
+    double ptp_time_seconds[] = {0.4, 0.5, 1.0};
+
+    ompl::base::PlannerAllocator planner_allocators[] = {
+            [](const ompl::base::SpaceInformationPtr &si) {
+                return std::make_shared<ompl::geometric::PRM>(si);
+            },
+    };
+
+    return ranges::views::cartesian_product(applyShellstateOptimization,
+                                            ptp_time_seconds,
+                                            planner_allocators,
+                                            useImprovisedInformedSampler,
+                                            tryLuckyShots,
+                                            useCostConvergence)
+           | ranges::views::transform([](const auto tuple) -> NewMultiGoalPlannerAllocatorFn {
+
+        auto [shellOptimize, ptp_budget, allocator, improvised_sampler, tryLucky, costConvergence] = tuple;
+
+        // I... believe this copies them?
+        return [shellOptimize=shellOptimize,
+                ptp_budget=ptp_budget,
+                allocator=allocator,
+                improvised_sampler=improvised_sampler,
+                tryLucky=tryLucky,
+                costConvergence=costConvergence](
+                        const AppleTreePlanningScene &scene_info,
+                        const ompl::base::SpaceInformationPtr &si) {
+
+            auto shell = std::make_shared<SphereShell>(
+                    scene_info.sphere_center,
+                    scene_info.sphere_radius
+            );
+
+            auto heuristics = std::make_shared<GreatCircleOmplDistanceHeuristics>(
+                    GreatCircleMetric(scene_info.sphere_center),
+                    std::dynamic_pointer_cast<DroneStateSpace>(si->getStateSpace())
+            );
+
+            auto ptp = std::make_shared<SingleGoalPlannerMethods>(
+                    ptp_budget,
+                    si,
+                    std::make_shared<DronePathLengthObjective>(si),
+                    allocator,
+                    improvised_sampler,
+                    tryLucky,
+                    costConvergence
+            );
+
+            return std::make_shared<ShellPathPlanner>(shell, shellOptimize, heuristics, ptp);
+        };
+    }) | ranges::to_vector;
+}
+
+std::vector<NewMultiGoalPlannerAllocatorFn> make_tsp_over_prm_allocators() {
+
+    const auto samples_per_goal = ranges::views::iota(2, 10);
+    const double plan_times_seconds[] = {1.0, 2.0, 5.0, 10.0, 15.0, 20.0};//, 30.0, 60.0};
+    const bool optimize_segments_options[] = {false,true};
+
+    return ranges::views::cartesian_product(plan_times_seconds, samples_per_goal, optimize_segments_options)
+           | ranges::views::filter([](const auto tuple) {
+        const auto &[plan_time, samples, optimize_segments] = tuple;
+
+        double expected_time = plan_time * (double) (samples * samples);
+
+        if (expected_time >= 600.0) {
+            std::cout << "Dropping task with plan_time: " << plan_time << " samples: " << samples << " expected_time: "
+                      << expected_time << std::endl;
+            return false;
+        } else {
+            return true;
+        }
+
+    }) | ranges::views::transform([&](const auto tuple) -> NewMultiGoalPlannerAllocatorFn {
+
+        auto [plan_time, samples, optimize_segments] = tuple;
+
+        return [plan_time=plan_time,
+                samples=samples,
+                optimize_segments=optimize_segments](
+                        const AppleTreePlanningScene &scene_info,
+                        const ompl::base::SpaceInformationPtr &si) {
+            return std::make_shared<MultigoalPrmStar>(plan_time, samples, optimize_segments);
+        };
+    }) | ranges::to_vector;
 }
 
 
