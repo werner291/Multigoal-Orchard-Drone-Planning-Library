@@ -12,17 +12,6 @@
 
 #include <ompl/geometric/planners/prm/PRM.h>
 
-class AccessiblePRM : public ompl::geometric::PRM {
-
-public:
-
-    AccessiblePRM(const ompl::base::SpaceInformationPtr &si, bool starStrategy=false) : PRM(si, starStrategy) {}
-
-    bool has_solution();
-
-    double best_cost() const;
-};
-
 class SingleGoalPlannerMethods {
 
     const double timePerAppleSeconds;

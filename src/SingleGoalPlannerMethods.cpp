@@ -137,10 +137,3 @@ Json::Value SingleGoalPlannerMethods::parameters() const {
     return params;
 }
 
-bool AccessiblePRM::has_solution() {
-    return this->addedNewSolution();
-}
-
-double AccessiblePRM::best_cost() const {
-    return bestCost_.value();
-}
