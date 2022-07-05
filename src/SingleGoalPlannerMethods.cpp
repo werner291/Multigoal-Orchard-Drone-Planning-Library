@@ -84,14 +84,9 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
         ompl::base::PlannerStatus::EXACT_SOLUTION) {
 
         result = *pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
-    } else {
-        return {};
+
+        result = optimize(result, optimization_objective, si);
     }
-
-
-    auto end_time = std::chrono::steady_clock::now();
-
-    result = optimize(result, optimization_objective, si);
 
     if (useImprovisedSampler) {
         si->getStateSpace()->clearStateSamplerAllocator();
