@@ -132,6 +132,11 @@ run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &alloca
     ofs.close();
 }
 
+ompl::base::PlannerPtr allocPRM(const ompl::base::SpaceInformationPtr &si) {
+    auto planner = make_shared<ompl::geometric::PRM>(si);
+    return planner;
+}
+
 std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators() {
 
     bool applyShellstateOptimization[] = {true, false};
@@ -140,11 +145,7 @@ std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators() {
     bool useCostConvergence[] = {false, true};
     double ptp_time_seconds[] = {0.4, 0.5, 1.0};
 
-    ompl::base::PlannerAllocator planner_allocators[] = {
-            [](const ompl::base::SpaceInformationPtr &si) {
-                return std::make_shared<ompl::geometric::PRM>(si);
-            },
-    };
+    ompl::base::PlannerPtr (*planner_allocators[])(const ompl::base::SpaceInformationPtr&) = {&allocPRM};
 
     return ranges::views::cartesian_product(applyShellstateOptimization,
                                             ptp_time_seconds,
