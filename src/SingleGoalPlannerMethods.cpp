@@ -59,6 +59,9 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
                     0.5
             );
         });
+    } else {
+        // It's supposed to do this anyway after planning, but I'm paranoid, so let's clear it anyway.
+        si->getStateSpace()->clearStateSamplerAllocator();
     }
 
     auto ompl_planner = alloc(si);
