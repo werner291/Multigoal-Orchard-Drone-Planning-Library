@@ -148,11 +148,25 @@ NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(
 
     auto ordering = tsp_open_end_grouped(
             [&](auto pair) {
-                auto path = prm->path_distance(start_state_node, goalVertices[pair.first].vertex[pair.second]);
+                auto path = std::dynamic_pointer_cast<ompl::geometric::PathGeometric>(
+                        prm->path_distance(start_state_node, goalVertices[pair.first].vertex[pair.second])
+                        );
+
+                if (optimize_matrix_paths && path) {
+                    *path = optimize(*path, objective, si);
+                }
+
                 return path ? path->length() : std::numeric_limits<double>::infinity();
             },
             [&](auto pair_i, auto pair_j) {
-                auto path = prm->path_distance(goalVertices[pair_i.first].vertex[pair_i.second], goalVertices[pair_j.first].vertex[pair_j.second]);
+                auto path = std::dynamic_pointer_cast<ompl::geometric::PathGeometric>(
+                        prm->path_distance(goalVertices[pair_i.first].vertex[pair_i.second], goalVertices[pair_j.first].vertex[pair_j.second])
+                );
+
+                if (optimize_matrix_paths && path) {
+                    *path = optimize(*path, objective, si);
+                }
+
                 return path ? path->length() : std::numeric_limits<double>::infinity();
             },
             goalVertices | views::transform([&](auto v) { return v.vertex.size(); }) | to_vector
@@ -189,14 +203,17 @@ NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(
     return result;
 }
 
-MultigoalPrmStar::MultigoalPrmStar(double prmBuildTime, size_t samplesPerGoal, bool optimizeSegments) : prm_build_time(
-        prmBuildTime), samplesPerGoal(samplesPerGoal), optimize_segments(optimizeSegments) {}
+MultigoalPrmStar::MultigoalPrmStar(double prmBuildTime, size_t samplesPerGoal, bool optimizeSegments,
+                                   bool optimizeMatrixPaths) : prm_build_time(
+        prmBuildTime), samplesPerGoal(samplesPerGoal), optimize_segments(optimizeSegments),
+                                                               optimize_matrix_paths(optimizeMatrixPaths) {}
 
 Json::Value MultigoalPrmStar::parameters() const {
     Json::Value params;
     params["prm_build_time"] = prm_build_time;
     params["samples_per_goal"] = (int) samplesPerGoal;
     params["optimize_segments"] = optimize_segments;
+    params["optimize_matrix_paths"] = optimize_matrix_paths;
     return params;
 }
 

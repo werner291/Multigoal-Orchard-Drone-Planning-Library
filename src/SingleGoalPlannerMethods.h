@@ -47,7 +47,10 @@ public:
     [[nodiscard]] Json::Value parameters() const;
 
     std::optional<ompl::geometric::PathGeometric>
-    attempt_lucky_shot(const ompl::base::State *a, const ompl::base::GoalPtr& b);
+        attempt_lucky_shot(const ompl::base::State *a, const ompl::base::GoalPtr& b);
+
+    std::optional<ompl::geometric::PathGeometric>
+        attempt_lucky_shot(const ompl::base::State *a, const ompl::base::State* b);
 };
 
 typedef std::function<std::shared_ptr<SingleGoalPlannerMethods>(ompl::base::SpaceInformationPtr,

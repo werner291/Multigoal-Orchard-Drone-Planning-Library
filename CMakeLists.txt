@@ -155,6 +155,10 @@ add_executable(${PROJECT_NAME}_prm_multigoal_experiment experiments/prm_multigoa
 target_link_libraries(${PROJECT_NAME}_prm_multigoal_experiment ${PROJECT_NAME}_shared)
 ament_target_dependencies(${PROJECT_NAME}_prm_multigoal_experiment ${AMENT_DEPS})
 
+add_executable(${PROJECT_NAME}_robo_tsp_experiment experiments/robo_tsp_experiment.cpp)
+target_link_libraries(${PROJECT_NAME}_robo_tsp_experiment ${PROJECT_NAME}_shared)
+ament_target_dependencies(${PROJECT_NAME}_robo_tsp_experiment ${AMENT_DEPS})
+
 add_executable(${PROJECT_NAME}_full_experiment experiments/full_experiment.cpp)
 target_link_libraries(${PROJECT_NAME}_full_experiment ${PROJECT_NAME}_shared)
 ament_target_dependencies(${PROJECT_NAME}_full_experiment ${AMENT_DEPS})

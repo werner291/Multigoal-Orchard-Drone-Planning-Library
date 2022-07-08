@@ -118,10 +118,6 @@ samplePlanningPairs(const planning_scene::PlanningSceneConstPtr &scene,
                     const size_t num_samples);
 
 std::optional<ompl::geometric::PathGeometric>
-planFromStateToState(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
-                     const ompl::base::State *a, const ompl::base::State *b, double duration);
-
-std::optional<ompl::geometric::PathGeometric>
 planFromStateToApple(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
                      ompl::base::State *a, const Apple &b, double duration, bool simplify);
 

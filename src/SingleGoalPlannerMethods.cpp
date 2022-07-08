@@ -76,7 +76,7 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
 
     planner.setProblemDefinition(pdef);
 
-    ompl::geometric::PathGeometric result(si);
+    std::optional<ompl::geometric::PathGeometric> result(si);
 
     auto ptc = useCostConvergence ? plannerOrTerminationCondition(
             ompl::base::timedPlannerTerminationCondition(timePerAppleSeconds),
@@ -86,9 +86,9 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
     if (planner.solve(ptc) ==
         ompl::base::PlannerStatus::EXACT_SOLUTION) {
 
-        result = *pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
+        result = {*pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>()};
 
-        result = optimize(result, optimization_objective, si);
+        result = {optimize(*result, optimization_objective, si)};
     }
 
     if (useImprovisedSampler) {
@@ -101,8 +101,34 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
 std::optional<ompl::geometric::PathGeometric>
 SingleGoalPlannerMethods::state_to_state(const ompl::base::State *a, const ompl::base::State *b) {
 
+    if (tryLuckyShots) {
+        auto result = attempt_lucky_shot(a, b);
+        if (result) {
+            return result;
+        }
+    }
+
     auto ompl_planner = alloc(si);
-    auto result = planFromStateToState(*ompl_planner, optimization_objective, a, b, timePerAppleSeconds);
+
+    auto pdef = std::make_shared<ompl::base::ProblemDefinition>(ompl_planner->getSpaceInformation());
+    pdef->setOptimizationObjective(optimization_objective);
+    pdef->setStartAndGoalStates(a, b);
+
+    auto ptc = useCostConvergence ? plannerOrTerminationCondition(
+            ompl::base::timedPlannerTerminationCondition(timePerAppleSeconds),
+            TimedConversionTerminationCondition(*pdef, ompl::time::seconds(0.025), true)
+    ) : ompl::base::timedPlannerTerminationCondition(timePerAppleSeconds);
+
+    std::optional<ompl::geometric::PathGeometric> result1;
+
+    ompl_planner->setProblemDefinition(pdef);
+    if (ompl_planner->solve(ptc) ==
+        ompl::base::PlannerStatus::EXACT_SOLUTION) {
+        result1 = {*pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>()};
+    } else {
+        result1 = {};
+    }
+    auto result = result1;
     if (result) {
         *result = optimize(*result, optimization_objective, si);
     }
@@ -121,5 +147,15 @@ Json::Value SingleGoalPlannerMethods::parameters() const {
     params["tryLuckyShots"] = tryLuckyShots;
     params["useCostConvergence"] = useCostConvergence;
     return params;
+}
+
+std::optional<ompl::geometric::PathGeometric>
+SingleGoalPlannerMethods::attempt_lucky_shot(const ompl::base::State *a, const ompl::base::State *b) {
+    if (si->checkMotion(a, b)) {
+        ompl::geometric::PathGeometric path(si, a, b);
+        return {path};
+    } else {
+        return {};
+    }
 }
 

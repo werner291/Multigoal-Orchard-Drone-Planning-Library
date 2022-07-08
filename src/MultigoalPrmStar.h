@@ -20,8 +20,10 @@ class MultigoalPrmStar : public NewMultiGoalPlanner {
     double prm_build_time;
     size_t samplesPerGoal;
     bool optimize_segments;
+    bool optimize_matrix_paths;
 public:
-    MultigoalPrmStar(double prmBuildTime, size_t samplesPerGoal, bool optimizeSegments);
+    MultigoalPrmStar(double prmBuildTime, size_t samplesPerGoal, bool optimizeSegments,
+                     bool optimizeMatrixPaths);
 
 public:
     PlanResult plan(const ompl::base::SpaceInformationPtr &si,

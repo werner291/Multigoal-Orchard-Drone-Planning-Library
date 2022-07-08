@@ -238,21 +238,6 @@ samplePlanningPairs(const planning_scene::PlanningSceneConstPtr &scene,
 }
 
 std::optional<ompl::geometric::PathGeometric>
-planFromStateToState(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
-                     const ompl::base::State *a, const ompl::base::State *b, double duration) {
-
-    auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner.getSpaceInformation());
-    pdef->setOptimizationObjective(objective);
-    pdef->setStartAndGoalStates(a,b);
-    planner.setProblemDefinition(pdef);
-    if (planner.solve(ompl::base::timedPlannerTerminationCondition(duration)) == ompl::base::PlannerStatus::EXACT_SOLUTION) {
-        return {*pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>()};
-    } else {
-        return {};
-    }
-}
-
-std::optional<ompl::geometric::PathGeometric>
 planExactForPdef(ompl::base::Planner &planner,
                  double duration,
                  bool simplify,
