@@ -31,6 +31,7 @@ include_directories(
         ${BULLET_INCLUDE_DIRS}
         ${OMPL_INCLUDE_DIRS}
         ortools/include
+        miniball/cpp/main
 )
 
 link_libraries(

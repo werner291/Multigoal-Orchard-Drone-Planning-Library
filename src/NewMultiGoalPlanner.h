@@ -7,6 +7,7 @@
 #include <ompl/base/Goal.h>
 #include <jsoncpp/json/value.h>
 #include "SingleGoalPlannerMethods.h"
+#include "planning_scene_diff_message.h"
 
 class NewMultiGoalPlanner {
 
@@ -22,9 +23,9 @@ public:
         [[nodiscard]] double length() const;
     };
 
-    virtual PlanResult plan(const ompl::base::SpaceInformationPtr& si,
-                            const ompl::base::State* start,
-                            const std::vector<ompl::base::GoalPtr> &goals) = 0;
+    virtual PlanResult plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
+                            const std::vector<ompl::base::GoalPtr> &goals,
+                            const AppleTreePlanningScene &planning_scene) = 0;
 
     virtual Json::Value parameters() const = 0;
 

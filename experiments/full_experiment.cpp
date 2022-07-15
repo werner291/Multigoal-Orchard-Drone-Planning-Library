@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
             planners,
             "analysis/full_experiment.json",
             5,
+            {10, 50, SIZE_MAX},
             std::thread::hardware_concurrency()
     );
 

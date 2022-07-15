@@ -149,4 +149,10 @@ struct MultiApplePlanResult {
 
 };
 
+moveit::core::RobotState randomStateOutsideTree(const moveit::core::RobotModelConstPtr &drone, const int seed);
+
+bodies::BoundingSphere
+compute_enclosing_sphere(const moveit_msgs::msg::PlanningScene &planning_scene_message, const double padding);
+
+
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

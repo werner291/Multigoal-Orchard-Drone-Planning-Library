@@ -6,20 +6,23 @@
 #include "traveling_salesman.h"
 #include "probe_retreat_move.h"
 #include "DronePathLengthObjective.h"
+#include "planning_scene_diff_message.h"
+#include "experiment_utils.h"
 
 #include <utility>
 
-ShellPathPlanner::ShellPathPlanner(std::shared_ptr<CollisionFreeShell> shell, bool applyShellstateOptimization,
-                                   std::shared_ptr<OmplDistanceHeuristics> distanceHeuristics,
+ShellPathPlanner::ShellPathPlanner(bool applyShellstateOptimization,
                                    std::shared_ptr<SingleGoalPlannerMethods> methods) :
-        shell(std::move(shell)),
         apply_shellstate_optimization(applyShellstateOptimization),
-        distance_heuristics(std::move(distanceHeuristics)), methods(methods) {}
+        methods(std::move(methods)) {}
 
-NewMultiGoalPlanner::PlanResult ShellPathPlanner::plan(
-        const ompl::base::SpaceInformationPtr &si,
-        const ompl::base::State *start,
-        const std::vector<ompl::base::GoalPtr> &goals) {
+NewMultiGoalPlanner::PlanResult ShellPathPlanner::plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
+                                  const std::vector<ompl::base::GoalPtr> &goals,
+                                  const AppleTreePlanningScene &planning_scene) {
+
+    auto enclosing = compute_enclosing_sphere(planning_scene.scene_msg, 0.1);
+
+    auto shell = std::make_shared<SphereShell>(enclosing.center, enclosing.radius);
 
     OMPLSphereShellWrapper ompl_shell(shell, si);
 
@@ -31,7 +34,9 @@ NewMultiGoalPlanner::PlanResult ShellPathPlanner::plan(
         return result;
     }
 
-    auto ordering = computeApproachOrdering(start, goals, approaches);
+    auto ordering = computeApproachOrdering(start, goals, approaches,
+                                            GreatCircleOmplDistanceHeuristics(GreatCircleMetric(enclosing.center),
+                                                                              std::dynamic_pointer_cast<DroneStateSpace>(si->getStateSpace())));
 
     auto first_approach = planFirstApproach(start, approaches[ordering[0]].second);
 
@@ -119,14 +124,15 @@ ShellPathPlanner::planFirstApproach(const ompl::base::State *start,
 std::vector<size_t> ShellPathPlanner::computeApproachOrdering(
         const ompl::base::State *start,
         const std::vector<ompl::base::GoalPtr> &goals,
-        const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches) const {
+        const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches,
+        const OmplDistanceHeuristics& distance_heuristics) const {
 
     return tsp_open_end(
             [&](auto i) {
-                return distance_heuristics->state_to_goal(start, goals[approaches[i].first].get());
+                return distance_heuristics.state_to_goal(start, goals[approaches[i].first].get());
             },
             [&](auto i, auto j) {
-                return distance_heuristics->goal_to_goal(
+                return distance_heuristics.goal_to_goal(
                         goals[approaches[i].first].get(),
                         goals[approaches[j].first].get()
                 );
@@ -181,7 +187,6 @@ std::optional<ompl::geometric::PathGeometric> ShellPathPlanner::planApproachForG
 Json::Value ShellPathPlanner::parameters() const {
     Json::Value result;
 
-    result["distance_heuristics"] = distance_heuristics->name();
     result["apply_shellstate_optimization"] = apply_shellstate_optimization;
     result["ptp"] = methods->parameters();
 

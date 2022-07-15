@@ -33,10 +33,9 @@ NewKnnPlanner::buildGNAT(const ompl::base::State *start, const vector <ompl::bas
     return gnat;
 }
 
-NewKnnPlanner::PlanResult NewKnnPlanner::plan(
-        const ompl::base::SpaceInformationPtr &si,
-        const ompl::base::State *start,
-        const std::vector <ompl::base::GoalPtr> &goals) {
+NewKnnPlanner::PlanResult NewKnnPlanner::plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
+                               const std::vector<ompl::base::GoalPtr> &goals,
+                               const AppleTreePlanningScene &planning_scene) {
 
     auto gnat = buildGNAT(start, goals);
 

@@ -18,8 +18,6 @@ moveit_msgs::msg::PlanningScene createPlanningSceneDiff(const std::vector<Detach
 struct AppleTreePlanningScene {
     moveit_msgs::msg::PlanningScene scene_msg;
     std::vector<Apple> apples;
-    Eigen::Vector3d sphere_center;
-    double sphere_radius;
 };
 
 const std::initializer_list<size_t> DIFFICULT_APPLES {80, 79, 88, 76, 78, 3, 62, 21, 11, 16};

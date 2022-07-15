@@ -10,3 +10,6 @@
 [submodule "moveit"]
 	path = moveit
 	url = https://github.com/ros-planning/moveit.git
+[submodule "miniball"]
+	path = miniball
+	url = https://github.com/hbf/miniball.git
