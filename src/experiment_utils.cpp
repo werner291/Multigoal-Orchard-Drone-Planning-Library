@@ -21,6 +21,8 @@
 #include <geometric_shapes/shape_operations.h>
 #include <ompl/geometric/PathSimplifier.h>
 
+#include "Seb.h"
+
 #include "../src/planning_scene_diff_message.h"
 #include "../src/msgs_utilities.h"
 #include "experiment_utils.h"
@@ -334,12 +336,12 @@ ExperimentPlanningContext loadContext(const moveit::core::RobotModelConstPtr &dr
 
 }
 
-moveit::core::RobotState randomStateOutsideTree(const moveit::core::RobotModelPtr &drone) {
+moveit::core::RobotState randomStateOutsideTree(const moveit::core::RobotModelConstPtr &drone, const int seed) {
     moveit::core::RobotState start_state(drone);
 
     randomizeUprightWithBase(start_state, 0.0);
 
-    ompl::RNG rng;
+    ompl::RNG rng(seed);
 
     double random_t = rng.uniformReal(-M_PI, M_PI);
     double height = rng.uniformReal(0.5, 2.0);
@@ -363,4 +365,43 @@ std::vector<ompl::base::GoalPtr> constructNewAppleGoals(
                         auto goal = std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center);
                         return std::static_pointer_cast<ompl::base::Goal>(goal);
                     }) | ranges::to_vector;
+}
+
+bodies::BoundingSphere
+compute_enclosing_sphere(const moveit_msgs::msg::PlanningScene &planning_scene_message, const double padding) {
+
+    typedef double FT;
+    typedef Seb::Point<FT> Point;
+    typedef std::vector<Point> PointVector;
+    typedef Seb::Smallest_enclosing_ball<FT> Miniball;
+
+    std::vector<Point> points;
+
+    for (const auto& col : planning_scene_message.world.collision_objects) {
+        if (col.id == "apples") {
+            for (const auto& mesh : col.meshes) {
+                for (auto v : mesh.vertices) {
+                    std::vector<FT> point_vect { v.x, v.y, v.z };
+
+                    points.emplace_back(3, point_vect.begin());
+                }
+            }
+        }
+    }
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    Miniball mb(3, points);
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::cout << "Miniball computation took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << " ms" << std::endl;
+
+    std::vector<FT> center(mb.center_begin(), mb.center_end());
+    FT radius = sqrt(mb.squared_radius());
+
+    Eigen::Vector3d center_eigen(center[0], center[1], center[2]);
+
+    bodies::BoundingSphere sphere;
+    sphere.center = center_eigen;
+    sphere.radius = radius + padding;
+
+    return sphere;
 }

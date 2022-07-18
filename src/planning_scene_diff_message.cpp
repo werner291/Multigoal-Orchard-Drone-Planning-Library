@@ -7,6 +7,7 @@
 
 #include "planning_scene_diff_message.h"
 #include "general_utilities.h"
+#include "Seb.h"
 
 void createTrunkInPlanningSceneMessage(const std::vector<DetachedTreeNode> &tree_flattened,
                                        moveit_msgs::msg::PlanningScene &planning_scene) {
@@ -191,6 +192,12 @@ createPlanningSceneDiff(const std::vector<DetachedTreeNode> &treeFlattened,
 AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::string &model_name) {
 
     const std::string cache_filename = "scene_cached_" + model_name + ".msg";
+    std::stringstream prefix_stream;
+    prefix_stream << "file://";
+    prefix_stream << MYSOURCE_ROOT;
+    prefix_stream << "/3d-models/";
+    prefix_stream << model_name;
+    std::string prefix = prefix_stream.str();
 
     auto cached_scene_info = read_ros_msg<moveit_msgs::msg::PlanningScene>(cache_filename);
 
@@ -202,12 +209,7 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
 
         planning_scene_message.is_diff = true;
 
-        std::stringstream prefix_stream;
-        prefix_stream << "file://";
-        prefix_stream << MYSOURCE_ROOT;
-        prefix_stream << "/3d-models/";
-        prefix_stream << model_name;
-        std::string prefix = prefix_stream.str();
+
 
                 {
             const shape_msgs::msg::Mesh mesh = meshMsgFromResource(prefix + "_trunk.dae");
@@ -229,6 +231,8 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
                 "leaves",
                 meshMsgFromResource(prefix + "_leaves.dae"));
 
+        planning_scene_message.name = model_name;
+
         save_ros_msg(cache_filename, planning_scene_message);
 
         std::cout << "Cached scene info for " << to_yaml(planning_scene_message) << std::endl;
@@ -246,5 +250,15 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
         }
     }
 
-    return {planning_scene_message, apples_from_connected_components(apples), {0.0, 0.0, 2.1}, 1.9};
+
+    {
+        auto enclosing = compute_enclosing_sphere(planning_scene_message, 0.1);
+
+        std::cout << "center: " << enclosing.center << std::endl;
+        std::cout << "radius: " << enclosing.radius << std::endl;
+
+    }
+
+    return {planning_scene_message, apples_from_connected_components(apples)};
 }
+

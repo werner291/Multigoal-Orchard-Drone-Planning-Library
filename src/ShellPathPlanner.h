@@ -6,24 +6,20 @@
 #include "NewMultiGoalPlanner.h"
 #include "SphereShell.h"
 #include "DistanceHeuristics.h"
+#include "planning_scene_diff_message.h"
 
 class ShellPathPlanner : public NewMultiGoalPlanner {
 
-    std::shared_ptr<CollisionFreeShell> shell;
-    std::shared_ptr<OmplDistanceHeuristics> distance_heuristics;
     std::shared_ptr<SingleGoalPlannerMethods> methods;
     bool apply_shellstate_optimization;
 
-
 public:
-    ShellPathPlanner(std::shared_ptr<CollisionFreeShell> shell,
-                     bool applyShellstateOptimization,
-                     std::shared_ptr<OmplDistanceHeuristics> distanceHeuristics,
+    ShellPathPlanner(bool applyShellstateOptimization,
                      std::shared_ptr<SingleGoalPlannerMethods> methods);
 
-    PlanResult plan(const ompl::base::SpaceInformationPtr &si,
-                    const ompl::base::State *start,
-                    const std::vector<ompl::base::GoalPtr> &goals) override;
+    PlanResult plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
+                    const std::vector<ompl::base::GoalPtr> &goals,
+                    const AppleTreePlanningScene &planning_scene) override;
 
     PlanResult assembleFullPath(
             const ompl::base::SpaceInformationPtr &si,
@@ -49,7 +45,8 @@ public:
     std::vector<size_t> computeApproachOrdering(
             const ompl::base::State *start,
             const std::vector<ompl::base::GoalPtr> &goals,
-            const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches) const;
+            const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches,
+            const OmplDistanceHeuristics& distance_heuristics) const;
 
     std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> planApproaches(
             const ompl::base::SpaceInformationPtr &si,

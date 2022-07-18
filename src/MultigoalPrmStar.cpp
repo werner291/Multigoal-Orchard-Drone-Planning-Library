@@ -117,10 +117,9 @@ std::vector<AppleIdVertexPair> createGoalVertices(PRMCustom &prm,
 }
 
 
-NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(
-        const ompl::base::SpaceInformationPtr &si,
-        const ompl::base::State *start,
-        const std:: vector<ompl::base::GoalPtr> &goals) {
+NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
+                                  const std::vector<ompl::base::GoalPtr> &goals,
+                                  const AppleTreePlanningScene &planning_scene) {
 
     std::cout << "Creating PRM ( budget: " << prm_build_time << "s)" << std::endl;
     auto prm = std::make_shared<PRMCustom>(si);
