@@ -155,6 +155,7 @@ ShellPathPlanner::planApproaches(const ompl::base::SpaceInformationPtr &si,
 
     for (const auto& [goal_i, goal] : goals | ranges::views::enumerate) {
         if (auto approach = planApproachForGoal(si, ompl_shell, goal)) {
+			assert(approach->getStateCount() > 0);
             approaches.emplace_back(
                     goal_i,
                     *approach

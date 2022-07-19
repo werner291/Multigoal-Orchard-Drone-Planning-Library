@@ -88,8 +88,8 @@ add_library(${PROJECT_NAME}_shared
         src/SamplerWrapper.h
         src/UnionGoalSampleableRegion.cpp
         src/UnionGoalSampleableRegion.h
-        src/greatcircle.h
-        src/greatcircle.cpp
+        src/GreatCircleMetric.h
+        src/GreatCircleMetric.cpp
         src/MultigoalPrmStar.cpp
         src/MultigoalPrmStar.h
         src/traveling_salesman.h
@@ -119,7 +119,9 @@ add_library(${PROJECT_NAME}_shared
         src/run_experiment.cpp
         src/run_experiment.h
         src/DirectApproachVariantSampler.cpp
-        src/DirectApproachVariantSampler.h src/TimedCostConvergenceTerminationCondition.cpp src/TimedCostConvergenceTerminationCondition.h)
+        src/DirectApproachVariantSampler.h
+        src/TimedCostConvergenceTerminationCondition.cpp
+        src/TimedCostConvergenceTerminationCondition.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

@@ -402,11 +402,17 @@ std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators() {
 
 	// We'll be taking a cartesian product of these.
 	// Due to C++ ownership stupidity, it's best to keep plain old data here only.
-	bool applyShellstateOptimization[] = {true, false};
-	bool useImprovisedInformedSampler[] = {false, true};
-	bool tryLuckyShots[] = {false, true};
-	bool useCostConvergence[] = {false, true};
+//	bool applyShellstateOptimization[] = {true, false};
+//	bool useImprovisedInformedSampler[] = {false, true};
+//	bool tryLuckyShots[] = {false, true};
+//	bool useCostConvergence[] = {false, true};
+//	double ptp_time_seconds[] = {0.4, 0.5, 1.0};
+	bool applyShellstateOptimization[] = {true};
+	bool useImprovisedInformedSampler[] = {true};
+	bool tryLuckyShots[] = {true};
+	bool useCostConvergence[] = {true};
 	double ptp_time_seconds[] = {0.4, 0.5, 1.0};
+
 	// We explicitly use a function pointer here so we don't get burnt by this containing a reference to some local variable.
 	ompl::base::PlannerPtr(*planner_allocators[])(const ompl::base::SpaceInformationPtr&) = { &allocPRM };
 

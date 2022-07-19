@@ -10,110 +10,109 @@
 
 /// Alternative to ros::init that does not take a mutable reference to an int.
 void rosinit_noparam() {
-    int zero = 0;
-    ros::init(zero, nullptr, "probe_retreat_move");
+	int zero = 0;
+	ros::init(zero, nullptr, "probe_retreat_move");
 }
 
-ExperimentVisualTools::ExperimentVisualTools() : nh((rosinit_noparam(),"evt")) {
+ExperimentVisualTools::ExperimentVisualTools() : nh((rosinit_noparam(), "evt")) {
 
 }
 
 void ExperimentVisualTools::publishPlanningScene(const moveit_msgs::PlanningScene &scene_msg) {
-    auto scene = nh.advertise<moveit_msgs::PlanningScene>("/planning_scene", 1, true);
-    scene.publish(scene_msg);
-    publisher_handles.push_back(scene);
+	auto scene = nh.advertise<moveit_msgs::PlanningScene>("/planning_scene", 1, true);
+	scene.publish(scene_msg);
+	publisher_handles.push_back(scene);
 }
 
 void ExperimentVisualTools::dumpProjections(const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &apples,
-                                            const std::string &topic_name) {
+											const std::string &topic_name) {
 
-    std_msgs::ColorRGBA color;
+	std_msgs::ColorRGBA color;
 
-    ompl::RNG rng;
-    color.a = 1.0;
-    color.r = (float) rng.uniform01();
-    color.g = (float) rng.uniform01();
-    color.b = (float) rng.uniform01();
+	ompl::RNG rng;
+	color.a = 1.0;
+	color.r = (float) rng.uniform01();
+	color.g = (float) rng.uniform01();
+	color.b = (float) rng.uniform01();
 
-    auto sphere_projections = nh.advertise<visualization_msgs::MarkerArray>(topic_name, 1, true);
+	auto sphere_projections = nh.advertise<visualization_msgs::MarkerArray>(topic_name, 1, true);
 
-    visualization_msgs::MarkerArray projections_msg;
+	visualization_msgs::MarkerArray projections_msg;
 
-    visualization_msgs::Marker balls;
-    balls.header.frame_id = "world";
-    balls.type = visualization_msgs::Marker::POINTS;
-    balls.points.resize(apples.size());
-    balls.color = color;
-    balls.scale.x = 0.05;
-    balls.scale.y = 0.05;
-    balls.scale.z = 0.05;
-    balls.pose.orientation.w = 1.0;
+	visualization_msgs::Marker balls;
+	balls.header.frame_id = "world";
+	balls.type = visualization_msgs::Marker::POINTS;
+	balls.points.resize(apples.size());
+	balls.color = color;
+	balls.scale.x = 0.05;
+	balls.scale.y = 0.05;
+	balls.scale.z = 0.05;
+	balls.pose.orientation.w = 1.0;
 
-    visualization_msgs::Marker lines;
-    lines.header.frame_id = "world";
-    lines.id = 1;
-    lines.type = visualization_msgs::Marker::LINE_LIST;
-    lines.scale.x = 0.01;
-    lines.color = color;
-    lines.pose.orientation.w = 1.0;
-    lines.points.resize(2 * apples.size());
+	visualization_msgs::Marker lines;
+	lines.header.frame_id = "world";
+	lines.id = 1;
+	lines.type = visualization_msgs::Marker::LINE_LIST;
+	lines.scale.x = 0.01;
+	lines.color = color;
+	lines.pose.orientation.w = 1.0;
+	lines.points.resize(2 * apples.size());
 
-    for (const auto &[apple_id, apple]: apples | ranges::views::enumerate) {
+	for (const auto &[apple_id, apple]: apples | ranges::views::enumerate) {
 
-        const Eigen::Vector3d onSphere = appleFromApproach(
-                *apple.second.getSpaceInformation()->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>(),
-                apple.second).center;
+		const Eigen::Vector3d onSphere = appleFromApproach(*apple.second
+				.getSpaceInformation()
+				->getStateSpace()
+				->as<ompl_interface::ModelBasedStateSpace>(), apple.second).center;
 
-        tf::pointEigenToMsg(onSphere, balls.points[apple_id]);
+		tf::pointEigenToMsg(onSphere, balls.points[apple_id]);
 
-        tf::pointEigenToMsg(apple.first.center, lines.points[apple_id * 2]);
-        tf::pointEigenToMsg(onSphere, lines.points[apple_id * 2 + 1]);
+		tf::pointEigenToMsg(apple.first.center, lines.points[apple_id * 2]);
+		tf::pointEigenToMsg(onSphere, lines.points[apple_id * 2 + 1]);
 
-    }
+	}
 
-    projections_msg.markers.push_back(balls);
-    projections_msg.markers.push_back(lines);
+	projections_msg.markers.push_back(balls);
+	projections_msg.markers.push_back(lines);
 
-    sphere_projections.publish(projections_msg);
+	sphere_projections.publish(projections_msg);
 
-    publisher_handles.push_back(sphere_projections);
+	publisher_handles.push_back(sphere_projections);
 }
 
 void ExperimentVisualTools::dumpApproaches(const std::shared_ptr<ompl::base::SpaceInformation> &si,
-                                           const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches,
-                                           const std::string &topic_name) {
+										   const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches,
+										   const std::string &topic_name) {
 
-    ompl::geometric::PathGeometric combined_path(si);
+	ompl::geometric::PathGeometric combined_path(si);
 
-    for (const auto &approach: approaches) {
-        ompl::geometric::PathGeometric approach_copy(approach.second);
-        approach_copy.interpolate();
-        combined_path.append(approach_copy);
-    }
+	for (const auto &approach: approaches) {
+		ompl::geometric::PathGeometric approach_copy(approach.second);
+		approach_copy.interpolate();
+		combined_path.append(approach_copy);
+	}
 
-    publishPath(si, topic_name, combined_path);
+	publishPath(si, topic_name, combined_path);
 
 }
 
 void ExperimentVisualTools::publishPath(const std::shared_ptr<ompl::base::SpaceInformation> &si,
-                                        const std::string &topic_name,
-                                        const ompl::geometric::PathGeometric &combined_path) {
-    auto moveit_trajectory = omplPathToRobotTrajectory(
-            *si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>(),
-            combined_path
-            );
+										const std::string &topic_name,
+										const ompl::geometric::PathGeometric &combined_path) {
+	auto moveit_trajectory = omplPathToRobotTrajectory(*si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>(),
+													   combined_path);
 
-    publishTrajectory(topic_name, moveit_trajectory);
+	publishTrajectory(topic_name, moveit_trajectory);
 
 }
 
 void ExperimentVisualTools::publishTrajectory(const std::string &topic_name,
-                                              const robot_trajectory::RobotTrajectory &moveit_trajectory) {
-    moveit_msgs::DisplayTrajectory msg = robotTrajectoryToDisplayTrajectory(moveit_trajectory);
+											  const robot_trajectory::RobotTrajectory &moveit_trajectory) {
+	moveit_msgs::DisplayTrajectory msg = robotTrajectoryToDisplayTrajectory(moveit_trajectory);
 
-    auto traj = nh.advertise<moveit_msgs::DisplayTrajectory>(topic_name, 1, true);
+	auto traj = nh.advertise<moveit_msgs::DisplayTrajectory>(topic_name, 1, true);
 
-    traj.publish(msg);
+	traj.publish(msg);
 
-    publisher_handles.push_back(traj);
+	publisher_handles.push_back(traj);
 }

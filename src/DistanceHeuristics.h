@@ -4,7 +4,7 @@
 #include <ompl/base/State.h>
 #include <ompl/base/Goal.h>
 #include "ompl_custom.h"
-#include "greatcircle.h"
+#include "GreatCircleMetric.h"
 
 /**
  * Base class for some notion of distance heuristics between either a state and a goal, or two goals.

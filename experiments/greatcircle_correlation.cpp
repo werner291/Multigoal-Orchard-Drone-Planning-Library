@@ -5,7 +5,7 @@
 #include "../src/experiment_utils.h"
 #include "../src/thread_pool.hpp"
 #include "../src/DronePathLengthObjective.h"
-#include "../src/greatcircle.h"
+#include "../src/GreatCircleMetric.h"
 #include "../src/probe_retreat_move.h"
 
 int main(int argc, char **argv) {

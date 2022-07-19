@@ -111,12 +111,6 @@ struct PointToPointPair {
     std::shared_ptr<ompl::base::State> to_state;
 };
 
-std::vector<PointToPointPair>
-samplePlanningPairs(const planning_scene::PlanningSceneConstPtr &scene,
-                    const moveit::core::RobotModelConstPtr &drone,
-                    const std::vector<Apple> &apples,
-                    const size_t num_samples);
-
 std::optional<ompl::geometric::PathGeometric>
 planFromStateToState(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
                      const ompl::base::State *a, const ompl::base::State *b, double duration);

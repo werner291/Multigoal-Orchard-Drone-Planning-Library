@@ -1,4 +1,3 @@
-
 #ifndef NEW_PLANNERS_GENERAL_UTILITIES_CPP
 #define NEW_PLANNERS_GENERAL_UTILITIES_CPP
 
@@ -18,22 +17,22 @@
 template<typename T>
 std::vector<size_t> index_vector(const std::vector<T> &v) {
 
-    std::vector<size_t> ids(v.size());
-    for (size_t i = 0; i < ids.size(); ++i) {
-        ids[i] = i;
-    }
+	std::vector<size_t> ids(v.size());
+	for (size_t i = 0; i < ids.size(); ++i) {
+		ids[i] = i;
+	}
 
-    return ids;
+	return ids;
 
 }
 
-Eigen::Vector4d any_perpendicular_of_two(const Eigen::Vector4d& a, const Eigen::Vector4d& b);
+Eigen::Vector4d any_perpendicular_of_two(const Eigen::Vector4d &a, const Eigen::Vector4d &b);
 
 
 /**
  * Take the generalized vector cross product of three Vector4d's. That is, a vector perpendicular to all three.
  */
-Eigen::Vector4d cross_three(const Eigen::Vector4d& a, const Eigen::Vector4d& b, const Eigen::Vector4d& c);
+Eigen::Vector4d cross_three(const Eigen::Vector4d &a, const Eigen::Vector4d &b, const Eigen::Vector4d &c);
 
 /**
  *
@@ -43,17 +42,14 @@ Eigen::Vector4d cross_three(const Eigen::Vector4d& a, const Eigen::Vector4d& b, 
  *
  * Note: `qa` and `qb` must be unit quaternions, such that `acos(qa.dot(qb)) <= max_distance`.
  */
-Eigen::Quaterniond sampleInformedQuaternion(const Eigen::Quaterniond& qa,
-                                            const Eigen::Quaterniond& qb,
-                                            const double max_distance);
+[[maybe_unused]] Eigen::Quaterniond
+sampleInformedQuaternion(const Eigen::Quaterniond &qa, const Eigen::Quaterniond &qb, const double max_distance);
 
-/**
- * The slerp distance between two quaternions, defined as acos(|qs1⋅qs2|), in radians.
- */
-double quat_dist(const Eigen::Quaterniond& qs1, const Eigen::Quaterniond& qs2);
-
-template<typename V> void truncate(std::vector<V>& v, size_t n) {
-    if (v.size() > n) {v.resize(n);}
+template<typename V>
+void truncate(std::vector<V> &v, size_t n) {
+	if (v.size() > n) {
+		v.resize(n);
+	}
 }
 
 /**
@@ -74,32 +70,29 @@ template<typename V> void truncate(std::vector<V>& v, size_t n) {
  *                          to generate all permutations of all non-empty subsets.
  */
 template<typename T, typename V>
-void generate_combinations
-        (std::vector<T> visitable,
-         const V empty_value,
-         const std::function<V(std::vector<size_t>::const_iterator first,
-                               std::vector<size_t>::const_iterator last,
-                               const V &)> &consider_cb,
-         size_t elements_fixed = 0) {
+void generate_combinations(std::vector<T> visitable,
+						   const V empty_value,
+						   const std::function<V(std::vector<size_t>::const_iterator first,
+												 std::vector<size_t>::const_iterator last,
+												 const V &)> &consider_cb,
+						   size_t elements_fixed = 0) {
 
-    // Iterate over every element beyond the range of fixed elements.
-    // This intentionally includes the first element in that range.
-    for (size_t swap_with = elements_fixed; swap_with < visitable.size(); ++swap_with) {
-        // Swap the first element in the variable range with the pointed-to element.
-        // Both indices may be euqal, in which case the swap is a no-op.
-        std::swap(visitable[elements_fixed], visitable[swap_with]);
+	// Iterate over every element beyond the range of fixed elements.
+	// This intentionally includes the first element in that range.
+	for (size_t swap_with = elements_fixed; swap_with < visitable.size(); ++swap_with) {
+		// Swap the first element in the variable range with the pointed-to element.
+		// Both indices may be euqal, in which case the swap is a no-op.
+		std::swap(visitable[elements_fixed], visitable[swap_with]);
 
-        // Call the callback with the fixed range extended by 1.
-        V value = consider_cb(visitable.begin(), visitable.begin() + elements_fixed + 1, empty_value);
+		// Call the callback with the fixed range extended by 1.
+		V value = consider_cb(visitable.begin(), visitable.begin() + elements_fixed + 1, empty_value);
 
-        // Recurse, also with the extended fixed range.
-        generate_combinations(
-                visitable, value, consider_cb, elements_fixed + 1
-        );
+		// Recurse, also with the extended fixed range.
+		generate_combinations(visitable, value, consider_cb, elements_fixed + 1);
 
-        // Undo the swap to ensure predictable behavior to bring te vector back to what it was.
-        std::swap(visitable[elements_fixed], visitable[swap_with]);
-    }
+		// Undo the swap to ensure predictable behavior to bring te vector back to what it was.
+		std::swap(visitable[elements_fixed], visitable[swap_with]);
+	}
 }
 
 /**
@@ -107,27 +100,22 @@ void generate_combinations
  * Output is a vector of vectors of vertex indices.
  * Each vector is a connected components.
  */
-std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::msg::Mesh& mesh);
+std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::msg::Mesh &mesh);
 
 /**
  * Perform a convex decomposition of the given mesh using the HACD library.
  *
  * @param concavity Lower values give more accurate results, at the cost of higher number of parts.
  */
-std::vector<shape_msgs::msg::Mesh> convex_decomposition(const shape_msgs::msg::Mesh &mesh, const double concavity = 2.0);
+std::vector<shape_msgs::msg::Mesh>
+convex_decomposition(const shape_msgs::msg::Mesh &mesh, const double concavity = 2.0);
 
-template<typename V>
-std::vector<V> vectorByOrdering(const std::vector<V> &original, const std::vector<size_t> &ordering) {
-    std::vector<V> result;
-    result.reserve(ordering.size());
-    for (const size_t i : ordering) result.push_back(original[i]);
-    return result;
-}
-
+/**
+ * Rangev3 adapter for generating the consecutive pairs of a range.
+ */
 template<typename Rng>
 auto pairwise(Rng range) {
-    return ranges::views::zip(range | ranges::views::drop_last(1),
-                              range | ranges::views::drop(1));
+	return ranges::views::zip(range | ranges::views::drop_last(1), range | ranges::views::drop(1));
 }
 
 /**

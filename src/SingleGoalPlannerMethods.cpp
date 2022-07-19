@@ -70,15 +70,15 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
 
     auto start_time = std::chrono::steady_clock::now();
     ompl::base::Planner &planner = *ompl_planner;
-    std::optional<ompl::geometric::PathGeometric> result1;
-    auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner.getSpaceInformation());
+
+	auto pdef = std::make_shared<ompl::base::ProblemDefinition>(planner.getSpaceInformation());
     pdef->setOptimizationObjective(optimization_objective);
     pdef->addStartState(a);
     pdef->setGoal(b);
 
     planner.setProblemDefinition(pdef);
 
-    std::optional<ompl::geometric::PathGeometric> result(si);
+    std::optional<ompl::geometric::PathGeometric> result;
 
     auto ptc = useCostConvergence ? plannerOrTerminationCondition(
             ompl::base::timedPlannerTerminationCondition(timePerAppleSeconds),
@@ -96,6 +96,8 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
     if (useImprovisedSampler) {
         si->getStateSpace()->clearStateSamplerAllocator();
     }
+
+	assert(!result || result->getStateCount() > 0);
 
     return result;
 }

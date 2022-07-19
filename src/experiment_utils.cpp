@@ -6,7 +6,7 @@
 #include "../src/SingleGoalPlannerMethods.h"
 //#include "../src/NewKnnPlanner.h"
 #include "../src/probe_retreat_move.h"
-#include "../src/greatcircle.h"
+#include "../src/GreatCircleMetric.h"
 #include "../src/experiment_utils.h"
 #include <boost/range/adaptor/transformed.hpp>
 #include <execution>
@@ -204,40 +204,6 @@ std::vector<Apple> apples_from_connected_components(shape_msgs::msg::Mesh apples
     );
 }
 
-
-std::vector<PointToPointPair>
-samplePlanningPairs(const planning_scene::PlanningSceneConstPtr &scene,
-                    const moveit::core::RobotModelConstPtr &drone,
-                    const std::vector<Apple> &apples, const size_t num_samples) {
-
-    ompl_interface::ModelBasedStateSpaceSpecification spec(drone, "whole_body");
-    auto state_space = std::make_shared<DroneStateSpace>(spec);
-    state_space->setup();
-
-    std::default_random_engine rng;
-
-    auto si = initSpaceInformation(scene, drone, state_space);
-    auto goals = constructAppleGoals(si, apples);
-
-    auto del_state = [state_space = state_space](ompl::base::State *st) { state_space->freeState(st); };
-
-    return boost::copy_range<std::vector<PointToPointPair>>(
-            boost::irange<size_t>(0, num_samples) |
-            boost::adaptors::transformed(
-                    [apples = apples, state_space = state_space, &rng, &del_state, &goals, &si](size_t i) {
-
-                        auto[target_i, target_j] = generateIndexPairNoReplacement(rng, apples.size());
-
-                        std::shared_ptr<ompl::base::State> from_state(state_space->allocState(), del_state);
-                        goals[target_i]->sampleGoal(from_state.get());
-
-                        std::shared_ptr<ompl::base::State> to_state(state_space->allocState(), del_state);
-                        goals[target_j]->sampleGoal(to_state.get());
-
-                        return PointToPointPair{target_i, from_state, target_j, to_state};
-
-                    }));
-}
 
 std::optional<ompl::geometric::PathGeometric>
 planFromStateToState(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,

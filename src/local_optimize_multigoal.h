@@ -6,6 +6,11 @@
 #include <ompl/base/Goal.h>
 #include <ompl/geometric/PathSimplifier.h>
 
+/**
+ * TODO Unfinished.
+ *
+ * Locally optimizes a multi-goal path by sampling alternative goal states and locally-optimizing the sections between goals.
+ */
 void local_optimize_multigoal(ompl::geometric::PathGeometric& path,
                               std::vector<std::pair<size_t, ompl::base::GoalPtr>>& pinned_to_goals,
                               std::function<void(ompl::base::State*, ompl::base::Goal*)>& project_to_goal,

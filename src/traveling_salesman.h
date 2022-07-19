@@ -9,7 +9,7 @@
 #include <utility>
 #include <ompl/base/PlannerTerminationCondition.h>
 #include "procedural_tree_generation.h"
-#include "greatcircle.h"
+#include "GreatCircleMetric.h"
 
 class DistanceHeuristics {
 public:

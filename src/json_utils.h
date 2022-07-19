@@ -1,7 +1,3 @@
-//
-// Created by werner on 28-09-21.
-//
-
 #ifndef NEW_PLANNERS_JSON_UTILS_H
 #define NEW_PLANNERS_JSON_UTILS_H
 

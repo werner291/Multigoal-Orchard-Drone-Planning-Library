@@ -1,7 +1,7 @@
 
 #include "../src/experiment_utils.h"
 #include "../src/thread_pool.hpp"
-#include "../src/greatcircle.h"
+#include "../src/GreatCircleMetric.h"
 #include "../src/NewKnnPlanner.h"
 #include "../src/run_experiment.h"
 #include <range/v3/all.hpp>
