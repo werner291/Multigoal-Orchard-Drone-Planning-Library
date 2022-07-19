@@ -78,7 +78,7 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
 
     planner.setProblemDefinition(pdef);
 
-    ompl::geometric::PathGeometric result(si);
+    std::optional<ompl::geometric::PathGeometric> result(si);
 
     auto ptc = useCostConvergence ? plannerOrTerminationCondition(
             ompl::base::timedPlannerTerminationCondition(timePerAppleSeconds),
@@ -90,7 +90,7 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
 
         result = *pdef->getSolutionPath()->as<ompl::geometric::PathGeometric>();
 
-        result = optimize(result, optimization_objective, si);
+        result = optimize(*result, optimization_objective, si);
     }
 
     if (useImprovisedSampler) {
