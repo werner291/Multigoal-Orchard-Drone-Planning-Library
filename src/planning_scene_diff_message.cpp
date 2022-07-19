@@ -209,9 +209,7 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
 
         planning_scene_message.is_diff = true;
 
-
-
-                {
+		{
             const shape_msgs::msg::Mesh mesh = meshMsgFromResource(prefix + "_trunk.dae");
 
             const std::vector<shape_msgs::msg::Mesh> decomposition = convex_decomposition(mesh, 2.0);
@@ -221,7 +219,7 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
             }
         }
 
-        const shape_msgs::msg::Mesh apples = meshMsgFromResource(prefix + "_apples.dae");
+        const shape_msgs::msg::Mesh apples = meshMsgFromResource(prefix + "_fruit.dae");
 
         addColoredMeshCollisionShape(planning_scene_message, {1.0, 0.0, 0.0}, "apples", apples);
 

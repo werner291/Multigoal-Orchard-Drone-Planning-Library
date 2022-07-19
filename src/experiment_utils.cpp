@@ -378,7 +378,7 @@ compute_enclosing_sphere(const moveit_msgs::msg::PlanningScene &planning_scene_m
     std::vector<Point> points;
 
     for (const auto& col : planning_scene_message.world.collision_objects) {
-        if (col.id == "apples") {
+        if (col.id == "leaves") {
             for (const auto& mesh : col.meshes) {
                 for (auto v : mesh.vertices) {
                     std::vector<FT> point_vect { v.x, v.y, v.z };

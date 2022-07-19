@@ -42,6 +42,8 @@ SingleGoalPlannerMethods::attempt_lucky_shot(const ompl::base::State *a, const o
 std::optional<ompl::geometric::PathGeometric>
 SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::base::GoalPtr b) {
 
+	assert(si->getStateValidityChecker()->isValid(a));
+
     if (tryLuckyShots) {
         auto result = attempt_lucky_shot(a, b);
         if (result) {

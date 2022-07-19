@@ -28,6 +28,8 @@ struct Run {
 	PlanningProblem problem;
 };
 
+std::vector<std::string> model_names_from_directory();
+
 using namespace std;
 
 /// Load a Moveit-based statespace with the drone.
@@ -62,14 +64,35 @@ ompl::base::ScopedState<> genStartState(const shared_ptr<DroneStateSpace> &state
 }
 
 /// Load a list of apple tree planning scenes from the directory.
-vector<shared_ptr<AppleTreePlanningScene>> loadScenes() {
+std::vector<shared_ptr<AppleTreePlanningScene>> loadScenes() {
 
-	vector<shared_ptr<AppleTreePlanningScene>> scenes;
+	std::vector<shared_ptr<AppleTreePlanningScene>> scenes;
 
-	// Look into the 3d-models directory.
+	std::vector<string> model_names = {
+			"appletree",
+			"lemontree2",
+			"orangetree4"
+	};
+
+	for (const auto &model_name: model_names) {
+
+		// Load the scene.
+		auto scene = createMeshBasedAppleTreePlanningSceneMessage(model_name);
+
+		// Convert to a shared pointer and add to the list.
+		scenes.push_back(make_shared<AppleTreePlanningScene>(scene));
+
+	}
+
+	return scenes;
+}
+
+vector<string> model_names_from_directory() {// Look into the 3d-models directory.
 	// Note: due to copyright issues, you must decrypt the 3d-models.zip file
 	// Ask the authors for the password or get your own apple tree models somewhere.
 	string path = "3d-models";
+
+	vector<string> model_names;
 
 	for (const auto &entry: std::filesystem::directory_iterator(path)) {
 		// If the file ends in "_trunk.dae" we identify it as an apple tree model
@@ -81,16 +104,10 @@ vector<shared_ptr<AppleTreePlanningScene>> loadScenes() {
 
 			// Chop off the "_trunk.dae" suffix.
 			auto model_name = filename.substr(0, filename.size() - string("_trunk.dae").size());
-
-			// Load the scene.
-			auto scene = createMeshBasedAppleTreePlanningSceneMessage(model_name);
-
-			// Convert to a shared pointer and add to the list.
-			scenes.push_back(make_shared<AppleTreePlanningScene>(scene));
+			model_names.push_back(model_name);
 		}
 	}
-
-	return scenes;
+	return model_names;
 }
 
 /// Pick a subset of size at most napples uniformly at random.
@@ -121,16 +138,23 @@ std::vector<PlanningProblem> genPlanningProblems(const int num_runs,
 												 const vector<shared_ptr<AppleTreePlanningScene>> &scenes,
 												 Rng &rng) {
 
-	return
-		// Generate all combinations apples, scenes, and runs.
-			ranges::views::cartesian_product(ranges::views::iota(0, num_runs), napples, scenes) |
-			// Pick the subset of apples and put them into a PlanningProblem
-			ranges::views::transform([&](const auto &tuple) {
-				const auto &[run_id, select_n, scene_info] = tuple;
-				vector<Apple> apples = random_subset(rng, select_n, scene_info, scene_info->apples);
-				return PlanningProblem{static_cast<size_t>(run_id), genStartState(stateSpace, rng()), apples,
-									   scene_info};
-			}) | ranges::to_vector;
+	std::vector<PlanningProblem> problems;
+
+	for (const auto& scene: scenes) {
+		for (const auto& n: napples) {
+
+			assert(n <= scene->apples.size());
+
+			for (int i = 0; i < num_runs; i++) {
+				auto start_state = genStartState(stateSpace, rng());
+				auto apples = random_subset(rng, n, scene, scene->apples);
+
+				problems.push_back( PlanningProblem {static_cast<size_t>(i), start_state, apples, scene } );
+			}
+		}
+	}
+
+	return problems;
 }
 
 /// Given a set of planner planner allocators and problems,
@@ -215,7 +239,7 @@ Json::Value run_task(const moveit::core::RobotModelConstPtr &drone, const Run &r
 	// Objective is path length minimization.
 	auto objective = make_shared<DronePathLengthObjective>(si);
 
-	auto timeout = ompl::base::timedPlannerTerminationCondition(std::chrono::seconds(5));
+	auto timeout = ompl::base::timedPlannerTerminationCondition(std::chrono::minutes(5));
 
 	NewMultiGoalPlanner::PlanResult result;
 
@@ -425,7 +449,7 @@ std::vector<NewMultiGoalPlannerAllocatorFn> make_tsp_over_prm_allocators() {
 
 	const auto samples_per_goal = ranges::views::iota(2, 10);
 	const double plan_times_seconds[] = {1.0, 2.0, 5.0, 10.0, 15.0, 20.0};//, 30.0, 60.0};
-	const bool optimize_segments_options[] = {false, true};
+	const bool optimize_segments_options[] = {true};//{false, true};
 
 	return ranges::views::cartesian_product(plan_times_seconds, samples_per_goal, optimize_segments_options) |
 		   ranges::views::transform([&](const auto tuple) -> NewMultiGoalPlannerAllocatorFn {
