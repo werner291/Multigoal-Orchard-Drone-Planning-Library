@@ -4,7 +4,7 @@
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 #include <range/v3/all.hpp>
 #include "../src/SingleGoalPlannerMethods.h"
-#include "../src/NewKnnPlanner.h"
+//#include "../src/NewKnnPlanner.h"
 #include "../src/probe_retreat_move.h"
 #include "../src/greatcircle.h"
 #include "../src/experiment_utils.h"

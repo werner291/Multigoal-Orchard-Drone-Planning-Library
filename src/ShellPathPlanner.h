@@ -19,7 +19,8 @@ public:
 
     PlanResult plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
                     const std::vector<ompl::base::GoalPtr> &goals,
-                    const AppleTreePlanningScene &planning_scene) override;
+                    const AppleTreePlanningScene &planning_scene,
+					ompl::base::PlannerTerminationCondition& ptc) override;
 
     PlanResult assembleFullPath(
             const ompl::base::SpaceInformationPtr &si,
@@ -48,10 +49,11 @@ public:
             const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches,
             const OmplDistanceHeuristics& distance_heuristics) const;
 
-    std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> planApproaches(
-            const ompl::base::SpaceInformationPtr &si,
-            const std::vector<ompl::base::GoalPtr> &goals,
-            const OMPLSphereShellWrapper &ompl_shell) const;
+    std::vector<std::pair<size_t, ompl::geometric::PathGeometric>>
+	planApproaches(const ompl::base::SpaceInformationPtr &si,
+				   const std::vector<ompl::base::GoalPtr> &goals,
+				   const OMPLSphereShellWrapper &ompl_shell,
+				   ompl::base::PlannerTerminationCondition &ptc) const;
 
     std::optional<ompl::geometric::PathGeometric> planApproachForGoal(
             const ompl::base::SpaceInformationPtr &si,

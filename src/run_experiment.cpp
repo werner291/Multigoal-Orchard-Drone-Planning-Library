@@ -215,9 +215,19 @@ Json::Value run_task(const moveit::core::RobotModelConstPtr &drone, const Run &r
 	// Objective is path length minimization.
 	auto objective = make_shared<DronePathLengthObjective>(si);
 
+	auto timeout = ompl::base::timedPlannerTerminationCondition(std::chrono::seconds(5));
+
+	NewMultiGoalPlanner::PlanResult result;
+
 	// Run the planner, timing the runtime.
 	auto start_time = ompl::time::now();
-	auto result = planner->plan(si, start_state.get(), goals, *scene);
+	try {
+		result = planner->plan(si, start_state.get(), goals, *scene, timeout);
+	} catch (PlanningTimeout &) {
+		// If we timed out, we return an empty path.
+		result.segments.clear();
+		std::cout << "Planning timed out" << std::endl;
+	}
 	auto run_time = ompl::time::seconds(ompl::time::now() - start_time);
 
 	// Construct the output JSON.
@@ -418,20 +428,7 @@ std::vector<NewMultiGoalPlannerAllocatorFn> make_tsp_over_prm_allocators() {
 	const bool optimize_segments_options[] = {false, true};
 
 	return ranges::views::cartesian_product(plan_times_seconds, samples_per_goal, optimize_segments_options) |
-		   ranges::views::filter([](const auto tuple) {
-			   const auto &[plan_time, samples, optimize_segments] = tuple;
-
-			   double expected_time = plan_time * (double) (samples * samples);
-
-			   if (expected_time >= 600.0) {
-				   std::cout << "Dropping task with plan_time: " << plan_time << " samples: " << samples
-							 << " expected_time: " << expected_time << std::endl;
-				   return false;
-			   } else {
-				   return true;
-			   }
-
-		   }) | ranges::views::transform([&](const auto tuple) -> NewMultiGoalPlannerAllocatorFn {
+		   ranges::views::transform([&](const auto tuple) -> NewMultiGoalPlannerAllocatorFn {
 
 		auto [plan_time, samples, optimize_segments] = tuple;
 

@@ -7,6 +7,7 @@
 #include <ortools/constraint_solver/routing_parameters.h>
 #include <boost/range/irange.hpp>
 #include <utility>
+#include <ompl/base/PlannerTerminationCondition.h>
 #include "procedural_tree_generation.h"
 #include "greatcircle.h"
 
@@ -73,11 +74,16 @@ double ordering_heuristic_cost(const std::vector<size_t>& ordering,
                                const std::vector<Apple>& apples,
                                const DistanceHeuristics& dh);
 
-std::vector<size_t> tsp_open_end(const std::function<double(size_t)> &from_start, const std::function<double(size_t,size_t)> & between, size_t n);
+std::vector<size_t> tsp_open_end(
+		const std::function<double(size_t)> &from_start,
+		const std::function<double(size_t,size_t)> & between,
+		size_t n,
+		const ompl::base::PlannerTerminationCondition &ptc = ompl::base::plannerNonTerminatingCondition());
 
-std::vector<std::pair<size_t, size_t>> tsp_open_end_grouped(
-        const std::function<double(std::pair<size_t, size_t>)> &from_start,
-        const std::function<double(std::pair<size_t, size_t>, std::pair<size_t, size_t>)> &between,
-        const std::vector<size_t>& sizes);
+std::vector<std::pair<size_t, size_t>>
+tsp_open_end_grouped(const std::function<double(std::pair<size_t, size_t>)> &from_start,
+					 const std::function<double(std::pair<size_t, size_t>, std::pair<size_t, size_t>)> &between,
+					 const std::vector<size_t> &sizes,
+					 ompl::base::PlannerTerminationCondition &ptc);
 
 #endif //NEW_PLANNERS_TRAVELING_SALESMAN_H

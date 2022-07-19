@@ -24,9 +24,11 @@ public:
     MultigoalPrmStar(double prmBuildTime, size_t samplesPerGoal, bool optimizeSegments);
 
 public:
-    PlanResult plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
-                    const std::vector<ompl::base::GoalPtr> &goals,
-                    const AppleTreePlanningScene &planning_scene) override;
+    PlanResult plan(const ompl::base::SpaceInformationPtr &si,
+					const ompl::base::State *start,
+					const std::vector<ompl::base::GoalPtr> &goals,
+					const AppleTreePlanningScene &planning_scene,
+					ompl::base::PlannerTerminationCondition &ptc) override;
 
     [[nodiscard]] Json::Value parameters() const override;
 

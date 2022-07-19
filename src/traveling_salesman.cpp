@@ -1,5 +1,6 @@
 #include <moveit/robot_state/robot_state.h>
 #include "traveling_salesman.h"
+#include "general_utilities.h"
 
 #include <boost/range/algorithm/min_element.hpp>
 #include <utility>
@@ -113,7 +114,9 @@ std::vector<size_t> ORToolsOrderingStrategy::apple_ordering(const std::vector<Ap
 }
 
 std::tuple<Int64DistanceMatrix, size_t, size_t> mkOpenEndedDistanceMatrix(const std::function<double(size_t)> &from_start,
-                                                                          const std::function<double(size_t, size_t)> &between, size_t n) {
+																		  const std::function<double(size_t, size_t)> &between,
+																		  size_t n,
+																		  const ompl::base::PlannerTerminationCondition &ptc) {
 
     Int64DistanceMatrix distance_matrix(n+2, std::vector<int64_t>(n+2));
 
@@ -129,6 +132,7 @@ std::tuple<Int64DistanceMatrix, size_t, size_t> mkOpenEndedDistanceMatrix(const 
             // Lower triangle is filled by symmetry
             distance_matrix[j][i] = distance_matrix[i][j];
         }
+		checkPtc(ptc);
     }
 
     // The distance_matrix[N] column contains the distance between the start state and the apple.
@@ -155,10 +159,14 @@ std::tuple<Int64DistanceMatrix, size_t, size_t> mkOpenEndedDistanceMatrix(const 
             );
 }
 
-std::vector<size_t> tsp_open_end(const std::function<double(size_t)> &from_start, const std::function<double(size_t, size_t)> &between,size_t n) {
+std::vector<size_t> tsp_open_end(
+		const std::function<double(size_t)> &from_start,
+		const std::function<double(size_t, size_t)> &between,
+		size_t n,
+		const ompl::base::PlannerTerminationCondition &ptc) {
     
     const auto &[distance_matrix, start_state_index, end_state_index] =
-            mkOpenEndedDistanceMatrix(from_start, between, n);
+            mkOpenEndedDistanceMatrix(from_start, between, n, ptc);
 
     // This allows us to translate OR-tools internal indices into the indices of the table above.
     operations_research::RoutingIndexManager manager((int) n+2, 1,
@@ -201,10 +209,11 @@ std::vector<std::pair<size_t, size_t>> flatten_indices(const std::vector<size_t>
     return index_pairs;
 }
 
-std::vector<std::pair<size_t, size_t>> tsp_open_end_grouped(
-        const std::function<double(std::pair<size_t, size_t>)> &from_start,
-        const std::function<double(std::pair<size_t, size_t>, std::pair<size_t, size_t>)> &between,
-        const std::vector<size_t>& sizes) {
+std::vector<std::pair<size_t, size_t>>
+tsp_open_end_grouped(const std::function<double(std::pair<size_t, size_t>)> &from_start,
+					 const std::function<double(std::pair<size_t, size_t>, std::pair<size_t, size_t>)> &between,
+					 const std::vector<size_t> &sizes,
+					 ompl::base::PlannerTerminationCondition &ptc) {
 
     // Sum up all sizes
     auto index_lookup = flatten_indices(sizes);
@@ -221,7 +230,8 @@ std::vector<std::pair<size_t, size_t>> tsp_open_end_grouped(
                     [&](size_t i, size_t j) {
                         return between(index_lookup[i], index_lookup[j]);
                     },
-                    n);
+                    n,
+					ptc);
 
     std::cout << "Solving the routing problem..." << std::endl;
 
@@ -251,8 +261,6 @@ std::vector<std::pair<size_t, size_t>> tsp_open_end_grouped(
     searchParameters.set_first_solution_strategy(operations_research::FirstSolutionStrategy::PATH_CHEAPEST_ARC);
 
     const operations_research::Assignment* solution = routing.SolveWithParameters(searchParameters);
-
-
 
     // Translate the internal ordering into an ordering on the apples.
     std::vector<std::pair<size_t, size_t>> ordering;

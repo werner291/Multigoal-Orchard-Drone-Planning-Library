@@ -108,8 +108,8 @@ add_library(${PROJECT_NAME}_shared
         src/robot_path.h
         src/NewMultiGoalPlanner.cpp
         src/NewMultiGoalPlanner.h
-        src/NewKnnPlanner.cpp
-        src/NewKnnPlanner.h
+#        src/NewKnnPlanner.cpp
+#        src/NewKnnPlanner.h
         src/DistanceHeuristics.cpp
         src/DistanceHeuristics.h
         src/SingleGoalPlannerMethods.cpp

@@ -11,14 +11,18 @@
 
 #include <utility>
 
+
+
 ShellPathPlanner::ShellPathPlanner(bool applyShellstateOptimization,
                                    std::shared_ptr<SingleGoalPlannerMethods> methods) :
         apply_shellstate_optimization(applyShellstateOptimization),
         methods(std::move(methods)) {}
 
-NewMultiGoalPlanner::PlanResult ShellPathPlanner::plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
-                                  const std::vector<ompl::base::GoalPtr> &goals,
-                                  const AppleTreePlanningScene &planning_scene) {
+NewMultiGoalPlanner::PlanResult ShellPathPlanner::plan(
+		const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
+		const std::vector<ompl::base::GoalPtr> &goals,
+		const AppleTreePlanningScene &planning_scene,
+		ompl::base::PlannerTerminationCondition& ptc) {
 
     auto enclosing = compute_enclosing_sphere(planning_scene.scene_msg, 0.1);
 
@@ -26,7 +30,7 @@ NewMultiGoalPlanner::PlanResult ShellPathPlanner::plan(const ompl::base::SpaceIn
 
     OMPLSphereShellWrapper ompl_shell(shell, si);
 
-    auto approaches = planApproaches(si, goals, ompl_shell);
+    auto approaches = planApproaches(si, goals, ompl_shell, ptc);
 
     PlanResult result {{}};
 
@@ -141,10 +145,11 @@ std::vector<size_t> ShellPathPlanner::computeApproachOrdering(
     );
 }
 
-std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> ShellPathPlanner::planApproaches(
-        const ompl::base::SpaceInformationPtr &si,
-        const std::vector<ompl::base::GoalPtr> &goals,
-        const OMPLSphereShellWrapper &ompl_shell) const {
+std::vector<std::pair<size_t, ompl::geometric::PathGeometric>>
+ShellPathPlanner::planApproaches(const ompl::base::SpaceInformationPtr &si,
+								 const std::vector<ompl::base::GoalPtr> &goals,
+								 const OMPLSphereShellWrapper &ompl_shell,
+								 ompl::base::PlannerTerminationCondition &ptc) const {
 
     std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> approaches;
 
@@ -155,6 +160,8 @@ std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> ShellPathPlanner:
                     *approach
             );
         }
+
+		checkPtc(ptc);
 
     }
 

@@ -259,3 +259,13 @@ std::vector<shape_msgs::msg::Mesh> convex_decomposition(const shape_msgs::msg::M
     }));
 
 }
+
+void checkPtc(const ompl::base::PlannerTerminationCondition &ptc) {
+	if (ptc()) {
+		throw PlanningTimeout();
+	}
+}
+
+const char *PlanningTimeout::what() const noexcept {
+	return "Planning timeout";
+}

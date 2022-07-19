@@ -117,9 +117,11 @@ std::vector<AppleIdVertexPair> createGoalVertices(PRMCustom &prm,
 }
 
 
-NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
-                                  const std::vector<ompl::base::GoalPtr> &goals,
-                                  const AppleTreePlanningScene &planning_scene) {
+NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(const ompl::base::SpaceInformationPtr &si,
+								  const ompl::base::State *start,
+								  const std::vector<ompl::base::GoalPtr> &goals,
+								  const AppleTreePlanningScene &planning_scene,
+								  ompl::base::PlannerTerminationCondition &ptc) {
 
     std::cout << "Creating PRM ( budget: " << prm_build_time << "s)" << std::endl;
     auto prm = std::make_shared<PRMCustom>(si);
@@ -145,17 +147,14 @@ NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(const ompl::base::SpaceIn
 
     std::cout << "Solving TSP..." << std::endl;
 
-    auto ordering = tsp_open_end_grouped(
-            [&](auto pair) {
-                auto path = prm->path_distance(start_state_node, goalVertices[pair.first].vertex[pair.second]);
-                return path ? path->length() : std::numeric_limits<double>::infinity();
-            },
-            [&](auto pair_i, auto pair_j) {
-                auto path = prm->path_distance(goalVertices[pair_i.first].vertex[pair_i.second], goalVertices[pair_j.first].vertex[pair_j.second]);
-                return path ? path->length() : std::numeric_limits<double>::infinity();
-            },
-            goalVertices | views::transform([&](auto v) { return v.vertex.size(); }) | to_vector
-    );
+    auto ordering = tsp_open_end_grouped([&](auto pair) {
+		auto path = prm->path_distance(start_state_node, goalVertices[pair.first].vertex[pair.second]);
+		return path ? path->length() : std::numeric_limits<double>::infinity();
+	}, [&](auto pair_i, auto pair_j) {
+		auto path = prm->path_distance(goalVertices[pair_i.first].vertex[pair_i.second],
+									   goalVertices[pair_j.first].vertex[pair_j.second]);
+		return path ? path->length() : std::numeric_limits<double>::infinity();
+	}, goalVertices | views::transform([&](auto v) { return v.vertex.size(); }) | to_vector, ptc);
 
     std::cout << "Building final path" << std::endl;
 

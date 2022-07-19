@@ -25,7 +25,8 @@ public:
 
     virtual PlanResult plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
                             const std::vector<ompl::base::GoalPtr> &goals,
-                            const AppleTreePlanningScene &planning_scene) = 0;
+                            const AppleTreePlanningScene &planning_scene,
+							ompl::base::PlannerTerminationCondition& ptc) = 0;
 
     virtual Json::Value parameters() const = 0;
 

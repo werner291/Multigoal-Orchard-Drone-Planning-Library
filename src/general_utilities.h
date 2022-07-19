@@ -13,6 +13,7 @@
 #include <range/v3/view/drop_last.hpp>
 #include <range/v3/view/drop.hpp>
 #include <shape_msgs/msg/mesh.hpp>
+#include <ompl/base/PlannerTerminationCondition.h>
 
 template<typename T>
 std::vector<size_t> index_vector(const std::vector<T> &v) {
@@ -128,5 +129,15 @@ auto pairwise(Rng range) {
     return ranges::views::zip(range | ranges::views::drop_last(1),
                               range | ranges::views::drop(1));
 }
+
+/**
+ * An exception thrown in case we run out of time.
+ */
+struct PlanningTimeout : public std::exception {
+	const char *what() const noexcept override;
+};
+
+/// Checks the givven planner termination condition and throws a PlanningTimeout exception if it is met.
+void checkPtc(const ompl::base::PlannerTerminationCondition &ptc);
 
 #endif //NEW_PLANNERS_GENERAL_UTILITIES_CPP
