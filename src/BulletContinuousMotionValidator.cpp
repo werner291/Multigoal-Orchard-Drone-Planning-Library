@@ -60,14 +60,24 @@ double BulletContinuousMotionValidator::estimateMaximumRotation(const moveit::co
 				const double *variables2 = st2.getJointPositions(jm);
 
 				if (dynamic_cast<const moveit::core::RevoluteJointModel *>(jm)->isContinuous()) {
-					// TODO Not implemented. Need some kind of wrapping behavior
-					throw std::runtime_error("Cannot compute maximum rotation with continuous revolute joint.");
+
+					// Wrap it into the [0, 2pi) range.
+					double d = std::modf(std::abs(variables1[0] - variables2[0]), 2.0 * M_PI);
+
+					// If > pi, it's in the other half of the circle.
+					if (d > M_PI) {
+						d = 2.0 * M_PI - d;
+					}
+
+					max_angle += d;
+
 				} else {
+
 					// simply add it
-					max_angle += std::abs(variables1[0] - variables2[0]);
+					max_angle += d;
 				}
 			}
-				break;
+			break;
 		}
 	}
 	return max_angle;
