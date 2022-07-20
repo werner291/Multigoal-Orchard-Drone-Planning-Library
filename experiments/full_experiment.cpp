@@ -17,8 +17,8 @@ int main(int argc, char **argv) {
     run_planner_experiment(
             planners,
             "analysis/full_experiment.json",
-            5,
-            {10, 50, SIZE_MAX},
+            10,
+            {10, 50, 100, 150},
             std::thread::hardware_concurrency()
     );
 
