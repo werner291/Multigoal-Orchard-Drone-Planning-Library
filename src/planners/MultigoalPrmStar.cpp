@@ -2,10 +2,10 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
 #include "MultigoalPrmStar.h"
-#include "DronePathLengthObjective.h"
-#include "ompl_custom.h"
-#include "traveling_salesman.h"
-#include "probe_retreat_move.h"
+#include "../DronePathLengthObjective.h"
+#include "../ompl_custom.h"
+#include "../traveling_salesman.h"
+#include "../probe_retreat_move.h"
 
 #include <range/v3/all.hpp>
 
@@ -117,11 +117,11 @@ std::vector<AppleIdVertexPair> createGoalVertices(PRMCustom &prm,
 }
 
 
-NewMultiGoalPlanner::PlanResult MultigoalPrmStar::plan(const ompl::base::SpaceInformationPtr &si,
-								  const ompl::base::State *start,
-								  const std::vector<ompl::base::GoalPtr> &goals,
-								  const AppleTreePlanningScene &planning_scene,
-								  ompl::base::PlannerTerminationCondition &ptc) {
+MultiGoalPlanner::PlanResult MultigoalPrmStar::plan(const ompl::base::SpaceInformationPtr &si,
+													const ompl::base::State *start,
+													const std::vector<ompl::base::GoalPtr> &goals,
+													const AppleTreePlanningScene &planning_scene,
+													ompl::base::PlannerTerminationCondition &ptc) {
 
     std::cout << "Creating PRM ( budget: " << prm_build_time << "s)" << std::endl;
     auto prm = std::make_shared<PRMCustom>(si);

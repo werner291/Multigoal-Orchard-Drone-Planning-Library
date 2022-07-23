@@ -6,10 +6,10 @@
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/base/Goal.h>
 #include <jsoncpp/json/value.h>
-#include "SingleGoalPlannerMethods.h"
-#include "planning_scene_diff_message.h"
+#include "../SingleGoalPlannerMethods.h"
+#include "../planning_scene_diff_message.h"
 
-class NewMultiGoalPlanner {
+class MultiGoalPlanner {
 
 public:
     struct PathSegment {

@@ -6,16 +6,16 @@
 #define NEW_PLANNERS_MULTIGOALPRMSTAR_H
 
 #include <moveit/planning_scene/planning_scene.h>
-#include "robot_path.h"
-#include "experiment_utils.h"
-#include "procedural_tree_generation.h"
-#include "NewMultiGoalPlanner.h"
+#include "../robot_path.h"
+#include "../experiment_utils.h"
+#include "../procedural_tree_generation.h"
+#include "MultiGoalPlanner.h"
 
 MultiApplePlanResult
 planByApples(const moveit::core::RobotState &start_state, const planning_scene::PlanningSceneConstPtr &scene,
              const std::vector<Apple> &apples, double prm_build_time, bool optimize_segments, size_t samplesPerGoal);
 
-class MultigoalPrmStar : public NewMultiGoalPlanner {
+class MultigoalPrmStar : public MultiGoalPlanner {
 
     double prm_build_time;
     size_t samplesPerGoal;

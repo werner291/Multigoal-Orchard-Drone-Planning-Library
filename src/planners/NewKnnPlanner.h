@@ -5,8 +5,8 @@
 #include <variant>
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 #include <json/value.h>
-#include "NewMultiGoalPlanner.h"
-#include "DistanceHeuristics.h"
+#include "MultiGoalPlanner.h"
+#include "../DistanceHeuristics.h"
 
 class NewKnnPlanner : public NewMultiGoalPlanner {
 

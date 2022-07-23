@@ -3,19 +3,25 @@
 #define NEW_PLANNERS_SHELLPATHPLANNER_H
 
 #include <range/v3/view/enumerate.hpp>
-#include "NewMultiGoalPlanner.h"
-#include "SphereShell.h"
-#include "DistanceHeuristics.h"
-#include "planning_scene_diff_message.h"
+#include "MultiGoalPlanner.h"
+#include "../SphereShell.h"
+#include "../DistanceHeuristics.h"
+#include "../planning_scene_diff_message.h"
 
-class ShellPathPlanner : public NewMultiGoalPlanner {
+class ShellPathPlanner : public MultiGoalPlanner {
+
+	typedef const std::function<std::shared_ptr<SphereShell>(const AppleTreePlanningScene& scene_info)> MakeShellFn;
+
+	MakeShellFn shell_builder;
 
     std::shared_ptr<SingleGoalPlannerMethods> methods;
+
     bool apply_shellstate_optimization;
 
 public:
     ShellPathPlanner(bool applyShellstateOptimization,
-                     std::shared_ptr<SingleGoalPlannerMethods> methods);
+					 std::shared_ptr<SingleGoalPlannerMethods> methods,
+					 MakeShellFn& shellBuilder);
 
     PlanResult plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
                     const std::vector<ompl::base::GoalPtr> &goals,
@@ -47,7 +53,7 @@ public:
             const ompl::base::State *start,
             const std::vector<ompl::base::GoalPtr> &goals,
             const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches,
-            const OmplDistanceHeuristics& distance_heuristics) const;
+            const OMPLSphereShellWrapper& distance_heuristics) const;
 
     std::vector<std::pair<size_t, ompl::geometric::PathGeometric>>
 	planApproaches(const ompl::base::SpaceInformationPtr &si,

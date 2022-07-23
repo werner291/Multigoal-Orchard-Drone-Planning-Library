@@ -3,30 +3,30 @@
 //
 
 #include "ShellPathPlanner.h"
-#include "traveling_salesman.h"
-#include "probe_retreat_move.h"
-#include "DronePathLengthObjective.h"
-#include "planning_scene_diff_message.h"
-#include "experiment_utils.h"
+#include "../traveling_salesman.h"
+#include "../probe_retreat_move.h"
+#include "../DronePathLengthObjective.h"
+#include "../planning_scene_diff_message.h"
+#include "../experiment_utils.h"
 
 #include <utility>
 
 
 
 ShellPathPlanner::ShellPathPlanner(bool applyShellstateOptimization,
-                                   std::shared_ptr<SingleGoalPlannerMethods> methods) :
-        apply_shellstate_optimization(applyShellstateOptimization),
-        methods(std::move(methods)) {}
+								   std::shared_ptr<SingleGoalPlannerMethods> methods,
+								   MakeShellFn& shellBuilder) :
+		apply_shellstate_optimization(applyShellstateOptimization),
+		methods(std::move(methods)), shell_builder(shellBuilder) {}
 
-NewMultiGoalPlanner::PlanResult ShellPathPlanner::plan(
-		const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
+MultiGoalPlanner::PlanResult ShellPathPlanner::plan(
+		const ompl::base::SpaceInformationPtr &si,
+		const ompl::base::State *start,
 		const std::vector<ompl::base::GoalPtr> &goals,
 		const AppleTreePlanningScene &planning_scene,
 		ompl::base::PlannerTerminationCondition& ptc) {
 
-    auto enclosing = compute_enclosing_sphere(planning_scene.scene_msg, 0.1);
-
-    auto shell = std::make_shared<SphereShell>(enclosing.center, enclosing.radius);
+	auto shell = shell_builder(planning_scene);
 
     OMPLSphereShellWrapper ompl_shell(shell, si);
 
@@ -38,9 +38,7 @@ NewMultiGoalPlanner::PlanResult ShellPathPlanner::plan(
         return result;
     }
 
-    auto ordering = computeApproachOrdering(start, goals, approaches,
-                                            GreatCircleOmplDistanceHeuristics(GreatCircleMetric(enclosing.center),
-                                                                              std::dynamic_pointer_cast<DroneStateSpace>(si->getStateSpace())));
+    auto ordering = computeApproachOrdering(start, goals, approaches, ompl_shell);
 
     auto first_approach = planFirstApproach(start, approaches[ordering[0]].second);
 
@@ -51,14 +49,14 @@ NewMultiGoalPlanner::PlanResult ShellPathPlanner::plan(
     return assembleFullPath(si, goals, ompl_shell, approaches, ordering, result, *first_approach);
 }
 
-NewMultiGoalPlanner::PlanResult ShellPathPlanner::assembleFullPath(
-        const ompl::base::SpaceInformationPtr &si,
-       const std::vector<ompl::base::GoalPtr> &goals,
-       OMPLSphereShellWrapper &ompl_shell,
-       const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches,
-       const std::vector<size_t> &ordering,
-       NewMultiGoalPlanner::PlanResult &result,
-       ompl::geometric::PathGeometric &initial_approach) const {
+MultiGoalPlanner::PlanResult ShellPathPlanner::assembleFullPath(
+		const ompl::base::SpaceInformationPtr &si,
+		const std::vector<ompl::base::GoalPtr> &goals,
+		OMPLSphereShellWrapper &ompl_shell,
+		const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches,
+		const std::vector<size_t> &ordering,
+		MultiGoalPlanner::PlanResult &result,
+		ompl::geometric::PathGeometric &initial_approach) const {
 
     result.segments.push_back({approaches[ordering[0]].first, initial_approach});
 
@@ -91,10 +89,10 @@ NewMultiGoalPlanner::PlanResult ShellPathPlanner::assembleFullPath(
 
 ompl::geometric::PathGeometric
 ShellPathPlanner::retreat_move_probe(const std::vector<ompl::base::GoalPtr> &goals, OMPLSphereShellWrapper &ompl_shell,
-                                     NewMultiGoalPlanner::PlanResult &result,
-                                     ompl::geometric::PathGeometric &goal_to_goal,
-                                     const std::pair<size_t, ompl::geometric::PathGeometric> &approach_a,
-                                     const std::pair<size_t, ompl::geometric::PathGeometric> &approach_b) const {
+									 MultiGoalPlanner::PlanResult &result,
+									 ompl::geometric::PathGeometric &goal_to_goal,
+									 const std::pair<size_t, ompl::geometric::PathGeometric> &approach_a,
+									 const std::pair<size_t, ompl::geometric::PathGeometric> &approach_b) const {
 
     goal_to_goal.append(approach_a.second);
     goal_to_goal.reverse();
@@ -129,14 +127,14 @@ std::vector<size_t> ShellPathPlanner::computeApproachOrdering(
         const ompl::base::State *start,
         const std::vector<ompl::base::GoalPtr> &goals,
         const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches,
-        const OmplDistanceHeuristics& distance_heuristics) const {
+        const OMPLSphereShellWrapper& shell) const {
 
     return tsp_open_end(
             [&](auto i) {
-                return distance_heuristics.state_to_goal(start, goals[approaches[i].first].get());
+                return shell.predict_path_length(start, goals[approaches[i].first].get());
             },
             [&](auto i, auto j) {
-                return distance_heuristics.goal_to_goal(
+                return shell.predict_path_length(
                         goals[approaches[i].first].get(),
                         goals[approaches[j].first].get()
                 );
