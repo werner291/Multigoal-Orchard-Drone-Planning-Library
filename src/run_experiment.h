@@ -6,11 +6,11 @@
 #define NEW_PLANNERS_RUN_EXPERIMENT_H
 
 #include <functional>
-#include "NewMultiGoalPlanner.h"
+#include "planners/MultiGoalPlanner.h"
 #include "planning_scene_diff_message.h"
 #include "ompl_custom.h"
 
-typedef std::function<std::shared_ptr<NewMultiGoalPlanner>(
+typedef std::function<std::shared_ptr<MultiGoalPlanner>(
         const AppleTreePlanningScene& scene_info,
         const ompl::base::SpaceInformationPtr&)>
         NewMultiGoalPlannerAllocatorFn;

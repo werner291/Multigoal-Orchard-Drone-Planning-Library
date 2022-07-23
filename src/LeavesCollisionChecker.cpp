@@ -1,6 +1,7 @@
 #include <vector>
 
 #include <geometric_shapes/shapes.h>
+#include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 #include "LeavesCollisionChecker.h"
 
 LeavesCollisionChecker::LeavesCollisionChecker(const std::vector <Eigen::Vector3d> &leaf_vertices) {

@@ -11,78 +11,151 @@
 #include "moveit_conversions.h"
 #include "ompl_custom.h"
 
+/**
+ * Describes, in MoveIt terms, a "shell" shape that fits around the obstacles in the scene,
+ * and can be used to quickly plan collision-free paths around then.
+ */
 class CollisionFreeShell {
 
 public:
-    [[nodiscard]] virtual moveit::core::RobotState state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a) const = 0;
+	/**
+	 * Construct a RobotState located on the collision-free shell,
+	 * in a point corresponding to the given shell point.
+	 *
+	 * @param drone 	A robot model.
+	 * @param a 		The shell point (assumed to be on the shell)
+	 * @return 			A RobotState located on the collision-free shell.
+	 */
+    [[nodiscard]] virtual moveit::core::RobotState state_on_shell(
+			const moveit::core::RobotModelConstPtr &drone,
+			const Eigen::Vector3d &a) const = 0;
 
-    [[nodiscard]] virtual std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a, const Apple &b) const = 0;
+	/**
+	 * Construct a path from a to b, on the collision-free shell.
+	 *
+	 * @param drone 	A robot model (assumed to be on the shell)
+	 * @param a 		The start point (assumed to be on the shell).
+	 * @param b 		The end point (assumed to be on the shell).
+	 * @return 			The path.
+	 */
+    [[nodiscard]] virtual std::vector<moveit::core::RobotState> path_on_shell(
+			const moveit::core::RobotModelConstPtr &drone,
+			const Eigen::Vector3d &a,
+			const Eigen::Vector3d &b) const = 0;
 
-    [[nodiscard]] virtual Eigen::Vector3d applePositionOnShell(const Apple &a) const = 0;
+	/**
+	 * Project a point from anywhere in R^3 onto the collision-free shell.
+	 *
+	 * @param a 		The point to project.
+	 * @return 			The point on the shell.
+	 */
+    [[nodiscard]] virtual Eigen::Vector3d project(
+			const Eigen::Vector3d &a) const = 0;
+
+	/**
+	 * Predict the length of a path from a to b, on the collision-free shell, without constructing the path.
+	 *
+	 * This prediction may be an approximation.
+	 *
+	 * @param a 		The start point (assumed to be on the shell).
+	 * @param b 		The end point (assumed to be on the shell).
+	 * @return 			The predicted length.
+	 */
+	[[nodiscard]] virtual double predict_path_length(
+			const Eigen::Vector3d &a,
+			const Eigen::Vector3d &b) const = 0;
 
 };
 
+/**
+ * An implementation of a CollisionFreeShell, using a sphere as the shell shape.
+ */
 class SphereShell : public CollisionFreeShell {
 
+	/// The center of the sphere.
     Eigen::Vector3d center;
-public:
-    [[nodiscard]] const Eigen::Vector3d &getCenter() const;
-
-    [[nodiscard]] double getRadius() const;
-
-private:
+	/// The radius of the sphere.
     double radius;
 
 public:
+	/**
+	 * Construct a SphereShell.
+	 * @param center 	The center of the sphere.
+	 * @param radius 	The radius of the sphere.
+	 */
     SphereShell(Eigen::Vector3d center, double radius);
 
-    [[nodiscard]] moveit::core::RobotState state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a) const override;
+	/**
+	 * Construct a RobotState located on the collision-free shell,
+	 * in a point corresponding to the given shell point.
+	 *
+	 * In this case, that is: a state where the end-effector of the robot is at the given point,
+	 * the robot is facing the center of the sphere, with the arm extended and horizontal.
+	 *
+	 * @param drone 	A robot model.
+	 * @param a 		The shell point (assumed to be on the shell)
+	 * @return 			A RobotState located on the collision-free shell.
+	 */
+    [[nodiscard]] moveit::core::RobotState state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Eigen::Vector3d &a) const override;
 
-    [[nodiscard]] std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a, const Apple &b) const override;
+	/**
+	 * Construct a path from a to b from shell states along the geodesic between a and b.
+	 *
+	 * @param drone 	A robot model (assumed to be on the shell)
+	 * @param a 		The start point (assumed to be on the shell).
+	 * @param b 		The end point (assumed to be on the shell).
+	 * @return 			The path.
+	 */
+    [[nodiscard]] std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone, const Eigen::Vector3d &a, const Eigen::Vector3d &b) const override;
 
-    [[nodiscard]] Eigen::Vector3d applePositionOnShell(const Apple &a) const override;
+	/**
+	 * Perform a central projection of a point from anywhere in R^3 onto the sphere surface.
+	 *
+	 * @param a 		The point to project.
+	 * @return 			The point on the sphere,
+	 */
+    [[nodiscard]] Eigen::Vector3d project(const Eigen::Vector3d &a) const override;
+
+	/**
+	 * Predict the length of a path from a to b; this is the length of the geodesic between a and b.
+	 *
+	 * @param a 		The start point (assumed to be on the shell).
+	 * @param b 		The end point (assumed to be on the shell).
+	 * @return 			The predicted length.
+	 */
+	[[nodiscard]] double predict_path_length(const Eigen::Vector3d &a, const Eigen::Vector3d &b) const override;
 };
 
-class CylinderShell : public CollisionFreeShell {
-
-    Eigen::Vector2d center;
-public:
-    CylinderShell(const Eigen::Vector2d &center, double radius);
-
-private:
-    double radius;
-public:
-    [[nodiscard]] const Eigen::Vector2d &getCenter() const;
-
-    [[nodiscard]] double getRadius() const;
-
-private:
-
-public:
-
-    [[nodiscard]] moveit::core::RobotState state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a) const override;
-
-    [[nodiscard]] std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone, const Apple &a, const Apple &b) const override;
-
-    [[nodiscard]] Eigen::Vector3d applePositionOnShell(const Apple &a) const override;
-};
-
+/**
+ * An adapter that translates between OMPL concepts and CollisionFreeShell (which uses MoveIt types).
+ *
+ * Assumes that the OMPL state space is a ModelBasedStateSpace.
+ */
 class OMPLSphereShellWrapper {
+
+	/// Reference to the underlying CollisionFreeShell.
     std::shared_ptr<CollisionFreeShell> shell;
+
+	/// The OMPL SpaceInformation.
     ompl::base::SpaceInformationPtr si;
+
 public:
     [[nodiscard]] std::shared_ptr<CollisionFreeShell> getShell() const;
 
 public:
     OMPLSphereShellWrapper(std::shared_ptr<CollisionFreeShell> shell, ompl::base::SpaceInformationPtr si);
 
-    void state_on_shell(const Apple& apple, ompl::base::State* st) const;
-
-    ompl::geometric::PathGeometric path_on_shell(const Apple& a, const Apple& b);
+	void state_on_shell(const Eigen::Vector3d& a, ompl::base::State* st) const;
 
     void state_on_shell(const ompl::base::Goal* apple, ompl::base::State* st) const;
 
-    ompl::geometric::PathGeometric path_on_shell(const ompl::base::Goal* a, const ompl::base::Goal* b);
+	ompl::geometric::PathGeometric path_on_shell(const Eigen::Vector3d& a, const Eigen::Vector3d& b);
+
+	ompl::geometric::PathGeometric path_on_shell(const ompl::base::Goal* a, const ompl::base::Goal* b);
+
+	[[nodiscard]] double predict_path_length(const ompl::base::Goal* a, const ompl::base::Goal* b) const;
+
+	[[nodiscard]] double predict_path_length(const ompl::base::State* a, const ompl::base::Goal* b) const;
 
 
 };

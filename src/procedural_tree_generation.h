@@ -47,8 +47,6 @@ struct TreeSceneData {
     std::vector<Eigen::Vector3d> leaf_vertices;
 };
 
-TreeSceneData generateTreeScene(int numberOfApples);
-
 /**
  * Generate the branching structure of the tree, including trunk radius, lengths, branching points, etc...
  *

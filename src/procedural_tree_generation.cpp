@@ -200,13 +200,3 @@ make_tree_branches(const Eigen::Isometry3d &root_at, unsigned int branching_dept
     return nodes;
 }
 
-TreeSceneData generateTreeScene(int numberOfApples) {
-
-    std::vector<DetachedTreeNode> treeFlattened = make_tree_branches(Eigen::Isometry3d::Identity(), 10, 0.5);
-    std::vector<Eigen::Vector3d> leafVertices = generateLeafVertices(treeFlattened);
-    const double appleRadius = 0.05;
-    std::vector<Apple> apples = spawn_apples(treeFlattened, numberOfApples, appleRadius);
-
-    return {treeFlattened, apples, leafVertices};
-}
-

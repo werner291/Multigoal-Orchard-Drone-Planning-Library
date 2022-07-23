@@ -6,7 +6,6 @@
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <fcl/fcl.h>
 #include "ompl_custom.h"
-#include "InverseClearanceIntegralObjective.h"
 #include <moveit/robot_state/conversions.h>
 #include "msgs_utilities.h"
 
