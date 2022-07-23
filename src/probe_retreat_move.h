@@ -10,15 +10,9 @@ ompl::geometric::PathGeometric optimize(const ompl::geometric::PathGeometric& pa
                                         const ompl::base::OptimizationObjectivePtr &objective,
                                         const std::shared_ptr<ompl::base::SpaceInformation> &si);
 
-ompl::geometric::PathGeometric optimizeExit(const Apple &apple,
-                                            ompl::geometric::PathGeometric path,
-                                            const ompl::base::OptimizationObjectivePtr &objective,
-                                            const OMPLSphereShellWrapper &shell,
-                                            const std::shared_ptr<ompl::base::SpaceInformation> &si);
-
 [[nodiscard]] ompl::geometric::PathGeometric optimizeExit(const ompl::base::Goal* goal,
                                                           const ompl::geometric::PathGeometric& path,
                                                           const ompl::base::OptimizationObjectivePtr &objective,
-                                                          const OMPLSphereShellWrapper &shell,
+                                                          const MoveItAppleSphereShell &shell,
                                                           const std::shared_ptr<ompl::base::SpaceInformation> &si);
 

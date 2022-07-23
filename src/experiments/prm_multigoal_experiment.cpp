@@ -1,9 +1,9 @@
 
 
-#include "../src/planning_scene_diff_message.h"
-#include "../src/experiment_utils.h"
+#include "../planning_scene_diff_message.h"
+#include "../experiment_utils.h"
 #include "../src/MultigoalPrmStar.h"
-#include "../src/run_experiment.h"
+#include "../run_experiment.h"
 
 #include <range/v3/all.hpp>
 

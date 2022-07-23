@@ -2,7 +2,7 @@
 #define NEW_PLANNERS_ENDEFFECTORONSHELLGOAL_H
 
 #include <ompl/base/goals/GoalSampleableRegion.h>
-#include "SphereShell.h"
+#include "shell/MoveItAppleSphereShell.h"
 
 /**
  * A GoalSampleableRegion that generates states states where the end-effector is on a given sphere shell,
@@ -14,7 +14,7 @@
 class EndEffectorOnShellGoal : public ompl::base::GoalSampleableRegion {
 
 	/// The sphere shell to sample on.
-	OMPLSphereShellWrapper sphereShell;
+	MoveItAppleSphereShell sphereShell;
 
 	// The focus point on the sphere shell to sample near.
 	Eigen::Vector3d focus;
@@ -27,7 +27,7 @@ public:
 	 * @param focus 		The focus point on the sphere shell to sample near.
 	 */
 	EndEffectorOnShellGoal(const ompl::base::SpaceInformationPtr &si,
-						   OMPLSphereShellWrapper sphereShell,
+						   MoveItAppleSphereShell sphereShell,
 						   Eigen::Vector3d focus);
 
 	/**
@@ -50,6 +50,10 @@ public:
 	 * @return 		The distance.
 	 */
 	double distanceGoal(const ompl::base::State *st) const override;
+
+	const Eigen::Vector3d &getFocus() const;
+
+	void setFocus(const Eigen::Vector3d &focus);
 
 };
 

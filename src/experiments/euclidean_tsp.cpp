@@ -4,9 +4,9 @@
 #include <Eigen/Geometry>
 #include <json/json.h>
 #include <fstream>
-#include "../src/procedural_tree_generation.h"
+#include "../procedural_tree_generation.h"
 #include "../src/preorder_strategy/preorder_strategy.h"
-#include "../src/experiment_utils.h"
+#include "../experiment_utils.h"
 
 int main(int argc, char **argv) {
 

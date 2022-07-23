@@ -25,13 +25,13 @@ ompl::geometric::PathGeometric optimize(const ompl::geometric::PathGeometric& pa
     }
 }
 
-ompl::geometric::PathGeometric optimizeExit(const Apple &apple,
+ompl::geometric::PathGeometric optimizeExit(const ompl::base::Goal* goal,
                                             ompl::geometric::PathGeometric path,
                                             const ompl::base::OptimizationObjectivePtr &objective,
-                                            const OMPLSphereShellWrapper &shell,
+                                            const MoveItAppleSphereShell &shell,
                                             const std::shared_ptr<ompl::base::SpaceInformation> &si) {
 
-    auto shellGoal = std::make_shared<EndEffectorOnShellGoal>(si, shell, apple.center);
+    auto shellGoal = std::make_shared<EndEffectorOnShellGoal>(si, shell, shell.shell_point(goal));
 
     ompl::geometric::PathSimplifier simplifier(si, shellGoal);
 
@@ -52,18 +52,3 @@ ompl::geometric::PathGeometric optimizeExit(const Apple &apple,
     return path;
 
 }
-
-[[nodiscard]] ompl::geometric::PathGeometric optimizeExit(const ompl::base::Goal* goal,
-                                                          const ompl::geometric::PathGeometric& path,
-                                                          const ompl::base::OptimizationObjectivePtr &objective,
-                                                          const OMPLSphereShellWrapper &shell,
-                                                          const std::shared_ptr<ompl::base::SpaceInformation> &si) {
-    return optimizeExit(
-            Apple { goal->as<DroneEndEffectorNearTarget>()->getTarget(), {0.0,0.0,0.0} },
-            path,
-            objective,
-            shell,
-            si
-    );
-}
-

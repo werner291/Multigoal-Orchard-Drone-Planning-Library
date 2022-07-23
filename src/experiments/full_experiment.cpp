@@ -1,6 +1,6 @@
 #include <range/v3/view/concat.hpp>
 #include <range/v3/range/conversion.hpp>
-#include "../src/run_experiment.h"
+#include "../run_experiment.h"
 
 int main(int argc, char **argv) {
 

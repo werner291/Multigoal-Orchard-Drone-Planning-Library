@@ -62,7 +62,7 @@ double BulletContinuousMotionValidator::estimateMaximumRotation(const moveit::co
 				if (dynamic_cast<const moveit::core::RevoluteJointModel *>(jm)->isContinuous()) {
 
 					// Wrap it into the [0, 2pi) range.
-					double d = std::modf(std::abs(variables1[0] - variables2[0]), 2.0 * M_PI);
+					double d = std::fmod(std::abs(variables1[0] - variables2[0]), 2.0 * M_PI);
 
 					// If > pi, it's in the other half of the circle.
 					if (d > M_PI) {
@@ -74,7 +74,7 @@ double BulletContinuousMotionValidator::estimateMaximumRotation(const moveit::co
 				} else {
 
 					// simply add it
-					max_angle += d;
+					max_angle += variables1[0] - variables2[0];
 				}
 			}
 			break;

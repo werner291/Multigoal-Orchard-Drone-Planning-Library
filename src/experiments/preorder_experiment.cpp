@@ -4,10 +4,10 @@
 #include <fstream>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 
-#include "../src/planning_scene_diff_message.h"
-#include "../src/traveling_salesman.h"
-#include "../src/experiment_utils.h"
-#include "../src/DronePathLengthObjective.h"
+#include "../planning_scene_diff_message.h"
+#include "../traveling_salesman.h"
+#include "../experiment_utils.h"
+#include "../DronePathLengthObjective.h"
 
 struct PlanningResult {
     ompl::geometric::PathGeometric path;

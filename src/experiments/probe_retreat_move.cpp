@@ -1,8 +1,8 @@
-#include "../src/experiment_utils.h"
-#include "../src/probe_retreat_move.h"
-#include "../src/NewMultiGoalPlanner.h"
-#include "../src/DistanceHeuristics.h"
-#include "../src/run_experiment.h"
+#include "../experiment_utils.h"
+#include "../probe_retreat_move.h"
+#include "../src/MultiGoalPlanner.h"
+#include "../DistanceHeuristics.h"
+#include "../run_experiment.h"
 
 #include <ompl/geometric/planners/prm/PRM.h>
 

@@ -1,10 +1,10 @@
 #include "run_experiment.h"
 #include "experiment_utils.h"
 #include "probe_retreat_move.h"
-#include "NewMultiGoalPlanner.h"
+#include "planners/MultiGoalPlanner.h"
 #include "DistanceHeuristics.h"
-#include "ShellPathPlanner.h"
-#include "MultigoalPrmStar.h"
+#include "planners/ShellPathPlanner.h"
+#include "planners/MultigoalPrmStar.h"
 #include <range/v3/all.hpp>
 #include <fstream>
 #include <filesystem>
@@ -48,7 +48,7 @@ loadSpaceInformation(const std::shared_ptr<DroneStateSpace> &stateSpace,
 }
 
 /// Convert a PlanResult to JSON
-Json::Value toJson(const NewMultiGoalPlanner::PlanResult &result) {
+Json::Value toJson(const MultiGoalPlanner::PlanResult &result) {
 	Json::Value run_stats;
 	run_stats["final_path_length"] = result.length();
 	run_stats["goals_visited"] = (int) result.segments.size();
@@ -241,7 +241,7 @@ Json::Value run_task(const moveit::core::RobotModelConstPtr &drone, const Run &r
 
 	auto timeout = ompl::base::timedPlannerTerminationCondition(std::chrono::minutes(5));
 
-	NewMultiGoalPlanner::PlanResult result;
+	MultiGoalPlanner::PlanResult result;
 
 	// Run the planner, timing the runtime.
 	auto start_time = ompl::time::now();
@@ -395,6 +395,14 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
 /// Allocate a shared instance of og::PRM (because we need this as a function pointer).
 ompl::base::PlannerPtr allocPRM(const ompl::base::SpaceInformationPtr &si) {
 	return make_shared<ompl::geometric::PRM>(si);
+}
+
+std::shared_ptr<MoveItAppleSphereShell> buildSphereShell(const AppleTreePlanningScene& scene) {
+	auto enclosing = compute_enclosing_sphere(scene.scene_msg, 0.1);
+
+	return std::make_shared<MoveItAppleSphereShell>(
+			enclosing.center, enclosing.radius
+			);
 }
 
 /// Generate a list of ShellPathPlanner allocators to be run during an experiment.

@@ -4,7 +4,7 @@
 #include <utility>
 
 EndEffectorOnShellGoal::EndEffectorOnShellGoal(const ompl::base::SpaceInformationPtr &si,
-											   OMPLSphereShellWrapper sphereShell,
+											   MoveItAppleSphereShell sphereShell,
 											   Eigen::Vector3d focus)
 		: GoalSampleableRegion(si), sphereShell(std::move(sphereShell)), focus(std::move(focus)) {
 }
@@ -19,7 +19,9 @@ void EndEffectorOnShellGoal::sampleGoal(ompl::base::State *st) const {
 								focus.z() + rng.gaussian(0.0, 0.5));
 
 	// Then, generate a state on the shell, relying on the fact that the point will be projected onto the sphere.
-	sphereShell.state_on_shell({moved_focus, {0.0, 0.0, 0.0}}, st);
+	const auto st_returned = sphereShell.state_on_shell(sphereShell.project(moved_focus));
+
+	si_->copyState(st, st_returned.get());
 }
 
 unsigned int EndEffectorOnShellGoal::maxSampleCount() const {
@@ -35,8 +37,16 @@ double EndEffectorOnShellGoal::distanceGoal(const ompl::base::State *st) const {
 
 	// Compute end-effector position with forward kinematics
 	Eigen::Vector3d ee_pos = rs.getGlobalLinkTransform("end_effector").translation();
-	Eigen::Vector3d shell_projection = sphereShell.getShell()->applePositionOnShell({ee_pos, {0.0, 0.0, 0.0}});
+	Eigen::Vector3d shell_projection = sphereShell.project(ee_pos);
 
 	// Return the Euclidean distance between the end-effector and the shell projection.
 	return (shell_projection - ee_pos).norm();
+}
+
+const Eigen::Vector3d &EndEffectorOnShellGoal::getFocus() const {
+	return focus;
+}
+
+void EndEffectorOnShellGoal::setFocus(const Eigen::Vector3d &focus) {
+	EndEffectorOnShellGoal::focus = focus;
 }

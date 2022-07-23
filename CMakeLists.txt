@@ -58,70 +58,67 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(${PROJECT_NAME}_shared
         src/BulletContinuousMotionValidator.cpp
         src/BulletContinuousMotionValidator.h
+        src/DirectApproachVariantSampler.cpp
+        src/DirectApproachVariantSampler.h
+        src/DistanceHeuristics.cpp
+        src/DistanceHeuristics.h
+        src/DronePathLengthObjective.cpp
+        src/DronePathLengthObjective.h
         src/DroneStateConstraintSampler.cpp
         src/DroneStateSampler.cpp
         src/DroneStateSampler.h
+        src/EndEffectorOnShellGoal.cpp
+        src/EndEffectorOnShellGoal.h
+        src/GreatCircleMetric.cpp
+        src/GreatCircleMetric.h
+        src/InformedBetweenTwoDroneStatesSampler.h
+        src/InformedManipulatorDroneSampler.cpp
+        src/InformedRobotStateSampler.cpp
+        src/InformedRobotStateSampler.h
+        src/LeavesCollisionChecker.cpp
+        src/LeavesCollisionChecker.h
+        src/SamplerWrapper.cpp
+        src/SamplerWrapper.h
+        src/SingleGoalPlannerMethods.cpp
+        src/SingleGoalPlannerMethods.h
+        src/TimedCostConvergenceTerminationCondition.cpp
+        src/TimedCostConvergenceTerminationCondition.h
+        src/UnionGoalSampleableRegion.cpp
+        src/UnionGoalSampleableRegion.h
         src/experiment_utils.cpp
         src/experiment_utils.h
         src/general_utilities.cpp
         src/general_utilities.h
-        src/InformedRobotStateSampler.cpp
-        src/InformedRobotStateSampler.h
-        src/InformedManipulatorDroneSampler.cpp
-        src/InformedBetweenTwoDroneStatesSampler.h
-        src/InverseClearanceIntegralObjective.cpp
-        src/InverseClearanceIntegralObjective.h
         src/json_utils.cpp
         src/json_utils.h
-        src/LeavesCollisionChecker.cpp
-        src/LeavesCollisionChecker.h
-        src/DronePathLengthObjective.cpp
-        src/DronePathLengthObjective.h
+        src/moveit_conversions.cpp
+        src/moveit_conversions.h
         src/msgs_utilities.cpp
         src/msgs_utilities.h
         src/ompl_custom.cpp
         src/ompl_custom.h
+        src/planners/MultiGoalPlanner.cpp
+        src/planners/MultiGoalPlanner.h
+        src/planners/MultigoalPrmStar.cpp
+        src/planners/MultigoalPrmStar.h
+        src/planners/ShellPathPlanner.cpp
+        src/planners/ShellPathPlanner.h
         src/planning_scene_diff_message.cpp
         src/planning_scene_diff_message.h
-        src/procedural_tree_generation.cpp
-        src/SamplerWrapper.cpp
-        src/SamplerWrapper.h
-        src/UnionGoalSampleableRegion.cpp
-        src/UnionGoalSampleableRegion.h
-        src/GreatCircleMetric.h
-        src/GreatCircleMetric.cpp
-        src/MultigoalPrmStar.cpp
-        src/MultigoalPrmStar.h
-        src/traveling_salesman.h
-        src/traveling_salesman.cpp
         src/probe_retreat_move.cpp
         src/probe_retreat_move.h
-        src/moveit_conversions.cpp
-        src/moveit_conversions.h
-        src/SphereShell.cpp
-        src/SphereShell.h
-        src/EndEffectorOnShellGoal.cpp
-        src/EndEffectorOnShellGoal.h
-        src/MultigoalPrmStar.cpp
-        src/MultigoalPrmStar.h
+        src/procedural_tree_generation.cpp
         src/robot_path.cpp
         src/robot_path.h
-        src/NewMultiGoalPlanner.cpp
-        src/NewMultiGoalPlanner.h
-#        src/NewKnnPlanner.cpp
-#        src/NewKnnPlanner.h
-        src/DistanceHeuristics.cpp
-        src/DistanceHeuristics.h
-        src/SingleGoalPlannerMethods.cpp
-        src/SingleGoalPlannerMethods.h
-        src/ShellPathPlanner.cpp
-        src/ShellPathPlanner.h
         src/run_experiment.cpp
         src/run_experiment.h
-        src/DirectApproachVariantSampler.cpp
-        src/DirectApproachVariantSampler.h
-        src/TimedCostConvergenceTerminationCondition.cpp
-        src/TimedCostConvergenceTerminationCondition.h)
+        src/shell/MoveItAppleSphereShell.cpp
+        src/shell/MoveItAppleSphereShell.h
+        src/traveling_salesman.cpp
+        src/traveling_salesman.h
+#        src/NewKnnPlanner.cpp
+#        src/NewKnnPlanner.h
+        )
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -150,15 +147,15 @@ ament_target_dependencies(${PROJECT_NAME}_shared ${AMENT_DEPS})
 #add_executable(${PROJECT_NAME}_preorder_experiment experiments/preorder_experiment.cpp)
 #target_link_libraries(${PROJECT_NAME}_preorder_experiment ${PROJECT_NAME}_shared)
 
-add_executable(${PROJECT_NAME}_probe_retreat_move experiments/probe_retreat_move.cpp)
+add_executable(${PROJECT_NAME}_probe_retreat_move src/experiments/probe_retreat_move.cpp)
 target_link_libraries(${PROJECT_NAME}_probe_retreat_move ${PROJECT_NAME}_shared)
 ament_target_dependencies(${PROJECT_NAME}_probe_retreat_move ${AMENT_DEPS})
 
-add_executable(${PROJECT_NAME}_prm_multigoal_experiment experiments/prm_multigoal_experiment.cpp)
+add_executable(${PROJECT_NAME}_prm_multigoal_experiment src/experiments/prm_multigoal_experiment.cpp)
 target_link_libraries(${PROJECT_NAME}_prm_multigoal_experiment ${PROJECT_NAME}_shared)
 ament_target_dependencies(${PROJECT_NAME}_prm_multigoal_experiment ${AMENT_DEPS})
 
-add_executable(${PROJECT_NAME}_full_experiment experiments/full_experiment.cpp)
+add_executable(${PROJECT_NAME}_full_experiment src/experiments/full_experiment.cpp)
 target_link_libraries(${PROJECT_NAME}_full_experiment ${PROJECT_NAME}_shared)
 ament_target_dependencies(${PROJECT_NAME}_full_experiment ${AMENT_DEPS})
 

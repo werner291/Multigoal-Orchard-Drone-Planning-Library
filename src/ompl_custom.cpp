@@ -5,7 +5,6 @@
 #include <ompl/base/DiscreteMotionValidator.h>
 #include <fcl/fcl.h>
 #include "DroneStateConstraintSampler.h"
-#include "InverseClearanceIntegralObjective.h"
 #include "ompl_custom.h"
 #include "UnionGoalSampleableRegion.h"
 

@@ -2,11 +2,11 @@
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include <fstream>
 #include <ompl/geometric/planners/prm/PRMstar.h>
-#include "../src/experiment_utils.h"
+#include "../experiment_utils.h"
 #include "../src/thread_pool.hpp"
-#include "../src/DronePathLengthObjective.h"
-#include "../src/GreatCircleMetric.h"
-#include "../src/probe_retreat_move.h"
+#include "../DronePathLengthObjective.h"
+#include "../GreatCircleMetric.h"
+#include "../probe_retreat_move.h"
 
 int main(int argc, char **argv) {
 

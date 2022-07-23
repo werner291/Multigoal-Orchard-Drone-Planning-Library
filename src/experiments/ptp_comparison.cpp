@@ -7,8 +7,8 @@
 #include <boost/range/combine.hpp>
 #include "../src/thread_pool.hpp"
 
-#include "../src/experiment_utils.h"
-#include "../src/DronePathLengthObjective.h"
+#include "../experiment_utils.h"
+#include "../DronePathLengthObjective.h"
 
 
 int main(int argc, char **argv) {
