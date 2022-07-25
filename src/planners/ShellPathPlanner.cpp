@@ -15,7 +15,7 @@
 
 ShellPathPlanner::ShellPathPlanner(bool applyShellstateOptimization,
 								   std::shared_ptr<SingleGoalPlannerMethods> methods,
-								   MakeShellFn& shellBuilder) :
+								   const std::shared_ptr<ShellBuilder>& shellBuilder) :
 		apply_shellstate_optimization(applyShellstateOptimization),
 		methods(std::move(methods)), shell_builder(shellBuilder) {}
 
@@ -26,11 +26,9 @@ MultiGoalPlanner::PlanResult ShellPathPlanner::plan(
 		const AppleTreePlanningScene &planning_scene,
 		ompl::base::PlannerTerminationCondition& ptc) {
 
-	auto shell = shell_builder(planning_scene);
+	auto shell = shell_builder->buildShell(planning_scene, si);
 
-    OMPLSphereShellWrapper ompl_shell(shell, si);
-
-    auto approaches = planApproaches(si, goals, ompl_shell, ptc);
+    auto approaches = planApproaches(si, goals, *shell, ptc);
 
     PlanResult result {{}};
 
@@ -38,7 +36,7 @@ MultiGoalPlanner::PlanResult ShellPathPlanner::plan(
         return result;
     }
 
-    auto ordering = computeApproachOrdering(start, goals, approaches, ompl_shell);
+    auto ordering = computeApproachOrdering(start, goals, approaches, *shell);
 
     auto first_approach = planFirstApproach(start, approaches[ordering[0]].second);
 
@@ -46,7 +44,7 @@ MultiGoalPlanner::PlanResult ShellPathPlanner::plan(
         return result;
     }
 
-    return assembleFullPath(si, goals, ompl_shell, approaches, ordering, result, *first_approach);
+    return assembleFullPath(si, goals, *shell, approaches, ordering, result, *first_approach);
 }
 
 MultiGoalPlanner::PlanResult ShellPathPlanner::assembleFullPath(
@@ -152,6 +150,7 @@ ShellPathPlanner::planApproaches(const ompl::base::SpaceInformationPtr &si,
     std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> approaches;
 
     for (const auto& [goal_i, goal] : goals | ranges::views::enumerate) {
+		std::cout << "Planning approach for goal " << goal_i << std::endl;
         if (auto approach = planApproachForGoal(si, ompl_shell, goal)) {
 			assert(approach->getStateCount() > 0);
             approaches.emplace_back(
@@ -193,6 +192,7 @@ std::optional<ompl::geometric::PathGeometric> ShellPathPlanner::planApproachForG
 Json::Value ShellPathPlanner::parameters() const {
     Json::Value result;
 
+	result["shell_builder_params"] = shell_builder->parameters();
     result["apply_shellstate_optimization"] = apply_shellstate_optimization;
     result["ptp"] = methods->parameters();
 
@@ -201,4 +201,28 @@ Json::Value ShellPathPlanner::parameters() const {
 
 std::string ShellPathPlanner::name() const {
     return "ShellPathPlanner";
+}
+
+std::shared_ptr<OMPLSphereShellWrapper> PaddedSphereShellAroundLeavesBuilder::buildShell(const AppleTreePlanningScene &scene_info,
+																						 const ompl::base::SpaceInformationPtr &si) {
+
+	auto enclosing = compute_enclosing_sphere(scene_info.scene_msg, 0.0);
+
+	enclosing.radius += padding * (enclosing.center.z() - enclosing.radius);
+
+	std::cout << "Enclosing sphere: " << enclosing.center << " " << enclosing.radius << std::endl;
+
+	auto shell = std::make_shared<SphereShell>(enclosing.center, enclosing.radius);
+
+	return std::make_shared<OMPLSphereShellWrapper>(shell, si);
+
+}
+
+Json::Value PaddedSphereShellAroundLeavesBuilder::parameters() const {
+	Json::Value result;
+	result["padding"] = padding;
+	return result;
+}
+
+PaddedSphereShellAroundLeavesBuilder::PaddedSphereShellAroundLeavesBuilder(double padding) : padding(padding) {
 }

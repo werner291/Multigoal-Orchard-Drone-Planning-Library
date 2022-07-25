@@ -355,10 +355,7 @@ compute_enclosing_sphere(const moveit_msgs::msg::PlanningScene &planning_scene_m
         }
     }
 
-    auto start_time = std::chrono::high_resolution_clock::now();
     Miniball mb(3, points);
-    auto end_time = std::chrono::high_resolution_clock::now();
-    std::cout << "Miniball computation took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << " ms" << std::endl;
 
     std::vector<FT> center(mb.center_begin(), mb.center_end());
     FT radius = sqrt(mb.squared_radius());

@@ -24,6 +24,9 @@ protected:
 	 * Method is protected, since the CollisionFreeShell should be interfaced
 	 * with in an as-abstract-as-possible manner.
 	 *
+	 * Ideally, I'd like to treat the Vector3d completely abstractly, but
+	 * that'll require a lot of wrapping for relatively little gain.
+	 *
 	 * @param a 		The point to project.
 	 * @return 			The point on the shell.
 	 */

@@ -74,7 +74,7 @@ double BulletContinuousMotionValidator::estimateMaximumRotation(const moveit::co
 				} else {
 
 					// simply add it
-					max_angle += variables1[0] - variables2[0];
+					max_angle += std::abs(variables1[0] - variables2[0]);
 				}
 			}
 			break;

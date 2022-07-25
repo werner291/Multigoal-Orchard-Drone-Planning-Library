@@ -317,6 +317,7 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
 							const std::string &results_path,
 							const int num_runs,
 							const std::vector<size_t> &napples,
+							const std::vector<std::string> &scene_names,
 							const unsigned int nworkers) {
 
 	// Load the robot model.
@@ -325,7 +326,7 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
 	const auto drone = std::const_pointer_cast<const moveit::core::RobotModel>(loadRobotModel());
 
 	// Load the apple tree model with some metadata.
-	vector<shared_ptr<AppleTreePlanningScene>> scenes = loadScenes({"appletree", "lemontree2", "orangetree4"});
+	vector<shared_ptr<AppleTreePlanningScene>> scenes = loadScenes(scene_names);
 
 	std::vector<std::thread> threads;
 	std::mutex mut;
@@ -403,17 +404,9 @@ std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators(
 		const std::vector<bool>& useImprovisedInformedSampler,
 		const std::vector<bool>& tryLuckyShots,
 		const std::vector<bool>& useCostConvergence,
-		const std::vector<double>& ptp_time_seconds
+		const std::vector<double>& ptp_time_seconds,
+		const std::vector<ShellBuilderAllocatorFn>& shell_builders
 		) {
-
-	// We'll be taking a cartesian product of these.
-	// Due to C++ ownership stupidity, it's best to keep plain old data here only.
-//	bool applyShellstateOptimization[] = {true, false};
-//	bool useImprovisedInformedSampler[] = {false, true};
-//	bool tryLuckyShots[] = {false, true};
-//	bool useCostConvergence[] = {false, true};
-//	double ptp_time_seconds[] = {0.4, 0.5, 1.0};
-
 
 	// We explicitly use a function pointer here so we don't get burnt by this containing a reference to some local variable.
 	ompl::base::PlannerPtr(*planner_allocators[])(const ompl::base::SpaceInformationPtr&) = { &allocPRM };
@@ -424,11 +417,12 @@ std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators(
 											planner_allocators,
 											useImprovisedInformedSampler,
 											tryLuckyShots,
-											useCostConvergence) |
+											useCostConvergence,
+											shell_builders) |
 		   ranges::views::transform([](const auto tuple) -> NewMultiGoalPlannerAllocatorFn {
 
 			   // Unpack the tuple.
-			   auto [shellOptimize, ptp_budget, allocator, improvised_sampler, tryLucky, costConvergence] = tuple;
+			   auto [shellOptimize, ptp_budget, allocator, improvised_sampler, tryLucky, costConvergence, shell_builder] = tuple;
 
 			   // Explicitly capture each by value to prevent any references from going out of scope.
 			   return [shellOptimize = shellOptimize,
@@ -436,7 +430,8 @@ std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators(
 					   allocator = allocator,
 					   improvised_sampler = improvised_sampler,
 					   tryLucky = tryLucky,
-					   costConvergence = costConvergence](
+					   costConvergence = costConvergence,
+					   shell_builder=shell_builder](
 					   const AppleTreePlanningScene &scene_info,
 					   const ompl::base::SpaceInformationPtr &si) {
 
@@ -448,7 +443,7 @@ std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators(
 																		 tryLucky,
 																		 costConvergence);
 
-				   return std::make_shared<ShellPathPlanner>(shellOptimize, ptp, buildSphereShell);
+				   return std::make_shared<ShellPathPlanner>(shellOptimize, ptp, shell_builder());
 
 			   };
 		   }) | ranges::to_vector; //  We return a vector to, again, prevent returning references to local variables.

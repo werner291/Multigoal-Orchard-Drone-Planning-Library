@@ -142,6 +142,13 @@ Eigen::Vector3d OMPLSphereShellWrapper::gaussian_sample_near_point(const Eigen::
 Eigen::Vector3d OMPLSphereShellWrapper::project(const ompl::base::State *st) const {
 	moveit::core::RobotState rst(si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->getRobotModel());
 	si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToRobotState(rst, st);
+	rst.update(true);
+
+
+	if (isnan(rst.getGlobalLinkTransform("end_effector").translation().z())) {
+		std::cout << rst << std::endl;
+	}
+
 	return shell->project(rst);
 }
 

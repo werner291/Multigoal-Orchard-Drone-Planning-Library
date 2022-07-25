@@ -10,18 +10,29 @@
 
 class ShellPathPlanner : public MultiGoalPlanner {
 
-	typedef const std::function<std::shared_ptr<SphereShell>(const AppleTreePlanningScene& scene_info)> MakeShellFn;
+public:
+	class ShellBuilder {
 
-	MakeShellFn shell_builder;
+	public:
+		virtual std::shared_ptr<OMPLSphereShellWrapper> buildShell(
+				const AppleTreePlanningScene &scene_info,
+				const ompl::base::SpaceInformationPtr &si) = 0;
 
+		virtual Json::Value parameters() const = 0;
+
+	};
+
+private:
+	std::shared_ptr<ShellBuilder> shell_builder;
     std::shared_ptr<SingleGoalPlannerMethods> methods;
 
     bool apply_shellstate_optimization;
 
 public:
+
     ShellPathPlanner(bool applyShellstateOptimization,
 					 std::shared_ptr<SingleGoalPlannerMethods> methods,
-					 MakeShellFn& shellBuilder);
+					 const std::shared_ptr<ShellBuilder>& shellBuilder);
 
     PlanResult plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,
                     const std::vector<ompl::base::GoalPtr> &goals,
@@ -69,6 +80,20 @@ public:
     Json::Value parameters() const override;
 
     std::string name() const override;
+
+};
+
+class PaddedSphereShellAroundLeavesBuilder : public ShellPathPlanner::ShellBuilder {
+
+	double padding;
+public:
+	PaddedSphereShellAroundLeavesBuilder(double padding = 0.1);
+
+public:
+	std::shared_ptr<OMPLSphereShellWrapper>
+	buildShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) override;
+
+	[[nodiscard]] Json::Value parameters() const override;
 
 };
 
