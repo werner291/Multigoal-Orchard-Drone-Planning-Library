@@ -126,53 +126,16 @@ set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "
 
 ament_target_dependencies(${PROJECT_NAME}_shared ${AMENT_DEPS})
 
-#
-##message(FATAL_ERROR ${catkin_INCLUDE_DIRS})
-#
-### Visualization node
-#
-#add_executable(${PROJECT_NAME}_ptp_correlation experiments/ptp_correlation.cpp)
-#
-#add_executable(${PROJECT_NAME}_euclidean_tsp experiments/euclidean_tsp.cpp)
-#
-#add_executable(${PROJECT_NAME}_ptp_comparison experiments/ptp_comparison.cpp)
-#target_link_libraries(${PROJECT_NAME}_ptp_comparison ${PROJECT_NAME}_shared)
-#
-#add_executable(${PROJECT_NAME}_prmstar_keep_or_clear experiments/prmstar_keep_or_clear.cpp)
-#target_link_libraries(${PROJECT_NAME}_prmstar_keep_or_clear ${PROJECT_NAME}_shared)
-#
-#add_executable(${PROJECT_NAME}_greatcircle_correlation experiments/greatcircle_correlation.cpp)
-#target_link_libraries(${PROJECT_NAME}_greatcircle_correlation ${PROJECT_NAME}_shared)
-#
-#add_executable(${PROJECT_NAME}_preorder_experiment experiments/preorder_experiment.cpp)
-#target_link_libraries(${PROJECT_NAME}_preorder_experiment ${PROJECT_NAME}_shared)
+function(experiment name)
+    add_executable(${PROJECT_NAME}_experiment_${name} src/experiments/${name}.cpp)
+    target_link_libraries(${PROJECT_NAME}_experiment_${name} ${PROJECT_NAME}_shared)
+endfunction()
 
-add_executable(${PROJECT_NAME}_probe_retreat_move src/experiments/probe_retreat_move.cpp)
-target_link_libraries(${PROJECT_NAME}_probe_retreat_move ${PROJECT_NAME}_shared)
-ament_target_dependencies(${PROJECT_NAME}_probe_retreat_move ${AMENT_DEPS})
+experiment("shellpath")
+experiment("shellpath_shell_choice")
+experiment("tsp_over_prm")
+experiment("tsp_over_prm_vs_sphereshell")
 
-add_executable(${PROJECT_NAME}_prm_multigoal_experiment src/experiments/prm_multigoal_experiment.cpp)
-target_link_libraries(${PROJECT_NAME}_prm_multigoal_experiment ${PROJECT_NAME}_shared)
-ament_target_dependencies(${PROJECT_NAME}_prm_multigoal_experiment ${AMENT_DEPS})
-
-add_executable(${PROJECT_NAME}_full_experiment src/experiments/full_experiment.cpp)
-target_link_libraries(${PROJECT_NAME}_full_experiment ${PROJECT_NAME}_shared)
-ament_target_dependencies(${PROJECT_NAME}_full_experiment ${AMENT_DEPS})
-
-#
-#add_executable(${PROJECT_NAME}_approach_planning experiments/approach_planning.cpp)
-#target_link_libraries(${PROJECT_NAME}_approach_planning ${PROJECT_NAME}_shared)
-#
-#add_executable(${PROJECT_NAME}_knn experiments/knn.cpp)
-#target_link_libraries(${PROJECT_NAME}_knn ${PROJECT_NAME}_shared)
-#
-#add_executable(${PROJECT_NAME}_generate_tree_data src/generate_tree_data.cpp)
-#
-##target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared)
-#
-#
-##target_link_libraries(${PROJECT_NAME}_tests ${CATKIN_LIBRARIES} ${EIGEN_LIBRARIES} ${FCL_LIBRARIES} ${Boost_LIBRARIES} jsoncpp_lib)
-#
 include(GoogleTest)
 
 add_executable(${PROJECT_NAME}_tests

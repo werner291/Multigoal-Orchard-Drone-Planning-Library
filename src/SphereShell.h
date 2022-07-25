@@ -17,6 +17,18 @@
  */
 class CollisionFreeShell {
 
+protected:
+
+	/**
+	 * Project a point from anywhere in R^3 onto the collision-free shell.
+	 * Method is protected, since the CollisionFreeShell should be interfaced
+	 * with in an as-abstract-as-possible manner.
+	 *
+	 * @param a 		The point to project.
+	 * @return 			The point on the shell.
+	 */
+	[[nodiscard]] virtual Eigen::Vector3d project(const Eigen::Vector3d &a) const = 0;
+
 public:
 	/**
 	 * Construct a RobotState located on the collision-free shell,
@@ -44,13 +56,12 @@ public:
 			const Eigen::Vector3d &b) const = 0;
 
 	/**
-	 * Project a point from anywhere in R^3 onto the collision-free shell.
+	 * Sample a point within a (roughly) Gaussian distribution around the given point on the sphere.
 	 *
-	 * @param a 		The point to project.
-	 * @return 			The point on the shell.
+	 * @param near 	The point to sample near.
+	 * @return 		The sampled point.
 	 */
-    [[nodiscard]] virtual Eigen::Vector3d project(
-			const Eigen::Vector3d &a) const = 0;
+	[[nodiscard]] Eigen::Vector3d gaussian_sample_near_point(const Eigen::Vector3d& near) const;
 
 	/**
 	 * Predict the length of a path from a to b, on the collision-free shell, without constructing the path.
@@ -64,6 +75,21 @@ public:
 	[[nodiscard]] virtual double predict_path_length(
 			const Eigen::Vector3d &a,
 			const Eigen::Vector3d &b) const = 0;
+
+	/**
+	 * Project a RobotState onto the collision-free shell.
+	 *
+	 * @param st 		The RobotState to project.
+	 * @return 			The projected point.
+	 */
+	[[nodiscard]] virtual Eigen::Vector3d project(const moveit::core::RobotState& st) const;
+
+	/**
+	 * Project an Apple/target onto the collision-free shell.
+	 * @param st 		The Apple to project.
+	 * @return 			The projected point.
+	 */
+	[[nodiscard]] virtual Eigen::Vector3d project(const Apple& st) const;
 
 };
 
@@ -157,7 +183,11 @@ public:
 
 	[[nodiscard]] double predict_path_length(const ompl::base::State* a, const ompl::base::Goal* b) const;
 
+	[[nodiscard]] Eigen::Vector3d gaussian_sample_near_point(const Eigen::Vector3d& near) const;
 
+	[[nodiscard]] Eigen::Vector3d project(const ompl::base::State* st) const;
+
+	[[nodiscard]] Eigen::Vector3d project(const ompl::base::Goal* goal) const;
 };
 
 #endif //NEW_PLANNERS_SPHERESHELL_H

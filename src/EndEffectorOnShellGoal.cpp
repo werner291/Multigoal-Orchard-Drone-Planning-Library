@@ -11,15 +11,8 @@ EndEffectorOnShellGoal::EndEffectorOnShellGoal(const ompl::base::SpaceInformatio
 
 void EndEffectorOnShellGoal::sampleGoal(ompl::base::State *st) const {
 
-	// Sample a point in R^3 in a gaussian distribution around the focus point.
-	ompl::RNG rng;
-
-	Eigen::Vector3d moved_focus(focus.x() + rng.gaussian(0.0, 0.5),
-								focus.y() + rng.gaussian(0.0, 0.5),
-								focus.z() + rng.gaussian(0.0, 0.5));
-
 	// Then, generate a state on the shell, relying on the fact that the point will be projected onto the sphere.
-	sphereShell.state_on_shell(moved_focus, st);
+	sphereShell.state_on_shell(sphereShell.gaussian_sample_near_point(sphereShell.project(st)), st);
 }
 
 unsigned int EndEffectorOnShellGoal::maxSampleCount() const {
@@ -35,7 +28,7 @@ double EndEffectorOnShellGoal::distanceGoal(const ompl::base::State *st) const {
 
 	// Compute end-effector position with forward kinematics
 	Eigen::Vector3d ee_pos = rs.getGlobalLinkTransform("end_effector").translation();
-	Eigen::Vector3d shell_projection = sphereShell.getShell()->project(ee_pos);
+	Eigen::Vector3d shell_projection = sphereShell.getShell()->project(rs);
 
 	// Return the Euclidean distance between the end-effector and the shell projection.
 	return (shell_projection - ee_pos).norm();

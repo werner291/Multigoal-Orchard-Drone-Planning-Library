@@ -64,15 +64,9 @@ ompl::base::ScopedState<> genStartState(const shared_ptr<DroneStateSpace> &state
 }
 
 /// Load a list of apple tree planning scenes from the directory.
-std::vector<shared_ptr<AppleTreePlanningScene>> loadScenes() {
+std::vector<shared_ptr<AppleTreePlanningScene>> loadScenes(const std::vector<std::string> &model_names) {
 
 	std::vector<shared_ptr<AppleTreePlanningScene>> scenes;
-
-	std::vector<string> model_names = {
-			"appletree",
-			"lemontree2",
-			"orangetree4"
-	};
 
 	for (const auto &model_name: model_names) {
 
@@ -331,7 +325,7 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
 	const auto drone = std::const_pointer_cast<const moveit::core::RobotModel>(loadRobotModel());
 
 	// Load the apple tree model with some metadata.
-	vector<shared_ptr<AppleTreePlanningScene>> scenes = loadScenes();
+	vector<shared_ptr<AppleTreePlanningScene>> scenes = loadScenes({"appletree", "lemontree2", "orangetree4"});
 
 	std::vector<std::thread> threads;
 	std::mutex mut;
@@ -404,7 +398,13 @@ std::shared_ptr<SphereShell> buildSphereShell(const AppleTreePlanningScene& scen
 }
 
 /// Generate a list of ShellPathPlanner allocators to be run during an experiment.
-std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators() {
+std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators(
+		const std::vector<bool>& applyShellstateOptimization,
+		const std::vector<bool>& useImprovisedInformedSampler,
+		const std::vector<bool>& tryLuckyShots,
+		const std::vector<bool>& useCostConvergence,
+		const std::vector<double>& ptp_time_seconds
+		) {
 
 	// We'll be taking a cartesian product of these.
 	// Due to C++ ownership stupidity, it's best to keep plain old data here only.
@@ -413,11 +413,7 @@ std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators() {
 //	bool tryLuckyShots[] = {false, true};
 //	bool useCostConvergence[] = {false, true};
 //	double ptp_time_seconds[] = {0.4, 0.5, 1.0};
-	bool applyShellstateOptimization[] = {true};
-	bool useImprovisedInformedSampler[] = {true};
-	bool tryLuckyShots[] = {true};
-	bool useCostConvergence[] = {true};
-	double ptp_time_seconds[] = {0.4, 0.5, 1.0};
+
 
 	// We explicitly use a function pointer here so we don't get burnt by this containing a reference to some local variable.
 	ompl::base::PlannerPtr(*planner_allocators[])(const ompl::base::SpaceInformationPtr&) = { &allocPRM };
@@ -453,15 +449,16 @@ std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators() {
 																		 costConvergence);
 
 				   return std::make_shared<ShellPathPlanner>(shellOptimize, ptp, buildSphereShell);
+
 			   };
 		   }) | ranges::to_vector; //  We return a vector to, again, prevent returning references to local variables.
 }
 
-std::vector<NewMultiGoalPlannerAllocatorFn> make_tsp_over_prm_allocators() {
-
-	const auto samples_per_goal = ranges::views::iota(2, 10);
-	const double plan_times_seconds[] = {1.0, 2.0, 5.0, 10.0, 15.0, 20.0};//, 30.0, 60.0};
-	const bool optimize_segments_options[] = {true};//{false, true};
+std::vector<NewMultiGoalPlannerAllocatorFn> make_tsp_over_prm_allocators(
+		const std::vector<size_t>& samples_per_goal,
+		const std::vector<double>& plan_times_seconds,
+		const std::vector<bool>& optimize_segments_options
+		) {
 
 	return ranges::views::cartesian_product(plan_times_seconds, samples_per_goal, optimize_segments_options) |
 		   ranges::views::transform([&](const auto tuple) -> NewMultiGoalPlannerAllocatorFn {
