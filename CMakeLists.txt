@@ -13,6 +13,7 @@ find_package(Boost REQUIRED)
 find_package(Bullet REQUIRED)
 find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
+find_package(Qhull REQUIRED)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -30,6 +31,7 @@ include_directories(
         ${GTEST_INCLUDE_DIRS}
         ${BULLET_INCLUDE_DIRS}
         ${OMPL_INCLUDE_DIRS}
+        ${QHULL_INCLUDE_DIRS}
         ortools/include
         miniball/cpp/main
 )
@@ -118,7 +120,7 @@ add_library(${PROJECT_NAME}_shared
         src/traveling_salesman.h
 #        src/NewKnnPlanner.cpp
 #        src/NewKnnPlanner.h
-        )
+        src/ConvexHullShell.cpp src/ConvexHullShell.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
