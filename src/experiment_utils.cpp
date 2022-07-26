@@ -259,49 +259,6 @@ planToGoal(ompl::base::Planner &planner,
     return planExactForPdef(planner, duration, simplify, pdef);
 }
 
-std::optional<ompl::geometric::PathGeometric>
-planFromStateToApple(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
-                     ompl::base::State *a, const Apple &b, double duration, bool simplify) {
-
-    return planToGoal(planner, objective, a, duration, simplify,
-                      std::make_shared<DroneEndEffectorNearTarget>(planner.getSpaceInformation(), 0.05, b.center));
-
-}
-
-[[deprecated("use randomStateOutsideTree instead")]]
-moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelConstPtr &drone) {
-    moveit::core::RobotState start_state(drone);
-
-    start_state.setVariablePositions({
-                                             3.0, 3.0, 1.5,      // Position off the side of the tree
-                                             0.0, 0.0, 0.0, 1.0, // Identity rotation
-                                             0.0, 0.0, 0.0, 0.0  // Arm straight out
-                                     });
-
-    start_state.update(true);
-    return start_state;
-}
-
-ExperimentPlanningContext loadContext(const moveit::core::RobotModelConstPtr &drone, const moveit_msgs::msg::PlanningScene &scene_msg) {
-    ExperimentPlanningContext context;
-
-    // initialize the state space and such
-    auto state_space = std::make_shared<DroneStateSpace>(
-            ompl_interface::ModelBasedStateSpaceSpecification(drone, "whole_body"), TRANSLATION_BOUND);
-
-    auto scene = setupPlanningScene(scene_msg, drone);
-    auto si = initSpaceInformation(scene, scene->getRobotModel(), state_space);
-
-    auto objective = std::make_shared<DronePathLengthObjective>(si);
-
-    return {
-            state_space,
-            si,
-            objective
-    };
-
-}
-
 moveit::core::RobotState randomStateOutsideTree(const moveit::core::RobotModelConstPtr &drone, const int seed) {
     moveit::core::RobotState start_state(drone);
 

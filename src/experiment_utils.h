@@ -22,8 +22,6 @@ struct LeafCollisions {
     size_t removed_contacts;
 };
 
-moveit::core::RobotState stateOutsideTree(const moveit::core::RobotModelConstPtr &drone);
-
 struct TreePlanningScene {
     std::vector<Apple> apples;
     std::vector<Eigen::Vector3d> leaf_vertices;
@@ -99,8 +97,6 @@ struct ExperimentPlanningContext {
     ompl::base::OptimizationObjectivePtr objective;
 };
 
-ExperimentPlanningContext loadContext(const moveit::core::RobotModelConstPtr& drone, const moveit_msgs::msg::PlanningScene& scene_msg);
-
 std::vector<Apple> apples_from_connected_components(shape_msgs::msg::Mesh apples_mesh);
 
 struct PointToPointPair {
@@ -114,10 +110,6 @@ struct PointToPointPair {
 std::optional<ompl::geometric::PathGeometric>
 planFromStateToState(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
                      const ompl::base::State *a, const ompl::base::State *b, double duration);
-
-std::optional<ompl::geometric::PathGeometric>
-planFromStateToApple(ompl::base::Planner &planner, const ompl::base::OptimizationObjectivePtr &objective,
-                     ompl::base::State *a, const Apple &b, double duration, bool simplify);
 
 std::optional<ompl::geometric::PathGeometric>
 planExactForPdef(ompl::base::Planner &planner, double duration, bool simplify,

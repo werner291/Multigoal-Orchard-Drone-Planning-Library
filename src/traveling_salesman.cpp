@@ -1,6 +1,10 @@
 #include <moveit/robot_state/robot_state.h>
 #include "traveling_salesman.h"
 #include "general_utilities.h"
+#include "ortools/constraint_solver/routing_index_manager.h"
+#include "ortools/constraint_solver/routing.h"
+#include "ortools/constraint_solver/routing_enums.pb.h"
+#include "ortools/constraint_solver/routing_parameters.h"
 
 #include <boost/range/algorithm/min_element.hpp>
 #include <utility>
@@ -8,110 +12,11 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/for_each.hpp>
 #include <range/v3/view/enumerate.hpp>
+#include <boost/range/irange.hpp>
 
 
 typedef std::vector<std::vector<int64_t>> Int64DistanceMatrix;
 
-double ordering_heuristic_cost(const std::vector<size_t> &ordering, const std::vector<Apple> &apples,
-                               const DistanceHeuristics& dh) {
-
-    double d = dh.first_distance(apples[ordering[0]]);
-
-    for (const size_t i : boost::irange<size_t>(1,apples.size())) {
-        d += dh.between_distance(apples[ordering[i - 1]], apples[ordering[i]]);
-    }
-
-    return d;
-}
-
-
-
-double GreatcircleDistanceHeuristics::between_distance(const Apple &apple_a, const Apple &apple_b) const {
-    return gcm.measure(apple_a.center, apple_b.center);
-}
-
-double GreatcircleDistanceHeuristics::first_distance(const Apple &apple) const {
-    return gcm.measure(apple.center, start_end_effector_pos);
-}
-
-std::string GreatcircleDistanceHeuristics::name() {
-    return "greatcircle";
-}
-
-GreatcircleDistanceHeuristics::GreatcircleDistanceHeuristics(Eigen::Vector3d startEndEffectorPos,
-                                                             GreatCircleMetric gcm)
-        : start_end_effector_pos(std::move(startEndEffectorPos)), gcm(std::move(gcm)) {}
-
-double EuclideanDistanceHeuristics::between_distance(const Apple &apple_a, const Apple &apple_b) const {
-    return (apple_a.center - apple_b.center).norm();
-}
-
-double EuclideanDistanceHeuristics::first_distance(const Apple &apple) const {
-    return (apple.center - start_end_effector_pos).norm();
-}
-
-std::string EuclideanDistanceHeuristics::name() {
-    return "euclidean";
-}
-
-EuclideanDistanceHeuristics::EuclideanDistanceHeuristics(Eigen::Vector3d startEndEffectorPos) : start_end_effector_pos(std::move(
-        startEndEffectorPos)) {}
-
-std::string GreedyOrderingStrategy::name() const{
-    return "greedy";
-}
-
-std::vector<size_t>
-GreedyOrderingStrategy::apple_ordering(const std::vector<Apple> &apples, const DistanceHeuristics &distance) const {
-
-    size_t first_apple = *boost::range::min_element(boost::irange<size_t>(1,apples.size()), [&](const auto a, const auto b) {
-        return distance.first_distance(apples[a]) < distance.first_distance(apples[b]);
-    });
-
-    std::vector<bool> visited(apples.size(), false);
-    visited[first_apple] = true;
-
-    std::vector<size_t> ordering { first_apple };
-    ordering.reserve(apples.size());
-
-    while (ordering.size() < apples.size()) {
-
-        size_t next = 0;
-        double next_distance = INFINITY;
-
-        for (const size_t i : boost::irange<size_t>(0,apples.size())) {
-
-            double candidate_distance = distance.between_distance(apples[ordering.back()], apples[i]);
-
-            if (!visited[i] && candidate_distance < next_distance) {
-                next = i;
-                next_distance = candidate_distance;
-            }
-        }
-
-        visited[next] = true;
-        ordering.push_back(next);
-
-    }
-
-    return ordering;
-}
-
-std::string ORToolsOrderingStrategy::name() const{
-    return "OR-tools";
-}
-
-
-std::vector<size_t> ORToolsOrderingStrategy::apple_ordering(const std::vector<Apple> &apples,
-                                                            const DistanceHeuristics &distance) const {
-
-    return tsp_open_end([&](size_t i) {
-        return distance.first_distance(apples[i]);
-    }, [&](size_t i, size_t j) {
-        return distance.between_distance(apples[i], apples[j]);
-    }, apples.size());
-
-}
 
 std::tuple<Int64DistanceMatrix, size_t, size_t> mkOpenEndedDistanceMatrix(const std::function<double(size_t)> &from_start,
 																		  const std::function<double(size_t, size_t)> &between,

@@ -1,7 +1,3 @@
-//
-// Created by werner on 29-6-22.
-//
-
 #include "TimedCostConvergenceTerminationCondition.h"
 
 TimedConversionTerminationCondition::TimedConversionTerminationCondition(ompl::base::ProblemDefinition &pdef,

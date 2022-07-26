@@ -2,84 +2,43 @@
 #ifndef NEW_PLANNERS_TRAVELING_SALESMAN_H
 #define NEW_PLANNERS_TRAVELING_SALESMAN_H
 
-#include <ortools/constraint_solver/routing.h>
-#include <ortools/constraint_solver/routing_index_manager.h>
-#include <ortools/constraint_solver/routing_parameters.h>
-#include <boost/range/irange.hpp>
-#include <utility>
+#include <functional>
 #include <ompl/base/PlannerTerminationCondition.h>
-#include "procedural_tree_generation.h"
-#include "GreatCircleMetric.h"
 
-class DistanceHeuristics {
-public:
-    [[nodiscard]] virtual std::string name() = 0;
-    [[nodiscard]] virtual double first_distance(const Apple &) const = 0;
-    [[nodiscard]] virtual double between_distance(const Apple &, const Apple &) const = 0;
-};
-
-class EuclideanDistanceHeuristics : public DistanceHeuristics {
-
-    Eigen::Vector3d start_end_effector_pos;
-
-public:
-    explicit EuclideanDistanceHeuristics(Eigen::Vector3d startEndEffectorPos);
-
-    std::string name() override;
-
-    [[nodiscard]] double first_distance(const Apple &apple) const override;
-
-    [[nodiscard]] double between_distance(const Apple &apple_a, const Apple &apple_b) const override;
-};
-
-class GreatcircleDistanceHeuristics : public DistanceHeuristics {
-
-private:
-    Eigen::Vector3d start_end_effector_pos;
-    GreatCircleMetric gcm;
-
-public:
-    GreatcircleDistanceHeuristics(Eigen::Vector3d startEndEffectorPos, GreatCircleMetric gcm);
-
-    std::string name() override;
-
-    [[nodiscard]] double first_distance(const Apple &apple) const override;
-
-    [[nodiscard]] double between_distance(const Apple &apple_a, const Apple &apple_b) const override;
-};
-
-class OrderingStrategy {
-public:
-    [[nodiscard]] virtual std::string name() const = 0;
-    [[nodiscard]] virtual std::vector<size_t> apple_ordering(const std::vector<Apple> &apples, const DistanceHeuristics& distance) const = 0;
-};
-
-class GreedyOrderingStrategy : public OrderingStrategy {
-public:
-    [[nodiscard]] std::string name() const override;
-
-    [[nodiscard]] std::vector<size_t> apple_ordering(const std::vector<Apple> &apples, const DistanceHeuristics &distance) const override;
-
-};
-
-class ORToolsOrderingStrategy : public OrderingStrategy {
-public:
-    [[nodiscard]] std::string name() const override;
-
-    [[nodiscard]] std::vector<size_t> apple_ordering(const std::vector<Apple> &apples, const DistanceHeuristics &distance) const override;
-
-};
-
-double ordering_heuristic_cost(const std::vector<size_t>& ordering,
-                               const std::vector<Apple>& apples,
-                               const DistanceHeuristics& dh);
-
+/**
+ * Determine an approximately optimal ordering of a given set of items/indices.
+ *
+ * Items are represented by indices only.
+ *
+ * The tour is assumed to start from some implicit item, visit all items in the set, and terminate at an arbitrary item in the set.
+ *
+ * @param from_start	A function that gives a distance between a given item index and some assumed start item.
+ * @param between		A function that gives a distance between two given item indices.
+ * @param n				The number of items in the set (all indices will be in the range 0..n-1).
+ * @param ptc			A termination condition to terminate the operation. This is a timeout only; no result is returned if the timeout is exceeded.
+ * @return				The tour, represented as a vector of indices.
+ *
+ * @throws PlanningTimeout if the timeout is exceeded.
+ */
 std::vector<size_t> tsp_open_end(
 		const std::function<double(size_t)> &from_start,
 		const std::function<double(size_t,size_t)> & between,
 		size_t n,
 		const ompl::base::PlannerTerminationCondition &ptc = ompl::base::plannerNonTerminatingCondition());
 
+/**
+ * Determine an approximately optimal ordering of a given set of items/indices, where items may be grouped together.
+ *
+ * Items are identified as pairs of indices: a group index and an item index within that group.
+ *
+ * @param from_start 	A function that gives a distance between a given item and an implicit start item.
+ * @param between 		A function that gives a distance between two given items.
+ * @param sizes 		A vector of the number of items in each group.
+ * @param ptc 			A termination condition to terminate the operation. This is a timeout only; no result is returned if the timeout is exceeded.
+ * @return 				The tour, represented as a vector of pairs of indices.
+ *
+ * @throws PlanningTimeout if the timeout is exceeded.
+ */
 std::vector<std::pair<size_t, size_t>>
 tsp_open_end_grouped(const std::function<double(std::pair<size_t, size_t>)> &from_start,
 					 const std::function<double(std::pair<size_t, size_t>, std::pair<size_t, size_t>)> &between,

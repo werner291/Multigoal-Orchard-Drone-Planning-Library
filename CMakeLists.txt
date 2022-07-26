@@ -132,7 +132,8 @@ function(experiment name)
 endfunction()
 
 experiment("shellpath")
-experiment("shellpath_shell_choice")
+experiment("shellpath_shell_inflation")
+experiment("shellpath_shell_bias")
 experiment("tsp_over_prm")
 experiment("tsp_over_prm_vs_sphereshell")
 
