@@ -32,14 +32,14 @@ int main(int argc, char **argv) {
 			);
 
     planners.insert(planners.end(), tsp_over_prm_allocators.begin(), tsp_over_prm_allocators.end());
-    
-    run_planner_experiment(
-            planners,
-            "analysis/full_experiment.json",
-            10,
-            {10, 50, 100, 150},
-            std::thread::hardware_concurrency()
-    );
+
+	run_planner_experiment(planners,
+						   "analysis/full_experiment.json",
+						   10,
+						   {10, 50, 100, 150},
+						   std::thread::hardware_concurrency(),
+						   0,
+						   true);
 
     return 0;
 }

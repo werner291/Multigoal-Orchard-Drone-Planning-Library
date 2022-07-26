@@ -15,12 +15,13 @@ int main(int argc, char **argv) {
 
     ompl::msg::setLogLevel(ompl::msg::LOG_ERROR);
 
-    run_planner_experiment(
-            make_tsp_over_prm_allocators(),
-            "analysis/prm_multigoal_experiment.json",
-            50,
-            std::thread::hardware_concurrency()
-            );
+	run_planner_experiment(make_tsp_over_prm_allocators(),
+						   "analysis/prm_multigoal_experiment.json",
+						   50,
+						   std::thread::hardware_concurrency(),
+						   <#initializer#>,
+						   0,
+						   true);
 
     return 0;
 }

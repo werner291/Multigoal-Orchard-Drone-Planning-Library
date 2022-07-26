@@ -19,11 +19,12 @@ typedef std::function<std::shared_ptr<MultiGoalPlanner>(
 
 void
 run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &allocators,
-                       const std::string &results_path,
-                       const int num_runs,
-                       const std::vector<size_t>& napples,
-					   const std::vector<std::string>& scenes, // {"appletree", "lemontree2", "orangetree4"}
-                       unsigned int nworkers);
+					   const std::string &results_path,
+					   const int num_runs,
+					   const std::vector<size_t> &napples,
+					   const std::vector<std::string> &scene_names,
+					   const unsigned int nworkers,
+					   bool groundPlane);
 
 typedef std::function<std::shared_ptr<ShellPathPlanner::ShellBuilder>()> ShellBuilderAllocatorFn;
 

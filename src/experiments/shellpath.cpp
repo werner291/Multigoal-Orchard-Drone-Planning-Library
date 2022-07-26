@@ -22,7 +22,9 @@ int main(int argc, char **argv) {
 						   "analysis/shellpath.json",
 						   10,
 						   {10, 50, 100, 150},
-						   std::thread::hardware_concurrency());
+						   std::thread::hardware_concurrency(),
+						   0,
+						   true);
 
 }
 

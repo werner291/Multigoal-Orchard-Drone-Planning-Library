@@ -12,7 +12,7 @@ EndEffectorOnShellGoal::EndEffectorOnShellGoal(const ompl::base::SpaceInformatio
 void EndEffectorOnShellGoal::sampleGoal(ompl::base::State *st) const {
 
 	// Then, generate a state on the shell, relying on the fact that the point will be projected onto the sphere.
-	sphereShell.state_on_shell(sphereShell.gaussian_sample_near_point(sphereShell.project(st)), st);
+	sphereShell.state_on_shell(sphereShell.gaussian_sample_near_point(focus), st);
 }
 
 unsigned int EndEffectorOnShellGoal::maxSampleCount() const {

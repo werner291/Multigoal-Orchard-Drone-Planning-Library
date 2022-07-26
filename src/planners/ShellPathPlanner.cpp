@@ -150,7 +150,6 @@ ShellPathPlanner::planApproaches(const ompl::base::SpaceInformationPtr &si,
     std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> approaches;
 
     for (const auto& [goal_i, goal] : goals | ranges::views::enumerate) {
-		std::cout << "Planning approach for goal " << goal_i << std::endl;
         if (auto approach = planApproachForGoal(si, ompl_shell, goal)) {
 			assert(approach->getStateCount() > 0);
             approaches.emplace_back(
@@ -173,6 +172,16 @@ std::optional<ompl::geometric::PathGeometric> ShellPathPlanner::planApproachForG
 
     ompl::base::ScopedState shell_state(si);
     ompl_shell.state_on_shell(goal.get(), shell_state.get());
+
+	if (ompl_shell.project(goal.get()).z() < 0) {
+
+		moveit::core::RobotState start_state(si->getStateSpace()->as<DroneStateSpace>()->getRobotModel());
+		si->getStateSpace()->as<DroneStateSpace>()->copyToRobotState(start_state, shell_state.get());
+
+		std::cout << ompl_shell.project(goal.get()) << " shell state: " << start_state << std::endl;
+
+		std::cout << "Validity: " << si->isValid(shell_state.get()) << std::endl;
+	}
 
     auto approach_path = methods->state_to_goal(shell_state.get(), goal);
 

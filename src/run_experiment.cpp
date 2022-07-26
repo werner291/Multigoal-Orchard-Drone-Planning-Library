@@ -64,14 +64,15 @@ ompl::base::ScopedState<> genStartState(const shared_ptr<DroneStateSpace> &state
 }
 
 /// Load a list of apple tree planning scenes from the directory.
-std::vector<shared_ptr<AppleTreePlanningScene>> loadScenes(const std::vector<std::string> &model_names) {
+std::vector<shared_ptr<AppleTreePlanningScene>>
+loadScenes(const std::vector<std::string> &model_names, bool includeGroundPlane) {
 
 	std::vector<shared_ptr<AppleTreePlanningScene>> scenes;
 
 	for (const auto &model_name: model_names) {
 
 		// Load the scene.
-		auto scene = createMeshBasedAppleTreePlanningSceneMessage(model_name);
+		auto scene = createMeshBasedAppleTreePlanningSceneMessage(model_name, includeGroundPlane);
 
 		// Convert to a shared pointer and add to the list.
 		scenes.push_back(make_shared<AppleTreePlanningScene>(scene));
@@ -318,7 +319,8 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
 							const int num_runs,
 							const std::vector<size_t> &napples,
 							const std::vector<std::string> &scene_names,
-							const unsigned int nworkers) {
+							const unsigned int nworkers,
+							bool groundPlane) {
 
 	// Load the robot model.
 	// It never changes, so it's safe to use in all workers.
@@ -326,7 +328,7 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
 	const auto drone = std::const_pointer_cast<const moveit::core::RobotModel>(loadRobotModel());
 
 	// Load the apple tree model with some metadata.
-	vector<shared_ptr<AppleTreePlanningScene>> scenes = loadScenes(scene_names);
+	vector<shared_ptr<AppleTreePlanningScene>> scenes = loadScenes(scene_names, groundPlane);
 
 	std::vector<std::thread> threads;
 	std::mutex mut;

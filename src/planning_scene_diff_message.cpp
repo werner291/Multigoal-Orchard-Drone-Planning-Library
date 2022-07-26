@@ -189,7 +189,8 @@ createPlanningSceneDiff(const std::vector<DetachedTreeNode> &treeFlattened,
     return planning_scene_diff;
 }
 
-AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::string &model_name) {
+AppleTreePlanningScene
+createMeshBasedAppleTreePlanningSceneMessage(const std::string &model_name, bool include_ground_plane) {
 
     const std::string cache_filename = "scene_cached_" + model_name + ".msg";
     std::stringstream prefix_stream;
@@ -219,17 +220,20 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
             }
         }
 
-        const shape_msgs::msg::Mesh apples = meshMsgFromResource(prefix + "_fruit.dae");
+		{
+			const shape_msgs::msg::Mesh apples = meshMsgFromResource(prefix + "_fruit.dae");
 
-        addColoredMeshCollisionShape(planning_scene_message, {1.0, 0.0, 0.0}, "apples", apples);
+			addColoredMeshCollisionShape(planning_scene_message, {1.0, 0.0, 0.0}, "apples", apples);
+		}
 
-        addColoredMeshCollisionShape(
-                planning_scene_message,
-                {0.1, 0.7, 0.1},
-                "leaves",
-                meshMsgFromResource(prefix + "_leaves.dae"));
+		{
+			addColoredMeshCollisionShape(planning_scene_message,
+										 {0.1, 0.7, 0.1},
+										 "leaves",
+										 meshMsgFromResource(prefix + "_leaves.dae"));
 
-        planning_scene_message.name = model_name;
+			planning_scene_message.name = model_name;
+		}
 
         save_ros_msg(cache_filename, planning_scene_message);
 
@@ -240,22 +244,29 @@ AppleTreePlanningScene createMeshBasedAppleTreePlanningSceneMessage(const std::s
         planning_scene_message = *cached_scene_info;
     }
 
-    shape_msgs::msg::Mesh apples;
-    for (const auto &collision_shape: planning_scene_message.world.collision_objects) {
-        if (collision_shape.id == "apples") {
-            apples = collision_shape.meshes[0];
-            break;
-        }
-    }
+	shape_msgs::msg::Mesh apples;
+	for (const auto &collision_shape: planning_scene_message.world.collision_objects) {
+		if (collision_shape.id == "apples") {
+			apples = collision_shape.meshes[0];
+			break;
+		}
+	}
 
-
-    {
-        auto enclosing = compute_enclosing_sphere(planning_scene_message, 0.1);
-
-        std::cout << "center: " << enclosing.center << std::endl;
-        std::cout << "radius: " << enclosing.radius << std::endl;
-
-    }
+	// Make a ground plane.
+	if (include_ground_plane) {
+		moveit_msgs::msg::CollisionObject ground;
+		ground.primitives.resize(1);
+		ground.primitives[0].type = shape_msgs::msg::SolidPrimitive::BOX;
+		ground.primitives[0].dimensions.resize(3);
+		ground.primitives[0].dimensions[0] = 50.0;
+		ground.primitives[0].dimensions[1] = 50.0;
+		ground.primitives[0].dimensions[2] = 50.0;
+		ground.primitive_poses.resize(1);
+		ground.primitive_poses[0].position.z = -25.0;
+		ground.header.frame_id = "world";
+		ground.id = "ground";
+		planning_scene_message.world.collision_objects.push_back(ground);
+	}
 
     return {planning_scene_message, apples_from_connected_components(apples)};
 }
