@@ -1,0 +1,5502 @@
+[
+	{
+		"final_path_length" : 408.6766680951265,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 32.809900761000002,
+		"scene_name" : "appletree",
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 370.2721850541256,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 28.991693953999999,
+		"scene_name" : "appletree",
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 391.22529920974,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 35.956946619,
+		"scene_name" : "appletree",
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 403.83165334671003,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 28.480440431000002,
+		"scene_name" : "appletree",
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 448.53028109097119,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 26.859381566,
+		"scene_name" : "appletree",
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 435.87598754080022,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 30.148089055,
+		"scene_name" : "appletree",
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 414.52473363969654,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 33.923947757999997,
+		"scene_name" : "appletree",
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 448.83395734104852,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 30.456791932000002,
+		"scene_name" : "appletree",
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 445.23535600410059,
+		"goals_visited" : 150,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 32.466926659999999,
+		"scene_name" : "appletree",
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 375.10647544257739,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 32.442762967999997,
+		"scene_name" : "appletree",
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 386.38456748440126,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 27.586814179000001,
+		"scene_name" : "appletree",
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 431.00100525723985,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 27.719640798,
+		"scene_name" : "appletree",
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 407.11874125829814,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 28.648621204000001,
+		"scene_name" : "appletree",
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 364.16591785277001,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 26.476963849000001,
+		"scene_name" : "appletree",
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 399.87209419780675,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 30.169556738000001,
+		"scene_name" : "appletree",
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 452.7664348755219,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 27.858121327999999,
+		"scene_name" : "appletree",
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 389.45922530488451,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 23.845878488,
+		"scene_name" : "appletree",
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 391.39360480271432,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 26.354286834,
+		"scene_name" : "appletree",
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 434.99368797406026,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 26.046606822000001,
+		"scene_name" : "appletree",
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 453.59912800532419,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 23.216511520000001,
+		"scene_name" : "appletree",
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 421.01948058962034,
+		"goals_visited" : 150,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 20.465129703999999,
+		"scene_name" : "appletree",
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 432.45373382727507,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 30.431444206999998,
+		"scene_name" : "appletree",
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 415.60303775656996,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 22.501378376000002,
+		"scene_name" : "appletree",
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 451.75785936862439,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 23.624264374999999,
+		"scene_name" : "appletree",
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 406.26586395045291,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 19.484173900999998,
+		"scene_name" : "appletree",
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 469.68827949203694,
+		"goals_visited" : 150,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 23.897810124999999,
+		"scene_name" : "appletree",
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 400.65207243025998,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 25.413826547999999,
+		"scene_name" : "appletree",
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 386.07035832066424,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 22.335431402000001,
+		"scene_name" : "appletree",
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 466.02296148972607,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 26.566534088000001,
+		"scene_name" : "appletree",
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 410.88139025447117,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 23.277285510999999,
+		"scene_name" : "appletree",
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 405.28362588389126,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 28.196446725000001,
+		"scene_name" : "appletree",
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 382.113697074085,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 28.180556059000001,
+		"scene_name" : "appletree",
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 385.28167206581747,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 23.131702082,
+		"scene_name" : "appletree",
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 401.4700876890924,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 29.152293585999999,
+		"scene_name" : "appletree",
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 403.72151406858256,
+		"goals_visited" : 145,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 25.040560568,
+		"scene_name" : "appletree",
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 430.79084904077394,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 25.284569509000001,
+		"scene_name" : "appletree",
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 439.20783461336373,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 27.564012859999998,
+		"scene_name" : "appletree",
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 407.29520968866387,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 22.268974113999999,
+		"scene_name" : "appletree",
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 395.4407957612674,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 24.954012733999999,
+		"scene_name" : "appletree",
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 471.6840526723206,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 26.918982196999998,
+		"scene_name" : "appletree",
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 463.79190378801303,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 24.673830627000001,
+		"scene_name" : "appletree",
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 466.37245437320269,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 25.409331504000001,
+		"scene_name" : "appletree",
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 375.4909849556654,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 27.046096343999999,
+		"scene_name" : "appletree",
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 473.0991964192151,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 25.391280237,
+		"scene_name" : "appletree",
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 403.78626363265732,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 20.020544607000001,
+		"scene_name" : "appletree",
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 385.6229836352731,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 21.152707208999999,
+		"scene_name" : "appletree",
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 483.6573619613373,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 23.817590647999999,
+		"scene_name" : "appletree",
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 435.78867022898686,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 22.274350534,
+		"scene_name" : "appletree",
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 398.95946870602819,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 22.892103655,
+		"scene_name" : "appletree",
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 413.76704535425921,
+		"goals_visited" : 150,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 21.958819001999998,
+		"scene_name" : "appletree",
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 469.27269442355862,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 23.290699501999999,
+		"scene_name" : "appletree",
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 426.86797522607651,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 24.727648346999999,
+		"scene_name" : "appletree",
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 437.92462026784432,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 28.522838953000001,
+		"scene_name" : "appletree",
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 416.32906391392441,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 27.166060012999999,
+		"scene_name" : "appletree",
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 492.42979005210793,
+		"goals_visited" : 150,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 26.123925030999999,
+		"scene_name" : "appletree",
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 399.44536088401446,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 25.449374381999998,
+		"scene_name" : "appletree",
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 455.5014624564659,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 23.730266623999999,
+		"scene_name" : "appletree",
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 409.53019118233846,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 23.456199545,
+		"scene_name" : "appletree",
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 444.4640446197194,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 23.206467288999999,
+		"scene_name" : "appletree",
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 372.15253808975177,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 23.840944411999999,
+		"scene_name" : "appletree",
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 469.85607945105698,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 26.471324642999999,
+		"scene_name" : "appletree",
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 381.15249669532807,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 23.029505370999999,
+		"scene_name" : "appletree",
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 405.61274563885087,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 24.163086772,
+		"scene_name" : "appletree",
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 451.31086583890516,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 23.914570669,
+		"scene_name" : "appletree",
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 424.31209047532946,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 24.404722784000001,
+		"scene_name" : "appletree",
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 408.94054763149393,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 25.400339708000001,
+		"scene_name" : "appletree",
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 403.35057930159553,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 23.966970586999999,
+		"scene_name" : "appletree",
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 397.29045571383506,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 21.428591127000001,
+		"scene_name" : "appletree",
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 367.17915459047612,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 22.661812654999999,
+		"scene_name" : "appletree",
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 456.63095352140448,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 27.876863334999999,
+		"scene_name" : "appletree",
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 429.56738954677434,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 25.255925486999999,
+		"scene_name" : "appletree",
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 421.10612354918646,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 23.235570477,
+		"scene_name" : "appletree",
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 432.42377949746952,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 22.646403486000001,
+		"scene_name" : "appletree",
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 398.16318181794395,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 28.225143280000001,
+		"scene_name" : "appletree",
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 405.29255070435056,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 22.364038865000001,
+		"scene_name" : "appletree",
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 438.68691922791902,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 25.996333933999999,
+		"scene_name" : "appletree",
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 412.2449831071122,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 26.124934791000001,
+		"scene_name" : "appletree",
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 423.07245450230027,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 25.878180042,
+		"scene_name" : "appletree",
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 432.40219085336412,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 27.707074818999999,
+		"scene_name" : "appletree",
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 396.58970158181268,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 25.648062585000002,
+		"scene_name" : "appletree",
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 412.8503317432278,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 26.758579059999999,
+		"scene_name" : "appletree",
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 435.20032713810087,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 26.286328521000002,
+		"scene_name" : "appletree",
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 377.81158674004337,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 24.937793219,
+		"scene_name" : "appletree",
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 430.09636706603351,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 24.104537926999999,
+		"scene_name" : "appletree",
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 448.09391469512792,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 22.173490413,
+		"scene_name" : "appletree",
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 444.56356202013842,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 26.511052133,
+		"scene_name" : "appletree",
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 406.36648939742747,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 25.974601311000001,
+		"scene_name" : "appletree",
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 458.51010795250733,
+		"goals_visited" : 145,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 27.973168413,
+		"scene_name" : "appletree",
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 406.47772570126739,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 25.89676034,
+		"scene_name" : "appletree",
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 412.70573833600184,
+		"goals_visited" : 150,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 25.605854018999999,
+		"scene_name" : "appletree",
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 436.09230044280378,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 23.563840253999999,
+		"scene_name" : "appletree",
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 412.23547834701185,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 28.430227028000001,
+		"scene_name" : "appletree",
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 380.53270081027921,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 20.069267634999999,
+		"scene_name" : "appletree",
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 439.26714369243626,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 27.058047004999999,
+		"scene_name" : "appletree",
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 402.5006765259559,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 18.210931452000001,
+		"scene_name" : "appletree",
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 389.26644179380014,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 24.502897216000001,
+		"scene_name" : "appletree",
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 402.25432485764225,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 27.414177403,
+		"scene_name" : "appletree",
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 372.17712486176771,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 28.652088815999999,
+		"scene_name" : "appletree",
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 416.52637678270315,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 29.229128832000001,
+		"scene_name" : "appletree",
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 397.66644496573895,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 23.836385481000001,
+		"scene_name" : "appletree",
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 465.41567021191725,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 34.350304483000002,
+		"scene_name" : "appletree",
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 404.83718287106069,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 28.859992239,
+		"scene_name" : "appletree",
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 387.2915585925154,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 26.765739753999998,
+		"scene_name" : "appletree",
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 416.27827170048749,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 31.080188093,
+		"scene_name" : "appletree",
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 453.63130105181335,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 24.600392607,
+		"scene_name" : "appletree",
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 414.18594838822617,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 32.495797494999998,
+		"scene_name" : "appletree",
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 375.8692574356387,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 34.032621734000003,
+		"scene_name" : "appletree",
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 433.27502765611359,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 28.65023218,
+		"scene_name" : "appletree",
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 393.47517117256996,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 27.791421873000001,
+		"scene_name" : "appletree",
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 457.23993845038171,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 30.120066122000001,
+		"scene_name" : "appletree",
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 419.30331323693832,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 33.890675326999997,
+		"scene_name" : "appletree",
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 447.05073082485308,
+		"goals_visited" : 145,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 28.593682809000001,
+		"scene_name" : "appletree",
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 442.38960337575179,
+		"goals_visited" : 145,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 36.677447461,
+		"scene_name" : "appletree",
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 389.08248919431009,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 31.408800865,
+		"scene_name" : "appletree",
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 420.73721736633178,
+		"goals_visited" : 145,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 25.71070404,
+		"scene_name" : "appletree",
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 386.80991292130716,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 30.829681881999999,
+		"scene_name" : "appletree",
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 377.66854024949072,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 33.553293992999997,
+		"scene_name" : "appletree",
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 460.48385952597442,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 27.187298613999999,
+		"scene_name" : "appletree",
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 421.40075407679763,
+		"goals_visited" : 150,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 30.831992331999999,
+		"scene_name" : "appletree",
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 430.31026088334335,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 28.010392833000001,
+		"scene_name" : "appletree",
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 404.65091866860882,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 29.459647521000001,
+		"scene_name" : "appletree",
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 399.02395740407167,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 28.424558374,
+		"scene_name" : "appletree",
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 435.63463283451341,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 24.264200555999999,
+		"scene_name" : "appletree",
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 413.83515171020849,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 24.863847103000001,
+		"scene_name" : "appletree",
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 437.27972231664626,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 26.281767178999999,
+		"scene_name" : "appletree",
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 412.74435799664161,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 23.683797863999999,
+		"scene_name" : "appletree",
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 483.90791868475884,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 28.860094515,
+		"scene_name" : "appletree",
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 389.32070938683154,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 27.105345927999998,
+		"scene_name" : "appletree",
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 454.60404611144725,
+		"goals_visited" : 150,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 25.544439288,
+		"scene_name" : "appletree",
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 397.66646075105325,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 25.301418176999999,
+		"scene_name" : "appletree",
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 431.74835047309136,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 27.350443136999999,
+		"scene_name" : "appletree",
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 422.90576576328806,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 22.382082174000001,
+		"scene_name" : "appletree",
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 399.15297525911114,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 24.334386157000001,
+		"scene_name" : "appletree",
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 425.11801668577999,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 20.658998092000001,
+		"scene_name" : "appletree",
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 425.12681428956643,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 27.060724790999998,
+		"scene_name" : "appletree",
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 447.78763244391359,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 25.374372626,
+		"scene_name" : "appletree",
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 409.4868210062051,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 25.190831273000001,
+		"scene_name" : "appletree",
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 450.82622047400741,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 22.619413129000002,
+		"scene_name" : "appletree",
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 379.75660339334627,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 25.055083594999999,
+		"scene_name" : "appletree",
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 410.44084291466265,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 22.421892307,
+		"scene_name" : "appletree",
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 468.58530074913909,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 23.143512079000001,
+		"scene_name" : "appletree",
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 438.52124962480616,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 26.864416462000001,
+		"scene_name" : "appletree",
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 448.46360804536283,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 23.860763473999999,
+		"scene_name" : "appletree",
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 436.25797773926558,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 25.283030138000001,
+		"scene_name" : "appletree",
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 488.20301062959919,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 25.883979182000001,
+		"scene_name" : "appletree",
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 413.37652905450443,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 26.649661255000002,
+		"scene_name" : "appletree",
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 443.90138476949159,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 24.074921994,
+		"scene_name" : "appletree",
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 447.39758668766183,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 30.495852076999999,
+		"scene_name" : "appletree",
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 476.88640536499145,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 27.766718508,
+		"scene_name" : "appletree",
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 438.96495583295206,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 22.211568484000001,
+		"scene_name" : "appletree",
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 419.53414262927907,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 22.141829847,
+		"scene_name" : "appletree",
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 430.15517802055194,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 23.275627017000001,
+		"scene_name" : "appletree",
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 463.16262121661777,
+		"goals_visited" : 145,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 26.254277747,
+		"scene_name" : "appletree",
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 412.40466887071358,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 23.280250283000001,
+		"scene_name" : "appletree",
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 432.15780992173268,
+		"goals_visited" : 150,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 22.853502048999999,
+		"scene_name" : "appletree",
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 469.73216312260837,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 22.911373022999999,
+		"scene_name" : "appletree",
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 422.09276531000046,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 26.135408343000002,
+		"scene_name" : "appletree",
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 383.77175107833438,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 27.335209246000002,
+		"scene_name" : "appletree",
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 422.50205515573413,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 26.608456517,
+		"scene_name" : "appletree",
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 417.76747794035947,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 25.742903263999999,
+		"scene_name" : "appletree",
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 408.00645737669038,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 25.894094903999999,
+		"scene_name" : "appletree",
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 460.02858335900868,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 23.204779056,
+		"scene_name" : "appletree",
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 482.34056590249128,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 24.205076332000001,
+		"scene_name" : "appletree",
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 438.78307941049246,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 29.829469271000001,
+		"scene_name" : "appletree",
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 442.30770079034062,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 23.63549368,
+		"scene_name" : "appletree",
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 422.90484781944201,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 21.993864625000001,
+		"scene_name" : "appletree",
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 413.78377376332173,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 25.553983559999999,
+		"scene_name" : "appletree",
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 368.19094786528711,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 24.825345453000001,
+		"scene_name" : "appletree",
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 407.50767532394599,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 26.318783324999998,
+		"scene_name" : "appletree",
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 408.25231958714494,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 22.502970273999999,
+		"scene_name" : "appletree",
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 430.88896840203341,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 22.852894416000002,
+		"scene_name" : "appletree",
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 454.55891646841837,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 26.888868455000001,
+		"scene_name" : "appletree",
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 424.03713707533865,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 25.178882886,
+		"scene_name" : "appletree",
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 458.29279576314161,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 23.809427152000001,
+		"scene_name" : "appletree",
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 386.8406917082138,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 26.386943118000001,
+		"scene_name" : "appletree",
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 444.26501246549145,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 24.026999107000002,
+		"scene_name" : "appletree",
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 321.42816025630054,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 24.386916654,
+		"scene_name" : "appletree",
+		"start_state" : 13
+	},
+	{
+		"final_path_length" : 476.85080076645102,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 25.084167128000001,
+		"scene_name" : "appletree",
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 399.73022503503745,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 22.206928687000001,
+		"scene_name" : "appletree",
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 404.53162583433027,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 26.167429802000001,
+		"scene_name" : "appletree",
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 407.78795600824861,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 29.211920643999999,
+		"scene_name" : "appletree",
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 392.01036003516583,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 25.096915438,
+		"scene_name" : "appletree",
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 427.92716758988951,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 24.266273528999999,
+		"scene_name" : "appletree",
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 401.79083370921035,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 28.432794464000001,
+		"scene_name" : "appletree",
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 366.65691492542953,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 27.966216662000001,
+		"scene_name" : "appletree",
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 425.72649985253565,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 24.61939692,
+		"scene_name" : "appletree",
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 393.33502136370367,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 23.323099068000001,
+		"scene_name" : "appletree",
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 447.88459771577033,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 27.554567452000001,
+		"scene_name" : "appletree",
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 443.91641408440756,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 24.221413944999998,
+		"scene_name" : "appletree",
+		"start_state" : 17
+	},
+	{
+		"final_path_length" : 420.76787945720633,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 29.934457738999999,
+		"scene_name" : "appletree",
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 399.95128812329733,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 23.857209628,
+		"scene_name" : "appletree",
+		"start_state" : 9
+	},
+	{
+		"final_path_length" : 430.30759900723592,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 21.196346698999999,
+		"scene_name" : "appletree",
+		"start_state" : 2
+	},
+	{
+		"final_path_length" : 380.23151386608242,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 23.83137876,
+		"scene_name" : "appletree",
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 442.07880691840091,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 24.273966921,
+		"scene_name" : "appletree",
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 428.27902548082011,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 27.780287496,
+		"scene_name" : "appletree",
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 386.87450684768271,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 26.381337431999999,
+		"scene_name" : "appletree",
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 381.6360335189093,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 26.506828638999998,
+		"scene_name" : "appletree",
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 390.90695673473851,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 24.268864442999998,
+		"scene_name" : "appletree",
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 382.11468679930152,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 25.126907407000001,
+		"scene_name" : "appletree",
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 430.89845068497607,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.0
+			}
+		},
+		"run_time" : 31.457272473,
+		"scene_name" : "appletree",
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 398.31468030306957,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 24.018180280999999,
+		"scene_name" : "appletree",
+		"start_state" : 18
+	},
+	{
+		"final_path_length" : 435.45690850693404,
+		"goals_visited" : 150,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 23.581370065000002,
+		"scene_name" : "appletree",
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 387.58948468533765,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 24.962514253999998,
+		"scene_name" : "appletree",
+		"start_state" : 11
+	},
+	{
+		"final_path_length" : 488.59759400245548,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 5.0
+			}
+		},
+		"run_time" : 23.572520091000001,
+		"scene_name" : "appletree",
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 392.2763913385233,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.0
+			}
+		},
+		"run_time" : 27.027179976999999,
+		"scene_name" : "appletree",
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 414.6611955344851,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 26.848168526999999,
+		"scene_name" : "appletree",
+		"start_state" : 7
+	},
+	{
+		"final_path_length" : 450.57975408814241,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 23.311827457,
+		"scene_name" : "appletree",
+		"start_state" : 19
+	},
+	{
+		"final_path_length" : 439.44611200679594,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 25.500842116000001,
+		"scene_name" : "appletree",
+		"start_state" : 5
+	},
+	{
+		"final_path_length" : 452.51450309535608,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.0
+			}
+		},
+		"run_time" : 22.771018704999999,
+		"scene_name" : "appletree",
+		"start_state" : 16
+	},
+	{
+		"final_path_length" : 412.67225171037018,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 26.255685327999998,
+		"scene_name" : "appletree",
+		"start_state" : 0
+	},
+	{
+		"final_path_length" : 458.44013503974219,
+		"goals_visited" : 145,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 22.086037610000002,
+		"scene_name" : "appletree",
+		"start_state" : 3
+	},
+	{
+		"final_path_length" : 411.51439813043794,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 1.5
+			}
+		},
+		"run_time" : 26.258056731,
+		"scene_name" : "appletree",
+		"start_state" : 15
+	},
+	{
+		"final_path_length" : 447.75865789996857,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 24.032011529999998,
+		"scene_name" : "appletree",
+		"start_state" : 4
+	},
+	{
+		"final_path_length" : 445.5473924506673,
+		"goals_visited" : 150,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 26.716869125999999,
+		"scene_name" : "appletree",
+		"start_state" : 6
+	},
+	{
+		"final_path_length" : 384.55307079308193,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.0
+			}
+		},
+		"run_time" : 23.608561949999999,
+		"scene_name" : "appletree",
+		"start_state" : 10
+	},
+	{
+		"final_path_length" : 386.13094199570446,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 0.5
+			}
+		},
+		"run_time" : 24.519744172999999,
+		"scene_name" : "appletree",
+		"start_state" : 12
+	},
+	{
+		"final_path_length" : 366.38869060488821,
+		"goals_visited" : 146,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.0
+			}
+		},
+		"run_time" : 22.268735383999999,
+		"scene_name" : "appletree",
+		"start_state" : 1
+	},
+	{
+		"final_path_length" : 426.33647898169761,
+		"goals_visited" : 148,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 2.5
+			}
+		},
+		"run_time" : 22.612145631000001,
+		"scene_name" : "appletree",
+		"start_state" : 14
+	},
+	{
+		"final_path_length" : 477.29217293590892,
+		"goals_visited" : 149,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 4.5
+			}
+		},
+		"run_time" : 21.931100911000001,
+		"scene_name" : "appletree",
+		"start_state" : 8
+	},
+	{
+		"final_path_length" : 402.88325562831267,
+		"goals_visited" : 147,
+		"napples" : 150,
+		"planner_name" : "ShellPathPlanner",
+		"planner_params" : 
+		{
+			"apply_shellstate_optimization" : true,
+			"ptp" : 
+			{
+				"ptp" : "PRMstar",
+				"timePerAppleSeconds" : 1.0,
+				"tryLuckyShots" : true,
+				"useCostConvergence" : true,
+				"useImprovisedSampler" : true
+			},
+			"shell_builder_params" : 
+			{
+				"padding" : 3.5
+			}
+		},
+		"run_time" : 17.062542787000002,
+		"scene_name" : "appletree",
+		"start_state" : 2
+	}
+]
