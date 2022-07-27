@@ -17,7 +17,23 @@ public:
 
 class ConvexHullShell : public CollisionFreeShell {
 
+	std::vertices<const Eigen::Vector3d> vertices;
+
+	struct Facet {
+		size_t a, b, c;
+		size_t neighbour_ab, neighbour_bc, neighbour_ca;
+	};
+
+	std::vector<Facet> facets;
+
+	ompl::NearestNeighboursGNAT<size_t> vertex_index;
+
+	size_t closest_vertex(const Eigen::Vector3d &a);
+
 public:
+
+	ConvexHullShell(const shapes::Mesh& mesh);
+
 	moveit::core::RobotState
 		state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Eigen::Vector3d &a) const override;
 
