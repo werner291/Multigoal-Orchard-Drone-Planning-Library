@@ -4,6 +4,7 @@
 
 #include "SphereShell.h"
 #include "planners/ShellPathPlanner.h"
+#include <ompl/datastructures/NearestNeighborsGNAT.h>
 
 class ConvexHullShellBuilder : public ShellPathPlanner::ShellBuilder {
 
@@ -12,12 +13,11 @@ public:
 	buildShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) override;
 
 	Json::Value parameters() const override;
-
 };
 
 class ConvexHullShell : public CollisionFreeShell {
 
-	std::vertices<const Eigen::Vector3d> vertices;
+	std::vector<Eigen::Vector3d> vertices;
 
 	struct Facet {
 		size_t a, b, c;
@@ -26,13 +26,23 @@ class ConvexHullShell : public CollisionFreeShell {
 
 	std::vector<Facet> facets;
 
-	ompl::NearestNeighboursGNAT<size_t> vertex_index;
+	struct NNGNATEntry {
+		bool operator==(const NNGNATEntry &rhs) const;
 
-	size_t closest_vertex(const Eigen::Vector3d &a);
+		bool operator!=(const NNGNATEntry &rhs) const;
+
+		size_t face_index;
+		Eigen::Vector3d at;
+
+	};
+
+	ompl::NearestNeighborsGNAT<NNGNATEntry> facet_index;
+
+	size_t guess_closest_face(const Eigen::Vector3d &a) const;
 
 public:
 
-	ConvexHullShell(const shapes::Mesh& mesh);
+	ConvexHullShell(const shape_msgs::msg::Mesh &mesh);
 
 	moveit::core::RobotState
 		state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Eigen::Vector3d &a) const override;
@@ -46,6 +56,9 @@ public:
 protected:
 	Eigen::Vector3d project(const Eigen::Vector3d &a) const override;
 
+	void match_faces();
+
+	void init_gnat();
 };
 
 
