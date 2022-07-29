@@ -97,82 +97,32 @@ Eigen::Vector3d SphereShell::project(const Eigen::Vector3d &a) const {
 	return center + (a - center).normalized() * radius;
 }
 
-OMPLSphereShellWrapper::OMPLSphereShellWrapper(std::shared_ptr<CollisionFreeShell> shell,
-											   ompl::base::SpaceInformationPtr si)
-		: shell(std::move(shell)), si(std::move(si)) {
-}
+Eigen::Vector3d SphereShell::gaussian_sample_near_point(const Eigen::Vector3d &near) const {
 
-void OMPLSphereShellWrapper::state_on_shell(const Eigen::Vector3d &a, ompl::base::State *st) const {
-
-	auto state_space = std::dynamic_pointer_cast<ompl_interface::ModelBasedStateSpace>(si->getStateSpace());
-
-	state_space->copyToOMPLState(st, shell->state_on_shell(state_space->getRobotModel(), a));
-}
-
-ompl::geometric::PathGeometric OMPLSphereShellWrapper::path_on_shell(const Eigen::Vector3d &a, const Eigen::Vector3d &b) {
-	return omplPathFromMoveitTrajectory(shell->path_on_shell(si->getStateSpace()
-																	 ->as<ompl_interface::ModelBasedStateSpace>()
-																	 ->getRobotModel(), a, b), si);
-}
-
-std::shared_ptr<CollisionFreeShell> OMPLSphereShellWrapper::getShell() const {
-	return shell;
-}
-
-void OMPLSphereShellWrapper::state_on_shell(const ompl::base::Goal *apple, ompl::base::State *st) const {
-	state_on_shell(project(apple), st);
-}
-
-ompl::geometric::PathGeometric OMPLSphereShellWrapper::path_on_shell(const ompl::base::Goal *a, const ompl::base::Goal *b) {
-	return path_on_shell(project(a), project(b));
-}
-
-double OMPLSphereShellWrapper::predict_path_length(const ompl::base::Goal *a, const ompl::base::Goal *b) const {
-	return shell->predict_path_length(project(a), project(b));
-}
-
-double OMPLSphereShellWrapper::predict_path_length(const ompl::base::State *a, const ompl::base::Goal *b) const {
-	return shell->predict_path_length(project(a), project(b));
-}
-
-Eigen::Vector3d OMPLSphereShellWrapper::gaussian_sample_near_point(const Eigen::Vector3d &near) const {
-	return shell->gaussian_sample_near_point(near);
-}
-
-Eigen::Vector3d OMPLSphereShellWrapper::project(const ompl::base::State *st) const {
-	moveit::core::RobotState rst(si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->getRobotModel());
-	si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToRobotState(rst, st);
-	rst.update(true);
-
-
-	if (isnan(rst.getGlobalLinkTransform("end_effector").translation().z())) {
-		std::cout << rst << std::endl;
-	}
-
-	return shell->project(rst);
-}
-
-Eigen::Vector3d OMPLSphereShellWrapper::project(const ompl::base::Goal *goal) const {
-	return shell->project(Apple {
-			goal->as<DroneEndEffectorNearTarget>()->getTarget(),
-	});
-}
-
-Eigen::Vector3d CollisionFreeShell::gaussian_sample_near_point(const Eigen::Vector3d &near) const {
 	ompl::RNG rng;
 
-	Eigen::Vector3d moved_focus(near.x() + rng.gaussian(0.0, 0.5),
-								near.y() + rng.gaussian(0.0, 0.5),
-								near.z() + rng.gaussian(0.0, 0.5));
-
-	return project(moved_focus);
+	return project(
+			near + Eigen::Vector3d(rng.gaussian(0.0, 0.5),rng.gaussian(0.0, 0.5),rng.gaussian(0.0, 0.5))
+			);
 
 }
 
-Eigen::Vector3d CollisionFreeShell::project(const moveit::core::RobotState &st) const {
-	return project(st.getGlobalLinkTransform("base_link").translation());
+Eigen::Vector3d SphereShell::project(const moveit::core::RobotState &st) const {
+	return project(st.getGlobalLinkTransform("end_effector").translation());
 }
 
-Eigen::Vector3d CollisionFreeShell::project(const Apple &st) const {
+Eigen::Vector3d SphereShell::project(const Apple &st) const {
 	return project(st.center);
 }
+
+
+
+//
+//
+//Eigen::Vector3d CollisionFreeShell::project(const moveit::core::RobotState &st) const {
+//	return project(st.getGlobalLinkTransform("base_link").translation());
+//}
+//
+//Eigen::Vector3d CollisionFreeShell::project(const Apple &st) const {
+//	return project(st.center);
+//}

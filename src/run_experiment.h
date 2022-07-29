@@ -1,6 +1,3 @@
-//
-// Created by werner on 18-5-22.
-//
 
 #ifndef NEW_PLANNERS_RUN_EXPERIMENT_H
 #define NEW_PLANNERS_RUN_EXPERIMENT_H
@@ -12,10 +9,7 @@
 #include "ompl_custom.h"
 #include "planners/ShellPathPlanner.h"
 
-typedef std::function<std::shared_ptr<MultiGoalPlanner>(
-        const AppleTreePlanningScene& scene_info,
-        const ompl::base::SpaceInformationPtr&)>
-        NewMultiGoalPlannerAllocatorFn;
+using NewMultiGoalPlannerAllocatorFn = std::function<std::shared_ptr<MultiGoalPlanner> (const AppleTreePlanningScene &, const ompl::base::SpaceInformationPtr &)>;
 
 void
 run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &allocators,
@@ -25,19 +19,6 @@ run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &alloca
 					   const std::vector<std::string> &scene_names,
 					   const unsigned int nworkers,
 					   bool groundPlane);
-
-typedef std::function<std::shared_ptr<ShellPathPlanner::ShellBuilder>()> ShellBuilderAllocatorFn;
-
-std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators(
-			const std::vector<bool>& applyShellstateOptimization = {true, false},
-			const std::vector<bool>& useImprovisedInformedSampler = {false, true},
-			const std::vector<bool>& tryLuckyShots = {false, true},
-			const std::vector<bool>& useCostConvergence = {false, true},
-			const std::vector<double>& ptp_time_seconds = {0.4, 0.5, 1.0},
-			const std::vector<ShellBuilderAllocatorFn>& shell_builders = {
-					[](){return std::make_shared<PaddedSphereShellAroundLeavesBuilder>(0.1);}
-			}
-		);
 
 std::vector<NewMultiGoalPlannerAllocatorFn> make_tsp_over_prm_allocators(
 		const std::vector<size_t>& samples_per_goal = {2,3,4,5,6,7,8,9},

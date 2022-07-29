@@ -6,17 +6,22 @@
 #include "planners/ShellPathPlanner.h"
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 
-class ConvexHullShellBuilder : public ShellPathPlanner::ShellBuilder {
+struct ConvexHullPoint {
+	size_t face_id;
+	Eigen::Vector3d barycentric;
+};
+
+class ConvexHullShellBuilder : public ShellPathPlanner<ConvexHullPoint>::ShellBuilder {
 
 public:
-	std::shared_ptr<OMPLSphereShellWrapper>
+	std::shared_ptr<OMPLSphereShellWrapper<ConvexHullPoint>>
 		buildShell(const AppleTreePlanningScene &scene_info,
 				   const ompl::base::SpaceInformationPtr &si) const override;
 
 	[[nodiscard]] Json::Value parameters() const override;
 };
 
-class ConvexHullShell : public CollisionFreeShell {
+class ConvexHullShell : public CollisionFreeShell<ConvexHullPoint> {
 
 	std::vector<Eigen::Vector3d> vertices;
 
@@ -46,18 +51,22 @@ public:
 	ConvexHullShell(const shape_msgs::msg::Mesh &mesh);
 
 	[[nodiscard]] moveit::core::RobotState
-		state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Eigen::Vector3d &a) const override;
+		state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const override;
 
 	[[nodiscard]] std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone,
-														const Eigen::Vector3d &a,
-														const Eigen::Vector3d &b) const override;
+														const ConvexHullPoint &a,
+														const ConvexHullPoint &b) const override;
 
-	[[nodiscard]] double predict_path_length(const Eigen::Vector3d &a, const Eigen::Vector3d &b) const override;
+	[[nodiscard]] double predict_path_length(const ConvexHullPoint &a, const ConvexHullPoint &b) const override;
+
+	ConvexHullPoint gaussian_sample_near_point(const ConvexHullPoint &near) const override;
+
+	ConvexHullPoint project(const moveit::core::RobotState &st) const override;
+
+	ConvexHullPoint project(const Apple &st) const override;
 
 protected:
-	[[nodiscard]] Eigen::Vector3d project(const Eigen::Vector3d &a) const override;
-
-
+	[[nodiscard]] ConvexHullPoint project(const Eigen::Vector3d &a) const;
 
 	void match_faces();
 

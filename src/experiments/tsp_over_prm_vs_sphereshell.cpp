@@ -5,6 +5,9 @@
  */
 
 #include <range/v3/range/conversion.hpp>
+#include <range/v3/view/cartesian_product.hpp>
+#include <range/v3/view/transform.hpp>
+#include <range/v3/view/for_each.hpp>
 #include "../run_experiment.h"
 
 int main(int argc, char **argv) {
@@ -14,15 +17,27 @@ int main(int argc, char **argv) {
     std::vector<NewMultiGoalPlannerAllocatorFn> planners;
 
 	// Use known-good parameters here. We don't necessarily need huge diversity since this is our planner.
-    auto shellpath_allocators = make_shellpath_allocators(
-			{true},
-			{true},
-			{true},
-			{true},
-			{0.4, 0.5, 1.0}
-			);
 
-    planners.insert(planners.end(), shellpath_allocators.begin(), shellpath_allocators.end());
+	for (double ptp_budget : {0.4, 0.5, 1.0}) {
+		auto mkptp = [=](const ompl::base::SpaceInformationPtr &si) {
+
+			return std::make_shared<SingleGoalPlannerMethods>(
+					ptp_budget,
+					si,
+					std::make_shared<DronePathLengthObjective>(si),
+					[](auto si) { std::make_shared<ompl::geometric::PRM>(si); },
+					true,
+					true,
+					true
+					);
+		};
+
+		planners.push_back([=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
+
+			return std::make_shared<ShellPathPlanner<Eigen::Vector3d>>(true, mkptp(si), std::make_shared<PaddedSphereShellAroundLeavesBuilder>(0.1));
+
+		});
+	}
 
 	// To prove conclusively that our planner is better than this one, we'll want to test a large number of parameters.
     auto tsp_over_prm_allocators = make_tsp_over_prm_allocators(

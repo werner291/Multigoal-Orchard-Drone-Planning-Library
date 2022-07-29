@@ -6,17 +6,17 @@
 #include <range/v3/view/iota.hpp>
 
 moveit::core::RobotState
-ConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Eigen::Vector3d &a) const {
+ConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const {
 	throw std::runtime_error("Not implemented");
 }
 
 std::vector<moveit::core::RobotState> ConvexHullShell::path_on_shell(const moveit::core::RobotModelConstPtr &drone,
-																	 const Eigen::Vector3d &a,
-																	 const Eigen::Vector3d &b) const {
+																	 const ConvexHullPoint &a,
+																	 const ConvexHullPoint &b) const {
 	throw std::runtime_error("Not implemented");
 }
 
-double ConvexHullShell::predict_path_length(const Eigen::Vector3d &a, const Eigen::Vector3d &b) const {
+double ConvexHullShell::predict_path_length(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
 	throw std::runtime_error("Not implemented");
 
 }
@@ -136,6 +136,48 @@ void ConvexHullShell::match_faces() {
 	}
 }
 
+ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &a) const {
+
+	size_t face_index = guess_closest_face(a);
+
+	while (true) {
+
+		const Facet &f = facets[face_index];
+
+		Eigen::Vector3d a_proj = pointInTriangle(a, vertices[f.a], vertices[f.b], vertices[f.c]);
+
+		if (0 <= a_proj.x() && a_proj.x() <= 1 && 0 <= a_proj.y() && a_proj.y() <= 1 && 0 <= a_proj.z() && a_proj.z() <= 1) {
+			return ConvexHullPoint{face_index, a_proj};
+		} else {
+
+			if (a_proj.x() < 0) {
+				face_index = f.neighbour_bc;
+			} else if (a_proj.y() < 0) {
+				face_index = f.neighbour_ca;
+			} else if (a_proj.z() < 0) {
+				face_index = f.neighbour_ab;
+			} else {
+				throw std::runtime_error("Projection outside of face or face neighbours.");
+			}
+
+		}
+
+	}
+
+}
+
+ConvexHullPoint ConvexHullShell::gaussian_sample_near_point(const ConvexHullPoint &near) const {
+	throw std::runtime_error("Not implemented.");
+}
+
+ConvexHullPoint ConvexHullShell::project(const moveit::core::RobotState &st) const {
+	return project(st.getGlobalLinkTransform("base_link").translation());
+}
+
+ConvexHullPoint ConvexHullShell::project(const Apple &st) const {
+	return project(st.center);
+}
+
 std::vector<geometry_msgs::msg::Point>
 extract_leaf_vertices(const AppleTreePlanningScene &scene_info)  {
 	std::vector<geometry_msgs::msg::Point> mesh_points;
@@ -151,13 +193,15 @@ extract_leaf_vertices(const AppleTreePlanningScene &scene_info)  {
 	return mesh_points;
 }
 
-std::shared_ptr<OMPLSphereShellWrapper> ConvexHullShellBuilder::buildShell(
+std::shared_ptr<OMPLSphereShellWrapper<ConvexHullPoint>> ConvexHullShellBuilder::buildShell(
 		const AppleTreePlanningScene &scene_info,
 		const ompl::base::SpaceInformationPtr &si) const {
 
 	auto leaf_vertices = extract_leaf_vertices(scene_info);
 
-	return std::make_shared<OMPLSphereShellWrapper>(std::make_shared<ConvexHullShell>(convexHull(leaf_vertices)),si);
+	return std::make_shared<OMPLSphereShellWrapper<ConvexHullPoint>>(
+			std::make_shared<ConvexHullShell>(
+					convexHull(leaf_vertices)),si);
 
 }
 

@@ -15,22 +15,8 @@
  * Describes, in MoveIt terms, a "shell" shape that fits around the obstacles in the scene,
  * and can be used to quickly plan collision-free paths around then.
  */
+template<typename ShellPoint>
 class CollisionFreeShell {
-
-protected:
-
-	/**
-	 * Project a point from anywhere in R^3 onto the collision-free shell.
-	 * Method is protected, since the CollisionFreeShell should be interfaced
-	 * with in an as-abstract-as-possible manner.
-	 *
-	 * Ideally, I'd like to treat the Vector3d completely abstractly, but
-	 * that'll require a lot of wrapping for relatively little gain.
-	 *
-	 * @param a 		The point to project.
-	 * @return 			The point on the shell.
-	 */
-	[[nodiscard]] virtual Eigen::Vector3d project(const Eigen::Vector3d &a) const = 0;
 
 public:
 	/**
@@ -43,7 +29,7 @@ public:
 	 */
     [[nodiscard]] virtual moveit::core::RobotState state_on_shell(
 			const moveit::core::RobotModelConstPtr &drone,
-			const Eigen::Vector3d &a) const = 0;
+			const ShellPoint &a) const = 0;
 
 	/**
 	 * Construct a path from a to b, on the collision-free shell.
@@ -55,8 +41,8 @@ public:
 	 */
     [[nodiscard]] virtual std::vector<moveit::core::RobotState> path_on_shell(
 			const moveit::core::RobotModelConstPtr &drone,
-			const Eigen::Vector3d &a,
-			const Eigen::Vector3d &b) const = 0;
+			const ShellPoint &a,
+			const ShellPoint &b) const = 0;
 
 	/**
 	 * Sample a point within a (roughly) Gaussian distribution around the given point on the sphere.
@@ -64,7 +50,7 @@ public:
 	 * @param near 	The point to sample near.
 	 * @return 		The sampled point.
 	 */
-	[[nodiscard]] Eigen::Vector3d gaussian_sample_near_point(const Eigen::Vector3d& near) const;
+	[[nodiscard]] virtual ShellPoint gaussian_sample_near_point(const ShellPoint& near) const = 0;
 
 	/**
 	 * Predict the length of a path from a to b, on the collision-free shell, without constructing the path.
@@ -76,8 +62,8 @@ public:
 	 * @return 			The predicted length.
 	 */
 	[[nodiscard]] virtual double predict_path_length(
-			const Eigen::Vector3d &a,
-			const Eigen::Vector3d &b) const = 0;
+			const ShellPoint &a,
+			const ShellPoint &b) const = 0;
 
 	/**
 	 * Project a RobotState onto the collision-free shell.
@@ -85,26 +71,34 @@ public:
 	 * @param st 		The RobotState to project.
 	 * @return 			The projected point.
 	 */
-	[[nodiscard]] virtual Eigen::Vector3d project(const moveit::core::RobotState& st) const;
+	[[nodiscard]] virtual ShellPoint project(const moveit::core::RobotState& st) const = 0;
 
 	/**
 	 * Project an Apple/target onto the collision-free shell.
 	 * @param st 		The Apple to project.
 	 * @return 			The projected point.
 	 */
-	[[nodiscard]] virtual Eigen::Vector3d project(const Apple& st) const;
+	[[nodiscard]] virtual ShellPoint project(const Apple& st) const = 0;
 
 };
 
 /**
  * An implementation of a CollisionFreeShell, using a sphere as the shell shape.
  */
-class SphereShell : public CollisionFreeShell {
+class SphereShell : public CollisionFreeShell<Eigen::Vector3d> {
 
 	/// The center of the sphere.
     Eigen::Vector3d center;
 	/// The radius of the sphere.
     double radius;
+
+	/**
+	 * Perform a central projection of a point from anywhere in R^3 onto the sphere surface.
+	 *
+	 * @param a 		The point to project.
+	 * @return 			The point on the sphere,
+	 */
+	[[nodiscard]] Eigen::Vector3d project(const Eigen::Vector3d &a) const;
 
 public:
 	/**
@@ -138,14 +132,6 @@ public:
     [[nodiscard]] std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone, const Eigen::Vector3d &a, const Eigen::Vector3d &b) const override;
 
 	/**
-	 * Perform a central projection of a point from anywhere in R^3 onto the sphere surface.
-	 *
-	 * @param a 		The point to project.
-	 * @return 			The point on the sphere,
-	 */
-    [[nodiscard]] Eigen::Vector3d project(const Eigen::Vector3d &a) const override;
-
-	/**
 	 * Predict the length of a path from a to b; this is the length of the geodesic between a and b.
 	 *
 	 * @param a 		The start point (assumed to be on the shell).
@@ -153,6 +139,12 @@ public:
 	 * @return 			The predicted length.
 	 */
 	[[nodiscard]] double predict_path_length(const Eigen::Vector3d &a, const Eigen::Vector3d &b) const override;
+
+	Eigen::Vector3d gaussian_sample_near_point(const Eigen::Vector3d &near) const override;
+
+	Eigen::Vector3d project(const moveit::core::RobotState &st) const override;
+
+	Eigen::Vector3d project(const Apple &st) const override;
 };
 
 /**
@@ -160,37 +152,87 @@ public:
  *
  * Assumes that the OMPL state space is a ModelBasedStateSpace.
  */
+template<typename ShellPoint>
 class OMPLSphereShellWrapper {
 
 	/// Reference to the underlying CollisionFreeShell.
-    std::shared_ptr<CollisionFreeShell> shell;
+    std::shared_ptr<CollisionFreeShell<ShellPoint>> shell;
 
 	/// The OMPL SpaceInformation.
     ompl::base::SpaceInformationPtr si;
 
 public:
-    [[nodiscard]] std::shared_ptr<CollisionFreeShell> getShell() const;
+    OMPLSphereShellWrapper(std::shared_ptr<CollisionFreeShell<ShellPoint> > shell,
+						   ompl::base::SpaceInformationPtr si) : shell(std::move(shell)), si(std::move(si)) {
+	}
 
-public:
-    OMPLSphereShellWrapper(std::shared_ptr<CollisionFreeShell> shell, ompl::base::SpaceInformationPtr si);
+	void state_on_shell(const ShellPoint& a, ompl::base::State* st) const {
 
-	void state_on_shell(const Eigen::Vector3d& a, ompl::base::State* st) const;
+		auto state_space = std::dynamic_pointer_cast<ompl_interface::ModelBasedStateSpace>(si->getStateSpace());
 
-    void state_on_shell(const ompl::base::Goal* apple, ompl::base::State* st) const;
+		state_space->copyToOMPLState(st, shell->state_on_shell(state_space->getRobotModel(), a));
+	}
 
-	ompl::geometric::PathGeometric path_on_shell(const Eigen::Vector3d& a, const Eigen::Vector3d& b);
 
-	ompl::geometric::PathGeometric path_on_shell(const ompl::base::Goal* a, const ompl::base::Goal* b);
+	ompl::geometric::PathGeometric path_on_shell(const ShellPoint& a, const ShellPoint& b)  {
+		return omplPathFromMoveitTrajectory(shell->path_on_shell(si->getStateSpace()
+																		 ->as<ompl_interface::ModelBasedStateSpace>()
+																		 ->getRobotModel(), a, b), si);
+	}
 
-	[[nodiscard]] double predict_path_length(const ompl::base::Goal* a, const ompl::base::Goal* b) const;
+	std::shared_ptr<CollisionFreeShell<ShellPoint>> getShell() const {
+		return shell;
+	}
 
-	[[nodiscard]] double predict_path_length(const ompl::base::State* a, const ompl::base::Goal* b) const;
+	void state_on_shell(const ompl::base::Goal *apple, ompl::base::State *st) const {
+		state_on_shell(project(apple), st);
+	}
 
-	[[nodiscard]] Eigen::Vector3d gaussian_sample_near_point(const Eigen::Vector3d& near) const;
+	ompl::geometric::PathGeometric path_on_shell(const ompl::base::Goal *a, const ompl::base::Goal *b) {
+		return path_on_shell(project(a), project(b));
+	}
 
-	[[nodiscard]] Eigen::Vector3d project(const ompl::base::State* st) const;
+	double predict_path_length(const ompl::base::Goal *a, const ompl::base::Goal *b) const {
+		return shell->predict_path_length(project(a), project(b));
+	}
 
-	[[nodiscard]] Eigen::Vector3d project(const ompl::base::Goal* goal) const;
+	double predict_path_length(const ompl::base::State *a, const ompl::base::Goal *b) const {
+		return shell->predict_path_length(project(a), project(b));
+	}
+
+	ShellPoint gaussian_sample_near_point(const ShellPoint &near) const {
+		return shell->gaussian_sample_near_point(near);
+	}
+
+	ShellPoint project(const ompl::base::State *st) const {
+		moveit::core::RobotState rst(si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->getRobotModel());
+		si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>()->copyToRobotState(rst, st);
+		rst.update(true);
+
+
+		if (isnan(rst.getGlobalLinkTransform("end_effector").translation().z())) {
+			std::cout << rst << std::endl;
+		}
+
+		return shell->project(rst);
+	}
+
+	ShellPoint project(const ompl::base::Goal *goal) const {
+		return shell->project(Apple {
+				goal->as<DroneEndEffectorNearTarget>()->getTarget(),
+		});
+	}
+
+//	Eigen::Vector3d CollisionFreeShell::gaussian_sample_near_point(const Eigen::Vector3d &near) const {
+//		ompl::RNG rng;
+//
+//		Eigen::Vector3d moved_focus(near.x() + rng.gaussian(0.0, 0.5),
+//									near.y() + rng.gaussian(0.0, 0.5),
+//									near.z() + rng.gaussian(0.0, 0.5));
+//
+//		return project(moved_focus);
+//
+//	}
 };
 
 #endif //NEW_PLANNERS_SPHERESHELL_H

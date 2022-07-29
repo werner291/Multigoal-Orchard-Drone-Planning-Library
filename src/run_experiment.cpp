@@ -400,56 +400,6 @@ std::shared_ptr<SphereShell> buildSphereShell(const AppleTreePlanningScene& scen
 	return std::make_shared<SphereShell>(enclosing.center, enclosing.radius);
 }
 
-/// Generate a list of ShellPathPlanner allocators to be run during an experiment.
-std::vector<NewMultiGoalPlannerAllocatorFn> make_shellpath_allocators(
-		const std::vector<bool>& applyShellstateOptimization,
-		const std::vector<bool>& useImprovisedInformedSampler,
-		const std::vector<bool>& tryLuckyShots,
-		const std::vector<bool>& useCostConvergence,
-		const std::vector<double>& ptp_time_seconds,
-		const std::vector<ShellBuilderAllocatorFn>& shell_builders
-		) {
-
-	// We explicitly use a function pointer here so we don't get burnt by this containing a reference to some local variable.
-	ompl::base::PlannerPtr(*planner_allocators[])(const ompl::base::SpaceInformationPtr&) = { &allocPRM };
-
-	// Generate all combinations.
-	return ranges::views::cartesian_product(applyShellstateOptimization,
-											ptp_time_seconds,
-											planner_allocators,
-											useImprovisedInformedSampler,
-											tryLuckyShots,
-											useCostConvergence,
-											shell_builders) |
-		   ranges::views::transform([](const auto tuple) -> NewMultiGoalPlannerAllocatorFn {
-
-			   // Unpack the tuple.
-			   auto [shellOptimize, ptp_budget, allocator, improvised_sampler, tryLucky, costConvergence, shell_builder] = tuple;
-
-			   // Explicitly capture each by value to prevent any references from going out of scope.
-			   return [shellOptimize = shellOptimize,
-					   ptp_budget = ptp_budget,
-					   allocator = allocator,
-					   improvised_sampler = improvised_sampler,
-					   tryLucky = tryLucky,
-					   costConvergence = costConvergence,
-					   shell_builder=shell_builder](
-					   const AppleTreePlanningScene &scene_info,
-					   const ompl::base::SpaceInformationPtr &si) {
-
-				   auto ptp = std::make_shared<SingleGoalPlannerMethods>(ptp_budget,
-																		 si,
-																		 std::make_shared<DronePathLengthObjective>(si),
-																		 allocator,
-																		 improvised_sampler,
-																		 tryLucky,
-																		 costConvergence);
-
-				   return std::make_shared<ShellPathPlanner>(shellOptimize, ptp, shell_builder());
-
-			   };
-		   }) | ranges::to_vector; //  We return a vector to, again, prevent returning references to local variables.
-}
 
 std::vector<NewMultiGoalPlannerAllocatorFn> make_tsp_over_prm_allocators(
 		const std::vector<size_t>& samples_per_goal,

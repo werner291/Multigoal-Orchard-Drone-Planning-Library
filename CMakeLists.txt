@@ -88,8 +88,6 @@ add_library(${PROJECT_NAME}_shared
         src/SphereShell.h
         src/TimedCostConvergenceTerminationCondition.cpp
         src/TimedCostConvergenceTerminationCondition.h
-        src/UnionGoalSampleableRegion.cpp
-        src/UnionGoalSampleableRegion.h
         src/experiment_utils.cpp
         src/experiment_utils.h
         src/general_utilities.cpp

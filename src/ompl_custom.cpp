@@ -6,7 +6,6 @@
 #include <fcl/fcl.h>
 #include "DroneStateConstraintSampler.h"
 #include "ompl_custom.h"
-#include "UnionGoalSampleableRegion.h"
 
 bool StateValidityChecker::isValid(const ompl::base::State *state) const {
 
