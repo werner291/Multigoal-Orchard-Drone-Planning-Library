@@ -223,16 +223,11 @@ public:
 		});
 	}
 
-//	Eigen::Vector3d CollisionFreeShell::gaussian_sample_near_point(const Eigen::Vector3d &near) const {
-//		ompl::RNG rng;
-//
-//		Eigen::Vector3d moved_focus(near.x() + rng.gaussian(0.0, 0.5),
-//									near.y() + rng.gaussian(0.0, 0.5),
-//									near.z() + rng.gaussian(0.0, 0.5));
-//
-//		return project(moved_focus);
-//
-//	}
 };
+
+
+moveit::core::RobotState robotStateFromFacing(const moveit::core::RobotModelConstPtr &drone,
+															   const Eigen::Vector3d &desired_ee_pos,
+															   const Eigen::Vector3d &required_facing);
 
 #endif //NEW_PLANNERS_SPHERESHELL_H

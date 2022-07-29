@@ -7,7 +7,23 @@
 
 moveit::core::RobotState
 ConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const {
-	throw std::runtime_error("Not implemented");
+
+	const Facet& facet = facets[a.face_id];
+
+	Eigen::Vector3d desired_ee_pos = to_euclidean(a, facet);
+
+	// TODO: Check winding order on the triangles.
+	Eigen::Vector3d normal = (vertices[facet.b] - vertices[facet.a]).cross(vertices[facet.c] - vertices[facet.a]).normalized();
+
+	Eigen::Vector3d required_facing = -normal;
+
+	return robotStateFromFacing(drone, desired_ee_pos, required_facing);
+
+}
+
+Eigen::Vector3d ConvexHullShell::to_euclidean(const ConvexHullPoint &a, const ConvexHullShell::Facet &facet) {
+	Eigen::Vector3d desired_ee_pos = vertices[facet.a] * a.barycentric.x() + vertices[facet.b] * a.barycentric.y() + vertices[facet.c] * a.barycentric.z();
+	return desired_ee_pos;
 }
 
 std::vector<moveit::core::RobotState> ConvexHullShell::path_on_shell(const moveit::core::RobotModelConstPtr &drone,
@@ -17,6 +33,9 @@ std::vector<moveit::core::RobotState> ConvexHullShell::path_on_shell(const movei
 }
 
 double ConvexHullShell::predict_path_length(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
+
+
+
 	throw std::runtime_error("Not implemented");
 
 }
@@ -167,7 +186,17 @@ ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &a) const {
 }
 
 ConvexHullPoint ConvexHullShell::gaussian_sample_near_point(const ConvexHullPoint &near) const {
-	throw std::runtime_error("Not implemented.");
+
+	const Facet &f = facets[near.face_id];
+
+	Eigen::Vector3d a_proj = vertices[f.a] * near.barycentric.x() + vertices[f.b] * near.barycentric.y() + vertices[f.c] * near.barycentric.z();
+
+	ompl::RNG rng;
+
+	Eigen::Vector3d a_rand = a_proj + Eigen::Vector3d(rng.gaussian(0.0, 0.1), rng.gaussian(0.0, 0.1), rng.gaussian(0.0, 0.1));
+
+	return project(a_rand);
+
 }
 
 ConvexHullPoint ConvexHullShell::project(const moveit::core::RobotState &st) const {

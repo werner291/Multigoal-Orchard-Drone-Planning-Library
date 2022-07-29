@@ -11,34 +11,10 @@ SphereShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const
 	// Check precondition that a is a point on the shell.
 	assert((a - project(a)).squaredNorm() < 1e-6);
 
-	moveit::core::RobotState st(drone);
-
-	// A horrifying way to compute the reuired yaw angle.
-	Eigen::Vector3d default_facing(0.0, 1.0, 0.0);
 	Eigen::Vector3d required_facing = (center - a).normalized();
-	Eigen::Vector3d base_facing = (Eigen::Vector3d(required_facing.x(), required_facing.y(), 0.0)).normalized();
-	double yaw = copysign(acos(default_facing.dot(base_facing)), default_facing.cross(base_facing).z());
 
-	Eigen::Quaterniond qd(Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()));
+	return robotStateFromFacing(drone, a, required_facing);
 
-	// Set to all 0s, except for the orientation of the base.
-	st.setVariablePositions({0.0, 0.0, 0.0,      // Position off the side of the tree
-							 qd.x(), qd.y(), qd.z(), qd.w(),// Identity rotation
-							 0.0, 0.0, 0.0, 0.0  // Arm straight out
-							});
-
-	st.update(true);
-
-	// Apply a translation to the base to bring the end-effector to the desired position.
-	Eigen::Vector3d offset = a - st.getGlobalLinkTransform("end_effector").translation();
-
-	st.setVariablePosition(0, offset.x());
-	st.setVariablePosition(1, offset.y());
-	st.setVariablePosition(2, offset.z());
-
-	st.update(true);
-
-	return st;
 }
 
 std::vector<moveit::core::RobotState> SphereShell::path_on_shell(const moveit::core::RobotModelConstPtr &drone,
@@ -126,3 +102,33 @@ Eigen::Vector3d SphereShell::project(const Apple &st) const {
 //Eigen::Vector3d CollisionFreeShell::project(const Apple &st) const {
 //	return project(st.center);
 //}
+moveit::core::RobotState robotStateFromFacing(const moveit::core::RobotModelConstPtr &drone,
+											  const Eigen::Vector3d &desired_ee_pos,
+											  const Eigen::Vector3d &required_facing) {
+	moveit::core::RobotState st(drone);
+	// A horrifying way to compute the reuired yaw angle.
+	Eigen::Vector3d default_facing(0.0, 1.0, 0.0);
+	Eigen::Vector3d base_facing = (Eigen::Vector3d(required_facing.x(), required_facing.y(), 0.0)).normalized();
+	double yaw = copysign(acos(default_facing.dot(base_facing)), default_facing.cross(base_facing).z());
+
+	Eigen::Quaterniond qd(Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()));
+
+	// Set to all 0s, except for the orientation of the base.
+	st.setVariablePositions({0.0, 0.0, 0.0,      // Position off the side of the tree
+							 qd.x(), qd.y(), qd.z(), qd.w(),// Identity rotation
+							 0.0, 0.0, 0.0, 0.0  // Arm straight out
+							});
+
+	st.update(true);
+
+	// Apply a translation to the base to bring the end-effector to the desired position.
+	Eigen::Vector3d offset = desired_ee_pos - st.getGlobalLinkTransform("end_effector").translation();
+
+	st.setVariablePosition(0, offset.x());
+	st.setVariablePosition(1, offset.y());
+	st.setVariablePosition(2, offset.z());
+
+	st.update(true);
+
+	return st;
+}

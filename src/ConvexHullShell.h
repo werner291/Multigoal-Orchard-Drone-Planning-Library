@@ -1,4 +1,3 @@
-
 #ifndef NEW_PLANNERS_CONVEXHULLSHELL_H
 #define NEW_PLANNERS_CONVEXHULLSHELL_H
 
@@ -15,8 +14,7 @@ class ConvexHullShellBuilder : public ShellPathPlanner<ConvexHullPoint>::ShellBu
 
 public:
 	std::shared_ptr<OMPLSphereShellWrapper<ConvexHullPoint>>
-		buildShell(const AppleTreePlanningScene &scene_info,
-				   const ompl::base::SpaceInformationPtr &si) const override;
+	buildShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) const override;
 
 	[[nodiscard]] Json::Value parameters() const override;
 };
@@ -51,11 +49,11 @@ public:
 	ConvexHullShell(const shape_msgs::msg::Mesh &mesh);
 
 	[[nodiscard]] moveit::core::RobotState
-		state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const override;
+	state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const override;
 
 	[[nodiscard]] std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone,
-														const ConvexHullPoint &a,
-														const ConvexHullPoint &b) const override;
+																	  const ConvexHullPoint &a,
+																	  const ConvexHullPoint &b) const override;
 
 	[[nodiscard]] double predict_path_length(const ConvexHullPoint &a, const ConvexHullPoint &b) const override;
 
@@ -71,7 +69,13 @@ protected:
 	void match_faces();
 
 	void init_gnat();
+
+	Eigen::Vector3d to_euclidean(const ConvexHullPoint &a, const Facet &facet);
 };
+
+moveit::core::RobotState robotStateFromFacing(const moveit::core::RobotModelConstPtr &drone,
+											  const Eigen::Vector3d &desired_ee_pos,
+											  const Eigen::Vector3d &required_facing);
 
 
 #endif //NEW_PLANNERS_CONVEXHULLSHELL_H
