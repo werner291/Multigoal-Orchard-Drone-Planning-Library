@@ -5,9 +5,6 @@
  */
 
 #include <range/v3/range/conversion.hpp>
-#include <range/v3/view/cartesian_product.hpp>
-#include <range/v3/view/transform.hpp>
-#include <range/v3/view/for_each.hpp>
 #include "../run_experiment.h"
 
 int main(int argc, char **argv) {
@@ -25,14 +22,14 @@ int main(int argc, char **argv) {
 					ptp_budget,
 					si,
 					std::make_shared<DronePathLengthObjective>(si),
-					[](auto si) { std::make_shared<ompl::geometric::PRM>(si); },
+					[](auto si) { return std::make_shared<ompl::geometric::PRM>(si); },
 					true,
 					true,
 					true
 					);
 		};
 
-		planners.push_back([=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
+		planners.emplace_back([=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
 
 			return std::make_shared<ShellPathPlanner<Eigen::Vector3d>>(true, mkptp(si), std::make_shared<PaddedSphereShellAroundLeavesBuilder>(0.1));
 
@@ -52,8 +49,8 @@ int main(int argc, char **argv) {
 						   "analysis/full_experiment.json",
 						   10,
 						   {10, 50, 100, 150},
+						   {"appletree", "lemontree2", "orangetree4"},
 						   std::thread::hardware_concurrency(),
-						   0,
 						   true);
 
     return 0;
