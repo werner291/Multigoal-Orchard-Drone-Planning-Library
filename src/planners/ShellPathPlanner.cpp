@@ -1,23 +1,16 @@
-//
-// Created by werner on 17-5-22.
-//
 
 #include "ShellPathPlanner.h"
 #include "../traveling_salesman.h"
 #include "../probe_retreat_move.h"
 #include "../DronePathLengthObjective.h"
-#include "../planning_scene_diff_message.h"
 #include "../experiment_utils.h"
-
 #include <utility>
-
-
 
 ShellPathPlanner::ShellPathPlanner(bool applyShellstateOptimization,
 								   std::shared_ptr<SingleGoalPlannerMethods> methods,
-								   const std::shared_ptr<ShellBuilder>& shellBuilder) :
+								   std::shared_ptr<const ShellBuilder>  shellBuilder) :
 		apply_shellstate_optimization(applyShellstateOptimization),
-		methods(std::move(methods)), shell_builder(shellBuilder) {}
+		methods(std::move(methods)), shell_builder(std::move(shellBuilder)) {}
 
 MultiGoalPlanner::PlanResult ShellPathPlanner::plan(
 		const ompl::base::SpaceInformationPtr &si,
@@ -213,7 +206,7 @@ std::string ShellPathPlanner::name() const {
 }
 
 std::shared_ptr<OMPLSphereShellWrapper> PaddedSphereShellAroundLeavesBuilder::buildShell(const AppleTreePlanningScene &scene_info,
-																						 const ompl::base::SpaceInformationPtr &si) {
+																						 const ompl::base::SpaceInformationPtr &si) const {
 
 	auto enclosing = compute_enclosing_sphere(scene_info.scene_msg, 0.0);
 

@@ -42,6 +42,7 @@ link_libraries(
         ${Boost_LIBRARIES}
         ${BULLET_LIBRARIES}
         ${OMPL_LIBRARIES}
+        qhullcpp
         HACD # Note: the HACD library is included Bullet's "extra" libraries
         jsoncpp_lib
         tbb
@@ -120,7 +121,7 @@ add_library(${PROJECT_NAME}_shared
         src/traveling_salesman.h
 #        src/NewKnnPlanner.cpp
 #        src/NewKnnPlanner.h
-        src/ConvexHullShell.cpp src/ConvexHullShell.h)
+        src/ConvexHullShell.cpp src/ConvexHullShell.h src/convex_hull.cpp src/convex_hull.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -136,6 +137,7 @@ endfunction()
 experiment("shellpath")
 experiment("shellpath_shell_inflation")
 experiment("shellpath_shell_bias")
+experiment("shellpath_convexhull_vs_sphere")
 experiment("tsp_over_prm")
 experiment("tsp_over_prm_vs_sphereshell")
 

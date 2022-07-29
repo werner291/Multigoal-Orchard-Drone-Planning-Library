@@ -10,9 +10,10 @@ class ConvexHullShellBuilder : public ShellPathPlanner::ShellBuilder {
 
 public:
 	std::shared_ptr<OMPLSphereShellWrapper>
-	buildShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) override;
+		buildShell(const AppleTreePlanningScene &scene_info,
+				   const ompl::base::SpaceInformationPtr &si) const override;
 
-	Json::Value parameters() const override;
+	[[nodiscard]] Json::Value parameters() const override;
 };
 
 class ConvexHullShell : public CollisionFreeShell {
@@ -44,17 +45,19 @@ public:
 
 	ConvexHullShell(const shape_msgs::msg::Mesh &mesh);
 
-	moveit::core::RobotState
+	[[nodiscard]] moveit::core::RobotState
 		state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Eigen::Vector3d &a) const override;
 
-	std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone,
+	[[nodiscard]] std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone,
 														const Eigen::Vector3d &a,
 														const Eigen::Vector3d &b) const override;
 
-	double predict_path_length(const Eigen::Vector3d &a, const Eigen::Vector3d &b) const override;
+	[[nodiscard]] double predict_path_length(const Eigen::Vector3d &a, const Eigen::Vector3d &b) const override;
 
 protected:
-	Eigen::Vector3d project(const Eigen::Vector3d &a) const override;
+	[[nodiscard]] Eigen::Vector3d project(const Eigen::Vector3d &a) const override;
+
+
 
 	void match_faces();
 

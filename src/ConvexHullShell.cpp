@@ -1,14 +1,9 @@
 
 #include "ConvexHullShell.h"
+#include "convex_hull.h"
 
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/iota.hpp>
-
-#include <libqhullcpp/Qhull.h>
-#include <libqhullcpp/RboxPoints.h>
-#include <libqhullcpp/QhullFacetList.h>
-#include <libqhullcpp/QhullVertexSet.h>
-
 
 moveit::core::RobotState
 ConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const Eigen::Vector3d &a) const {
@@ -61,39 +56,11 @@ Eigen::Vector3d pointInTriangle(const Eigen::Vector3d& qp,
 	double beta = w.cross(v).dot(n) / n.dot(n);
 	double alpha = 1 - gamma - beta;
 
-	return Eigen::Vector3d(alpha, beta, gamma);
+	return {
+		alpha, beta, gamma
+	};
 }
 
-
-Eigen::Vector3d ConvexHullShell::project(const Eigen::Vector3d &query_pt) const {
-
-	size_t face_index = guess_closest_face(query_pt);
-
-	// Now, we're going to "climb" the convex hull, to find the point closest to our query point.
-
-	while (true) {
-
-		const Facet &facet = facets[face_index];
-
-		// Credit to https://math.stackexchange.com/a/28552 for this formula (and Copilot for autocompleting most of it)
-
-		const auto va = vertices[facet.a];
-		const auto vb = vertices[facet.b];
-		const auto vc = vertices[facet.c];
-
-		Eigen::Vector3d barycentric = pointInTriangle(query_pt, va, vb, vc);
-		
-		// If the point is inside the triangle, we're done.
-		if (barycentric.x() >= 0 && barycentric.y() >= 0 && barycentric.z() >= 0) {
-			return va * barycentric.x() + vb * barycentric.y() + vc * barycentric.z();
-		}
-		
-
-	}
-
-
-
-}
 
 size_t ConvexHullShell::guess_closest_face(const Eigen::Vector3d &a) const {
 	return facet_index.nearest(NNGNATEntry{SIZE_MAX, a}).face_index;
@@ -169,44 +136,6 @@ void ConvexHullShell::match_faces() {
 	}
 }
 
-shape_msgs::msg::Mesh convexHull(const std::vector<geometry_msgs::msg::Point> &mesh_points) {
-	orgQhull::RboxPoints points;
-	for (const auto& p : mesh_points) {
-		double coords[3] = {p.x, p.y, p.z};
-
-		orgQhull::QhullPoint qhp(3, coords);
-
-		points.append(qhp);
-	}
-
-
-	orgQhull::Qhull qhull;
-	qhull.runQhull(points, "");
-
-	shape_msgs::msg::Mesh mesh;
-
-	for (const auto& facet : qhull.facetList()) {
-
-		assert(facet.vertices().size() == 3);
-
-		shape_msgs::msg::MeshTriangle t;
-		t.vertex_indices[0] = facet.vertices().at(0).id();
-		t.vertex_indices[1] = facet.vertices().at(1).id();
-		t.vertex_indices[2] = facet.vertices().at(2).id();
-		mesh.triangles.push_back(t);
-	}
-
-	for (const auto& vertex : qhull.vertexList()) {
-		geometry_msgs::msg::Point p;
-		p.x = vertex.point()[0];
-		p.y = vertex.point()[1];
-		p.z = vertex.point()[2];
-		mesh.vertices.push_back(p);
-	}
-	return mesh;
-}
-
-
 std::vector<geometry_msgs::msg::Point>
 extract_leaf_vertices(const AppleTreePlanningScene &scene_info)  {
 	std::vector<geometry_msgs::msg::Point> mesh_points;
@@ -224,7 +153,7 @@ extract_leaf_vertices(const AppleTreePlanningScene &scene_info)  {
 
 std::shared_ptr<OMPLSphereShellWrapper> ConvexHullShellBuilder::buildShell(
 		const AppleTreePlanningScene &scene_info,
-		const ompl::base::SpaceInformationPtr &si) {
+		const ompl::base::SpaceInformationPtr &si) const {
 
 	auto leaf_vertices = extract_leaf_vertices(scene_info);
 
