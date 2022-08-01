@@ -182,15 +182,68 @@ void ConvexHullShell::match_faces() {
 		}
 
 	}
+
+	for (size_t i = 0; i < facets.size(); i++) {
+		// At least one edge must refer back to the given edge
+		assert(
+				facets[facets[i].neighbour_ab].neighbour_ab == i ||
+				facets[facets[i].neighbour_ab].neighbour_bc == i ||
+				facets[facets[i].neighbour_ab].neighbour_ca == i
+		);
+
+		assert(
+				facets[facets[i].neighbour_bc].neighbour_ab == i ||
+				facets[facets[i].neighbour_bc].neighbour_bc == i ||
+				facets[facets[i].neighbour_bc].neighbour_ca == i
+		);
+
+		assert(
+				facets[facets[i].neighbour_ca].neighbour_ab == i ||
+				facets[facets[i].neighbour_ca].neighbour_bc == i ||
+				facets[facets[i].neighbour_ca].neighbour_ca == i
+		);
+
+		for (size_t neighbour_index : {facets[i].neighbour_ab, facets[i].neighbour_bc, facets[i].neighbour_ca}) {
+			size_t shared_vertices = 0;
+
+			shared_vertices += (facets[i].a == facets[neighbour_index].a) + (facets[i].a == facets[neighbour_index].b) + (facets[i].a == facets[neighbour_index].c);
+			shared_vertices += (facets[i].b == facets[neighbour_index].a) + (facets[i].b == facets[neighbour_index].b) + (facets[i].b == facets[neighbour_index].c);
+			shared_vertices += (facets[i].c == facets[neighbour_index].a) + (facets[i].c == facets[neighbour_index].b) + (facets[i].c == facets[neighbour_index].c);
+
+			assert(shared_vertices == 2);
+		}
+
+	}
 }
 
 ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &a) const {
 
+	std::cout << "Projecting " << a.transpose() << std::endl;
+
 	size_t face_index = guess_closest_face(a);
+
+	size_t iters = 0;
 
 	while (true) {
 
+		iters += 1;
+
 		const Facet &f = facets[face_index];
+
+		// TODO for tomorrow: If it tries to step back, conclude the point is on an edge?
+
+		if (iters > 50) {
+			std::cout << "On facet: " << face_index << " - "
+				<< f.a << " " << f.b << " " << f.c
+				<< "(" << vertices[f.a].x() << "," << vertices[f.a].y() << "," << vertices[f.a].z() << ")"
+				<< "(" << vertices[f.b].x() << "," << vertices[f.b].y() << "," << vertices[f.b].z() << ")"
+				<< "(" << vertices[f.c].x() << "," << vertices[f.c].y() << "," << vertices[f.c].z() << ")" << std::endl;
+
+		}
+
+		if (iters > 60) {
+			exit(1);
+		}
 
 		Eigen::Vector3d a_barycentric = pointInTriangle(a, vertices[f.a], vertices[f.b], vertices[f.c]);
 
