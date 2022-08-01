@@ -26,16 +26,7 @@ shape_msgs::msg::Mesh convexHull(const std::vector<geometry_msgs::msg::Point> &m
 
 	shape_msgs::msg::Mesh mesh;
 
-	for (const auto& facet : qhull.facetList()) {
-
-		assert(facet.vertices().size() == 3);
-
-		shape_msgs::msg::MeshTriangle t;
-		t.vertex_indices[0] = facet.vertices().at(0).id();
-		t.vertex_indices[1] = facet.vertices().at(1).id();
-		t.vertex_indices[2] = facet.vertices().at(2).id();
-		mesh.triangles.push_back(t);
-	}
+	std::vector<size_t> point_id_translation(mesh_points.size(), SIZE_MAX);
 
 	for (const auto& vertex : qhull.vertexList()) {
 		geometry_msgs::msg::Point p;
@@ -43,6 +34,26 @@ shape_msgs::msg::Mesh convexHull(const std::vector<geometry_msgs::msg::Point> &m
 		p.y = vertex.point()[1];
 		p.z = vertex.point()[2];
 		mesh.vertices.push_back(p);
+
+		point_id_translation[vertex.point().id()] = mesh.vertices.size() - 1;
 	}
+
+	for (const auto& facet : qhull.facetList()) {
+
+		assert(facet.vertices().size() == 3);
+
+		shape_msgs::msg::MeshTriangle t;
+		t.vertex_indices[0] = point_id_translation[facet.vertices().at(0).point().id()];
+		t.vertex_indices[1] = point_id_translation[facet.vertices().at(1).point().id()];
+		t.vertex_indices[2] = point_id_translation[facet.vertices().at(2).point().id()];
+		mesh.triangles.push_back(t);
+
+		assert(t.vertex_indices[0] < mesh.vertices.size());
+		assert(t.vertex_indices[1] < mesh.vertices.size());
+		assert(t.vertex_indices[2] < mesh.vertices.size());
+
+	}
+
+
 	return mesh;
 }

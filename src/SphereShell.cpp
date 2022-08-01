@@ -91,17 +91,6 @@ Eigen::Vector3d SphereShell::project(const Apple &st) const {
 	return project(st.center);
 }
 
-
-
-//
-//
-//Eigen::Vector3d CollisionFreeShell::project(const moveit::core::RobotState &st) const {
-//	return project(st.getGlobalLinkTransform("base_link").translation());
-//}
-//
-//Eigen::Vector3d CollisionFreeShell::project(const Apple &st) const {
-//	return project(st.center);
-//}
 moveit::core::RobotState robotStateFromFacing(const moveit::core::RobotModelConstPtr &drone,
 											  const Eigen::Vector3d &desired_ee_pos,
 											  const Eigen::Vector3d &required_facing) {

@@ -3,6 +3,7 @@
 #define NEW_PLANNERS_SHELLPATHPLANNER_H
 
 #include <range/v3/view/enumerate.hpp>
+#include <range/v3/view/transform.hpp>
 #include "MultiGoalPlanner.h"
 #include "../SphereShell.h"
 #include "../DistanceHeuristics.h"
@@ -11,6 +12,7 @@
 #include "../general_utilities.h"
 #include "../traveling_salesman.h"
 #include "../probe_retreat_move.h"
+#include "../ExperimentVisualTools.h"
 
 template<typename ShellPoint>
 class ShellPathPlanner : public MultiGoalPlanner {
@@ -35,7 +37,6 @@ private:
 
 public:
 
-
 	ShellPathPlanner(bool applyShellstateOptimization,
 									   std::shared_ptr<SingleGoalPlannerMethods> methods,
 									   std::shared_ptr<const ShellBuilder>  shellBuilder) :
@@ -50,6 +51,30 @@ public:
 			ompl::base::PlannerTerminationCondition& ptc) {
 
 		auto shell = shell_builder->buildShell(planning_scene, si);
+
+//		rclcpp::init(0, nullptr);
+//		auto evt = std::make_shared<ExperimentVisualTools>();
+//		evt->publishPlanningScene(planning_scene.scene_msg);
+//
+//		std::vector<ompl::base::ScopedState<>> shell_states;
+//
+//		for (auto &goal : goals) {
+//			shell_states.emplace_back(si);
+//			shell->state_on_shell(shell->project(goal.get()), shell_states.back().get());
+//		}
+//
+//		evt->pincushion(
+//				ranges::views::zip(goals, shell_states)
+//					| ranges::views::transform([&](const auto pair) {
+//						return std::make_pair(pair.first.get(), pair.second.get());
+//					})
+//					| ranges::to_vector,
+//				si->getStateSpace().get(),
+//				"projections");
+//
+//		rclcpp::spin(evt);
+
+
 
 		auto approaches = planApproaches(si, goals, *shell, ptc);
 
@@ -211,7 +236,7 @@ public:
 		return approach_path;
 	}
 
-	Json::Value parameters() const {
+	Json::Value parameters() const override {
 		Json::Value result;
 
 		result["shell_builder_params"] = shell_builder->parameters();

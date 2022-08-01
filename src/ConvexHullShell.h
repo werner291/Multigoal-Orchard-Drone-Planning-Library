@@ -70,7 +70,7 @@ protected:
 
 	void init_gnat();
 
-	Eigen::Vector3d to_euclidean(const ConvexHullPoint &a, const Facet &facet);
+	Eigen::Vector3d to_euclidean(const ConvexHullPoint &a, const Facet &facet) const;
 };
 
 moveit::core::RobotState robotStateFromFacing(const moveit::core::RobotModelConstPtr &drone,

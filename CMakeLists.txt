@@ -80,6 +80,8 @@ add_library(${PROJECT_NAME}_shared
         src/InformedRobotStateSampler.h
         src/LeavesCollisionChecker.cpp
         src/LeavesCollisionChecker.h
+        src/ExperimentVisualTools.cpp
+        src/ExperimentVisualTools.h
         src/SamplerWrapper.cpp
         src/SamplerWrapper.h
         src/SingleGoalPlannerMethods.cpp

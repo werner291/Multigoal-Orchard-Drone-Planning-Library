@@ -4,6 +4,7 @@
 
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/iota.hpp>
+#include <range/v3/numeric/accumulate.hpp>
 
 moveit::core::RobotState
 ConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const {
@@ -12,16 +13,15 @@ ConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, c
 
 	Eigen::Vector3d desired_ee_pos = to_euclidean(a, facet);
 
-	// TODO: Check winding order on the triangles.
 	Eigen::Vector3d normal = (vertices[facet.b] - vertices[facet.a]).cross(vertices[facet.c] - vertices[facet.a]).normalized();
 
-	Eigen::Vector3d required_facing = -normal;
+	Eigen::Vector3d required_facing = normal;
 
 	return robotStateFromFacing(drone, desired_ee_pos, required_facing);
 
 }
 
-Eigen::Vector3d ConvexHullShell::to_euclidean(const ConvexHullPoint &a, const ConvexHullShell::Facet &facet) {
+Eigen::Vector3d ConvexHullShell::to_euclidean(const ConvexHullPoint &a, const ConvexHullShell::Facet &facet) const {
 	Eigen::Vector3d desired_ee_pos = vertices[facet.a] * a.barycentric.x() + vertices[facet.b] * a.barycentric.y() + vertices[facet.c] * a.barycentric.z();
 	return desired_ee_pos;
 }
@@ -33,8 +33,6 @@ std::vector<moveit::core::RobotState> ConvexHullShell::path_on_shell(const movei
 }
 
 double ConvexHullShell::predict_path_length(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
-
-
 
 	throw std::runtime_error("Not implemented");
 
@@ -105,8 +103,22 @@ ConvexHullShell::ConvexHullShell(const shape_msgs::msg::Mesh &mesh) {
 		return Eigen::Vector3d(p.x, p.y, p.z);
 	}) | ranges::to_vector;
 
-	this->facets = mesh.triangles | ranges::views::transform([](const shape_msgs::msg::MeshTriangle &t) {
-		return Facet{t.vertex_indices[0], t.vertex_indices[1], t.vertex_indices[2], 0, 0, 0};
+	// Find a point inside of the mesh.
+	Eigen::Vector3d com = ranges::accumulate(vertices,Eigen::Vector3d(0.0,0.0,0.0)) / (double) vertices.size();
+
+	this->facets = mesh.triangles | ranges::views::transform([&](const shape_msgs::msg::MeshTriangle &t) {
+
+		Facet f = {t.vertex_indices[0], t.vertex_indices[1], t.vertex_indices[2], 0, 0, 0};
+
+		Eigen::Vector3d normal = (vertices[f.b] - vertices[f.a]).cross(vertices[f.c] - vertices[f.a]).normalized();
+
+		// Ensure winding order puts the normal pointing out from the mesh
+		if (normal.dot(com - vertices[f.a]) < 0) {
+			std::swap(f.b, f.c);
+		}
+
+		return f;
+
 	}) | ranges::to_vector;
 
 	match_faces();
@@ -125,31 +137,48 @@ void ConvexHullShell::init_gnat() {
 }
 
 void ConvexHullShell::match_faces() {
-	std::unordered_map<UnorderedEdge, size_t> edge_to_face;
+
+	struct FaceEdge {
+		size_t face_index;
+		size_t* edge_field;
+	};
+
+	std::unordered_map<UnorderedEdge, FaceEdge> edge_to_face;
+
 	for (size_t i = 0; i < facets.size(); i++) {
 
-		UnorderedEdge ab = {facets[i].a, facets[i].b};
-		if (edge_to_face.find(ab) == edge_to_face.end()) {
-			edge_to_face[ab] = i;
-		} else {
-			facets[i].neighbour_ab = edge_to_face[ab];
-			facets[edge_to_face[ab]].neighbour_ab = i;
+		{
+			UnorderedEdge ab = {facets[i].a, facets[i].b};
+
+			if (edge_to_face.find(ab) == edge_to_face.end()) {
+				edge_to_face[ab] = {i, &facets[i].neighbour_ab};
+			} else {
+				facets[i].neighbour_ab = edge_to_face[ab].face_index;
+				*edge_to_face[ab].edge_field = i;
+				edge_to_face.erase(ab);
+			}
 		}
 
-		UnorderedEdge bc = {facets[i].b, facets[i].c};
-		if (edge_to_face.find(bc) == edge_to_face.end()) {
-			edge_to_face[bc] = i;
-		} else {
-			facets[i].neighbour_bc = edge_to_face[bc];
-			facets[edge_to_face[bc]].neighbour_bc = i;
+		{
+			UnorderedEdge bc = {facets[i].b, facets[i].c};
+			if (edge_to_face.find(bc) == edge_to_face.end()) {
+				edge_to_face[bc] = {i, &facets[i].neighbour_bc};
+			} else {
+				facets[i].neighbour_bc = edge_to_face[bc].face_index;
+				*edge_to_face[bc].edge_field = i;
+				edge_to_face.erase(bc);
+			}
 		}
 
-		UnorderedEdge ca = {facets[i].c, facets[i].a};
-		if (edge_to_face.find(ca) == edge_to_face.end()) {
-			edge_to_face[ca] = i;
-		} else {
-			facets[i].neighbour_ca = edge_to_face[ca];
-			facets[edge_to_face[ca]].neighbour_ca = i;
+		{
+			UnorderedEdge ca = {facets[i].c, facets[i].a};
+			if (edge_to_face.find(ca) == edge_to_face.end()) {
+				edge_to_face[ca] = {i, &facets[i].neighbour_ca};
+			} else {
+				facets[i].neighbour_ca = edge_to_face[ca].face_index;
+				*edge_to_face[ca].edge_field = i;
+				edge_to_face.erase(ca);
+			}
 		}
 
 	}
@@ -163,17 +192,24 @@ ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &a) const {
 
 		const Facet &f = facets[face_index];
 
-		Eigen::Vector3d a_proj = pointInTriangle(a, vertices[f.a], vertices[f.b], vertices[f.c]);
+		Eigen::Vector3d a_barycentric = pointInTriangle(a, vertices[f.a], vertices[f.b], vertices[f.c]);
 
-		if (0 <= a_proj.x() && a_proj.x() <= 1 && 0 <= a_proj.y() && a_proj.y() <= 1 && 0 <= a_proj.z() && a_proj.z() <= 1) {
-			return ConvexHullPoint{face_index, a_proj};
+		Eigen::Vector3d a_proj_euclidean = vertices[f.a] * a_barycentric.x() + vertices[f.b] * a_barycentric.y() + vertices[f.c] * a_barycentric.z();
+		Eigen::Vector3d normal = (vertices[f.b] - vertices[f.a]).cross(vertices[f.c] - vertices[f.a]).normalized();
+
+		Eigen::Vector3d proj_ray = (a-a_proj_euclidean).normalized();
+
+		assert(abs((proj_ray).dot(normal)) > 1.0 - 1.0e-6);
+
+		if (0 <= a_barycentric.x() && a_barycentric.x() <= 1 && 0 <= a_barycentric.y() && a_barycentric.y() <= 1 && 0 <= a_barycentric.z() && a_barycentric.z() <= 1) {
+			return ConvexHullPoint{face_index, a_barycentric};
 		} else {
 
-			if (a_proj.x() < 0) {
+			if (a_barycentric.x() < 0) {
 				face_index = f.neighbour_bc;
-			} else if (a_proj.y() < 0) {
+			} else if (a_barycentric.y() < 0) {
 				face_index = f.neighbour_ca;
-			} else if (a_proj.z() < 0) {
+			} else if (a_barycentric.z() < 0) {
 				face_index = f.neighbour_ab;
 			} else {
 				throw std::runtime_error("Projection outside of face or face neighbours.");

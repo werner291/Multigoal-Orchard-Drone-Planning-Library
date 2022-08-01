@@ -1,7 +1,8 @@
 #ifndef NEW_PLANNERS_EXPERIMENTVISUALTOOLS_H
 #define NEW_PLANNERS_EXPERIMENTVISUALTOOLS_H
 
-#include <ros/node_handle.h>
+#include <ompl/base/State.h>
+#include <ompl/base/Goal.h>
 #include <ompl/geometric/PathGeometric.h>
 #include <moveit/robot_trajectory/robot_trajectory.h>
 #include "procedural_tree_generation.h"
@@ -11,13 +12,10 @@
  *
  * All topics published by this class are kept alive at least until the destructor is called.
  */
-class ExperimentVisualTools {
-
-	// Reference to this program's ROS node handle.
-	ros::NodeHandle nh;
+class ExperimentVisualTools : public rclcpp::Node {
 
 	// References to publishers so they don't go out-of-scope.
-	std::vector<ros::Publisher> publisher_handles;
+	std::vector<std::shared_ptr<rclcpp::PublisherBase>> publisher_handles;
 
 public:
 	ExperimentVisualTools();
@@ -25,7 +23,7 @@ public:
 	/**
 	 * Makes a PlanningScene message available on ROS topic "/planning_scene".
 	 */
-	void publishPlanningScene(const moveit_msgs::PlanningScene &scene_msg);
+	void publishPlanningScene(const moveit_msgs::msg::PlanningScene &scene_msg);
 
 	/**
 	 * For a set of apple-approach-path pairs, publishes a MarkerArray topic that visualizes the end-effector
@@ -37,6 +35,13 @@ public:
 	 */
 	void dumpProjections(const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &apples,
 						 const std::string &topic_name);
+
+	void pincushion(const std::vector<std::pair<ompl::base::Goal *, ompl::base::State *>> &apples,
+					const ompl::base::StateSpace* space,
+					const std::string &topic_name);
+
+	void pincushion(const std::vector<std::pair<Apple, moveit::core::RobotState>> &apples,
+				   const std::string &topic_name);
 
 	/**
 	 * Publishes the given vector of paths as a single DisplayTrajectory message by concatenating them.

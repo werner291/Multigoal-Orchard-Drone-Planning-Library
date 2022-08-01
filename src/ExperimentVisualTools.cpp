@@ -1,33 +1,43 @@
-#include <ros/init.h>
-#include <moveit_msgs/PlanningScene.h>
-#include <visualization_msgs/MarkerArray.h>
-#include <eigen_conversions/eigen_msg.h>
-#include <moveit_msgs/DisplayTrajectory.h>
+#include <range/v3/view/enumerate.hpp>
+#include <range/v3/view/transform.hpp>
+#include <range/v3/view/for_each.hpp>
 #include "ExperimentVisualTools.h"
 #include "procedural_tree_generation.h"
 #include "probe_retreat_move.h"
 #include "msgs_utilities.h"
 
-/// Alternative to ros::init that does not take a mutable reference to an int.
-void rosinit_noparam() {
-	int zero = 0;
-	ros::init(zero, nullptr, "probe_retreat_move");
+rclcpp::QoS default_qos() {
+	rclcpp::QoS qos(1);
+	qos.durability(rclcpp::DurabilityPolicy::TransientLocal);
+	return qos;
 }
 
-ExperimentVisualTools::ExperimentVisualTools() : nh((rosinit_noparam(), "evt")) {
+ExperimentVisualTools::ExperimentVisualTools() : Node("new_planners") {
 
 }
 
-void ExperimentVisualTools::publishPlanningScene(const moveit_msgs::PlanningScene &scene_msg) {
-	auto scene = nh.advertise<moveit_msgs::PlanningScene>("/planning_scene", 1, true);
-	scene.publish(scene_msg);
-	publisher_handles.push_back(scene);
+void ExperimentVisualTools::publishPlanningScene(const moveit_msgs::msg::PlanningScene &scene_msg) {
+
+	auto pub = this->create_publisher<moveit_msgs::msg::PlanningScene>("planning_scene", default_qos());
+
+	pub->publish(scene_msg);
+
+	publisher_handles.push_back(pub);
+
+}
+
+geometry_msgs::msg::Point pointEigenToMsg(const Eigen::Vector3d& p) {
+	geometry_msgs::msg::Point msg;
+	msg.x = p.x();
+	msg.y = p.y();
+	msg.z = p.z();
+	return msg;
 }
 
 void ExperimentVisualTools::dumpProjections(const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &apples,
 											const std::string &topic_name) {
 
-	std_msgs::ColorRGBA color;
+	std_msgs::msg::ColorRGBA color;
 
 	ompl::RNG rng;
 	color.a = 1.0;
@@ -35,13 +45,13 @@ void ExperimentVisualTools::dumpProjections(const std::vector<std::pair<Apple, o
 	color.g = (float) rng.uniform01();
 	color.b = (float) rng.uniform01();
 
-	auto sphere_projections = nh.advertise<visualization_msgs::MarkerArray>(topic_name, 1, true);
+	auto sphere_projections = this->create_publisher<visualization_msgs::msg::MarkerArray>(topic_name, default_qos());
 
-	visualization_msgs::MarkerArray projections_msg;
+	visualization_msgs::msg::MarkerArray projections_msg;
 
-	visualization_msgs::Marker balls;
+	visualization_msgs::msg::Marker balls;
 	balls.header.frame_id = "world";
-	balls.type = visualization_msgs::Marker::POINTS;
+	balls.type = visualization_msgs::msg::Marker::POINTS;
 	balls.points.resize(apples.size());
 	balls.color = color;
 	balls.scale.x = 0.05;
@@ -49,70 +59,156 @@ void ExperimentVisualTools::dumpProjections(const std::vector<std::pair<Apple, o
 	balls.scale.z = 0.05;
 	balls.pose.orientation.w = 1.0;
 
-	visualization_msgs::Marker lines;
+	visualization_msgs::msg::Marker lines;
 	lines.header.frame_id = "world";
 	lines.id = 1;
-	lines.type = visualization_msgs::Marker::LINE_LIST;
+	lines.type = visualization_msgs::msg::Marker::LINE_LIST;
 	lines.scale.x = 0.01;
 	lines.color = color;
 	lines.pose.orientation.w = 1.0;
 	lines.points.resize(2 * apples.size());
 
-	for (const auto &[apple_id, apple]: apples | ranges::views::enumerate) {
+	for (const auto &[apple_id, approach_pair]: apples | ranges::views::enumerate) {
 
-		const Eigen::Vector3d onSphere = appleFromApproach(*apple.second
-				.getSpaceInformation()
+		const auto& approach_path = approach_pair.second;
+
+		auto ss = approach_path.getSpaceInformation()
 				->getStateSpace()
-				->as<ompl_interface::ModelBasedStateSpace>(), apple.second).center;
+				->as<ompl_interface::ModelBasedStateSpace>();
 
-		tf::pointEigenToMsg(onSphere, balls.points[apple_id]);
+		auto approach_state= approach_path.getState(0);
+		moveit::core::RobotState approach_state_robot_state(ss->getRobotModel());
+		ss->copyToRobotState(approach_state_robot_state, approach_state);
+		Eigen::Vector3d ee_pos = approach_state_robot_state.getGlobalLinkTransform("end_effector").translation();
 
-		tf::pointEigenToMsg(apple.first.center, lines.points[apple_id * 2]);
-		tf::pointEigenToMsg(onSphere, lines.points[apple_id * 2 + 1]);
+		balls.points[apple_id] = pointEigenToMsg(ee_pos);
+
+		lines.points[apple_id * 2] = pointEigenToMsg(approach_pair.first.center);
+		lines.points[apple_id * 2 + 1] = pointEigenToMsg(ee_pos);
 
 	}
 
 	projections_msg.markers.push_back(balls);
 	projections_msg.markers.push_back(lines);
 
-	sphere_projections.publish(projections_msg);
+	sphere_projections->publish(projections_msg);
 
 	publisher_handles.push_back(sphere_projections);
 }
 
-void ExperimentVisualTools::dumpApproaches(const std::shared_ptr<ompl::base::SpaceInformation> &si,
-										   const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches,
-										   const std::string &topic_name) {
+void ExperimentVisualTools::pincushion(const std::vector<std::pair<ompl::base::Goal *, ompl::base::State *>> &apples,
+									   const ompl::base::StateSpace* space,
+									   const std::string &topic_name) {
 
-	ompl::geometric::PathGeometric combined_path(si);
+	auto pairs = apples | ranges::views::transform([&](const auto &pair) -> std::pair<Apple, moveit::core::RobotState> {
 
-	for (const auto &approach: approaches) {
-		ompl::geometric::PathGeometric approach_copy(approach.second);
-		approach_copy.interpolate();
-		combined_path.append(approach_copy);
+		auto ss = space->as<ompl_interface::ModelBasedStateSpace>();
+		moveit::core::RobotState rs(ss->getRobotModel());
+		ss->copyToRobotState(rs, pair.second);
+
+		ompl::base::Goal * goal = pair.first;
+		Eigen::Vector3d apple_pos = goal->as<DroneEndEffectorNearTarget>()->getTarget();
+
+		Apple apple {
+				.center= apple_pos
+		};
+
+		return std::make_pair(
+				apple,
+				rs
+		);
+
+	}) | ranges::to_vector;
+
+	pincushion(
+			pairs,
+			topic_name
+			);
+
+}
+
+void ExperimentVisualTools::pincushion(const std::vector<std::pair<Apple, moveit::core::RobotState>> &apples,
+									   const std::string &topic_name) {
+
+	std_msgs::msg::ColorRGBA color;
+
+	ompl::RNG rng;
+	color.a = 1.0;
+	color.r = (float) rng.uniform01();
+	color.g = (float) rng.uniform01();
+	color.b = (float) rng.uniform01();
+
+	auto sphere_projections = this->create_publisher<visualization_msgs::msg::MarkerArray>(topic_name, default_qos());
+
+	visualization_msgs::msg::MarkerArray projections_msg;
+
+	visualization_msgs::msg::Marker balls;
+	balls.header.frame_id = "world";
+	balls.type = visualization_msgs::msg::Marker::POINTS;
+	balls.points = apples | ranges::views::transform([](const std::pair<Apple, moveit::core::RobotState> &apple_state_pair) {
+		return pointEigenToMsg(apple_state_pair.first.center);
+	}) | ranges::to_vector;
+	balls.color = color;
+	balls.scale.x = 0.05;
+	balls.scale.y = 0.05;
+	balls.scale.z = 0.05;
+	balls.pose.orientation.w = 1.0;
+
+	visualization_msgs::msg::Marker lines;
+	lines.header.frame_id = "world";
+	lines.id = 1;
+	lines.type = visualization_msgs::msg::Marker::LINE_LIST;
+	lines.scale.x = 0.01;
+	lines.color = color;
+	lines.pose.orientation.w = 1.0;
+
+	for (const auto& [apple, rs]: apples) {
+		lines.points.push_back(pointEigenToMsg(apple.center));
+		lines.points.push_back(pointEigenToMsg(rs.getGlobalLinkTransform("end_effector").translation()));
 	}
 
-	publishPath(si, topic_name, combined_path);
+	projections_msg.markers.push_back(balls);
+	projections_msg.markers.push_back(lines);
+
+	sphere_projections->publish(projections_msg);
+
+	publisher_handles.push_back(sphere_projections);
 
 }
-
-void ExperimentVisualTools::publishPath(const std::shared_ptr<ompl::base::SpaceInformation> &si,
-										const std::string &topic_name,
-										const ompl::geometric::PathGeometric &combined_path) {
-	auto moveit_trajectory = omplPathToRobotTrajectory(*si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>(),
-													   combined_path);
-
-	publishTrajectory(topic_name, moveit_trajectory);
-
-}
-
-void ExperimentVisualTools::publishTrajectory(const std::string &topic_name,
-											  const robot_trajectory::RobotTrajectory &moveit_trajectory) {
-	moveit_msgs::DisplayTrajectory msg = robotTrajectoryToDisplayTrajectory(moveit_trajectory);
-
-	auto traj = nh.advertise<moveit_msgs::DisplayTrajectory>(topic_name, 1, true);
-
-	traj.publish(msg);
-
-	publisher_handles.push_back(traj);
-}
+//
+//void ExperimentVisualTools::dumpApproaches(const std::shared_ptr<ompl::base::SpaceInformation> &si,
+//										   const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &approaches,
+//										   const std::string &topic_name) {
+//
+//	ompl::geometric::PathGeometric combined_path(si);
+//
+//	for (const auto &approach: approaches) {
+//		ompl::geometric::PathGeometric approach_copy(approach.second);
+//		approach_copy.interpolate();
+//		combined_path.append(approach_copy);
+//	}
+//
+//	publishPath(si, topic_name, combined_path);
+//
+//}
+//
+//void ExperimentVisualTools::publishPath(const std::shared_ptr<ompl::base::SpaceInformation> &si,
+//										const std::string &topic_name,
+//										const ompl::geometric::PathGeometric &combined_path) {
+//	auto moveit_trajectory = omplPathToRobotTrajectory(*si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>(),
+//													   combined_path);
+//
+//	publishTrajectory(topic_name, moveit_trajectory);
+//
+//}
+//
+//void ExperimentVisualTools::publishTrajectory(const std::string &topic_name,
+//											  const robot_trajectory::RobotTrajectory &moveit_trajectory) {
+//	moveit_msgs::DisplayTrajectory msg = robotTrajectoryToDisplayTrajectory(moveit_trajectory);
+//
+//	auto traj = nh.advertise<moveit_msgs::DisplayTrajectory>(topic_name, 1, true);
+//
+//	traj.publish(msg);
+//
+//	publisher_handles.push_back(traj);
+//}

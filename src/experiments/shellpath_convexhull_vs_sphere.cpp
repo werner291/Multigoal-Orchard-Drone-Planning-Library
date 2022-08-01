@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 
 	run_planner_experiment(planner_allocators,
 						   "analysis/shellpath_chull_vs_sphere.json",
-						   20,
+						   1,
 						   {150},
 						   {"appletree"},
 						   1,//thread::hardware_concurrency(),
