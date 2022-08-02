@@ -6,37 +6,6 @@
 #include <range/v3/view/iota.hpp>
 #include <range/v3/numeric/accumulate.hpp>
 
-moveit::core::RobotState
-ConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const {
-
-	const Facet& facet = facets[a.face_id];
-
-	Eigen::Vector3d desired_ee_pos = to_euclidean(a, facet);
-
-	Eigen::Vector3d normal = (vertices[facet.b] - vertices[facet.a]).cross(vertices[facet.c] - vertices[facet.a]).normalized();
-
-	Eigen::Vector3d required_facing = normal;
-
-	return robotStateFromFacing(drone, desired_ee_pos, required_facing);
-
-}
-
-Eigen::Vector3d ConvexHullShell::to_euclidean(const ConvexHullPoint &a, const ConvexHullShell::Facet &facet) const {
-	Eigen::Vector3d desired_ee_pos = vertices[facet.a] * a.barycentric.x() + vertices[facet.b] * a.barycentric.y() + vertices[facet.c] * a.barycentric.z();
-	return desired_ee_pos;
-}
-
-std::vector<moveit::core::RobotState> ConvexHullShell::path_on_shell(const moveit::core::RobotModelConstPtr &drone,
-																	 const ConvexHullPoint &a,
-																	 const ConvexHullPoint &b) const {
-	throw std::runtime_error("Not implemented");
-}
-
-double ConvexHullShell::predict_path_length(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
-
-	throw std::runtime_error("Not implemented");
-
-}
 
 /**
  *
@@ -54,9 +23,9 @@ double ConvexHullShell::predict_path_length(const ConvexHullPoint &a, const Conv
  * @return				The barycentric coordinates of the point (alpha, beta, gamma).
  */
 Eigen::Vector3d pointInTriangle(const Eigen::Vector3d& qp,
-					 const Eigen::Vector3d& va,
-					 const Eigen::Vector3d& vb,
-					 const Eigen::Vector3d& vc)
+								const Eigen::Vector3d& va,
+								const Eigen::Vector3d& vb,
+								const Eigen::Vector3d& vc)
 {
 	// u=P2−P1
 	Eigen::Vector3d u = vb - va;
@@ -74,8 +43,78 @@ Eigen::Vector3d pointInTriangle(const Eigen::Vector3d& qp,
 	double alpha = 1 - gamma - beta;
 
 	return {
-		alpha, beta, gamma
+			alpha, beta, gamma
 	};
+}
+
+
+moveit::core::RobotState
+ConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const {
+
+	const Facet& facet = facets[a.face_id];
+
+	Eigen::Vector3d desired_ee_pos = a.position;
+
+	Eigen::Vector3d normal = (vertices[facet.b] - vertices[facet.a]).cross(vertices[facet.c] - vertices[facet.a]).normalized();
+
+	Eigen::Vector3d required_facing = normal;
+
+	return robotStateFromFacing(drone, desired_ee_pos, required_facing);
+
+}
+
+std::vector<moveit::core::RobotState> ConvexHullShell::path_on_shell(const moveit::core::RobotModelConstPtr &drone,
+																	 const ConvexHullPoint &a,
+																	 const ConvexHullPoint &b) const {
+
+	std::vector<moveit::core::RobotState> path;
+
+	for (ConvexHullPoint pt : convex_hull_walk(a, b)) {
+		path.push_back(state_on_shell(drone, pt));
+	}
+
+	return path;
+
+}
+
+/**
+ * Given two lines, expressed in origin-vector form, find the points of closest approach.
+ *
+ * @param l1 	The first line.
+ * @param l2 	The second line.
+ * @return 		Parameters t and s, such that l1.pointAt(t) and l2.pointAt(s) are the points of closest approach.
+ */
+std::pair<double, double> closest_point_on_line(
+		const Eigen::ParametrizedLine<double, 3>& l1,
+		const Eigen::ParametrizedLine<double, 3>& l2) {
+
+	const Eigen::Vector3d& d1 = l1.direction();
+	const Eigen::Vector3d& d2 = l2.direction();
+
+	// Formula from	https://en.wikipedia.org/wiki/Skew_lines#Nearest_points
+	Eigen::Vector3d n = d1.cross(d2);
+	Eigen::Vector3d n1 = d1.cross(n);
+	Eigen::Vector3d n2 = d2.cross(n);
+	return {
+		n1.dot(l2.origin()-l1.origin()) / n1.dot(d1),
+		n2.dot(l1.origin()-l2.origin()) / n2.dot(d2)
+	};
+
+}
+
+
+double ConvexHullShell::predict_path_length(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
+
+	// I don't like that I'm allocating here... We'll see how bad the bottleneck is.
+	auto walk = convex_hull_walk(a,b);
+
+	double length = 0;
+
+	for (size_t i = 1; i < walk.size(); i++) {
+		length += (walk[i].position - walk[i-1].position).norm();
+	}
+
+	return length;
 }
 
 
@@ -182,38 +221,6 @@ void ConvexHullShell::match_faces() {
 		}
 
 	}
-
-	for (size_t i = 0; i < facets.size(); i++) {
-		// At least one edge must refer back to the given edge
-		assert(
-				facets[facets[i].neighbour_ab].neighbour_ab == i ||
-				facets[facets[i].neighbour_ab].neighbour_bc == i ||
-				facets[facets[i].neighbour_ab].neighbour_ca == i
-		);
-
-		assert(
-				facets[facets[i].neighbour_bc].neighbour_ab == i ||
-				facets[facets[i].neighbour_bc].neighbour_bc == i ||
-				facets[facets[i].neighbour_bc].neighbour_ca == i
-		);
-
-		assert(
-				facets[facets[i].neighbour_ca].neighbour_ab == i ||
-				facets[facets[i].neighbour_ca].neighbour_bc == i ||
-				facets[facets[i].neighbour_ca].neighbour_ca == i
-		);
-
-		for (size_t neighbour_index : {facets[i].neighbour_ab, facets[i].neighbour_bc, facets[i].neighbour_ca}) {
-			size_t shared_vertices = 0;
-
-			shared_vertices += (facets[i].a == facets[neighbour_index].a) + (facets[i].a == facets[neighbour_index].b) + (facets[i].a == facets[neighbour_index].c);
-			shared_vertices += (facets[i].b == facets[neighbour_index].a) + (facets[i].b == facets[neighbour_index].b) + (facets[i].b == facets[neighbour_index].c);
-			shared_vertices += (facets[i].c == facets[neighbour_index].a) + (facets[i].c == facets[neighbour_index].b) + (facets[i].c == facets[neighbour_index].c);
-
-			assert(shared_vertices == 2);
-		}
-
-	}
 }
 
 ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &a) const {
@@ -221,6 +228,8 @@ ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &a) const {
 	std::cout << "Projecting " << a.transpose() << std::endl;
 
 	size_t face_index = guess_closest_face(a);
+
+	size_t last_face = SIZE_MAX;
 
 	size_t iters = 0;
 
@@ -258,14 +267,34 @@ ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &a) const {
 			return ConvexHullPoint{face_index, a_barycentric};
 		} else {
 
+			size_t new_face;
+
 			if (a_barycentric.x() < 0) {
-				face_index = f.neighbour_bc;
+				new_face = f.neighbour_bc;
 			} else if (a_barycentric.y() < 0) {
-				face_index = f.neighbour_ca;
+				new_face = f.neighbour_ca;
 			} else if (a_barycentric.z() < 0) {
-				face_index = f.neighbour_ab;
+				new_face = f.neighbour_ab;
 			} else {
 				throw std::runtime_error("Projection outside of face or face neighbours.");
+			}
+
+			if (new_face == last_face) {
+				// We stepped back to the previous face. The point is on the edge.
+				// Capping the barycentric coordinates to the face should put the point there.
+
+				// TODO: Verify that this actually works?
+
+				Eigen::Vector3d capped_barycentric(
+						std::clamp(a_barycentric.x(), 0.0, 1.0),
+						std::clamp(a_barycentric.y(), 0.0, 1.0),
+						std::clamp(a_barycentric.z(), 0.0, 1.0)
+						);
+
+				return ConvexHullPoint{face_index, capped_barycentric};
+
+			} else {
+				last_face = new_face;
 			}
 
 		}
@@ -278,11 +307,9 @@ ConvexHullPoint ConvexHullShell::gaussian_sample_near_point(const ConvexHullPoin
 
 	const Facet &f = facets[near.face_id];
 
-	Eigen::Vector3d a_proj = vertices[f.a] * near.barycentric.x() + vertices[f.b] * near.barycentric.y() + vertices[f.c] * near.barycentric.z();
-
 	ompl::RNG rng;
 
-	Eigen::Vector3d a_rand = a_proj + Eigen::Vector3d(rng.gaussian(0.0, 0.1), rng.gaussian(0.0, 0.1), rng.gaussian(0.0, 0.1));
+	Eigen::Vector3d a_rand = near.position + Eigen::Vector3d(rng.gaussian(0.0, 0.1), rng.gaussian(0.0, 0.1), rng.gaussian(0.0, 0.1));
 
 	return project(a_rand);
 
@@ -294,6 +321,81 @@ ConvexHullPoint ConvexHullShell::project(const moveit::core::RobotState &st) con
 
 ConvexHullPoint ConvexHullShell::project(const Apple &st) const {
 	return project(st.center);
+}
+
+std::vector<ConvexHullPoint> ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
+	// A quick-and-dirty greedy approximation of the geodesic distance between the two points on the convex hull.
+	// We start from point A, then "walk" along the surface of the convex hull, and then end up at point B.
+
+	// First, we convert points A and B into Euclidean space.
+	const Eigen::Vector3d a_euc = a.position;
+	const Eigen::Vector3d b_euc = b.position;
+
+	Eigen::ParametrizedLine<double, 3> ideal_line(a_euc, (b_euc - a_euc).normalized());
+
+	// Current "walking" position, which will start at point A.
+	std::vector<ConvexHullPoint> walk {a};
+
+	double distance = 0.0;
+
+	while (walk.back().face_id != b.face_id) {
+
+		size_t current_face = walk.back().face_id;
+
+		// Look up the vertices of the triangle.
+		auto va = vertices[facets[current_face].a];
+		auto vb = vertices[facets[current_face].b];
+		auto vc = vertices[facets[current_face].c];
+
+		// Construct parameterized lines that extend the edges of the triangles.
+		Eigen::ParametrizedLine<double, 3> edge_ab(va, vb - va);
+		Eigen::ParametrizedLine<double, 3> edge_bc(vb, vc - vb);
+		Eigen::ParametrizedLine<double, 3> edge_ca(vc, va - vc);
+
+		// Find the closest approaches (expressed as parameters for the origin-ray form of the lines)
+		auto [t_ab, s_ab] = closest_point_on_line(ideal_line, edge_ab);
+		auto [t_bc, s_bc] = closest_point_on_line(ideal_line, edge_bc);
+		auto [t_ca, s_ca] = closest_point_on_line(ideal_line, edge_ca);
+
+		// Find the edge that we meet (first) on the way to B.
+		double t_min = INFINITY;
+		size_t next_face = SIZE_MAX;
+		Eigen::Vector3d next_point;
+
+		// We demand 0 < t_ab so that we don't go backwards,
+		// and that 0 <= s_ab <= 1 so make sure we're actually passing over/under the edge
+		if (0 < t_ab && t_ab < t_min && 0 <= s_ab && s_ab <= 1) {
+			t_min = t_ab;
+			next_face = facets[current_face].neighbour_ab;
+			next_point = edge_ab.pointAt(s_ab);
+		}
+
+		if (0 < t_bc && t_bc < t_min && 0 <= s_bc && s_bc <= 1) {
+			t_min = t_bc;
+			next_face = facets[current_face].neighbour_bc;
+			next_point = edge_bc.pointAt(s_bc);
+		}
+
+		if (0 < t_ca && t_ca < t_min && 0 <= s_ca && s_ca <= 1) {
+			t_min = t_ca;
+			next_face = facets[current_face].neighbour_ca;
+			next_point = edge_ca.pointAt(s_ca);
+		}
+
+		// Make sure we hit at least one of the cases (which should always happen since we start on a point on the triangle)
+		assert(t_min != INFINITY);
+		assert(next_face != SIZE_MAX);
+
+		// We add a point for exiting this face...
+		walk.push_back({walk.back().face_id, next_point});
+		// ...and entering the next face, ensuring that interpolation is as easy as possible.
+		walk.push_back({next_face, next_point});
+
+	}
+
+	walk.push_back(b);
+
+	return walk;
 }
 
 std::vector<geometry_msgs::msg::Point>

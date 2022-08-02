@@ -7,7 +7,7 @@
 
 struct ConvexHullPoint {
 	size_t face_id;
-	Eigen::Vector3d barycentric;
+	Eigen::Vector3d position;
 };
 
 class ConvexHullShellBuilder : public ShellPathPlanner<ConvexHullPoint>::ShellBuilder {
@@ -70,7 +70,8 @@ protected:
 
 	void init_gnat();
 
-	Eigen::Vector3d to_euclidean(const ConvexHullPoint &a, const Facet &facet) const;
+
+	std::vector<ConvexHullPoint> convex_hull_walk(const ConvexHullPoint& a, const ConvexHullPoint& b) const;
 };
 
 moveit::core::RobotState robotStateFromFacing(const moveit::core::RobotModelConstPtr &drone,
