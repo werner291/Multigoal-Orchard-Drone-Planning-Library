@@ -52,27 +52,27 @@ public:
 
 		auto shell = shell_builder->buildShell(planning_scene, si);
 
-//		rclcpp::init(0, nullptr);
-//		auto evt = std::make_shared<ExperimentVisualTools>();
-//		evt->publishPlanningScene(planning_scene.scene_msg);
-//
-//		std::vector<ompl::base::ScopedState<>> shell_states;
-//
-//		for (auto &goal : goals) {
-//			shell_states.emplace_back(si);
-//			shell->state_on_shell(shell->project(goal.get()), shell_states.back().get());
-//		}
-//
-//		evt->pincushion(
-//				ranges::views::zip(goals, shell_states)
-//					| ranges::views::transform([&](const auto pair) {
-//						return std::make_pair(pair.first.get(), pair.second.get());
-//					})
-//					| ranges::to_vector,
-//				si->getStateSpace().get(),
-//				"projections");
-//
-//		rclcpp::spin(evt);
+		rclcpp::init(0, nullptr);
+		auto evt = std::make_shared<ExperimentVisualTools>();
+		evt->publishPlanningScene(planning_scene.scene_msg);
+
+		std::vector<ompl::base::ScopedState<>> shell_states;
+
+		for (auto &goal : goals) {
+			shell_states.emplace_back(si);
+			shell->state_on_shell(shell->project(goal.get()), shell_states.back().get());
+		}
+
+		evt->pincushion(
+				ranges::views::zip(goals, shell_states)
+					| ranges::views::transform([&](const auto pair) {
+						return std::make_pair(pair.first.get(), pair.second.get());
+					})
+					| ranges::to_vector,
+				si->getStateSpace().get(),
+				"projections");
+
+		rclcpp::spin(evt);
 
 
 

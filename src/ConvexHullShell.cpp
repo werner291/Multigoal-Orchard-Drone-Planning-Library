@@ -69,7 +69,7 @@ std::vector<moveit::core::RobotState> ConvexHullShell::path_on_shell(const movei
 
 	std::vector<moveit::core::RobotState> path;
 
-	for (ConvexHullPoint pt : convex_hull_walk(a, b)) {
+	for (const ConvexHullPoint& pt : convex_hull_walk(a, b)) {
 		path.push_back(state_on_shell(drone, pt));
 	}
 
