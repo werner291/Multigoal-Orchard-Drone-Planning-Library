@@ -225,8 +225,6 @@ void ConvexHullShell::match_faces() {
 
 ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &a) const {
 
-	std::cout << "Projecting " << a.transpose() << std::endl;
-
 	size_t face_index = guess_closest_face(a);
 
 	size_t last_face = SIZE_MAX;
@@ -291,7 +289,11 @@ ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &a) const {
 						std::clamp(a_barycentric.z(), 0.0, 1.0)
 						);
 
-				return ConvexHullPoint{face_index, capped_barycentric};
+				capped_barycentric /= capped_barycentric.x() + capped_barycentric.y() + capped_barycentric.z();
+
+				Eigen::Vector3d euclidean = vertices[f.a] * capped_barycentric.x() + vertices[f.b] * capped_barycentric.y() + vertices[f.c] * capped_barycentric.z();
+
+				return ConvexHullPoint{face_index, euclidean};
 
 			} else {
 				last_face = new_face;
