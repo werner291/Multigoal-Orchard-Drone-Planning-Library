@@ -1,6 +1,7 @@
 #include <range/v3/view/enumerate.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/for_each.hpp>
+#include <moveit/robot_state/conversions.h>
 #include "ExperimentVisualTools.h"
 #include "procedural_tree_generation.h"
 #include "probe_retreat_move.h"
@@ -145,9 +146,6 @@ void ExperimentVisualTools::pincushion(const std::vector<std::pair<Apple, moveit
 	visualization_msgs::msg::Marker balls;
 	balls.header.frame_id = "world";
 	balls.type = visualization_msgs::msg::Marker::POINTS;
-	balls.points = apples | ranges::views::transform([](const std::pair<Apple, moveit::core::RobotState> &apple_state_pair) {
-		return pointEigenToMsg(apple_state_pair.first.center);
-	}) | ranges::to_vector;
 	balls.color = color;
 	balls.scale.x = 0.05;
 	balls.scale.y = 0.05;
@@ -166,6 +164,8 @@ void ExperimentVisualTools::pincushion(const std::vector<std::pair<Apple, moveit
 		lines.points.push_back(pointEigenToMsg(apple.center));
 		lines.points.push_back(pointEigenToMsg(rs.getGlobalLinkTransform("end_effector").translation()));
 	}
+
+	balls.points = lines.points;
 
 	projections_msg.markers.push_back(balls);
 	projections_msg.markers.push_back(lines);
@@ -192,23 +192,35 @@ void ExperimentVisualTools::pincushion(const std::vector<std::pair<Apple, moveit
 //
 //}
 //
-//void ExperimentVisualTools::publishPath(const std::shared_ptr<ompl::base::SpaceInformation> &si,
-//										const std::string &topic_name,
-//										const ompl::geometric::PathGeometric &combined_path) {
-//	auto moveit_trajectory = omplPathToRobotTrajectory(*si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>(),
-//													   combined_path);
-//
-//	publishTrajectory(topic_name, moveit_trajectory);
-//
-//}
-//
-//void ExperimentVisualTools::publishTrajectory(const std::string &topic_name,
-//											  const robot_trajectory::RobotTrajectory &moveit_trajectory) {
-//	moveit_msgs::DisplayTrajectory msg = robotTrajectoryToDisplayTrajectory(moveit_trajectory);
-//
-//	auto traj = nh.advertise<moveit_msgs::DisplayTrajectory>(topic_name, 1, true);
-//
-//	traj.publish(msg);
-//
-//	publisher_handles.push_back(traj);
-//}
+
+void ExperimentVisualTools::publishPath(const std::shared_ptr<ompl::base::SpaceInformation> &si,
+										const std::string &topic_name,
+										const ompl::geometric::PathGeometric &combined_path) {
+	auto moveit_trajectory = omplPathToRobotTrajectory(*si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>(),
+													   combined_path);
+
+	publishTrajectory(topic_name, moveit_trajectory);
+
+}
+
+moveit_msgs::msg::DisplayTrajectory robotTrajectoryToDisplayTrajectory(const robot_trajectory::RobotTrajectory &moveit_trajectory) {
+	moveit_msgs::msg::DisplayTrajectory msg;
+	msg.model_id = moveit_trajectory.getRobotModel()->getName();
+	msg.trajectory.resize(1);
+
+	moveit_trajectory.getRobotTrajectoryMsg(msg.trajectory[0]);
+	moveit::core::robotStateToRobotStateMsg(moveit_trajectory.getFirstWayPoint(), msg.trajectory_start);
+	return msg;
+}
+
+void ExperimentVisualTools::publishTrajectory(const std::string &topic_name,
+											  const robot_trajectory::RobotTrajectory &moveit_trajectory) {
+
+	moveit_msgs::msg::DisplayTrajectory msg = robotTrajectoryToDisplayTrajectory(moveit_trajectory);
+
+	auto traj = this->create_publisher<moveit_msgs::msg::DisplayTrajectory>(topic_name, default_qos());
+
+	traj->publish(msg);
+
+	publisher_handles.push_back(traj);
+}

@@ -1,6 +1,7 @@
 
 #include "ConvexHullShell.h"
 #include "convex_hull.h"
+#include "math.h"
 
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/iota.hpp>
@@ -77,30 +78,7 @@ std::vector<moveit::core::RobotState> ConvexHullShell::path_on_shell(const movei
 
 }
 
-/**
- * Given two lines, expressed in origin-vector form, find the points of closest approach.
- *
- * @param l1 	The first line.
- * @param l2 	The second line.
- * @return 		Parameters t and s, such that l1.pointAt(t) and l2.pointAt(s) are the points of closest approach.
- */
-std::pair<double, double> closest_point_on_line(
-		const Eigen::ParametrizedLine<double, 3>& l1,
-		const Eigen::ParametrizedLine<double, 3>& l2) {
 
-	const Eigen::Vector3d& d1 = l1.direction();
-	const Eigen::Vector3d& d2 = l2.direction();
-
-	// Formula from	https://en.wikipedia.org/wiki/Skew_lines#Nearest_points
-	Eigen::Vector3d n = d1.cross(d2);
-	Eigen::Vector3d n1 = d1.cross(n);
-	Eigen::Vector3d n2 = d2.cross(n);
-	return {
-		n1.dot(l2.origin()-l1.origin()) / n1.dot(d1),
-		n2.dot(l1.origin()-l2.origin()) / n2.dot(d2)
-	};
-
-}
 
 
 double ConvexHullShell::predict_path_length(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
@@ -237,32 +215,13 @@ ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &a) const {
 
 		const Facet &f = facets[face_index];
 
-		// TODO for tomorrow: If it tries to step back, conclude the point is on an edge?
-
-		if (iters > 50) {
-			std::cout << "On facet: " << face_index << " - "
-				<< f.a << " " << f.b << " " << f.c
-				<< "(" << vertices[f.a].x() << "," << vertices[f.a].y() << "," << vertices[f.a].z() << ")"
-				<< "(" << vertices[f.b].x() << "," << vertices[f.b].y() << "," << vertices[f.b].z() << ")"
-				<< "(" << vertices[f.c].x() << "," << vertices[f.c].y() << "," << vertices[f.c].z() << ")" << std::endl;
-
-		}
-
-		if (iters > 60) {
-			exit(1);
-		}
-
 		Eigen::Vector3d a_barycentric = pointInTriangle(a, vertices[f.a], vertices[f.b], vertices[f.c]);
 
 		Eigen::Vector3d a_proj_euclidean = vertices[f.a] * a_barycentric.x() + vertices[f.b] * a_barycentric.y() + vertices[f.c] * a_barycentric.z();
 		Eigen::Vector3d normal = (vertices[f.b] - vertices[f.a]).cross(vertices[f.c] - vertices[f.a]).normalized();
 
-		Eigen::Vector3d proj_ray = (a-a_proj_euclidean).normalized();
-
-		assert(abs((proj_ray).dot(normal)) > 1.0 - 1.0e-6);
-
 		if (0 <= a_barycentric.x() && a_barycentric.x() <= 1 && 0 <= a_barycentric.y() && a_barycentric.y() <= 1 && 0 <= a_barycentric.z() && a_barycentric.z() <= 1) {
-			return ConvexHullPoint{face_index, a_barycentric};
+			return ConvexHullPoint{face_index, a_proj_euclidean};
 		} else {
 
 			size_t new_face;
@@ -333,12 +292,13 @@ std::vector<ConvexHullPoint> ConvexHullShell::convex_hull_walk(const ConvexHullP
 	const Eigen::Vector3d a_euc = a.position;
 	const Eigen::Vector3d b_euc = b.position;
 
+	std::cout << "From (" << a_euc.x() << ", " << a_euc.y() << ", " << a_euc.z() << ") to (" << b_euc.x() << ", " << b_euc.y() << ", " << b_euc.z() << ")" << std::endl;
+
 	Eigen::ParametrizedLine<double, 3> ideal_line(a_euc, (b_euc - a_euc).normalized());
+double ideal_t = 0.0;
 
 	// Current "walking" position, which will start at point A.
 	std::vector<ConvexHullPoint> walk {a};
-
-	double distance = 0.0;
 
 	while (walk.back().face_id != b.face_id) {
 
@@ -348,6 +308,8 @@ std::vector<ConvexHullPoint> ConvexHullShell::convex_hull_walk(const ConvexHullP
 		auto va = vertices[facets[current_face].a];
 		auto vb = vertices[facets[current_face].b];
 		auto vc = vertices[facets[current_face].c];
+
+		std::cout << "Face : (" << va.x() << ", " << va.y() << ", " << va.z() << "), (" << vb.x() << ", " << vb.y() << ", " << vb.z() << "), (" << vc.x() << ", " << vc.y() << ", " << vc.z() << ")" << std::endl;
 
 		// Construct parameterized lines that extend the edges of the triangles.
 		Eigen::ParametrizedLine<double, 3> edge_ab(va, vb - va);
@@ -359,34 +321,54 @@ std::vector<ConvexHullPoint> ConvexHullShell::convex_hull_walk(const ConvexHullP
 		auto [t_bc, s_bc] = closest_point_on_line(ideal_line, edge_bc);
 		auto [t_ca, s_ca] = closest_point_on_line(ideal_line, edge_ca);
 
-		// Find the edge that we meet (first) on the way to B.
-		double t_min = INFINITY;
+		s_ab = std::clamp(s_ab, 0.0, 1.0);
+		s_bc = std::clamp(s_bc, 0.0, 1.0);
+		s_ca = std::clamp(s_ca, 0.0, 1.0);
+
+		Eigen::Vector3d pt_ab = edge_ab.pointAt(s_ab);
+		Eigen::Vector3d pt_bc = edge_bc.pointAt(s_bc);
+		Eigen::Vector3d pt_ca = edge_ca.pointAt(s_ca);
+
+		std::cout << "Closest points: (" << pt_ab.x() << ", " << pt_ab.y() << ", " << pt_ab.z() << "), (" << pt_bc.x() << ", " << pt_bc.y() << ", " << pt_bc.z() << "), (" << pt_ca.x() << ", " << pt_ca.y() << ", " << pt_ca.z() << ")" << std::endl;
+
+		t_ab = ideal_line.direction().dot(pt_ab - ideal_line.origin());
+		t_bc = ideal_line.direction().dot(pt_bc - ideal_line.origin());
+		t_ca = ideal_line.direction().dot(pt_ca - ideal_line.origin());
+
+		// Find which of the three point gets us the furthest along the idealized line.
 		size_t next_face = SIZE_MAX;
 		Eigen::Vector3d next_point;
 
 		// We demand 0 < t_ab so that we don't go backwards,
 		// and that 0 <= s_ab <= 1 so make sure we're actually passing over/under the edge
-		if (0 < t_ab && t_ab < t_min && 0 <= s_ab && s_ab <= 1) {
-			t_min = t_ab;
+		if (t_ab > ideal_t) {
+			ideal_t = t_ab;
 			next_face = facets[current_face].neighbour_ab;
 			next_point = edge_ab.pointAt(s_ab);
+
+			std::cout << "s: " << s_ab << ", t: " << t_ab << std::endl;
 		}
 
-		if (0 < t_bc && t_bc < t_min && 0 <= s_bc && s_bc <= 1) {
-			t_min = t_bc;
+		if (t_bc > ideal_t) {
+			ideal_t = t_bc;
 			next_face = facets[current_face].neighbour_bc;
 			next_point = edge_bc.pointAt(s_bc);
+
+			std::cout << "s: " << s_bc << ", t: " << t_bc << std::endl;
 		}
 
-		if (0 < t_ca && t_ca < t_min && 0 <= s_ca && s_ca <= 1) {
-			t_min = t_ca;
+		if (t_ca > ideal_t) {
+			ideal_t = t_ca;
 			next_face = facets[current_face].neighbour_ca;
 			next_point = edge_ca.pointAt(s_ca);
+
+			std::cout << "s: " << s_ca << ", t: " << t_ca << std::endl;
 		}
 
 		// Make sure we hit at least one of the cases (which should always happen since we start on a point on the triangle)
-		assert(t_min != INFINITY);
 		assert(next_face != SIZE_MAX);
+
+		std::cout << "Pt: " << next_point.transpose() << std::endl;
 
 		// We add a point for exiting this face...
 		walk.push_back({walk.back().face_id, next_point});
@@ -394,6 +376,8 @@ std::vector<ConvexHullPoint> ConvexHullShell::convex_hull_walk(const ConvexHullP
 		walk.push_back({next_face, next_point});
 
 	}
+
+	std::cout << "Got there!" << std::endl;
 
 	walk.push_back(b);
 

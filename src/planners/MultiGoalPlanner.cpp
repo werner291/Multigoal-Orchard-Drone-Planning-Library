@@ -7,3 +7,15 @@ double MultiGoalPlanner::PlanResult::length() const {
     }
     return length;
 }
+
+ompl::geometric::PathGeometric MultiGoalPlanner::PlanResult::combined() const {
+
+	ompl::geometric::PathGeometric combined_path(segments[0].path_.getSpaceInformation());
+
+	for (const auto &segment : segments) {
+		combined_path.append(segment.path_);
+	}
+
+	return combined_path;
+
+}

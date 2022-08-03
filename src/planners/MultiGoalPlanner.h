@@ -21,6 +21,8 @@ public:
         std::vector<PathSegment> segments;
 
         [[nodiscard]] double length() const;
+
+        [[nodiscard]] ompl::geometric::PathGeometric combined() const;
     };
 
     virtual PlanResult plan(const ompl::base::SpaceInformationPtr &si, const ompl::base::State *start,

@@ -72,10 +72,6 @@ public:
 				si->getStateSpace().get(),
 				"projections");
 
-		rclcpp::spin(evt);
-
-
-
 		auto approaches = planApproaches(si, goals, *shell, ptc);
 
 		PlanResult result {{}};
@@ -92,17 +88,23 @@ public:
 			return result;
 		}
 
-		return assembleFullPath(si, goals, *shell, approaches, ordering, result, *first_approach);
+		PlanResult fullPath = assembleFullPath(si, goals, *shell, approaches, ordering, result, *first_approach, false);
+
+		evt->publishPath(si, "result_path", fullPath.combined());
+		
+		rclcpp::spin(evt);
+
+		return fullPath;
 	}
 
-	MultiGoalPlanner::PlanResult assembleFullPath(
-			const ompl::base::SpaceInformationPtr &si,
-			const std::vector<ompl::base::GoalPtr> &goals,
-			OMPLSphereShellWrapper<ShellPoint> &ompl_shell,
-			const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches,
-			const std::vector<size_t> &ordering,
-			MultiGoalPlanner::PlanResult &result,
-			ompl::geometric::PathGeometric &initial_approach) const {
+	MultiGoalPlanner::PlanResult assembleFullPath(const ompl::base::SpaceInformationPtr &si,
+												  const std::vector<ompl::base::GoalPtr> &goals,
+												  OMPLSphereShellWrapper<ShellPoint> &ompl_shell,
+												  const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches,
+												  const std::vector<size_t> &ordering,
+												  MultiGoalPlanner::PlanResult &result,
+												  ompl::geometric::PathGeometric &initial_approach,
+												  bool optimize_segments) const {
 
 		result.segments.push_back({approaches[ordering[0]].first, initial_approach});
 
@@ -119,9 +121,9 @@ public:
 					approaches[ordering[i]]
 			);
 
-			auto start = std::chrono::steady_clock::now();
-			segment_path = optimize(segment_path, std::make_shared<DronePathLengthObjective>(si), si);
-			auto end = std::chrono::steady_clock::now();
+			if (optimize_segments) {
+				segment_path = optimize(segment_path, std::make_shared<DronePathLengthObjective>(si), si);
+			}
 
 			result.segments.push_back({
 											  approaches[ordering[0]].first,

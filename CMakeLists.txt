@@ -121,7 +121,7 @@ add_library(${PROJECT_NAME}_shared
         src/traveling_salesman.h
 #        src/NewKnnPlanner.cpp
 #        src/NewKnnPlanner.h
-        src/ConvexHullShell.cpp src/ConvexHullShell.h src/convex_hull.cpp src/convex_hull.h)
+        src/ConvexHullShell.cpp src/ConvexHullShell.h src/convex_hull.cpp src/convex_hull.h src/math.cpp src/math.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -146,7 +146,7 @@ include(GoogleTest)
 add_executable(${PROJECT_NAME}_tests
         test/test.cpp
         test/MoveItPathLengthObjectiveTest.cpp
-        )
+        test/math_test.cpp)
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})
 gtest_discover_tests(${PROJECT_NAME}_tests)
