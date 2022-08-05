@@ -234,7 +234,7 @@ Json::Value run_task(const moveit::core::RobotModelConstPtr &drone, const Run &r
 	// Objective is path length minimization.
 	auto objective = make_shared<DronePathLengthObjective>(si);
 
-	auto timeout = ompl::base::timedPlannerTerminationCondition(std::chrono::minutes(5));
+	auto timeout = ompl::base::timedPlannerTerminationCondition(std::chrono::minutes(2));
 
 	MultiGoalPlanner::PlanResult result;
 

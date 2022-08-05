@@ -25,12 +25,19 @@ omplPathToRobotTrajectory(const ompl_interface::ModelBasedStateSpace &state_spac
 
     robot_trajectory::RobotTrajectory traj(state_space.getRobotModel());
 
+
+
     double t = 0.0;
     for (size_t i : boost::irange<size_t>(0,result_path.getStateCount())) {
+
+		if (i > 0) {
+			t += result_path.getSpaceInformation()->distance(result_path.getState(i), result_path.getState(i-1));
+		}
+
         moveit::core::RobotState moveit_state(state_space.getRobotModel());
         state_space.copyToRobotState(moveit_state, result_path.getState(i));
         traj.addSuffixWayPoint(moveit_state, t);
-        t += 0.1;
+
     }
 
     return traj;

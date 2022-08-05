@@ -55,6 +55,7 @@ public:
 		rclcpp::init(0, nullptr);
 		auto evt = std::make_shared<ExperimentVisualTools>();
 		evt->publishPlanningScene(planning_scene.scene_msg);
+		rclcpp::spin_some(evt);
 
 		std::vector<ompl::base::ScopedState<>> shell_states;
 
@@ -90,7 +91,10 @@ public:
 
 		PlanResult fullPath = assembleFullPath(si, goals, *shell, approaches, ordering, result, *first_approach, false);
 
-		evt->publishPath(si, "result_path", fullPath.combined());
+
+		auto combined = fullPath.combined();
+		combined.interpolate();
+		evt->publishPath(si, "result_path", combined);
 		
 		rclcpp::spin(evt);
 
