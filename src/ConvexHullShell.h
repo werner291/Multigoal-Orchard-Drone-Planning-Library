@@ -13,6 +13,9 @@ struct ConvexHullPoint {
 class ConvexHullShellBuilder : public ShellPathPlanner<ConvexHullPoint>::ShellBuilder {
 
 public:
+	ConvexHullShellBuilder() {
+	}
+
 	std::shared_ptr<OMPLSphereShellWrapper<ConvexHullPoint>>
 	buildShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) const override;
 
@@ -22,6 +25,7 @@ public:
 class ConvexHullShell : public CollisionFreeShell<ConvexHullPoint> {
 
 	std::vector<Eigen::Vector3d> vertices;
+	double padding = 0.1;
 
 	struct Facet {
 		size_t a, b, c;
@@ -70,8 +74,9 @@ protected:
 
 	void init_gnat();
 
-
 	std::vector<ConvexHullPoint> convex_hull_walk(const ConvexHullPoint& a, const ConvexHullPoint& b) const;
+
+	Eigen::Vector3d cheat_into_facet_interior(const ConvexHullPoint &a) const ;
 };
 
 moveit::core::RobotState robotStateFromFacing(const moveit::core::RobotModelConstPtr &drone,

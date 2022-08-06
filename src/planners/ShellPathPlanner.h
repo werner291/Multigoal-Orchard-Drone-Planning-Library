@@ -35,13 +35,16 @@ private:
 
     bool apply_shellstate_optimization;
 
+	bool optimize_segments;
+
 public:
 
 	ShellPathPlanner(bool applyShellstateOptimization,
-									   std::shared_ptr<SingleGoalPlannerMethods> methods,
-									   std::shared_ptr<const ShellBuilder>  shellBuilder) :
+					 std::shared_ptr<SingleGoalPlannerMethods> methods,
+					 std::shared_ptr<const ShellBuilder> shellBuilder,
+					 bool optimizeSegments) :
 			apply_shellstate_optimization(applyShellstateOptimization),
-			methods(std::move(methods)), shell_builder(std::move(shellBuilder)) {}
+			methods(std::move(methods)), shell_builder(std::move(shellBuilder)), optimize_segments(optimizeSegments) {}
 
 	MultiGoalPlanner::PlanResult plan(
 			const ompl::base::SpaceInformationPtr &si,
@@ -52,10 +55,12 @@ public:
 
 		auto shell = shell_builder->buildShell(planning_scene, si);
 
+#if DEBUG_ROSBUMP
 		rclcpp::init(0, nullptr);
 		auto evt = std::make_shared<ExperimentVisualTools>();
 		evt->publishPlanningScene(planning_scene.scene_msg);
 		rclcpp::spin_some(evt);
+#endif
 
 		std::vector<ompl::base::ScopedState<>> shell_states;
 
@@ -64,6 +69,7 @@ public:
 			shell->state_on_shell(shell->project(goal.get()), shell_states.back().get());
 		}
 
+#if DEBUG_ROSBUMP
 		evt->pincushion(
 				ranges::views::zip(goals, shell_states)
 					| ranges::views::transform([&](const auto pair) {
@@ -72,6 +78,7 @@ public:
 					| ranges::to_vector,
 				si->getStateSpace().get(),
 				"projections");
+#endif
 
 		auto approaches = planApproaches(si, goals, *shell, ptc);
 
@@ -89,14 +96,15 @@ public:
 			return result;
 		}
 
-		PlanResult fullPath = assembleFullPath(si, goals, *shell, approaches, ordering, result, *first_approach, false);
+		PlanResult fullPath = assembleFullPath(si, goals, *shell, approaches, ordering, result, *first_approach);
 
-
+#if DEBUG_ROSBUMP
 		auto combined = fullPath.combined();
 		combined.interpolate();
 		evt->publishPath(si, "result_path", combined);
 		
 		rclcpp::spin(evt);
+#endif
 
 		return fullPath;
 	}
@@ -107,8 +115,7 @@ public:
 												  const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches,
 												  const std::vector<size_t> &ordering,
 												  MultiGoalPlanner::PlanResult &result,
-												  ompl::geometric::PathGeometric &initial_approach,
-												  bool optimize_segments) const {
+												  ompl::geometric::PathGeometric &initial_approach) const {
 
 		result.segments.push_back({approaches[ordering[0]].first, initial_approach});
 
@@ -248,6 +255,7 @@ public:
 		result["shell_builder_params"] = shell_builder->parameters();
 		result["apply_shellstate_optimization"] = apply_shellstate_optimization;
 		result["ptp"] = methods->parameters();
+		result["optimize_segments"] = optimize_segments;
 
 		return result;
 	}

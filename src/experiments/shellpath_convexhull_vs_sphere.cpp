@@ -35,17 +35,42 @@ int main(int argc, char **argv) {
 				return make_shared<ShellPathPlanner<ConvexHullPoint>>(
 						true,
 						alloc_ptp(si),
-						make_shared<ConvexHullShellBuilder>()
-						        );
-			}
+						make_shared<ConvexHullShellBuilder>(),
+				false);
+			},
+//
+//			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+//				return make_shared<ShellPathPlanner<ConvexHullPoint>>(
+//						true,
+//						alloc_ptp(si),
+//						make_shared<ConvexHullShellBuilder>(),
+//				true);
+//			},
+//
+//			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+//				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(
+//						true,
+//						alloc_ptp(si),
+//						make_shared<PaddedSphereShellAroundLeavesBuilder>(),
+//						false);
+//			},
+//
+//			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+//				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(
+//						true,
+//						alloc_ptp(si),
+//						make_shared<PaddedSphereShellAroundLeavesBuilder>(),
+//						true);
+//			},
+
 	};
 
 
 
 	run_planner_experiment(planner_allocators,
 						   "analysis/shellpath_chull_vs_sphere.json",
-						   1,
-						   {20},//{150},
+						   10,
+						   {50, 150},
 						   {"appletree"},
 						   1,//thread::hardware_concurrency(),
 						   true);

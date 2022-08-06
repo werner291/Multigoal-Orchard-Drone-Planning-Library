@@ -65,7 +65,9 @@ double SphereShell::predict_path_length(const Eigen::Vector3d &a, const Eigen::V
 	Eigen::Vector3d rb_ray = b - center;
 
 	// Compute angle between the two in radians (norm is known to equal radius)
-	return radius * acos(ra_ray.dot(rb_ray) / (radius * radius));
+	double d = radius * acos(std::clamp(ra_ray.dot(rb_ray) / (radius * radius), -1.0, 1.0));
+
+	return d;
 }
 
 Eigen::Vector3d SphereShell::project(const Eigen::Vector3d &a) const {
