@@ -293,7 +293,7 @@ ConvexHullPoint ConvexHullShell::project(const Apple &st) const {
 	return project(st.center);
 }
 
-#define DUMP_GEOGEBRA
+//#define DUMP_GEOGEBRA
 
 std::vector<ConvexHullPoint>
 ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
@@ -544,7 +544,6 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 					bool bc_goes_back = facets[current_face].neighbour_bc == walk[walk.size() - 3].face_id;
 					bool ca_goes_back = facets[current_face].neighbour_ca == walk[walk.size() - 3].face_id;
 
-
 					if (intersects_ab_strict && !ab_goes_back) {
 						next_face = facets[current_face].neighbour_ab;
 						next_pt = edge_ab.pointAt(t_ab);
@@ -578,8 +577,8 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 
 							if (!bc_goes_back) {
 								next_face = facets[current_face].neighbour_bc;
-							} else if (!ca_goes_back) {
-								next_face = facets[current_face].neighbour_ca;
+							} else if (!ab_goes_back) {
+								next_face = facets[current_face].neighbour_ab;
 							} else {
 								throw std::runtime_error("Two edges of a facet lead to the same facet!");
 							}
