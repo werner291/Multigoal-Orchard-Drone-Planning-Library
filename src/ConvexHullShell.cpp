@@ -293,7 +293,7 @@ ConvexHullPoint ConvexHullShell::project(const Apple &st) const {
 	return project(st.center);
 }
 
-//#define DUMP_GEOGEBRA
+#define DUMP_GEOGEBRA
 
 std::vector<ConvexHullPoint>
 ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
@@ -462,79 +462,157 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 				bool intersects_bc_strict = 0 + epsilon < t_bc && t_bc + epsilon < 1.0;
 				bool intersects_ca_strict = 0 + epsilon < t_ca && t_ca + epsilon < 1.0;
 
-				// Also, there will be at least two intersections between the edges and the plane.
-				// We need to pick the one where we don't step backward.
-				bool ab_goes_back = facets[current_face].neighbour_ab == walk[walk.size() - 3].face_id;
-				bool bc_goes_back = facets[current_face].neighbour_bc == walk[walk.size() - 3].face_id;
-				bool ca_goes_back = facets[current_face].neighbour_ca == walk[walk.size() - 3].face_id;
+				if (is_first_step) {
+					// This is the first step on the walk. We don't have to worry about stepping back as much as we should worry about departing in the right direction.
 
-				if (intersects_ab_strict && !ab_goes_back) {
-					next_face = facets[current_face].neighbour_ab;
-					next_pt = edge_ab.pointAt(t_ab);
-				} else if (intersects_bc_strict && !bc_goes_back) {
-					next_face = facets[current_face].neighbour_bc;
-					next_pt = edge_bc.pointAt(t_bc);
-				} else if (intersects_ca_strict && !ca_goes_back) {
-					next_face = facets[current_face].neighbour_ca;
-					next_pt = edge_ca.pointAt(t_ca);
-				} else {
-					// Egads! We're in a corner. Which one?
+					if (intersects_ab_strict || intersects_bc_strict || intersects_ca_strict) {
+						// We're actually, properly intersecting one of the edges.
+						// Just pick whichever intersection is closest to B.
 
-					if (va_on_plane){
-						// We're at vertex A.
+						double d_min = INFINITY;
 
-						next_pt = va; // We'll stay there...
-
-						// And "walk" around A in whatever direction is not where we just came from.
-						if (!ab_goes_back) {
+						if (intersects_ab_strict) {
+							d_min = std::min(d_min, (b_euc - edge_ab.pointAt(t_ab)).squaredNorm());
 							next_face = facets[current_face].neighbour_ab;
-						} else if (!ca_goes_back) {
+							next_pt = edge_ab.pointAt(t_ab);
+						}
+
+						if (intersects_bc_strict) {
+							d_min = std::min(d_min, (b_euc - edge_bc.pointAt(t_bc)).squaredNorm());
+							next_face = facets[current_face].neighbour_bc;
+							next_pt = edge_bc.pointAt(t_bc);
+						}
+
+						if (intersects_ca_strict) {
+							d_min = std::min(d_min, (b_euc - edge_ca.pointAt(t_ca)).squaredNorm());
 							next_face = facets[current_face].neighbour_ca;
+							next_pt = edge_ca.pointAt(t_ca);
+						}
+
+						assert(d_min < INFINITY);
+
+					} else {
+
+						// We must be at a corner. Pick the edge whose middle point is closest.
+
+						double d_min = INFINITY;
+
+						if (va_on_plane) {
+							next_pt = va;
+							if ((b_euc - edge_ab.pointAt(0.5)).squaredNorm() < d_min) {
+								d_min = (b_euc - edge_ab.pointAt(0.5)).squaredNorm();
+								next_face = facets[current_face].neighbour_ab;
+							}
+							if ((b_euc - edge_ca.pointAt(0.5)).squaredNorm() < d_min) {
+								d_min = (b_euc - edge_ca.pointAt(0.5)).squaredNorm();
+								next_face = facets[current_face].neighbour_ca;
+							}
+						} else if (vb_on_plane) {
+							next_pt = vb;
+							if ((b_euc - edge_bc.pointAt(0.5)).squaredNorm() < d_min) {
+								d_min = (b_euc - edge_bc.pointAt(0.5)).squaredNorm();
+								next_face = facets[current_face].neighbour_bc;
+							}
+							if ((b_euc - edge_ab.pointAt(0.5)).squaredNorm() < d_min) {
+								d_min = (b_euc - edge_ab.pointAt(0.5)).squaredNorm();
+								next_face = facets[current_face].neighbour_ab;
+							}
+						} else if (vc_on_plane) {
+							next_pt = vc;
+							if ((b_euc - edge_ca.pointAt(0.5)).squaredNorm() < d_min) {
+								d_min = (b_euc - edge_ca.pointAt(0.5)).squaredNorm();
+								next_face = facets[current_face].neighbour_ca;
+							}
+							if ((b_euc - edge_bc.pointAt(0.5)).squaredNorm() < d_min) {
+								d_min = (b_euc - edge_bc.pointAt(0.5)).squaredNorm();
+								next_face = facets[current_face].neighbour_bc;
+							}
 						} else {
+							throw std::runtime_error("Not cleanly intersecting an edge, but not at a corner either.");
+						}
+
+						assert(d_min < INFINITY);
+
+
+					}
+
+				} else {
+
+					// Also, there will be at least two intersections between the edges and the plane.
+					// We need to pick the one where we don't step backward.
+					bool ab_goes_back = facets[current_face].neighbour_ab == walk[walk.size() - 3].face_id;
+					bool bc_goes_back = facets[current_face].neighbour_bc == walk[walk.size() - 3].face_id;
+					bool ca_goes_back = facets[current_face].neighbour_ca == walk[walk.size() - 3].face_id;
+
+
+					if (intersects_ab_strict && !ab_goes_back) {
+						next_face = facets[current_face].neighbour_ab;
+						next_pt = edge_ab.pointAt(t_ab);
+					} else if (intersects_bc_strict && !bc_goes_back) {
+						next_face = facets[current_face].neighbour_bc;
+						next_pt = edge_bc.pointAt(t_bc);
+					} else if (intersects_ca_strict && !ca_goes_back) {
+						next_face = facets[current_face].neighbour_ca;
+						next_pt = edge_ca.pointAt(t_ca);
+					} else {
+						// Egads! We're in a corner. Which one?
+
+						if (va_on_plane) {
+							// We're at vertex A.
+
+							next_pt = va; // We'll stay there...
+
+							// And "walk" around A in whatever direction is not where we just came from.
+							if (!ab_goes_back) {
+								next_face = facets[current_face].neighbour_ab;
+							} else if (!ca_goes_back) {
+								next_face = facets[current_face].neighbour_ca;
+							} else {
+								// If we get here, the mesh is broken.
+								throw std::runtime_error("Two edges of a facet lead to the same facet!");
+							}
+						} else if (vb_on_plane) {
+							// Same for vertex B.
+
+							next_pt = vb;
+
+							if (!bc_goes_back) {
+								next_face = facets[current_face].neighbour_bc;
+							} else if (!ca_goes_back) {
+								next_face = facets[current_face].neighbour_ca;
+							} else {
+								throw std::runtime_error("Two edges of a facet lead to the same facet!");
+							}
+						} else if (vc_on_plane) {
+							// Same for vertex C.
+
+							next_pt = vc;
+
+							if (!ca_goes_back) {
+								next_face = facets[current_face].neighbour_ca;
+							} else if (!bc_goes_back) {
+								next_face = facets[current_face].neighbour_bc;
+							} else {
+								throw std::runtime_error("Two edges of a facet lead to the same facet!");
+							}
+						} else {
+
+#ifdef DUMP_GEOGEBRA
+							std::cout << "walk = PolyLine({";
+
+							for (size_t i = 0; i < walk.size(); i++) {
+								std::cout << "(" << walk[i].position.x() << ", " << walk[i].position.y() << ", " << walk[i].position.z() << ")";
+								if (i < walk.size() - 1) {
+									std::cout << ", ";
+								}
+							}
+
+							std::cout << "})" << std::endl;
+#endif
+
 							// If we get here, the mesh is broken.
 							throw std::runtime_error("Two edges of a facet lead to the same facet!");
 						}
-					} else if (vb_on_plane) {
-						// Same for vertex B.
-
-						next_pt = vb;
-
-						if (!bc_goes_back) {
-							next_face = facets[current_face].neighbour_bc;
-						} else if (!ca_goes_back) {
-							next_face = facets[current_face].neighbour_ca;
-						} else {
-							throw std::runtime_error("Two edges of a facet lead to the same facet!");
-						}
-					} else if (vc_on_plane) {
-						// Same for vertex C.
-
-						next_pt = vc;
-
-						if (!ca_goes_back) {
-							next_face = facets[current_face].neighbour_ca;
-						} else if (!bc_goes_back) {
-							next_face = facets[current_face].neighbour_bc;
-						} else {
-							throw std::runtime_error("Two edges of a facet lead to the same facet!");
-						}
-					} else {
-
-#ifdef DUMP_GEOGEBRA
-						std::cout << "walk = PolyLine({";
-
-						for (size_t i = 0; i < walk.size(); i++) {
-							std::cout << "(" << walk[i].position.x() << ", " << walk[i].position.y() << ", " << walk[i].position.z() << ")";
-							if (i < walk.size() - 1) {
-								std::cout << ", ";
-							}
-						}
-
-						std::cout << "})" << std::endl;
-#endif
-
-						// If we get here, the mesh is broken.
-						throw std::runtime_error("Two edges of a facet lead to the same facet!");
 					}
 				}
 			}
