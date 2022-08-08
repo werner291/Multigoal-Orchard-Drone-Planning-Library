@@ -1,6 +1,6 @@
 #include "ConvexHullShell.h"
 #include "convex_hull.h"
-#include "math.h"
+#include "math_utils.h"
 
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/iota.hpp>
@@ -293,9 +293,14 @@ ConvexHullPoint ConvexHullShell::project(const Apple &st) const {
 	return project(st.center);
 }
 
+//#define DUMP_GEOGEBRA
+
 std::vector<ConvexHullPoint>
 ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
 
+	std::set<size_t> visited_faces;
+
+	const double epsilon = 10e-10;
 
 	if (a.face_id == b.face_id) {
 		return {a, b};
@@ -310,8 +315,10 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 
 		const Eigen::ParametrizedLine<double, 3> ideal_line(a_euc, (b_euc - a_euc).normalized());
 
+#ifdef DUMP_GEOGEBRA
 		std::cout << "A = (" << a_euc.x() << ", " << a_euc.y() << ", " << a_euc.z() << ")" << std::endl;
 		std::cout << "B = (" << b_euc.x() << ", " << b_euc.y() << ", " << b_euc.z() << ")" << std::endl;
+#endif
 
 		ConvexHullPoint middle_proj = project(0.5 * (a_euc + b_euc));
 		Eigen::Vector3d middle_normal = (vertices[facets[middle_proj.face_id].b] -
@@ -319,15 +326,14 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 				vertices[facets[middle_proj.face_id].c] - vertices[facets[middle_proj.face_id].a]).normalized();
 		Eigen::Vector3d middle_proj_euc = middle_proj.position - middle_normal;
 
+#ifdef DUMP_GEOGEBRA
 		std::cout << "M = (" << middle_proj_euc.x() << ", " << middle_proj_euc.y() << ", " << middle_proj_euc.z() << ")"
 				  << std::endl;
+#endif
 
 		const Eigen::Vector3d normal = (a_euc - middle_proj_euc).cross(b_euc - middle_proj_euc).normalized();
 
 		const Eigen::Hyperplane<double, 3> cutting_plane(normal, -a_euc.dot(normal));
-
-		//		std::cout << "p = " << normal.x() << " x + " << normal.y() << " y + " << normal.z() << " z + "
-		//				  << cutting_plane.offset() << " = 0" << std::endl;
 
 		assert(cutting_plane.absDistance(a_euc) < 1e-6);
 		assert(cutting_plane.absDistance(b_euc) < 1e-6);
@@ -338,57 +344,203 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 
 		while (walk.back().face_id != b.face_id && (walk.back().position - b.position).squaredNorm() > 1e-10) {
 
+			bool is_first_step = walk.size() == 1;
+
 			size_t current_face = walk.back().face_id;
+
+			if (visited_faces.find(current_face) != visited_faces.end()) {
+
+#ifdef DUMP_GEOGEBRA
+				// Print the walk
+				std::cout << "walk = Polyline({";
+
+				for (size_t i = 0; i < walk.size(); ++i) {
+					std::cout << "(" << walk[i].position.x() << ", " << walk[i].position.y() << ", "
+							  << walk[i].position.z() << ")";
+					if (i < walk.size() - 1) {
+						std::cout << ", ";
+					}
+				}
+
+				std::cout << "})" << std::endl << std::flush;
+#endif
+
+				throw std::runtime_error("Walked through face twice.");
+			} else {
+				visited_faces.insert(current_face);
+			}
+
+
+			// Create variables to be set later.
+			size_t next_face;		 // Which face to step to next.
+			Eigen::Vector3d next_pt; // The point to step to next.
 
 			// Look up the vertices of the triangle.
 			auto va = vertices[facets[current_face].a];
 			auto vb = vertices[facets[current_face].b];
 			auto vc = vertices[facets[current_face].c];
 
-			std::cout << "Polygon({(" << va.x() << ", " << va.y() << ", " << va.z() << "), (" << vb.x() << ", "
-					  << vb.y() << ", " << vb.z() << "), (" << vc.x() << ", " << vc.y() << ", " << vc.z() << ")})"
-					  << std::endl;
+#ifdef DUMP_GEOGEBRA
+			std::cout << "face" << current_face << " = Polygon({(" << va.x() << ", " << va.y() << ", " << va.z() << "), (" << vb.x() << ", " << vb.y() << ", " << vb.z() << "), (" << vc.x() << ", " << vc.y() << ", " << vc.z() << ")}) " << std::endl;
+#endif
+
+			// For special cases, check if any are exactly pon the cutting plane.
+			bool va_on_plane = cutting_plane.absDistance(va) < 1e-10;
+			bool vb_on_plane = cutting_plane.absDistance(vb) < 1e-10;
+			bool vc_on_plane = cutting_plane.absDistance(vc) < 1e-10;
+
+			// Check if any whole edge of the triangle lies on the triangle, which is another special case.
+			bool edge_ab_on_plane = va_on_plane && vb_on_plane;
+			bool edge_bc_on_plane = vb_on_plane && vc_on_plane;
+			bool edge_ca_on_plane = vc_on_plane && va_on_plane;
 
 			// Construct parameterized lines that extend the edges of the triangles.
 			Eigen::ParametrizedLine<double, 3> edge_ab(va, vb - va);
 			Eigen::ParametrizedLine<double, 3> edge_bc(vb, vc - vb);
 			Eigen::ParametrizedLine<double, 3> edge_ca(vc, va - vc);
 
-			double t_ab = edge_ab.intersection(cutting_plane);
-			double t_bc = edge_bc.intersection(cutting_plane);
-			double t_ca = edge_ca.intersection(cutting_plane);
+			if (edge_ab_on_plane) {
 
-			const Eigen::Vector3d pt_ab = edge_ab.pointAt(t_ab);
-			const Eigen::Vector3d pt_bc = edge_bc.pointAt(t_bc);
-			const Eigen::Vector3d pt_ca = edge_ca.pointAt(t_ca);
-
-			size_t next_face;
-			Eigen::Vector3d next_pt;
-
-			const double epsilon = 10e-6;
-
-			// Pick the edge that won't cause us to step backward
-
-			if (0.0 - epsilon <= t_ab && t_ab - epsilon <= 1.0 &&
-				facets[current_face].neighbour_ab != walk[walk.size() - 3].face_id) {
+				// As a default, we'll step to the AB-neighbour.
 				next_face = facets[current_face].neighbour_ab;
-				next_pt = pt_ab;
-			} else if (0.0 - epsilon <= t_bc && t_bc - epsilon <= 1.0 &&
-					   facets[current_face].neighbour_bc != walk[walk.size() - 3].face_id) {
+
+				// Project our goal point onto the edge.
+				double t = projectionParameter(edge_ab, b_euc);
+
+				if (t - epsilon < 0.0) {
+					// Goal point is on the extended edge, beyond vertex A.
+					// Step to vertex A.
+					next_pt = va;
+				} else if (t + epsilon > 1.0) {
+					// Goal point is on the extended edge, beyond vertex B.
+					// Step to vertex B.
+					next_pt = vb;
+				} else {
+					// Goal point is on the extended edge, somewhere between vertex A and B.
+					// Step to the point on the extended edge.
+					next_pt = edge_ab.pointAt(t);
+
+					// As a matter of fact, this point corresponds to the goal point in euclidean coordinates.
+					// Algorithm should terminate next iteration as we enter the goal facet.
+				}
+
+			} else if (edge_bc_on_plane) {
+				// Same logic, but for BC
 				next_face = facets[current_face].neighbour_bc;
-				next_pt = pt_bc;
-			} else if (0.0 - epsilon <= t_ca && t_ca - epsilon <= 1.0 &&
-					   facets[current_face].neighbour_ca != walk[walk.size() - 3].face_id) {
+
+				double t = projectionParameter(edge_bc, b_euc);
+
+				if (t - epsilon < 0.0) {
+					next_pt = vb;
+				} else if (t + epsilon > 1.0) {
+					next_pt = vc;
+				} else {
+					next_pt = edge_bc.pointAt(t);
+				}
+			} else if (edge_ca_on_plane) {
+				// And for AC...
 				next_face = facets[current_face].neighbour_ca;
-				next_pt = pt_ca;
+
+				double t = projectionParameter(edge_ca, b_euc);
+
+				if (t - epsilon < 0.0) {
+					next_pt = va;
+				} else if (t + epsilon > 1.0) {
+					next_pt = vc;
+				} else {
+					next_pt = edge_ca.pointAt(t);
+				}
 			} else {
-				throw std::runtime_error("Could not find next face");
+
+				// Ok, so no edges in the plane. That makes intersection calculations meaningful.
+				double t_ab = edge_ab.intersection(cutting_plane);
+				double t_bc = edge_bc.intersection(cutting_plane);
+				double t_ca = edge_ca.intersection(cutting_plane);
+
+				// Check if the plane intersects the edges on their interior
+				bool intersects_ab_strict = 0 + epsilon < t_ab && t_ab + epsilon < 1.0;
+				bool intersects_bc_strict = 0 + epsilon < t_bc && t_bc + epsilon < 1.0;
+				bool intersects_ca_strict = 0 + epsilon < t_ca && t_ca + epsilon < 1.0;
+
+				// Also, there will be at least two intersections between the edges and the plane.
+				// We need to pick the one where we don't step backward.
+				bool ab_goes_back = facets[current_face].neighbour_ab == walk[walk.size() - 3].face_id;
+				bool bc_goes_back = facets[current_face].neighbour_bc == walk[walk.size() - 3].face_id;
+				bool ca_goes_back = facets[current_face].neighbour_ca == walk[walk.size() - 3].face_id;
+
+				if (intersects_ab_strict && !ab_goes_back) {
+					next_face = facets[current_face].neighbour_ab;
+					next_pt = edge_ab.pointAt(t_ab);
+				} else if (intersects_bc_strict && !bc_goes_back) {
+					next_face = facets[current_face].neighbour_bc;
+					next_pt = edge_bc.pointAt(t_bc);
+				} else if (intersects_ca_strict && !ca_goes_back) {
+					next_face = facets[current_face].neighbour_ca;
+					next_pt = edge_ca.pointAt(t_ca);
+				} else {
+					// Egads! We're in a corner. Which one?
+
+					if (va_on_plane){
+						// We're at vertex A.
+
+						next_pt = va; // We'll stay there...
+
+						// And "walk" around A in whatever direction is not where we just came from.
+						if (!ab_goes_back) {
+							next_face = facets[current_face].neighbour_ab;
+						} else if (!ca_goes_back) {
+							next_face = facets[current_face].neighbour_ca;
+						} else {
+							// If we get here, the mesh is broken.
+							throw std::runtime_error("Two edges of a facet lead to the same facet!");
+						}
+					} else if (vb_on_plane) {
+						// Same for vertex B.
+
+						next_pt = vb;
+
+						if (!bc_goes_back) {
+							next_face = facets[current_face].neighbour_bc;
+						} else if (!ca_goes_back) {
+							next_face = facets[current_face].neighbour_ca;
+						} else {
+							throw std::runtime_error("Two edges of a facet lead to the same facet!");
+						}
+					} else if (vc_on_plane) {
+						// Same for vertex C.
+
+						next_pt = vc;
+
+						if (!ca_goes_back) {
+							next_face = facets[current_face].neighbour_ca;
+						} else if (!bc_goes_back) {
+							next_face = facets[current_face].neighbour_bc;
+						} else {
+							throw std::runtime_error("Two edges of a facet lead to the same facet!");
+						}
+					} else {
+
+#ifdef DUMP_GEOGEBRA
+						std::cout << "walk = PolyLine({";
+
+						for (size_t i = 0; i < walk.size(); i++) {
+							std::cout << "(" << walk[i].position.x() << ", " << walk[i].position.y() << ", " << walk[i].position.z() << ")";
+							if (i < walk.size() - 1) {
+								std::cout << ", ";
+							}
+						}
+
+						std::cout << "})" << std::endl;
+#endif
+
+						// If we get here, the mesh is broken.
+						throw std::runtime_error("Two edges of a facet lead to the same facet!");
+					}
+				}
 			}
 
 			walk.push_back(ConvexHullPoint{current_face, next_pt});
 			walk.push_back(ConvexHullPoint{next_face, next_pt});
-
-			assert(walk.size() < 300);
 		}
 
 		walk.push_back(b);

@@ -1,5 +1,7 @@
-#include <Eigen/Core>
-#include "math.h"
+
+#include "math_utils.h"
+
+#include <Eigen/Geometry>
 
 std::pair<double, double>
 closest_point_on_line(const Eigen::ParametrizedLine<double, 3> &l1,
@@ -26,4 +28,8 @@ closest_point_on_line(const Eigen::ParametrizedLine<double, 3> &l1,
 		n1.dot(l1.origin() - l2.origin()) / n1.dot(d2)
 	};
 
+}
+
+double projectionParameter(const Eigen::ParametrizedLine<double, 3> &line, const Eigen::Vector3d &point) {
+	return (point - line.origin()).dot(line.direction());
 }

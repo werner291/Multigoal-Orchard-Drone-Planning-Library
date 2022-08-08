@@ -121,7 +121,7 @@ add_library(${PROJECT_NAME}_shared
         src/traveling_salesman.h
 #        src/NewKnnPlanner.cpp
 #        src/NewKnnPlanner.h
-        src/ConvexHullShell.cpp src/ConvexHullShell.h src/convex_hull.cpp src/convex_hull.h src/math.cpp src/math.h)
+        src/ConvexHullShell.cpp src/ConvexHullShell.h src/convex_hull.cpp src/convex_hull.h src/math_utils.cpp src/math_utils.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
