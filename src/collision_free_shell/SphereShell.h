@@ -7,9 +7,9 @@
 #include <ompl/base/ScopedState.h>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 #include <ompl/base/Goal.h>
-#include "procedural_tree_generation.h"
-#include "moveit_conversions.h"
-#include "ompl_custom.h"
+#include "../procedural_tree_generation.h"
+#include "../utilities/moveit_conversions.h"
+#include "../ompl_custom.h"
 
 /**
  * Describes, in MoveIt terms, a "shell" shape that fits around the obstacles in the scene,

@@ -7,7 +7,7 @@
 #include <range/v3/view/transform.hpp>
 #include "../run_experiment.h"
 #include "../DronePathLengthObjective.h"
-#include "../ConvexHullShell.h"
+#include "../collision_free_shell/ConvexHullShell.h"
 
 using namespace std;
 

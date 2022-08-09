@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <moveit/collision_detection_bullet/collision_detector_allocator_bullet.h>
 #include "test_utils.h"
-#include "../src/experiment_utils.h"
+#include "../src/utilities/experiment_utils.h"
 #include "../src/BulletContinuousMotionValidator.h"
 
 TEST(CollisionCheckingTests, max_angle) {

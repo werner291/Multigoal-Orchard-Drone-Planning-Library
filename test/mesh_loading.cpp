@@ -2,9 +2,9 @@
 #include <gtest/gtest.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <geometric_shapes/shapes.h>
-#include "../src/experiment_utils.h"
-#include "../src/msgs_utilities.h"
-#include "../src/general_utilities.h"
+#include "../src/utilities/experiment_utils.h"
+#include "../src/utilities/msgs_utilities.h"
+#include "../src/utilities/general_utilities.h"
 
 
 

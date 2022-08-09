@@ -3,7 +3,7 @@
 #include <range/v3/numeric/accumulate.hpp>
 #include <range/v3/view/transform.hpp>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
-#include "general_utilities.h"
+#include "utilities/general_utilities.h"
 
 double RobotPath::length() const {
     return ranges::accumulate(pairwise(waypoints) | ranges::views::transform([&](auto pair) {

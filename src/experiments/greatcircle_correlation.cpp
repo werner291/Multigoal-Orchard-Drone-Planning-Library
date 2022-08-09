@@ -2,7 +2,7 @@
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include <fstream>
 #include <ompl/geometric/planners/prm/PRMstar.h>
-#include "../experiment_utils.h"
+#include "../utilities/experiment_utils.h"
 #include "../src/thread_pool.hpp"
 #include "../DronePathLengthObjective.h"
 #include "../GreatCircleMetric.h"

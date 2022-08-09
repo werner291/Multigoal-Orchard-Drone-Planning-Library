@@ -1,9 +1,9 @@
 #ifndef NEW_PLANNERS_JSON_UTILS_H
 #define NEW_PLANNERS_JSON_UTILS_H
 
-#include "procedural_tree_generation.h"
-#include "LeavesCollisionChecker.h"
-#include "ompl_custom.h"
+#include "../procedural_tree_generation.h"
+#include "../LeavesCollisionChecker.h"
+#include "../ompl_custom.h"
 #include "experiment_utils.h"
 
 Json::Value toJSON(const LeafCollisions &leaf_collisions);

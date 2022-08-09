@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 
-#include "../src/experiment_utils.h"
+#include "../src/utilities/experiment_utils.h"
 
 TEST(MoveitPathLengthObjectiveTest, TestInformedSampler) {
 

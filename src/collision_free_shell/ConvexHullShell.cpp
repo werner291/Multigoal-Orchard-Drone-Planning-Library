@@ -1,63 +1,21 @@
 #include "ConvexHullShell.h"
-#include "convex_hull.h"
-#include "math_utils.h"
+#include "../utilities/convex_hull.h"
+#include "../utilities/math_utils.h"
 
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/iota.hpp>
 #include <range/v3/numeric/accumulate.hpp>
 
-
-/**
- *
- * Compute the barycentric coordinates of a point in the plane defined by the three vertices of a triangle.
- *
- * Based on StackExchange answer here: https://math.stackexchange.com/a/2579920
- *
- * The function returns a vector (alpha,beta,gamma) such that qp' == alpha*va + beta*vb + gamma*vc where
- * qp' is the projection of the query point into the plane defined by the three vertices of the triangle.
- *
- * @param qp	The point to compute the barycentric coordinates of.
- * @param va			The first vertex of the triangle.
- * @param vb			The second vertex of the triangle.
- * @param vc			The third vertex of the triangle.
- * @return				The barycentric coordinates of the point (alpha, beta, gamma).
- */
-Eigen::Vector3d pointInTriangle(const Eigen::Vector3d &qp,
-								const Eigen::Vector3d &va,
-								const Eigen::Vector3d &vb,
-								const Eigen::Vector3d &vc) {
-	// u=P2−P1
-	Eigen::Vector3d u = vb - va;
-	// v=P3−P1
-	Eigen::Vector3d v = vc - va;
-	// n=u×v
-	Eigen::Vector3d n = u.cross(v);
-	// w=P−P1
-	Eigen::Vector3d w = qp - va;
-	// Barycentric coordinates of the projection P′of P onto T:
-	// γ=[(u×w)⋅n]/n²
-	double gamma = u.cross(w).dot(n) / n.dot(n);
-	// β=[(w×v)⋅n]/n²
-	double beta = w.cross(v).dot(n) / n.dot(n);
-	double alpha = 1 - gamma - beta;
-
-	return {alpha, beta, gamma};
-}
-
-
 moveit::core::RobotState
 ConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const {
 
-	const Facet &facet = facets[a.face_id];
+	const Eigen::Vector3d normal = facet_normal(a.face_id);
 
-	Eigen::Vector3d desired_ee_pos = a.position;
-
-	Eigen::Vector3d normal = -(vertices[facet.b] - vertices[facet.a]).cross(vertices[facet.c] - vertices[facet.a])
-			.normalized();
-
-	Eigen::Vector3d required_facing = -normal;
-
-	return robotStateFromFacing(drone, desired_ee_pos + normal * padding, required_facing);
+	return robotStateFromFacing(drone,
+			// Translate the point by the padding times the normal.
+								a.position + normal * padding,
+			// Facing inward, so opposite the normal.
+								-normal);
 
 }
 
@@ -65,6 +23,7 @@ std::vector<moveit::core::RobotState> ConvexHullShell::path_on_shell(const movei
 																	 const ConvexHullPoint &a,
 																	 const ConvexHullPoint &b) const {
 
+	// Simply perform a convex hull walk and generate a state for every point.
 	std::vector<moveit::core::RobotState> path;
 
 	for (const ConvexHullPoint &pt: convex_hull_walk(a, b)) {
@@ -75,28 +34,25 @@ std::vector<moveit::core::RobotState> ConvexHullShell::path_on_shell(const movei
 
 }
 
-
 double ConvexHullShell::predict_path_length(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
 
 	// I don't like that I'm allocating here... We'll see how bad the bottleneck is.
+	// We generate the convex hull walk...
 	auto walk = convex_hull_walk(a, b);
 
+	// And simply add up the Euclidean distances and the rotations at edge crossings.
 	double length = 0;
 
 	for (size_t i = 1; i < walk.size(); i++) {
+		// Add the Euclidean distance between the points.
 		length += (walk[i].position - walk[i - 1].position).norm();
-
-		Eigen::Vector3d normal_1 = (vertices[facets[walk[i - 1].face_id].b] -
-									vertices[facets[walk[i - 1].face_id].a]).cross(
-				vertices[facets[walk[i - 1].face_id].c] - vertices[facets[walk[i - 1].face_id].a]).normalized();
-		Eigen::Vector3d normal_2 = (vertices[facets[walk[i].face_id].b] - vertices[facets[walk[i].face_id].a]).cross(
-				vertices[facets[walk[i].face_id].c] - vertices[facets[walk[i].face_id].a]).normalized();
-
-		length += acos(std::clamp(normal_1.dot(normal_2), -1.0, 1.0));
-
+		// Add the rotation between the facet normals.
+		length += acos(std::clamp(facet_normal(a.face_id).dot(facet_normal(b.face_id)), -1.0, 1.0));
 	}
 
+	// Sanity check.
 	assert(length >= 0);
+
 	return length;
 }
 
@@ -221,7 +177,7 @@ ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &a) const {
 
 		const Facet &f = facets[face_index];
 
-		Eigen::Vector3d a_barycentric = pointInTriangle(a, vertices[f.a], vertices[f.b], vertices[f.c]);
+		Eigen::Vector3d a_barycentric = project_barycentric(a, vertices[f.a], vertices[f.b], vertices[f.c]);
 
 		Eigen::Vector3d a_proj_euclidean = vertices[f.a] * a_barycentric.x() + vertices[f.b] * a_barycentric.y() +
 										   vertices[f.c] * a_barycentric.z();
@@ -372,7 +328,7 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 
 
 			// Create variables to be set later.
-			size_t next_face;		 // Which face to step to next.
+			size_t next_face;         // Which face to step to next.
 			Eigen::Vector3d next_pt; // The point to step to next.
 
 			// Look up the vertices of the triangle.
@@ -626,16 +582,50 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 	}
 }
 
-Eigen::Vector3d ConvexHullShell::cheat_into_facet_interior(const ConvexHullPoint &a) const {
-	Eigen::Vector3d a_bary = pointInTriangle(a.position, vertices[facets[a.face_id].a], vertices[facets[a.face_id].b], vertices[facets[a.face_id].c]);
-	std::clamp(a_bary.x(), 1e-3, 1.0-1.e-3);
-	std::clamp(a_bary.y(), 1e-3, 1.0-1.e-3);
-	std::clamp(a_bary.z(), 1e-3, 1.0-1.e-3);
-	a_bary /= a_bary.x() + a_bary.y() + a_bary.z();
+size_t ConvexHullShell::num_facets() const {
+	return facets.size();
+}
 
-	return vertices[facets[a.face_id].a] * a_bary.x() +
-		   vertices[facets[a.face_id].b] * a_bary.y() +
-		   vertices[facets[a.face_id].c] * a_bary.z();
+const ConvexHullShell::Facet &ConvexHullShell::facet(size_t i) const {
+	return facets[i];
+}
+
+const Eigen::Vector3d &ConvexHullShell::vertex(size_t i) const {
+	return vertices[i];
+}
+
+std::array<Eigen::Vector3d, 3> ConvexHullShell::facet_vertices(size_t facet_i) const {
+	const Facet &f = facet(facet_i);
+
+	return {vertex(f.a), vertex(f.b), vertex(f.c)};
+}
+
+
+double ConvexHullShell::facet_signed_distance(const Eigen::Vector3d ptr, size_t facet_index) const {
+	const auto &[a, b, c] = facet_vertices(facet_index);
+
+	Eigen::Vector3d ab = b - a;
+	Eigen::Vector3d ac = c - a;
+
+	Eigen::Vector3d n = ab.cross(ac);
+
+	return n.dot(ptr - a);
+}
+
+double ConvexHullShell::signed_distance(const Eigen::Vector3d &pt) const {
+	double d = -INFINITY;
+
+	for (size_t i = 0; i < facets.size(); i++) {
+		d = std::max(d, facet_signed_distance(pt, i));
+	}
+
+	return d;
+}
+
+Eigen::Vector3d ConvexHullShell::facet_normal(size_t i) const {
+	const auto &[a, b, c] = facet_vertices(i);
+
+	return (b - a).cross(c - a).normalized();
 }
 
 std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const AppleTreePlanningScene &scene_info) {

@@ -3,11 +3,11 @@
 #include <fstream>
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 #include <range/v3/all.hpp>
-#include "../src/SingleGoalPlannerMethods.h"
+#include "../SingleGoalPlannerMethods.h"
 //#include "../src/NewKnnPlanner.h"
-#include "../src/probe_retreat_move.h"
-#include "../src/GreatCircleMetric.h"
-#include "../src/experiment_utils.h"
+#include "../probe_retreat_move.h"
+#include "../GreatCircleMetric.h"
+#include "experiment_utils.h"
 #include <boost/range/adaptor/transformed.hpp>
 #include <execution>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
@@ -23,12 +23,12 @@
 
 #include "Seb.h"
 
-#include "../src/planning_scene_diff_message.h"
-#include "../src/msgs_utilities.h"
+#include "../planning_scene_diff_message.h"
+#include "msgs_utilities.h"
 #include "experiment_utils.h"
 #include "json_utils.h"
 #include "general_utilities.h"
-#include "DroneStateConstraintSampler.h"
+#include "../DroneStateConstraintSampler.h"
 
 
 TreePlanningScene buildPlanningScene(int numberOfApples, moveit::core::RobotModelPtr &drone) {

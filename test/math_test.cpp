@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <Eigen/Core>
 #include <Eigen/src/Geometry/ParametrizedLine.h>
-#include "../src/math_utils.h"
+#include "../src/utilities/math_utils.h"
 
 TEST(MathTest, closest_point_test) {
 

@@ -3,7 +3,7 @@
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
 
 #include <utility>
-#include "../src/experiment_utils.h"
+#include "../src/utilities/experiment_utils.h"
 #include "test_utils.h"
 #include "../src/multigoal/goals_gnat.h"
 #include "../src/DronePathLengthObjective.h"

@@ -5,7 +5,7 @@
 #include "ExperimentVisualTools.h"
 #include "procedural_tree_generation.h"
 #include "probe_retreat_move.h"
-#include "msgs_utilities.h"
+#include "utilities/msgs_utilities.h"
 
 rclcpp::QoS default_qos() {
 	rclcpp::QoS qos(1);

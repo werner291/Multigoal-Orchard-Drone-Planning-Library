@@ -5,8 +5,8 @@
 #include <ompl/geometric/planners/prm/PRMstar.h>
 
 #include "../planning_scene_diff_message.h"
-#include "../traveling_salesman.h"
-#include "../experiment_utils.h"
+#include "../utilities/traveling_salesman.h"
+#include "../utilities/experiment_utils.h"
 #include "../DronePathLengthObjective.h"
 
 struct PlanningResult {

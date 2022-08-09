@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "../src/experiment_utils.h"
-#include "../src/json_utils.h"
+#include "../src/utilities/experiment_utils.h"
+#include "../src/utilities/json_utils.h"
 
 TEST(JsonTest, tree_scene_test) {
 

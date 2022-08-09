@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <moveit/collision_detection/collision_detector_allocator.h>
 #include <random_numbers/random_numbers.h>
-#include "../src/experiment_utils.h"
-#include "../src/general_utilities.h"
+#include "../src/utilities/experiment_utils.h"
+#include "../src/utilities/general_utilities.h"
 #include "../src/InformedBetweenTwoDroneStatesSampler.h"
 #include "../src/DroneStateConstraintSampler.h"
 

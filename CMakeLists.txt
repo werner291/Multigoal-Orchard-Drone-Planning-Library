@@ -86,20 +86,20 @@ add_library(${PROJECT_NAME}_shared
         src/SamplerWrapper.h
         src/SingleGoalPlannerMethods.cpp
         src/SingleGoalPlannerMethods.h
-        src/SphereShell.cpp
-        src/SphereShell.h
+        src/collision_free_shell/SphereShell.cpp
+        src/collision_free_shell/SphereShell.h
         src/TimedCostConvergenceTerminationCondition.cpp
         src/TimedCostConvergenceTerminationCondition.h
-        src/experiment_utils.cpp
-        src/experiment_utils.h
-        src/general_utilities.cpp
-        src/general_utilities.h
-        src/json_utils.cpp
-        src/json_utils.h
-        src/moveit_conversions.cpp
-        src/moveit_conversions.h
-        src/msgs_utilities.cpp
-        src/msgs_utilities.h
+        src/utilities/experiment_utils.cpp
+        src/utilities/experiment_utils.h
+        src/utilities/general_utilities.cpp
+        src/utilities/general_utilities.h
+        src/utilities/json_utils.cpp
+        src/utilities/json_utils.h
+        src/utilities/moveit_conversions.cpp
+        src/utilities/moveit_conversions.h
+        src/utilities/msgs_utilities.cpp
+        src/utilities/msgs_utilities.h
         src/ompl_custom.cpp
         src/ompl_custom.h
         src/planners/MultiGoalPlanner.cpp
@@ -117,11 +117,11 @@ add_library(${PROJECT_NAME}_shared
         src/robot_path.h
         src/run_experiment.cpp
         src/run_experiment.h
-        src/traveling_salesman.cpp
-        src/traveling_salesman.h
+        src/utilities/traveling_salesman.cpp
+        src/utilities/traveling_salesman.h
 #        src/NewKnnPlanner.cpp
 #        src/NewKnnPlanner.h
-        src/ConvexHullShell.cpp src/ConvexHullShell.h src/convex_hull.cpp src/convex_hull.h src/math_utils.cpp src/math_utils.h)
+        src/collision_free_shell/ConvexHullShell.cpp src/collision_free_shell/ConvexHullShell.h src/utilities/convex_hull.cpp src/utilities/convex_hull.h src/utilities/math_utils.cpp src/utilities/math_utils.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -146,7 +146,8 @@ include(GoogleTest)
 add_executable(${PROJECT_NAME}_tests
         test/test.cpp
         test/MoveItPathLengthObjectiveTest.cpp
-        test/math_test.cpp)
+        test/math_test.cpp
+        src/collision_free_shell/test/ConvexHullShell_test.cpp)
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})
 gtest_discover_tests(${PROJECT_NAME}_tests)

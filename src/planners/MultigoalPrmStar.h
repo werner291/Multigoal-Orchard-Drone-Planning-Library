@@ -7,7 +7,7 @@
 
 #include <moveit/planning_scene/planning_scene.h>
 #include "../robot_path.h"
-#include "../experiment_utils.h"
+#include "../utilities/experiment_utils.h"
 #include "../procedural_tree_generation.h"
 #include "MultiGoalPlanner.h"
 

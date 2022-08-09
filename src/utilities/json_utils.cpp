@@ -2,21 +2,21 @@
 #include <random>
 #include <condition_variable>
 #include <filesystem>
-#include "../src/json_utils.h"
-#include "procedural_tree_generation.h"
+#include "json_utils.h"
+#include "../procedural_tree_generation.h"
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/categories.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <fstream>
-#include "../src/experiment_utils.h"
+#include "experiment_utils.h"
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <cstddef>
 #include <json/json.h>
 #include <ompl/base/OptimizationObjective.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
-#include "LeavesCollisionChecker.h"
-#include "ompl_custom.h"
+#include "../LeavesCollisionChecker.h"
+#include "../ompl_custom.h"
 #include "json_utils.h"
 
 Json::Value jsonFromGzipFile(const std::string &path);

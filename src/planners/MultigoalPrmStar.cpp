@@ -4,7 +4,7 @@
 #include "MultigoalPrmStar.h"
 #include "../DronePathLengthObjective.h"
 #include "../ompl_custom.h"
-#include "../traveling_salesman.h"
+#include "../utilities/traveling_salesman.h"
 #include "../probe_retreat_move.h"
 
 #include <range/v3/all.hpp>

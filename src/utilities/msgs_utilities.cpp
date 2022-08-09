@@ -1,11 +1,11 @@
-#include "../src/experiment_utils.h"
+#include "experiment_utils.h"
 #include <geometric_shapes/shapes.h>
 #include <geometric_shapes/shape_operations.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <gtest/gtest.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <fcl/fcl.h>
-#include "ompl_custom.h"
+#include "../ompl_custom.h"
 #include <moveit/robot_state/conversions.h>
 #include "msgs_utilities.h"
 

@@ -7,7 +7,7 @@
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
 
 #include "../src/DronePathLengthObjective.h"
-#include "../src/experiment_utils.h"
+#include "../src/utilities/experiment_utils.h"
 #include "test_utils.h"
 
 

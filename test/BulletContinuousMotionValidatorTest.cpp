@@ -8,7 +8,7 @@
 #include "test_utils.h"
 #include "../src/LeavesCollisionChecker.h"
 #include "../src/multigoal/approach_table.h"
-#include "../src/experiment_utils.h"
+#include "../src/utilities/experiment_utils.h"
 #include "../src/MoveitPathLengthObjective.h"
 
 

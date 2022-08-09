@@ -3,8 +3,8 @@
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
-#include "../experiment_utils.h"
-#include "../json_utils.h"
+#include "../utilities/experiment_utils.h"
+#include "../utilities/json_utils.h"
 #include <fstream>
 #include <filesystem>
 #include <condition_variable>

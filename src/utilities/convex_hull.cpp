@@ -2,7 +2,7 @@
 
 #include "convex_hull.h"
 
-// Warning: Qhull headers seem to conflict with some of the other headers, notably rangev3.
+// Warning: Qhull headers seem to conflict with some other headers, notably rangev3.
 // So, keep these below the other imports, and avoid including more than the absolute minimum in this file.
 #include <libqhullcpp/RboxPoints.h>
 #include <libqhullcpp/Qhull.h>

@@ -5,12 +5,12 @@
 #include <range/v3/view/enumerate.hpp>
 #include <range/v3/view/transform.hpp>
 #include "MultiGoalPlanner.h"
-#include "../SphereShell.h"
+#include "../collision_free_shell/SphereShell.h"
 #include "../DistanceHeuristics.h"
 #include "../planning_scene_diff_message.h"
 #include "../DronePathLengthObjective.h"
-#include "../general_utilities.h"
-#include "../traveling_salesman.h"
+#include "../utilities/general_utilities.h"
+#include "../utilities/traveling_salesman.h"
 #include "../probe_retreat_move.h"
 #include "../ExperimentVisualTools.h"
 

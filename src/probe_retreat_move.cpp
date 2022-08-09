@@ -6,7 +6,7 @@
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include "probe_retreat_move.h"
 #include "EndEffectorOnShellGoal.h"
-#include "general_utilities.h"
+#include "utilities/general_utilities.h"
 
 ompl::geometric::PathGeometric optimize(const ompl::geometric::PathGeometric& path,
                                         const ompl::base::OptimizationObjectivePtr &objective,

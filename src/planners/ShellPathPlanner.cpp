@@ -1,9 +1,9 @@
 
 #include "ShellPathPlanner.h"
-#include "../traveling_salesman.h"
+#include "../utilities/traveling_salesman.h"
 #include "../probe_retreat_move.h"
 #include "../DronePathLengthObjective.h"
-#include "../experiment_utils.h"
+#include "../utilities/experiment_utils.h"
 #include <utility>
 
 

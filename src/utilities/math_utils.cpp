@@ -1,6 +1,4 @@
-
 #include "math_utils.h"
-
 #include <Eigen/Geometry>
 
 std::pair<double, double>
@@ -32,4 +30,28 @@ closest_point_on_line(const Eigen::ParametrizedLine<double, 3> &l1,
 
 double projectionParameter(const Eigen::ParametrizedLine<double, 3> &line, const Eigen::Vector3d &point) {
 	return (point - line.origin()).dot(line.direction());
+}
+
+Eigen::Vector3d project_barycentric(const Eigen::Vector3d &qp,
+									const Eigen::Vector3d &va,
+									const Eigen::Vector3d &vb,
+									const Eigen::Vector3d &vc) {
+	// u=P2−P1
+	Eigen::Vector3d u = vb - va;
+	// v=P3−P1
+	Eigen::Vector3d v = vc - va;
+	// n=u×v
+	Eigen::Vector3d n = u.cross(v);
+	// w=P−P1
+	Eigen::Vector3d w = qp - va;
+	// Barycentric coordinates of the projection P′of P onto T:
+	// γ=[(u×w)⋅n]/n²
+	double gamma = u.cross(w).dot(n) / n.dot(n);
+	// β=[(w×v)⋅n]/n²
+	double beta = w.cross(v).dot(n) / n.dot(n);
+
+	// Must sum to 1.
+	double alpha = 1 - gamma - beta;
+
+	return {alpha, beta, gamma};
 }

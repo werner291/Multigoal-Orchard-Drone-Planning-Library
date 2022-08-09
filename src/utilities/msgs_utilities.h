@@ -11,7 +11,7 @@
 #include <shape_msgs/msg/mesh.hpp>
 #include <optional>
 
-#include "procedural_tree_generation.h"
+#include "../procedural_tree_generation.h"
 
 shape_msgs::msg::Mesh meshMsgFromResource(const std::string &resource);
 

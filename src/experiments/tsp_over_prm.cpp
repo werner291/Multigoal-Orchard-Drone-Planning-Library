@@ -1,7 +1,7 @@
 
 
 #include "../planning_scene_diff_message.h"
-#include "../experiment_utils.h"
+#include "../utilities/experiment_utils.h"
 #include "../src/MultigoalPrmStar.h"
 #include "../run_experiment.h"
 

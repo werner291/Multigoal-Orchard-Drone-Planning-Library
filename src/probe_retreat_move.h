@@ -6,7 +6,7 @@
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 
 #include "EndEffectorOnShellGoal.h"
-#include "general_utilities.h"
+#include "utilities/general_utilities.h"
 
 
 

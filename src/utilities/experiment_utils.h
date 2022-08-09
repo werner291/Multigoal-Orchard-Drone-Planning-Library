@@ -9,12 +9,12 @@
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/rrt/RRT.h>
 
-#include "SamplerWrapper.h"
-#include "planning_scene_diff_message.h"
-#include "procedural_tree_generation.h"
-#include "robot_path.h"
-#include "DronePathLengthObjective.h"
-#include "ompl_custom.h"
+#include "../SamplerWrapper.h"
+#include "../planning_scene_diff_message.h"
+#include "../procedural_tree_generation.h"
+#include "../robot_path.h"
+#include "../DronePathLengthObjective.h"
+#include "../ompl_custom.h"
 
 struct LeafCollisions {
     double t;

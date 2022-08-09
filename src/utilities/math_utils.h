@@ -28,4 +28,24 @@ std::pair<double, double> closest_point_on_line(
  */
 double projectionParameter(const Eigen::ParametrizedLine<double, 3>& line, const Eigen::Vector3d& point);
 
+/**
+ *
+ * Compute the barycentric coordinates of a point in the plane defined by the three vertices of a triangle.
+ *
+ * Based on StackExchange answer here: https://math.stackexchange.com/a/2579920
+ *
+ * The function returns a vector (alpha,beta,gamma) such that qp' == alpha*va + beta*vb + gamma*vc where
+ * qp' is the projection of the query point into the plane defined by the three vertices of the triangle.
+ *
+ * @param qp	The point to compute the barycentric coordinates of.
+ * @param va	The first vertex of the triangle.
+ * @param vb	The second vertex of the triangle.
+ * @param vc	The third vertex of the triangle.
+ * @return		The barycentric coordinates of the point (alpha, beta, gamma).
+ */
+Eigen::Vector3d project_barycentric(const Eigen::Vector3d &qp,
+									const Eigen::Vector3d &va,
+									const Eigen::Vector3d &vb,
+									const Eigen::Vector3d &vc);
+
 #endif //NEW_PLANNERS_MATH_UTILS_H

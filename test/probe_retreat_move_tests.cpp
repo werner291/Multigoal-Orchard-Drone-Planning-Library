@@ -1,9 +1,9 @@
 
 #include <gtest/gtest.h>
 #include <range/v3/range/conversion.hpp>
-#include "../src/experiment_utils.h"
+#include "../src/utilities/experiment_utils.h"
 #include "../src/DronePathLengthObjective.h"
-#include "../src/SphereShell.h"
+#include "../src/collision_free_shell/SphereShell.h"
 #include "../src/ExperimentVisualTools.h"
 
 TEST(ProbeRetreatMoveTests, state_outside_tree) {

@@ -4,9 +4,9 @@
 #include <ompl/geometric/planners/informedtrees/BITstar.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 
-#include "../experiment_utils.h"
+#include "../utilities/experiment_utils.h"
 #include "../DronePathLengthObjective.h"
-#include "../SphereShell.h"
+#include "../collision_free_shell/SphereShell.h"
 #include "../src/ros_utilities.h"
 
 int main(int argc, char **argv) {

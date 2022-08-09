@@ -2,7 +2,7 @@
 #define NEW_PLANNERS_ENDEFFECTORONSHELLGOAL_H
 
 #include <ompl/base/goals/GoalSampleableRegion.h>
-#include "SphereShell.h"
+#include "collision_free_shell/SphereShell.h"
 
 /**
  * A GoalSampleableRegion that generates states states where the end-effector is on a given sphere shell,
