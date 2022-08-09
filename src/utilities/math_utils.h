@@ -48,4 +48,10 @@ Eigen::Vector3d project_barycentric(const Eigen::Vector3d &qp,
 									const Eigen::Vector3d &vb,
 									const Eigen::Vector3d &vc);
 
+
+Eigen::Vector3d closest_point_on_triangle(const Eigen::Vector3d &p,
+										  const Eigen::Vector3d &va,
+										  const Eigen::Vector3d &vb,
+										  const Eigen::Vector3d &vc);
+
 #endif //NEW_PLANNERS_MATH_UTILS_H

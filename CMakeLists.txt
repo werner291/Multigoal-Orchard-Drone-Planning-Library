@@ -147,7 +147,7 @@ add_executable(${PROJECT_NAME}_tests
         test/test.cpp
         test/MoveItPathLengthObjectiveTest.cpp
         test/math_test.cpp
-        src/collision_free_shell/test/ConvexHullShell_test.cpp)
+        src/collision_free_shell/test/ConvexHullShell_test.cpp src/utilities/test/math_utils_test.cpp)
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})
 gtest_discover_tests(${PROJECT_NAME}_tests)

@@ -22,7 +22,7 @@ shape_msgs::msg::Mesh convexHull(const std::vector<geometry_msgs::msg::Point> &m
 	}
 
 	orgQhull::Qhull qhull;
-	qhull.runQhull(points, "");
+	qhull.runQhull(points, "Qt");
 
 	shape_msgs::msg::Mesh mesh;
 

@@ -172,6 +172,8 @@ public:
 	 */
 	Eigen::Vector3d facet_normal(size_t i) const;
 
+	Eigen::Hyperplane<double, 3> facet_plane(size_t i) const;
+
 	/**
 	 * Look up a vertex of the convex hull.
 	 *

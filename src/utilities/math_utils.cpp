@@ -1,5 +1,6 @@
 #include "math_utils.h"
 #include <Eigen/Geometry>
+#include <iostream>
 
 std::pair<double, double>
 closest_point_on_line(const Eigen::ParametrizedLine<double, 3> &l1,
@@ -29,7 +30,7 @@ closest_point_on_line(const Eigen::ParametrizedLine<double, 3> &l1,
 }
 
 double projectionParameter(const Eigen::ParametrizedLine<double, 3> &line, const Eigen::Vector3d &point) {
-	return (point - line.origin()).dot(line.direction());
+	return (point - line.origin()).dot(line.direction()) / line.direction().squaredNorm();
 }
 
 Eigen::Vector3d project_barycentric(const Eigen::Vector3d &qp,
@@ -54,4 +55,59 @@ Eigen::Vector3d project_barycentric(const Eigen::Vector3d &qp,
 	double alpha = 1 - gamma - beta;
 
 	return {alpha, beta, gamma};
+}
+
+Eigen::Vector3d closest_point_on_triangle(const Eigen::Vector3d &p,
+										  const Eigen::Vector3d &va,
+										  const Eigen::Vector3d &vb,
+										  const Eigen::Vector3d &vc) {
+
+	Eigen::Vector3d barycentric = project_barycentric(p, va, vb, vc);
+
+	Eigen::Vector3d closest_point;
+	double closest_distance = std::numeric_limits<double>::max();
+
+	if (0 <= barycentric[0] && barycentric[0] <= 1 && 0 <= barycentric[1] && barycentric[1] <= 1 && 0 <= barycentric[2] && barycentric[2] <= 1) {
+		closest_point = va * barycentric[0] + vb * barycentric[1] + vc * barycentric[2];
+	} else {
+
+		Eigen::ParametrizedLine<double, 3> ab(va, vb - va);
+		Eigen::ParametrizedLine<double, 3> bc(vb, vc - vb);
+		Eigen::ParametrizedLine<double, 3> ca(vc, va - vc);
+
+		double t_ab = projectionParameter(ab, p);
+		double t_bc = projectionParameter(bc, p);
+		double t_ca = projectionParameter(ca, p);
+
+		t_ab = std::clamp(t_ab, 0.0, 1.0);
+		t_bc = std::clamp(t_bc, 0.0, 1.0);
+		t_ca = std::clamp(t_ca, 0.0, 1.0);
+
+		Eigen::Vector3d pt_ab = ab.pointAt(t_ab);
+		Eigen::Vector3d pt_bc = bc.pointAt(t_bc);
+		Eigen::Vector3d pt_ca = ca.pointAt(t_ca);
+
+		double d_ab = (pt_ab - p).squaredNorm();
+		double d_bc = (pt_bc - p).squaredNorm();
+		double d_ca = (pt_ca - p).squaredNorm();
+
+		if (d_ab < closest_distance) {
+			closest_distance = d_ab;
+			closest_point = pt_ab;
+		}
+
+		if (d_bc < closest_distance) {
+			closest_distance = d_bc;
+			closest_point = pt_bc;
+		}
+
+		if (d_ca < closest_distance) {
+			closest_distance = d_ca;
+			closest_point = pt_ca;
+		}
+
+	}
+
+	return closest_point;
+
 }

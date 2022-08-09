@@ -50,34 +50,16 @@ double ConvexHullShell::predict_path_length(const ConvexHullPoint &a, const Conv
 		length += acos(std::clamp(facet_normal(a.face_id).dot(facet_normal(b.face_id)), -1.0, 1.0));
 	}
 
-	// Sanity check.
-	assert(length >= 0);
-
 	return length;
 }
-
 
 size_t ConvexHullShell::guess_closest_face(const Eigen::Vector3d &a) const {
 	return facet_index.nearest(NNGNATEntry{SIZE_MAX, a}).face_index;
 }
 
-struct UnorderedEdge {
-	size_t a, b;
-
-	bool operator==(const UnorderedEdge &other) const {
-		return a == other.a && b == other.b || a == other.b && b == other.a;
-	}
-};
-
-template<>
-struct std::hash<UnorderedEdge> {
-	size_t operator()(const UnorderedEdge &e) const {
-		return std::hash<size_t>()(e.a) ^ std::hash<size_t>()(e.b);
-	}
-};
-
 ConvexHullShell::ConvexHullShell(const shape_msgs::msg::Mesh &mesh) {
 
+	// Convert the points to Eigen and store.
 	this->vertices = mesh.vertices | ranges::views::transform([](const geometry_msgs::msg::Point &p) {
 		return Eigen::Vector3d(p.x, p.y, p.z);
 	}) | ranges::to_vector;
@@ -87,12 +69,14 @@ ConvexHullShell::ConvexHullShell(const shape_msgs::msg::Mesh &mesh) {
 
 	this->facets = mesh.triangles | ranges::views::transform([&](const shape_msgs::msg::MeshTriangle &t) {
 
+		// Build a Facet structure, leaving the neighbour_ab, neighbour_bc, and neighbour_ca fields empty for now.
 		Facet f = {t.vertex_indices[0], t.vertex_indices[1], t.vertex_indices[2], 0, 0, 0};
 
+		// Find the normal of the facet (we can't use the facet_normal() function since the facets have not been initialized.
 		Eigen::Vector3d normal = (vertices[f.b] - vertices[f.a]).cross(vertices[f.c] - vertices[f.a]).normalized();
 
 		// Ensure winding order puts the normal pointing out from the mesh
-		if (normal.dot(com - vertices[f.a]) < 0) {
+		if (normal.dot(vertices[f.a] - com) < 0) {
 			std::swap(f.b, f.c);
 		}
 
@@ -100,131 +84,249 @@ ConvexHullShell::ConvexHullShell(const shape_msgs::msg::Mesh &mesh) {
 
 	}) | ranges::to_vector;
 
+	// Match up the faces and populate the neighbour_ab, neighbour_bc, and neighbour_ca fields.
 	match_faces();
+
+	// Compute the spatial facet index.
 	init_gnat();
 
 }
 
 void ConvexHullShell::init_gnat() {
+
 	facet_index.setDistanceFunction([](const NNGNATEntry &a, const NNGNATEntry &b) {
+		// Distance between facets will be the Euclidean distance between the centroids.
 		return (a.at - b.at).norm();
 	});
 
 	for (const auto &[i, f]: this->facets | ranges::views::enumerate) {
+		// Add the facet to the index, keyed to the centroid.
 		facet_index.add(NNGNATEntry{i, (this->vertices[f.a] + this->vertices[f.b] + this->vertices[f.c]) / 3.0});
 	}
+
 }
+
+/**
+ * A simple structure of two integers (size_t) that can be hashed and checked for equality in an unordered fashion.
+ *
+ * This will serve as a hash key for the ConvexHullShell::match_faces function.
+ *
+ * Ths is: (a,b) == (b,a).
+ */
+struct UnorderedEdge {
+	size_t a, b;
+
+	bool operator==(const UnorderedEdge &other) const {
+		// Allow both (a,b) and (b,a) to be equal.
+		return a == other.a && b == other.b || a == other.b && b == other.a;
+	}
+};
+
+template<>
+struct std::hash<UnorderedEdge> {
+	size_t operator()(const UnorderedEdge &e) const {
+		// Using the ^ operator to xor the two integers (we need a commutative hash function).
+		return std::hash<size_t>()(e.a) ^ std::hash<size_t>()(e.b);
+	}
+};
 
 void ConvexHullShell::match_faces() {
 
+	/// A structure to hold a face index and a pointer to the field in the facet structure that holds the neighbour index.
 	struct FaceEdge {
+		/// The index of the face.
 		size_t face_index;
+		/// The pointer to the field in the facet structure that holds the neighbour index.
 		size_t *edge_field;
 	};
 
+	// For faces that have already been visited, for every edge of that face that has not been matched yet,
+	// we keep a key-value pair. The Key is the edge (unordered pair of the vertex indices), the Value is
+	// a structure that points back to the facet that was previously known to have this edge.
 	std::unordered_map<UnorderedEdge, FaceEdge> edge_to_face;
 
 	for (size_t i = 0; i < facets.size(); i++) {
 
-		{
-			UnorderedEdge ab = {facets[i].a, facets[i].b};
+		// Look up the facet.
+		Facet &f = facets[i];
 
-			if (edge_to_face.find(ab) == edge_to_face.end()) {
-				edge_to_face[ab] = {i, &facets[i].neighbour_ab};
-			} else {
-				facets[i].neighbour_ab = edge_to_face[ab].face_index;
-				*edge_to_face[ab].edge_field = i;
-				edge_to_face.erase(ab);
-			}
-		}
+		// Build an array of the edges of the face, with a reference to the neighbour field.
+		std::array<std::tuple<size_t, size_t, size_t*>, 3> edges =
+				{std::make_tuple(f.a, f.b, &f.neighbour_ab)
+				,std::make_tuple(f.b, f.c, &f.neighbour_bc)
+				,std::make_tuple(f.c, f.a, &f.neighbour_ca)};
 
-		{
-			UnorderedEdge bc = {facets[i].b, facets[i].c};
-			if (edge_to_face.find(bc) == edge_to_face.end()) {
-				edge_to_face[bc] = {i, &facets[i].neighbour_bc};
-			} else {
-				facets[i].neighbour_bc = edge_to_face[bc].face_index;
-				*edge_to_face[bc].edge_field = i;
-				edge_to_face.erase(bc);
-			}
-		}
+		// For each edge of the face, if it has not been matched yet, match it.
+		for (auto[a,b,neighbour] : edges) {
+			
+			UnorderedEdge edge {a,b}; // The edge to match.
 
-		{
-			UnorderedEdge ca = {facets[i].c, facets[i].a};
-			if (edge_to_face.find(ca) == edge_to_face.end()) {
-				edge_to_face[ca] = {i, &facets[i].neighbour_ca};
+			if (edge_to_face.find(edge) == edge_to_face.end()) {
+				// This edge has not been seen yet, store it for later matching.
+				edge_to_face[edge] = {i, neighbour};
 			} else {
-				facets[i].neighbour_ca = edge_to_face[ca].face_index;
-				*edge_to_face[ca].edge_field = i;
-				edge_to_face.erase(ca);
+				// We found a matching edge!
+				// Set the neighbour field of the face to the index of the other face.
+				f.neighbour_ab = edge_to_face[edge].face_index;
+				// ...and fill in the back-pointer.
+				*edge_to_face[edge].edge_field = i;
+
+				// Every edge can only be matched once (hopefully), so we can remove the edge from the map.
+				edge_to_face.erase(edge);
 			}
 		}
 
 	}
 }
 
-ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &a) const {
 
-	size_t face_index = guess_closest_face(a);
+ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &p) const {
 
-	size_t last_face = SIZE_MAX;
+	std::cout << "Query = (" << p.x() << ", " << p.y() << ", " << p.z() << ")" << std::endl;
 
-	size_t iters = 0;
+	size_t face_index = guess_closest_face(p);
 
-	while (true) {
+	// Find the closest point on the face to the point.
 
-		iters += 1;
+	const auto& [va, vb, vc] = facet_vertices(face_index);
 
-		const Facet &f = facets[face_index];
+	Eigen::Vector3d closest_point = closest_point_on_triangle(p, va, vb, vc);
 
-		Eigen::Vector3d a_barycentric = project_barycentric(a, vertices[f.a], vertices[f.b], vertices[f.c]);
+	bool improved = false;
 
-		Eigen::Vector3d a_proj_euclidean = vertices[f.a] * a_barycentric.x() + vertices[f.b] * a_barycentric.y() +
-										   vertices[f.c] * a_barycentric.z();
-		Eigen::Vector3d normal = (vertices[f.b] - vertices[f.a]).cross(vertices[f.c] - vertices[f.a]).normalized();
+	double closest_distance = (closest_point - p).squaredNorm();
 
-		if (0 <= a_barycentric.x() && a_barycentric.x() <= 1 && 0 <= a_barycentric.y() && a_barycentric.y() <= 1 &&
-			0 <= a_barycentric.z() && a_barycentric.z() <= 1) {
-			return ConvexHullPoint{face_index, a_proj_euclidean};
-		} else {
+	do {
 
-			size_t new_face;
+		std::cout << "(" << closest_point.x() << ", " << closest_point.y() << ", " << closest_point.z() << ")" << std::endl;
+		std::cout << "Polygon({(" << va.x() << "," << va.y() << "," << va.z() << "),(" << vb.x() << "," << vb.y() << "," << vb.z() << "),(" << vc.x() << "," << vc.y() << "," << vc.z() << ")})" << std::endl;
 
-			if (a_barycentric.x() < 0) {
-				new_face = f.neighbour_bc;
-			} else if (a_barycentric.y() < 0) {
-				new_face = f.neighbour_ca;
-			} else if (a_barycentric.z() < 0) {
-				new_face = f.neighbour_ab;
-			} else {
-				throw std::runtime_error("Projection outside of face or face neighbours.");
-			}
+		improved = false;
 
-			if (new_face == last_face) {
-				// We stepped back to the previous face. The point is on the edge.
-				// Capping the barycentric coordinates to the face should put the point there.
+		for (size_t neighbour: {facets[face_index].neighbour_ab, facets[face_index].neighbour_bc,
+								facets[face_index].neighbour_ca}) {
 
-				// TODO: Verify that this actually works?
+			const auto &[nva, nvb, nvc] = facet_vertices(neighbour);
 
-				Eigen::Vector3d capped_barycentric(std::clamp(a_barycentric.x(), 0.0, 1.0),
-												   std::clamp(a_barycentric.y(), 0.0, 1.0),
-												   std::clamp(a_barycentric.z(), 0.0, 1.0));
+			Eigen::Vector3d closest_point_on_neighbour = closest_point_on_triangle(p, nva, nvb, nvc);
 
-				capped_barycentric /= capped_barycentric.x() + capped_barycentric.y() + capped_barycentric.z();
+			double d = (closest_point_on_neighbour - p).squaredNorm();
 
-				Eigen::Vector3d euclidean =
-						vertices[f.a] * capped_barycentric.x() + vertices[f.b] * capped_barycentric.y() +
-						vertices[f.c] * capped_barycentric.z();
-
-				return ConvexHullPoint{face_index, euclidean};
-
-			} else {
-				last_face = new_face;
+			if (d < closest_distance) {
+				closest_point = closest_point_on_neighbour;
+				closest_distance = d;
+				face_index = neighbour;
+				improved = true;
 			}
 
 		}
+	} while (improved);
 
-	}
+	return ConvexHullPoint{face_index, closest_point};
+//
+//	// Take an initial guess by finding the facet whose centroid is closest to the point.
+//	size_t face_index = guess_closest_face(a);
+//
+//
+//	// Reference to the facet visited on the previous iteration, using SIZE_MAX as a "null" value.
+//	size_t last_face = SIZE_MAX;
+//
+//	// We terminate by returning our find.
+//	while (true) {
+//
+//		// Reference to the facet we are currently visiting.
+//		const Facet &f = facets[face_index];
+//
+//		const auto& [va, vb, vc] = facet_vertices(face_index);
+//
+//		// Project the point onto the plane defined by the facet, expressed as barycentric coordinates.
+//		Eigen::Vector3d a_barycentric = project_barycentric(a, va, vb, vc);
+//
+//		// A point lies within a facet if all three barycentric coordinates are in the range [0,1].
+//		if (0 <= a_barycentric.x() && a_barycentric.x() <= 1 &&
+//		    0 <= a_barycentric.y() && a_barycentric.y() <= 1 &&
+//			0 <= a_barycentric.z() && a_barycentric.z() <= 1) {
+//
+//			Eigen::Vector3d a_projected = a_barycentric.x() * va + a_barycentric.y() * vb + a_barycentric.z() * vc;
+//
+//			// The point lies cleanly, fully inside the triangle!
+//			// Return along with the face index.
+//			return ConvexHullPoint{face_index, a_projected};
+//
+//		} else {
+//
+//			// Find the next face to step to.
+//			size_t new_face;
+//
+//			/*
+//			 * For a point in barycentric coordinates (a,b,c), if a < 0, then the point lies outside the triangle,
+//			 * on the opposite of the plane through BC and the origin. Same for b and c.
+//			 *
+//			 * While barycentric coordinate components can also be > 1, this always coincides with another being < 0.
+//			 *
+//			 * So, we simply check which component is negative to know which edge to cross over.
+//			 */
+//
+//			if (a_barycentric.x() < 0) {
+//				new_face = f.neighbour_bc;
+//			} else if (a_barycentric.y() < 0) {
+//				new_face = f.neighbour_ca;
+//			} else if (a_barycentric.z() < 0) {
+//				new_face = f.neighbour_ab;
+//			} else {
+//				throw std::runtime_error("Projection outside of face or face neighbours.");
+//			}
+//
+//			if (new_face == last_face) {
+//
+//				std::cout << "Barycentric: " << a_barycentric.transpose() << std::endl;
+//
+//				// We stepped back to the previous face. The point is on the edge.
+//				//
+//				// Since we *did* enter this triangle, we know that we're beyond the plane perpendicular to the facet and containing the edge,
+//				// so we must be in the wedge defined by the two planes... Hence, the closest point must be on the edge.
+//
+//				// Capping the barycentric coordinates to the face should put the point there.
+//
+//				Eigen::Vector3d euclidean;
+//
+//				if (a_barycentric.x() > 1.0) {
+//					euclidean = vertices[f.a];
+//				} else if (a_barycentric.y() > 1.0) {
+//					euclidean = vertices[f.b];
+//				} else if (a_barycentric.z() > 1.0) {
+//					euclidean = vertices[f.c];
+//				} else if (a_barycentric.x() < 0.0) {
+//
+//					Eigen::ParametrizedLine<double, 3> bc(vb, vc-vb);
+//
+//					euclidean = bc.pointAt(std::clamp(projectionParameter(bc, a), 0.0, 1.0));
+//
+//				} else if (a_barycentric.y() < 0.0) {
+//
+//					Eigen::ParametrizedLine<double, 3> ca(vc, va-vc);
+//
+//					euclidean = ca.pointAt(std::clamp(projectionParameter(ca, a), 0.0, 1.0));
+//
+//				} else if (a_barycentric.z() < 0.0) {
+//
+//					Eigen::ParametrizedLine<double, 3> ab(va, vb-va);
+//
+//					euclidean = ab.pointAt(std::clamp(projectionParameter(ab, a), 0.0, 1.0));
+//
+//				} else {
+//					throw std::runtime_error("Barycentric coordinates are weird.");
+//				}
+//
+//				return ConvexHullPoint{face_index, euclidean};
+//
+//			} else {
+//				last_face = new_face;
+//			}
+//
+//		}
+//
+//	}
 
 }
 
