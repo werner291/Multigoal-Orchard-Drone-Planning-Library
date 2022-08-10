@@ -54,4 +54,21 @@ Eigen::Vector3d closest_point_on_triangle(const Eigen::Vector3d &p,
 										  const Eigen::Vector3d &vb,
 										  const Eigen::Vector3d &vc);
 
+/**
+ * If the point p is within a given margin distance from one of the vertices of the triangle,
+ * return a point slightly towards the other two vertices.
+ *
+ * @param p 		The point to check.
+ * @param va 		The first vertex of the triangle.
+ * @param vb 		The second vertex of the triangle.
+ * @param vc 		The third vertex of the triangle.
+ * @param margin 	The margin distance.
+ * @return 			A point within the triangle at least margin distance from the vertices near p.
+ */
+Eigen::Vector3d cheat_away_from_vertices(const Eigen::Vector3d &p,
+										 const Eigen::Vector3d &va,
+										 const Eigen::Vector3d &vb,
+										 const Eigen::Vector3d &vc,
+										 const double margin = 1.0e-6);
+
 #endif //NEW_PLANNERS_MATH_UTILS_H

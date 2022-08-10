@@ -38,30 +38,30 @@ int main(int argc, char **argv) {
 						make_shared<ConvexHullShellBuilder>(),
 				false);
 			},
-//
-//			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
-//				return make_shared<ShellPathPlanner<ConvexHullPoint>>(
-//						true,
-//						alloc_ptp(si),
-//						make_shared<ConvexHullShellBuilder>(),
-//				true);
-//			},
-//
-//			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
-//				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(
-//						true,
-//						alloc_ptp(si),
-//						make_shared<PaddedSphereShellAroundLeavesBuilder>(),
-//						false);
-//			},
-//
-//			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
-//				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(
-//						true,
-//						alloc_ptp(si),
-//						make_shared<PaddedSphereShellAroundLeavesBuilder>(),
-//						true);
-//			},
+
+			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+				return make_shared<ShellPathPlanner<ConvexHullPoint>>(
+						true,
+						alloc_ptp(si),
+						make_shared<ConvexHullShellBuilder>(),
+				true);
+			},
+
+			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(
+						true,
+						alloc_ptp(si),
+						make_shared<PaddedSphereShellAroundLeavesBuilder>(),
+						false);
+			},
+
+			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(
+						true,
+						alloc_ptp(si),
+						make_shared<PaddedSphereShellAroundLeavesBuilder>(),
+						true);
+			},
 
 	};
 
@@ -72,6 +72,6 @@ int main(int argc, char **argv) {
 						   10,
 						   {50, 150},
 						   {"appletree"},
-						   1,//thread::hardware_concurrency(),
+						   thread::hardware_concurrency(),
 						   true);
 }

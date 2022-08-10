@@ -45,6 +45,8 @@ class ConvexHullShell : public CollisionFreeShell<ConvexHullPoint> {
 		size_t a, b, c;
 		/// The neighbouring facets, by the edge that connects to them.
 		size_t neighbour_ab, neighbour_bc, neighbour_ca;
+
+		[[nodiscard]] std::array<size_t, 3> neighbours() const;
 	};
 
 	/// The facets that make up the convex hull.
@@ -202,6 +204,18 @@ public:
 	 */
 	double signed_distance(const Eigen::Vector3d &pt) const;
 
+	/**
+	 * Generate a path of ConversHullPoints from the given start to the given goal across the surface of the convex hull.
+	 *
+	 * At every edge traversal, a point will be generated for the facet being exited, and a point for the facet being entered,
+	 * so note that the returned path will contain duplicate points in Euclidean terms.
+	 *
+	 * @param a	The start point.
+	 * @param b	The goal point.
+	 * @return	A vector of ConvexHullPoints.
+	 */
+	std::vector<ConvexHullPoint> convex_hull_walk(const ConvexHullPoint& a, const ConvexHullPoint& b) const;
+
 protected:
 
 	/**
@@ -221,18 +235,6 @@ protected:
 	 * Internal: Build the facet lookup structure.
 	 */
 	void init_gnat();
-
-	/**
-	 * Generate a path of ConversHullPoints from the given start to the given goal across the surface of the convex hull.
-	 *
-	 * At every edge traversal, a point will be generated for the facet being exited, and a point for the facet being entered,
-	 * so note that the returned path will contain duplicate points in Euclidean terms.
-	 *
-	 * @param a	The start point.
-	 * @param b	The goal point.
-	 * @return	A vector of ConvexHullPoints.
-	 */
-	std::vector<ConvexHullPoint> convex_hull_walk(const ConvexHullPoint& a, const ConvexHullPoint& b) const;
 
 	/**
 	 *

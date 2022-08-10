@@ -26,6 +26,9 @@ std::vector<size_t> index_vector(const std::vector<T> &v) {
 
 }
 
+template<class C, typename T>
+bool contains(C&& c, T e) { return std::find(begin(c), end(c), e) != end(c); }
+
 Eigen::Vector4d any_perpendicular_of_two(const Eigen::Vector4d &a, const Eigen::Vector4d &b);
 
 
