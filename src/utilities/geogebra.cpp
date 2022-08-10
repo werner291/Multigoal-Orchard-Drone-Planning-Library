@@ -18,3 +18,7 @@ void geogebra_dump_walk(const std::vector<ConvexHullPoint> &walk) {
 
 	std::cout << "})" << std::endl << std::flush;
 }
+
+void geogebra_dump_named_face(const std::string &name, const Eigen::Vector3d &va, const Eigen::Vector3d &vb, const Eigen::Vector3d &vc) {
+	std::cout << name << " = Polygon({(" << va.x() << ", " << va.y() << ", " << va.z() << "), (" << vb.x() << ", " << vb.y() << ", " << vb.z() << "), (" << vc.x() << ", " << vc.y() << ", " << vc.z() << ")}) " << std::endl;
+}

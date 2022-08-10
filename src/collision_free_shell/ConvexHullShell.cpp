@@ -227,7 +227,7 @@ ConvexHullPoint ConvexHullShell::project(const Apple &st) const {
 	return project(st.center);
 }
 
-//#define DUMP_GEOGEBRA
+#define DUMP_GEOGEBRA
 
 std::vector<ConvexHullPoint>
 ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
@@ -249,26 +249,15 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 
 		const Eigen::ParametrizedLine<double, 3> ideal_line(a_euc, (b_euc - a_euc).normalized());
 
+		Eigen::Vector3d middle_proj_euc = computeSupportPoint(a, b);
+
 #ifdef DUMP_GEOGEBRA
 		geogebra_dump_named_point(a_euc, "A");
 		geogebra_dump_named_point(b_euc, "B");
-#endif
-
-		ConvexHullPoint middle_proj = project(0.5 * (a_euc + b_euc));
-		Eigen::Vector3d middle_normal = facet_normal(middle_proj.face_id);
-		Eigen::Vector3d middle_proj_euc = middle_proj.position + middle_normal;
-
-#ifdef DUMP_GEOGEBRA
 		geogebra_dump_named_point(middle_proj_euc, "M");
 #endif
 
-		const Eigen::Vector3d normal = (a_euc - middle_proj_euc).cross(b_euc - middle_proj_euc).normalized();
-
-		const Eigen::Hyperplane<double, 3> cutting_plane(normal, -a_euc.dot(normal));
-
-		assert(cutting_plane.absDistance(a_euc) < 1e-6);
-		assert(cutting_plane.absDistance(b_euc) < 1e-6);
-		assert(cutting_plane.absDistance(middle_proj_euc) < 1e-6);
+		const auto cutting_plane = plane_from_points(a.position, b.position, middle_proj_euc);
 
 		// Current "walking" position, which will start at point A.
 		std::vector<ConvexHullPoint> walk{a};
@@ -282,7 +271,6 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 			if (visited_faces.find(current_face) != visited_faces.end()) {
 
 #ifdef DUMP_GEOGEBRA
-				// Print the walk
 				geogebra_dump_walk(walk);
 #endif
 
@@ -297,12 +285,10 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 			Eigen::Vector3d next_pt; // The point to step to next.
 
 			// Look up the vertices of the triangle.
-			auto va = vertices[facets[current_face].a];
-			auto vb = vertices[facets[current_face].b];
-			auto vc = vertices[facets[current_face].c];
+			const auto& [va,vb,vc] = facet_vertices(current_face);
 
 #ifdef DUMP_GEOGEBRA
-			std::cout << "face" << current_face << " = Polygon({(" << va.x() << ", " << va.y() << ", " << va.z() << "), (" << vb.x() << ", " << vb.y() << ", " << vb.z() << "), (" << vc.x() << ", " << vc.y() << ", " << vc.z() << ")}) " << std::endl;
+			geogebra_dump_named_face("facet"+std::to_string(current_face), va, vb, vc);
 #endif
 
 			// For special cases, check if any are exactly pon the cutting plane.
@@ -391,6 +377,7 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 						// Just pick whichever intersection is closest to B.
 
 						double d_min = INFINITY;
+
 						double d_ab = (middle_proj_euc - edge_ab.pointAt(t_ab)).squaredNorm();
 						double d_bc = (middle_proj_euc - edge_bc.pointAt(t_bc)).squaredNorm();
 						double d_ca = (middle_proj_euc - edge_ca.pointAt(t_ca)).squaredNorm();
@@ -521,16 +508,7 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 						} else {
 
 #ifdef DUMP_GEOGEBRA
-							std::cout << "walk = PolyLine({";
-
-							for (size_t i = 0; i < walk.size(); i++) {
-								std::cout << "(" << walk[i].position.x() << ", " << walk[i].position.y() << ", " << walk[i].position.z() << ")";
-								if (i < walk.size() - 1) {
-									std::cout << ", ";
-								}
-							}
-
-							std::cout << "})" << std::endl;
+							geogebra_dump_walk(walk);
 #endif
 
 							// If we get here, the mesh is broken.
@@ -554,6 +532,13 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 	}
 }
 
+Eigen::Vector3d ConvexHullShell::computeSupportPoint(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
+	ConvexHullPoint middle_proj = project(0.5 * (a.position + b.position));
+	Eigen::Vector3d middle_normal = facet_normal(middle_proj.face_id);
+	Eigen::Vector3d middle_proj_euc = middle_proj.position + middle_normal;
+	return middle_proj_euc;
+}
+
 size_t ConvexHullShell::num_facets() const {
 	return facets.size();
 }
@@ -572,8 +557,7 @@ std::array<Eigen::Vector3d, 3> ConvexHullShell::facet_vertices(size_t facet_i) c
 	return {vertex(f.a), vertex(f.b), vertex(f.c)};
 }
 
-
-double ConvexHullShell::facet_signed_distance(const Eigen::Vector3d ptr, size_t facet_index) const {
+double ConvexHullShell::facet_signed_distance(const Eigen::Vector3d &ptr, size_t facet_index) const {
 	const auto &[a, b, c] = facet_vertices(facet_index);
 
 	Eigen::Vector3d ab = b - a;

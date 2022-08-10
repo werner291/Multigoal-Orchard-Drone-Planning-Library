@@ -71,4 +71,16 @@ Eigen::Vector3d cheat_away_from_vertices(const Eigen::Vector3d &p,
 										 const Eigen::Vector3d &vc,
 										 const double margin = 1.0e-6);
 
+using Plane3d = Eigen::Hyperplane<double, 3>;
+
+/**
+ * Compute a plane passing through three points.
+ *
+ * @param p1 	The first point.
+ * @param p2 	The second point.
+ * @param p3 	The third point.
+ * @return 		The plane passing through the three points.
+ */
+Plane3d plane_from_points(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, const Eigen::Vector3d &p3);
+
 #endif //NEW_PLANNERS_MATH_UTILS_H

@@ -3,6 +3,7 @@
 
 #include "SphereShell.h"
 #include "../planners/ShellPathPlanner.h"
+#include "../utilities/math_utils.h"
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 #include <range/v3/algorithm/min_element.hpp>
 #include <range/v3/view/iota.hpp>
@@ -32,6 +33,18 @@ public:
 };
 
 class ConvexHullShell : public CollisionFreeShell<ConvexHullPoint> {
+
+	enum TriangleEdgeId {
+		EDGE_AB = 0,
+		EDGE_BC = 1,
+		EDGE_CA = 2
+	};
+
+	enum TriangleVertexId {
+		VERTEX_A = 0,
+		VERTEX_B = 1,
+		VERTEX_C = 2
+	};
 
 	/// A set of all the vertices in the convex hull.
 	std::vector<Eigen::Vector3d> vertices;
@@ -174,8 +187,6 @@ public:
 	 */
 	Eigen::Vector3d facet_normal(size_t i) const;
 
-	Eigen::Hyperplane<double, 3> facet_plane(size_t i) const;
-
 	/**
 	 * Look up a vertex of the convex hull.
 	 *
@@ -244,7 +255,9 @@ protected:
 	 * @param facet_index 	The index of the facet.
 	 * @return 				The signed distance.
 	 */
-	double facet_signed_distance(const Eigen::Vector3d ptr, size_t facet_index) const;
+	double facet_signed_distance(const Eigen::Vector3d& ptr, size_t facet_index) const;
+
+	Eigen::Vector3d computeSupportPoint(const ConvexHullPoint &a, const ConvexHullPoint &b) const;
 };
 
 #endif //NEW_PLANNERS_CONVEXHULLSHELL_H

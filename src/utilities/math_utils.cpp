@@ -130,3 +130,11 @@ Eigen::Vector3d cheat_away_from_vertices(const Eigen::Vector3d &p,
 
 }
 
+Plane3d plane_from_points(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, const Eigen::Vector3d &p3) {
+
+	const Eigen::Vector3d normal = (p1 - p2).cross(p3 - p2).normalized();
+
+	return {normal, -p1.dot(normal)};
+
+}
+
