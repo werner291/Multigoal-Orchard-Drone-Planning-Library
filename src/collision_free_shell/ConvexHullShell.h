@@ -60,6 +60,8 @@ class ConvexHullShell : public CollisionFreeShell<ConvexHullPoint> {
 		size_t neighbour_ab, neighbour_bc, neighbour_ca;
 
 		[[nodiscard]] std::array<size_t, 3> neighbours() const;
+
+		[[nodiscard]] size_t neighbour(TriangleEdgeId edge_id) const;
 	};
 
 	/// The facets that make up the convex hull.
