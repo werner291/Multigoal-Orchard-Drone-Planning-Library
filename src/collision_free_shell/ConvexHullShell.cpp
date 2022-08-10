@@ -247,8 +247,6 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 		const Eigen::Vector3d a_euc = a.position;
 		const Eigen::Vector3d b_euc = b.position;
 
-		const Eigen::ParametrizedLine<double, 3> ideal_line(a_euc, (b_euc - a_euc).normalized());
-
 		Eigen::Vector3d middle_proj_euc = computeSupportPoint(a, b);
 
 #ifdef DUMP_GEOGEBRA
@@ -452,26 +450,46 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 
 					// Also, there will be at least two intersections between the edges and the plane.
 					// We need to pick the one where we don't step backward.
-					bool ab_goes_back = facets[current_face].neighbour_ab == walk[walk.size() - 3].face_id;
-					bool bc_goes_back = facets[current_face].neighbour_bc == walk[walk.size() - 3].face_id;
-					bool ca_goes_back = facets[current_face].neighbour_ca == walk[walk.size() - 3].face_id;
+					bool ab_goes_back = facets[current_face].neighbour(EDGE_AB) == walk[walk.size() - 3].face_id;
+					bool bc_goes_back = facets[current_face].neighbour(EDGE_BC) == walk[walk.size() - 3].face_id;
+					bool ca_goes_back = facets[current_face].neighbour(EDGE_CA) == walk[walk.size() - 3].face_id;
 
-					if (intersects_ab_strict && !ab_goes_back) {
-						next_point = {
-								facets[current_face].neighbour(EDGE_AB),
-								edge_ab.pointAt(t_ab)
-						};
-					} else if (intersects_bc_strict && !bc_goes_back) {
-						next_point = {
-								facets[current_face].neighbour(EDGE_BC),
-								edge_bc.pointAt(t_bc)
-						};
-					} else if (intersects_ca_strict && !ca_goes_back) {
-						next_point = {
-								facets[current_face].neighbour(EDGE_CA),
-								edge_ca.pointAt(t_ca)
-						};
-					} else {
+					std::array<bool, 3> goes_back = {
+						ab_goes_back,
+						bc_goes_back,
+						ca_goes_back
+					};
+
+					std::array<Eigen::ParametrizedLine<double, 3>, 3> edge_lines = {
+						edge_ab,
+						edge_bc,
+						edge_ca
+					};
+
+					std::array<bool, 3> interects_strict = {
+							intersects_ab_strict,
+							intersects_bc_strict,
+							intersects_ca_strict
+					};
+
+					std::array<double, 3> t_values = {
+							t_ab,
+							t_bc,
+							t_ca
+					};
+
+					bool through_edge = false;
+					for (auto edge : {EDGE_AB, EDGE_BC, EDGE_CA}) {
+						if (interects_strict[edge] && !goes_back[edge]) {
+							next_point = {
+									facets[current_face].neighbour(edge),
+									edge_lines[edge].pointAt(t_values[edge])
+							};
+							through_edge = true;
+						}
+					}
+
+					if (!through_edge) {
 						// Egads! We're in a corner. Which one?
 
 						if (va_on_plane) {
