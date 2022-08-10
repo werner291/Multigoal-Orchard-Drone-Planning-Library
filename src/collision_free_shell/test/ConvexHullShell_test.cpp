@@ -156,7 +156,7 @@ TEST_F(ConvexHullShell_test, path_on_surface_test) {
 
 	// Pick to random points and project them onto the surface.
 
-	ompl::RNG rng(42);
+	ompl::RNG rng(43);
 
 	auto start = shell->project(Apple {Eigen::Vector3d {rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0)}, {0.0, 0.0, 0.0}});
 	auto goal = shell->project(Apple {Eigen::Vector3d {rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0)}, {0.0, 0.0, 0.0}});

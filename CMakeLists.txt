@@ -129,7 +129,7 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/math_utils.h
 #        src/utilities/TriangleSpheretreeIndex.cpp
 #        src/utilities/TriangleSpheretreeIndex.h
-        )
+        src/utilities/geogebra.h src/utilities/geogebra.cpp)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

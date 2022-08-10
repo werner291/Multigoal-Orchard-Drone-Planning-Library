@@ -1,6 +1,7 @@
 #include "ConvexHullShell.h"
 #include "../utilities/convex_hull.h"
 #include "../utilities/math_utils.h"
+#include "../utilities/geogebra.h"
 
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/iota.hpp>
@@ -249,19 +250,16 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 		const Eigen::ParametrizedLine<double, 3> ideal_line(a_euc, (b_euc - a_euc).normalized());
 
 #ifdef DUMP_GEOGEBRA
-		std::cout << "A = (" << a_euc.x() << ", " << a_euc.y() << ", " << a_euc.z() << ")" << std::endl;
-		std::cout << "B = (" << b_euc.x() << ", " << b_euc.y() << ", " << b_euc.z() << ")" << std::endl;
+		geogebra_dump_named_point(a_euc, "A");
+		geogebra_dump_named_point(b_euc, "B");
 #endif
 
 		ConvexHullPoint middle_proj = project(0.5 * (a_euc + b_euc));
-		Eigen::Vector3d middle_normal = (vertices[facets[middle_proj.face_id].b] -
-										 vertices[facets[middle_proj.face_id].a]).cross(
-				vertices[facets[middle_proj.face_id].c] - vertices[facets[middle_proj.face_id].a]).normalized();
-		Eigen::Vector3d middle_proj_euc = middle_proj.position - middle_normal;
+		Eigen::Vector3d middle_normal = facet_normal(middle_proj.face_id);
+		Eigen::Vector3d middle_proj_euc = middle_proj.position + middle_normal;
 
 #ifdef DUMP_GEOGEBRA
-		std::cout << "M = (" << middle_proj_euc.x() << ", " << middle_proj_euc.y() << ", " << middle_proj_euc.z() << ")"
-				  << std::endl;
+		geogebra_dump_named_point(middle_proj_euc, "M");
 #endif
 
 		const Eigen::Vector3d normal = (a_euc - middle_proj_euc).cross(b_euc - middle_proj_euc).normalized();
@@ -285,17 +283,7 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 
 #ifdef DUMP_GEOGEBRA
 				// Print the walk
-				std::cout << "walk = Polyline({";
-
-				for (size_t i = 0; i < walk.size(); ++i) {
-					std::cout << "(" << walk[i].position.x() << ", " << walk[i].position.y() << ", "
-							  << walk[i].position.z() << ")";
-					if (i < walk.size() - 1) {
-						std::cout << ", ";
-					}
-				}
-
-				std::cout << "})" << std::endl << std::flush;
+				geogebra_dump_walk(walk);
 #endif
 
 				throw std::runtime_error("Walked through face twice.");
@@ -403,21 +391,24 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 						// Just pick whichever intersection is closest to B.
 
 						double d_min = INFINITY;
+						double d_ab = (middle_proj_euc - edge_ab.pointAt(t_ab)).squaredNorm();
+						double d_bc = (middle_proj_euc - edge_bc.pointAt(t_bc)).squaredNorm();
+						double d_ca = (middle_proj_euc - edge_ca.pointAt(t_ca)).squaredNorm();
 
-						if (intersects_ab_strict) {
-							d_min = std::min(d_min, (b_euc - edge_ab.pointAt(t_ab)).squaredNorm());
+						if (intersects_ab_strict && d_ab < d_min) {
+							d_min = std::min(d_min, d_ab);
 							next_face = facets[current_face].neighbour_ab;
 							next_pt = edge_ab.pointAt(t_ab);
 						}
 
-						if (intersects_bc_strict) {
-							d_min = std::min(d_min, (b_euc - edge_bc.pointAt(t_bc)).squaredNorm());
+						if (intersects_bc_strict && d_bc < d_min) {
+							d_min = std::min(d_min, d_bc);
 							next_face = facets[current_face].neighbour_bc;
 							next_pt = edge_bc.pointAt(t_bc);
 						}
 
-						if (intersects_ca_strict) {
-							d_min = std::min(d_min, (b_euc - edge_ca.pointAt(t_ca)).squaredNorm());
+						if (intersects_ca_strict && d_ca < d_min) {
+							d_min = std::min(d_min, d_ca);
 							next_face = facets[current_face].neighbour_ca;
 							next_pt = edge_ca.pointAt(t_ca);
 						}
@@ -554,6 +545,10 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 		}
 
 		walk.push_back(b);
+
+#ifdef DUMP_GEOGEBRA
+		geogebra_dump_walk(walk);
+#endif
 
 		return walk;
 	}
