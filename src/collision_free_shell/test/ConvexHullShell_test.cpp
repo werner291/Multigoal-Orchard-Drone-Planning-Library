@@ -158,26 +158,32 @@ TEST_F(ConvexHullShell_test, path_on_surface_test) {
 
 	ompl::RNG rng(43);
 
-	auto start = shell->project(Apple {Eigen::Vector3d {rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0)}, {0.0, 0.0, 0.0}});
-	auto goal = shell->project(Apple {Eigen::Vector3d {rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0)}, {0.0, 0.0, 0.0}});
+	for (size_t i = 0; i < 1000; ++i) {
+		auto start = shell->project(Apple{
+				Eigen::Vector3d{rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0)},
+				{0.0, 0.0, 0.0}});
+		auto goal = shell->project(Apple{
+				Eigen::Vector3d{rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0)},
+				{0.0, 0.0, 0.0}});
 
-	auto path = shell->convex_hull_walk(start, goal);
+		auto path = shell->convex_hull_walk(start, goal);
 
-	for (auto & i : path) {
-		const auto& [va1,vb1,vc1] = shell->facet_vertices(i.face_id);
-		Eigen::Vector3d closest_point = closest_point_on_triangle(i.position, va1, vb1, vc1);
-		ASSERT_NEAR((i.position - closest_point).squaredNorm(), 0.0, 1.0e-10);
-	}
-
-	for (size_t i = 0; i+1 < path.size(); ++i) {
-
-		auto a = path[i];
-		auto b = path[i+1];
-
-		if (a.face_id != b.face_id) {
-			ASSERT_EQ(a.position, b.position);
+		for (auto &i: path) {
+			const auto &[va1, vb1, vc1] = shell->facet_vertices(i.face_id);
+			Eigen::Vector3d closest_point = closest_point_on_triangle(i.position, va1, vb1, vc1);
+			ASSERT_NEAR((i.position - closest_point).squaredNorm(), 0.0, 1.0e-10);
 		}
 
+		for (size_t i = 0; i + 1 < path.size(); ++i) {
+
+			auto a = path[i];
+			auto b = path[i + 1];
+
+			if (a.face_id != b.face_id) {
+				ASSERT_NEAR((a.position - b.position).squaredNorm(), 0.0, 1.0e-10);
+			}
+
+		}
 	}
 
 }

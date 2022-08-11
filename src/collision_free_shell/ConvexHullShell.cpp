@@ -7,6 +7,8 @@
 #include <range/v3/view/iota.hpp>
 #include <range/v3/numeric/accumulate.hpp>
 
+const double EPSILON = 10e-10;
+
 moveit::core::RobotState
 ConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const {
 
@@ -152,15 +154,14 @@ void ConvexHullShell::match_faces() {
 		Facet &f = facets[i];
 
 		// Build an array of the edges of the face, with a reference to the neighbour field.
-		std::array<std::tuple<size_t, size_t, size_t*>, 3> edges =
-				{std::make_tuple(f.a, f.b, &f.neighbour_ab)
-				,std::make_tuple(f.b, f.c, &f.neighbour_bc)
-				,std::make_tuple(f.c, f.a, &f.neighbour_ca)};
+		std::array<std::tuple<size_t, size_t, size_t *>, 3> edges = {std::make_tuple(f.a, f.b, &f.neighbour_ab),
+																	 std::make_tuple(f.b, f.c, &f.neighbour_bc),
+																	 std::make_tuple(f.c, f.a, &f.neighbour_ca)};
 
 		// For each edge of the face, if it has not been matched yet, match it.
-		for (auto[a,b,neighbour] : edges) {
-			
-			UnorderedEdge edge {a,b}; // The edge to match.
+		for (auto [a, b, neighbour]: edges) {
+
+			UnorderedEdge edge{a, b}; // The edge to match.
 
 			if (edge_to_face.find(edge) == edge_to_face.end()) {
 				// This edge has not been seen yet, store it for later matching.
@@ -189,7 +190,7 @@ ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &p) const {
 	Eigen::Vector3d closest;
 
 	for (size_t face_i = 0; face_i < num_facets(); ++face_i) {
-		const auto& [va,vb,vc] = facet_vertices(face_i);
+		const auto &[va, vb, vc] = facet_vertices(face_i);
 
 		Eigen::Vector3d candidate_closest = closest_point_on_triangle(p, va, vb, vc);
 
@@ -227,351 +228,203 @@ ConvexHullPoint ConvexHullShell::project(const Apple &st) const {
 	return project(st.center);
 }
 
-#define DUMP_GEOGEBRA
-
 std::vector<ConvexHullPoint>
 ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
 
-	std::set<size_t> visited_faces;
-
-	const double epsilon = 10e-10;
 
 	if (a.face_id == b.face_id) {
+		// This is trivial: the walk is just the two points.
 		return {a, b};
 	} else {
 
 		// A quick-and-dirty greedy approximation of the geodesic distance between the two points on the convex hull.
 		// We start from point A, then "walk" along the surface of the convex hull, and then end up at point B.
 
-		// First, we convert points A and B into Euclidean space.
-		const Eigen::Vector3d a_euc = a.position;
-		const Eigen::Vector3d b_euc = b.position;
+		// We first compute a cutting plane. The "walk" will be part of the intersection of the cutting plane with the
+		// convex hull, between points A and B.
+		Eigen::Vector3d support_point = computeSupportPoint(a, b);
+		const auto cutting_plane = plane_from_points(a.position, b.position, support_point);
 
-		Eigen::Vector3d middle_proj_euc = computeSupportPoint(a, b);
-
-#ifdef DUMP_GEOGEBRA
-		geogebra_dump_named_point(a_euc, "A");
-		geogebra_dump_named_point(b_euc, "B");
-		geogebra_dump_named_point(middle_proj_euc, "M");
-#endif
-
-		const auto cutting_plane = plane_from_points(a.position, b.position, middle_proj_euc);
-
-		// Current "walking" position, which will start at point A.
+		// The current walk, which we will gradually build up as the algorithm iterates.
 		std::vector<ConvexHullPoint> walk{a};
 
+		// Keep going until we reach the end point.
 		while (walk.back().face_id != b.face_id && (walk.back().position - b.position).squaredNorm() > 1e-10) {
 
-			bool is_first_step = walk.size() == 1;
+			// Compute the next step.
+			ConvexHullPoint next_point = walk_step(b, support_point, cutting_plane, walk);
 
-			size_t current_face = walk.back().face_id;
-
-			if (visited_faces.find(current_face) != visited_faces.end()) {
-
-#ifdef DUMP_GEOGEBRA
-				geogebra_dump_walk(walk);
-#endif
-
-				throw std::runtime_error("Walked through face twice.");
-			} else {
-				visited_faces.insert(current_face);
-			}
-
-			ConvexHullPoint next_point;
-
-			// Look up the vertices of the triangle.
-			const auto& [va,vb,vc] = facet_vertices(current_face);
-
-#ifdef DUMP_GEOGEBRA
-			geogebra_dump_named_face("facet"+std::to_string(current_face), va, vb, vc);
-#endif
-
-			// For special cases, check if any are exactly pon the cutting plane.
-			bool va_on_plane = cutting_plane.absDistance(va) < 1e-10;
-			bool vb_on_plane = cutting_plane.absDistance(vb) < 1e-10;
-			bool vc_on_plane = cutting_plane.absDistance(vc) < 1e-10;
-
-			// Check if any whole edge of the triangle lies on the triangle, which is another special case.
-			bool edge_ab_on_plane = va_on_plane && vb_on_plane;
-			bool edge_bc_on_plane = vb_on_plane && vc_on_plane;
-			bool edge_ca_on_plane = vc_on_plane && va_on_plane;
-
-			// Construct parameterized lines that extend the edges of the triangles.
-			Eigen::ParametrizedLine<double, 3> edge_ab(va, vb - va);
-			Eigen::ParametrizedLine<double, 3> edge_bc(vb, vc - vb);
-			Eigen::ParametrizedLine<double, 3> edge_ca(vc, va - vc);
-
-			if (edge_ab_on_plane) {
-
-				// As a default, we'll step to the AB-neighbour.
-
-				// Project our goal point onto the edge.
-
-				next_point = ConvexHullPoint {
-					facets[current_face].neighbour_ab,
-					edge_ab.pointAt(std::clamp(projectionParameter(edge_ab, b_euc), 0.0, 1.0))
-				};
-
-			} else if (edge_bc_on_plane) {
-
-				next_point = ConvexHullPoint {
-					facets[current_face].neighbour_bc,
-					edge_bc.pointAt(std::clamp(projectionParameter(edge_bc, b_euc), 0.0, 1.0))
-				};
-
-			} else if (edge_ca_on_plane) {
-
-				next_point = ConvexHullPoint {
-						facets[current_face].neighbour_ca,
-						edge_bc.pointAt(std::clamp(projectionParameter(edge_bc, b_euc), 0.0, 1.0))
-				};
-
-			} else {
-
-				// Ok, so no edges in the plane. That makes intersection calculations meaningful.
-				double t_ab = edge_ab.intersection(cutting_plane);
-				double t_bc = edge_bc.intersection(cutting_plane);
-				double t_ca = edge_ca.intersection(cutting_plane);
-
-				// Check if the plane intersects the edges on their interior
-				bool intersects_ab_strict = 0 + epsilon < t_ab && t_ab + epsilon < 1.0;
-				bool intersects_bc_strict = 0 + epsilon < t_bc && t_bc + epsilon < 1.0;
-				bool intersects_ca_strict = 0 + epsilon < t_ca && t_ca + epsilon < 1.0;
-
-				if (is_first_step) {
-					// This is the first step on the walk. We don't have to worry about stepping back as much as we should worry about departing in the right direction.
-
-					if (intersects_ab_strict || intersects_bc_strict || intersects_ca_strict) {
-						// We're actually, properly intersecting one of the edges.
-						// Just pick whichever intersection is closest to B.
-
-						double d_min = INFINITY;
-
-						double d_ab = (middle_proj_euc - edge_ab.pointAt(t_ab)).squaredNorm();
-						double d_bc = (middle_proj_euc - edge_bc.pointAt(t_bc)).squaredNorm();
-						double d_ca = (middle_proj_euc - edge_ca.pointAt(t_ca)).squaredNorm();
-
-						if (intersects_ab_strict && d_ab < d_min) {
-							d_min = std::min(d_min, d_ab);
-
-							next_point = ConvexHullPoint {
-								facets[current_face].neighbour_ab,
-								edge_ab.pointAt(t_ab)
-							};
-						}
-
-						if (intersects_bc_strict && d_bc < d_min) {
-							d_min = std::min(d_min, d_bc);
-
-							next_point = ConvexHullPoint {
-								facets[current_face].neighbour_bc,
-								edge_bc.pointAt(t_bc)
-							};
-						}
-
-						if (intersects_ca_strict && d_ca < d_min) {
-							d_min = std::min(d_min, d_ca);
-
-							next_point = ConvexHullPoint {
-								facets[current_face].neighbour_ca,
-								edge_ca.pointAt(t_ca)
-							};
-
-						}
-
-						assert(d_min < INFINITY);
-
-					} else {
-
-						// We must be at a corner. Pick the edge whose middle point is closest.
-
-						double d_min = INFINITY;
-
-						double d_ab = (b_euc - edge_ab.pointAt(0.5)).squaredNorm();
-						double d_bc = (b_euc - edge_bc.pointAt(0.5)).squaredNorm();
-						double d_ca = (b_euc - edge_ca.pointAt(0.5)).squaredNorm();
-
-						if (va_on_plane) {
-							if (d_ab < d_min) {
-								d_min = d_ab;
-								next_point = {
-									facets[current_face].neighbour_ab,
-									va
-								};
-							}
-							if (d_ca < d_min) {
-								d_min = (b_euc - edge_ca.pointAt(0.5)).squaredNorm();
-								next_point = {
-										facets[current_face].neighbour_ca,
-										va
-								};
-							}
-						} else if (vb_on_plane) {
-							if (d_ab < d_min) {
-								d_min = d_ab;
-								next_point = {
-									facets[current_face].neighbour_ab,
-									vb
-								};
-							}
-							if (d_bc < d_min) {
-								d_min = d_bc;
-								next_point = {
-									facets[current_face].neighbour_bc,
-									vb
-								};
-							}
-						} else if (vc_on_plane) {
-							if (d_ca < d_min) {
-								d_min = d_ca;
-								next_point = {
-									facets[current_face].neighbour_ca,
-									vc
-								};
-							}
-							if (d_bc < d_min) {
-								d_min = d_bc;
-								next_point = {
-									facets[current_face].neighbour_bc,
-									vc
-								};
-							}
-
-						} else {
-							throw std::runtime_error("Not cleanly intersecting an edge, but not at a corner either.");
-						}
-
-						assert(d_min < INFINITY);
-
-
-					}
-
-				} else {
-
-					// Also, there will be at least two intersections between the edges and the plane.
-					// We need to pick the one where we don't step backward.
-					bool ab_goes_back = facets[current_face].neighbour(EDGE_AB) == walk[walk.size() - 3].face_id;
-					bool bc_goes_back = facets[current_face].neighbour(EDGE_BC) == walk[walk.size() - 3].face_id;
-					bool ca_goes_back = facets[current_face].neighbour(EDGE_CA) == walk[walk.size() - 3].face_id;
-
-					std::array<bool, 3> goes_back = {
-						ab_goes_back,
-						bc_goes_back,
-						ca_goes_back
-					};
-
-					std::array<Eigen::ParametrizedLine<double, 3>, 3> edge_lines = {
-						edge_ab,
-						edge_bc,
-						edge_ca
-					};
-
-					std::array<bool, 3> interects_strict = {
-							intersects_ab_strict,
-							intersects_bc_strict,
-							intersects_ca_strict
-					};
-
-					std::array<double, 3> t_values = {
-							t_ab,
-							t_bc,
-							t_ca
-					};
-
-					bool through_edge = false;
-					for (auto edge : {EDGE_AB, EDGE_BC, EDGE_CA}) {
-						if (interects_strict[edge] && !goes_back[edge]) {
-							next_point = {
-									facets[current_face].neighbour(edge),
-									edge_lines[edge].pointAt(t_values[edge])
-							};
-							through_edge = true;
-						}
-					}
-
-					if (!through_edge) {
-						// Egads! We're in a corner. Which one?
-
-						if (va_on_plane) {
-							// We're at vertex A.
-
-							// And "walk" around A in whatever direction is not where we just came from.
-							if (!ab_goes_back) {
-								next_point = {
-										facets[current_face].neighbour_ab,
-										va
-								};
-							} else if (!ca_goes_back) {
-								next_point = {
-										facets[current_face].neighbour_ca,
-										va
-								};
-							} else {
-								// If we get here, the mesh is broken.
-								throw std::runtime_error("Two edges of a facet lead to the same facet!");
-							}
-						} if (vb_on_plane) {
-							// We're at vertex B.
-							if (!bc_goes_back) {
-								next_point = {
-										facets[current_face].neighbour_bc,
-										vb
-								};
-							} else if (!ab_goes_back) {
-								next_point = {
-										facets[current_face].neighbour_ab,
-										vb
-								};
-							} else {
-								// If we get here, the mesh is broken.
-								throw std::runtime_error("Two edges of a facet lead to the same facet!");
-							}
-						} else if (vc_on_plane) {
-							// We're at vertex C.
-							if (!ca_goes_back) {
-								next_point = {
-										facets[current_face].neighbour_ca,
-										vc
-								};
-							} else if (!bc_goes_back) {
-								next_point = {
-										facets[current_face].neighbour_bc,
-										vc
-								};
-							} else {
-								// If we get here, the mesh is broken.
-								throw std::runtime_error("Two edges of a facet lead to the same facet!");
-							}
-						} else {
-
-#ifdef DUMP_GEOGEBRA
-							geogebra_dump_walk(walk);
-#endif
-
-							// If we get here, the mesh is broken.
-							throw std::runtime_error("Two edges of a facet lead to the same facet!");
-						}
-					}
-				}
-			}
-
-			walk.push_back(ConvexHullPoint{current_face, next_point.position});
+			// To ensure smooth interpolation, we split the next step between one that moves to the exit point
+			// of the current facet, then transition sto the new facet (likely with a different normal).
+			walk.push_back(ConvexHullPoint{walk.back().face_id, next_point.position});
 			walk.push_back(next_point);
+
 		}
 
+		// Push the end point onto the walk.
 		walk.push_back(b);
-
-#ifdef DUMP_GEOGEBRA
-		geogebra_dump_walk(walk);
-#endif
 
 		return walk;
 	}
 }
 
+std::optional<ConvexHullPoint> ConvexHullShell::step_through_edge_in_cutting_plane(const ConvexHullPoint &b,
+																				   const Eigen::Vector3d &support_point,
+																				   const Plane3d &cutting_plane,
+																				   const std::vector<ConvexHullPoint> &walk) const {
+
+	// If of the face the walk is currently on.
+	size_t current_face = walk.back().face_id;
+
+	for (auto edge: {EDGE_AB, EDGE_BC, EDGE_CA}) {
+
+		// Look up the Carthesian coordinates of the two vertices of the edge.
+		const auto [vp, vq] = facet_edge_vertices(current_face, edge);
+
+		// Check if the edge fully lies in the plane (by both vertices lying on the plane).
+		if (cutting_plane.absDistance(vp) < EPSILON && cutting_plane.absDistance(vq) < EPSILON) {
+
+			// Project the goal point onto the line that extends the edge.
+			Eigen::ParametrizedLine<double, 3> edge_line(vp, vq - vp);
+
+			// Restrict so we don't overshoot the edges of the triangle.
+			double t = std::clamp(projectionParameter(edge_line, b.position), 0.0, 1.0);
+
+			// Step to that point, and across the edge.
+			// (FIXME: this might get into an infinite loop if we have colinear edges in the convex hull)
+			return {ConvexHullPoint{facets[current_face].neighbour(edge), edge_line.pointAt(t)}};
+		}
+	}
+
+	return std::nullopt;
+
+}
+
+ConvexHullPoint ConvexHullShell::walk_step(const ConvexHullPoint &b,
+										   const Eigen::Vector3d &support_point,
+										   const Plane3d &cutting_plane,
+										   const std::vector<ConvexHullPoint> &walk) const {
+
+	if (auto edge_step = step_through_edge_in_cutting_plane(b, support_point, cutting_plane, walk)) {
+		return *edge_step;
+	} else if (walk.size() == 1) {
+		// This is the first step on the walk. We don't have to worry about stepping back as much
+		// as we should worry about departing in the right direction.
+		return firstStep(support_point, cutting_plane, walk.back());
+	} else {
+		return nextStep(walk.back(), cutting_plane, walk[walk.size() - 3].face_id);
+	}
+}
+
+std::optional<ConvexHullPoint>
+ConvexHullShell::strictEdgeTraversal(size_t face_id, TriangleEdgeId edge, const Plane3d &cutting_plane) const {
+
+	// ... look up the Carthesian coordinates of the two vertices of the edge,
+	const auto [vp, vq] = facet_edge_vertices(face_id, edge);
+
+	// ... compute the intersection of the extension of the edge with the cutting plane
+	Eigen::ParametrizedLine<double, 3> edge_line(vp, vq - vp);
+	double t = edge_line.intersectionParameter(cutting_plane);
+	Eigen::Vector3d pt = edge_line.pointAt(t);
+
+	if (0.0 + EPSILON < t && t + EPSILON < 1.0) {
+		return {{facet(face_id).neighbour(edge), pt}};
+	} else {
+		return {};
+	}
+}
+
+std::optional<ConvexHullPoint> ConvexHullShell::firstStepThroughEdges(const Eigen::Vector3d &towards_point,
+																	  const Plane3d &cutting_plane,
+																	  const ConvexHullPoint &start_point) const {
+
+	// Id of the face the walk is currently on.
+	size_t current_face = start_point.face_id;
+
+	ConvexHullPoint next_point;
+	double d_min = INFINITY;
+
+	// For every edge...
+	for (auto edge: {EDGE_AB, EDGE_BC, EDGE_CA}) {
+		if (auto pt = strictEdgeTraversal(current_face, edge, cutting_plane)) {
+			// ... compute the distance to the edge.
+			double d = (pt->position - towards_point).norm();
+			if (d < d_min) {
+				d_min = d;
+				next_point = *pt;
+			}
+		}
+	}
+
+	// If we found a point, return it.
+	if (d_min < INFINITY) {
+		return next_point;
+	} else {
+		// There is no clean intersection.
+		return std::nullopt;
+	}
+
+}
+
+
+ConvexHullPoint ConvexHullShell::firstStep(const Eigen::Vector3d &towards_point,
+										   const Plane3d &cutting_plane,
+										   const ConvexHullPoint &start_point) const {
+
+	size_t current_face = start_point.face_id;
+
+	if (auto through_edges = firstStepThroughEdges(towards_point, cutting_plane, start_point)) {
+		return *through_edges;
+	} else {
+		const auto &[va, vb, vc] = facet_vertices(current_face);
+
+		// We must be at a corner. Pick the edge whose middle point is closest.
+		for (TriangleVertexId v: {TriangleVertexId::VERTEX_A, TriangleVertexId::VERTEX_B, TriangleVertexId::VERTEX_C}) {
+
+			auto f = facet(current_face);
+
+			if (cutting_plane.absDistance(vertex(f.vertex(v))) < EPSILON) {
+				return stepAroundVertexTowards(towards_point, current_face, v);
+			}
+		}
+
+		throw std::runtime_error("No corner on the cutting plane. Is there an intersection at all?");
+	}
+
+
+}
+
+ConvexHullPoint ConvexHullShell::stepAroundVertexTowards(const Eigen::Vector3d &towards_point,
+														 size_t current_face,
+														 TriangleVertexId &v) const {
+	// Look up the facet.
+	const auto &f = facet(current_face);
+
+	// Find the edges adjacent to the vertex
+	auto adjacent = edges_adjacent_to_vertex(v);
+
+	// Look up their vertices
+	auto [p1, q1] = facet_edge_vertices(current_face, adjacent[0]);
+	auto [p2, q2] = facet_edge_vertices(current_face, adjacent[1]);
+
+	// Compute the distance of their middle point to the direction indicator point
+	double d1 = (towards_point - ((p1 + q1) / 2.0)).squaredNorm();
+	double d2 = (towards_point - ((p2 + q2) / 2.0)).squaredNorm();
+
+	// Return a step to the closest one, using the vertex itself as the (carthesian) point being stepped to.
+	if (d1 < d2) {
+		return {f.neighbour(adjacent[0]), vertex(f.vertex(v))};
+	} else {
+		return {f.neighbour(adjacent[1]), vertex(f.vertex(v))};
+	}
+}
+
 Eigen::Vector3d ConvexHullShell::computeSupportPoint(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
+	// Grab the middle point and project it onto the convex hull
 	ConvexHullPoint middle_proj = project(0.5 * (a.position + b.position));
+	// Compute the normal at that point
 	Eigen::Vector3d middle_normal = facet_normal(middle_proj.face_id);
+	// Send it off along the normal a bit to ensure we avoid colinear points.
 	Eigen::Vector3d middle_proj_euc = middle_proj.position + middle_normal;
 	return middle_proj_euc;
 }
@@ -621,6 +474,47 @@ Eigen::Vector3d ConvexHullShell::facet_normal(size_t i) const {
 	return (b - a).cross(c - a).normalized();
 }
 
+ConvexHullPoint ConvexHullShell::nextStep(const ConvexHullPoint &current_point,
+										  const Plane3d &cutting_plane,
+										  size_t last_face_id) const {
+
+	// Look up the facet data.
+	const Facet &f = facet(current_point.face_id);
+
+	// Check if there is a clean intersection with an edge that doesn't lead to the facet we just came from.
+	for (auto edge: {EDGE_AB, EDGE_BC, EDGE_CA}) {
+		if (f.neighbour(edge) != last_face_id) {
+			if (auto intersection = strictEdgeTraversal(current_point.face_id, edge, cutting_plane)) {
+				// We found one! This is the easy case, we just return it.
+				return *intersection;
+			}
+		}
+	}
+
+	// There was no clean interior intersection with one of the edges... We must be intersecting at a vertex!
+	for (auto vertex: {VERTEX_A, VERTEX_B, VERTEX_C}) {
+		if (cutting_plane.absDistance(vertices[f.vertex(vertex)]) < 1e-6) {
+			// We found the vertex we're intersecting with (which coincides with it lying on the plane).
+
+			for (auto edge: edges_adjacent_to_vertex(vertex)) {
+				// We step through the edge adjacent to the vertex that leads to a different facet than the one we came from.
+				if (f.neighbour(edge) != last_face_id) {
+					return {f.neighbour(edge), vertices[f.vertex(vertex)]};
+				}
+			}
+		}
+	}
+
+	throw std::runtime_error("Could not find an exit point. There may not be an intersection?");
+}
+
+std::array<Eigen::Vector3d, 2> ConvexHullShell::facet_edge_vertices(size_t face_i, TriangleEdgeId edge_id) const {
+	return {
+		vertices[facets[face_i].edge_vertices(edge_id)[0]],
+		vertices[facets[face_i].edge_vertices(edge_id)[1]]
+	};
+}
+
 std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const AppleTreePlanningScene &scene_info) {
 	std::vector<geometry_msgs::msg::Point> mesh_points;
 	for (const auto &col: scene_info.scene_msg.world.collision_objects) {
@@ -664,14 +558,42 @@ bool ConvexHullShell::NNGNATEntry::operator!=(const ConvexHullShell::NNGNATEntry
 }
 
 std::array<size_t, 3> ConvexHullShell::Facet::neighbours() const {
-	return { neighbour_ab, neighbour_bc, neighbour_ca };
+	return {neighbour_ab, neighbour_bc, neighbour_ca};
 }
 
-size_t ConvexHullShell::Facet::neighbour(ConvexHullShell::TriangleEdgeId edge_id) const {
+size_t ConvexHullShell::Facet::neighbour(TriangleEdgeId edge_id) const {
 	switch (edge_id) {
-		case EDGE_AB: return neighbour_ab;
-		case EDGE_BC: return neighbour_bc;
-		case EDGE_CA: return neighbour_ca;
-		default: throw std::runtime_error("Invalid edge id");
+		case EDGE_AB:
+			return neighbour_ab;
+		case EDGE_BC:
+			return neighbour_bc;
+		case EDGE_CA:
+			return neighbour_ca;
+		default:
+			throw std::runtime_error("Invalid edge id");
 	}
+}
+
+size_t ConvexHullShell::Facet::vertex(TriangleVertexId vertex_id) const {
+	switch (vertex_id) {
+		case TriangleVertexId::VERTEX_A:
+			return a;
+		case TriangleVertexId::VERTEX_B:
+			return b;
+		case TriangleVertexId::VERTEX_C:
+			return c;
+	}
+	throw std::runtime_error("Invalid vertex id");
+}
+
+std::array<size_t, 2> ConvexHullShell::Facet::edge_vertices(TriangleEdgeId edge_id) const {
+	switch (edge_id) {
+		case TriangleEdgeId::EDGE_AB:
+			return {a, b};
+		case TriangleEdgeId::EDGE_BC:
+			return {b, c};
+		case TriangleEdgeId::EDGE_CA:
+			return {c, a};
+	}
+	throw std::runtime_error("Invalid edge id");
 }

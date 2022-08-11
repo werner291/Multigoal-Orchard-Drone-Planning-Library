@@ -1,10 +1,6 @@
 
 #include "ShellPathPlanner.h"
-#include "../utilities/traveling_salesman.h"
-#include "../probe_retreat_move.h"
-#include "../DronePathLengthObjective.h"
 #include "../utilities/experiment_utils.h"
-#include <utility>
 
 
 std::shared_ptr<OMPLSphereShellWrapper<Eigen::Vector3d> > PaddedSphereShellAroundLeavesBuilder::buildShell(const AppleTreePlanningScene &scene_info,

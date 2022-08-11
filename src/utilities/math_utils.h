@@ -83,4 +83,20 @@ using Plane3d = Eigen::Hyperplane<double, 3>;
  */
 Plane3d plane_from_points(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, const Eigen::Vector3d &p3);
 
+enum TriangleEdgeId {
+	EDGE_AB = 0,
+	EDGE_BC = 1,
+	EDGE_CA = 2
+};
+
+enum TriangleVertexId {
+	VERTEX_A = 0,
+	VERTEX_B = 1,
+	VERTEX_C = 2
+};
+
+std::array<TriangleVertexId, 2> vertices_in_edge(TriangleEdgeId edge);
+
+std::array<TriangleEdgeId, 2> edges_adjacent_to_vertex(TriangleVertexId vertex);
+
 #endif //NEW_PLANNERS_MATH_UTILS_H

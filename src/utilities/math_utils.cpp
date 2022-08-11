@@ -138,3 +138,29 @@ Plane3d plane_from_points(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, 
 
 }
 
+std::array<TriangleEdgeId, 2> edges_adjacent_to_vertex(TriangleVertexId vertex) {
+
+	switch (vertex) {
+		case VERTEX_A:
+			return {EDGE_AB, EDGE_CA};
+		case VERTEX_B:
+			return {EDGE_BC, EDGE_AB};
+		case VERTEX_C:
+			return {EDGE_CA, EDGE_BC};
+	}
+
+}
+
+std::array<TriangleVertexId, 2> vertices_in_edge(TriangleEdgeId edge) {
+	switch (edge) {
+		case EDGE_AB:
+			return {VERTEX_A, VERTEX_B};
+		case EDGE_BC:
+			return {VERTEX_B, VERTEX_C};
+		case EDGE_CA:
+			return {VERTEX_C, VERTEX_A};
+		default:
+			throw std::runtime_error("Invalid edge id");
+	}
+}
+

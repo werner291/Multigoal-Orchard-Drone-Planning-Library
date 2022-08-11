@@ -34,17 +34,7 @@ public:
 
 class ConvexHullShell : public CollisionFreeShell<ConvexHullPoint> {
 
-	enum TriangleEdgeId {
-		EDGE_AB = 0,
-		EDGE_BC = 1,
-		EDGE_CA = 2
-	};
 
-	enum TriangleVertexId {
-		VERTEX_A = 0,
-		VERTEX_B = 1,
-		VERTEX_C = 2
-	};
 
 	/// A set of all the vertices in the convex hull.
 	std::vector<Eigen::Vector3d> vertices;
@@ -62,6 +52,10 @@ class ConvexHullShell : public CollisionFreeShell<ConvexHullPoint> {
 		[[nodiscard]] std::array<size_t, 3> neighbours() const;
 
 		[[nodiscard]] size_t neighbour(TriangleEdgeId edge_id) const;
+
+		[[nodiscard]] size_t vertex(TriangleVertexId vertex_id) const;
+
+		[[nodiscard]] std::array<size_t, 2> edge_vertices(TriangleEdgeId edge_id) const;
 	};
 
 	/// The facets that make up the convex hull.
@@ -182,6 +176,15 @@ public:
 	const Facet& facet(size_t i) const;
 
 	/**
+	 * Get the vertices (in Euclidean space) for the given edge of the given face ID.
+	 *
+	 * @param face_i	The face ID.
+	 * @param edge_id 	The edge ID.
+	 * @return 			The vertices.
+	 */
+	std::array<Eigen::Vector3d, 2> facet_edge_vertices(size_t face_i, TriangleEdgeId edge_id) const;
+
+	/**
 	 * Compute the outward-pointing normal of a facet. Normalization is applied.
 	 *
 	 * @param i 	The index of the facet (0 <= i < num_facets()).
@@ -259,7 +262,115 @@ protected:
 	 */
 	double facet_signed_distance(const Eigen::Vector3d& ptr, size_t facet_index) const;
 
+	/**
+	 * Compute the "support point" for a convex_hull_walk. That is: the third point to define the cutting plane,
+	 * in this case computed by taking the halfway point between a and b and projecting it onto the convex hull.
+	 *
+	 * @param a		The first point.
+	 * @param b		The second point.
+	 * @return		The support point.
+	 */
 	Eigen::Vector3d computeSupportPoint(const ConvexHullPoint &a, const ConvexHullPoint &b) const;
+
+	/**
+	 *
+	 * Internal: Given a ConvexHullPoint, a cutting plane, and a previous face index,
+	 * find the next point on the convex hull walk.
+	 *
+	 * @param current_point		The current point.
+	 * @param cutting_plane		The cutting plane.
+	 * @param last_face_idx		The previous face index. (Assumed != current_point.facet_index)
+	 *
+	 * @return					The next point, on the next face.
+	 */
+	[[nodiscard]] ConvexHullPoint nextStep(const ConvexHullPoint &current_point,
+										   const Plane3d &cutting_plane,
+										   size_t last_face_id) const;
+
+	/**
+	 * Internal: Given an initial point on the convex hull, a cutting plane, and a point,
+	 * find the next point on the path traced by cutting the facet of the convex hull by the plane,
+	 * in the direction of the given point.
+	 *
+	 * @param towards_point		The point to walk towards (to pick between the two intersections).
+	 * @param cutting_plane		The cutting plane.
+	 * @param start_point		The initial point.
+	 * @return					The next point, on the next face.
+	 */
+	ConvexHullPoint firstStep(const Eigen::Vector3d &towards_point,
+							  const Plane3d &cutting_plane,
+							  const ConvexHullPoint & start_point) const ;
+
+	/**
+	 * Same as the ConvexHullPoint, but explicitly try to complete the step only
+	 * by exiting through the interior of an edge (not a vertex).
+	 *
+	 * @param towards_point 	The point to walk towards (to pick between the two intersections).
+	 * @param cutting_plane 	The cutting plane.
+	 * @param start_point 		The initial point.
+	 * @return 					The next point, on the next face (or nullopt if the step fails)
+	 */
+	std::optional<ConvexHullPoint> firstStepThroughEdges(
+			const Eigen::Vector3d &towards_point,
+			const Plane3d &cutting_plane,
+			const ConvexHullPoint & start_point) const;
+
+	/**
+	 * Generate the next step on the convex hull walk; such a point is assumed to exist and that
+	 * the path has not yet been completed.
+	 *
+	 * @param b 				The goal point.
+	 * @param support_point 	The support point.
+	 * @param cutting_plane 	The cutting plane.
+	 * @param walk 				The current walk.
+	 * @return 					The next step.
+	 */
+	ConvexHullPoint walk_step(const ConvexHullPoint &b,
+							  const Eigen::Vector3d &support_point,
+							  const Plane3d &cutting_plane,
+							  const std::vector<ConvexHullPoint> &walk) const;
+
+	/**
+	 * Compute the intersection with the given edge of the given facet, if any.
+	 *
+	 * The method is "strict" in the sense that nullopt will be returned if the intersection is on a vertex.
+	 *
+	 * @param face_id			The index of the facet.
+	 * @param edge				The edge to intersect with.
+	 * @param cutting_plane		The cutting plane.
+	 * @return					The intersection point, if any.
+	 */
+	std::optional<ConvexHullPoint> strictEdgeTraversal(size_t face_id,
+													   TriangleEdgeId edge,
+													   const Plane3d &cutting_plane) const;
+
+	/**
+	 * Given a vertex of a facet in the convex hull, generate a ConvexHullPoint at that vertex but on the facet
+	 * that makes the most progress towards the goal point.
+	 *
+	 * @param towards_point 	The goal/direction indication point.
+	 * @param current_face 		The facet containing the vertex.
+	 * @param v 				The vertex.
+	 * @return 					The ConvexHullPoint.
+	 */
+	ConvexHullPoint stepAroundVertexTowards(const Eigen::Vector3d &towards_point,
+											size_t current_face,
+											TriangleVertexId &v) const;
+
+	/**
+	 * Given a point on the convex hull a cutting plane, find the next point of the walk if such a point appears
+	 * on an edge of the facet that lies in the cutting plane.
+	 *
+	 * @param b 				The goal point.
+	 * @param support_point 	The support point.
+	 * @param cutting_plane 	The cutting plane.
+	 * @param walk 				The current walk.
+	 * @return 					The next step if an edge lies in the plane, otherwise nullopt.
+	 */
+	std::optional<ConvexHullPoint> step_through_edge_in_cutting_plane(const ConvexHullPoint &b,
+																	  const Eigen::Vector3d &support_point,
+																	  const Plane3d &cutting_plane,
+																	  const std::vector<ConvexHullPoint> &walk) const;
 };
 
 #endif //NEW_PLANNERS_CONVEXHULLSHELL_H
