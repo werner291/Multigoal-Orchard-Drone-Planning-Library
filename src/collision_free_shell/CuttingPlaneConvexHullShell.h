@@ -1,5 +1,5 @@
-#ifndef NEW_PLANNERS_CONVEXHULLSHELL_H
-#define NEW_PLANNERS_CONVEXHULLSHELL_H
+#ifndef NEW_PLANNERS_CUTTINGPLANECONVEXHULLSHELL_H
+#define NEW_PLANNERS_CUTTINGPLANECONVEXHULLSHELL_H
 
 #include "SphereShell.h"
 #include "../planners/ShellPathPlanner.h"
@@ -9,7 +9,7 @@
 #include <range/v3/view/iota.hpp>
 
 /**
- * A reference to some location on a ConvexHullShell.
+ * A reference to some location on a CuttingPlaneConvexHullShell.
  */
 struct ConvexHullPoint {
 	/// The facet identifier of the facet containing this point.
@@ -19,7 +19,7 @@ struct ConvexHullPoint {
 };
 
 /**
- * A ShellBuilder that builds a ConvexHullShell around the leaf vertices in a tree.
+ * A ShellBuilder that builds a CuttingPlaneConvexHullShell around the leaf vertices in a tree.
  */
 class ConvexHullShellBuilder : public ShellPathPlanner<ConvexHullPoint>::ShellBuilder {
 
@@ -32,7 +32,7 @@ public:
 	[[nodiscard]] Json::Value parameters() const override;
 };
 
-class ConvexHullShell : public CollisionFreeShell<ConvexHullPoint> {
+class CuttingPlaneConvexHullShell : public CollisionFreeShell<ConvexHullPoint> {
 
 
 
@@ -89,14 +89,14 @@ class ConvexHullShell : public CollisionFreeShell<ConvexHullPoint> {
 public:
 
 	/**
-	 * Construct a ConvexHullShell from a convex hull mesh.
+	 * Construct a CuttingPlaneConvexHullShell from a convex hull mesh.
 	 *
 	 * Warning: The mesh given is assumed to already be convex. If it is not,
 	 * you may build one using the convexHull function.
 	 *
 	 * @param mesh 		The mesh to use. (Note: assumed to be convex!)
 	 */
-	ConvexHullShell(const shape_msgs::msg::Mesh &mesh);
+	CuttingPlaneConvexHullShell(const shape_msgs::msg::Mesh &mesh);
 
 	/**
 	 * Construct a RobotState whose end effector is at the given point, plus a padding distance.
@@ -373,4 +373,4 @@ protected:
 																	  const std::vector<ConvexHullPoint> &walk) const;
 };
 
-#endif //NEW_PLANNERS_CONVEXHULLSHELL_H
+#endif //NEW_PLANNERS_CUTTINGPLANECONVEXHULLSHELL_H

@@ -121,15 +121,15 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/traveling_salesman.h
 #        src/NewKnnPlanner.cpp
 #        src/NewKnnPlanner.h
-        src/collision_free_shell/ConvexHullShell.cpp
-        src/collision_free_shell/ConvexHullShell.h
+        src/collision_free_shell/CuttingPlaneConvexHullShell.cpp
+        src/collision_free_shell/CuttingPlaneConvexHullShell.h
         src/utilities/convex_hull.cpp
         src/utilities/convex_hull.h
         src/utilities/math_utils.cpp
         src/utilities/math_utils.h
 #        src/utilities/TriangleSpheretreeIndex.cpp
 #        src/utilities/TriangleSpheretreeIndex.h
-        src/utilities/geogebra.h src/utilities/geogebra.cpp)
+        src/utilities/geogebra.h src/utilities/geogebra.cpp src/collision_free_shell/CGALMeshShell.cpp src/collision_free_shell/CGALMeshShell.h src/collision_free_shell/test/CGALMeshShell_test.cpp)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

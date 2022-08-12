@@ -1,4 +1,4 @@
-#include "ConvexHullShell.h"
+#include "CuttingPlaneConvexHullShell.h"
 #include "../utilities/convex_hull.h"
 #include "../utilities/math_utils.h"
 #include "../utilities/geogebra.h"
@@ -10,7 +10,7 @@
 const double EPSILON = 10e-10;
 
 moveit::core::RobotState
-ConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const {
+CuttingPlaneConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const {
 
 	const Eigen::Vector3d normal = facet_normal(a.face_id);
 
@@ -22,9 +22,9 @@ ConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, c
 
 }
 
-std::vector<moveit::core::RobotState> ConvexHullShell::path_on_shell(const moveit::core::RobotModelConstPtr &drone,
-																	 const ConvexHullPoint &a,
-																	 const ConvexHullPoint &b) const {
+std::vector<moveit::core::RobotState> CuttingPlaneConvexHullShell::path_on_shell(const moveit::core::RobotModelConstPtr &drone,
+																				 const ConvexHullPoint &a,
+																				 const ConvexHullPoint &b) const {
 
 	// Simply perform a convex hull walk and generate a state for every point.
 	std::vector<moveit::core::RobotState> path;
@@ -37,7 +37,7 @@ std::vector<moveit::core::RobotState> ConvexHullShell::path_on_shell(const movei
 
 }
 
-double ConvexHullShell::predict_path_length(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
+double CuttingPlaneConvexHullShell::predict_path_length(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
 
 	// I don't like that I'm allocating here... We'll see how bad the bottleneck is.
 	// We generate the convex hull walk...
@@ -56,11 +56,11 @@ double ConvexHullShell::predict_path_length(const ConvexHullPoint &a, const Conv
 	return length;
 }
 
-size_t ConvexHullShell::guess_closest_face(const Eigen::Vector3d &a) const {
+size_t CuttingPlaneConvexHullShell::guess_closest_face(const Eigen::Vector3d &a) const {
 	return facet_index.nearest(NNGNATEntry{SIZE_MAX, a}).face_index;
 }
 
-ConvexHullShell::ConvexHullShell(const shape_msgs::msg::Mesh &mesh) {
+CuttingPlaneConvexHullShell::CuttingPlaneConvexHullShell(const shape_msgs::msg::Mesh &mesh) {
 
 	// Convert the points to Eigen and store.
 	this->vertices = mesh.vertices | ranges::views::transform([](const geometry_msgs::msg::Point &p) {
@@ -95,7 +95,7 @@ ConvexHullShell::ConvexHullShell(const shape_msgs::msg::Mesh &mesh) {
 
 }
 
-void ConvexHullShell::init_gnat() {
+void CuttingPlaneConvexHullShell::init_gnat() {
 
 	facet_index.setDistanceFunction([](const NNGNATEntry &a, const NNGNATEntry &b) {
 		// Distance between facets will be the Euclidean distance between the centroids.
@@ -112,7 +112,7 @@ void ConvexHullShell::init_gnat() {
 /**
  * A simple structure of two integers (size_t) that can be hashed and checked for equality in an unordered fashion.
  *
- * This will serve as a hash key for the ConvexHullShell::match_faces function.
+ * This will serve as a hash key for the CuttingPlaneConvexHullShell::match_faces function.
  *
  * Ths is: (a,b) == (b,a).
  */
@@ -133,7 +133,7 @@ struct std::hash<UnorderedEdge> {
 	}
 };
 
-void ConvexHullShell::match_faces() {
+void CuttingPlaneConvexHullShell::match_faces() {
 
 	/// A structure to hold a face index and a pointer to the field in the facet structure that holds the neighbour index.
 	struct FaceEdge {
@@ -181,7 +181,7 @@ void ConvexHullShell::match_faces() {
 	}
 }
 
-ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &p) const {
+ConvexHullPoint CuttingPlaneConvexHullShell::project(const Eigen::Vector3d &p) const {
 
 	// TODO: This is a brute-force O(n) algorithm. We should use some kind of spatial data structure to speed this up.
 
@@ -207,7 +207,7 @@ ConvexHullPoint ConvexHullShell::project(const Eigen::Vector3d &p) const {
 
 }
 
-ConvexHullPoint ConvexHullShell::gaussian_sample_near_point(const ConvexHullPoint &near) const {
+ConvexHullPoint CuttingPlaneConvexHullShell::gaussian_sample_near_point(const ConvexHullPoint &near) const {
 
 	const Facet &f = facets[near.face_id];
 
@@ -220,16 +220,16 @@ ConvexHullPoint ConvexHullShell::gaussian_sample_near_point(const ConvexHullPoin
 
 }
 
-ConvexHullPoint ConvexHullShell::project(const moveit::core::RobotState &st) const {
+ConvexHullPoint CuttingPlaneConvexHullShell::project(const moveit::core::RobotState &st) const {
 	return project(st.getGlobalLinkTransform("base_link").translation());
 }
 
-ConvexHullPoint ConvexHullShell::project(const Apple &st) const {
+ConvexHullPoint CuttingPlaneConvexHullShell::project(const Apple &st) const {
 	return project(st.center);
 }
 
 std::vector<ConvexHullPoint>
-ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
+CuttingPlaneConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
 
 
 	if (a.face_id == b.face_id) {
@@ -268,10 +268,10 @@ ConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoin
 	}
 }
 
-std::optional<ConvexHullPoint> ConvexHullShell::step_through_edge_in_cutting_plane(const ConvexHullPoint &b,
-																				   const Eigen::Vector3d &support_point,
-																				   const Plane3d &cutting_plane,
-																				   const std::vector<ConvexHullPoint> &walk) const {
+std::optional<ConvexHullPoint> CuttingPlaneConvexHullShell::step_through_edge_in_cutting_plane(const ConvexHullPoint &b,
+																							   const Eigen::Vector3d &support_point,
+																							   const Plane3d &cutting_plane,
+																							   const std::vector<ConvexHullPoint> &walk) const {
 
 	// If of the face the walk is currently on.
 	size_t current_face = walk.back().face_id;
@@ -300,10 +300,10 @@ std::optional<ConvexHullPoint> ConvexHullShell::step_through_edge_in_cutting_pla
 
 }
 
-ConvexHullPoint ConvexHullShell::walk_step(const ConvexHullPoint &b,
-										   const Eigen::Vector3d &support_point,
-										   const Plane3d &cutting_plane,
-										   const std::vector<ConvexHullPoint> &walk) const {
+ConvexHullPoint CuttingPlaneConvexHullShell::walk_step(const ConvexHullPoint &b,
+													   const Eigen::Vector3d &support_point,
+													   const Plane3d &cutting_plane,
+													   const std::vector<ConvexHullPoint> &walk) const {
 
 	if (auto edge_step = step_through_edge_in_cutting_plane(b, support_point, cutting_plane, walk)) {
 		return *edge_step;
@@ -317,7 +317,7 @@ ConvexHullPoint ConvexHullShell::walk_step(const ConvexHullPoint &b,
 }
 
 std::optional<ConvexHullPoint>
-ConvexHullShell::strictEdgeTraversal(size_t face_id, TriangleEdgeId edge, const Plane3d &cutting_plane) const {
+CuttingPlaneConvexHullShell::strictEdgeTraversal(size_t face_id, TriangleEdgeId edge, const Plane3d &cutting_plane) const {
 
 	// ... look up the Carthesian coordinates of the two vertices of the edge,
 	const auto [vp, vq] = facet_edge_vertices(face_id, edge);
@@ -334,9 +334,9 @@ ConvexHullShell::strictEdgeTraversal(size_t face_id, TriangleEdgeId edge, const 
 	}
 }
 
-std::optional<ConvexHullPoint> ConvexHullShell::firstStepThroughEdges(const Eigen::Vector3d &towards_point,
-																	  const Plane3d &cutting_plane,
-																	  const ConvexHullPoint &start_point) const {
+std::optional<ConvexHullPoint> CuttingPlaneConvexHullShell::firstStepThroughEdges(const Eigen::Vector3d &towards_point,
+																				  const Plane3d &cutting_plane,
+																				  const ConvexHullPoint &start_point) const {
 
 	// Id of the face the walk is currently on.
 	size_t current_face = start_point.face_id;
@@ -367,9 +367,9 @@ std::optional<ConvexHullPoint> ConvexHullShell::firstStepThroughEdges(const Eige
 }
 
 
-ConvexHullPoint ConvexHullShell::firstStep(const Eigen::Vector3d &towards_point,
-										   const Plane3d &cutting_plane,
-										   const ConvexHullPoint &start_point) const {
+ConvexHullPoint CuttingPlaneConvexHullShell::firstStep(const Eigen::Vector3d &towards_point,
+													   const Plane3d &cutting_plane,
+													   const ConvexHullPoint &start_point) const {
 
 	size_t current_face = start_point.face_id;
 
@@ -394,9 +394,9 @@ ConvexHullPoint ConvexHullShell::firstStep(const Eigen::Vector3d &towards_point,
 
 }
 
-ConvexHullPoint ConvexHullShell::stepAroundVertexTowards(const Eigen::Vector3d &towards_point,
-														 size_t current_face,
-														 TriangleVertexId &v) const {
+ConvexHullPoint CuttingPlaneConvexHullShell::stepAroundVertexTowards(const Eigen::Vector3d &towards_point,
+																	 size_t current_face,
+																	 TriangleVertexId &v) const {
 	// Look up the facet.
 	const auto &f = facet(current_face);
 
@@ -419,7 +419,7 @@ ConvexHullPoint ConvexHullShell::stepAroundVertexTowards(const Eigen::Vector3d &
 	}
 }
 
-Eigen::Vector3d ConvexHullShell::computeSupportPoint(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
+Eigen::Vector3d CuttingPlaneConvexHullShell::computeSupportPoint(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
 	// Grab the middle point and project it onto the convex hull
 	ConvexHullPoint middle_proj = project(0.5 * (a.position + b.position));
 	// Compute the normal at that point
@@ -429,25 +429,25 @@ Eigen::Vector3d ConvexHullShell::computeSupportPoint(const ConvexHullPoint &a, c
 	return middle_proj_euc;
 }
 
-size_t ConvexHullShell::num_facets() const {
+size_t CuttingPlaneConvexHullShell::num_facets() const {
 	return facets.size();
 }
 
-const ConvexHullShell::Facet &ConvexHullShell::facet(size_t i) const {
+const CuttingPlaneConvexHullShell::Facet &CuttingPlaneConvexHullShell::facet(size_t i) const {
 	return facets[i];
 }
 
-const Eigen::Vector3d &ConvexHullShell::vertex(size_t i) const {
+const Eigen::Vector3d &CuttingPlaneConvexHullShell::vertex(size_t i) const {
 	return vertices[i];
 }
 
-std::array<Eigen::Vector3d, 3> ConvexHullShell::facet_vertices(size_t facet_i) const {
+std::array<Eigen::Vector3d, 3> CuttingPlaneConvexHullShell::facet_vertices(size_t facet_i) const {
 	const Facet &f = facet(facet_i);
 
 	return {vertex(f.a), vertex(f.b), vertex(f.c)};
 }
 
-double ConvexHullShell::facet_signed_distance(const Eigen::Vector3d &ptr, size_t facet_index) const {
+double CuttingPlaneConvexHullShell::facet_signed_distance(const Eigen::Vector3d &ptr, size_t facet_index) const {
 	const auto &[a, b, c] = facet_vertices(facet_index);
 
 	Eigen::Vector3d ab = b - a;
@@ -458,7 +458,7 @@ double ConvexHullShell::facet_signed_distance(const Eigen::Vector3d &ptr, size_t
 	return n.dot(ptr - a);
 }
 
-double ConvexHullShell::signed_distance(const Eigen::Vector3d &pt) const {
+double CuttingPlaneConvexHullShell::signed_distance(const Eigen::Vector3d &pt) const {
 	double d = -INFINITY;
 
 	for (size_t i = 0; i < facets.size(); i++) {
@@ -468,15 +468,15 @@ double ConvexHullShell::signed_distance(const Eigen::Vector3d &pt) const {
 	return d;
 }
 
-Eigen::Vector3d ConvexHullShell::facet_normal(size_t i) const {
+Eigen::Vector3d CuttingPlaneConvexHullShell::facet_normal(size_t i) const {
 	const auto &[a, b, c] = facet_vertices(i);
 
 	return (b - a).cross(c - a).normalized();
 }
 
-ConvexHullPoint ConvexHullShell::nextStep(const ConvexHullPoint &current_point,
-										  const Plane3d &cutting_plane,
-										  size_t last_face_id) const {
+ConvexHullPoint CuttingPlaneConvexHullShell::nextStep(const ConvexHullPoint &current_point,
+													  const Plane3d &cutting_plane,
+													  size_t last_face_id) const {
 
 	// Look up the facet data.
 	const Facet &f = facet(current_point.face_id);
@@ -508,7 +508,7 @@ ConvexHullPoint ConvexHullShell::nextStep(const ConvexHullPoint &current_point,
 	throw std::runtime_error("Could not find an exit point. There may not be an intersection?");
 }
 
-std::array<Eigen::Vector3d, 2> ConvexHullShell::facet_edge_vertices(size_t face_i, TriangleEdgeId edge_id) const {
+std::array<Eigen::Vector3d, 2> CuttingPlaneConvexHullShell::facet_edge_vertices(size_t face_i, TriangleEdgeId edge_id) const {
 	return {
 		vertices[facets[face_i].edge_vertices(edge_id)[0]],
 		vertices[facets[face_i].edge_vertices(edge_id)[1]]
@@ -535,7 +535,7 @@ ConvexHullShellBuilder::buildShell(const AppleTreePlanningScene &scene_info,
 
 	auto leaf_vertices = extract_leaf_vertices(scene_info);
 
-	return std::make_shared<OMPLSphereShellWrapper<ConvexHullPoint>>(std::make_shared<ConvexHullShell>(convexHull(
+	return std::make_shared<OMPLSphereShellWrapper<ConvexHullPoint>>(std::make_shared<CuttingPlaneConvexHullShell>(convexHull(
 			leaf_vertices)), si);
 
 }
@@ -549,19 +549,19 @@ Json::Value ConvexHullShellBuilder::parameters() const {
 	return params;
 }
 
-bool ConvexHullShell::NNGNATEntry::operator==(const ConvexHullShell::NNGNATEntry &rhs) const {
+bool CuttingPlaneConvexHullShell::NNGNATEntry::operator==(const CuttingPlaneConvexHullShell::NNGNATEntry &rhs) const {
 	return face_index == rhs.face_index && at == rhs.at;
 }
 
-bool ConvexHullShell::NNGNATEntry::operator!=(const ConvexHullShell::NNGNATEntry &rhs) const {
+bool CuttingPlaneConvexHullShell::NNGNATEntry::operator!=(const CuttingPlaneConvexHullShell::NNGNATEntry &rhs) const {
 	return !(rhs == *this);
 }
 
-std::array<size_t, 3> ConvexHullShell::Facet::neighbours() const {
+std::array<size_t, 3> CuttingPlaneConvexHullShell::Facet::neighbours() const {
 	return {neighbour_ab, neighbour_bc, neighbour_ca};
 }
 
-size_t ConvexHullShell::Facet::neighbour(TriangleEdgeId edge_id) const {
+size_t CuttingPlaneConvexHullShell::Facet::neighbour(TriangleEdgeId edge_id) const {
 	switch (edge_id) {
 		case EDGE_AB:
 			return neighbour_ab;
@@ -574,7 +574,7 @@ size_t ConvexHullShell::Facet::neighbour(TriangleEdgeId edge_id) const {
 	}
 }
 
-size_t ConvexHullShell::Facet::vertex(TriangleVertexId vertex_id) const {
+size_t CuttingPlaneConvexHullShell::Facet::vertex(TriangleVertexId vertex_id) const {
 	switch (vertex_id) {
 		case TriangleVertexId::VERTEX_A:
 			return a;
@@ -586,7 +586,7 @@ size_t ConvexHullShell::Facet::vertex(TriangleVertexId vertex_id) const {
 	throw std::runtime_error("Invalid vertex id");
 }
 
-std::array<size_t, 2> ConvexHullShell::Facet::edge_vertices(TriangleEdgeId edge_id) const {
+std::array<size_t, 2> CuttingPlaneConvexHullShell::Facet::edge_vertices(TriangleEdgeId edge_id) const {
 	switch (edge_id) {
 		case TriangleEdgeId::EDGE_AB:
 			return {a, b};

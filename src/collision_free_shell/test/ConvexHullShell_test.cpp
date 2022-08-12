@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <boost/math/special_functions/sign.hpp>
 
-#include "../ConvexHullShell.h"
+#include "../CuttingPlaneConvexHullShell.h"
 #include "../../utilities/convex_hull.h"
 #include "../../utilities/math_utils.h"
 
@@ -23,7 +23,7 @@ protected:
 			points.push_back(p);
 		}
 
-		shell = std::make_unique<ConvexHullShell>(convexHull(points));
+		shell = std::make_unique<CuttingPlaneConvexHullShell>(convexHull(points));
 
 		std::vector<geometry_msgs::msg::Point> cube_points;
 		cube_points.reserve(8);
@@ -35,15 +35,15 @@ protected:
 			cube_points.push_back(p);
 		}
 
-		cube_shell = std::make_unique<ConvexHullShell>(convexHull(cube_points));
+		cube_shell = std::make_unique<CuttingPlaneConvexHullShell>(convexHull(cube_points));
 
 
 	}
 
 	std::vector<geometry_msgs::msg::Point> points;
-	std::unique_ptr<ConvexHullShell> shell;
+	std::unique_ptr<CuttingPlaneConvexHullShell> shell;
 
-	std::unique_ptr<ConvexHullShell> cube_shell;
+	std::unique_ptr<CuttingPlaneConvexHullShell> cube_shell;
 };
 
 

@@ -4,7 +4,7 @@
 #define NEW_PLANNERS_GEOGEBRA_H
 
 #include <Eigen/Core>
-#include "../collision_free_shell/ConvexHullShell.h"
+#include "../collision_free_shell/CuttingPlaneConvexHullShell.h"
 
 void geogebra_dump_named_point(const Eigen::Vector3d &middle_proj_euc, const std::string& name);
 
