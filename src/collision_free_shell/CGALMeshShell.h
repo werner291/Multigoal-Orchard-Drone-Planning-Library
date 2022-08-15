@@ -102,23 +102,84 @@ public:
 	[[nodiscard]] moveit::core::RobotState state_on_shell(const moveit::core::RobotModelConstPtr &drone,
 														  const CGALMeshPoint &a) const override;
 
+	/**
+	 * Plan a path of RobotStates from the given start to the given goal.
+	 *
+	 * Linear interpolation between the states in the returned vector are guaranteed to have the robot's end-effector
+	 * on the convex hull at all times (+ padding), and the path is guaranteed to be collision-free.
+	 *
+	 * @param drone 	The robot model to use.
+	 * @param start 	The start point.
+	 * @param goal 		The goal point.
+	 *
+	 * @return 			A vector of RobotStates, which serve as anchor points for linear interpolation.
+	 */
 	[[nodiscard]] std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone,
 														const CGALMeshPoint &a,
 														const CGALMeshPoint &b) const override;
 
+	/**
+	 * Generate a ConvexHullPoint in a (roughly) gaussian distribution around another point.
+	 *
+	 * @param near 	The point to generate around.
+	 * @return 		The generated point.
+	 */
 	[[nodiscard]] CGALMeshPoint gaussian_sample_near_point(const CGALMeshPoint &near) const override;
 
+	/**
+	 * Predict the length of a path from the given start to the given goal by generating and measuring the length
+	 * of a segmented line across the surface without constructing all the robot states.
+	 *
+	 * @param a 	The start point.
+	 * @param b 	The goal point.
+	 * @return 		The predicted length of the path.
+	 */
 	[[nodiscard]] double predict_path_length(const CGALMeshPoint &a,
 											 const CGALMeshPoint &b) const override;
 
+	/**
+	 * Find the CGALMeshPoint of the projection of the end-effector of the robot onto the convex hull.
+	 *
+	 * @param st 		The RobotState to use.
+	 * @return 			The projected point.
+	 */
 	[[nodiscard]] CGALMeshPoint project(const moveit::core::RobotState &st) const override;
 
+	/**
+	 * Find the CGALMeshPoint of the projection of an apple onto the convex hull.
+	 *
+	 * @param st 		The RobotState to use.
+	 * @return 			The projected point.
+	 */
 	[[nodiscard]] CGALMeshPoint project(const Apple &st) const override;
 
+	/**
+	 * Project a point onto the convex hull, returning a CGALMeshPoint (that includes the facet index).
+	 *
+	 * @param a 	The point to project.
+	 * @return 		The projected point.
+	 */
 	[[nodiscard]] CGALMeshPoint project(const Eigen::Vector3d& pt) const;
 
-	Eigen::Vector3d toCarthesian(const CGALMeshPoint &near) const;
+	/**
+	 * For a given CGALMeshPoint (which really is a face index paired with barycentric coordinates),
+	 * compute the carthesian coordinates.
+	 *
+	 * @param pt
+	 * @return
+	 */
+	Eigen::Vector3d toCarthesian(const CGALMeshPoint &pt) const;
 
+	/**
+	 * For a given CGALMeshPoint (which really is a face index paired with barycentric coordinates),
+	 * compute the normal vector of the face.
+	 *
+	 * Note: this is not the normal vector of the triangle, special cases like edges or vertices are not handled explicitly:
+	 * we exclusively look at the face index in the CGALMeshPoint.
+	 *
+	 * @param near	The point to compute the normal for.
+	 * @return		The normal vector.
+	 */
 	Eigen::Vector3d normalAt(const CGALMeshPoint &near) const;
 };
 
