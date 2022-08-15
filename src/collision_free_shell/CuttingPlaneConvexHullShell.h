@@ -23,8 +23,12 @@ struct ConvexHullPoint {
  */
 class ConvexHullShellBuilder : public ShellPathPlanner<ConvexHullPoint>::ShellBuilder {
 
-public:
-	ConvexHullShellBuilder() = default;
+	double rotation_weight = 1.0;
+	double padding = 0.1;
+
+	public:
+	ConvexHullShellBuilder(double padding, double rotationWeight);
+
 
 	[[nodiscard]] std::shared_ptr<OMPLSphereShellWrapper<ConvexHullPoint>>
 	buildShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) const override;
@@ -41,6 +45,8 @@ class CuttingPlaneConvexHullShell : public CollisionFreeShell<ConvexHullPoint> {
 
 	/// A padding distance to add to shell states.
 	double padding = 0.1;
+
+	double rotation_weight = 1.0;
 
 	/// The Facet structure that contains references to the vertices and neighbouring facets.
 	struct Facet {
@@ -96,7 +102,7 @@ public:
 	 *
 	 * @param mesh 		The mesh to use. (Note: assumed to be convex!)
 	 */
-	CuttingPlaneConvexHullShell(const shape_msgs::msg::Mesh &mesh);
+	CuttingPlaneConvexHullShell(const shape_msgs::msg::Mesh &mesh, double rotationWeight, double padding);
 
 	/**
 	 * Construct a RobotState whose end effector is at the given point, plus a padding distance.

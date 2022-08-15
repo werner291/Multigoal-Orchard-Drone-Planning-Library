@@ -2,6 +2,7 @@
 #include "../utilities/convex_hull.h"
 #include "../utilities/math_utils.h"
 #include "../utilities/geogebra.h"
+#include "../utilities/experiment_utils.h"
 
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/iota.hpp>
@@ -43,24 +44,38 @@ double CuttingPlaneConvexHullShell::predict_path_length(const ConvexHullPoint &a
 	// We generate the convex hull walk...
 	auto walk = convex_hull_walk(a, b);
 
+//	geogebra_dump_named_walk(walk, "CUTPLANE");
+
 	// And simply add up the Euclidean distances and the rotations at edge crossings.
 	double length = 0;
+	double length_rot = 0;
 
 	for (size_t i = 1; i < walk.size(); i++) {
 		// Add the Euclidean distance between the points.
-		length += (walk[i].position - walk[i - 1].position).norm();
+		double d = (walk[i].position - walk[i - 1].position).norm();
+//		std::cout << "d = " << d << std::endl;
+		length += d;
 		// Add the rotation between the facet normals.
-		length += acos(std::clamp(facet_normal(a.face_id).dot(facet_normal(b.face_id)), -1.0, 1.0));
+		double angle = acos(std::clamp(facet_normal(walk[i].face_id).dot(facet_normal(walk[i-1].face_id)), -1.0, 1.0));
+//		std::cout << "Angle: " << angle << std::endl;
+		length_rot += angle;
+		
 	}
 
-	return length;
+//	std::cout << "Total length = " << length << std::endl;
+//	std::cout << "Total rotation = " << length_rot << std::endl;
+
+	return length + length_rot * rotation_weight;
 }
 
 size_t CuttingPlaneConvexHullShell::guess_closest_face(const Eigen::Vector3d &a) const {
 	return facet_index.nearest(NNGNATEntry{SIZE_MAX, a}).face_index;
 }
 
-CuttingPlaneConvexHullShell::CuttingPlaneConvexHullShell(const shape_msgs::msg::Mesh &mesh) {
+CuttingPlaneConvexHullShell::CuttingPlaneConvexHullShell(const shape_msgs::msg::Mesh &mesh,
+														 double rotationWeight,
+														 double padding)
+		: rotation_weight(rotationWeight), padding(padding) {
 
 	// Convert the points to Eigen and store.
 	this->vertices = mesh.vertices | ranges::views::transform([](const geometry_msgs::msg::Point &p) {
@@ -515,19 +530,7 @@ std::array<Eigen::Vector3d, 2> CuttingPlaneConvexHullShell::facet_edge_vertices(
 	};
 }
 
-std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const AppleTreePlanningScene &scene_info) {
-	std::vector<geometry_msgs::msg::Point> mesh_points;
-	for (const auto &col: scene_info.scene_msg.world.collision_objects) {
-		if (col.id == "leaves") {
-			for (const auto &mesh: col.meshes) {
-				for (auto v: mesh.vertices) {
-					mesh_points.push_back(v);
-				}
-			}
-		}
-	}
-	return mesh_points;
-}
+
 
 std::shared_ptr<OMPLSphereShellWrapper<ConvexHullPoint>>
 ConvexHullShellBuilder::buildShell(const AppleTreePlanningScene &scene_info,
@@ -535,8 +538,8 @@ ConvexHullShellBuilder::buildShell(const AppleTreePlanningScene &scene_info,
 
 	auto leaf_vertices = extract_leaf_vertices(scene_info);
 
-	return std::make_shared<OMPLSphereShellWrapper<ConvexHullPoint>>(std::make_shared<CuttingPlaneConvexHullShell>(convexHull(
-			leaf_vertices)), si);
+	return std::make_shared<OMPLSphereShellWrapper<ConvexHullPoint>>(std::make_shared<CuttingPlaneConvexHullShell>(
+			convexHull(leaf_vertices), rotation_weight, padding), si);
 
 }
 
@@ -545,8 +548,14 @@ Json::Value ConvexHullShellBuilder::parameters() const {
 	Json::Value params;
 
 	params["type"] = "convex_hull";
+	params["rotation_weight"] = rotation_weight;
+	params["padding"] = padding;
 
 	return params;
+}
+
+ConvexHullShellBuilder::ConvexHullShellBuilder(double padding, double rotationWeight)
+		: padding(padding), rotation_weight(rotationWeight) {
 }
 
 bool CuttingPlaneConvexHullShell::NNGNATEntry::operator==(const CuttingPlaneConvexHullShell::NNGNATEntry &rhs) const {

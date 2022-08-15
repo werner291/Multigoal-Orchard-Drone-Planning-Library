@@ -325,3 +325,17 @@ compute_enclosing_sphere(const moveit_msgs::msg::PlanningScene &planning_scene_m
 
     return sphere;
 }
+
+std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const AppleTreePlanningScene &scene_info) {
+	std::vector<geometry_msgs::msg::Point> mesh_points;
+	for (const auto &col: scene_info.scene_msg.world.collision_objects) {
+		if (col.id == "leaves") {
+			for (const auto &mesh: col.meshes) {
+				for (auto v: mesh.vertices) {
+					mesh_points.push_back(v);
+				}
+			}
+		}
+	}
+	return mesh_points;
+}

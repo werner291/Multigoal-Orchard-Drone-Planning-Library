@@ -140,5 +140,6 @@ moveit::core::RobotState randomStateOutsideTree(const moveit::core::RobotModelCo
 bodies::BoundingSphere
 compute_enclosing_sphere(const moveit_msgs::msg::PlanningScene &planning_scene_message, const double padding);
 
+std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const AppleTreePlanningScene &scene_info);
 
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

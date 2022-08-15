@@ -131,4 +131,14 @@ struct PlanningTimeout : public std::exception {
 /// Checks the givven planner termination condition and throws a PlanningTimeout exception if it is met.
 void checkPtc(const ompl::base::PlannerTerminationCondition &ptc);
 
+/**
+ * For every triangle (a,b,c) in the mesh (convex), compute the normal vector of the triangle. If this vector points inward,
+ * vertices b and c are swapped.
+ *
+ * @param mesh		The mesh to correct. (Will be modified.)
+ *
+ * @post			For every triangle (a,b,c), (b-a).cross(c-a) points outward.
+ */
+void fixWinding(shape_msgs::msg::Mesh& mesh);
+
 #endif //NEW_PLANNERS_GENERAL_UTILITIES_CPP

@@ -14,6 +14,7 @@ find_package(Bullet REQUIRED)
 find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
 find_package(Qhull REQUIRED)
+find_package(CGAL REQUIRED)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -32,6 +33,7 @@ include_directories(
         ${BULLET_INCLUDE_DIRS}
         ${OMPL_INCLUDE_DIRS}
         ${QHULL_INCLUDE_DIRS}
+        #{CGAL_INCLUDE_DIRS}
         ortools/include
         miniball/cpp/main
 )
@@ -46,12 +48,15 @@ link_libraries(
         HACD # Note: the HACD library is included Bullet's "extra" libraries
         jsoncpp_lib
         tbb
+        ${CGAL_LIBRARIES}
         ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
 )
 
 ###########
 ## Build ##
 ###########
+
+set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -129,7 +134,7 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/math_utils.h
 #        src/utilities/TriangleSpheretreeIndex.cpp
 #        src/utilities/TriangleSpheretreeIndex.h
-        src/utilities/geogebra.h src/utilities/geogebra.cpp src/collision_free_shell/CGALMeshShell.cpp src/collision_free_shell/CGALMeshShell.h src/collision_free_shell/test/CGALMeshShell_test.cpp)
+        src/utilities/geogebra.h src/utilities/geogebra.cpp src/collision_free_shell/CGALMeshShell.cpp src/collision_free_shell/CGALMeshShell.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -155,7 +160,10 @@ add_executable(${PROJECT_NAME}_tests
         test/test.cpp
         test/MoveItPathLengthObjectiveTest.cpp
         test/math_test.cpp
-        src/collision_free_shell/test/ConvexHullShell_test.cpp src/utilities/test/math_utils_test.cpp)
+        src/collision_free_shell/test/CuttingPlaneConvexHullShell_test.cpp
+        src/collision_free_shell/test/CGALMeshShell_test.cpp
+        src/utilities/test/math_utils_test.cpp)
+
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})
 gtest_discover_tests(${PROJECT_NAME}_tests)

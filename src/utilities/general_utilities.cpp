@@ -283,6 +283,27 @@ void checkPtc(const ompl::base::PlannerTerminationCondition &ptc) {
 	}
 }
 
+void fixWinding(shape_msgs::msg::Mesh &mesh) {
+
+	Eigen::Vector3d centroid(0, 0, 0);
+	for (const auto& v : mesh.vertices) {
+		centroid += Eigen::Vector3d(v.x, v.y, v.z);
+	}
+	centroid /= (double) mesh.vertices.size();
+
+
+	for (auto& t : mesh.triangles) {
+		Eigen::Vector3d v0(mesh.vertices[t.vertex_indices[0]].x, mesh.vertices[t.vertex_indices[0]].y, mesh.vertices[t.vertex_indices[0]].z);
+		Eigen::Vector3d v1(mesh.vertices[t.vertex_indices[1]].x, mesh.vertices[t.vertex_indices[1]].y, mesh.vertices[t.vertex_indices[1]].z);
+		Eigen::Vector3d v2(mesh.vertices[t.vertex_indices[2]].x, mesh.vertices[t.vertex_indices[2]].y, mesh.vertices[t.vertex_indices[2]].z);
+		Eigen::Vector3d normal = (v1 - v0).cross(v2 - v0);
+		if (normal.dot(centroid - v0) < 0) {
+			std::swap(t.vertex_indices[1], t.vertex_indices[2]);
+		}
+	}
+
+}
+
 const char *PlanningTimeout::what() const noexcept {
 	return "Planning timeout";
 }

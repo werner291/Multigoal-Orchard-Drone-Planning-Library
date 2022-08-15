@@ -1,6 +1,7 @@
 
 
 #include "convex_hull.h"
+#include "general_utilities.h"
 
 // Warning: Qhull headers seem to conflict with some other headers, notably rangev3.
 // So, keep these below the other imports, and avoid including more than the absolute minimum in this file.
@@ -8,6 +9,7 @@
 #include <libqhullcpp/Qhull.h>
 #include <libqhullcpp/QhullFacetList.h>
 #include <libqhullcpp/QhullVertexSet.h>
+#include <Eigen/Core>
 
 shape_msgs::msg::Mesh convexHull(const std::vector<geometry_msgs::msg::Point> &mesh_points) {
 
@@ -54,6 +56,7 @@ shape_msgs::msg::Mesh convexHull(const std::vector<geometry_msgs::msg::Point> &m
 
 	}
 
+	fixWinding(mesh);
 
 	return mesh;
 }

@@ -55,7 +55,7 @@ public:
 
 		auto shell = shell_builder->buildShell(planning_scene, si);
 
-#if DEBUG_ROSBUMP
+#if DEBUG_ROSDUMP
 		rclcpp::init(0, nullptr);
 		auto evt = std::make_shared<ExperimentVisualTools>();
 		evt->publishPlanningScene(planning_scene.scene_msg);
@@ -69,7 +69,7 @@ public:
 			shell->state_on_shell(shell->project(goal.get()), shell_states.back().get());
 		}
 
-#if DEBUG_ROSBUMP
+#if DEBUG_ROSDUMP
 		evt->pincushion(
 				ranges::views::zip(goals, shell_states)
 					| ranges::views::transform([&](const auto pair) {
@@ -98,7 +98,7 @@ public:
 
 		PlanResult fullPath = assembleFullPath(si, goals, *shell, approaches, ordering, result, *first_approach);
 
-#if DEBUG_ROSBUMP
+#if DEBUG_ROSDUMP
 		auto combined = fullPath.combined();
 		combined.interpolate();
 		evt->publishPath(si, "result_path", combined);

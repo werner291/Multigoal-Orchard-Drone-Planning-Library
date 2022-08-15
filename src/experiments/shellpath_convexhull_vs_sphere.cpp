@@ -4,10 +4,9 @@
 
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <range/v3/view/linear_distribute.hpp>
-#include <range/v3/view/transform.hpp>
 #include "../run_experiment.h"
-#include "../DronePathLengthObjective.h"
 #include "../collision_free_shell/CuttingPlaneConvexHullShell.h"
+#include "../collision_free_shell/CGALMeshShell.h"
 
 using namespace std;
 
@@ -35,17 +34,69 @@ int main(int argc, char **argv) {
 				return make_shared<ShellPathPlanner<ConvexHullPoint>>(
 						true,
 						alloc_ptp(si),
-						make_shared<ConvexHullShellBuilder>(),
-				false);
+						make_shared<ConvexHullShellBuilder>(0.1, 1.0),
+						false);
 			},
 
 			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
 				return make_shared<ShellPathPlanner<ConvexHullPoint>>(
 						true,
 						alloc_ptp(si),
-						make_shared<ConvexHullShellBuilder>(),
-				true);
+						make_shared<ConvexHullShellBuilder>(0.1, 1.0),
+						true);
 			},
+
+			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+				return make_shared<ShellPathPlanner<CGALMeshPoint>>(
+						true,
+						alloc_ptp(si),
+						make_shared<CGALConvexHullShellBuilder>(0.1, 1.0),
+						false);
+			},
+
+			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+				return make_shared<ShellPathPlanner<CGALMeshPoint>>(
+						true,
+						alloc_ptp(si),
+						make_shared<CGALConvexHullShellBuilder>(0.1, 1.0),
+						true);
+			},
+
+			///////
+
+			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+				return make_shared<ShellPathPlanner<ConvexHullPoint>>(
+						true,
+						alloc_ptp(si),
+						make_shared<ConvexHullShellBuilder>(0.1, 2.0),
+						false);
+			},
+
+			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+				return make_shared<ShellPathPlanner<ConvexHullPoint>>(
+						true,
+						alloc_ptp(si),
+						make_shared<ConvexHullShellBuilder>(0.1, 2.0),
+						true);
+			},
+
+			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+				return make_shared<ShellPathPlanner<CGALMeshPoint>>(
+						true,
+						alloc_ptp(si),
+						make_shared<CGALConvexHullShellBuilder>(0.1, 2.0),
+						false);
+			},
+
+			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+				return make_shared<ShellPathPlanner<CGALMeshPoint>>(
+						true,
+						alloc_ptp(si),
+						make_shared<CGALConvexHullShellBuilder>(0.1, 2.0),
+						true);
+			},
+
+			///////
 
 			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
 				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(
@@ -70,7 +121,7 @@ int main(int argc, char **argv) {
 	run_planner_experiment(planner_allocators,
 						   "analysis/shellpath_chull_vs_sphere.json",
 						   10,
-						   {50, 150},
+						   {150},//{50, 150},
 						   {"appletree"},
 						   thread::hardware_concurrency(),
 						   true);

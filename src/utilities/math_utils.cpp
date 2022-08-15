@@ -147,6 +147,8 @@ std::array<TriangleEdgeId, 2> edges_adjacent_to_vertex(TriangleVertexId vertex) 
 			return {EDGE_BC, EDGE_AB};
 		case VERTEX_C:
 			return {EDGE_CA, EDGE_BC};
+		default:
+			throw std::runtime_error("Invalid vertex");
 	}
 
 }

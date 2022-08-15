@@ -23,7 +23,7 @@ protected:
 			points.push_back(p);
 		}
 
-		shell = std::make_unique<CuttingPlaneConvexHullShell>(convexHull(points));
+		shell = std::make_unique<CuttingPlaneConvexHullShell>(convexHull(points), 0.1, 1.0);
 
 		std::vector<geometry_msgs::msg::Point> cube_points;
 		cube_points.reserve(8);
@@ -35,7 +35,7 @@ protected:
 			cube_points.push_back(p);
 		}
 
-		cube_shell = std::make_unique<CuttingPlaneConvexHullShell>(convexHull(cube_points));
+		cube_shell = std::make_unique<CuttingPlaneConvexHullShell>(convexHull(cube_points), 0.1, 1.0);
 
 
 	}
