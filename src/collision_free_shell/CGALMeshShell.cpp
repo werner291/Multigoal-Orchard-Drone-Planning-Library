@@ -53,44 +53,91 @@ Eigen::Vector3d toEigen(const Kernel::Point_3 &p) {
 	return  { p.x(), p.y(), p.z() };
 }
 
+/**
+ * A visitor for Surface_mesh_shortest_path::shortest_path_sequence_to_source_points that builds a robot
+ * path along the generated surface path.
+ */
 struct PathVisitor {
 
+	/// Reference to the triangle mesh
 	const Triangle_mesh& mesh;
+
+	/// Reference to the robot model (for constructing the states)
 	const moveit::core::RobotModelConstPtr& drone;
+
+	/// The path being built.
 	std::vector<moveit::core::RobotState> states;
+
+	/// Shortest path algorithm struct (for point lookups and such)
 	Surface_mesh_shortest_path path_algo;
 
+	/**
+	 * Constructor.
+	 * @param mesh 		The triangle mesh.
+	 * @param drone 	The robot model.
+	 */
 	explicit PathVisitor(const Triangle_mesh &mesh, const moveit::core::RobotModelConstPtr &drone)
 			: mesh(mesh), drone(drone), path_algo(mesh) {
 	}
 
+	/**
+	 * Called when the path leaves a face through a half-edge.
+	 * @param edge 		The half-edge for leaving the face (NOT the opposite half-edge where we enter the face!)
+	 * @param t 		Interpolation value between the two vertices of the half-edge where the intersection occurs.
+	 */
 	void operator()(Surface_mesh_shortest_path::halfedge_descriptor edge, Surface_mesh_shortest_path::FT t)
 	{
+		// Compute the intersection position.
 		Eigen::Vector3d pos = toEigen(path_algo.point(edge, t));
 
+		// Add a Robot state...
 		states.push_back(robotStateFromFacing(
 				drone,
+				// ... with the intersection position ...
 				pos,
+				// ... and facing into the normal of the face we're leaving.
 				-faceNormal(mesh, mesh.face(edge)))
 		);
 
+		// ...and another robot state
 		states.push_back(robotStateFromFacing(
 				drone,
+				// ... with the (same!) intersection position ...
 				pos,
+				// ... but facing into the normal of the face we're *entering*
 				-faceNormal(mesh, mesh.face(mesh.opposite(edge))))
 		);
 	}
 
+	/**
+	 * The path *exactly* crosses an edge. Since this is exceedingly unikely to happen with randomly-generated
+	 * meshes, we do not implement it here.
+	 *
+	 * @param vertex 	The vertex of the edge where the path crosses.
+	 */
 	void operator()(Surface_mesh_shortest_path::vertex_descriptor vertex)
 	{
+		// If we were to implement it, we'd have to somehow know the normals of the faces we just left,
+		// and the faces we're entering. To my knowledge, a halfedge datastructure provides no efficient
+		// way to do this, and the visitor does not appear to receive this information directly. (Could we deduce it from other calls?)
 		throw std::runtime_error("Not implemented");
 	}
 
+	/**
+	 * The path includes a point on the interior of a face. Note that, since a geodesic is a straight line on planar surfaces,
+	 * this case will only occur at the start of the path. Nevertheless, nothing should break if this *does* occur for some reason.
+	 *
+	 * @param f 			The face where the path has a point.
+	 * @param location 		The location of the point on the face (in barycentric coordinates)
+	 */
 	void operator()(Surface_mesh_shortest_path::face_descriptor f, Surface_mesh_shortest_path::Barycentric_coordinates location)
 	{
+		// Add a Robot state...
 		states.push_back(robotStateFromFacing(
 				drone,
+				// ... with the given position, converted to Euclidean coordinates ...
 				toEigen(path_algo.point(f, location)),
+				// ... and facing into the normal of the face.
 				-faceNormal(mesh, f)
 		));
 	}
@@ -106,9 +153,11 @@ std::vector<moveit::core::RobotState> CGALMeshShell::path_on_shell(const moveit:
 	// We add a "source" point a.
 	shortest_paths.add_source_point(a);
 
+	// Generate a path of RobotStates by passing the visitor to the shortest path algorithm.
 	PathVisitor visitor(tmesh, drone);
 	shortest_paths.shortest_path_sequence_to_source_points(b.first, b.second, visitor);
 
+	// Return the path.
 	return std::move(visitor.states);
 }
 
