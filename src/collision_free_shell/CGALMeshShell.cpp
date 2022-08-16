@@ -22,6 +22,10 @@ CGALMeshShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, con
 								-normal);
 }
 
+Eigen::Vector3d toEigen(const Kernel::Point_3 &p) {
+	return  { p.x(), p.y(), p.z() };
+}
+
 std::vector<moveit::core::RobotState> CGALMeshShell::path_on_shell(const moveit::core::RobotModelConstPtr &drone,
 																   const CGALMeshPoint &a,
 																   const CGALMeshPoint &b) const {
@@ -48,6 +52,8 @@ std::vector<moveit::core::RobotState> CGALMeshShell::path_on_shell(const moveit:
 	// making a special case for vertex crossings.
 	Eigen::Vector3d normal = normalAt(a);
 	Eigen::Vector3d pos = toCarthesian(a);
+
+	assert((states[0].getGlobalLinkTransform("end_effector").translation() - pos).norm() < 1e-6);
 
 	for (auto &i: path) {
 
@@ -107,6 +113,9 @@ std::vector<moveit::core::RobotState> CGALMeshShell::path_on_shell(const moveit:
 	// Add a final state.
 	states.push_back(state_on_shell(drone, b));
 
+	assert((states[states.size()-1].getGlobalLinkTransform("end_effector").translation() - pos).norm() < 1e-6);
+	assert((states[states.size()-2].getGlobalLinkTransform("end_effector").translation() - pos).norm() < 1e-6);
+
 	return states;
 }
 
@@ -123,25 +132,8 @@ CGALMeshPoint CGALMeshShell::gaussian_sample_near_point(const CGALMeshPoint &nea
 }
 
 Eigen::Vector3d CGALMeshShell::toCarthesian(const CGALMeshPoint &pt) const {
-
-	// "Walk" around the halfedges around the given face to find the vertices.
-	auto vertices = tmesh.vertices_around_face(tmesh.halfedge(pt.first));
-
-	// These are triangles, so we should have exactly 3.
-	assert(vertices.size() == 3);
-
-	// It's an iterator... We'll convert to an array for easier access.
-	auto itr = vertices.begin();
-
-	std::array<Kernel::Point_3, 3> points{tmesh.point(*(itr++)), tmesh.point(*(itr++)), tmesh.point(*(itr++)),};
-
-	// Convert to Eigen.
-	Eigen::Vector3d va(points[0].x(), points[0].y(), points[0].z());
-	Eigen::Vector3d vb(points[1].x(), points[1].y(), points[1].z());
-	Eigen::Vector3d vc(points[2].x(), points[2].y(), points[2].z());
-
-	// Compute a weighted sum using the baryentric coordinates, yielding the carthesian coordinates.
-	return pt.second[0] * va + pt.second[1] * vb + pt.second[2] * vc;
+	Surface_mesh_shortest_path shortest_paths(tmesh);
+	return toEigen(shortest_paths.point(pt.first, pt.second));
 }
 
 Eigen::Vector3d CGALMeshShell::normalAt(const CGALMeshPoint &near) const {
