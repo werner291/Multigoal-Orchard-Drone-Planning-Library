@@ -6,6 +6,7 @@
 #include <ompl/geometric/PathGeometric.h>
 #include <moveit/robot_trajectory/robot_trajectory.h>
 #include "procedural_tree_generation.h"
+#include "robot_path.h"
 
 /**
  * A few helper functions for visualizing the results of an experiment in RViz.
@@ -43,6 +44,8 @@ public:
 	void pincushion(const std::vector<std::pair<Apple, moveit::core::RobotState>> &apples,
 				   const std::string &topic_name);
 
+	void publishMesh(const shape_msgs::msg::Mesh &mesh, const std::string &topic_name);
+
 	/**
 	 * Publishes the given vector of paths as a single DisplayTrajectory message by concatenating them.
 	 *
@@ -64,6 +67,16 @@ public:
 	void publishPath(const std::shared_ptr<ompl::base::SpaceInformation> &si,
 					 const std::string &topic_name,
 					 const ompl::geometric::PathGeometric &combined_path);
+
+	/**
+	 * Publish the given path on a DisplayTrajectory topic, converting automatically from OMPL.
+	 *
+	 * @param si 			SpaceInformation to help with conversion to ROS messages (through Moveit).
+	 * @param topic_name 	The ROS topic name.
+	 * @param combined_path The path to publish,
+	 */
+	void publishPath(const std::string &topic_name,
+					 const RobotPath &combined_path);
 
 	/**
 	 * Publish the given trajectory on a DisplayTrajectory topic.

@@ -225,3 +225,50 @@ void ExperimentVisualTools::publishTrajectory(const std::string &topic_name,
 
 	publisher_handles.push_back(traj);
 }
+
+void ExperimentVisualTools::publishPath(const std::string &topic_name, const RobotPath &combined_path) {
+	robot_trajectory::RobotTrajectory moveit_trajectory(combined_path.waypoints[0].getRobotModel());
+
+	double t = 0.0;
+	moveit::core::RobotState last_state = combined_path.waypoints[0];
+
+	for (const auto &waypoint: combined_path.waypoints) {
+		t += last_state.distance(waypoint);
+		moveit_trajectory.addSuffixWayPoint(waypoint, t);
+		last_state = waypoint;
+	}
+
+	publishTrajectory(topic_name, moveit_trajectory);
+
+}
+
+void ExperimentVisualTools::publishMesh(const shape_msgs::msg::Mesh &mesh, const std::string &topic_name) {
+
+	visualization_msgs::msg::Marker mesh_marker;
+	mesh_marker.header.frame_id = "world";
+	mesh_marker.type = visualization_msgs::msg::Marker::TRIANGLE_LIST;
+	mesh_marker.scale.x = 1.0;
+	mesh_marker.scale.y = 1.0;
+	mesh_marker.scale.z = 1.0;
+
+	mesh_marker.pose.orientation.x = 0.0;
+	mesh_marker.pose.orientation.y = 0.0;
+	mesh_marker.pose.orientation.z = 0.0;
+	mesh_marker.pose.orientation.w = 1.0;
+
+	mesh_marker.color.r = 1.0;
+	mesh_marker.color.g = 1.0;
+	mesh_marker.color.b = 1.0;
+	mesh_marker.color.a = 1.0;
+
+	for (const auto &triangle: mesh.triangles) {
+		mesh_marker.points.push_back(mesh.vertices[triangle.vertex_indices[0]]);
+		mesh_marker.points.push_back(mesh.vertices[triangle.vertex_indices[2]]);
+		mesh_marker.points.push_back(mesh.vertices[triangle.vertex_indices[1]]);
+	}
+
+	auto mesh_publisher = this->create_publisher<visualization_msgs::msg::Marker>(topic_name, default_qos());
+	mesh_publisher->publish(mesh_marker);
+	publisher_handles.push_back(mesh_publisher);
+
+}

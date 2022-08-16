@@ -7,6 +7,33 @@
 #include "../utilities/convex_hull.h"
 #include "../utilities/geogebra.h"
 
+Eigen::Vector3d faceNormal(const Triangle_mesh& tmesh, const Surface_mesh_shortest_path::face_descriptor &face) {
+	// Look up the vertices (same way as in toCarthesian).
+	auto vertices = tmesh.vertices_around_face(tmesh.halfedge(face));
+
+	assert(vertices.size() == 3);
+
+	auto itr = vertices.begin();
+
+	std::array<Kernel::Point_3, 3> points{
+		tmesh.point(*(itr++)),
+		tmesh.point(*(itr++)),
+		tmesh.point(*(itr++))
+	};
+
+	Eigen::Vector3d va(points[0].x(), points[0].y(), points[0].z());
+	Eigen::Vector3d vb(points[1].x(), points[1].y(), points[1].z());
+	Eigen::Vector3d vc(points[2].x(), points[2].y(), points[2].z());
+
+	// Compute the normalized cross product.
+	// This one inexplicably points inward, so we flip it again. Does the CGAL code flip our vertices somewhere?
+	return -(vb - va).cross(vc - va).normalized();
+}
+
+Eigen::Vector3d normalAt(const Triangle_mesh& tmesh, const CGALMeshPoint &near) {
+	return faceNormal(tmesh, near.first);
+}
+
 moveit::core::RobotState
 CGALMeshShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const CGALMeshPoint &a) const {
 
@@ -26,6 +53,50 @@ Eigen::Vector3d toEigen(const Kernel::Point_3 &p) {
 	return  { p.x(), p.y(), p.z() };
 }
 
+struct PathVisitor {
+
+	const Triangle_mesh& mesh;
+	const moveit::core::RobotModelConstPtr& drone;
+	std::vector<moveit::core::RobotState> states;
+	Surface_mesh_shortest_path path_algo;
+
+	explicit PathVisitor(const Triangle_mesh &mesh, const moveit::core::RobotModelConstPtr &drone)
+			: mesh(mesh), drone(drone), path_algo(mesh) {
+	}
+
+	void operator()(Surface_mesh_shortest_path::halfedge_descriptor edge, Surface_mesh_shortest_path::FT t)
+	{
+		Eigen::Vector3d pos = toEigen(path_algo.point(edge, t));
+
+		states.push_back(robotStateFromFacing(
+				drone,
+				pos,
+				-faceNormal(mesh, mesh.face(edge)))
+		);
+
+		states.push_back(robotStateFromFacing(
+				drone,
+				pos,
+				-faceNormal(mesh, mesh.face(mesh.opposite(edge))))
+		);
+	}
+
+	void operator()(Surface_mesh_shortest_path::vertex_descriptor vertex)
+	{
+		throw std::runtime_error("Not implemented");
+	}
+
+	void operator()(Surface_mesh_shortest_path::face_descriptor f, Surface_mesh_shortest_path::Barycentric_coordinates location)
+	{
+		states.push_back(robotStateFromFacing(
+				drone,
+				toEigen(path_algo.point(f, location)),
+				-faceNormal(mesh, f)
+		));
+	}
+
+};
+
 std::vector<moveit::core::RobotState> CGALMeshShell::path_on_shell(const moveit::core::RobotModelConstPtr &drone,
 																   const CGALMeshPoint &a,
 																   const CGALMeshPoint &b) const {
@@ -35,88 +106,10 @@ std::vector<moveit::core::RobotState> CGALMeshShell::path_on_shell(const moveit:
 	// We add a "source" point a.
 	shortest_paths.add_source_point(a);
 
-	// Compute the path from a to b.
-	std::vector<Kernel::Point_3> path;
-	shortest_paths.shortest_path_points_to_source_points(b.first, b.second, std::back_inserter(path));
-	// Reverse the path, since the path, as computed, is from b to a.
-	std::reverse(path.begin(), path.end());
+	PathVisitor visitor(tmesh, drone);
+	shortest_paths.shortest_path_sequence_to_source_points(b.first, b.second, visitor);
 
-	// Initialize a path containing just an initial state.
-	std::vector<moveit::core::RobotState> states{
-			state_on_shell(drone, a) // Initial state is the state at the given start point.
-	};
-
-	// We'll keep track of the "last" normal and carthesian coordinates,
-	// so that we can insert states as-needed as these change.
-	// We do it this way because it is much easier to deal with than
-	// making a special case for vertex crossings.
-	Eigen::Vector3d normal = normalAt(a);
-	Eigen::Vector3d pos = toCarthesian(a);
-
-	assert((states[0].getGlobalLinkTransform("end_effector").translation() - pos).norm() < 1e-6);
-
-	for (auto &i: path) {
-
-		// Look up the coordinates of the new point and convert to Eigen.
-		Eigen::Vector3d new_pos(i.x(), i.y(), i.z());
-
-		// Translation vector to get from the last point to the current.
-		Eigen::Vector3d delta = new_pos - pos;
-
-		if ((pos - new_pos).norm() < 1.0e-10) {
-			// The new point is the same as the last point, so we don't need to add a state.
-			// Note that we don't care about the normal vectors, as those are computes as a function
-			// of straight-line sections of the path.
-
-			continue;
-		} else {
-			// The new point is different from the last point, so we need to add at least one state.
-
-			// Check if the current (last) normal vector is still perpendicular to the path.
-			if (abs(normal.dot(delta)) > 1.0e-10) {
-				// If not, we must add a state without movement but with a
-				// new normal to prevent the robot from crossing into the shell when interpolating.
-				//
-				// Effectively, we want the robot to "rotate" around the end-effector, keeping the latter in one place.
-				// TODO: Might need more than one state, now that I think about it...
-
-				// Compute a vector perpendicular to the old normal vector and the delta vector.
-				// This will put any new normal vector into the same plane as the old one. (TODO Should I want that?)
-				Eigen::Vector3d corner_normal = delta.cross(normal);
-
-				// Then, compute a vector perpendicular to the corner normal and the delta vector.
-				// This will make the normal perpendicular to the new path section.
-				Eigen::Vector3d new_normal = delta.cross(corner_normal).normalized();
-
-				// If the vector faces inward, flip it. (TODO: is this math sufficiently robust?)
-				if (new_normal.dot(normal) < 0.0) {
-					new_normal = -new_normal;
-				}
-
-				// Record the new normal vector.
-				normal = new_normal;
-
-				// Add a state with the new normal vector, but at the old position.
-				states.push_back({robotStateFromFacing(drone, pos + normal * padding, -normal)});
-			}
-
-			// Advance the carthesian coordinates.
-			pos = new_pos;
-
-			// Add a new state with assumed identical normal to the previous one.
-			states.push_back({robotStateFromFacing(drone, pos + normal * padding, -normal)});
-
-		}
-
-	}
-
-	// Add a final state.
-	states.push_back(state_on_shell(drone, b));
-
-	assert((states[states.size()-1].getGlobalLinkTransform("end_effector").translation() - pos).norm() < 1e-6);
-	assert((states[states.size()-2].getGlobalLinkTransform("end_effector").translation() - pos).norm() < 1e-6);
-
-	return states;
+	return std::move(visitor.states);
 }
 
 CGALMeshPoint CGALMeshShell::gaussian_sample_near_point(const CGALMeshPoint &near) const {
@@ -137,23 +130,7 @@ Eigen::Vector3d CGALMeshShell::toCarthesian(const CGALMeshPoint &pt) const {
 }
 
 Eigen::Vector3d CGALMeshShell::normalAt(const CGALMeshPoint &near) const {
-
-	// Look up the vertices (same way as in toCarthesian).
-	auto vertices = tmesh.vertices_around_face(tmesh.halfedge(near.first));
-
-	assert(vertices.size() == 3);
-
-	auto itr = vertices.begin();
-
-	std::array<Kernel::Point_3, 3> points{tmesh.point(*(itr++)), tmesh.point(*(itr++)), tmesh.point(*(itr++)),};
-
-	Eigen::Vector3d va(points[0].x(), points[0].y(), points[0].z());
-	Eigen::Vector3d vb(points[1].x(), points[1].y(), points[1].z());
-	Eigen::Vector3d vc(points[2].x(), points[2].y(), points[2].z());
-
-	// Compute the normalized cross product.
-	// This one inexplicably points inward, so we flip it again. Does the CGAL code flip our vertices somewhere?
-	return -(vb - va).cross(vc - va).normalized();
+	return ::normalAt(tmesh, near);
 }
 
 double CGALMeshShell::predict_path_length(const CGALMeshPoint &a, const CGALMeshPoint &b) const {
