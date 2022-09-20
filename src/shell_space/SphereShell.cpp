@@ -3,7 +3,8 @@
 #include <utility>
 #include <range/v3/all.hpp>
 
-SphereShell::SphereShell(Eigen::Vector3d center, double radius) : center(std::move(center)), radius(radius) {
+SphereShell::SphereShell(Eigen::Vector3d center, double radius, bool horizontalArm)
+		: center(std::move(center)), radius(radius), horizontal_arm(horizontalArm) {
 }
 
 moveit::core::RobotState
@@ -13,7 +14,12 @@ SphereShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const
 
 	Eigen::Vector3d required_facing = (center - a).normalized();
 
-	return robotStateFromFacing(drone, a, required_facing);
+	if (horizontal_arm) {
+		required_facing.z() = 0;
+		required_facing.normalize();
+	}
+
+	return robotStateFromPointAndArmvec(drone, a, required_facing);
 
 }
 
@@ -122,4 +128,17 @@ moveit::core::RobotState robotStateFromFacing(const moveit::core::RobotModelCons
 	st.update(true);
 
 	return st;
+}
+
+
+Eigen::Vector3d SphereSurfaceArmVector::arm_vector(const Eigen::Vector3d &p) const {
+	return (center - p).normalized();
+}
+
+Eigen::Vector3d SphereSurfaceArmVector::nearest_point_on_shell(const Eigen::Vector3d &p) const {
+	return (p - center).normalized() * radius + center;
+}
+
+Eigen::Vector3d SphereSurfaceArmVector::surface_point(const Eigen::Vector3d &p) const {
+	return p;
 }

@@ -330,6 +330,14 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
 	// Load the apple tree model with some metadata.
 	vector<shared_ptr<AppleTreePlanningScene>> scenes = loadScenes(scene_names, groundPlane);
 
+	for (auto &scene : scenes) {
+		std::cout << "Scene " << scene->scene_msg.name << " has " << scene->apples.size() << " apples." << std::endl;
+		for (auto &apple : scene->apples) {
+			std::cout << "(" << apple.center.x() << ", " << apple.center.y() << ", " << apple.center.z() << ")" << std::endl;
+		}
+	}
+	exit(1);
+
 	std::vector<std::thread> threads;
 	std::mutex mut;
 

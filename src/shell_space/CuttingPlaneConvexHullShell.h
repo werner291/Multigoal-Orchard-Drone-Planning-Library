@@ -30,7 +30,7 @@ class ConvexHullShellBuilder : public ShellPathPlanner<ConvexHullPoint>::ShellBu
 	ConvexHullShellBuilder(double padding, double rotationWeight);
 
 
-	[[nodiscard]] std::shared_ptr<OMPLSphereShellWrapper<ConvexHullPoint>>
+	[[nodiscard]] std::shared_ptr<OMPLShellSpaceWrapper<ConvexHullPoint>>
 	buildShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) const override;
 
 	[[nodiscard]] Json::Value parameters() const override;

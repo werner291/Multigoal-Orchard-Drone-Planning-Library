@@ -48,14 +48,14 @@ public:
 	 */
 	explicit CGALConvexHullShellBuilder(double padding, double rotationWeight);
 
-	[[nodiscard]] std::shared_ptr<OMPLSphereShellWrapper<CGALMeshPoint>>
+	[[nodiscard]] std::shared_ptr<OMPLShellSpaceWrapper<CGALMeshPoint>>
 	buildShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) const override;
 
 	[[nodiscard]] Json::Value parameters() const override;
 };
 
 /**
- * A CollisionFreeShell based on the Surface_mesh_shortest_path module in CGAL.
+ * A ShellSpace based on the Surface_mesh_shortest_path module in CGAL.
  *
  * The "shell" is a triangle mesh that is (typically) the convex hull of the leaf vertices in the tree.
  *

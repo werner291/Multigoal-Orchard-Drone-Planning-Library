@@ -26,7 +26,7 @@ public:
 	}
 
 public:
-	shared_ptr<OMPLSphereShellWrapper>
+	shared_ptr<OMPLShellSpaceWrapper>
 	buildShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) override {
 
 		auto enclosing = compute_enclosing_sphere(scene_info.scene_msg, 0.0);
@@ -42,7 +42,7 @@ public:
 
 		auto shell = std::make_shared<SphereShell>(enclosing.center, enclosing.radius);
 
-		return std::make_shared<OMPLSphereShellWrapper>(shell, si);
+		return std::make_shared<OMPLShellSpaceWrapper>(shell, si);
 
 	}
 

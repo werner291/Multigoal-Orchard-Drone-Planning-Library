@@ -257,10 +257,10 @@ CGALMeshPoint CGALMeshShell::project(const Eigen::Vector3d &pt) const {
 	return shortest_paths.locate(Kernel::Point_3(pt.x(), pt.y(), pt.z()), tree);
 }
 
-std::shared_ptr<OMPLSphereShellWrapper<CGALMeshPoint>>
+std::shared_ptr<OMPLShellSpaceWrapper<CGALMeshPoint>>
 CGALConvexHullShellBuilder::buildShell(const AppleTreePlanningScene &scene_info,
 									   const ompl::base::SpaceInformationPtr &si) const {
-	return std::make_shared<OMPLSphereShellWrapper<CGALMeshPoint>>(std::make_shared<CGALMeshShell>(convexHull(
+	return std::make_shared<OMPLShellSpaceWrapper<CGALMeshPoint>>(std::make_shared<CGALMeshShell>(convexHull(
 			extract_leaf_vertices(scene_info)), rotation_weight, padding), si);
 }
 

@@ -58,7 +58,7 @@ link_libraries(
 
 set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #SET(CMAKE_CXX_FLAGS_DEBUG "-O0")
 #SET(CMAKE_C_FLAGS_DEBUG "-O0")
@@ -91,8 +91,8 @@ add_library(${PROJECT_NAME}_shared
         src/SamplerWrapper.h
         src/SingleGoalPlannerMethods.cpp
         src/SingleGoalPlannerMethods.h
-        src/collision_free_shell/SphereShell.cpp
-        src/collision_free_shell/SphereShell.h
+        src/shell_space/SphereShell.cpp
+        src/shell_space/SphereShell.h
         src/TimedCostConvergenceTerminationCondition.cpp
         src/TimedCostConvergenceTerminationCondition.h
         src/utilities/experiment_utils.cpp
@@ -126,15 +126,23 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/traveling_salesman.h
 #        src/NewKnnPlanner.cpp
 #        src/NewKnnPlanner.h
-        src/collision_free_shell/CuttingPlaneConvexHullShell.cpp
-        src/collision_free_shell/CuttingPlaneConvexHullShell.h
+        src/shell_space/ShellSpace.h
+        src/shell_space/ShellSpace.cpp
+        src/shell_space/CuttingPlaneConvexHullShell.cpp
+        src/shell_space/CuttingPlaneConvexHullShell.h
+        src/shell_space/WorkspaceShell.cpp
+        src/shell_space/WorkspaceShell.h
         src/utilities/convex_hull.cpp
         src/utilities/convex_hull.h
         src/utilities/math_utils.cpp
         src/utilities/math_utils.h
 #        src/utilities/TriangleSpheretreeIndex.cpp
 #        src/utilities/TriangleSpheretreeIndex.h
-        src/utilities/geogebra.h src/utilities/geogebra.cpp src/collision_free_shell/CGALMeshShell.cpp src/collision_free_shell/CGALMeshShell.h)
+        src/utilities/geogebra.h
+        src/utilities/geogebra.cpp
+        src/shell_space/CGALMeshShell.cpp
+        src/shell_space/CGALMeshShell.h
+        src/shell_space/CylinderShell.cpp src/shell_space/CylinderShell.h src/shell_space/OmplShellSpace.cpp src/shell_space/OmplShellSpace.h src/shell_space/MoveItShellSpace.cpp src/shell_space/MoveItShellSpace.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -150,9 +158,10 @@ endfunction()
 experiment("shellpath")
 experiment("shellpath_shell_inflation")
 experiment("shellpath_shell_bias")
-experiment("shellpath_convexhull_vs_sphere")
+experiment("shell_comparison")
 experiment("tsp_over_prm")
 experiment("tsp_over_prm_vs_sphereshell")
+experiment("shell_comparison_sphere_armangle")
 
 include(GoogleTest)
 
@@ -160,8 +169,8 @@ add_executable(${PROJECT_NAME}_tests
         test/test.cpp
         test/MoveItPathLengthObjectiveTest.cpp
         test/math_test.cpp
-        src/collision_free_shell/test/CuttingPlaneConvexHullShell_test.cpp
-        src/collision_free_shell/test/CGALMeshShell_test.cpp
+        src/shell_space/test/CuttingPlaneConvexHullShell_test.cpp
+        src/shell_space/test/CGALMeshShell_test.cpp
         src/utilities/test/math_utils_test.cpp)
 
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)

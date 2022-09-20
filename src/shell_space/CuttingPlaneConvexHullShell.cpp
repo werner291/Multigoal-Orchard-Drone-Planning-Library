@@ -532,13 +532,13 @@ std::array<Eigen::Vector3d, 2> CuttingPlaneConvexHullShell::facet_edge_vertices(
 
 
 
-std::shared_ptr<OMPLSphereShellWrapper<ConvexHullPoint>>
+std::shared_ptr<OMPLShellSpaceWrapper<ConvexHullPoint>>
 ConvexHullShellBuilder::buildShell(const AppleTreePlanningScene &scene_info,
 								   const ompl::base::SpaceInformationPtr &si) const {
 
 	auto leaf_vertices = extract_leaf_vertices(scene_info);
 
-	return std::make_shared<OMPLSphereShellWrapper<ConvexHullPoint>>(std::make_shared<CuttingPlaneConvexHullShell>(
+	return std::make_shared<OMPLShellSpaceWrapper<ConvexHullPoint>>(std::make_shared<CuttingPlaneConvexHullShell>(
 			convexHull(leaf_vertices), rotation_weight, padding), si);
 
 }

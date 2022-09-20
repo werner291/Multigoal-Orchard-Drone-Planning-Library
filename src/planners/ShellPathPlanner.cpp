@@ -3,8 +3,8 @@
 #include "../utilities/experiment_utils.h"
 
 
-std::shared_ptr<OMPLSphereShellWrapper<Eigen::Vector3d> > PaddedSphereShellAroundLeavesBuilder::buildShell(const AppleTreePlanningScene &scene_info,
-																						 const ompl::base::SpaceInformationPtr &si) const {
+std::shared_ptr<OMPLShellSpaceWrapper<Eigen::Vector3d> > PaddedSphereShellAroundLeavesBuilder::buildShell(const AppleTreePlanningScene &scene_info,
+																										  const ompl::base::SpaceInformationPtr &si) const {
 
 	auto enclosing = compute_enclosing_sphere(scene_info.scene_msg, 0.0);
 
@@ -14,7 +14,7 @@ std::shared_ptr<OMPLSphereShellWrapper<Eigen::Vector3d> > PaddedSphereShellAroun
 
 	auto shell = std::make_shared<SphereShell>(enclosing.center, enclosing.radius);
 
-	return std::make_shared<OMPLSphereShellWrapper<Eigen::Vector3d> >(shell, si);
+	return std::make_shared<OMPLShellSpaceWrapper<Eigen::Vector3d> >(shell, si);
 
 }
 

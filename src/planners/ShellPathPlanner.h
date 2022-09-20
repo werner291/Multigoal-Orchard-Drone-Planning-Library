@@ -5,7 +5,7 @@
 #include <range/v3/view/enumerate.hpp>
 #include <range/v3/view/transform.hpp>
 #include "MultiGoalPlanner.h"
-#include "../collision_free_shell/SphereShell.h"
+#include "../shell_space/OmplShellSpace.h"
 #include "../DistanceHeuristics.h"
 #include "../planning_scene_diff_message.h"
 #include "../DronePathLengthObjective.h"
@@ -14,14 +14,23 @@
 #include "../probe_retreat_move.h"
 #include "../ExperimentVisualTools.h"
 
-template<typename ShellPoint>
+template<typename Shell, typename ShellPoint, typename ShellPath>
+class ShellConstructionMethod {
+
+public:
+
+	virtual Shell construct_shell(const AppleTreePlanningScene &scene_info) const = 0;
+
+};
+
+template<typename Shell, typename ShellPoint, typename ShellPath>
 class ShellPathPlanner : public MultiGoalPlanner {
 
 public:
 	class ShellBuilder {
 
 	public:
-		virtual std::shared_ptr<OMPLSphereShellWrapper<ShellPoint>> buildShell(
+		virtual std::shared_ptr<OmplShellSpace<Shell, ShellPoint, ShellPath>> buildShell(
 				const AppleTreePlanningScene &scene_info,
 				const ompl::base::SpaceInformationPtr &si)const  = 0;
 
@@ -44,7 +53,9 @@ public:
 					 std::shared_ptr<const ShellBuilder> shellBuilder,
 					 bool optimizeSegments) :
 			apply_shellstate_optimization(applyShellstateOptimization),
-			methods(std::move(methods)), shell_builder(std::move(shellBuilder)), optimize_segments(optimizeSegments) {}
+			methods(std::move(methods)),
+			shell_builder(std::move(shellBuilder)),
+			optimize_segments(optimizeSegments) {}
 
 	MultiGoalPlanner::PlanResult plan(
 			const ompl::base::SpaceInformationPtr &si,
@@ -111,7 +122,7 @@ public:
 
 	MultiGoalPlanner::PlanResult assembleFullPath(const ompl::base::SpaceInformationPtr &si,
 												  const std::vector<ompl::base::GoalPtr> &goals,
-												  OMPLSphereShellWrapper<ShellPoint> &ompl_shell,
+												  OMPLShellSpaceWrapper<ShellPoint> &ompl_shell,
 												  const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches,
 												  const std::vector<size_t> &ordering,
 												  MultiGoalPlanner::PlanResult &result,
@@ -147,11 +158,11 @@ public:
 	}
 
 	ompl::geometric::PathGeometric
-	retreat_move_probe(const std::vector<ompl::base::GoalPtr> &goals, OMPLSphereShellWrapper<ShellPoint> &ompl_shell,
-										 MultiGoalPlanner::PlanResult &result,
-										 ompl::geometric::PathGeometric &goal_to_goal,
-										 const std::pair<size_t, ompl::geometric::PathGeometric> &approach_a,
-										 const std::pair<size_t, ompl::geometric::PathGeometric> &approach_b) const {
+	retreat_move_probe(const std::vector<ompl::base::GoalPtr> &goals, OMPLShellSpaceWrapper<ShellPoint> &ompl_shell,
+					   MultiGoalPlanner::PlanResult &result,
+					   ompl::geometric::PathGeometric &goal_to_goal,
+					   const std::pair<size_t, ompl::geometric::PathGeometric> &approach_a,
+					   const std::pair<size_t, ompl::geometric::PathGeometric> &approach_b) const {
 
 		goal_to_goal.append(approach_a.second);
 		goal_to_goal.reverse();
@@ -186,7 +197,7 @@ public:
 			const ompl::base::State *start,
 			const std::vector<ompl::base::GoalPtr> &goals,
 			const std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> &approaches,
-			const OMPLSphereShellWrapper<ShellPoint>& shell) const {
+			const OMPLShellSpaceWrapper<ShellPoint>& shell) const {
 
 		return tsp_open_end(
 				[&](auto i) {
@@ -205,7 +216,7 @@ public:
 	std::vector<std::pair<size_t, ompl::geometric::PathGeometric>>
 	planApproaches(const ompl::base::SpaceInformationPtr &si,
 									 const std::vector<ompl::base::GoalPtr> &goals,
-									 const OMPLSphereShellWrapper<ShellPoint> &ompl_shell,
+									 const OMPLShellSpaceWrapper<ShellPoint> &ompl_shell,
 									 ompl::base::PlannerTerminationCondition &ptc) const {
 
 		std::vector<std::pair<size_t, ompl::geometric::PathGeometric>> approaches;
@@ -228,7 +239,7 @@ public:
 
 	std::optional<ompl::geometric::PathGeometric> planApproachForGoal(
 			const ompl::base::SpaceInformationPtr &si,
-			const OMPLSphereShellWrapper<ShellPoint> &ompl_shell,
+			const OMPLShellSpaceWrapper<ShellPoint> &ompl_shell,
 			const ompl::base::GoalPtr &goal) const {
 
 		ompl::base::ScopedState shell_state(si);
@@ -273,7 +284,7 @@ public:
 	PaddedSphereShellAroundLeavesBuilder(double padding = 0.1);
 
 public:
-	std::shared_ptr<OMPLSphereShellWrapper<Eigen::Vector3d>>
+	std::shared_ptr<OMPLShellSpaceWrapper<Eigen::Vector3d>>
 	buildShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) const override;
 
 	[[nodiscard]] Json::Value parameters() const override;
