@@ -1,0 +1,106 @@
+
+#ifndef NEW_PLANNERS_APPROACHPLANNING_H
+#define NEW_PLANNERS_APPROACHPLANNING_H
+
+#include "../../ExperimentVisualTools.h"
+#include "../../probe_retreat_move.h"
+#include "../../utilities/traveling_salesman.h"
+#include "../../utilities/general_utilities.h"
+#include "../../DronePathLengthObjective.h"
+#include "../../planning_scene_diff_message.h"
+#include "../../DistanceHeuristics.h"
+#include "../../shell_space/OmplShellSpace.h"
+#include "../MultiGoalPlanner.h"
+#include <range/v3/view/transform.hpp>
+#include <range/v3/view/enumerate.hpp>
+#include <ompl/base/goals/GoalState.h>
+#include <ompl/geometric/planners/prm/PRMstar.h>
+
+template<typename ShellPoint>
+struct ApproachPath {
+	ShellPoint shell_point;
+	ompl::geometric::PathGeometric robot_path;
+};
+template<typename ShellPoint>
+struct InitialApproachPath {
+	ShellPoint shell_point;
+	ompl::geometric::PathGeometric robot_path;
+};
+
+template<typename ShellPoint>
+class ApproachPlanningMethods {
+
+public:
+
+	virtual std::optional<InitialApproachPath<ShellPoint>> initial_approach_path(const ompl::base::State *start, const OmplShellSpace<ShellPoint>& shell) const = 0;
+
+	virtual std::optional<ApproachPath<ShellPoint>> approach_path(const ompl::base::GoalPtr &goal, const OmplShellSpace<ShellPoint>& shell) const = 0;
+
+};
+
+template<typename ShellPoint>
+class MakeshiftPrmApproachPlanningMethods : public ApproachPlanningMethods<ShellPoint> {
+
+	// Mutable because there isn't *supposed* to be any transfer of data in between calls.
+	// Let's have a mutex just in case, we're limited by the collision detection mutex anyway,
+	// so this won't cause a major speed penalty.
+	mutable std::mutex mutex;
+	mutable std::shared_ptr<SingleGoalPlannerMethods> single_goal_planner_methods;
+
+public:
+	explicit MakeshiftPrmApproachPlanningMethods(ompl::base::SpaceInformationPtr si) {
+
+		ompl::base::PlannerAllocator mkprm = [](const ompl::base::SpaceInformationPtr & si) {
+			return std::make_shared<ompl::geometric::PRMstar>(si);
+		};
+
+		ompl::base::OptimizationObjectivePtr objective = std::make_shared<DronePathLengthObjective>(si);
+
+		single_goal_planner_methods = std::make_shared<SingleGoalPlannerMethods>(1.0,si,objective,mkprm,true,true,true);
+
+	}
+
+	std::optional<InitialApproachPath<ShellPoint>> initial_approach_path(
+			const ompl::base::State *start,
+			const OmplShellSpace<ShellPoint> &shell) const override {
+
+		std::scoped_lock lock(mutex);
+
+		ompl::base::ScopedState<> shell_state(shell.getSpaceInformation());
+
+		ShellPoint shellPoint = shell.pointNearState(start);
+
+		shell.stateFromPoint(shellPoint, shell_state.get());
+
+		auto path = single_goal_planner_methods->state_to_state(start, shell_state.get());
+		
+		if (path) {
+			return InitialApproachPath<ShellPoint>{shellPoint, *path};
+		} else {
+			return std::nullopt;
+		}
+	}
+
+	std::optional<ApproachPath<ShellPoint>>
+	approach_path(const ompl::base::GoalPtr &goal, const OmplShellSpace<ShellPoint> &shell) const override {
+
+		std::scoped_lock lock(mutex);
+
+		ompl::base::ScopedState<> shell_state(shell.getSpaceInformation());
+
+		ShellPoint shellPoint = shell.pointNearGoal(goal.get());
+
+		shell.stateFromPoint(shellPoint, shell_state.get());
+
+		auto path = single_goal_planner_methods->state_to_goal(shell_state.get(), goal);
+
+		if (path) {
+			return ApproachPath<ShellPoint>{shellPoint, *path};
+		} else {
+			return std::nullopt;
+		}
+	}
+
+};
+
+#endif //NEW_PLANNERS_APPROACHPLANNING_H

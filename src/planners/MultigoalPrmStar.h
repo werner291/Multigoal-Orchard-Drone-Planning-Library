@@ -6,7 +6,7 @@
 #define NEW_PLANNERS_MULTIGOALPRMSTAR_H
 
 #include <moveit/planning_scene/planning_scene.h>
-#include "../robot_path.h"
+#include "../RobotPath.h"
 #include "../utilities/experiment_utils.h"
 #include "../procedural_tree_generation.h"
 #include "MultiGoalPlanner.h"

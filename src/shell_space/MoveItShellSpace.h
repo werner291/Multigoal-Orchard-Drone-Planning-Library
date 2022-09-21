@@ -4,9 +4,11 @@
 
 #include <moveit/robot_state/robot_state.h>
 #include <moveit/robot_model/robot_model.h>
-#include "WorkspaceShell.h"
-#include "../robot_path.h"
 
+#include <utility>
+#include "WorkspaceShell.h"
+#include "../RobotPath.h"
+#include "../procedural_tree_generation.h"
 
 /**
  *
@@ -34,6 +36,7 @@ moveit::core::RobotState robotStateFromPointAndArmvec(const moveit::core::RobotM
 template<typename ShellPoint>
 class MoveItShellSpace {
 
+private:
 	/// Reference to a robot model.
 	moveit::core::RobotModelConstPtr robot_model;
 
@@ -41,6 +44,15 @@ class MoveItShellSpace {
 	std::shared_ptr<const WorkspaceShell<ShellPoint>> shell;
 
 public:
+
+	/**
+	 * Construct a MoveItShellSpace.
+	 * @param robotModel 		The robot model.
+	 * @param shell 			The workspace shell.
+	 */
+	MoveItShellSpace(moveit::core::RobotModelConstPtr robotModel, const std::shared_ptr<const WorkspaceShell<ShellPoint>> &shell)
+			: robot_model(std::move(robotModel)), shell(shell) {
+	}
 
 	/**
 	 * For a given point on the workspace shell, return a robot state.
@@ -78,19 +90,31 @@ public:
 				robot_path.waypoints.push_back(stateFromPoint(point));
 			}
 			return robot_path;
-		} else {
+		} if (auto curve = std::dynamic_pointer_cast<const CurvePath<ShellPoint>>(path)) {
 			// Just take 100 samples.
 			for (size_t i = 0; i <= 100; i++) {
 				double t = (double) i / 100.0;
-				ShellPoint point = path->at(t);
+				ShellPoint point = curve->at(t);
 				robot_path.waypoints.push_back(stateFromPoint(point));
 			}
+		} else {
+			throw std::runtime_error("Unknown path type.");
 		}
 
 		return robot_path;
 	}
 
+	double predict_path_length(const ShellPoint &start, const ShellPoint &end) const {
+		return shell->path_from_to(start, end)->length();
+	}
 
+	ShellPoint pointNearState(const moveit::core::RobotState &state) const {
+		return shell->nearest_point_on_shell(state.getGlobalLinkTransform("end_effector").translation());
+	}
+
+	ShellPoint pointNearGoal(const Apple& apple) const {
+		return shell->nearest_point_on_shell(apple.center);
+	}
 
 };
 

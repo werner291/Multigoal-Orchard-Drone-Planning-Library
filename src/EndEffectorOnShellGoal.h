@@ -2,7 +2,7 @@
 #define NEW_PLANNERS_ENDEFFECTORONSHELLGOAL_H
 
 #include <ompl/base/goals/GoalSampleableRegion.h>
-#include "collision_free_shell/SphereShell.h"
+#include "shell_space/OmplShellSpace.h"
 
 /**
  * A GoalSampleableRegion that generates states states where the end-effector is on a given sphere shell,
@@ -15,7 +15,7 @@ template<typename ShellPoint>
 class EndEffectorOnShellGoal : public ompl::base::GoalSampleableRegion {
 
 	/// The sphere shell to sample on.
-	OMPLSphereShellWrapper<ShellPoint> sphereShell;
+	OmplShellSpace<ShellPoint> sphereShell;
 
 	// The focus point on the sphere shell to sample near.
 	ShellPoint focus;
@@ -28,7 +28,7 @@ public:
 	 * @param focus 		The focus point on the sphere shell to sample near.
 	 */
 	EndEffectorOnShellGoal(const ompl::base::SpaceInformationPtr &si,
-						   OMPLSphereShellWrapper<ShellPoint> sphereShell,
+						   OmplShellSpace<ShellPoint> sphereShell,
 						   ShellPoint focus) : GoalSampleableRegion(si), sphereShell(std::move(sphereShell)), focus(std::move(focus)) {
 	}
 
@@ -62,17 +62,6 @@ public:
 
 		throw std::runtime_error("Not implemented");
 
-//		// Convert to a MoveIt state
-//		auto *state_space = si_->getStateSpace()->as<DroneStateSpace>();
-//		moveit::core::RobotState rs(state_space->getRobotModel());
-//		state_space->copyToRobotState(rs, st);
-//
-//		// Compute end-effector position with forward kinematics
-//		Eigen::Vector3d ee_pos = rs.getGlobalLinkTransform("end_effector").translation();
-//		Eigen::Vector3d shell_projection = sphereShell.getShell()->project(rs);
-//
-//		// Return the Euclidean distance between the end-effector and the shell projection.
-//		return (shell_projection - ee_pos).norm();
 	}
 
 };

@@ -16,6 +16,9 @@
 template<typename ShellPoint>
 class ShellPath {
 	// Marker class, really only used as a common base class.
+
+public:
+	virtual double length() = 0;
 };
 
 /**
@@ -37,6 +40,7 @@ public:
 template<typename ShellPoint>
 class CurvePath : public ShellPath<ShellPoint> {
 
+public:
 	virtual ShellPoint at(double t) const = 0;
 
 };
@@ -90,6 +94,10 @@ public:
 	 */
 	virtual std::shared_ptr<ShellPath<ShellPoint>> path_from_to(const ShellPoint& from, const ShellPoint& to) const = 0;
 
+	/**
+	 * Return a random shell point on the shell near a given one.
+	 */
+	virtual ShellPoint random_near(const ShellPoint& p, double radius) const = 0;
 };
 
 

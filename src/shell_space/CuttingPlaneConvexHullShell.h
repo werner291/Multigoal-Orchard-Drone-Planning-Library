@@ -21,7 +21,7 @@ struct ConvexHullPoint {
 /**
  * A ShellBuilder that builds a CuttingPlaneConvexHullShell around the leaf vertices in a tree.
  */
-class ConvexHullShellBuilder : public ShellPathPlanner<ConvexHullPoint>::ShellBuilder {
+class ConvexHullShellBuilder : public OmplShellConstructionMethod<ConvexHullPoint> {
 
 	double rotation_weight = 1.0;
 	double padding = 0.1;

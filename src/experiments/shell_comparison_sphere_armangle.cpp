@@ -30,20 +30,24 @@ int main(int argc, char **argv) {
 	vector<NewMultiGoalPlannerAllocatorFn> planner_allocators = {
 
 			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
-				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(
-						true,
-						alloc_ptp(si),
-						make_shared<PaddedSphereShellAroundLeavesBuilder>(),
-						false);
-			},
 
-			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+				std::unique_ptr<ApproachPlanningMethods<Eigen::Vector3d>> approach_methods =
+						std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
+
 				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(
-						true,
-						alloc_ptp(si),
-						make_shared<PaddedSphereShellAroundLeavesBuilder>(),
+						[](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr& si) {
+							return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(paddedSphericalShellAroundLeaves(scene_info, 0.1), si);
+						},
+						std::move(approach_methods),
 						true);
 			},
+
+//			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+//				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(
+//						std::make_shared<PaddedShellAroundLeavesBuilder>(0.1),
+//						std::make_shared<MakeshiftPrmApproachPlanningMethods>(),
+//						true);
+//			},
 	};
 
 	run_planner_experiment(planner_allocators,

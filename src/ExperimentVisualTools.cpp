@@ -193,16 +193,16 @@ void ExperimentVisualTools::pincushion(const std::vector<std::pair<Apple, moveit
 //}
 //
 
-void ExperimentVisualTools::publishPath(const std::shared_ptr<ompl::base::SpaceInformation> &si,
-										const std::string &topic_name,
-										const ompl::geometric::PathGeometric &combined_path) {
-
-	auto moveit_trajectory = omplPathToRobotTrajectory(*si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>(),
-													   combined_path);
-
-	publishTrajectory(topic_name, moveit_trajectory);
-
-}
+//void ExperimentVisualTools::publishPath(const std::shared_ptr<ompl::base::SpaceInformation> &si,
+//										const std::string &topic_name,
+//										const ompl::geometric::PathGeometric &combined_path) {
+//
+//	auto moveit_trajectory = omplPathToRobotTrajectory(*si->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>(),
+//													   combined_path);
+//
+//	publishTrajectory(topic_name, moveit_trajectory);
+//
+//}
 
 moveit_msgs::msg::DisplayTrajectory robotTrajectoryToDisplayTrajectory(const robot_trajectory::RobotTrajectory &moveit_trajectory) {
 	moveit_msgs::msg::DisplayTrajectory msg;

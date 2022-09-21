@@ -58,7 +58,7 @@ link_libraries(
 
 set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #SET(CMAKE_CXX_FLAGS_DEBUG "-O0")
 #SET(CMAKE_C_FLAGS_DEBUG "-O0")
@@ -118,8 +118,8 @@ add_library(${PROJECT_NAME}_shared
         src/probe_retreat_move.cpp
         src/probe_retreat_move.h
         src/procedural_tree_generation.cpp
-        src/robot_path.cpp
-        src/robot_path.h
+        src/RobotPath.cpp
+        src/RobotPath.h
         src/run_experiment.cpp
         src/run_experiment.h
         src/utilities/traveling_salesman.cpp
@@ -128,21 +128,29 @@ add_library(${PROJECT_NAME}_shared
 #        src/NewKnnPlanner.h
         src/shell_space/ShellSpace.h
         src/shell_space/ShellSpace.cpp
-        src/shell_space/CuttingPlaneConvexHullShell.cpp
-        src/shell_space/CuttingPlaneConvexHullShell.h
+#        src/shell_space/CuttingPlaneConvexHullShell.cpp
+#        src/shell_space/CuttingPlaneConvexHullShell.h
         src/shell_space/WorkspaceShell.cpp
         src/shell_space/WorkspaceShell.h
-        src/utilities/convex_hull.cpp
-        src/utilities/convex_hull.h
+#        src/utilities/convex_hull.cpp
+#        src/utilities/convex_hull.h
         src/utilities/math_utils.cpp
         src/utilities/math_utils.h
 #        src/utilities/TriangleSpheretreeIndex.cpp
 #        src/utilities/TriangleSpheretreeIndex.h
         src/utilities/geogebra.h
         src/utilities/geogebra.cpp
-        src/shell_space/CGALMeshShell.cpp
-        src/shell_space/CGALMeshShell.h
-        src/shell_space/CylinderShell.cpp src/shell_space/CylinderShell.h src/shell_space/OmplShellSpace.cpp src/shell_space/OmplShellSpace.h src/shell_space/MoveItShellSpace.cpp src/shell_space/MoveItShellSpace.h)
+#        src/shell_space/CGALMeshShell.cpp
+#        src/shell_space/CGALMeshShell.h
+        src/shell_space/CylinderShell.cpp
+        src/shell_space/CylinderShell.h
+        src/shell_space/OmplShellSpace.cpp
+        src/shell_space/OmplShellSpace.h
+        src/shell_space/MoveItShellSpace.cpp
+        src/shell_space/MoveItShellSpace.h
+        src/planners/shell_path_planner/Construction.h
+        src/planners/shell_path_planner/OrderingMethod.h
+        src/planners/shell_path_planner/Construction.cpp)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -171,7 +179,7 @@ add_executable(${PROJECT_NAME}_tests
         test/math_test.cpp
         src/shell_space/test/CuttingPlaneConvexHullShell_test.cpp
         src/shell_space/test/CGALMeshShell_test.cpp
-        src/utilities/test/math_utils_test.cpp)
+        src/utilities/test/math_utils_test.cpp src/shell_space/test/SphereShell_test.cpp)
 
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})

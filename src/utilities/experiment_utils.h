@@ -12,7 +12,7 @@
 #include "../SamplerWrapper.h"
 #include "../planning_scene_diff_message.h"
 #include "../procedural_tree_generation.h"
-#include "../robot_path.h"
+#include "../RobotPath.h"
 #include "../DronePathLengthObjective.h"
 #include "../ompl_custom.h"
 

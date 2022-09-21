@@ -402,13 +402,6 @@ ompl::base::PlannerPtr allocPRM(const ompl::base::SpaceInformationPtr &si) {
 	return make_shared<ompl::geometric::PRM>(si);
 }
 
-std::shared_ptr<SphereShell> buildSphereShell(const AppleTreePlanningScene& scene) {
-	auto enclosing = compute_enclosing_sphere(scene.scene_msg, 0.1);
-
-	return std::make_shared<SphereShell>(enclosing.center, enclosing.radius);
-}
-
-
 std::vector<NewMultiGoalPlannerAllocatorFn> make_tsp_over_prm_allocators(
 		const std::vector<size_t>& samples_per_goal,
 		const std::vector<double>& plan_times_seconds,

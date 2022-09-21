@@ -6,7 +6,7 @@
 #include <ompl/geometric/PathGeometric.h>
 #include <moveit/robot_trajectory/robot_trajectory.h>
 #include "procedural_tree_generation.h"
-#include "robot_path.h"
+#include "RobotPath.h"
 
 /**
  * A few helper functions for visualizing the results of an experiment in RViz.
