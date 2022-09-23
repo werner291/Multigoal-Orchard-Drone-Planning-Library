@@ -18,12 +18,6 @@
 #include "shell_path_planner/OrderingMethod.h"
 
 template<typename ShellPoint>
-using OrderingMethod = std::function<std::vector<ShellPoint>(
-		const InitialApproachPath<ShellPoint>& start,
-		std::vector<ApproachPath<ShellPoint>>& approaches,
-		const OmplShellSpace<ShellPoint>& shell)>;
-
-template<typename ShellPoint>
 void orderWithOrTools(
 		const InitialApproachPath<ShellPoint>& start,
 		std::vector<ApproachPath<ShellPoint>>& approaches,

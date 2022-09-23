@@ -53,8 +53,7 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
 
 	// If asked to do so, see if the straight-line motion makes for a trivial solution.
 	if (tryLuckyShots) {
-		auto result = attempt_lucky_shot(a, b);
-		if (result) {
+		if (auto result = attempt_lucky_shot(a, b)) {
 			return result;
 		}
 	}

@@ -7,10 +7,11 @@
 #include <ompl/base/ScopedState.h>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 #include <ompl/base/Goal.h>
-#include "../procedural_tree_generation.h"
+#include "../planning_scene_diff_message.h"
 #include "../utilities/moveit_conversions.h"
 #include "../ompl_custom.h"
 #include "WorkspaceShell.h"
+#include "ArmHorizontal.h"
 
 /**
  * A geodesic path on a sphere between two points.
@@ -89,7 +90,22 @@ public:
 	[[nodiscard]] Eigen::Vector3d surface_point(const Eigen::Vector3d &p) const override;
 
 private:
-	Eigen::Vector3d random_near(const Eigen::Vector3d &p, double radius) const override;
+	[[nodiscard]] Eigen::Vector3d random_near(const Eigen::Vector3d &p, double radius) const override;
 };
+
+/**
+ * Constructs a WorkspaceShell based on the minimum enclosing sphere of the leaves in a scene.
+ *
+ * @param scene_info 		The scene information.
+ * @param padding 			The padding to add to the radius of the sphere.
+ * @return 					A WorkspaceShell.
+ */
+[[nodiscard]] std::shared_ptr<WorkspaceShell<Eigen::Vector3d>> paddedSphericalShellAroundLeaves(const AppleTreePlanningScene &scene_info, double padding);
+
+template<typename ShellPoint>
+[[nodiscard]]
+std::shared_ptr<ArmHorizontalDecorator<ShellPoint>> horizontalAdapter(std::shared_ptr<WorkspaceShell<ShellPoint>> shell) {
+	return std::make_shared<ArmHorizontalDecorator<ShellPoint>>(shell);
+}
 
 #endif //NEW_PLANNERS_SPHERESHELL_H

@@ -150,7 +150,7 @@ add_library(${PROJECT_NAME}_shared
         src/shell_space/MoveItShellSpace.h
         src/planners/shell_path_planner/Construction.h
         src/planners/shell_path_planner/OrderingMethod.h
-        src/planners/shell_path_planner/Construction.cpp)
+        src/planners/shell_path_planner/Construction.cpp src/planners/shell_path_planner/ApproachPlanning.cpp src/utilities/moveit.cpp src/utilities/moveit.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

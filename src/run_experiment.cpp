@@ -330,14 +330,6 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
 	// Load the apple tree model with some metadata.
 	vector<shared_ptr<AppleTreePlanningScene>> scenes = loadScenes(scene_names, groundPlane);
 
-	for (auto &scene : scenes) {
-		std::cout << "Scene " << scene->scene_msg.name << " has " << scene->apples.size() << " apples." << std::endl;
-		for (auto &apple : scene->apples) {
-			std::cout << "(" << apple.center.x() << ", " << apple.center.y() << ", " << apple.center.z() << ")" << std::endl;
-		}
-	}
-	exit(1);
-
 	std::vector<std::thread> threads;
 	std::mutex mut;
 
@@ -395,11 +387,6 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
 
 	// Save the statistics to disk.
 	write_stats(results_path, statistics);
-}
-
-/// Allocate a shared instance of og::PRM (because we need this as a function pointer).
-ompl::base::PlannerPtr allocPRM(const ompl::base::SpaceInformationPtr &si) {
-	return make_shared<ompl::geometric::PRM>(si);
 }
 
 std::vector<NewMultiGoalPlannerAllocatorFn> make_tsp_over_prm_allocators(

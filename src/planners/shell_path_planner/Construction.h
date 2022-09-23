@@ -21,13 +21,6 @@ using MkWorkspaceShellFn = std::function<std::shared_ptr<WorkspaceShell<ShellPoi
 template <typename ShellPoint>
 using MkOmplShellFn = std::function<std::shared_ptr<OmplShellSpace<ShellPoint>>(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr&)>;
 
-/**
- * Constructs a WorkspaceShell based on the minimum enclosing sphere of the leaves in a scene.
- *
- * @param scene_info 		The scene information.
- * @param padding 			The padding to add to the radius of the sphere.
- * @return 					A WorkspaceShell.
- */
-[[nodiscard]] std::shared_ptr<WorkspaceShell<Eigen::Vector3d>> paddedSphericalShellAroundLeaves(const AppleTreePlanningScene &scene_info, double padding);
+
 
 #endif //NEW_PLANNERS_CONSTRUCTION_H

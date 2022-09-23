@@ -1,4 +1,19 @@
 #include <moveit/robot_state/robot_state.h>
+#include "../utilities/moveit.h"
+
+struct Polar {
+	double r;
+	double azimuth;
+	double altitude;
+};
+
+Polar pointToPolar(const Eigen::Vector3d &point) {
+	Polar polar {};
+	polar.r = point.norm();
+	polar.azimuth = std::atan2(point.y(), point.x());
+	polar.altitude = std::asin(point.z() / polar.r);
+	return polar;
+}
 
 moveit::core::RobotState robotStateFromPointAndArmvec(const moveit::core::RobotModelConstPtr &drone,
 													  const Eigen::Vector3d &desired_ee_pos,
@@ -7,18 +22,17 @@ moveit::core::RobotState robotStateFromPointAndArmvec(const moveit::core::RobotM
 	// Ensure armvec is normalized
 	assert(std::abs(armvec.norm() - 1.0) < 1e-6);
 
-	// Construct a quaternion rotation that puts the front of the drone facing the arm vector.
-	Eigen::Quaterniond qd(Eigen::AngleAxisd(acos(armvec.z()), Eigen::Vector3d::UnitZ()));
+	Polar polar = pointToPolar(armvec);
+
+	Eigen::Quaterniond qd(Eigen::AngleAxisd(2.0 * M_PI - (M_PI / 2.0 - polar.azimuth), Eigen::Vector3d::UnitZ()));
 
 	// Pick a base joint angle such that the arm is pointing in the right direction.
-	double theta0 = atan2(armvec.topRows<2>().norm(), armvec.z());
 
 	moveit::core::RobotState st(drone);
 
-	st.setVariablePositions({
-									0.0, 0.0, 0.0,
+	st.setVariablePositions({0.0, 0.0, 0.0,
 									qd.x(), qd.y(), qd.z(), qd.w(),
-									theta0,
+									polar.altitude,
 									0.0,
 									0.0,
 									0.0
@@ -27,21 +41,21 @@ moveit::core::RobotState robotStateFromPointAndArmvec(const moveit::core::RobotM
 	st.update(true);
 
 	// Apply a translation to the base to bring the end-effector to the desired position.
-	Eigen::Vector3d offset = desired_ee_pos - st.getGlobalLinkTransform("end_effector").translation();
 
-	st.setVariablePosition(0, offset.x());
-	st.setVariablePosition(1, offset.y());
-	st.setVariablePosition(2, offset.z());
+	setBaseTranslation(st, desired_ee_pos - st.getGlobalLinkTransform("end_effector").translation());
 
 	st.update(true);
 
 	// Sanity check: is the arm pointing in the right direction?
 	{
-		Eigen::Vector3d actual_armvec = st.getGlobalLinkTransform("link1").translation() - st.getGlobalLinkTransform("end_effector").translation();
+		Eigen::Vector3d actual_armvec = st.getGlobalLinkTransform("arm2").translation() - st.getGlobalLinkTransform("arm").translation();
 		actual_armvec.normalize();
+
 		assert((actual_armvec - armvec).norm() < 1e-6);
 	}
 
 	return st;
 
 }
+
+

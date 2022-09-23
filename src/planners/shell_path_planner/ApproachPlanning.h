@@ -2,25 +2,21 @@
 #ifndef NEW_PLANNERS_APPROACHPLANNING_H
 #define NEW_PLANNERS_APPROACHPLANNING_H
 
-#include "../../ExperimentVisualTools.h"
-#include "../../probe_retreat_move.h"
-#include "../../utilities/traveling_salesman.h"
-#include "../../utilities/general_utilities.h"
-#include "../../DronePathLengthObjective.h"
-#include "../../planning_scene_diff_message.h"
-#include "../../DistanceHeuristics.h"
-#include "../../shell_space/OmplShellSpace.h"
-#include "../MultiGoalPlanner.h"
-#include <range/v3/view/transform.hpp>
-#include <range/v3/view/enumerate.hpp>
-#include <ompl/base/goals/GoalState.h>
+#include <optional>
+#include <mutex>
+#include <memory>
+#include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
+#include "../../DronePathLengthObjective.h"
+#include "../../shell_space/OmplShellSpace.h"
+#include "../../SingleGoalPlannerMethods.h"
 
 template<typename ShellPoint>
 struct ApproachPath {
 	ShellPoint shell_point;
 	ompl::geometric::PathGeometric robot_path;
 };
+
 template<typename ShellPoint>
 struct InitialApproachPath {
 	ShellPoint shell_point;

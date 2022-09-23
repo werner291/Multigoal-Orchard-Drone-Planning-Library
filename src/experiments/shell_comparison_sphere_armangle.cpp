@@ -31,30 +31,32 @@ int main(int argc, char **argv) {
 
 			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
 
-				std::unique_ptr<ApproachPlanningMethods<Eigen::Vector3d>> approach_methods =
-						std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
-
-				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(
-						[](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr& si) {
-							return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(paddedSphericalShellAroundLeaves(scene_info, 0.1), si);
-						},
-						std::move(approach_methods),
-						true);
+				auto approach_methods = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
+				auto shellBuilder = [](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr& si) {
+					return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(paddedSphericalShellAroundLeaves(scene_info, 0.1), si);
+				};
+				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(shellBuilder,std::move(approach_methods),true);
 			},
 
-//			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
-//				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(
-//						std::make_shared<PaddedShellAroundLeavesBuilder>(0.1),
-//						std::make_shared<MakeshiftPrmApproachPlanningMethods>(),
-//						true);
-//			},
+			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
+
+				auto approach_methods = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
+				auto shellBuilder = [](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr& si) {
+
+					auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene_info, 0.1));
+
+					return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(workspaceShell, si);
+				};
+				return make_shared<ShellPathPlanner<Eigen::Vector3d>>(shellBuilder,std::move(approach_methods),true);
+			},
+
 	};
 
 	run_planner_experiment(planner_allocators,
 						   "analysis/shellpath_shell_comparison.json",
 						   10,
 						   {150},//{50, 150},
-						   {"appletree", "lemontree2", "orangetree4"},
+						   {"appletree"},//, "lemontree2", "orangetree4"},
 						   thread::hardware_concurrency(),
 						   true);
 }
