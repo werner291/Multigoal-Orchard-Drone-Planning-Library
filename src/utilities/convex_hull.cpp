@@ -9,7 +9,6 @@
 #include <libqhullcpp/Qhull.h>
 #include <libqhullcpp/QhullFacetList.h>
 #include <libqhullcpp/QhullVertexSet.h>
-#include <Eigen/Core>
 
 shape_msgs::msg::Mesh convexHull(const std::vector<geometry_msgs::msg::Point> &mesh_points) {
 

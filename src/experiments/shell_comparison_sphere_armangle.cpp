@@ -30,7 +30,6 @@ int main(int argc, char **argv) {
 	vector<NewMultiGoalPlannerAllocatorFn> planner_allocators = {
 
 			[=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) -> shared_ptr<MultiGoalPlanner> {
-
 				auto approach_methods = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
 				auto shellBuilder = [](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr& si) {
 					return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(paddedSphericalShellAroundLeaves(scene_info, 0.1), si);

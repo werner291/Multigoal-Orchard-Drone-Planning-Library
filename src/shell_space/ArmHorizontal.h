@@ -47,6 +47,10 @@ public:
 		return shell->random_near(p, radius);
 	}
 
+	double path_length(const std::shared_ptr<ShellPath<ShellPoint>> &path) const override {
+		return shell->path_length(path);
+	}
+
 };
 
 #endif //NEW_PLANNERS_ARMHORIZONTAL_H

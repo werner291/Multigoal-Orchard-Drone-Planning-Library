@@ -1,12 +1,10 @@
-//
-// Created by werner on 20-9-22.
-//
 
 #ifndef NEW_PLANNERS_WORKSPACESHELL_H
 #define NEW_PLANNERS_WORKSPACESHELL_H
 
 #include <Eigen/Core>
 #include <moveit/robot_state/robot_state.h>
+#include <ompl/util/RandomNumbers.h>
 
 /**
  * An abstract path across a workspace shell.
@@ -18,20 +16,11 @@ class ShellPath {
 	// Marker class, really only used as a common base class.
 
 public:
-	virtual double length() = 0;
+	virtual ~ShellPath() = default;
 };
 
-/**
- * A path across a workspace shell, where the path is defined by a list of ShellPoints.
- * @tparam ShellPoint		Type of points on the shell.
- */
 template<typename ShellPoint>
-class PiecewiseLinearPath : public ShellPath<ShellPoint> {
-
-public:
-	std::vector<ShellPoint> points;
-
-};
+class WorkspaceShell;
 
 /**
  * A path across a workspace shell, where the shell is defined by a parametric curve.
@@ -97,9 +86,33 @@ public:
 	/**
 	 * Return a random shell point on the shell near a given one.
 	 */
-	virtual ShellPoint random_near(const ShellPoint& p, double radius) const = 0;
+	virtual ShellPoint random_near(const ShellPoint& p, double radius) const {
+		// Get a random point on the sphere
+		std::vector<double> pt(3);
+		ompl::RNG rng;
+		rng.uniformInBall(radius, pt);
+
+		// Project it onto the sphere
+		return nearest_point_on_shell(surface_point(p) + Eigen::Vector3d(pt[0], pt[1], pt[2]));
+	}
+
+	virtual double path_length(const std::shared_ptr<ShellPath<ShellPoint>>& path) const = 0;
 };
 
 
+/**
+ * A path across a workspace shell, where the path is defined by a list of ShellPoints.
+ * @tparam ShellPoint		Type of points on the shell.
+ */
+template<typename ShellPoint>
+class PiecewiseLinearPath : public ShellPath<ShellPoint> {
+
+public:
+	explicit PiecewiseLinearPath(const std::vector<ShellPoint> &points) : points(points) {
+	}
+
+public:
+	std::vector<ShellPoint> points;
+};
 
 #endif //NEW_PLANNERS_WORKSPACESHELL_H

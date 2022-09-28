@@ -19,8 +19,12 @@ struct CylinderShellPoint {
  */
 class HelixPath : public CurvePath<CylinderShellPoint> {
 
+
+public:
+	double length();
+
 	/// Start point
-	CylinderShellPoint start;
+	CylinderShellPoint start{};
 
 	/// Change in angle
 	double delta_angle;
@@ -30,8 +34,6 @@ class HelixPath : public CurvePath<CylinderShellPoint> {
 
 	/// Radius of the cylinder (for length calculation)
 	double radius;
-
-public:
 
 	/**
 	 * Create a helical path between two points on the cylinder.
@@ -53,8 +55,6 @@ public:
 	}
 
 	[[nodiscard]] CylinderShellPoint at(double t) const override;
-
-	double length() override;
 };
 
 /**
@@ -78,6 +78,9 @@ public:
 	std::shared_ptr<ShellPath<CylinderShellPoint>>
 	path_from_to(const CylinderShellPoint &from, const CylinderShellPoint &to) const override;
 
+	CylinderShellPoint random_near(const CylinderShellPoint &p, double radius) const override;
+
+	double path_length(const std::shared_ptr<ShellPath<CylinderShellPoint>> &path) const override;
 };
 
 

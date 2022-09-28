@@ -126,22 +126,20 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/traveling_salesman.h
 #        src/NewKnnPlanner.cpp
 #        src/NewKnnPlanner.h
-        src/shell_space/ShellSpace.h
-        src/shell_space/ShellSpace.cpp
-#        src/shell_space/CuttingPlaneConvexHullShell.cpp
-#        src/shell_space/CuttingPlaneConvexHullShell.h
+        src/shell_space/CuttingPlaneConvexHullShell.cpp
+        src/shell_space/CuttingPlaneConvexHullShell.h
         src/shell_space/WorkspaceShell.cpp
         src/shell_space/WorkspaceShell.h
-#        src/utilities/convex_hull.cpp
-#        src/utilities/convex_hull.h
+        src/utilities/convex_hull.cpp
+        src/utilities/convex_hull.h
         src/utilities/math_utils.cpp
         src/utilities/math_utils.h
 #        src/utilities/TriangleSpheretreeIndex.cpp
 #        src/utilities/TriangleSpheretreeIndex.h
         src/utilities/geogebra.h
         src/utilities/geogebra.cpp
-#        src/shell_space/CGALMeshShell.cpp
-#        src/shell_space/CGALMeshShell.h
+        src/shell_space/CGALMeshShell.cpp
+        src/shell_space/CGALMeshShell.h
         src/shell_space/CylinderShell.cpp
         src/shell_space/CylinderShell.h
         src/shell_space/OmplShellSpace.cpp
@@ -150,7 +148,10 @@ add_library(${PROJECT_NAME}_shared
         src/shell_space/MoveItShellSpace.h
         src/planners/shell_path_planner/Construction.h
         src/planners/shell_path_planner/OrderingMethod.h
-        src/planners/shell_path_planner/Construction.cpp src/planners/shell_path_planner/ApproachPlanning.cpp src/utilities/moveit.cpp src/utilities/moveit.h)
+        src/planners/shell_path_planner/Construction.cpp
+        src/planners/shell_path_planner/ApproachPlanning.cpp
+        src/utilities/moveit.cpp
+        src/utilities/moveit.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -179,7 +180,8 @@ add_executable(${PROJECT_NAME}_tests
         test/math_test.cpp
         src/shell_space/test/CuttingPlaneConvexHullShell_test.cpp
         src/shell_space/test/CGALMeshShell_test.cpp
-        src/utilities/test/math_utils_test.cpp src/shell_space/test/SphereShell_test.cpp)
+        src/utilities/test/math_utils_test.cpp
+        src/shell_space/test/SphereShell_test.cpp)
 
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})

@@ -10,64 +10,6 @@
 
 const double EPSILON = 10e-10;
 
-moveit::core::RobotState
-CuttingPlaneConvexHullShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const {
-
-	const Eigen::Vector3d normal = facet_normal(a.face_id);
-
-	return robotStateFromFacing(drone,
-			// Translate the point by the padding times the normal.
-								a.position + normal * padding,
-			// Facing inward, so opposite the normal.
-								-normal);
-
-}
-
-std::vector<moveit::core::RobotState> CuttingPlaneConvexHullShell::path_on_shell(const moveit::core::RobotModelConstPtr &drone,
-																				 const ConvexHullPoint &a,
-																				 const ConvexHullPoint &b) const {
-
-	// Simply perform a convex hull walk and generate a state for every point.
-	std::vector<moveit::core::RobotState> path;
-
-	for (const ConvexHullPoint &pt: convex_hull_walk(a, b)) {
-		path.push_back(state_on_shell(drone, pt));
-	}
-
-	return path;
-
-}
-
-double CuttingPlaneConvexHullShell::predict_path_length(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
-
-	// I don't like that I'm allocating here... We'll see how bad the bottleneck is.
-	// We generate the convex hull walk...
-	auto walk = convex_hull_walk(a, b);
-
-//	geogebra_dump_named_walk(walk, "CUTPLANE");
-
-	// And simply add up the Euclidean distances and the rotations at edge crossings.
-	double length = 0;
-	double length_rot = 0;
-
-	for (size_t i = 1; i < walk.size(); i++) {
-		// Add the Euclidean distance between the points.
-		double d = (walk[i].position - walk[i - 1].position).norm();
-//		std::cout << "d = " << d << std::endl;
-		length += d;
-		// Add the rotation between the facet normals.
-		double angle = acos(std::clamp(facet_normal(walk[i].face_id).dot(facet_normal(walk[i-1].face_id)), -1.0, 1.0));
-//		std::cout << "Angle: " << angle << std::endl;
-		length_rot += angle;
-		
-	}
-
-//	std::cout << "Total length = " << length << std::endl;
-//	std::cout << "Total rotation = " << length_rot << std::endl;
-
-	return length + length_rot * rotation_weight;
-}
-
 size_t CuttingPlaneConvexHullShell::guess_closest_face(const Eigen::Vector3d &a) const {
 	return facet_index.nearest(NNGNATEntry{SIZE_MAX, a}).face_index;
 }
@@ -196,60 +138,14 @@ void CuttingPlaneConvexHullShell::match_faces() {
 	}
 }
 
-ConvexHullPoint CuttingPlaneConvexHullShell::project(const Eigen::Vector3d &p) const {
+std::shared_ptr<ShellPath<ConvexHullPoint>>
+CuttingPlaneConvexHullShell::path_from_to(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
 
-	// TODO: This is a brute-force O(n) algorithm. We should use some kind of spatial data structure to speed this up.
-
-	size_t face_index;
-	double expected_signed_dist = INFINITY;
-	Eigen::Vector3d closest;
-
-	for (size_t face_i = 0; face_i < num_facets(); ++face_i) {
-		const auto &[va, vb, vc] = facet_vertices(face_i);
-
-		Eigen::Vector3d candidate_closest = closest_point_on_triangle(p, va, vb, vc);
-
-		double distance = (p - candidate_closest).squaredNorm();
-
-		if (distance < expected_signed_dist) {
-			expected_signed_dist = distance;
-			closest = candidate_closest;
-			face_index = face_i;
-		}
-	}
-
-	return ConvexHullPoint{face_index, closest};
-
-}
-
-ConvexHullPoint CuttingPlaneConvexHullShell::gaussian_sample_near_point(const ConvexHullPoint &near) const {
-
-	const Facet &f = facets[near.face_id];
-
-	ompl::RNG rng;
-
-	Eigen::Vector3d a_rand =
-			near.position + Eigen::Vector3d(rng.gaussian(0.0, 0.1), rng.gaussian(0.0, 0.1), rng.gaussian(0.0, 0.1));
-
-	return project(a_rand);
-
-}
-
-ConvexHullPoint CuttingPlaneConvexHullShell::project(const moveit::core::RobotState &st) const {
-	return project(st.getGlobalLinkTransform("base_link").translation());
-}
-
-ConvexHullPoint CuttingPlaneConvexHullShell::project(const Apple &st) const {
-	return project(st.center);
-}
-
-std::vector<ConvexHullPoint>
-CuttingPlaneConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
-
+	std::vector<ConvexHullPoint> walk;
 
 	if (a.face_id == b.face_id) {
 		// This is trivial: the walk is just the two points.
-		return {a, b};
+		walk = {a, b};
 	} else {
 
 		// A quick-and-dirty greedy approximation of the geodesic distance between the two points on the convex hull.
@@ -261,7 +157,7 @@ CuttingPlaneConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const Co
 		const auto cutting_plane = plane_from_points(a.position, b.position, support_point);
 
 		// The current walk, which we will gradually build up as the algorithm iterates.
-		std::vector<ConvexHullPoint> walk{a};
+		walk.push_back(a);
 
 		// Keep going until we reach the end point.
 		while (walk.back().face_id != b.face_id && (walk.back().position - b.position).squaredNorm() > 1e-10) {
@@ -278,9 +174,9 @@ CuttingPlaneConvexHullShell::convex_hull_walk(const ConvexHullPoint &a, const Co
 
 		// Push the end point onto the walk.
 		walk.push_back(b);
-
-		return walk;
 	}
+
+	return std::make_shared<PiecewiseLinearPath<ConvexHullPoint>>(walk);
 }
 
 std::optional<ConvexHullPoint> CuttingPlaneConvexHullShell::step_through_edge_in_cutting_plane(const ConvexHullPoint &b,
@@ -436,7 +332,7 @@ ConvexHullPoint CuttingPlaneConvexHullShell::stepAroundVertexTowards(const Eigen
 
 Eigen::Vector3d CuttingPlaneConvexHullShell::computeSupportPoint(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
 	// Grab the middle point and project it onto the convex hull
-	ConvexHullPoint middle_proj = project(0.5 * (a.position + b.position));
+	ConvexHullPoint middle_proj = nearest_point_on_shell(0.5 * (a.position + b.position));
 	// Compute the normal at that point
 	Eigen::Vector3d middle_normal = facet_normal(middle_proj.face_id);
 	// Send it off along the normal a bit to ensure we avoid colinear points.
@@ -530,33 +426,15 @@ std::array<Eigen::Vector3d, 2> CuttingPlaneConvexHullShell::facet_edge_vertices(
 	};
 }
 
-
-
-std::shared_ptr<OMPLShellSpaceWrapper<ConvexHullPoint>>
-ConvexHullShellBuilder::buildShell(const AppleTreePlanningScene &scene_info,
-								   const ompl::base::SpaceInformationPtr &si) const {
-
-	auto leaf_vertices = extract_leaf_vertices(scene_info);
-
-	return std::make_shared<OMPLShellSpaceWrapper<ConvexHullPoint>>(std::make_shared<CuttingPlaneConvexHullShell>(
-			convexHull(leaf_vertices), rotation_weight, padding), si);
-
-}
-
-
-Json::Value ConvexHullShellBuilder::parameters() const {
-	Json::Value params;
-
-	params["type"] = "convex_hull";
-	params["rotation_weight"] = rotation_weight;
-	params["padding"] = padding;
-
-	return params;
-}
-
-ConvexHullShellBuilder::ConvexHullShellBuilder(double padding, double rotationWeight)
-		: padding(padding), rotation_weight(rotationWeight) {
-}
+//Json::Value ConvexHullShellBuilder::parameters() const {
+//	Json::Value params;
+//
+//	params["type"] = "convex_hull";
+//	params["rotation_weight"] = rotation_weight;
+//	params["padding"] = padding;
+//
+//	return params;
+//}
 
 bool CuttingPlaneConvexHullShell::NNGNATEntry::operator==(const CuttingPlaneConvexHullShell::NNGNATEntry &rhs) const {
 	return face_index == rhs.face_index && at == rhs.at;
@@ -605,4 +483,61 @@ std::array<size_t, 2> CuttingPlaneConvexHullShell::Facet::edge_vertices(Triangle
 			return {c, a};
 	}
 	throw std::runtime_error("Invalid edge id");
+}
+
+Eigen::Vector3d CuttingPlaneConvexHullShell::arm_vector(const ConvexHullPoint &p) const {
+	return -facet_normal(p.face_id);
+}
+
+ConvexHullPoint CuttingPlaneConvexHullShell::nearest_point_on_shell(const Eigen::Vector3d &p) const {
+	// TODO: This is a brute-force O(n) algorithm. We should use some kind of spatial data structure to speed this up.
+
+	size_t face_index;
+	double expected_signed_dist = INFINITY;
+	Eigen::Vector3d closest;
+
+	for (size_t face_i = 0; face_i < num_facets(); ++face_i) {
+		const auto &[va, vb, vc] = facet_vertices(face_i);
+
+		Eigen::Vector3d candidate_closest = closest_point_on_triangle(p, va, vb, vc);
+
+		double distance = (p - candidate_closest).squaredNorm();
+
+		if (distance < expected_signed_dist) {
+			expected_signed_dist = distance;
+			closest = candidate_closest;
+			face_index = face_i;
+		}
+	}
+
+	return ConvexHullPoint{face_index, closest};
+}
+
+Eigen::Vector3d CuttingPlaneConvexHullShell::surface_point(const ConvexHullPoint &p) const {
+	return p.position;
+}
+
+double CuttingPlaneConvexHullShell::path_length(const std::shared_ptr<ShellPath<ConvexHullPoint>> &path) const {
+
+	auto p = std::dynamic_pointer_cast<PiecewiseLinearPath<ConvexHullPoint>>(path);
+
+	assert(p); // I'd rather do this statically, but oh well.
+
+	double length = 0.0;
+
+	for (size_t i = 0; i + 1 < p->points.size(); ++i) {
+		length += (p->points[i].position - p->points[i + 1].position).norm();
+		length += std::acos(facet_normal(p->points[i].face_id).dot(facet_normal(p->points[i + 1].face_id)));
+	}
+
+	return length;
+}
+
+std::shared_ptr<WorkspaceShell<ConvexHullPoint>>
+convexHullAroundLeaves(const AppleTreePlanningScene &scene_info, double padding, double rotation_weight) {
+
+	auto leaf_vertices = extract_leaf_vertices(scene_info);
+
+	return std::make_shared<CuttingPlaneConvexHullShell>(convexHull(leaf_vertices), rotation_weight, padding);
+
 }

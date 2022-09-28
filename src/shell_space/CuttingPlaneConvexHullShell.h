@@ -4,6 +4,7 @@
 #include "SphereShell.h"
 #include "../planners/ShellPathPlanner.h"
 #include "../utilities/math_utils.h"
+#include "../utilities/convex_hull.h"
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 #include <range/v3/algorithm/min_element.hpp>
 #include <range/v3/view/iota.hpp>
@@ -17,28 +18,26 @@ struct ConvexHullPoint {
 	/// The position of this point in 3D Euclidean space.
 	Eigen::Vector3d position;
 };
+//
+///**
+// * A ShellBuilder that builds a CuttingPlaneConvexHullShell around the leaf vertices in a tree.
+// */
+//class ConvexHullShellBuilder : public OmplShellConstructionMethod<ConvexHullPoint> {
+//
+//	double rotation_weight = 1.0;
+//	double padding = 0.1;
+//
+//	public:
+//	ConvexHullShellBuilder(double padding, double rotationWeight);
+//
+//
+//	[[nodiscard]] std::shared_ptr<OMPLShellSpaceWrapper<ConvexHullPoint>>
+//	buildShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) const override;
+//
+//	[[nodiscard]] Json::Value parameters() const override;
+//}
 
-/**
- * A ShellBuilder that builds a CuttingPlaneConvexHullShell around the leaf vertices in a tree.
- */
-class ConvexHullShellBuilder : public OmplShellConstructionMethod<ConvexHullPoint> {
-
-	double rotation_weight = 1.0;
-	double padding = 0.1;
-
-	public:
-	ConvexHullShellBuilder(double padding, double rotationWeight);
-
-
-	[[nodiscard]] std::shared_ptr<OMPLShellSpaceWrapper<ConvexHullPoint>>
-	buildShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) const override;
-
-	[[nodiscard]] Json::Value parameters() const override;
-};
-
-class CuttingPlaneConvexHullShell : public CollisionFreeShell<ConvexHullPoint> {
-
-
+class CuttingPlaneConvexHullShell : public WorkspaceShell<ConvexHullPoint> {
 
 	/// A set of all the vertices in the convex hull.
 	std::vector<Eigen::Vector3d> vertices;
@@ -105,66 +104,6 @@ public:
 	CuttingPlaneConvexHullShell(const shape_msgs::msg::Mesh &mesh, double rotationWeight, double padding);
 
 	/**
-	 * Construct a RobotState whose end effector is at the given point, plus a padding distance.
-	 *
-	 * @param drone 	The robot model to use.
-	 * @param a 		The point to use.
-	 * @return 			The constructed RobotState.
-	 */
-	[[nodiscard]] moveit::core::RobotState
-	state_on_shell(const moveit::core::RobotModelConstPtr &drone, const ConvexHullPoint &a) const override;
-
-	/**
-	 * Plan a path of RobotStates from the given start to the given goal.
-	 *
-	 * Linear interpolation between the states in the returned vector are guaranteed to have the robot's end-effector
-	 * on the convex hull at all times (+ padding), and the path is guaranteed to be collision-free.
-	 *
-	 * @param drone 	The robot model to use.
-	 * @param start 	The start point.
-	 * @param goal 		The goal point.
-	 *
-	 * @return 			A vector of RobotStates, which serve as anchor points for linear interpolation.
-	 */
-	[[nodiscard]] std::vector<moveit::core::RobotState> path_on_shell(const moveit::core::RobotModelConstPtr &drone,
-																	  const ConvexHullPoint &a,
-																	  const ConvexHullPoint &b) const override;
-
-	/**
-	 * Predict the length of a path from the given start to the given goal by generating and measuring the length
-	 * of a segmented line across the surface without constructing all the robot states.
-	 *
-	 * @param a 	The start point.
-	 * @param b 	The goal point.
-	 * @return 		The predicted length of the path.
-	 */
-	[[nodiscard]] double predict_path_length(const ConvexHullPoint &a, const ConvexHullPoint &b) const override;
-
-	/**
-	 * Generate a ConvexHullPoint in a (roughly) gaussian distribution around another point.
-	 *
-	 * @param near 	The point to generate around.
-	 * @return 		The generated point.
-	 */
-	ConvexHullPoint gaussian_sample_near_point(const ConvexHullPoint &near) const override;
-
-	/**
-	 * Find the ConvexHullPoint of the projection of the end-effector of the robot onto the convex hull.
-	 *
-	 * @param st 		The RobotState to use.
-	 * @return 			The projected point.
-	 */
-	ConvexHullPoint project(const moveit::core::RobotState &st) const override;
-
-	/**
-	 * Find the ConvexHullPoint of the projection of an apple onto the convex hull.
-	 *
-	 * @param st 		The RobotState to use.
-	 * @return 			The projected point.
-	 */
-	ConvexHullPoint project(const Apple &st) const override;
-
-	/**
 	 * The number of facets in the convex hull.
 	 *
 	 * Valid facet indices will be in the range [0, num_facets).
@@ -226,6 +165,12 @@ public:
 	 */
 	double signed_distance(const Eigen::Vector3d &pt) const;
 
+	Eigen::Vector3d arm_vector(const ConvexHullPoint &p) const override;
+
+	ConvexHullPoint nearest_point_on_shell(const Eigen::Vector3d &p) const override;
+
+	Eigen::Vector3d surface_point(const ConvexHullPoint &p) const override;
+
 	/**
 	 * Generate a path of ConversHullPoints from the given start to the given goal across the surface of the convex hull.
 	 *
@@ -236,17 +181,12 @@ public:
 	 * @param b	The goal point.
 	 * @return	A vector of ConvexHullPoints.
 	 */
-	std::vector<ConvexHullPoint> convex_hull_walk(const ConvexHullPoint& a, const ConvexHullPoint& b) const;
+	std::shared_ptr<ShellPath<ConvexHullPoint>>
+	path_from_to(const ConvexHullPoint &from, const ConvexHullPoint &to) const override;
+
+	double path_length(const std::shared_ptr<ShellPath<ConvexHullPoint>> &path) const override;
 
 protected:
-
-	/**
-	 * Project a point onto the convex hull, returning a ConvexHullPoint (that includes the facet index).
-	 *
-	 * @param a 	The point to project.
-	 * @return 		The projected point.
-	 */
-	[[nodiscard]] ConvexHullPoint project(const Eigen::Vector3d &a) const;
 
 	/**
 	 * Internal: populate the neighbour_ab, neighbour_bc, neighbour_ca fields of each facet.
@@ -377,6 +317,11 @@ protected:
 																	  const Eigen::Vector3d &support_point,
 																	  const Plane3d &cutting_plane,
 																	  const std::vector<ConvexHullPoint> &walk) const;
+
 };
+
+std::shared_ptr<WorkspaceShell<ConvexHullPoint>>
+	convexHullAroundLeaves(const AppleTreePlanningScene &scene_info, double padding, double rotation_weight);
+
 
 #endif //NEW_PLANNERS_CUTTINGPLANECONVEXHULLSHELL_H

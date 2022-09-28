@@ -37,7 +37,6 @@ protected:
 
 		cube_shell = std::make_unique<CuttingPlaneConvexHullShell>(convexHull(cube_points), 0.1, 1.0);
 
-
 	}
 
 	std::vector<geometry_msgs::msg::Point> points;
@@ -99,7 +98,7 @@ TEST_F(ConvexHullShell_test, cube_projections) {
 			expected_proj.z() = (abs(p.z()) == max_dim) ? p.z() / max_dim : p.z();
 		}
 
-		auto proj = cube_shell->project(Apple {p, {0.0, 0.0, 0.0}});
+		auto proj = cube_shell->nearest_point_on_shell({0.0, 0.0, 0.0});
 
 		std::cout << "p: " << p.transpose() << std::endl;
 		std::cout << "proj: " << proj.position.transpose() << std::endl;
@@ -144,7 +143,7 @@ TEST_F(ConvexHullShell_test, DISABLED_brute_force_comparison) {
 
 		std::cout << "Expected = (" << expected_proj.x() << "," << expected_proj.y() << "," << expected_proj.z() << ")" << std::endl;
 
-		auto pt = shell->project(Apple {p, {0.0, 0.0, 0.0}});
+		auto pt = shell->nearest_point_on_shell({0.0, 0.0, 0.0});
 
 		assert((pt.position - expected_proj).squaredNorm() < 1.0e-10);
 		ASSERT_NEAR((pt.position - expected_proj).squaredNorm(), 0.0, 1.0e-10);
@@ -159,25 +158,21 @@ TEST_F(ConvexHullShell_test, path_on_surface_test) {
 	ompl::RNG rng(43);
 
 	for (size_t i = 0; i < 1000; ++i) {
-		auto start = shell->project(Apple{
-				Eigen::Vector3d{rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0)},
-				{0.0, 0.0, 0.0}});
-		auto goal = shell->project(Apple{
-				Eigen::Vector3d{rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0)},
-				{0.0, 0.0, 0.0}});
+		auto start = shell->nearest_point_on_shell({rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0)});
+		auto goal = shell->nearest_point_on_shell({rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0), rng.uniformReal(-2.0, 2.0)});
 
-		auto path = shell->convex_hull_walk(start, goal);
+		auto path = std::dynamic_pointer_cast<PiecewiseLinearPath<ConvexHullPoint>>(shell->path_from_to(start, goal))->points;
 
-		for (auto &i: path) {
-			const auto &[va1, vb1, vc1] = shell->facet_vertices(i.face_id);
-			Eigen::Vector3d closest_point = closest_point_on_triangle(i.position, va1, vb1, vc1);
-			ASSERT_NEAR((i.position - closest_point).squaredNorm(), 0.0, 1.0e-10);
+		for (auto &pt: path) {
+			const auto &[va1, vb1, vc1] = shell->facet_vertices(pt.face_id);
+			Eigen::Vector3d closest_point = closest_point_on_triangle(pt.position, va1, vb1, vc1);
+			ASSERT_NEAR((pt.position - closest_point).squaredNorm(), 0.0, 1.0e-10);
 		}
 
-		for (size_t i = 0; i + 1 < path.size(); ++i) {
+		for (size_t j = 0; j + 1 < path.size(); ++j) {
 
-			auto a = path[i];
-			auto b = path[i + 1];
+			auto a = path[j];
+			auto b = path[j + 1];
 
 			if (a.face_id != b.face_id) {
 				ASSERT_NEAR((a.position - b.position).squaredNorm(), 0.0, 1.0e-10);

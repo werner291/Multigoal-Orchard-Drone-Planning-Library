@@ -47,7 +47,7 @@ public:
 	 */
 	[[nodiscard]] Eigen::Vector3d at(double t) const override;
 
-	double length() override;
+	double length();
 
 };
 
@@ -89,8 +89,7 @@ public:
 
 	[[nodiscard]] Eigen::Vector3d surface_point(const Eigen::Vector3d &p) const override;
 
-private:
-	[[nodiscard]] Eigen::Vector3d random_near(const Eigen::Vector3d &p, double radius) const override;
+	double path_length(const std::shared_ptr<ShellPath<Eigen::Vector3d>> &path) const override;
 };
 
 /**

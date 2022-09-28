@@ -1,5 +1,4 @@
 #include "SphereShell.h"
-#include "../planning_scene_diff_message.h"
 #include "../utilities/experiment_utils.h"
 
 #include <range/v3/all.hpp>
@@ -34,15 +33,13 @@ WorkspaceSphereShell::path_from_to(const Eigen::Vector3d &from, const Eigen::Vec
 
 }
 
-Eigen::Vector3d WorkspaceSphereShell::random_near(const Eigen::Vector3d &p, double radius) const {
+double WorkspaceSphereShell::path_length(const std::shared_ptr<ShellPath<Eigen::Vector3d>> &path) const {
+	auto great_circle_path = std::dynamic_pointer_cast<GreatCirclePath>(path);
 
-	// Get a random point on the sphere
-	std::vector<double> pt(3);
-	ompl::RNG rng;
-	rng.uniformInBall(radius, pt);
+	assert(great_circle_path != nullptr);
 
-	// Project it onto the sphere
-	return nearest_point_on_shell(p + Eigen::Vector3d(pt[0], pt[1], pt[2]));
+	// The length of the great circle path is the arc length of the great circle.
+	return great_circle_path->length();
 }
 
 Eigen::Vector3d GreatCirclePath::at(double t) const {

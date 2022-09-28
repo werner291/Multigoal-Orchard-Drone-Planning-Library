@@ -105,7 +105,7 @@ public:
 	}
 
 	double predict_path_length(const ShellPoint &start, const ShellPoint &end) const {
-		return shell->path_from_to(start, end)->length();
+		return shell->path_length(shell->path_from_to(start, end));
 	}
 
 	ShellPoint pointNearState(const moveit::core::RobotState &state) const {

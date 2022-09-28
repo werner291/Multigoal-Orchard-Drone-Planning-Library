@@ -1,6 +1,3 @@
-//
-// Created by werner on 12-8-22.
-//
 
 #include "CGALMeshShell.h"
 #include "../utilities/experiment_utils.h"
@@ -34,21 +31,6 @@ Eigen::Vector3d normalAt(const Triangle_mesh& tmesh, const CGALMeshPoint &near) 
 	return faceNormal(tmesh, near.first);
 }
 
-moveit::core::RobotState
-CGALMeshShell::state_on_shell(const moveit::core::RobotModelConstPtr &drone, const CGALMeshPoint &a) const {
-
-	// Compute the normal vector and carthesian coordinates of the point.
-	const Eigen::Vector3d normal = normalAt(a);
-	const Eigen::Vector3d pos = toCarthesian(a);
-
-	// ANd simp[ly return a robot with the end-eddector at that position (+ padding) and facing into the normal.
-	return robotStateFromFacing(drone,
-			// Translate the point by the padding times the normal.
-								pos + normal * padding,
-			// Facing inward, so opposite the normal.
-								-normal);
-}
-
 Eigen::Vector3d toEigen(const Kernel::Point_3 &p) {
 	return  { p.x(), p.y(), p.z() };
 }
@@ -62,11 +44,8 @@ struct PathVisitor {
 	/// Reference to the triangle mesh
 	const Triangle_mesh& mesh;
 
-	/// Reference to the robot model (for constructing the states)
-	const moveit::core::RobotModelConstPtr& drone;
-
 	/// The path being built.
-	std::vector<moveit::core::RobotState> states;
+	std::vector<CGALMeshPoint> states;
 
 	/// Shortest path algorithm struct (for point lookups and such)
 	Surface_mesh_shortest_path path_algo;
@@ -76,8 +55,8 @@ struct PathVisitor {
 	 * @param mesh 		The triangle mesh.
 	 * @param drone 	The robot model.
 	 */
-	explicit PathVisitor(const Triangle_mesh &mesh, const moveit::core::RobotModelConstPtr &drone)
-			: mesh(mesh), drone(drone), path_algo(mesh) {
+	explicit PathVisitor(const Triangle_mesh &mesh)
+			: mesh(mesh), path_algo(mesh) {
 	}
 
 	/**
@@ -90,22 +69,12 @@ struct PathVisitor {
 		// Compute the intersection position.
 		Eigen::Vector3d pos = toEigen(path_algo.point(edge, t));
 
-		// Add a Robot state...
-		states.push_back(robotStateFromFacing(
-				drone,
-				// ... with the intersection position ...
-				pos,
-				// ... and facing into the normal of the face we're leaving.
-				-faceNormal(mesh, mesh.face(edge)))
+		states.push_back(
+				path_algo.face_location(edge, t)
 		);
 
-		// ...and another robot state
-		states.push_back(robotStateFromFacing(
-				drone,
-				// ... with the (same!) intersection position ...
-				pos,
-				// ... but facing into the normal of the face we're *entering*
-				-faceNormal(mesh, mesh.face(mesh.opposite(edge))))
+		states.push_back(
+				path_algo.face_location(mesh.opposite(edge), 1.0-t)
 		);
 	}
 
@@ -133,47 +102,12 @@ struct PathVisitor {
 	void operator()(Surface_mesh_shortest_path::face_descriptor f, Surface_mesh_shortest_path::Barycentric_coordinates location)
 	{
 		// Add a Robot state...
-		states.push_back(robotStateFromFacing(
-				drone,
-				// ... with the given position, converted to Euclidean coordinates ...
-				toEigen(path_algo.point(f, location)),
-				// ... and facing into the normal of the face.
-				-faceNormal(mesh, f)
-		));
+		states.emplace_back(f,location);
 	}
 
 };
 
-std::vector<moveit::core::RobotState> CGALMeshShell::path_on_shell(const moveit::core::RobotModelConstPtr &drone,
-																   const CGALMeshPoint &a,
-																   const CGALMeshPoint &b) const {
-
-	// Initialize the shortest path algorithm with a reference to the triangle mesh.
-	Surface_mesh_shortest_path shortest_paths(tmesh);
-	// We add a "source" point a.
-	shortest_paths.add_source_point(a);
-
-	// Generate a path of RobotStates by passing the visitor to the shortest path algorithm.
-	PathVisitor visitor(tmesh, drone);
-	shortest_paths.shortest_path_sequence_to_source_points(b.first, b.second, visitor);
-
-	// Return the path.
-	return std::move(visitor.states);
-}
-
-CGALMeshPoint CGALMeshShell::gaussian_sample_near_point(const CGALMeshPoint &near) const {
-
-	ompl::RNG rng;
-
-	// This method simply generates a random offset from a gaussian sample, then...
-	Eigen::Vector3d offset(rng.gaussian(0.0, 0.1), rng.gaussian(0.0, 0.1), rng.gaussian(0.0, 0.1));
-
-	// ...adds it to the given point (after converting to carthesian coordinates), and projects back to a CGALMeshPoint.
-	return project(toCarthesian(near) + offset);
-
-}
-
-Eigen::Vector3d CGALMeshShell::toCarthesian(const CGALMeshPoint &pt) const {
+Eigen::Vector3d CGALMeshShell::surface_point(const CGALMeshPoint &pt) const {
 	Surface_mesh_shortest_path shortest_paths(tmesh);
 	return toEigen(shortest_paths.point(pt.first, pt.second));
 }
@@ -182,7 +116,7 @@ Eigen::Vector3d CGALMeshShell::normalAt(const CGALMeshPoint &near) const {
 	return ::normalAt(tmesh, near);
 }
 
-double CGALMeshShell::predict_path_length(const CGALMeshPoint &a, const CGALMeshPoint &b) const {
+std::shared_ptr<ShellPath<CGALMeshPoint>> CGALMeshShell::path_from_to(const CGALMeshPoint &a, const CGALMeshPoint &b) const {
 
 	// Initialize the shortest path algorithm with a reference to the triangle mesh.
 	Surface_mesh_shortest_path shortest_paths(tmesh);
@@ -190,38 +124,11 @@ double CGALMeshShell::predict_path_length(const CGALMeshPoint &a, const CGALMesh
 	shortest_paths.add_source_point(a);
 
 	// Compute the path to a from b. This technically computes the reversed path, but this should not make a difference for the path length.
-	std::vector<Kernel::Point_3> path;
-	shortest_paths.shortest_path_points_to_source_points(b.first, b.second, std::back_inserter(path));
+	PathVisitor v(tmesh);
+	shortest_paths.shortest_path_sequence_to_source_points(b.first, b.second, v);
 
-	// Add up the distances between the points of the path.
-	double total_length = 0.0;
+	return std::make_shared<PiecewiseLinearPath<CGALMeshPoint>>(std::move(v.states));
 
-	for (size_t i = 0; i + 1 < path.size(); ++i) {
-		double d = sqrt((path[i] - path[i + 1]).squared_length());
-		total_length += d;
-	}
-
-	// Add up the turning angles at every point of the path.
-	double total_rotation = 0.0;
-
-	for (size_t i = 0; i + 2 < path.size(); ++i) {
-
-		double da = angle((path[i + 1] - path[i]), path[i + 2] - path[i + 1]);
-
-		total_rotation += da;
-	}
-
-	// Total prediction is the sum of the two, with the rotation weighed parametrically.
-	return total_length + total_rotation * rotation_weight;
-
-}
-
-CGALMeshPoint CGALMeshShell::project(const moveit::core::RobotState &st) const {
-	return project(st.getGlobalLinkTransform("end_effector").translation());
-}
-
-CGALMeshPoint CGALMeshShell::project(const Apple &st) const {
-	return project(st.center);
 }
 
 CGALMeshShell::CGALMeshShell(const shape_msgs::msg::Mesh &mesh, double rotationWeight, double padding)
@@ -248,7 +155,7 @@ CGALMeshShell::CGALMeshShell(const shape_msgs::msg::Mesh &mesh, double rotationW
 
 }
 
-CGALMeshPoint CGALMeshShell::project(const Eigen::Vector3d &pt) const {
+CGALMeshPoint CGALMeshShell::nearest_point_on_shell(const Eigen::Vector3d &pt) const {
 
 	// initialize the algorithm struct.
 	Surface_mesh_shortest_path shortest_paths(tmesh);
@@ -257,23 +164,30 @@ CGALMeshPoint CGALMeshShell::project(const Eigen::Vector3d &pt) const {
 	return shortest_paths.locate(Kernel::Point_3(pt.x(), pt.y(), pt.z()), tree);
 }
 
-std::shared_ptr<OMPLShellSpaceWrapper<CGALMeshPoint>>
-CGALConvexHullShellBuilder::buildShell(const AppleTreePlanningScene &scene_info,
-									   const ompl::base::SpaceInformationPtr &si) const {
-	return std::make_shared<OMPLShellSpaceWrapper<CGALMeshPoint>>(std::make_shared<CGALMeshShell>(convexHull(
-			extract_leaf_vertices(scene_info)), rotation_weight, padding), si);
+double CGALMeshShell::path_length(const std::shared_ptr<ShellPath<CGALMeshPoint>> &path) const {
+
+	auto p = std::dynamic_pointer_cast<PiecewiseLinearPath<CGALMeshPoint>>(path);
+
+	assert(p);
+
+	double length = 0.0;
+
+	for (size_t i = 0; i < p->points.size() - 1; i++) {
+		length += (surface_point(p->points[i]) - surface_point(p->points[i + 1])).norm();
+		length += rotation_weight * (arm_vector(p->points[i]) - arm_vector(p->points[i + 1])).norm();
+	}
+
+	return length;
 }
 
-Json::Value CGALConvexHullShellBuilder::parameters() const {
-	Json::Value params;
-
-	params["type"] = "convex_hull_cgal";
-	params["rotation_weight"] = rotation_weight;
-	params["padding"] = padding;
-
-	return params;
+Eigen::Vector3d CGALMeshShell::arm_vector(const CGALMeshPoint &p) const {
+	return -normalAt(p);
 }
 
-CGALConvexHullShellBuilder::CGALConvexHullShellBuilder(double padding, double rotationWeight)
-		: padding(padding), rotation_weight(rotationWeight) {
+std::shared_ptr<WorkspaceShell<CGALMeshPoint>> convexHullAroundLeavesCGAL(const AppleTreePlanningScene &scene_info,
+																		  const ompl::base::SpaceInformationPtr &si,
+																		  double rotation_weight,
+																		  double padding) {
+
+	return std::make_shared<CGALMeshShell>(convexHull(extract_leaf_vertices(scene_info)), rotation_weight, padding);
 }

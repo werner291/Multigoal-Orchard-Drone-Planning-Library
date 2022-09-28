@@ -31,7 +31,18 @@ int main(int argc, char **argv) {
 
 		planners.emplace_back([=](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
 
-			return std::make_shared<ShellPathPlanner<Eigen::Vector3d>>(true, mkptp(si), std::make_shared<PaddedSphereShellAroundLeavesBuilder>(0.1));
+
+				auto approach_methods = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
+				auto shellBuilder = [](const AppleTreePlanningScene &scene_info,
+									   const ompl::base::SpaceInformationPtr &si) {
+
+					auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene_info,
+																											  0.1));
+
+					return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(workspaceShell, si);
+				};
+				return std::make_shared<ShellPathPlanner<Eigen::Vector3d>>(shellBuilder, std::move(approach_methods), true);
+
 
 		});
 	}

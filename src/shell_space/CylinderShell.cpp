@@ -1,5 +1,4 @@
 
-
 #include "CylinderShell.h"
 
 Eigen::Vector3d CylinderShell::arm_vector(const CylinderShellPoint &p) const {
@@ -25,7 +24,9 @@ CylinderShell::path_from_to(const CylinderShellPoint &from, const CylinderShellP
 	return std::make_shared<HelixPath>(from, to, radius);
 }
 
-CylinderShell::CylinderShell(double radius) : radius(radius) {
+double CylinderShell::path_length(const std::shared_ptr<ShellPath<CylinderShellPoint>> &path) const {
+	return std::dynamic_pointer_cast<HelixPath>(path)->delta_angle * std::dynamic_pointer_cast<HelixPath>(path)->radius
+	       + std::dynamic_pointer_cast<HelixPath>(path)->delta_height;
 }
 
 CylinderShellPoint HelixPath::at(double t) const {
@@ -36,5 +37,5 @@ CylinderShellPoint HelixPath::at(double t) const {
 }
 
 double HelixPath::length() {
-	return sqrt((delta_angle*radius)*(delta_angle*radius) + delta_height*delta_height);
+	return delta_angle * radius + delta_height;
 }
