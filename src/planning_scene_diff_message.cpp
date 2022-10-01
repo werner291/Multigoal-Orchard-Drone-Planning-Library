@@ -8,6 +8,7 @@
 #include "planning_scene_diff_message.h"
 #include "utilities/general_utilities.h"
 #include "Seb.h"
+#include "utilities/load_mesh.h"
 
 void createTrunkInPlanningSceneMessage(const std::vector<DetachedTreeNode> &tree_flattened,
                                        moveit_msgs::msg::PlanningScene &planning_scene) {

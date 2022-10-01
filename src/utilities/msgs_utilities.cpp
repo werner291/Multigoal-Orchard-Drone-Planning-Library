@@ -28,14 +28,7 @@ geometry_msgs::msg::Quaternion eigenQuaternionMsg(const Eigen::Quaterniond &q) {
 }
 
 
-shape_msgs::msg::Mesh meshMsgFromResource(const std::string &resource) {
-    std::shared_ptr<shapes::Mesh> mesh_shape(shapes::createMeshFromResource(
-            resource));
-    shape_msgs::msg::Mesh mesh;
-    shapes::ShapeMsg mesh_msg;
-    shapes::constructMsgFromShape(mesh_shape.get(), mesh_msg);
-    return boost::get<shape_msgs::msg::Mesh>(mesh_msg);
-}
+
 
 void addColoredMeshCollisionShape(moveit_msgs::msg::PlanningScene &planning_scene_message, const Eigen::Vector3f &rgb,
                                   const std::string &id, const shape_msgs::msg::Mesh &mesh) {

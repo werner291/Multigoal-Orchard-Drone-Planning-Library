@@ -13,8 +13,6 @@
 
 #include "../procedural_tree_generation.h"
 
-shape_msgs::msg::Mesh meshMsgFromResource(const std::string &resource);
-
 void addColoredMeshCollisionShape(moveit_msgs::msg::PlanningScene &planning_scene_message,
                                   const Eigen::Vector3f &rgb,
                                   const std::string &id,

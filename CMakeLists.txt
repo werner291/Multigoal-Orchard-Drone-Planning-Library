@@ -15,6 +15,7 @@ find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
 find_package(Qhull REQUIRED)
 find_package(CGAL REQUIRED)
+find_package(VTK REQUIRED)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -33,6 +34,7 @@ include_directories(
         ${BULLET_INCLUDE_DIRS}
         ${OMPL_INCLUDE_DIRS}
         ${QHULL_INCLUDE_DIRS}
+        ${VTK_INCLUDE_DIRS}
         #{CGAL_INCLUDE_DIRS}
         ortools/include
         miniball/cpp/main
@@ -44,6 +46,7 @@ link_libraries(
         ${Boost_LIBRARIES}
         ${BULLET_LIBRARIES}
         ${OMPL_LIBRARIES}
+        ${VTK_LIBRARIES}
         qhullcpp
         HACD # Note: the HACD library is included Bullet's "extra" libraries
         jsoncpp_lib
@@ -149,9 +152,9 @@ add_library(${PROJECT_NAME}_shared
         src/planners/shell_path_planner/Construction.h
         src/planners/shell_path_planner/OrderingMethod.h
         src/planners/shell_path_planner/Construction.cpp
-        src/planners/shell_path_planner/ApproachPlanning.cpp
+#        src/planners/shell_path_planner/ApproachPlanning.cpp
         src/utilities/moveit.cpp
-        src/utilities/moveit.h)
+        src/utilities/moveit.h src/experiments/exploration.cpp src/vtk/vtk.cpp src/vtk/vtk.h src/vtk/VtkRobotModel.cpp src/vtk/VtkRobotModel.h src/utilities/load_mesh.cpp src/utilities/load_mesh.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -171,6 +174,7 @@ experiment("shell_comparison")
 experiment("tsp_over_prm")
 experiment("tsp_over_prm_vs_sphereshell")
 experiment("shell_comparison_sphere_armangle")
+experiment("exploration")
 
 include(GoogleTest)
 
