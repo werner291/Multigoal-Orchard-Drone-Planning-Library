@@ -12,12 +12,20 @@
 #include <vtkPlaneSource.h>
 #include <vtkLight.h>
 #include <vtkRendererSource.h>
+#include <vtkPointData.h>
+
+#include <utility>
 
 #include "../utilities/experiment_utils.h"
 #include "../vtk/VtkRobotModel.h"
 #include "../utilities/load_mesh.h"
 #include "../DroneStateConstraintSampler.h"
 #include "../utilities/moveit.h"
+
+const std::array<double, 3> GROUND_PLANE_RGB = {0.3, 0.2, 0.1};
+const std::array<double, 3> FRUIT_RGB = {1.0, 0.0, 0.0};
+const std::array<double, 3> TRUNK_RGB = {0.5, 0.3, 0.1};
+const std::array<double, 3> LEAVES_RGB = {0.0, 1.0, 0.0};
 
 vtkNew<vtkPoints> meshVerticesToVtkPoints(const shape_msgs::msg::Mesh &mesh);
 
@@ -67,6 +75,138 @@ public:
 		vtkTimerCallback::callback = callback;
 	}
 };
+
+enum PointType {
+	PT_OBSTACLE,
+	PT_SOFT_OBSTACLE,
+	PT_TARGET
+};
+
+struct Point {
+	PointType type;
+	Eigen::Vector3d position;
+};
+
+struct SegmentedPointCloud {
+	std::vector<Point> points;
+};
+
+std::optional<PointType> pointTypeByColor(const Eigen::Vector3d &color) {
+
+	bool is_ground = (color - Eigen::Vector3d(GROUND_PLANE_RGB.data())).squaredNorm() < 1.0e-6;
+	bool is_trunk = (color - Eigen::Vector3d(TRUNK_RGB.data())).squaredNorm() < 1.0e-6;
+	bool is_leaves = (color - Eigen::Vector3d(LEAVES_RGB.data())).squaredNorm() < 1.0e-6;
+	bool is_fruit = (color - Eigen::Vector3d(FRUIT_RGB.data())).squaredNorm() < 1.0e-6;
+
+	if (is_ground || is_trunk) {
+		return {PT_OBSTACLE};
+	} else if (is_leaves) {
+		return {PT_SOFT_OBSTACLE};
+	} else if (is_fruit) {
+		return {PT_TARGET};
+	} else {
+		return {};
+	}
+}
+
+SegmentedPointCloud segmentPointCloudData(vtkPolyData *pPolyData) {
+	auto points = pPolyData->GetPoints();
+	auto colors = pPolyData->GetPointData()->GetScalars();
+
+	SegmentedPointCloud segmentedPointCloud;
+
+	assert(points->GetNumberOfPoints() == colors->GetNumberOfTuples());
+	assert(colors->GetNumberOfComponents() == 3);
+
+	for (int i = 0; i < points->GetNumberOfPoints(); i++) {
+		Point point;
+		points->GetPoint(i, point.position.data());
+
+		Eigen::Vector3d color;
+		colors->GetTuple(i, color.data());
+
+		auto ptType = pointTypeByColor(color);
+
+		if (ptType.has_value()) {
+			point.type = *ptType;
+			segmentedPointCloud.points.push_back(point);
+		}
+	}
+
+	return std::move(segmentedPointCloud);
+}
+
+class OnlinePointCloudAlgorithm {
+
+protected:
+	std::function<void(robot_trajectory::RobotTrajectory)> trajectoryCallback;
+public:
+	explicit OnlinePointCloudAlgorithm(std::function<void(robot_trajectory::RobotTrajectory)> trajectoryCallback)
+			: trajectoryCallback(std::move(trajectoryCallback)) {
+	}
+
+public:
+	virtual void updatePointCloud(const moveit::core::RobotState& current_state, const SegmentedPointCloud &segmentedPointCloud) = 0;
+
+};
+
+class StupidGoToFirstPointAlgorithm : public OnlinePointCloudAlgorithm {
+
+	bool firstPointFound = false;
+
+public:
+	explicit StupidGoToFirstPointAlgorithm(std::function<void(robot_trajectory::RobotTrajectory)> trajectoryCallback)
+			: OnlinePointCloudAlgorithm(std::move(trajectoryCallback)) {
+	}
+
+	void updatePointCloud(const moveit::core::RobotState& current_state, const SegmentedPointCloud &segmentedPointCloud) override {
+
+		if (!firstPointFound) {
+
+			for (const auto &point : segmentedPointCloud.points) {
+
+				if (point.type == PT_TARGET) {
+
+					firstPointFound = true;
+
+					robot_trajectory::RobotTrajectory trajectory(current_state.getRobotModel(), "whole_body");
+					trajectory.addSuffixWayPoint(current_state, 0.0);
+
+					moveit::core::RobotState targetState(current_state);
+					moveEndEffectorToGoal(targetState, 0.0, point.position);
+					trajectory.addSuffixWayPoint(targetState, current_state.distance(targetState));
+
+					trajectoryCallback(std::move(trajectory));
+
+					std::cout << "Found!" << std::endl;
+
+					return;
+
+				}
+			}
+			{
+				// Rotate in place
+
+				moveit::core::RobotState targetState(current_state);
+
+				Eigen::Quaterniond base_pose(targetState.getGlobalLinkTransform("base_link").rotation());
+				Eigen::Quaterniond target_pose = base_pose * Eigen::AngleAxisd(0.1, Eigen::Vector3d::UnitZ());
+
+				setBaseOrientation(targetState, target_pose);
+
+				robot_trajectory::RobotTrajectory trajectory(current_state.getRobotModel(), "whole_body");
+				trajectory.addSuffixWayPoint(current_state, 0.0);
+				trajectory.addSuffixWayPoint(targetState, current_state.distance(targetState));
+
+				trajectoryCallback(std::move(trajectory));
+				return;
+			}
+		}
+	}
+
+
+};
+
 
 int main(int, char*[]) {
 
@@ -129,7 +269,7 @@ int main(int, char*[]) {
 	viewerRenderer->ClearLights();
 	viewerRenderer->AddLight(naturalLight);
 
-	addActorCollectionToRenderer(orchard_actors, viewerRenderer);
+//	addActorCollectionToRenderer(orchard_actors, viewerRenderer);
 	addActorCollectionToRenderer(robotModel.getLinkActors(), viewerRenderer);
 
 	vtkNew<vtkRenderWindow> visualizerWindow;
@@ -143,13 +283,26 @@ int main(int, char*[]) {
 	renderWindowInteractor->SetRenderWindow(visualizerWindow);
 	renderWindowInteractor->CreateRepeatingTimer(33);
 
+	double pathProgressT = 0.0;
+	std::optional<robot_trajectory::RobotTrajectory> currentTrajectory;
+
+	StupidGoToFirstPointAlgorithm stupidAlgorithm([&](robot_trajectory::RobotTrajectory trajectory) {
+		currentTrajectory = std::move(trajectory);
+		pathProgressT = 0.0;
+	});
+
 	vtkNew<vtkTimerCallback> cb;
 	cb->setCallback([&](){
 
-		t += 0.033;
+		if (currentTrajectory) {
 
-		if (t > trajectory.getWayPointDurationFromStart(trajectory.getWayPointCount() - 1)) {
-			t = 0;
+			double maxT = currentTrajectory->getWayPointDurationFromStart(currentTrajectory->getWayPointCount() - 1);
+
+			pathProgressT += 0.033;
+
+			if (pathProgressT > maxT) {
+				pathProgressT = maxT;
+			}
 		}
 
 		auto state = std::make_shared<moveit::core::RobotState>(drone);
@@ -160,30 +313,8 @@ int main(int, char*[]) {
 		Eigen::Isometry3d eePose = state->getGlobalLinkTransform("end_effector");
 		setCameraFromEigen(eePose, sensorRenderer->GetActiveCamera());
 		sensorViewWindow->Render();
-//		filter->Modified();
 
-		auto points = depthToPointCloud->GetOutput()->GetPoints();
-
-		enum PointType {
-			PT_OBSTACLE,
-			PT_SOFT_OBSTACLE,
-			PT_TARGET
-		};
-
-//		struct SegmentedPointCloud {
-//			std::vector<Eigen::Vector3d> points;
-//			std::vector<PointType> types;
-//		};
-
-//		SegmentedPointCloud segmentedPointCloud;
-//
-//		for (int i = 0; i < points->GetNumberOfPoints(); i++) {
-//			double p[3];
-//			points->GetPoint(i, p);
-//			segmentedPointCloud.points.emplace_back(p[0], p[1], p[2]);
-//		}
-//
-//		std::cout << "Number of points: " << points->GetNumberOfPoints() << std::endl;
+		stupidAlgorithm.updatePointCloud(*state, segmentPointCloudData(depthToPointCloud->GetOutput()));
 
 	});
 
@@ -302,18 +433,18 @@ vtkNew<vtkActorCollection> buildOrchardActors() {
 	for (auto pos : {Eigen::Vector2d(-2.5,-2.5), Eigen::Vector2d(2.5, 2.5)})
 	{
 		auto tree_actor = createActorFromMesh(loadMesh("appletree_trunk.dae"));
-		tree_actor->GetProperty()->SetColor(0.4, 0.2, 0.1);
-		tree_actor->GetProperty()->SetAmbientColor(0.4, 0.2, 0.1);
+		tree_actor->GetProperty()->SetDiffuseColor(TRUNK_RGB.data());
+		tree_actor->GetProperty()->SetAmbientColor(TRUNK_RGB.data());
 		tree_actor->GetProperty()->SetAmbient(1.0);
 
 		auto leaves_actor = createActorFromMesh(loadMesh("appletree_leaves.dae"));
-		leaves_actor->GetProperty()->SetColor(0.1, 0.6, 0.1);
-		leaves_actor->GetProperty()->SetAmbientColor(0.1, 0.6, 0.1);
+		leaves_actor->GetProperty()->SetDiffuseColor(LEAVES_RGB.data());
+		leaves_actor->GetProperty()->SetAmbientColor(LEAVES_RGB.data());
 		leaves_actor->GetProperty()->SetAmbient(1.0);
 
 		auto fruit_actor = createActorFromMesh(loadMesh("appletree_fruit.dae"));
-		fruit_actor->GetProperty()->SetColor(1.0, 0.0, 0.0);
-		fruit_actor->GetProperty()->SetAmbientColor(1.0, 0.0, 0.0);
+		fruit_actor->GetProperty()->SetDiffuseColor(FRUIT_RGB.data());
+		fruit_actor->GetProperty()->SetAmbientColor(FRUIT_RGB.data());
 		fruit_actor->GetProperty()->SetAmbient(1.0);
 
 		for (auto act : {tree_actor.Get(), leaves_actor.Get(), fruit_actor.Get()})
@@ -342,8 +473,8 @@ vtkNew<vtkActor> buildGroundPlaneActor() {
 
 	vtkNew<vtkActor> ground_plane_actor;
 	ground_plane_actor->SetMapper(ground_plane_mapper);
-	ground_plane_actor->GetProperty()->SetColor(0.5, 0.3, 0.1);
-	ground_plane_actor->GetProperty()->SetAmbientColor(0.5, 0.3, 0.1);
+	ground_plane_actor->GetProperty()->SetDiffuseColor(GROUND_PLANE_RGB.data());
+	ground_plane_actor->GetProperty()->SetAmbientColor(GROUND_PLANE_RGB.data());
 	ground_plane_actor->GetProperty()->SetAmbient(1.0);
 	return ground_plane_actor;
 }
