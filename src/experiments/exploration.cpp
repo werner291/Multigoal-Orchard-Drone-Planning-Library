@@ -11,6 +11,7 @@
 #include <vtkDepthImageToPointCloud.h>
 #include <vtkPlaneSource.h>
 #include <vtkLight.h>
+#include <vtkRendererSource.h>
 
 #include "../utilities/experiment_utils.h"
 #include "../vtk/VtkRobotModel.h"
@@ -95,15 +96,20 @@ int main(int, char*[]) {
 	sensorViewWindow->SetSize(200, 200);
 	sensorViewWindow->AddRenderer(sensorRenderer);
 	sensorViewWindow->SetWindowName("Robot Sensor View");
+
 	vtkNew<vtkRenderWindowInteractor> sensorWindowInteractor;
 	sensorWindowInteractor->SetRenderWindow(sensorViewWindow);
 
-	vtkNew<vtkWindowToImageFilter> filter;
-	filter->SetInput(sensorViewWindow);
-	filter->SetInputBufferTypeToZBuffer();
+	vtkNew<vtkRendererSource> rendererSource;
+	rendererSource->DepthValuesOn();
+	rendererSource->SetInput(sensorRenderer);
+
+//	vtkNew<vtkWindowToImageFilter> filter;
+//	filter->SetInput(rendererSource->GetOutput());
+//	filter->SetInputBufferTypeToZBuffer();
 
 	vtkNew<vtkDepthImageToPointCloud> depthToPointCloud;
-	depthToPointCloud->SetInputConnection(filter->GetOutputPort());
+	depthToPointCloud->SetInputConnection(0, rendererSource->GetOutputPort());
 	depthToPointCloud->SetCamera(sensorRenderer->GetActiveCamera());
 
 	vtkNew<vtkPolyDataMapper> pointCloudMapper;
@@ -154,7 +160,7 @@ int main(int, char*[]) {
 		Eigen::Isometry3d eePose = state->getGlobalLinkTransform("end_effector");
 		setCameraFromEigen(eePose, sensorRenderer->GetActiveCamera());
 		sensorViewWindow->Render();
-		filter->Modified();
+//		filter->Modified();
 
 		auto points = depthToPointCloud->GetOutput()->GetPoints();
 
@@ -164,20 +170,20 @@ int main(int, char*[]) {
 			PT_TARGET
 		};
 
-		struct SegmentedPointCloud {
-			std::vector<Eigen::Vector3d> points;
-			std::vector<PointType> types;
-		};
+//		struct SegmentedPointCloud {
+//			std::vector<Eigen::Vector3d> points;
+//			std::vector<PointType> types;
+//		};
 
-		SegmentedPointCloud segmentedPointCloud;
-
-		for (int i = 0; i < points->GetNumberOfPoints(); i++) {
-			double p[3];
-			points->GetPoint(i, p);
-			segmentedPointCloud.points.emplace_back(p[0], p[1], p[2]);
-		}
-
-		std::cout << "Number of points: " << points->GetNumberOfPoints() << std::endl;
+//		SegmentedPointCloud segmentedPointCloud;
+//
+//		for (int i = 0; i < points->GetNumberOfPoints(); i++) {
+//			double p[3];
+//			points->GetPoint(i, p);
+//			segmentedPointCloud.points.emplace_back(p[0], p[1], p[2]);
+//		}
+//
+//		std::cout << "Number of points: " << points->GetNumberOfPoints() << std::endl;
 
 	});
 
@@ -199,7 +205,7 @@ vtkNew<vtkLight> mkWhiteAmbientLight() {
 void setCameraFromEigen(Eigen::Isometry3d &eePose, vtkCamera *pCamera) {
 	Eigen::Vector3d eye_center = eePose.translation();
 	Eigen::Vector3d eye_focus = eePose * Eigen::Vector3d(0, 1.0, 0.0);
-	Eigen::Vector3d eye_up = eePose * Eigen::Vector3d(0, 0.0, 1.0);
+	Eigen::Vector3d eye_up = eePose.rotation() * Eigen::Vector3d(0, 0.0, 1.0);
 
 	pCamera->SetPosition(eye_center.x(), eye_center.y(), eye_center.z());
 	pCamera->SetFocalPoint(eye_focus.x(), eye_focus.y(), eye_focus.z());
