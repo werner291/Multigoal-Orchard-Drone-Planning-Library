@@ -102,8 +102,8 @@ add_library(${PROJECT_NAME}_shared
         src/evaluation/Task.cpp
         src/evaluation/Task.h
         src/experiments/exploration.cpp
-        src/exploration/OnlineAlgorithm.cpp
-        src/exploration/OnlineAlgorithm.h
+        src/exploration/OnlinePointCloudMotionControlAlgorithm.cpp
+        src/exploration/OnlinePointCloudMotionControlAlgorithm.h
         src/ompl_custom.cpp
         src/ompl_custom.h
         src/planners/MultiGoalPlanner.cpp
@@ -163,14 +163,14 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/traveling_salesman.h
         src/vtk/VtkRobotModel.cpp
         src/vtk/VtkRobotModel.h
-        src/vtk/vtk.cpp
-        src/vtk/vtk.h
+        src/utilities/vtk.cpp
+        src/utilities/vtk.h
 #        src/NewKnnPlanner.cpp
 #        src/NewKnnPlanner.h
 #        src/planners/shell_path_planner/ApproachPlanning.cpp
 #        src/utilities/TriangleSpheretreeIndex.cpp
 #        src/utilities/TriangleSpheretreeIndex.h
-        )
+        src/exploration/SegmentedPointCloud.cpp src/exploration/SegmentedPointCloud.h src/exploration/ColorEncoding.cpp src/exploration/ColorEncoding.h src/exploration/VtkToPointCloud.h src/exploration/VtkToPointCloud.cpp src/exploration/StupidAlgorithm.cpp)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

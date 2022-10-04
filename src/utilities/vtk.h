@@ -1,0 +1,97 @@
+
+#ifndef NEW_PLANNERS_VTK_H
+#define NEW_PLANNERS_VTK_H
+
+#include <vtkPolyDataMapper.h>
+#include <vtkLight.h>
+#include <vtkCamera.h>
+#include <vtkActorCollection.h>
+#include <vtkCommand.h>
+#include <vtkDepthImageToPointCloud.h>
+
+#include <moveit/robot_model/link_model.h>
+
+#include <shape_msgs/msg/mesh.hpp>
+
+/**
+ * Returns a vtkPolyDataMapper for the collision geometry of the given robot LinkModel.
+ *
+ * @param lm 		The LinkModel to get the collision geometry for.
+ * @return 			A vtkPolyDataMapper for the collision geometry of the given robot LinkModel.
+ */
+vtkNew<vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel *lm);
+
+/**
+ * Build a pure white ambient light, to bring out the ambient color of the objects without modification (and preserve the color encoding).
+ *
+ * @return 			A pure white ambient light.
+ */
+vtkNew<vtkLight> mkWhiteAmbientLight();
+
+/**
+ * Set the given camera to the given transform.
+ *
+ * @param tf 			The transform to set the camera to.
+ * @param pCamera 		The camera to set the transform for.
+ */
+void setCameraFromEigen(Eigen::Isometry3d &tf, vtkCamera *pCamera);
+
+/**
+ * Add the given actor collection to the given renderer.
+ *
+ * @param orchard_actors 		The actor collection to add to the renderer.
+ * @param sensorRenderer 		The renderer to add the actor collection to.
+ */
+void addActorCollectionToRenderer(vtkNew<vtkActorCollection> &orchard_actors, vtkNew<vtkRenderer> &sensorRenderer);
+
+/**
+ * Convert a ROS shape_msgs::msg::Mesh to a vtkPolyData.
+ * @param mesh 		The ROS mesh to convert.
+ * @return 			The converted vtkPolyData.
+ */
+vtkNew<vtkPolyData> rosMeshToVtkPolyData(const shape_msgs::msg::Mesh &mesh);
+
+/**
+ * Create a vtkActor with the given ROS mesh message.
+ *
+ * @param mesh 		The ROS mesh message to create the actor for.
+ * @return 			The created vtkActor.
+ */
+vtkNew<vtkActor> createActorFromMesh(const shape_msgs::msg::Mesh &mesh);
+
+/**
+ * Extract a point cloud (source) from the given renderer. It will update when the renderer outputs a new frame.
+ *
+ * @param sensorRenderer 		The renderer to extract the point cloud from.
+ * @return 						The extracted point cloud.
+ */
+vtkNew<vtkDepthImageToPointCloud> extractPointCloudFromRenderer(vtkNew<vtkRenderer> &sensorRenderer);
+
+/**
+ * A vtkTimerCommand that calls the given callback when the timer fires, to allow the use of lambdas as callbacks in vtk.
+ *
+ * Do not forget to call setCallback() to set the callback to call when the timer fires.
+ */
+class vtkTimerCallback : public vtkCommand
+{
+	/// The callback to call when the timer fires.
+	std::function<void()> callback;
+
+	/// Constructor is private, use the static method New (or vtkNew) to create a new instance.
+	vtkTimerCallback() = default;
+public:
+
+	/// Create a new vtkTimerCallback instance (usually through vtkNew).
+	static vtkTimerCallback* New();
+
+	/// Execute the callback. This simply calls the callback that was set earlier.
+	virtual void Execute(vtkObject* caller, unsigned long eventId,
+						 void* vtkNotUsed(callData));
+
+	/// Set the callback to call when the timer fires.
+	void setCallback(const std::function<void()> &cb) {
+		vtkTimerCallback::callback = cb;
+	}
+};
+
+#endif //NEW_PLANNERS_VTK_H

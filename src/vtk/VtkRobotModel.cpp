@@ -5,7 +5,7 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include "VtkRobotModel.h"
-#include "vtk.h"
+#include "../utilities/vtk.h"
 
 vtkNew<vtkActorCollection> &VtkRobotmodel::getLinkActors() {
 	return link_actors;
