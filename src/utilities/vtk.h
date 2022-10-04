@@ -72,17 +72,22 @@ vtkNew<vtkDepthImageToPointCloud> extractPointCloudFromRenderer(vtkNew<vtkRender
  *
  * Do not forget to call setCallback() to set the callback to call when the timer fires.
  */
-class vtkTimerCallback : public vtkCommand
+class vtkFunctionalCallback : public vtkCommand
 {
 	/// The callback to call when the timer fires.
 	std::function<void()> callback;
+	unsigned long event_id;
+public:
+	void setEventId(unsigned long eventId);
+
+private:
 
 	/// Constructor is private, use the static method New (or vtkNew) to create a new instance.
-	vtkTimerCallback() = default;
+	vtkFunctionalCallback() = default;
 public:
 
-	/// Create a new vtkTimerCallback instance (usually through vtkNew).
-	static vtkTimerCallback* New();
+	/// Create a new vtkFunctionalCallback instance (usually through vtkNew).
+	static vtkFunctionalCallback* New();
 
 	/// Execute the callback. This simply calls the callback that was set earlier.
 	virtual void Execute(vtkObject* caller, unsigned long eventId,
@@ -90,7 +95,7 @@ public:
 
 	/// Set the callback to call when the timer fires.
 	void setCallback(const std::function<void()> &cb) {
-		vtkTimerCallback::callback = cb;
+		vtkFunctionalCallback::callback = cb;
 	}
 };
 

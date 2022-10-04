@@ -244,7 +244,8 @@ int main(int, char*[]) {
 		pathProgressT = 0.0;
 	});
 
-	vtkNew<vtkTimerCallback> cb;
+	vtkNew<vtkFunctionalCallback> cb;
+	cb->setEventId(vtkCommand::TimerEvent);
 	cb->setCallback([&](){
 
 		if (currentTrajectory) {

@@ -152,13 +152,17 @@ vtkNew<vtkDepthImageToPointCloud> extractPointCloudFromRenderer(vtkNew<vtkRender
 	return depthToPointCloud;
 }
 
-vtkTimerCallback *vtkTimerCallback::New() {
-	return new vtkTimerCallback;
+vtkFunctionalCallback *vtkFunctionalCallback::New() {
+	return new vtkFunctionalCallback;
 }
 
-void vtkTimerCallback::Execute(vtkObject *caller, unsigned long eventId, void *) {
-	if (vtkCommand::TimerEvent == eventId)
+void vtkFunctionalCallback::Execute(vtkObject *caller, unsigned long eventId, void *) {
+	if (eventId == event_id)
 	{
 		callback();
 	}
+}
+
+void vtkFunctionalCallback::setEventId(unsigned long eventId) {
+	event_id = eventId;
 }
