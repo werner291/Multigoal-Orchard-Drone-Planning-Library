@@ -9,7 +9,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include "vtk.h"
 
-vtkNew <vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel *lm) {
+vtkNew<vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel *lm) {
 
 	// Allocate a new polydata mapper
 	vtkNew<vtkPolyDataMapper> linkPolyData;
@@ -20,11 +20,6 @@ vtkNew <vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel *lm) {
 
 	// Get the shape type and jump to the appropriate case
 	switch (shape->type) {
-
-		case shapes::UNKNOWN_SHAPE: {
-			throw std::runtime_error("Unknown shape type");
-			break;
-		}
 
 		case shapes::SPHERE: {
 			auto sphere = std::dynamic_pointer_cast<const shapes::Sphere>(shape);
@@ -50,6 +45,7 @@ vtkNew <vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel *lm) {
 			cubeSource->SetXLength(box->size[0]);
 			cubeSource->SetYLength(box->size[1]);
 			cubeSource->SetZLength(box->size[2]);
+
 			linkPolyData->SetInputConnection(cubeSource->GetOutputPort());
 		}
 			break;
@@ -62,7 +58,14 @@ vtkNew <vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel *lm) {
 		case shapes::OCTREE:
 			throw std::runtime_error("Octree shape type not supported");
 			break;
+
+		default:
+		case shapes::UNKNOWN_SHAPE: {
+			throw std::runtime_error("Unknown shape type");
+			break;
+		}
 	}
+
 	return linkPolyData;
 }
 
@@ -111,15 +114,18 @@ vtkNew<vtkPoints> meshVerticesToVtkPoints(const shape_msgs::msg::Mesh &mesh) {
 }
 
 vtkNew<vtkPolyData> rosMeshToVtkPolyData(const shape_msgs::msg::Mesh &mesh) {
+
 	vtkNew<vtkPoints> points = meshVerticesToVtkPoints(mesh);
 
 	vtkNew<vtkCellArray> cells = meshTrianglesToVtkCells(mesh);
 
 	vtkNew<vtkPolyData> polyData;
+
 	polyData->SetPoints(points);
 	polyData->SetPolys(cells);
 
 	return polyData;
+
 }
 
 vtkNew<vtkActor> createActorFromMesh(const shape_msgs::msg::Mesh &mesh) {
@@ -154,8 +160,5 @@ void vtkTimerCallback::Execute(vtkObject *caller, unsigned long eventId, void *)
 	if (vtkCommand::TimerEvent == eventId)
 	{
 		callback();
-
-		auto* iren = dynamic_cast<vtkRenderWindowInteractor*>(caller);
-		iren->GetRenderWindow()->Render();
 	}
 }

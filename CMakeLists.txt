@@ -123,6 +123,8 @@ add_library(${PROJECT_NAME}_shared
         src/procedural_tree_generation.cpp
         src/run_experiment.cpp
         src/run_experiment.h
+        src/TreeMeshes.h
+        src/TreeMeshes.cpp
         src/shell_space/CGALMeshShell.cpp
         src/shell_space/CGALMeshShell.h
         src/shell_space/CuttingPlaneConvexHullShell.cpp

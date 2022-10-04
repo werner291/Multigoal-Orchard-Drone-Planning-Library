@@ -11,22 +11,80 @@
 #include <vtkDepthImageToPointCloud.h>
 #include <vtkPlaneSource.h>
 #include <vtkLight.h>
-#include <vtkRendererSource.h>
 #include <vtkPointData.h>
+#include <vtkCallbackCommand.h>
 
 #include <utility>
 
 #include "../utilities/experiment_utils.h"
 #include "../vtk/VtkRobotModel.h"
 #include "../utilities/load_mesh.h"
-#include "../DroneStateConstraintSampler.h"
 #include "../utilities/moveit.h"
 #include "../exploration/StupidAlgorithm.h"
 #include "../exploration/ColorEncoding.h"
 #include "../exploration/VtkToPointCloud.h"
 #include "../utilities/vtk.h"
+#include "../TreeMeshes.h"
 
-vtkNew<vtkActorCollection> buildOrchardActors();
+//
+//Eigen::Vector3d toEigen(const geometry_msgs::msg::Point &point) {
+//	return {point.x, point.y, point.z };
+//}
+//
+//std::vector<Eigen::Vector3d> buildScanTargetPoints(const shape_msgs::msg::Mesh &mesh, size_t n) {
+//
+//	// Distribute 1000 points on the surface of the mesh.
+//
+//	// TODO: Argue uniformity of some kind.
+//
+//	std::vector<Eigen::Vector3d> points;
+//	points.reserve(n);
+//
+//	ompl::RNG rng;
+//	for (size_t i = 0; i < n; i++) {
+//		const auto &triangle = mesh.triangles[rng.uniformInt(0, (int) mesh.triangles.size() - 1)];
+//
+//		const auto &p1 = toEigen(mesh.vertices[triangle.vertex_indices[0]]);
+//		const auto &p2 = toEigen(mesh.vertices[triangle.vertex_indices[1]]);
+//		const auto &p3 = toEigen(mesh.vertices[triangle.vertex_indices[2]]);
+//
+//		const double r1 = rng.uniform01();
+//		const double r2 = rng.uniform01();
+//
+//		Eigen::Vector3d sample = p1 + r1 * (p2 - p1) + r2 * (p3 - p1);
+//
+//		points.push_back(sample);
+//	}
+//
+//	return points;
+//
+//}
+//
+//void buildSurfacePointsActor(std::vector<Eigen::Vector3d> &fruitSurfacePoints) {
+//	vtkNew<vtkActor> fruitSurfacePointsActor;
+//
+//	{
+//		vtkNew<vtkPoints> fruitSurfacePointsVtk;
+//		for (const auto &point: fruitSurfacePoints) {
+//			fruitSurfacePointsVtk->InsertNextPoint(point.data());
+//		}
+//		vtkNew<vtkPolyData> fruitSurfacePolyData;
+//		fruitSurfacePolyData->SetPoints(fruitSurfacePointsVtk);
+//
+//		vtkNew<vtkPolyDataMapper> fruitSurfacePointsMapper;
+//		fruitSurfacePointsMapper->SetInputData(fruitSurfacePolyData);
+//
+//		fruitSurfacePointsActor->SetMapper(fruitSurfacePointsMapper);
+//		fruitSurfacePointsActor->GetProperty()->SetPointSize(5);
+//		fruitSurfacePointsActor->GetProperty()->SetColor(0.5, 0.0, 1.0);
+//	}
+//}
+
+struct SimplifiedOrchard {
+	std::vector<std::pair<Eigen::Vector2d, TreeMeshes>> trees;
+};
+
+vtkNew<vtkActorCollection> buildOrchardActors(const SimplifiedOrchard &orchard);
 
 vtkNew<vtkActor> buildGroundPlaneActor();
 
@@ -34,9 +92,7 @@ vtkNew<vtkRenderWindow> buildSensorRenderWindow(vtkNew<vtkRenderer> &sensorRende
 
 vtkNew<vtkRenderer> buildSensorRenderer();
 
-int main(int, char*[]) {
-
-	auto drone = loadRobotModel();
+moveit::core::RobotState mkInitialState(const moveit::core::RobotModelPtr &drone) {
 	moveit::core::RobotState current_state(drone);
 	current_state.setVariablePositions({
 		5.0, 0.0, 1.5,
@@ -44,28 +100,88 @@ int main(int, char*[]) {
 		0.0, 0.0, 0.0, 0.0
 	});
 	current_state.update();
+	return current_state;
+}
 
-	VtkRobotmodel robotModel(drone);
+vtkNew<vtkRenderWindow> buildViewerWindow(vtkNew<vtkRenderer> &viewerRenderer) {
+	vtkNew<vtkRenderWindow> visualizerWindow;
+	visualizerWindow->SetSize(800,600);
+	visualizerWindow->SetWindowName("PointCloud");
+	visualizerWindow->AddRenderer(viewerRenderer);
+	return visualizerWindow;
+}
 
-	vtkNew<vtkActorCollection> orchard_actors = buildOrchardActors();
+vtkNew<vtkRenderWindowInteractor> buildVisualizerWindowInteractor(vtkNew<vtkRenderWindow> &visualizerWindow) {
+	vtkNew<vtkRenderWindowInteractor> renderWindowInteractor;
+	renderWindowInteractor->SetRenderWindow(visualizerWindow);
+	renderWindowInteractor->CreateRepeatingTimer(33);
+	return renderWindowInteractor;
+}
 
-	vtkNew<vtkRenderer> sensorRenderer = buildSensorRenderer();
-	vtkNew<vtkRenderWindow> sensorViewWindow = buildSensorRenderWindow(sensorRenderer);
-
-	addActorCollectionToRenderer(orchard_actors, sensorRenderer);
-	addActorCollectionToRenderer(robotModel.getLinkActors(), sensorRenderer);
-
-	vtkNew<vtkDepthImageToPointCloud> depthToPointCloud = extractPointCloudFromRenderer(sensorRenderer);
-
+vtkNew<vtkActor> buildPointCloudActor(vtkNew<vtkDepthImageToPointCloud> &depthToPointCloud) {
 	vtkNew<vtkPolyDataMapper> pointCloudMapper;
 	pointCloudMapper->SetInputConnection(depthToPointCloud->GetOutputPort());
 
 	vtkNew<vtkActor> pointCloudActor;
 	pointCloudActor->SetMapper(pointCloudMapper);
-	sensorViewWindow->Render();
+	return pointCloudActor;
+}
 
+Eigen::Vector3d toEigen(const geometry_msgs::msg::Point &point) {
+	return {point.x, point.y, point.z };
+}
+
+std::vector<Eigen::Vector3d> buildScanTargetPoints(const shape_msgs::msg::Mesh &mesh, size_t n) {
+
+	// Distribute 1000 points on the surface of the mesh.
+
+	// TODO: Argue uniformity of some kind.
+
+	std::vector<Eigen::Vector3d> points;
+	points.reserve(n);
+
+	ompl::RNG rng;
+	for (size_t i = 0; i < n; i++) {
+		const auto &triangle = mesh.triangles[rng.uniformInt(0, (int) mesh.triangles.size() - 1)];
+
+		const auto &p1 = toEigen(mesh.vertices[triangle.vertex_indices[0]]);
+		const auto &p2 = toEigen(mesh.vertices[triangle.vertex_indices[1]]);
+		const auto &p3 = toEigen(mesh.vertices[triangle.vertex_indices[2]]);
+
+		const double r1 = rng.uniform01();
+		const double r2 = rng.uniform01();
+
+		Eigen::Vector3d sample = p1 + r1 * (p2 - p1) + r2 * (p3 - p1);
+
+		points.push_back(sample);
+	}
+
+	return points;
+
+}
+
+void buildSurfacePointsActor(std::vector<Eigen::Vector3d> &fruitSurfacePoints) {
+	vtkNew<vtkActor> fruitSurfacePointsActor;
+
+	{
+		vtkNew<vtkPoints> fruitSurfacePointsVtk;
+		for (const auto &point: fruitSurfacePoints) {
+			fruitSurfacePointsVtk->InsertNextPoint(point.data());
+		}
+		vtkNew<vtkPolyData> fruitSurfacePolyData;
+		fruitSurfacePolyData->SetPoints(fruitSurfacePointsVtk);
+
+		vtkNew<vtkPolyDataMapper> fruitSurfacePointsMapper;
+		fruitSurfacePointsMapper->SetInputData(fruitSurfacePolyData);
+
+		fruitSurfacePointsActor->SetMapper(fruitSurfacePointsMapper);
+		fruitSurfacePointsActor->GetProperty()->SetPointSize(5);
+		fruitSurfacePointsActor->GetProperty()->SetColor(0.5, 0.0, 1.0);
+	}
+}
+
+vtkNew<vtkRenderer> buildViewerRenderer() {
 	vtkNew<vtkRenderer> viewerRenderer;
-	viewerRenderer->AddActor(pointCloudActor);
 	viewerRenderer->SetBackground(0.0, 0.0, 0.8);
 	viewerRenderer->ResetCamera();
 
@@ -73,20 +189,52 @@ int main(int, char*[]) {
 	naturalLight->SetAmbientColor(0.0, 0.0, 0.0);
 	viewerRenderer->ClearLights();
 	viewerRenderer->AddLight(naturalLight);
+	return viewerRenderer;
+}
 
-	addActorCollectionToRenderer(orchard_actors, viewerRenderer);
-	addActorCollectionToRenderer(robotModel.getLinkActors(), viewerRenderer);
 
-	vtkNew<vtkRenderWindow> visualizerWindow;
-	visualizerWindow->SetSize(800,600);
-	visualizerWindow->SetWindowName("PointCloud");
-	visualizerWindow->AddRenderer(viewerRenderer);
 
-	double t = 0;
+int main(int, char*[]) {
 
-	vtkNew<vtkRenderWindowInteractor> renderWindowInteractor;
-	renderWindowInteractor->SetRenderWindow(visualizerWindow);
-	renderWindowInteractor->CreateRepeatingTimer(33);
+	auto drone = loadRobotModel();
+	moveit::core::RobotState current_state = mkInitialState(drone);
+
+	VtkRobotmodel robotModel(drone);
+	robotModel.applyState(current_state);
+
+	SimplifiedOrchard orchard = {
+		{
+			{ { 0.0, 0.0 }, loadTreeMeshes("appletree") },
+		}
+	};
+
+	auto orchard_actors = buildOrchardActors(orchard);
+
+	vtkNew<vtkRenderer> sensorRenderer = buildSensorRenderer();
+	vtkNew<vtkRenderWindow> sensorViewWindow = buildSensorRenderWindow(sensorRenderer);
+	sensorViewWindow->Render();
+
+	{
+		addActorCollectionToRenderer(orchard_actors, sensorRenderer);
+		addActorCollectionToRenderer(robotModel.getLinkActors(), sensorRenderer);
+	}
+
+	vtkNew<vtkDepthImageToPointCloud> depthToPointCloud = extractPointCloudFromRenderer(sensorRenderer);
+
+	vtkNew<vtkCallbackCommand> pointCloudCallback;
+
+	vtkNew<vtkActor> pointCloudActor = buildPointCloudActor(depthToPointCloud);
+
+	vtkNew<vtkRenderer> viewerRenderer = buildViewerRenderer();
+
+	{
+		viewerRenderer->AddActor(pointCloudActor);
+		addActorCollectionToRenderer(orchard_actors, viewerRenderer);
+		addActorCollectionToRenderer(robotModel.getLinkActors(), viewerRenderer);
+	}
+
+	vtkNew<vtkRenderWindow> visualizerWindow = buildViewerWindow(viewerRenderer);
+	vtkNew<vtkRenderWindowInteractor> renderWindowInteractor = buildVisualizerWindowInteractor(visualizerWindow);
 
 	double pathProgressT = 0.0;
 	std::optional<robot_trajectory::RobotTrajectory> currentTrajectory;
@@ -101,7 +249,8 @@ int main(int, char*[]) {
 
 		if (currentTrajectory) {
 
-			double maxT = currentTrajectory->getWayPointDurationFromStart(currentTrajectory->getWayPointCount() - 1);
+			double maxT = currentTrajectory->getWayPointDurationFromStart(
+					currentTrajectory->getWayPointCount() - 1);
 
 			pathProgressT += 0.033;
 
@@ -122,11 +271,18 @@ int main(int, char*[]) {
 			sensorViewWindow->Render();
 		}
 
-		stupidAlgorithm.updatePointCloud(current_state, segmentPointCloudData(depthToPointCloud->GetOutput()));
+		// Nullptr check to avoid a race condition where the callback is called before the first point cloud is rendered.
+		// FIXME: Ideally, I'd like to make sure the algorithm sees the point cloud exactly once.
+		if (depthToPointCloud->GetOutput()->GetPoints() != nullptr) {
+			stupidAlgorithm.updatePointCloud(current_state, segmentPointCloudData(depthToPointCloud->GetOutput()));
+		}
+
+		visualizerWindow->Render();
 
 	});
 
 	renderWindowInteractor->AddObserver(vtkCommand::TimerEvent, cb);
+	renderWindowInteractor->AddObserver(vtkCommand::WindowFrameEvent, cb);
 
 	renderWindowInteractor->Start();
 
@@ -153,32 +309,47 @@ vtkNew<vtkRenderer> buildSensorRenderer() {
 	return sensorRenderer;
 }
 
+void setColorsByEncoding(vtkNew<vtkActor> &tree_actor, const std::array<double, 3> &rgb) {
+	tree_actor->GetProperty()->SetDiffuseColor(rgb.data());
+	tree_actor->GetProperty()->SetAmbientColor(rgb.data());
+	tree_actor->GetProperty()->SetAmbient(1.0);
+}
 
-vtkNew<vtkActorCollection> buildOrchardActors() {
+
+vtkNew<vtkActorCollection> buildTreeActors(const TreeMeshes& meshes) {
+
+	vtkNew<vtkActorCollection> actors;
+
+	auto tree_actor = createActorFromMesh(meshes.trunk_mesh);
+	setColorsByEncoding(tree_actor, TRUNK_RGB);
+
+	auto leaves_actor = createActorFromMesh(meshes.leaves_mesh);
+	setColorsByEncoding(leaves_actor, LEAVES_RGB);
+
+	auto fruit_actor = createActorFromMesh(meshes.fruit_mesh);
+	setColorsByEncoding(fruit_actor, FRUIT_RGB);
+
+	actors->AddItem(tree_actor);
+	actors->AddItem(leaves_actor);
+	actors->AddItem(fruit_actor);
+
+	return actors;
+}
+
+vtkNew<vtkActorCollection> buildOrchardActors(const SimplifiedOrchard &orchard) {
 
 	vtkNew<vtkActorCollection> orchard_actors;
 
-	for (auto pos : {Eigen::Vector2d(-2.5,-2.5), Eigen::Vector2d(2.5, 2.5)})
+	for (const auto& [pos, meshes] : orchard.trees)
 	{
-		auto tree_actor = createActorFromMesh(loadMesh("appletree_trunk.dae"));
-		tree_actor->GetProperty()->SetDiffuseColor(TRUNK_RGB.data());
-		tree_actor->GetProperty()->SetAmbientColor(TRUNK_RGB.data());
-		tree_actor->GetProperty()->SetAmbient(1.0);
+		auto tree_actors = buildTreeActors(meshes);
 
-		auto leaves_actor = createActorFromMesh(loadMesh("appletree_leaves.dae"));
-		leaves_actor->GetProperty()->SetDiffuseColor(LEAVES_RGB.data());
-		leaves_actor->GetProperty()->SetAmbientColor(LEAVES_RGB.data());
-		leaves_actor->GetProperty()->SetAmbient(1.0);
+		for (int i = 0; i < tree_actors->GetNumberOfItems(); i++) {
+			auto actor = vtkActor::SafeDownCast(tree_actors->GetItemAsObject(i));
+			actor->SetPosition(pos.x(), pos.y(), 0);
 
-		auto fruit_actor = createActorFromMesh(loadMesh("appletree_fruit.dae"));
-		fruit_actor->GetProperty()->SetDiffuseColor(FRUIT_RGB.data());
-		fruit_actor->GetProperty()->SetAmbientColor(FRUIT_RGB.data());
-		fruit_actor->GetProperty()->SetAmbient(1.0);
+			orchard_actors->AddItem(actor);
 
-		for (auto act : {tree_actor.Get(), leaves_actor.Get(), fruit_actor.Get()})
-		{
-			act->SetPosition(pos.x(), pos.y(), 0.0);
-			orchard_actors->AddItem(act);
 		}
 	}
 
