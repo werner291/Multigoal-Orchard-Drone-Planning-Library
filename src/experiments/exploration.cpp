@@ -39,8 +39,6 @@ vtkNew<vtkActorCollection> buildOrchardActors();
 
 vtkNew<vtkActor> buildGroundPlaneActor();
 
-robot_trajectory::RobotTrajectory mkTrajectory(const moveit::core::RobotModelPtr &drone);
-
 void addActorCollectionToRenderer(vtkNew<vtkActorCollection> &orchard_actors, vtkNew<vtkRenderer> &sensorRenderer);
 
 void setCameraFromEigen(Eigen::Isometry3d &eePose, vtkCamera *pCamera);
@@ -93,10 +91,21 @@ struct SegmentedPointCloud {
 
 std::optional<PointType> pointTypeByColor(const Eigen::Vector3d &color) {
 
-	bool is_ground = (color - Eigen::Vector3d(GROUND_PLANE_RGB.data())).squaredNorm() < 1.0e-6;
-	bool is_trunk = (color - Eigen::Vector3d(TRUNK_RGB.data())).squaredNorm() < 1.0e-6;
-	bool is_leaves = (color - Eigen::Vector3d(LEAVES_RGB.data())).squaredNorm() < 1.0e-6;
-	bool is_fruit = (color - Eigen::Vector3d(FRUIT_RGB.data())).squaredNorm() < 1.0e-6;
+	bool is_ground = abs(color.x() - std::floor(255.0 * GROUND_PLANE_RGB[0]))
+			+ abs(color.y() - std::floor(255.0 * GROUND_PLANE_RGB[1]))
+			+ abs(color.z() - std::floor(255.0 * GROUND_PLANE_RGB[2])) < 1.0e-6;
+
+	bool is_fruit = abs(color.x() - std::floor(255.0 * FRUIT_RGB[0]))
+			+ abs(color.y() - std::floor(255.0 * FRUIT_RGB[1]))
+			+ abs(color.z() - std::floor(255.0 * FRUIT_RGB[2])) < 1.0e-6;
+
+	bool is_trunk = abs(color.x() - std::floor(255.0 * TRUNK_RGB[0]))
+			+ abs(color.y() - std::floor(255.0 * TRUNK_RGB[1]))
+			+ abs(color.z() - std::floor(255.0 * TRUNK_RGB[2])) < 1.0e-6;
+
+	bool is_leaves = abs(color.x() - std::floor(255.0 * LEAVES_RGB[0]))
+			+ abs(color.y() - std::floor(255.0 * LEAVES_RGB[1]))
+			+ abs(color.z() - std::floor(255.0 * LEAVES_RGB[2])) < 1.0e-6;
 
 	if (is_ground || is_trunk) {
 		return {PT_OBSTACLE};
@@ -211,10 +220,15 @@ public:
 int main(int, char*[]) {
 
 	auto drone = loadRobotModel();
+	moveit::core::RobotState current_state(drone);
+	current_state.setVariablePositions({
+		5.0, 0.0, 1.5,
+		0.0, 0.0, 0.0, 1.0,
+		0.0, 0.0, 0.0, 0.0
+	});
+	current_state.update();
 
 	VtkRobotmodel robotModel(drone);
-
-	robot_trajectory::RobotTrajectory trajectory = mkTrajectory(drone);
 
 	vtkNew<vtkActorCollection> orchard_actors = buildOrchardActors();
 
@@ -269,7 +283,7 @@ int main(int, char*[]) {
 	viewerRenderer->ClearLights();
 	viewerRenderer->AddLight(naturalLight);
 
-//	addActorCollectionToRenderer(orchard_actors, viewerRenderer);
+	addActorCollectionToRenderer(orchard_actors, viewerRenderer);
 	addActorCollectionToRenderer(robotModel.getLinkActors(), viewerRenderer);
 
 	vtkNew<vtkRenderWindow> visualizerWindow;
@@ -303,18 +317,21 @@ int main(int, char*[]) {
 			if (pathProgressT > maxT) {
 				pathProgressT = maxT;
 			}
+
+			{
+				moveit::core::RobotStatePtr state_fakeshared(moveit::core::RobotStatePtr{}, &current_state);
+				currentTrajectory->getStateAtDurationFromStart(pathProgressT, state_fakeshared);
+			}
+
+			current_state.update(true);
+			robotModel.applyState(current_state);
+
+			Eigen::Isometry3d eePose = current_state.getGlobalLinkTransform("end_effector");
+			setCameraFromEigen(eePose, sensorRenderer->GetActiveCamera());
+			sensorViewWindow->Render();
 		}
 
-		auto state = std::make_shared<moveit::core::RobotState>(drone);
-		trajectory.getStateAtDurationFromStart(t, state);
-		state->update(true);
-		robotModel.applyState(*state);
-
-		Eigen::Isometry3d eePose = state->getGlobalLinkTransform("end_effector");
-		setCameraFromEigen(eePose, sensorRenderer->GetActiveCamera());
-		sensorViewWindow->Render();
-
-		stupidAlgorithm.updatePointCloud(*state, segmentPointCloudData(depthToPointCloud->GetOutput()));
+		stupidAlgorithm.updatePointCloud(current_state, segmentPointCloudData(depthToPointCloud->GetOutput()));
 
 	});
 
@@ -348,38 +365,6 @@ void addActorCollectionToRenderer(vtkNew<vtkActorCollection> &orchard_actors, vt
 		sensorRenderer->AddActor(vtkActor::SafeDownCast(orchard_actors->GetItemAsObject(i)));
 	}
 }
-
-robot_trajectory::RobotTrajectory mkTrajectory(const moveit::core::RobotModelPtr &drone) {
-	robot_trajectory::RobotTrajectory trajectory(drone, "whole_body");
-
-	moveit::core::RobotState robotState(drone);
-
-	for (int i = 0; i <= 30; i++) {
-
-		double t = i / 30.0;
-
-		Eigen::Vector3d pos(cos(t * 2 * M_PI), sin(t * 2 * M_PI), 1.0);
-
-		setBaseTranslation(robotState, pos);
-
-		Eigen::Quaterniond q(Eigen::AngleAxisd(t * 2 * M_PI, Eigen::Vector3d::UnitZ()));
-
-		setBaseOrientation(robotState, q);
-
-		robotState.setVariablePosition(7, 0.0);
-		robotState.setVariablePosition(8, 0.0);
-		robotState.setVariablePosition(9, 0.0);
-		robotState.setVariablePosition(10, 0.0);
-
-		robotState.update(true);
-
-		trajectory.addSuffixWayPoint(robotState, 1.0);
-
-	}
-
-	return std::move(trajectory);
-}
-
 
 vtkNew<vtkPolyData> rosMeshToVtkPolyData(const shape_msgs::msg::Mesh &mesh) {
 	vtkNew<vtkPoints> points = meshVerticesToVtkPoints(mesh);

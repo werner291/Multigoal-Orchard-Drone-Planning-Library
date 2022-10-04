@@ -53,6 +53,7 @@ link_libraries(
         tbb
         ${CGAL_LIBRARIES}
         ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
+        ${VTK_LIBRARIES}
 )
 
 ###########
@@ -80,6 +81,8 @@ add_library(${PROJECT_NAME}_shared
         src/DroneStateSampler.h
         src/EndEffectorOnShellGoal.cpp
         src/EndEffectorOnShellGoal.h
+        src/ExperimentVisualTools.cpp
+        src/ExperimentVisualTools.h
         src/GreatCircleMetric.cpp
         src/GreatCircleMetric.h
         src/InformedBetweenTwoDroneStatesSampler.h
@@ -88,26 +91,19 @@ add_library(${PROJECT_NAME}_shared
         src/InformedRobotStateSampler.h
         src/LeavesCollisionChecker.cpp
         src/LeavesCollisionChecker.h
-        src/ExperimentVisualTools.cpp
-        src/ExperimentVisualTools.h
+        src/RobotPath.cpp
+        src/RobotPath.h
         src/SamplerWrapper.cpp
         src/SamplerWrapper.h
         src/SingleGoalPlannerMethods.cpp
         src/SingleGoalPlannerMethods.h
-        src/shell_space/SphereShell.cpp
-        src/shell_space/SphereShell.h
         src/TimedCostConvergenceTerminationCondition.cpp
         src/TimedCostConvergenceTerminationCondition.h
-        src/utilities/experiment_utils.cpp
-        src/utilities/experiment_utils.h
-        src/utilities/general_utilities.cpp
-        src/utilities/general_utilities.h
-        src/utilities/json_utils.cpp
-        src/utilities/json_utils.h
-        src/utilities/moveit_conversions.cpp
-        src/utilities/moveit_conversions.h
-        src/utilities/msgs_utilities.cpp
-        src/utilities/msgs_utilities.h
+        src/evaluation/Task.cpp
+        src/evaluation/Task.h
+        src/experiments/exploration.cpp
+        src/exploration/OnlineAlgorithm.cpp
+        src/exploration/OnlineAlgorithm.h
         src/ompl_custom.cpp
         src/ompl_custom.h
         src/planners/MultiGoalPlanner.cpp
@@ -116,45 +112,65 @@ add_library(${PROJECT_NAME}_shared
         src/planners/MultigoalPrmStar.h
         src/planners/ShellPathPlanner.cpp
         src/planners/ShellPathPlanner.h
+        src/planners/shell_path_planner/ApproachPlanning.cpp
+        src/planners/shell_path_planner/Construction.cpp
+        src/planners/shell_path_planner/Construction.h
+        src/planners/shell_path_planner/OrderingMethod.h
         src/planning_scene_diff_message.cpp
         src/planning_scene_diff_message.h
         src/probe_retreat_move.cpp
         src/probe_retreat_move.h
         src/procedural_tree_generation.cpp
-        src/RobotPath.cpp
-        src/RobotPath.h
         src/run_experiment.cpp
         src/run_experiment.h
-        src/utilities/traveling_salesman.cpp
-        src/utilities/traveling_salesman.h
-#        src/NewKnnPlanner.cpp
-#        src/NewKnnPlanner.h
+        src/shell_space/CGALMeshShell.cpp
+        src/shell_space/CGALMeshShell.h
         src/shell_space/CuttingPlaneConvexHullShell.cpp
         src/shell_space/CuttingPlaneConvexHullShell.h
+        src/shell_space/CylinderShell.cpp
+        src/shell_space/CylinderShell.h
+        src/shell_space/MoveItShellSpace.cpp
+        src/shell_space/MoveItShellSpace.h
+        src/shell_space/OmplShellSpace.cpp
+        src/shell_space/OmplShellSpace.h
+        src/shell_space/SphereShell.cpp
+        src/shell_space/SphereShell.h
         src/shell_space/WorkspaceShell.cpp
         src/shell_space/WorkspaceShell.h
         src/utilities/convex_hull.cpp
         src/utilities/convex_hull.h
+        src/utilities/experiment_utils.cpp
+        src/utilities/experiment_utils.h
+        src/utilities/general_utilities.cpp
+        src/utilities/general_utilities.h
+        src/utilities/geogebra.cpp
+        src/utilities/geogebra.h
+        src/utilities/json_utils.cpp
+        src/utilities/json_utils.h
+        src/utilities/load_mesh.cpp
+        src/utilities/load_mesh.h
         src/utilities/math_utils.cpp
         src/utilities/math_utils.h
+        src/utilities/moveit.cpp
+        src/utilities/moveit.cpp
+        src/utilities/moveit.h
+        src/utilities/moveit.h
+        src/utilities/moveit_conversions.cpp
+        src/utilities/moveit_conversions.h
+        src/utilities/msgs_utilities.cpp
+        src/utilities/msgs_utilities.h
+        src/utilities/traveling_salesman.cpp
+        src/utilities/traveling_salesman.h
+        src/vtk/VtkRobotModel.cpp
+        src/vtk/VtkRobotModel.h
+        src/vtk/vtk.cpp
+        src/vtk/vtk.h
+#        src/NewKnnPlanner.cpp
+#        src/NewKnnPlanner.h
+#        src/planners/shell_path_planner/ApproachPlanning.cpp
 #        src/utilities/TriangleSpheretreeIndex.cpp
 #        src/utilities/TriangleSpheretreeIndex.h
-        src/utilities/geogebra.h
-        src/utilities/geogebra.cpp
-        src/shell_space/CGALMeshShell.cpp
-        src/shell_space/CGALMeshShell.h
-        src/shell_space/CylinderShell.cpp
-        src/shell_space/CylinderShell.h
-        src/shell_space/OmplShellSpace.cpp
-        src/shell_space/OmplShellSpace.h
-        src/shell_space/MoveItShellSpace.cpp
-        src/shell_space/MoveItShellSpace.h
-        src/planners/shell_path_planner/Construction.h
-        src/planners/shell_path_planner/OrderingMethod.h
-        src/planners/shell_path_planner/Construction.cpp
-#        src/planners/shell_path_planner/ApproachPlanning.cpp
-        src/utilities/moveit.cpp
-        src/utilities/moveit.h src/experiments/exploration.cpp src/vtk/vtk.cpp src/vtk/vtk.h src/vtk/VtkRobotModel.cpp src/vtk/VtkRobotModel.h src/utilities/load_mesh.cpp src/utilities/load_mesh.h)
+        )
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -185,7 +201,8 @@ add_executable(${PROJECT_NAME}_tests
         src/shell_space/test/CuttingPlaneConvexHullShell_test.cpp
         src/shell_space/test/CGALMeshShell_test.cpp
         src/utilities/test/math_utils_test.cpp
-        src/shell_space/test/SphereShell_test.cpp)
+        src/shell_space/test/SphereShell_test.cpp
+        )
 
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})
