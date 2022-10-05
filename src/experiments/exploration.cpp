@@ -56,10 +56,10 @@ int main(int, char*[]) {
 	vtkNew<vtkActor> pointCloudActor = buildDepthImagePointCloudActor(sensor.getPointCloudOutputPort());
 
 	Viewer viewer;
-	viewer.addActor(pointCloudActor);
 	viewer.addActorCollection(orchard_actors);
 	viewer.addActorCollection(robotModel.getLinkActors());
 	viewer.addActor(fruitSurfacePointsActor);
+	viewer.addActor(pointCloudActor);
 
 
 	double pathProgressT = 0.0;

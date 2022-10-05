@@ -12,7 +12,7 @@ SimulatedSensor::SimulatedSensor() {
 	sensorWindow = buildSensorRenderWindow(sensorRenderer);
 	depthToPointCloud = extractPointCloudFromRenderer(sensorRenderer);
 
-	sensorWindow->Render();
+//	sensorWindow->Render();
 }
 
 void SimulatedSensor::addActor(vtkActor *actor) {
