@@ -5,17 +5,9 @@
 #include <Eigen/Core>
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 #include "exploration/SegmentedPointCloud.h"
+#include "exploration/scan_points.h"
 
 static const double VISIBLE_POINT_MAX_DISTANCE = 0.01;
-/**
- * A point somewhere in the world that needs to be scanned, including a flag indicating whether it has been scanned.
- */
-struct ScanTargetPoint {
-	/// The position of the point
-	Eigen::Vector3d point { 0.0, 0.0, 0.0 };
-
-	Eigen::Vector3d normal { 0.0, 0.0, 0.0 };
-};
 
 /**
  * A spatial index of the points that need to be scanned.

@@ -3,6 +3,7 @@
 #define NEW_PLANNERS_TREEMESHES_H
 
 #include <shape_msgs/msg/mesh.hpp>
+#include <Eigen/Core>
 #include "utilities/load_mesh.h"
 
 struct TreeMeshes {
@@ -18,5 +19,9 @@ struct TreeMeshes {
  * @return 				The loaded meshes.
  */
 TreeMeshes loadTreeMeshes(const std::string& treeName);
+
+struct SimplifiedOrchard {
+	std::vector<std::pair<Eigen::Vector2d, TreeMeshes>> trees;
+};
 
 #endif //NEW_PLANNERS_TREEMESHES_H

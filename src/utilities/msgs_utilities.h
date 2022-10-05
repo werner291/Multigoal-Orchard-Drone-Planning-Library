@@ -6,6 +6,7 @@
 #include <moveit_msgs/msg/display_trajectory.hpp>
 #include <moveit_msgs/msg/planning_scene.hpp>
 #include <rclcpp/serialization.hpp>
+#include <rclcpp/serialized_message.hpp>
 #include <std_msgs/msg/color_rgba.hpp>
 #include <fstream>
 #include <shape_msgs/msg/mesh.hpp>
@@ -64,5 +65,7 @@ std::optional<Msg> read_ros_msg(const std::string& filename){
 
     return {msg};
 }
+
+Eigen::Vector3d toEigen(const geometry_msgs::msg::Point &point);
 
 #endif //NEW_PLANNERS_BUILD_REQUEST_H

@@ -5,9 +5,13 @@
 #include <vtkRenderer.h>
 #include <vtkRendererSource.h>
 #include <vtkRenderWindow.h>
+#include <vtkProperty.h>
+#include <vtkPointData.h>
 
 #include <vtkRenderWindowInteractor.h>
+#include <vtkPlaneSource.h>
 #include "vtk.h"
+#include "../exploration/ColorEncoding.h"
 
 vtkNew<vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel *lm) {
 
@@ -150,6 +154,138 @@ vtkNew<vtkDepthImageToPointCloud> extractPointCloudFromRenderer(vtkNew<vtkRender
 	depthToPointCloud->SetInputConnection(0, rendererSource->GetOutputPort());
 	depthToPointCloud->SetCamera(sensorRenderer->GetActiveCamera());
 	return depthToPointCloud;
+}
+
+vtkNew<vtkRenderer> buildViewerRenderer() {
+	vtkNew<vtkRenderer> viewerRenderer;
+	viewerRenderer->SetBackground(0.1, 0.1, 0.5);
+	viewerRenderer->ResetCamera();
+
+	vtkNew<vtkLight> naturalLight;
+	naturalLight->SetAmbientColor(0.0, 0.0, 0.0);
+	viewerRenderer->ClearLights();
+	viewerRenderer->AddLight(naturalLight);
+	return viewerRenderer;
+}
+
+vtkNew<vtkActor> constructSimplePolyDataPointCloudActor(const vtkNew<vtkPolyData> &fruitSurfacePolyData) {
+	vtkNew<vtkActor> fruitSurfacePointsActor;
+	vtkNew<vtkPolyDataMapper> fruitSurfacePointsMapper;
+	fruitSurfacePointsMapper->SetInputData(fruitSurfacePolyData);
+
+	fruitSurfacePointsActor->SetMapper(fruitSurfacePointsMapper);
+	fruitSurfacePointsActor->GetProperty()->SetPointSize(20);
+	return fruitSurfacePointsActor;
+}
+
+vtkNew<vtkPolyData> mkVtkPolyDataFromScannablePoints(const std::vector<ScanTargetPoint> &scan_targets) {
+	vtkNew<vtkUnsignedCharArray> colors;
+	colors->SetNumberOfComponents(3);
+
+	vtkNew<vtkPoints> fruitSurfacePointsVtk;
+	vtkNew<vtkCellArray> fruitSurfaceCells;
+
+	for (const auto &point: scan_targets) {
+		auto pt_id = fruitSurfacePointsVtk->InsertNextPoint(point.point.data());
+		fruitSurfaceCells->InsertNextCell({pt_id});
+
+		colors->InsertNextTuple3(0, 0, 255);
+	}
+
+	vtkNew<vtkPolyData> fruitSurfacePolyData;
+	fruitSurfacePolyData->SetPoints(fruitSurfacePointsVtk);
+	fruitSurfacePolyData->SetVerts(fruitSurfaceCells);
+	fruitSurfacePolyData->GetPointData()->SetScalars(colors);
+	return fruitSurfacePolyData;
+}
+
+vtkNew<vtkRenderer> buildSensorRenderer() {
+
+	vtkNew<vtkRenderer> sensorRenderer;
+	sensorRenderer->SetBackground(0.0, 0.0, 0.0);
+	sensorRenderer->GetActiveCamera()->SetClippingRange(0.1, 10.0);
+
+	vtkNew<vtkLight> solidColorLight = mkWhiteAmbientLight();
+	sensorRenderer->ClearLights();
+	sensorRenderer->AddLight(solidColorLight);
+
+	return sensorRenderer;
+}
+
+vtkNew<vtkRenderWindow> buildSensorRenderWindow(vtkNew<vtkRenderer> &sensorRenderer) {
+	vtkNew<vtkRenderWindow> sensorViewWindow;
+	sensorViewWindow->SetSize(SENSOR_RESOLUTION, SENSOR_RESOLUTION);
+	sensorViewWindow->AddRenderer(sensorRenderer);
+	sensorViewWindow->SetWindowName("Robot Sensor View");
+	return sensorViewWindow;
+}
+
+void setColorsByEncoding(vtkNew<vtkActor> &tree_actor, const std::array<double, 3> &rgb) {
+	tree_actor->GetProperty()->SetDiffuseColor(rgb.data());
+	tree_actor->GetProperty()->SetAmbientColor(rgb.data());
+	tree_actor->GetProperty()->SetAmbient(1.0);
+}
+
+vtkNew<vtkActorCollection> buildTreeActors(const TreeMeshes &meshes) {
+
+	vtkNew<vtkActorCollection> actors;
+
+	auto tree_actor = createActorFromMesh(meshes.trunk_mesh);
+	setColorsByEncoding(tree_actor, TRUNK_RGB);
+
+	auto leaves_actor = createActorFromMesh(meshes.leaves_mesh);
+	setColorsByEncoding(leaves_actor, LEAVES_RGB);
+
+	auto fruit_actor = createActorFromMesh(meshes.fruit_mesh);
+	setColorsByEncoding(fruit_actor, FRUIT_RGB);
+
+	actors->AddItem(tree_actor);
+	actors->AddItem(leaves_actor);
+	actors->AddItem(fruit_actor);
+
+	return actors;
+}
+
+vtkNew<vtkActorCollection> buildOrchardActors(const SimplifiedOrchard &orchard) {
+
+	vtkNew<vtkActorCollection> orchard_actors;
+
+	for (const auto& [pos, meshes] : orchard.trees)
+	{
+		auto tree_actors = buildTreeActors(meshes);
+
+		for (int i = 0; i < tree_actors->GetNumberOfItems(); i++) {
+			auto actor = vtkActor::SafeDownCast(tree_actors->GetItemAsObject(i));
+			actor->SetPosition(pos.x(), pos.y(), 0);
+
+			orchard_actors->AddItem(actor);
+
+		}
+	}
+
+	vtkNew<vtkActor> ground_plane_actor = buildGroundPlaneActor();
+
+	orchard_actors->AddItem(ground_plane_actor);
+
+	return orchard_actors;
+
+}
+
+vtkNew<vtkActor> buildGroundPlaneActor() {
+	vtkNew<vtkPlaneSource> ground_plane_source;
+	ground_plane_source->SetPoint1(10.0, 0.0, 0.0);
+	ground_plane_source->SetPoint2(0.0, 10.0, 0.0);
+	ground_plane_source->SetCenter(0.0, 0.0, 0.0);
+
+	vtkNew<vtkPolyDataMapper> ground_plane_mapper;
+	ground_plane_mapper->SetInputConnection(ground_plane_source->GetOutputPort());
+
+	vtkNew<vtkActor> ground_plane_actor;
+	ground_plane_actor->SetMapper(ground_plane_mapper);
+
+	setColorsByEncoding(ground_plane_actor, GROUND_PLANE_RGB);
+
+	return ground_plane_actor;
 }
 
 vtkFunctionalCallback *vtkFunctionalCallback::New() {

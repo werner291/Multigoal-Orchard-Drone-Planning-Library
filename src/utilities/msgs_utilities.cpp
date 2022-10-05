@@ -53,3 +53,7 @@ void addColoredMeshCollisionShape(moveit_msgs::msg::PlanningScene &planning_scen
     planning_scene_message.object_colors.push_back(oc);
 }
 
+Eigen::Vector3d toEigen(const geometry_msgs::msg::Point &point) {
+	return {point.x, point.y, point.z };
+}
+

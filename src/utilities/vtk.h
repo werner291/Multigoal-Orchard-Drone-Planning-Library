@@ -12,6 +12,10 @@
 #include <moveit/robot_model/link_model.h>
 
 #include <shape_msgs/msg/mesh.hpp>
+#include "../ScannablePointsIndex.h"
+#include "../TreeMeshes.h"
+
+static const int SENSOR_RESOLUTION = 200;
 
 /**
  * Returns a vtkPolyDataMapper for the collision geometry of the given robot LinkModel.
@@ -76,7 +80,7 @@ class vtkFunctionalCallback : public vtkCommand
 {
 	/// The callback to call when the timer fires.
 	std::function<void()> callback;
-	unsigned long event_id;
+	unsigned long event_id{};
 public:
 	void setEventId(unsigned long eventId);
 
@@ -98,5 +102,85 @@ public:
 		vtkFunctionalCallback::callback = cb;
 	}
 };
+
+/**
+ * Build a vtkRenderer with a simple blue background and a diffuse light.
+ *
+ * @return The created vtkRenderer.
+ */
+vtkNew<vtkRenderer> buildViewerRenderer();
+
+/**
+ * Construct a vtkActor for the given vtkPolyData, assuming that the latter represents a point cloud.
+ *
+ * @param pointCloudPolyData 		The vtkPolyData to construct the actor for.
+ * @return 							The constructed vtkActor.
+ */
+vtkNew<vtkActor> constructSimplePolyDataPointCloudActor(const vtkNew<vtkPolyData> &pointCloudPolyData);
+
+/**
+ * Build vtkPolyData from the given vector of ScanTargetPoint, in order to visualize them.
+ *
+ * The resulting poly data will have one point and one vertex for every ScanTargetPoint,
+ * colored dark blue, with matching indices.
+ *
+ * @param scan_targets 		The ScanTargetPoints to build the poly data for.
+ * @return 					The built vtkPolyData.
+ */
+vtkNew<vtkPolyData> mkVtkPolyDataFromScannablePoints(const std::vector<ScanTargetPoint> &scan_targets);
+
+/**
+ * Build a vtkRenderer to simulate a sensor, with a black background and a white ambient light,
+ * which preserves 1-to-1 the ambient color of all objects in the scene.
+ * 
+ * @return 		The created vtkRenderer.
+ */
+vtkNew<vtkRenderer> buildSensorRenderer();
+
+/**
+ * Build a render window for the sensor render.
+ * 
+ * @param sensorRenderer 		The sensor renderer to build the render window for.
+ * @return 						The created render window.
+ */
+vtkNew<vtkRenderWindow> buildSensorRenderWindow(vtkNew<vtkRenderer> &sensorRenderer);
+
+/**
+ * Given an array of RGB values ( in [0,1] ), set the ambient and diffuse colors to that colors.
+ *
+ * The ambient color will be set such that the object will be rendered with exactly that color,
+ * which can be useful to preserve data encoded in the color.
+ *
+ * @param tree_actor 		The actor to set the colors for.
+ * @param rgb 				The RGB values [0-1] to set the colors to.
+ */
+void setColorsByEncoding(vtkNew<vtkActor> &tree_actor, const std::array<double, 3> &rgb);
+
+/**
+ * Given a TreeMeshes, build an actor collection with an actor for each part of the tree: trunk, leaves and fruit.
+ *
+ * Actors are colored according to color encoding.
+ *
+ * @param meshes 		The TreeMeshes to build the actor collection for.
+ * @return 				The built actor collection.
+ */
+vtkNew<vtkActorCollection> buildTreeActors(const TreeMeshes& meshes);
+
+/**
+ * Given a SimplifiedOrchard, construct the required actors to visualize it.
+ * Color encoding to identify different parts is used.
+ *
+ * @param orchard 		The SimplifiedOrchard to build the actors for.
+ * @return 				The built actor collection.
+ */
+vtkNew<vtkActorCollection> buildOrchardActors(const SimplifiedOrchard &orchard);
+
+/**
+ * Build a vtkActor representing a simple flat ground plane, with GROUND_PLANE_RGB as color.
+ *
+ * @return 		The built vtkActor.
+ */
+vtkNew<vtkActor> buildGroundPlaneActor();
+
 
 #endif //NEW_PLANNERS_VTK_H
