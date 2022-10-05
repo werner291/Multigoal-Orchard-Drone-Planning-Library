@@ -157,6 +157,7 @@ vtkNew<vtkRenderer> buildViewerRenderer() {
 	return viewerRenderer;
 }
 
+
 int main(int, char*[]) {
 
 	auto drone = loadRobotModel();
@@ -249,7 +250,7 @@ int main(int, char*[]) {
 		// FIXME: Ideally, I'd like to make sure the algorithm sees the point cloud exactly once.
 		if (depthToPointCloud->GetOutput()->GetPoints() != nullptr) {
 
-			const SegmentedPointCloud &segmentedPointCloud = segmentPointCloudData(depthToPointCloud->GetOutput());
+			SegmentedPointCloud segmentedPointCloud = segmentPointCloudData(depthToPointCloud->GetOutput());
 
 			stupidAlgorithm.updatePointCloud(current_state, segmentedPointCloud);
 
@@ -257,7 +258,8 @@ int main(int, char*[]) {
 											   current_state.getGlobalLinkTransform("end_effector").translation(),
 											   current_state.getGlobalLinkTransform("end_effector").rotation() * Eigen::Vector3d(0, 1, 0),
 											   M_PI / 4.0,
-											   0.1
+											   0.1,
+											   segmentedPointCloud
 											   );
 
 			for (auto &point: scanned_points) {

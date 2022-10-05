@@ -6,6 +6,7 @@
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 #include "exploration/SegmentedPointCloud.h"
 
+static const double VISIBLE_POINT_MAX_DISTANCE = 0.01;
 /**
  * A point somewhere in the world that needs to be scanned, including a flag indicating whether it has been scanned.
  */
@@ -74,7 +75,8 @@ public:
 	std::vector<size_t> findScannedPoints(const Eigen::Vector3d &scanSource,
 										  const Eigen::Vector3d &scanDirection,
 										  double fov,
-										  double maxDistance) const;
+										  double maxDistance,
+										  const SegmentedPointCloud& visiblePoints) const;
 
 
 };

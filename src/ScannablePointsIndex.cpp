@@ -1,5 +1,6 @@
-
+#include <variant>
 #include "ScannablePointsIndex.h"
+#include "HashedSpatialIndex.h"
 
 bool ScannablePointsIndex::GNATEntry::operator==(const ScannablePointsIndex::GNATEntry &other) const {
 	return point.point == other.point.point;
@@ -27,12 +28,20 @@ ScannablePointsIndex::ScannablePointsIndex(const std::vector<ScanTargetPoint> &i
 std::vector<size_t> ScannablePointsIndex::findScannedPoints(const Eigen::Vector3d &scanSource,
 															const Eigen::Vector3d &scanDirection,
 															const double fov,
-															double maxDistance) const {
+															double maxDistance,
+															const SegmentedPointCloud& visiblePoints) const {
 
 	std::vector<GNATEntry> near_sensor = findNearSensor(scanSource, maxDistance);
 
 	// TODO: Premature optimization is the root of all evil.
 	// But we might still want to index the scanned points by their position at some point.
+	HashedSpatialIndex<std::monostate> scannedPointsIndex(VISIBLE_POINT_MAX_DISTANCE, 1000);
+
+	for (const auto& point : visiblePoints.points) {
+		if (point.type == PointType::PT_TARGET) {
+			scannedPointsIndex.insert(point.position, {});
+		}
+	}
 
 	std::vector<size_t> scanned;
 
@@ -47,6 +56,11 @@ std::vector<size_t> ScannablePointsIndex::findScannedPoints(const Eigen::Vector3
 
 		// Check if the point's normal is turned towards the sensor
 		if (entry.point.normal.dot(scanDirection) < 0) {
+			continue;
+		}
+
+		// Check if a target point is near this place.
+		if (!scannedPointsIndex.any_within(entry.point.point, VISIBLE_POINT_MAX_DISTANCE).has_value()) {
 			continue;
 		}
 

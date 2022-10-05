@@ -26,6 +26,14 @@ struct Point {
 	PointType type;
 	/// Position of the point
 	Eigen::Vector3d position;
+
+	bool operator==(const Point &other) const {
+		return type == other.type && position == other.position;
+	}
+
+	bool operator!=(const Point &other) const {
+		return !(*this == other);
+	}
 };
 
 /**
