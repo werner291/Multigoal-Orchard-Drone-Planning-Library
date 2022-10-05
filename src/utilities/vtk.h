@@ -39,7 +39,7 @@ vtkNew<vtkLight> mkWhiteAmbientLight();
  * @param tf 			The transform to set the camera to.
  * @param pCamera 		The camera to set the transform for.
  */
-void setCameraFromEigen(Eigen::Isometry3d &tf, vtkCamera *pCamera);
+void setCameraFromEigen(const Eigen::Isometry3d &tf, vtkCamera *pCamera);
 
 /**
  * Add the given actor collection to the given renderer.
@@ -47,7 +47,7 @@ void setCameraFromEigen(Eigen::Isometry3d &tf, vtkCamera *pCamera);
  * @param orchard_actors 		The actor collection to add to the renderer.
  * @param sensorRenderer 		The renderer to add the actor collection to.
  */
-void addActorCollectionToRenderer(vtkNew<vtkActorCollection> &orchard_actors, vtkNew<vtkRenderer> &sensorRenderer);
+void addActorCollectionToRenderer(vtkActorCollection *orchard_actors, vtkRenderer *sensorRenderer);
 
 /**
  * Convert a ROS shape_msgs::msg::Mesh to a vtkPolyData.
@@ -70,7 +70,7 @@ vtkNew<vtkActor> createActorFromMesh(const shape_msgs::msg::Mesh &mesh);
  * @param sensorRenderer 		The renderer to extract the point cloud from.
  * @return 						The extracted point cloud.
  */
-vtkNew<vtkDepthImageToPointCloud> extractPointCloudFromRenderer(vtkNew<vtkRenderer> &sensorRenderer);
+vtkNew<vtkDepthImageToPointCloud> extractPointCloudFromRenderer(vtkRenderer *sensorRenderer);
 
 /**
  * A vtkTimerCommand that calls the given callback when the timer fires, to allow the use of lambdas as callbacks in vtk.
@@ -103,21 +103,6 @@ public:
 		vtkFunctionalCallback::callback = cb;
 	}
 };
-
-/**
- * Build a vtkRenderer with a simple blue background and a diffuse light.
- *
- * @return The created vtkRenderer.
- */
-vtkNew<vtkRenderer> buildViewerRenderer();
-
-/**
- * Build a viewer window to go with the vtkRenderer from buildViewerRenderer.
- *
- * @param viewerRenderer 		The renderer to build the viewer window for.
- * @return 						The created viewer window.
- */
-vtkNew<vtkRenderWindow> buildViewerWindow(vtkNew<vtkRenderer> &viewerRenderer);
 
 /**
  * Build a simple window interactor that sets up a 33ms timer as well.
@@ -159,7 +144,7 @@ vtkNew<vtkRenderer> buildSensorRenderer();
  * @param sensorRenderer 		The sensor renderer to build the render window for.
  * @return 						The created render window.
  */
-vtkNew<vtkRenderWindow> buildSensorRenderWindow(vtkNew<vtkRenderer> &sensorRenderer);
+vtkNew<vtkRenderWindow> buildSensorRenderWindow(vtkRenderer *sensorRenderer);
 
 /**
  * Given an array of RGB values ( in [0,1] ), set the ambient and diffuse colors to that colors.
@@ -204,6 +189,6 @@ vtkNew<vtkActor> buildGroundPlaneActor();
  * @param depthToPointCloud 		The vtkDepthImageToPointCloud to build the actor for.
  * @return 							The built vtkActor.
  */
-vtkNew<vtkActor> buildDepthImagePointCloudActor(vtkNew<vtkDepthImageToPointCloud> &depthToPointCloud);
+vtkNew<vtkActor> buildDepthImagePointCloudActor(vtkAlgorithmOutput *pointCloudInput);
 
 #endif //NEW_PLANNERS_VTK_H

@@ -4,6 +4,7 @@
 
 #include <moveit/robot_state/robot_state.h>
 #include <Eigen/Core>
+#include <moveit/robot_trajectory/robot_trajectory.h>
 
 /**
  * Assuming the robot has a floating base as the first 7 joint variables, this function sets the translation of the base.
@@ -20,5 +21,16 @@ void setBaseTranslation(moveit::core::RobotState &st, const Eigen::Vector3d &off
  * @param q 			The orientation to set the base to.
  */
 void setBaseOrientation(moveit::core::RobotState &robotState, Eigen::Quaterniond &q);
+
+/**
+ * Set the given robot state to a point at time T in the given trajectory.
+ *
+ * @param state 				The robot state to set.
+ * @param t 					The time T to set the robot state to.
+ * @param currentTrajectory 	The trajectory to get the robot state from.
+ */
+void setStateToTrajectoryPoint(moveit::core::RobotState &state,
+							   double t,
+							   const robot_trajectory::RobotTrajectory &currentTrajectory);
 
 #endif //NEW_PLANNERS_MOVEIT_H

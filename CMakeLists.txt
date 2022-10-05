@@ -172,7 +172,7 @@ add_library(${PROJECT_NAME}_shared
 #        src/planners/shell_path_planner/ApproachPlanning.cpp
 #        src/utilities/TriangleSpheretreeIndex.cpp
 #        src/utilities/TriangleSpheretreeIndex.h
-        src/exploration/SegmentedPointCloud.cpp src/exploration/SegmentedPointCloud.h src/exploration/ColorEncoding.cpp src/exploration/ColorEncoding.h src/exploration/VtkToPointCloud.h src/exploration/VtkToPointCloud.cpp src/exploration/StupidAlgorithm.cpp src/ScannablePointsIndex.cpp src/ScannablePointsIndex.h src/HashedSpatialIndex.cpp src/HashedSpatialIndex.h src/exploration/scan_points.h src/exploration/scan_points.cpp)
+        src/exploration/SegmentedPointCloud.cpp src/exploration/SegmentedPointCloud.h src/exploration/ColorEncoding.cpp src/exploration/ColorEncoding.h src/exploration/VtkToPointCloud.h src/exploration/VtkToPointCloud.cpp src/exploration/StupidAlgorithm.cpp src/ScannablePointsIndex.cpp src/ScannablePointsIndex.h src/HashedSpatialIndex.cpp src/HashedSpatialIndex.h src/exploration/scan_points.h src/exploration/scan_points.cpp src/vtk/SimulatedSensor.cpp src/vtk/SimulatedSensor.h src/vtk/Viewer.cpp src/vtk/Viewer.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

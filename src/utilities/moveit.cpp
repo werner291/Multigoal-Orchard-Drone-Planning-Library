@@ -13,3 +13,16 @@ void setBaseOrientation(moveit::core::RobotState &robotState, Eigen::Quaterniond
 	robotState.setVariablePosition(5, q.z());
 	robotState.setVariablePosition(6, q.w());
 }
+
+void setStateToTrajectoryPoint(moveit::core::RobotState &state,
+							   double t,
+							   const robot_trajectory::RobotTrajectory &currentTrajectory) {
+
+	// RobotTrajectory::getStateAtDurationFromStart annoyingly requires a shared_ptr,
+	// so we make a fake shared pointer through the aliasing constructor of std::shared_ptr
+	// to get a shared_ptr pointing to our robotstate without surrendering ownership.
+	moveit::core::RobotStatePtr state_fakeshared(moveit::core::RobotStatePtr{}, &state);
+	currentTrajectory.getStateAtDurationFromStart(t, state_fakeshared);
+	state.update(true);
+
+}

@@ -81,7 +81,7 @@ vtkNew<vtkLight> mkWhiteAmbientLight() {
 	return light;
 }
 
-void setCameraFromEigen(Eigen::Isometry3d &tf, vtkCamera *pCamera) {
+void setCameraFromEigen(const Eigen::Isometry3d &tf, vtkCamera *pCamera) {
 	Eigen::Vector3d eye_center = tf.translation();
 	Eigen::Vector3d eye_focus = tf * Eigen::Vector3d(0, 1.0, 0.0);
 	Eigen::Vector3d eye_up = tf.rotation() * Eigen::Vector3d(0, 0.0, 1.0);
@@ -91,7 +91,7 @@ void setCameraFromEigen(Eigen::Isometry3d &tf, vtkCamera *pCamera) {
 	pCamera->SetViewUp(eye_up.x(), eye_up.y(), eye_up.z());
 }
 
-void addActorCollectionToRenderer(vtkNew<vtkActorCollection> &orchard_actors, vtkNew<vtkRenderer> &sensorRenderer) {
+void addActorCollectionToRenderer(vtkActorCollection *orchard_actors, vtkRenderer *sensorRenderer) {
 	for (int i = 0; i < orchard_actors->GetNumberOfItems(); i++) {
 		sensorRenderer->AddActor(vtkActor::SafeDownCast(orchard_actors->GetItemAsObject(i)));
 	}
@@ -145,7 +145,7 @@ vtkNew<vtkActor> createActorFromMesh(const shape_msgs::msg::Mesh &mesh) {
 	return actor;
 }
 
-vtkNew<vtkDepthImageToPointCloud> extractPointCloudFromRenderer(vtkNew<vtkRenderer> &sensorRenderer) {
+vtkNew<vtkDepthImageToPointCloud> extractPointCloudFromRenderer(vtkRenderer *sensorRenderer) {
 	vtkNew<vtkRendererSource> rendererSource;
 	rendererSource->DepthValuesOn();
 	rendererSource->SetInput(sensorRenderer);
@@ -156,17 +156,6 @@ vtkNew<vtkDepthImageToPointCloud> extractPointCloudFromRenderer(vtkNew<vtkRender
 	return depthToPointCloud;
 }
 
-vtkNew<vtkRenderer> buildViewerRenderer() {
-	vtkNew<vtkRenderer> viewerRenderer;
-	viewerRenderer->SetBackground(0.1, 0.1, 0.5);
-	viewerRenderer->ResetCamera();
-
-	vtkNew<vtkLight> naturalLight;
-	naturalLight->SetAmbientColor(0.0, 0.0, 0.0);
-	viewerRenderer->ClearLights();
-	viewerRenderer->AddLight(naturalLight);
-	return viewerRenderer;
-}
 
 vtkNew<vtkActor> constructSimplePolyDataPointCloudActor(const vtkNew<vtkPolyData> &fruitSurfacePolyData) {
 	vtkNew<vtkActor> fruitSurfacePointsActor;
@@ -212,7 +201,7 @@ vtkNew<vtkRenderer> buildSensorRenderer() {
 	return sensorRenderer;
 }
 
-vtkNew<vtkRenderWindow> buildSensorRenderWindow(vtkNew<vtkRenderer> &sensorRenderer) {
+vtkNew<vtkRenderWindow> buildSensorRenderWindow(vtkRenderer *sensorRenderer) {
 	vtkNew<vtkRenderWindow> sensorViewWindow;
 	sensorViewWindow->SetSize(SENSOR_RESOLUTION, SENSOR_RESOLUTION);
 	sensorViewWindow->AddRenderer(sensorRenderer);
@@ -288,24 +277,9 @@ vtkNew<vtkActor> buildGroundPlaneActor() {
 	return ground_plane_actor;
 }
 
-vtkNew<vtkRenderWindow> buildViewerWindow(vtkNew<vtkRenderer> &viewerRenderer) {
-	vtkNew<vtkRenderWindow> visualizerWindow;
-	visualizerWindow->SetSize(800,600);
-	visualizerWindow->SetWindowName("PointCloud");
-	visualizerWindow->AddRenderer(viewerRenderer);
-	return visualizerWindow;
-}
-
-vtkNew<vtkRenderWindowInteractor> buildVisualizerWindowInteractor(vtkNew<vtkRenderWindow> &visualizerWindow) {
-	vtkNew<vtkRenderWindowInteractor> renderWindowInteractor;
-	renderWindowInteractor->SetRenderWindow(visualizerWindow);
-	renderWindowInteractor->CreateRepeatingTimer(33);
-	return renderWindowInteractor;
-}
-
-vtkNew<vtkActor> buildDepthImagePointCloudActor(vtkNew<vtkDepthImageToPointCloud> &depthToPointCloud) {
+vtkNew<vtkActor> buildDepthImagePointCloudActor(vtkAlgorithmOutput *pointCloudInput) {
 	vtkNew<vtkPolyDataMapper> pointCloudMapper;
-	pointCloudMapper->SetInputConnection(depthToPointCloud->GetOutputPort());
+	pointCloudMapper->SetInputConnection(pointCloudInput);
 
 	vtkNew<vtkActor> pointCloudActor;
 	pointCloudActor->SetMapper(pointCloudMapper);
