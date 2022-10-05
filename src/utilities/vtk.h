@@ -8,6 +8,7 @@
 #include <vtkActorCollection.h>
 #include <vtkCommand.h>
 #include <vtkDepthImageToPointCloud.h>
+#include <vtkRenderWindowInteractor.h>
 
 #include <moveit/robot_model/link_model.h>
 
@@ -111,6 +112,21 @@ public:
 vtkNew<vtkRenderer> buildViewerRenderer();
 
 /**
+ * Build a viewer window to go with the vtkRenderer from buildViewerRenderer.
+ *
+ * @param viewerRenderer 		The renderer to build the viewer window for.
+ * @return 						The created viewer window.
+ */
+vtkNew<vtkRenderWindow> buildViewerWindow(vtkNew<vtkRenderer> &viewerRenderer);
+
+/**
+ * Build a simple window interactor that sets up a 33ms timer as well.
+ * @param visualizerWindow 		The window to build the interactor for.
+ * @return 						The created interactor.
+ */
+vtkNew<vtkRenderWindowInteractor> buildVisualizerWindowInteractor(vtkNew<vtkRenderWindow> &visualizerWindow);
+
+/**
  * Construct a vtkActor for the given vtkPolyData, assuming that the latter represents a point cloud.
  *
  * @param pointCloudPolyData 		The vtkPolyData to construct the actor for.
@@ -182,5 +198,12 @@ vtkNew<vtkActorCollection> buildOrchardActors(const SimplifiedOrchard &orchard);
  */
 vtkNew<vtkActor> buildGroundPlaneActor();
 
+/**
+ * Build a point cloud actor for a vtkDepthImageToPointCloud.
+ *
+ * @param depthToPointCloud 		The vtkDepthImageToPointCloud to build the actor for.
+ * @return 							The built vtkActor.
+ */
+vtkNew<vtkActor> buildDepthImagePointCloudActor(vtkNew<vtkDepthImageToPointCloud> &depthToPointCloud);
 
 #endif //NEW_PLANNERS_VTK_H

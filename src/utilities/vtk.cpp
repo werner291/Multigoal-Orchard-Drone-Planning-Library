@@ -288,6 +288,30 @@ vtkNew<vtkActor> buildGroundPlaneActor() {
 	return ground_plane_actor;
 }
 
+vtkNew<vtkRenderWindow> buildViewerWindow(vtkNew<vtkRenderer> &viewerRenderer) {
+	vtkNew<vtkRenderWindow> visualizerWindow;
+	visualizerWindow->SetSize(800,600);
+	visualizerWindow->SetWindowName("PointCloud");
+	visualizerWindow->AddRenderer(viewerRenderer);
+	return visualizerWindow;
+}
+
+vtkNew<vtkRenderWindowInteractor> buildVisualizerWindowInteractor(vtkNew<vtkRenderWindow> &visualizerWindow) {
+	vtkNew<vtkRenderWindowInteractor> renderWindowInteractor;
+	renderWindowInteractor->SetRenderWindow(visualizerWindow);
+	renderWindowInteractor->CreateRepeatingTimer(33);
+	return renderWindowInteractor;
+}
+
+vtkNew<vtkActor> buildDepthImagePointCloudActor(vtkNew<vtkDepthImageToPointCloud> &depthToPointCloud) {
+	vtkNew<vtkPolyDataMapper> pointCloudMapper;
+	pointCloudMapper->SetInputConnection(depthToPointCloud->GetOutputPort());
+
+	vtkNew<vtkActor> pointCloudActor;
+	pointCloudActor->SetMapper(pointCloudMapper);
+	return pointCloudActor;
+}
+
 vtkFunctionalCallback *vtkFunctionalCallback::New() {
 	return new vtkFunctionalCallback;
 }

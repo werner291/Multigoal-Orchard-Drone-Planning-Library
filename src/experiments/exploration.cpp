@@ -27,11 +27,7 @@
 
 moveit::core::RobotState mkInitialState(const moveit::core::RobotModelPtr &drone);
 
-vtkNew<vtkRenderWindow> buildViewerWindow(vtkNew<vtkRenderer> &viewerRenderer);
-
-vtkNew<vtkRenderWindowInteractor> buildVisualizerWindowInteractor(vtkNew<vtkRenderWindow> &visualizerWindow);
-
-vtkNew<vtkActor> buildPointCloudActor(vtkNew<vtkDepthImageToPointCloud> &depthToPointCloud);
+vtkNew<vtkActor> buildDepthImagePointCloudActor(vtkNew<vtkDepthImageToPointCloud> &depthToPointCloud);
 
 std::vector<ScanTargetPoint> buildScanTargetPoints(const shape_msgs::msg::Mesh &mesh, size_t n);
 
@@ -72,7 +68,7 @@ int main(int, char*[]) {
 
 	vtkNew<vtkCallbackCommand> pointCloudCallback;
 
-	vtkNew<vtkActor> pointCloudActor = buildPointCloudActor(depthToPointCloud);
+	vtkNew<vtkActor> pointCloudActor = buildDepthImagePointCloudActor(depthToPointCloud);
 
 	vtkNew<vtkRenderer> viewerRenderer = buildViewerRenderer();
 
@@ -169,27 +165,5 @@ moveit::core::RobotState mkInitialState(const moveit::core::RobotModelPtr &drone
 	return current_state;
 }
 
-vtkNew<vtkRenderWindow> buildViewerWindow(vtkNew<vtkRenderer> &viewerRenderer) {
-	vtkNew<vtkRenderWindow> visualizerWindow;
-	visualizerWindow->SetSize(800,600);
-	visualizerWindow->SetWindowName("PointCloud");
-	visualizerWindow->AddRenderer(viewerRenderer);
-	return visualizerWindow;
-}
 
-vtkNew<vtkRenderWindowInteractor> buildVisualizerWindowInteractor(vtkNew<vtkRenderWindow> &visualizerWindow) {
-	vtkNew<vtkRenderWindowInteractor> renderWindowInteractor;
-	renderWindowInteractor->SetRenderWindow(visualizerWindow);
-	renderWindowInteractor->CreateRepeatingTimer(33);
-	return renderWindowInteractor;
-}
-
-vtkNew<vtkActor> buildPointCloudActor(vtkNew<vtkDepthImageToPointCloud> &depthToPointCloud) {
-	vtkNew<vtkPolyDataMapper> pointCloudMapper;
-	pointCloudMapper->SetInputConnection(depthToPointCloud->GetOutputPort());
-
-	vtkNew<vtkActor> pointCloudActor;
-	pointCloudActor->SetMapper(pointCloudMapper);
-	return pointCloudActor;
-}
 
