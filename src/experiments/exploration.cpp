@@ -15,6 +15,7 @@
 #include <vtkCallbackCommand.h>
 
 #include <utility>
+#include <ompl/datastructures/NearestNeighborsGNAT.h>
 
 #include "../utilities/experiment_utils.h"
 #include "../vtk/VtkRobotModel.h"
@@ -25,60 +26,7 @@
 #include "../exploration/VtkToPointCloud.h"
 #include "../utilities/vtk.h"
 #include "../TreeMeshes.h"
-
-//
-//Eigen::Vector3d toEigen(const geometry_msgs::msg::Point &point) {
-//	return {point.x, point.y, point.z };
-//}
-//
-//std::vector<Eigen::Vector3d> buildScanTargetPoints(const shape_msgs::msg::Mesh &mesh, size_t n) {
-//
-//	// Distribute 1000 points on the surface of the mesh.
-//
-//	// TODO: Argue uniformity of some kind.
-//
-//	std::vector<Eigen::Vector3d> points;
-//	points.reserve(n);
-//
-//	ompl::RNG rng;
-//	for (size_t i = 0; i < n; i++) {
-//		const auto &triangle = mesh.triangles[rng.uniformInt(0, (int) mesh.triangles.size() - 1)];
-//
-//		const auto &p1 = toEigen(mesh.vertices[triangle.vertex_indices[0]]);
-//		const auto &p2 = toEigen(mesh.vertices[triangle.vertex_indices[1]]);
-//		const auto &p3 = toEigen(mesh.vertices[triangle.vertex_indices[2]]);
-//
-//		const double r1 = rng.uniform01();
-//		const double r2 = rng.uniform01();
-//
-//		Eigen::Vector3d sample = p1 + r1 * (p2 - p1) + r2 * (p3 - p1);
-//
-//		points.push_back(sample);
-//	}
-//
-//	return points;
-//
-//}
-//
-//void buildSurfacePointsActor(std::vector<Eigen::Vector3d> &fruitSurfacePoints) {
-//	vtkNew<vtkActor> fruitSurfacePointsActor;
-//
-//	{
-//		vtkNew<vtkPoints> fruitSurfacePointsVtk;
-//		for (const auto &point: fruitSurfacePoints) {
-//			fruitSurfacePointsVtk->InsertNextPoint(point.data());
-//		}
-//		vtkNew<vtkPolyData> fruitSurfacePolyData;
-//		fruitSurfacePolyData->SetPoints(fruitSurfacePointsVtk);
-//
-//		vtkNew<vtkPolyDataMapper> fruitSurfacePointsMapper;
-//		fruitSurfacePointsMapper->SetInputData(fruitSurfacePolyData);
-//
-//		fruitSurfacePointsActor->SetMapper(fruitSurfacePointsMapper);
-//		fruitSurfacePointsActor->GetProperty()->SetPointSize(5);
-//		fruitSurfacePointsActor->GetProperty()->SetColor(0.5, 0.0, 1.0);
-//	}
-//}
+#include "../ScannablePointsIndex.h"
 
 struct SimplifiedOrchard {
 	std::vector<std::pair<Eigen::Vector2d, TreeMeshes>> trees;
@@ -91,6 +39,10 @@ vtkNew<vtkActor> buildGroundPlaneActor();
 vtkNew<vtkRenderWindow> buildSensorRenderWindow(vtkNew<vtkRenderer> &sensorRenderer);
 
 vtkNew<vtkRenderer> buildSensorRenderer();
+
+vtkNew<vtkPolyData> mkVtkPoolyDataFromScannablePoints(const std::vector<ScanTargetPoint> &fruitSurfacePoints);
+
+vtkNew<vtkActor> constructSimplePolyDataPointCloudActor(vtkNew<vtkPolyData> &fruitSurfacePolyData);
 
 moveit::core::RobotState mkInitialState(const moveit::core::RobotModelPtr &drone) {
 	moveit::core::RobotState current_state(drone);
@@ -131,13 +83,13 @@ Eigen::Vector3d toEigen(const geometry_msgs::msg::Point &point) {
 	return {point.x, point.y, point.z };
 }
 
-std::vector<Eigen::Vector3d> buildScanTargetPoints(const shape_msgs::msg::Mesh &mesh, size_t n) {
+std::vector<ScanTargetPoint> buildScanTargetPoints(const shape_msgs::msg::Mesh &mesh, size_t n) {
 
 	// Distribute 1000 points on the surface of the mesh.
 
 	// TODO: Argue uniformity of some kind.
 
-	std::vector<Eigen::Vector3d> points;
+	std::vector<ScanTargetPoint> points;
 	points.reserve(n);
 
 	ompl::RNG rng;
@@ -153,36 +105,49 @@ std::vector<Eigen::Vector3d> buildScanTargetPoints(const shape_msgs::msg::Mesh &
 
 		Eigen::Vector3d sample = p1 + r1 * (p2 - p1) + r2 * (p3 - p1);
 
-		points.push_back(sample);
+		ScanTargetPoint point;
+		point.point = sample;
+		points.push_back(point);
 	}
 
 	return points;
 
 }
 
-void buildSurfacePointsActor(std::vector<Eigen::Vector3d> &fruitSurfacePoints) {
+vtkNew<vtkActor> constructSimplePolyDataPointCloudActor(vtkNew<vtkPolyData> &fruitSurfacePolyData) {
 	vtkNew<vtkActor> fruitSurfacePointsActor;
+	vtkNew<vtkPolyDataMapper> fruitSurfacePointsMapper;
+	fruitSurfacePointsMapper->SetInputData(fruitSurfacePolyData);
 
-	{
-		vtkNew<vtkPoints> fruitSurfacePointsVtk;
-		for (const auto &point: fruitSurfacePoints) {
-			fruitSurfacePointsVtk->InsertNextPoint(point.data());
-		}
-		vtkNew<vtkPolyData> fruitSurfacePolyData;
-		fruitSurfacePolyData->SetPoints(fruitSurfacePointsVtk);
+	fruitSurfacePointsActor->SetMapper(fruitSurfacePointsMapper);
+	fruitSurfacePointsActor->GetProperty()->SetPointSize(20);
+	return fruitSurfacePointsActor;
+}
 
-		vtkNew<vtkPolyDataMapper> fruitSurfacePointsMapper;
-		fruitSurfacePointsMapper->SetInputData(fruitSurfacePolyData);
+vtkNew<vtkPolyData> mkVtkPoolyDataFromScannablePoints(const std::vector<ScanTargetPoint> &fruitSurfacePoints) {
+	vtkNew<vtkUnsignedCharArray> colors;
+	colors->SetNumberOfComponents(3);
 
-		fruitSurfacePointsActor->SetMapper(fruitSurfacePointsMapper);
-		fruitSurfacePointsActor->GetProperty()->SetPointSize(5);
-		fruitSurfacePointsActor->GetProperty()->SetColor(0.5, 0.0, 1.0);
+	vtkNew<vtkPoints> fruitSurfacePointsVtk;
+	vtkNew<vtkCellArray> fruitSurfaceCells;
+
+	for (const auto &point: fruitSurfacePoints) {
+		auto pt_id = fruitSurfacePointsVtk->InsertNextPoint(point.point.data());
+		fruitSurfaceCells->InsertNextCell({pt_id});
+
+		colors->InsertNextTuple3(0, 0, 255);
 	}
+
+	vtkNew<vtkPolyData> fruitSurfacePolyData;
+	fruitSurfacePolyData->SetPoints(fruitSurfacePointsVtk);
+	fruitSurfacePolyData->SetVerts(fruitSurfaceCells);
+	fruitSurfacePolyData->GetPointData()->SetScalars(colors);
+	return fruitSurfacePolyData;
 }
 
 vtkNew<vtkRenderer> buildViewerRenderer() {
 	vtkNew<vtkRenderer> viewerRenderer;
-	viewerRenderer->SetBackground(0.0, 0.0, 0.8);
+	viewerRenderer->SetBackground(0.1, 0.1, 0.5);
 	viewerRenderer->ResetCamera();
 
 	vtkNew<vtkLight> naturalLight;
@@ -191,8 +156,6 @@ vtkNew<vtkRenderer> buildViewerRenderer() {
 	viewerRenderer->AddLight(naturalLight);
 	return viewerRenderer;
 }
-
-
 
 int main(int, char*[]) {
 
@@ -207,6 +170,14 @@ int main(int, char*[]) {
 			{ { 0.0, 0.0 }, loadTreeMeshes("appletree") },
 		}
 	};
+
+	auto surface_points = buildScanTargetPoints(orchard.trees[0].second.fruit_mesh, 2000);
+	
+	ScannablePointsIndex scannablePointsIndex(surface_points);
+
+	vtkNew<vtkPolyData> fruitSurfacePolyData = mkVtkPoolyDataFromScannablePoints(surface_points);
+
+	vtkNew<vtkActor> fruitSurfacePointsActor = constructSimplePolyDataPointCloudActor(fruitSurfacePolyData);
 
 	auto orchard_actors = buildOrchardActors(orchard);
 
@@ -231,6 +202,7 @@ int main(int, char*[]) {
 		viewerRenderer->AddActor(pointCloudActor);
 		addActorCollectionToRenderer(orchard_actors, viewerRenderer);
 		addActorCollectionToRenderer(robotModel.getLinkActors(), viewerRenderer);
+		viewerRenderer->AddActor(fruitSurfacePointsActor);
 	}
 
 	vtkNew<vtkRenderWindow> visualizerWindow = buildViewerWindow(viewerRenderer);
@@ -265,17 +237,34 @@ int main(int, char*[]) {
 			}
 
 			current_state.update(true);
-			robotModel.applyState(current_state);
 
-			Eigen::Isometry3d eePose = current_state.getGlobalLinkTransform("end_effector");
-			setCameraFromEigen(eePose, sensorRenderer->GetActiveCamera());
-			sensorViewWindow->Render();
 		}
+
+		robotModel.applyState(current_state);
+		Eigen::Isometry3d eePose = current_state.getGlobalLinkTransform("end_effector");
+		setCameraFromEigen(eePose, sensorRenderer->GetActiveCamera());
+		sensorViewWindow->Render();
 
 		// Nullptr check to avoid a race condition where the callback is called before the first point cloud is rendered.
 		// FIXME: Ideally, I'd like to make sure the algorithm sees the point cloud exactly once.
 		if (depthToPointCloud->GetOutput()->GetPoints() != nullptr) {
-			stupidAlgorithm.updatePointCloud(current_state, segmentPointCloudData(depthToPointCloud->GetOutput()));
+
+			const SegmentedPointCloud &segmentedPointCloud = segmentPointCloudData(depthToPointCloud->GetOutput());
+
+			stupidAlgorithm.updatePointCloud(current_state, segmentedPointCloud);
+
+			auto scanned_points = scannablePointsIndex.findScannedPoints(
+											   current_state.getGlobalLinkTransform("end_effector").translation(),
+											   current_state.getGlobalLinkTransform("end_effector").rotation() * Eigen::Vector3d(0, 1, 0),
+											   M_PI / 4.0,
+											   0.1
+											   );
+
+			for (auto &point: scanned_points) {
+				std::cout << "Yes!" << std::endl;
+				fruitSurfacePolyData->GetPointData()->GetScalars()->SetTuple3((vtkIdType) point, 255, 0, 255);
+				fruitSurfacePolyData->Modified();
+			}
 		}
 
 		visualizerWindow->Render();
