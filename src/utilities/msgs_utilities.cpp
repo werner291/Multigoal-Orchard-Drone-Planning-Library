@@ -57,3 +57,20 @@ Eigen::Vector3d toEigen(const geometry_msgs::msg::Point &point) {
 	return {point.x, point.y, point.z };
 }
 
+geometry_msgs::msg::Quaternion msgFromEigen(const Eigen::Quaterniond &q) {
+	geometry_msgs::msg::Quaternion msg;
+	msg.x = q.x();
+	msg.y = q.y();
+	msg.z = q.z();
+	msg.w = q.w();
+	return msg;
+}
+
+geometry_msgs::msg::Point msgFromEigen(const Eigen::Vector3d &v) {
+	geometry_msgs::msg::Point p;
+	p.x = v.x();
+	p.y = v.y();
+	p.z = v.z();
+	return p;
+}
+

@@ -68,4 +68,8 @@ std::optional<Msg> read_ros_msg(const std::string& filename){
 
 Eigen::Vector3d toEigen(const geometry_msgs::msg::Point &point);
 
+geometry_msgs::msg::Point msgFromEigen(const Eigen::Vector3d &v);
+
+geometry_msgs::msg::Quaternion msgFromEigen(const Eigen::Quaterniond& q);
+
 #endif //NEW_PLANNERS_BUILD_REQUEST_H
