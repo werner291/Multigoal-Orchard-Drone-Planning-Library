@@ -10,6 +10,11 @@
 
 #include <utility>
 
+#include <range/v3/view/enumerate.hpp>
+
+#include <moveit/collision_detection_fcl/collision_env_fcl.h>
+#include <geometric_shapes/shape_operations.h>
+
 #include "../utilities/experiment_utils.h"
 #include "../vtk/VtkRobotModel.h"
 #include "../utilities/load_mesh.h"
@@ -20,10 +25,52 @@
 #include "../utilities/vtk.h"
 #include "../vtk/SimulatedSensor.h"
 #include "../vtk/Viewer.h"
+#include "../utilities/msgs_utilities.h"
 
 moveit::core::RobotState mkInitialState(const moveit::core::RobotModelPtr &drone);
 
 std::vector<ScanTargetPoint> buildScanTargetPoints(const shape_msgs::msg::Mesh &mesh, size_t n);
+
+moveit_msgs::msg::PlanningSceneWorld planningSceneMessageFromSimplifiedOrchard(const SimplifiedOrchard& orchard) {
+
+	moveit_msgs::msg::PlanningSceneWorld world_msg;
+
+	for (const auto& [tree_id, tree] : orchard.trees | ranges::views::enumerate) {
+		{
+			moveit_msgs::msg::CollisionObject collision_object;
+
+			collision_object.id = "tree_" + std::to_string(tree_id) + "_trunk";
+			collision_object.header.frame_id = "world";
+			collision_object.meshes.push_back(tree.second.trunk_mesh);
+			collision_object.pose.position = msgFromEigen(Eigen::Vector3d(tree.first.x(), tree.first.y(), 0));
+			collision_object.pose.orientation = msgFromEigen(Eigen::Quaterniond::Identity());
+			world_msg.collision_objects.push_back(collision_object);
+		}
+//		{
+//			moveit_msgs::msg::CollisionObject collision_object;
+//
+//			collision_object.id = "tree_" + std::to_string(tree_id) + "_leaves";
+//			collision_object.header.frame_id = "world";
+//			collision_object.meshes.push_back(tree.second.leaves_mesh);
+//			collision_object.pose.position = msgFromEigen(Eigen::Vector3d(tree.first.x(), tree.first.y(), 0));
+//			collision_object.pose.orientation = msgFromEigen(Eigen::Quaterniond::Identity());
+//			world_msg.collision_objects.push_back(collision_object);
+//		}
+//		{
+//			moveit_msgs::msg::CollisionObject collision_object;
+//
+//			collision_object.id = "tree_" + std::to_string(tree_id) + "_fruit";
+//			collision_object.header.frame_id = "world";
+//			collision_object.meshes.push_back(tree.second.fruit_mesh);
+//			collision_object.pose.position = msgFromEigen(Eigen::Vector3d(tree.first.x(), tree.first.y(), 0));
+//			collision_object.pose.orientation = msgFromEigen(Eigen::Quaterniond::Identity());
+//			world_msg.collision_objects.push_back(collision_object);
+//		}
+	}
+
+}
+
+
 
 int main(int, char*[]) {
 
@@ -38,6 +85,19 @@ int main(int, char*[]) {
 			{ { 0.0, 0.0 }, loadTreeMeshes("appletree") },
 		}
 	};
+
+	auto collision_world = std::make_shared<collision_detection::World>();
+
+	for (const auto& [tree_id, tree] : orchard.trees | ranges::views::enumerate) {
+
+		Eigen::Isometry3d tree_pose = Eigen::Isometry3d::Identity();
+		tree_pose.translation() = Eigen::Vector3d(tree.first.x(), tree.first.y(), 0);
+		collision_world->addToObject("tree_" + std::to_string(tree_id) + "_trunk",
+									 shapes::ShapeConstPtr(shapes::constructShapeFromMsg(tree.second.trunk_mesh)),
+									 tree_pose);
+	}
+
+	collision_detection::CollisionEnvFCL collision_env(drone, collision_world);
 
 	auto surface_points = buildScanTargetPoints(orchard.trees[0].second.fruit_mesh, 2000);
 	
@@ -61,7 +121,6 @@ int main(int, char*[]) {
 	viewer.addActor(fruitSurfacePointsActor);
 	viewer.addActor(pointCloudActor);
 
-
 	double pathProgressT = 0.0;
 	std::optional<robot_trajectory::RobotTrajectory> currentTrajectory;
 
@@ -78,6 +137,14 @@ int main(int, char*[]) {
 
 			setStateToTrajectoryPoint(current_state, pathProgressT, *currentTrajectory);
 
+			collision_detection::CollisionRequest collision_request;
+			collision_detection::CollisionResult collision_result;
+			collision_env.checkRobotCollision(collision_request, collision_result, current_state);
+
+			if (collision_result.collision) {
+				std::cout << "Oh no!" << std::endl;
+			}
+
 		}
 
 		robotModel.applyState(current_state);
@@ -93,10 +160,8 @@ int main(int, char*[]) {
 
 			stupidAlgorithm.updatePointCloud(current_state, segmentedPointCloud);
 
-			auto scanned_points = scannablePointsIndex.findScannedPoints(current_state.getGlobalLinkTransform(
-																				 "end_effector").translation(),
-																		 current_state.getGlobalLinkTransform(
-																				 "end_effector").rotation() *
+			auto scanned_points = scannablePointsIndex.findScannedPoints(eePose.translation(),
+																		 eePose.rotation() *
 																		 Eigen::Vector3d(0, 1, 0),
 																		 M_PI / 4.0,
 																		 0.1,

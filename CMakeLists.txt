@@ -85,6 +85,8 @@ add_library(${PROJECT_NAME}_shared
         src/ExperimentVisualTools.h
         src/GreatCircleMetric.cpp
         src/GreatCircleMetric.h
+        src/HashedSpatialIndex.cpp
+        src/HashedSpatialIndex.h
         src/InformedBetweenTwoDroneStatesSampler.h
         src/InformedManipulatorDroneSampler.cpp
         src/InformedRobotStateSampler.cpp
@@ -95,15 +97,26 @@ add_library(${PROJECT_NAME}_shared
         src/RobotPath.h
         src/SamplerWrapper.cpp
         src/SamplerWrapper.h
+        src/ScannablePointsIndex.cpp
+        src/ScannablePointsIndex.h
         src/SingleGoalPlannerMethods.cpp
         src/SingleGoalPlannerMethods.h
         src/TimedCostConvergenceTerminationCondition.cpp
         src/TimedCostConvergenceTerminationCondition.h
-        src/evaluation/Task.cpp
-        src/evaluation/Task.h
+        src/TreeMeshes.cpp
+        src/TreeMeshes.h
         src/experiments/exploration.cpp
+        src/exploration/ColorEncoding.cpp
+        src/exploration/ColorEncoding.h
         src/exploration/OnlinePointCloudMotionControlAlgorithm.cpp
         src/exploration/OnlinePointCloudMotionControlAlgorithm.h
+        src/exploration/SegmentedPointCloud.cpp
+        src/exploration/SegmentedPointCloud.h
+        src/exploration/StupidAlgorithm.cpp
+        src/exploration/VtkToPointCloud.cpp
+        src/exploration/VtkToPointCloud.h
+        src/exploration/scan_points.cpp
+        src/exploration/scan_points.h
         src/ompl_custom.cpp
         src/ompl_custom.h
         src/planners/MultiGoalPlanner.cpp
@@ -112,7 +125,6 @@ add_library(${PROJECT_NAME}_shared
         src/planners/MultigoalPrmStar.h
         src/planners/ShellPathPlanner.cpp
         src/planners/ShellPathPlanner.h
-        src/planners/shell_path_planner/ApproachPlanning.cpp
         src/planners/shell_path_planner/Construction.cpp
         src/planners/shell_path_planner/Construction.h
         src/planners/shell_path_planner/OrderingMethod.h
@@ -123,8 +135,6 @@ add_library(${PROJECT_NAME}_shared
         src/procedural_tree_generation.cpp
         src/run_experiment.cpp
         src/run_experiment.h
-        src/TreeMeshes.h
-        src/TreeMeshes.cpp
         src/shell_space/CGALMeshShell.cpp
         src/shell_space/CGALMeshShell.h
         src/shell_space/CuttingPlaneConvexHullShell.cpp
@@ -163,16 +173,20 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/msgs_utilities.h
         src/utilities/traveling_salesman.cpp
         src/utilities/traveling_salesman.h
-        src/vtk/VtkRobotModel.cpp
-        src/vtk/VtkRobotModel.h
         src/utilities/vtk.cpp
         src/utilities/vtk.h
+        src/vtk/SimulatedSensor.cpp
+        src/vtk/SimulatedSensor.h
+        src/vtk/Viewer.cpp
+        src/vtk/Viewer.h
+        src/vtk/VtkRobotModel.cpp
+        src/vtk/VtkRobotModel.h
 #        src/NewKnnPlanner.cpp
 #        src/NewKnnPlanner.h
 #        src/planners/shell_path_planner/ApproachPlanning.cpp
 #        src/utilities/TriangleSpheretreeIndex.cpp
 #        src/utilities/TriangleSpheretreeIndex.h
-        src/exploration/SegmentedPointCloud.cpp src/exploration/SegmentedPointCloud.h src/exploration/ColorEncoding.cpp src/exploration/ColorEncoding.h src/exploration/VtkToPointCloud.h src/exploration/VtkToPointCloud.cpp src/exploration/StupidAlgorithm.cpp src/ScannablePointsIndex.cpp src/ScannablePointsIndex.h src/HashedSpatialIndex.cpp src/HashedSpatialIndex.h src/exploration/scan_points.h src/exploration/scan_points.cpp src/vtk/SimulatedSensor.cpp src/vtk/SimulatedSensor.h src/vtk/Viewer.cpp src/vtk/Viewer.h)
+        )
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
