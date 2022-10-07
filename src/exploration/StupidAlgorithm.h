@@ -31,7 +31,6 @@ public:
 	 */
 	void updatePointCloud(const moveit::core::RobotState& current_state, const SegmentedPointCloud &segmentedPointCloud) override;
 
-
 };
 
 #endif //NEW_PLANNERS_STUPIDALGORITHM_H

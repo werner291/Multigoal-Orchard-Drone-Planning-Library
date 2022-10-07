@@ -7,39 +7,40 @@
 #include <optional>
 
 /**
- * Classification categories for points in SegmentedPointCloud.
- */
-enum PointType {
-	/// Point lies on the surface of a hard obstacle.
-	PT_OBSTACLE,
-	/// Point lies on the surface of a soft obstacle: it may be passed, but you cannot see through it.
-	PT_SOFT_OBSTACLE,
-	/// Point lies on the surface of a target object.
-	PT_TARGET
-};
-
-/**
- * A point in a SegmentedPointCloud, labeled by position and point type.
- */
-struct Point {
-	/// Type of the point.
-	PointType type;
-	/// Position of the point
-	Eigen::Vector3d position;
-
-	bool operator==(const Point &other) const {
-		return type == other.type && position == other.position;
-	}
-
-	bool operator!=(const Point &other) const {
-		return !(*this == other);
-	}
-};
-
-/**
  * A point cloud, segmented into different categories.
  */
 struct SegmentedPointCloud {
+
+	/**
+	 * Classification categories for points in SegmentedPointCloud.
+	 */
+	enum PointType {
+		/// Point lies on the surface of a hard obstacle.
+		PT_OBSTACLE,
+		/// Point lies on the surface of a soft obstacle: it may be passed, but you cannot see through it.
+		PT_SOFT_OBSTACLE,
+		/// Point lies on the surface of a target object.
+		PT_TARGET
+	};
+
+	/**
+	 * A point in a SegmentedPointCloud, labeled by position and point type.
+	 */
+	struct Point {
+		/// Type of the point.
+		PointType type;
+		/// Position of the point
+		Eigen::Vector3d position;
+
+		bool operator==(const Point &other) const {
+			return type == other.type && position == other.position;
+		}
+
+		bool operator!=(const Point &other) const {
+			return !(*this == other);
+		}
+	};
+
 	std::vector<Point> points;
 };
 

@@ -163,7 +163,7 @@ vtkNew<vtkActor> constructSimplePolyDataPointCloudActor(const vtkNew<vtkPolyData
 	fruitSurfacePointsMapper->SetInputData(fruitSurfacePolyData);
 
 	fruitSurfacePointsActor->SetMapper(fruitSurfacePointsMapper);
-	fruitSurfacePointsActor->GetProperty()->SetPointSize(20);
+	fruitSurfacePointsActor->GetProperty()->SetPointSize(5);
 	return fruitSurfacePointsActor;
 }
 

@@ -186,7 +186,7 @@ add_library(${PROJECT_NAME}_shared
 #        src/planners/shell_path_planner/ApproachPlanning.cpp
 #        src/utilities/TriangleSpheretreeIndex.cpp
 #        src/utilities/TriangleSpheretreeIndex.h
-        )
+        src/exploration/DynamicBoundingSphereAlgorithm.cpp src/exploration/DynamicBoundingSphereAlgorithm.h src/utilities/trajectory_primitives.cpp src/utilities/trajectory_primitives.h src/StreamingConvexHull.cpp src/StreamingConvexHull.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -218,7 +218,7 @@ add_executable(${PROJECT_NAME}_tests
         src/shell_space/test/CGALMeshShell_test.cpp
         src/utilities/test/math_utils_test.cpp
         src/shell_space/test/SphereShell_test.cpp
-        )
+        test/StreamingConvecHull_test.cpp)
 
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})

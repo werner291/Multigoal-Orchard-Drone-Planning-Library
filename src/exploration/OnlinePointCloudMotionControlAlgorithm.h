@@ -5,6 +5,25 @@
 #include <functional>
 #include <moveit/robot_trajectory/robot_trajectory.h>
 #include "SegmentedPointCloud.h"
+#include "../TreeMeshes.h"
+
+/**
+ * An axis-aligned bounding box that is guaranteed to contain all points to be explored.
+ *
+ * he robot need not search outside for points of interest, although it may need to seek
+ * out obstacles outside the box.
+ */
+struct TargetBoundingBox {
+	Eigen::AlignedBox3d boundingBox;
+};
+
+/**
+ * Given a SimplifiedOrchard, compute a TargetBoundingBox that contains all points of interest.
+ *
+ * @param orchard 		The orchard to compute the bounding box for.
+ * @return 				The bounding box.
+ */
+TargetBoundingBox computeTargetBoundingBox(const SimplifiedOrchard &orchard);
 
 /**
  * Abstract class for online motion control algorithms.

@@ -25,6 +25,6 @@ const std::array<double, 3> LEAVES_RGB = {0.0, 1.0, 0.0};
  * @param color 		Color of the point
  * @return 				Point type, if the color is recognized. Otherwise, std::nullopt.
  */
-std::optional<PointType> pointTypeByColor(const Eigen::Vector3d &color);
+std::optional<SegmentedPointCloud::PointType> pointTypeByColor(const Eigen::Vector3d &color);
 
 #endif //NEW_PLANNERS_COLORENCODING_H

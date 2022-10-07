@@ -14,6 +14,7 @@
 
 #include <moveit/collision_detection_fcl/collision_env_fcl.h>
 #include <geometric_shapes/shape_operations.h>
+#include <vtkSphereSource.h>
 
 #include "../utilities/experiment_utils.h"
 #include "../vtk/VtkRobotModel.h"
@@ -26,51 +27,14 @@
 #include "../vtk/SimulatedSensor.h"
 #include "../vtk/Viewer.h"
 #include "../utilities/msgs_utilities.h"
+#include "../exploration/DynamicBoundingSphereAlgorithm.h"
+#include "../StreamingConvexHull.h"
 
 moveit::core::RobotState mkInitialState(const moveit::core::RobotModelPtr &drone);
 
 std::vector<ScanTargetPoint> buildScanTargetPoints(const shape_msgs::msg::Mesh &mesh, size_t n);
 
-moveit_msgs::msg::PlanningSceneWorld planningSceneMessageFromSimplifiedOrchard(const SimplifiedOrchard& orchard) {
-
-	moveit_msgs::msg::PlanningSceneWorld world_msg;
-
-	for (const auto& [tree_id, tree] : orchard.trees | ranges::views::enumerate) {
-		{
-			moveit_msgs::msg::CollisionObject collision_object;
-
-			collision_object.id = "tree_" + std::to_string(tree_id) + "_trunk";
-			collision_object.header.frame_id = "world";
-			collision_object.meshes.push_back(tree.second.trunk_mesh);
-			collision_object.pose.position = msgFromEigen(Eigen::Vector3d(tree.first.x(), tree.first.y(), 0));
-			collision_object.pose.orientation = msgFromEigen(Eigen::Quaterniond::Identity());
-			world_msg.collision_objects.push_back(collision_object);
-		}
-//		{
-//			moveit_msgs::msg::CollisionObject collision_object;
-//
-//			collision_object.id = "tree_" + std::to_string(tree_id) + "_leaves";
-//			collision_object.header.frame_id = "world";
-//			collision_object.meshes.push_back(tree.second.leaves_mesh);
-//			collision_object.pose.position = msgFromEigen(Eigen::Vector3d(tree.first.x(), tree.first.y(), 0));
-//			collision_object.pose.orientation = msgFromEigen(Eigen::Quaterniond::Identity());
-//			world_msg.collision_objects.push_back(collision_object);
-//		}
-//		{
-//			moveit_msgs::msg::CollisionObject collision_object;
-//
-//			collision_object.id = "tree_" + std::to_string(tree_id) + "_fruit";
-//			collision_object.header.frame_id = "world";
-//			collision_object.meshes.push_back(tree.second.fruit_mesh);
-//			collision_object.pose.position = msgFromEigen(Eigen::Vector3d(tree.first.x(), tree.first.y(), 0));
-//			collision_object.pose.orientation = msgFromEigen(Eigen::Quaterniond::Identity());
-//			world_msg.collision_objects.push_back(collision_object);
-//		}
-	}
-
-}
-
-
+SegmentedPointCloud generateInitialCloud(const SimplifiedOrchard &orchard);
 
 int main(int, char*[]) {
 
@@ -124,16 +88,33 @@ int main(int, char*[]) {
 	double pathProgressT = 0.0;
 	std::optional<robot_trajectory::RobotTrajectory> currentTrajectory;
 
-	StupidGoToFirstPointAlgorithm stupidAlgorithm([&](robot_trajectory::RobotTrajectory trajectory) {
+
+	vtkNew<vtkPolyData> convexHullData;
+
+	DynamicBoundingSphereAlgorithm dbsa([&](robot_trajectory::RobotTrajectory trajectory) {
 		currentTrajectory = std::move(trajectory);
 		pathProgressT = 0.0;
 	});
+
+	dbsa.updatePointCloud(current_state, generateInitialCloud(orchard));
+
+	StreamingConvexHull convexHull = StreamingConvexHull::fromSpherifiedCube(1);
+	auto polyData = rosMeshToVtkPolyData(convexHull.toMesh());
+
+	vtkNew<vtkPolyDataMapper> mapper;
+	mapper->SetInputData(polyData);
+
+	vtkNew<vtkActor> actor;
+	actor->SetMapper(mapper);
+	actor->GetProperty()->SetColor(1.0, 0.0, 1.0);
+
+	viewer.addActor(actor);
 
 	auto callback = [&]() {
 
 		if (currentTrajectory) {
 
-			pathProgressT += 0.033;
+			pathProgressT += 0.005;
 
 			setStateToTrajectoryPoint(current_state, pathProgressT, *currentTrajectory);
 
@@ -158,17 +139,23 @@ int main(int, char*[]) {
 
 			SegmentedPointCloud segmentedPointCloud = segmentPointCloudData(sensor.getPointCloud());
 
-			stupidAlgorithm.updatePointCloud(current_state, segmentedPointCloud);
+			dbsa.updatePointCloud(current_state, segmentedPointCloud);
 
-			auto scanned_points = scannablePointsIndex.findScannedPoints(eePose.translation(),
-																		 eePose.rotation() *
-																		 Eigen::Vector3d(0, 1, 0),
-																		 M_PI / 4.0,
-																		 0.1,
-																		 segmentedPointCloud);
+			for (const auto &item: segmentedPointCloud.points) {
+				if (item.type == SegmentedPointCloud::PT_TARGET && item.position.z() > 1.0e-6) {
+					convexHull.addPoint(item.position);
+				}
+			}
+
+			const shape_msgs::msg::Mesh &mesh = convexHull.toMesh();
+			std::cout << "Convex hull has " << mesh.vertices.size() << " vertices and " << mesh.triangles.size() << " triangles." << std::endl;
+			mapper->SetInputData(rosMeshToVtkPolyData(mesh));
+			mapper->GetInput()->Modified();
+
+			auto scanned_points = scannablePointsIndex
+					.findScannedPoints(eePose.translation(),eePose.rotation() *Eigen::Vector3d(0, 1, 0),M_PI / 4.0,0.1,segmentedPointCloud);
 
 			for (auto &point: scanned_points) {
-				std::cout << "Yes!" << std::endl;
 				fruitSurfacePolyData->GetPointData()->GetScalars()->SetTuple3((vtkIdType) point, 255, 0, 255);
 				fruitSurfacePolyData->Modified();
 			}
@@ -184,6 +171,19 @@ int main(int, char*[]) {
 
 	return EXIT_SUCCESS;
 }
+
+SegmentedPointCloud generateInitialCloud(const SimplifiedOrchard &orchard) {// Pick a random fruit mesh vertex.
+	ompl::RNG rng;
+	auto fruitMeshVertex = orchard.trees[0].second.fruit_mesh.vertices[rng.uniformInt(0, orchard.trees[0].second.fruit_mesh.vertices.size() - 1)];
+
+	SegmentedPointCloud initialCloud {
+			{SegmentedPointCloud::Point{SegmentedPointCloud::PT_TARGET,
+										{fruitMeshVertex.x, fruitMeshVertex.y, fruitMeshVertex.z},
+
+			}}};
+	return initialCloud;
+}
+
 
 moveit::core::RobotState mkInitialState(const moveit::core::RobotModelPtr &drone) {
 	moveit::core::RobotState current_state(drone);

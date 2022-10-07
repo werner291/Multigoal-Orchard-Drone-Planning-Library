@@ -26,19 +26,19 @@ bool isColorSame(const Eigen::Vector3d &color, const std::array<double, 3> &rgb)
 		&& isComponentSame(color, rgb, 2);
 }
 
-std::optional<PointType> pointTypeByColor(const Eigen::Vector3d &color) {
+std::optional<SegmentedPointCloud::PointType> pointTypeByColor(const Eigen::Vector3d &color) {
 
 	// Simply check if the color matches any of the encoded colors
 
 	if (isColorSame(color, GROUND_PLANE_RGB) || isColorSame(color, TRUNK_RGB)) {
 		// Ground and trunk are hard obstacles
-		return PT_OBSTACLE;
+		return SegmentedPointCloud::PT_OBSTACLE;
 	} else if (isColorSame(color, FRUIT_RGB)) {
 		// Fruit is a target
-		return PT_TARGET;
+		return SegmentedPointCloud::PT_TARGET;
 	} else if (isColorSame(color, LEAVES_RGB)) {
 		// Leaves are soft obstacles
-		return PT_SOFT_OBSTACLE;
+		return SegmentedPointCloud::PT_SOFT_OBSTACLE;
 	} else {
 		// Unknown color (probably background)
 		return std::nullopt;

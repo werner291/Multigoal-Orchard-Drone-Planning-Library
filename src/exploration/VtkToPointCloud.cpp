@@ -22,7 +22,7 @@ SegmentedPointCloud segmentPointCloudData(vtkPolyData *pPolyData) {
 	// Iterate over all points
 	for (int i = 0; i < points->GetNumberOfPoints(); i++) {
 
-		Point point;
+		SegmentedPointCloud::Point point;
 
 		// Extract the position of the point
 		points->GetPoint(i, point.position.data());

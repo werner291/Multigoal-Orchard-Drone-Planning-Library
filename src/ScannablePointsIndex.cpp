@@ -38,7 +38,7 @@ std::vector<size_t> ScannablePointsIndex::findScannedPoints(const Eigen::Vector3
 	HashedSpatialIndex<std::monostate> scannedPointsIndex(VISIBLE_POINT_MAX_DISTANCE, 1000);
 
 	for (const auto& point : visiblePoints.points) {
-		if (point.type == PointType::PT_TARGET) {
+		if (point.type == SegmentedPointCloud::PT_TARGET) {
 			scannedPointsIndex.insert(point.position, {});
 		}
 	}

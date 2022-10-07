@@ -2,6 +2,7 @@
 
 #include "convex_hull.h"
 #include "general_utilities.h"
+#include "msgs_utilities.h"
 
 // Warning: Qhull headers seem to conflict with some other headers, notably rangev3.
 // So, keep these below the other imports, and avoid including more than the absolute minimum in this file.
