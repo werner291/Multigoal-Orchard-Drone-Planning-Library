@@ -3,6 +3,7 @@
 #include "utilities/msgs_utilities.h"
 #include "utilities/convex_hull.h"
 #include <range/v3/all.hpp>
+#include <ompl/util/RandomNumbers.h>
 
 double infzero(double x) {
 	if (x > 0) return INFINITY;
@@ -49,7 +50,7 @@ StreamingConvexHull StreamingConvexHull::fromSpherifiedCube(size_t segments) {
 
 }
 
-void StreamingConvexHull::addPoint(const Eigen::Vector3d &point) {
+bool StreamingConvexHull::addPoint(const Eigen::Vector3d &point) {
 	for (auto &supporting_point: supporting_set) {
 
 		double d1 = supporting_point.first.dot(point);
@@ -57,8 +58,10 @@ void StreamingConvexHull::addPoint(const Eigen::Vector3d &point) {
 
 		if (d1 > d2) {
 			supporting_point.second = point;
+			return true;
 		}
 	}
+	return false;
 }
 
 
@@ -103,4 +106,21 @@ shape_msgs::msg::Mesh  StreamingConvexHull::toMesh() const {
 
 	return convexHull(points);
 
+}
+
+bool StreamingConvexHull::addPoints(const std::vector<Eigen::Vector3d> &points) {
+
+	bool changed = false;
+
+	if (points.size() > 0) {
+		ompl::RNG rng;
+
+
+		// We add 100 points at random.
+		for (size_t i = 0; i < 100; i++) {
+			changed |= addPoint(points[rng.uniformInt(0, points.size() - 1)]);
+		}
+	}
+
+	return changed;
 }

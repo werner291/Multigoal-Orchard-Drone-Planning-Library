@@ -79,17 +79,25 @@ int main(int, char*[]) {
 
 	vtkNew<vtkActor> pointCloudActor = buildDepthImagePointCloudActor(sensor.getPointCloudOutputPort());
 
+	StreamingConvexHull convexHull = StreamingConvexHull::fromSpherifiedCube(3);
+
+	vtkNew<vtkPolyDataMapper> mapper;
+	mapper->SetInputData(rosMeshToVtkPolyData(convexHull.toMesh()));
+
+	vtkNew<vtkActor> actor;
+	actor->SetMapper(mapper);
+	actor->GetProperty()->SetColor(1.0, 0.0, 1.0);
+
 	Viewer viewer;
 	viewer.addActorCollection(orchard_actors);
 	viewer.addActorCollection(robotModel.getLinkActors());
 	viewer.addActor(fruitSurfacePointsActor);
+	viewer.addActor(actor);
+	// For an unknown
 	viewer.addActor(pointCloudActor);
 
 	double pathProgressT = 0.0;
 	std::optional<robot_trajectory::RobotTrajectory> currentTrajectory;
-
-
-	vtkNew<vtkPolyData> convexHullData;
 
 	DynamicBoundingSphereAlgorithm dbsa([&](robot_trajectory::RobotTrajectory trajectory) {
 		currentTrajectory = std::move(trajectory);
@@ -97,18 +105,6 @@ int main(int, char*[]) {
 	});
 
 	dbsa.updatePointCloud(current_state, generateInitialCloud(orchard));
-
-	StreamingConvexHull convexHull = StreamingConvexHull::fromSpherifiedCube(1);
-	auto polyData = rosMeshToVtkPolyData(convexHull.toMesh());
-
-	vtkNew<vtkPolyDataMapper> mapper;
-	mapper->SetInputData(polyData);
-
-	vtkNew<vtkActor> actor;
-	actor->SetMapper(mapper);
-	actor->GetProperty()->SetColor(1.0, 0.0, 1.0);
-
-	viewer.addActor(actor);
 
 	auto callback = [&]() {
 
@@ -141,16 +137,20 @@ int main(int, char*[]) {
 
 			dbsa.updatePointCloud(current_state, segmentedPointCloud);
 
+			std::vector<Eigen::Vector3d> points;
+
 			for (const auto &item: segmentedPointCloud.points) {
-				if (item.type == SegmentedPointCloud::PT_TARGET && item.position.z() > 1.0e-6) {
-					convexHull.addPoint(item.position);
+				if (item.type == SegmentedPointCloud::PT_SOFT_OBSTACLE && item.position.z() > 1.0e-6) {
+					points.push_back(item.position);
 				}
 			}
 
-			const shape_msgs::msg::Mesh &mesh = convexHull.toMesh();
-			std::cout << "Convex hull has " << mesh.vertices.size() << " vertices and " << mesh.triangles.size() << " triangles." << std::endl;
-			mapper->SetInputData(rosMeshToVtkPolyData(mesh));
-			mapper->GetInput()->Modified();
+			if (convexHull.addPoints(points))
+			{
+				auto mesh = convexHull.toMesh();
+				mapper->SetInputData(rosMeshToVtkPolyData(convexHull.toMesh()));
+				mapper->Modified();
+			}
 
 			auto scanned_points = scannablePointsIndex
 					.findScannedPoints(eePose.translation(),eePose.rotation() *Eigen::Vector3d(0, 1, 0),M_PI / 4.0,0.1,segmentedPointCloud);

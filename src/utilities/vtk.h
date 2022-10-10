@@ -56,6 +56,10 @@ void addActorCollectionToRenderer(vtkActorCollection *orchard_actors, vtkRendere
  */
 vtkNew<vtkPolyData> rosMeshToVtkPolyData(const shape_msgs::msg::Mesh &mesh);
 
+vtkNew<vtkCellArray> meshTrianglesToVtkCells(const shape_msgs::msg::Mesh &mesh);
+
+vtkNew<vtkPoints> meshVerticesToVtkPoints(const shape_msgs::msg::Mesh &mesh);
+
 /**
  * Create a vtkActor with the given ROS mesh message.
  *

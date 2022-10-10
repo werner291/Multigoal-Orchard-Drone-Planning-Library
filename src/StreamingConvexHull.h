@@ -27,7 +27,9 @@ public:
 
 	static StreamingConvexHull fromSpherifiedCube(size_t segments);
 
-	void addPoint(const Eigen::Vector3d &point);
+	bool addPoint(const Eigen::Vector3d &point);
+
+	bool addPoints(const std::vector<Eigen::Vector3d> &points);
 
 	[[nodiscard]] shape_msgs::msg::Mesh toMesh() const;
 
