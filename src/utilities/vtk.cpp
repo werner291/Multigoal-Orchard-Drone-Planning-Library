@@ -138,6 +138,7 @@ vtkNew<vtkActor> createActorFromMesh(const shape_msgs::msg::Mesh &mesh) {
 
 	vtkNew<vtkPolyDataMapper> mapper;
 	mapper->SetInputData(polyData);
+	mapper->SetColorModeToDefault();
 
 	vtkNew<vtkActor> actor;
 	actor->SetMapper(mapper);
@@ -195,7 +196,7 @@ vtkNew<vtkRenderer> buildSensorRenderer() {
 	sensorRenderer->GetActiveCamera()->SetClippingRange(0.1, 10.0);
 
 	vtkNew<vtkLight> solidColorLight = mkWhiteAmbientLight();
-	sensorRenderer->ClearLights();
+	sensorRenderer->RemoveAllLights();
 	sensorRenderer->AddLight(solidColorLight);
 
 	return sensorRenderer;
@@ -209,24 +210,30 @@ vtkNew<vtkRenderWindow> buildSensorRenderWindow(vtkRenderer *sensorRenderer) {
 	return sensorViewWindow;
 }
 
-void setColorsByEncoding(vtkNew<vtkActor> &tree_actor, const std::array<double, 3> &rgb) {
+void setColorsByEncoding(vtkNew<vtkActor> &tree_actor, const std::array<double, 3> &rgb, bool usePureColor) {
 	tree_actor->GetProperty()->SetDiffuseColor(rgb.data());
 	tree_actor->GetProperty()->SetAmbientColor(rgb.data());
-	tree_actor->GetProperty()->SetAmbient(1.0);
+
+	if (usePureColor) {
+		tree_actor->GetProperty()->SetAmbient(1.0);
+	} else {
+		tree_actor->GetProperty()->SetAmbient(0.2);
+		tree_actor->GetProperty()->SetDiffuse(0.8);
+	}
 }
 
-vtkNew<vtkActorCollection> buildTreeActors(const TreeMeshes &meshes) {
+vtkNew<vtkActorCollection> buildTreeActors(const TreeMeshes &meshes, bool usePureColor) {
 
 	vtkNew<vtkActorCollection> actors;
 
 	auto tree_actor = createActorFromMesh(meshes.trunk_mesh);
-	setColorsByEncoding(tree_actor, TRUNK_RGB);
+	setColorsByEncoding(tree_actor, TRUNK_RGB, usePureColor);
 
 	auto leaves_actor = createActorFromMesh(meshes.leaves_mesh);
-	setColorsByEncoding(leaves_actor, LEAVES_RGB);
+	setColorsByEncoding(leaves_actor, LEAVES_RGB, usePureColor);
 
 	auto fruit_actor = createActorFromMesh(meshes.fruit_mesh);
-	setColorsByEncoding(fruit_actor, FRUIT_RGB);
+	setColorsByEncoding(fruit_actor, FRUIT_RGB, usePureColor);
 
 	actors->AddItem(tree_actor);
 	actors->AddItem(leaves_actor);
@@ -235,13 +242,13 @@ vtkNew<vtkActorCollection> buildTreeActors(const TreeMeshes &meshes) {
 	return actors;
 }
 
-vtkNew<vtkActorCollection> buildOrchardActors(const SimplifiedOrchard &orchard) {
+vtkNew<vtkActorCollection> buildOrchardActors(const SimplifiedOrchard &orchard, bool usePureColor) {
 
 	vtkNew<vtkActorCollection> orchard_actors;
 
 	for (const auto& [pos, meshes] : orchard.trees)
 	{
-		auto tree_actors = buildTreeActors(meshes);
+		auto tree_actors = buildTreeActors(meshes, usePureColor);
 
 		for (int i = 0; i < tree_actors->GetNumberOfItems(); i++) {
 			auto actor = vtkActor::SafeDownCast(tree_actors->GetItemAsObject(i));
@@ -252,7 +259,7 @@ vtkNew<vtkActorCollection> buildOrchardActors(const SimplifiedOrchard &orchard) 
 		}
 	}
 
-	vtkNew<vtkActor> ground_plane_actor = buildGroundPlaneActor();
+	vtkNew<vtkActor> ground_plane_actor = buildGroundPlaneActor(usePureColor);
 
 	orchard_actors->AddItem(ground_plane_actor);
 
@@ -260,7 +267,7 @@ vtkNew<vtkActorCollection> buildOrchardActors(const SimplifiedOrchard &orchard) 
 
 }
 
-vtkNew<vtkActor> buildGroundPlaneActor() {
+vtkNew<vtkActor> buildGroundPlaneActor(bool usePureColor) {
 	vtkNew<vtkPlaneSource> ground_plane_source;
 	ground_plane_source->SetPoint1(10.0, 0.0, 0.0);
 	ground_plane_source->SetPoint2(0.0, 10.0, 0.0);
@@ -272,7 +279,7 @@ vtkNew<vtkActor> buildGroundPlaneActor() {
 	vtkNew<vtkActor> ground_plane_actor;
 	ground_plane_actor->SetMapper(ground_plane_mapper);
 
-	setColorsByEncoding(ground_plane_actor, GROUND_PLANE_RGB);
+	setColorsByEncoding(ground_plane_actor, GROUND_PLANE_RGB, usePureColor);
 
 	return ground_plane_actor;
 }

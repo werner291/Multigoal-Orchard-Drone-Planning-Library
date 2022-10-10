@@ -71,10 +71,8 @@ int main(int, char*[]) {
 
 	vtkNew<vtkActor> fruitSurfacePointsActor = constructSimplePolyDataPointCloudActor(fruitSurfacePolyData);
 
-	auto orchard_actors = buildOrchardActors(orchard);
-
 	SimulatedSensor sensor;
-	sensor.addActorCollection(orchard_actors);
+	sensor.addActorCollection(buildOrchardActors(orchard, true));
 	sensor.addActorCollection(robotModel.getLinkActors());
 
 	vtkNew<vtkActor> pointCloudActor = buildDepthImagePointCloudActor(sensor.getPointCloudOutputPort());
@@ -86,15 +84,20 @@ int main(int, char*[]) {
 
 	vtkNew<vtkActor> actor;
 	actor->SetMapper(mapper);
-	actor->GetProperty()->SetColor(1.0, 0.0, 1.0);
+	actor->GetProperty()->SetColor(0.0, 1.0, 0.0);
+	actor->GetProperty()->SetOpacity(0.8);
 
 	Viewer viewer;
-	viewer.addActorCollection(orchard_actors);
+	viewer.addActorCollection(buildOrchardActors(orchard, false));
 	viewer.addActorCollection(robotModel.getLinkActors());
 	viewer.addActor(fruitSurfacePointsActor);
 	viewer.addActor(actor);
-	// For an unknown
+	// For an unknown reason, things break when this isn't the last actor added.
 	viewer.addActor(pointCloudActor);
+
+	viewer.viewerRenderer->GetActiveCamera()->SetPosition(4,4,2.0);
+	viewer.viewerRenderer->GetActiveCamera()->SetFocalPoint(0,0,1.5);
+	viewer.viewerRenderer->GetActiveCamera()->SetViewUp(0,0,1);
 
 	double pathProgressT = 0.0;
 	std::optional<robot_trajectory::RobotTrajectory> currentTrajectory;
@@ -123,6 +126,8 @@ int main(int, char*[]) {
 			}
 
 		}
+
+		std::cout << pathProgressT << std::endl;
 
 		robotModel.applyState(current_state);
 

@@ -159,7 +159,7 @@ vtkNew<vtkRenderWindow> buildSensorRenderWindow(vtkRenderer *sensorRenderer);
  * @param tree_actor 		The actor to set the colors for.
  * @param rgb 				The RGB values [0-1] to set the colors to.
  */
-void setColorsByEncoding(vtkNew<vtkActor> &tree_actor, const std::array<double, 3> &rgb);
+void setColorsByEncoding(vtkNew<vtkActor> &tree_actor, const std::array<double, 3> &rgb, bool usePureColor);
 
 /**
  * Given a TreeMeshes, build an actor collection with an actor for each part of the tree: trunk, leaves and fruit.
@@ -169,23 +169,30 @@ void setColorsByEncoding(vtkNew<vtkActor> &tree_actor, const std::array<double, 
  * @param meshes 		The TreeMeshes to build the actor collection for.
  * @return 				The built actor collection.
  */
-vtkNew<vtkActorCollection> buildTreeActors(const TreeMeshes& meshes);
+vtkNew<vtkActorCollection> buildTreeActors(const TreeMeshes &meshes, bool usePureColor);
 
 /**
  * Given a SimplifiedOrchard, construct the required actors to visualize it.
  * Color encoding to identify different parts is used.
  *
+ * Note to the future: Ambient color in VTK appears to be very badly broken, so far the only thing that seems to work
+ * is setting it on actor creation, so that's what we do. The ambient color of lights in the scene appears to simply
+ * be ignored.
+ *
+ * Ideally, we'd just set up scene lighting to preserve the color of objects, but that doesn't seem to work.
+ *
  * @param orchard 		The SimplifiedOrchard to build the actors for.
+ * @param usePureColor 	Whether to maximize ambient color to preserve color encoding (see note above)
  * @return 				The built actor collection.
  */
-vtkNew<vtkActorCollection> buildOrchardActors(const SimplifiedOrchard &orchard);
+vtkNew<vtkActorCollection> buildOrchardActors(const SimplifiedOrchard &orchard, bool usePureColor);
 
 /**
  * Build a vtkActor representing a simple flat ground plane, with GROUND_PLANE_RGB as color.
  *
  * @return 		The built vtkActor.
  */
-vtkNew<vtkActor> buildGroundPlaneActor();
+vtkNew<vtkActor> buildGroundPlaneActor(bool usePureColor);
 
 /**
  * Build a point cloud actor for a vtkDepthImageToPointCloud.

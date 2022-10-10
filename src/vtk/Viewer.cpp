@@ -2,14 +2,22 @@
 #include "Viewer.h"
 #include "../utilities/vtk.h"
 
+#include <vtkLightCollection.h>
+#include <vtkLight.h>
+#include <vtkProperty.h>
+
 Viewer::Viewer() {
 	viewerRenderer->SetBackground(0.1, 0.1, 0.5);
 	viewerRenderer->ResetCamera();
+//
+	viewerRenderer->RemoveAllLights();
 
-	vtkNew<vtkLight> naturalLight;
-	naturalLight->SetAmbientColor(0.0, 0.0, 0.0);
-	viewerRenderer->ClearLights();
+	vtkLight* naturalLight = viewerRenderer->MakeLight();
+	naturalLight->SetDiffuseColor(1.0, 1.0, 1.0);
+	naturalLight->SetDirectionAngle(70, 45);
 	viewerRenderer->AddLight(naturalLight);
+
+//	vtkLight::SafeDownCast(viewerRenderer->GetLights()->GetItemAsObject(0))->SetAmbientColor(0.0, 0.0, 1.0);
 
 	visualizerWindow->SetSize(800,600);
 	visualizerWindow->SetWindowName("PointCloud");

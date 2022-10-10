@@ -4,7 +4,8 @@
 
 #include "SimulatedSensor.h"
 #include "../utilities/vtk.h"
-
+#include <vtkActor.h>
+#include <vtkProperty.h>
 
 SimulatedSensor::SimulatedSensor() {
 
