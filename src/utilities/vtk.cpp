@@ -158,16 +158,6 @@ vtkNew<vtkDepthImageToPointCloud> extractPointCloudFromRenderer(vtkRenderer *sen
 }
 
 
-vtkNew<vtkActor> constructSimplePolyDataPointCloudActor(const vtkNew<vtkPolyData> &fruitSurfacePolyData) {
-	vtkNew<vtkActor> fruitSurfacePointsActor;
-	vtkNew<vtkPolyDataMapper> fruitSurfacePointsMapper;
-	fruitSurfacePointsMapper->SetInputData(fruitSurfacePolyData);
-
-	fruitSurfacePointsActor->SetMapper(fruitSurfacePointsMapper);
-	fruitSurfacePointsActor->GetProperty()->SetPointSize(5);
-	return fruitSurfacePointsActor;
-}
-
 vtkNew<vtkPolyData> mkVtkPolyDataFromScannablePoints(const std::vector<ScanTargetPoint> &scan_targets) {
 	vtkNew<vtkUnsignedCharArray> colors;
 	colors->SetNumberOfComponents(3);

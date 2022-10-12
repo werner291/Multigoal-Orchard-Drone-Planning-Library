@@ -6,6 +6,9 @@
 #include <vtkRenderWindow.h>
 #include <vtkDepthImageToPointCloud.h>
 #include <Eigen/Geometry>
+#include <optional>
+
+#include "../exploration/SegmentedPointCloud.h"
 
 /**
  * A simulated sensor that can be used to get point clouds from a vtk environment.
@@ -32,6 +35,13 @@ struct SimulatedSensor {
 	[[nodiscard]] vtkPolyData* getPointCloud() const;
 
 	void requestRender(const Eigen::Isometry3d& from_pose);
+
+	/**
+	 * Extract the latest point cloud from the sensor in segmented form.
+	 *
+	 * @return 		The segmented point cloud, or std::nullopt if no point cloud was available.
+	 */
+	std::optional<SegmentedPointCloud> extractLatestPointCloud();
 };
 
 #endif //NEW_PLANNERS_SIMULATEDSENSOR_H

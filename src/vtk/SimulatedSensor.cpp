@@ -4,6 +4,7 @@
 
 #include "SimulatedSensor.h"
 #include "../utilities/vtk.h"
+#include "../exploration/VtkToPointCloud.h"
 #include <vtkActor.h>
 #include <vtkProperty.h>
 
@@ -35,6 +36,14 @@ vtkPolyData *SimulatedSensor::getPointCloud() const {
 void SimulatedSensor::requestRender(const Eigen::Isometry3d &from_pose) {
 	setCameraFromEigen(from_pose, sensorRenderer->GetActiveCamera());
 	sensorWindow->Render();
+}
+
+std::optional<SegmentedPointCloud> SimulatedSensor::extractLatestPointCloud() {
+	if (getPointCloud()->GetPoints() != nullptr) {
+		return segmentPointCloudData(getPointCloud());
+	} else {
+		return std::nullopt;
+	}
 }
 
 

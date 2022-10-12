@@ -116,14 +116,6 @@ public:
 vtkNew<vtkRenderWindowInteractor> buildVisualizerWindowInteractor(vtkNew<vtkRenderWindow> &visualizerWindow);
 
 /**
- * Construct a vtkActor for the given vtkPolyData, assuming that the latter represents a point cloud.
- *
- * @param pointCloudPolyData 		The vtkPolyData to construct the actor for.
- * @return 							The constructed vtkActor.
- */
-vtkNew<vtkActor> constructSimplePolyDataPointCloudActor(const vtkNew<vtkPolyData> &pointCloudPolyData);
-
-/**
  * Build vtkPolyData from the given vector of ScanTargetPoint, in order to visualize them.
  *
  * The resulting poly data will have one point and one vertex for every ScanTargetPoint,
