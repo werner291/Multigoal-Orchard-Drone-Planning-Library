@@ -186,7 +186,7 @@ add_library(${PROJECT_NAME}_shared
 #        src/planners/shell_path_planner/ApproachPlanning.cpp
 #        src/utilities/TriangleSpheretreeIndex.cpp
 #        src/utilities/TriangleSpheretreeIndex.h
-        src/exploration/DynamicConvexHullAlgorithm.cpp src/exploration/DynamicConvexHullAlgorithm.h src/utilities/trajectory_primitives.cpp src/utilities/trajectory_primitives.h src/StreamingConvexHull.cpp src/StreamingConvexHull.h src/WorkspaceSpec.cpp src/WorkspaceSpec.h src/CurrentPathState.cpp src/CurrentPathState.h src/vtk/VisualizationSpecifics.cpp src/vtk/VisualizationSpecifics.h)
+        src/exploration/DynamicConvexHullAlgorithm.cpp src/exploration/DynamicConvexHullAlgorithm.h src/utilities/trajectory_primitives.cpp src/utilities/trajectory_primitives.h src/StreamingConvexHull.cpp src/StreamingConvexHull.h src/WorkspaceSpec.cpp src/WorkspaceSpec.h src/CurrentPathState.cpp src/CurrentPathState.h src/vtk/VisualizationSpecifics.cpp src/vtk/VisualizationSpecifics.h src/AnytimeOptimalInsertion.cpp src/AnytimeOptimalInsertion.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

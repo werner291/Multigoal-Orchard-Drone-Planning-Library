@@ -23,11 +23,11 @@
 #include "../vtk/SimulatedSensor.h"
 #include "../vtk/Viewer.h"
 #include "../exploration/DynamicConvexHullAlgorithm.h"
-#include "../StreamingConvexHull.h"
 #include "../WorkspaceSpec.h"
 #include "../CurrentPathState.h"
 #include "../utilities/moveit.h"
 #include "../vtk/VisualizationSpecifics.h"
+#include "../OnlineOrderOptimization.h"
 
 /**
  * Given a SimplifiedOrchard, create a SegmentedPointCloud that gives an initial hint about the contents
@@ -48,8 +48,6 @@ SegmentedPointCloud generateInitialCloud(const SimplifiedOrchard &orchard);
  * @return 				The collision environment.
  */
 std::unique_ptr<collision_detection::CollisionEnvFCL> buildOrchardAndRobotFCLCollisionEnvironment(const WorkspaceSpec &spec);
-
-
 
 WorkspaceSpec buildWorkspaceSpec() {
 	auto drone = loadRobotModel();

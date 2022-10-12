@@ -77,7 +77,8 @@ DynamicConvexHullAlgorithm::DynamicConvexHullAlgorithm(const moveit::core::Robot
 		: OnlinePointCloudMotionControlAlgorithm(trajectoryCallback), convexHull(StreamingConvexHull::fromSpherifiedCube(3)),
 		  targetPoints(0.05, 1000),
 		  visit_ordering([this](size_t i) { return (targetPointsOnChullSurface[i].second - last_end_effector_position).norm(); },
-						 [this](size_t i, size_t j) { return (targetPointsOnChullSurface[i].second - targetPointsOnChullSurface[j].second).norm(); }) {
+						 [this](size_t i, size_t j) { return (targetPointsOnChullSurface[i].second - targetPointsOnChullSurface[j].second).norm(); },
+						 [](const std::vector<size_t>&indices) { }) {
 
 	last_end_effector_position = initial_state.getGlobalLinkTransform("end_effector").translation();
 
@@ -93,6 +94,6 @@ DynamicConvexHullAlgorithm::getTargetPointsOnChullSurface() const {
 	return targetPointsOnChullSurface;
 }
 
-const DynamicOrderOptimization<size_t> &DynamicConvexHullAlgorithm::getVisitOrdering() const {
+const AnytimeOptimalInsertion<size_t> &DynamicConvexHullAlgorithm::getVisitOrdering() const {
 	return visit_ordering;
 }

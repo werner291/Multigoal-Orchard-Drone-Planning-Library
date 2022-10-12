@@ -14,62 +14,8 @@
 #include "../StreamingConvexHull.h"
 #include "../HashedSpatialIndex.h"
 
-template<typename V>
-class DynamicOrderOptimization {
+#include "../AnytimeOptimalInsertion.h"
 
-	std::vector<V> visit_ordering;
-	std::function<double(const V &)> first_distance_function;
-	std::function<double(const V&, const V&)> distance_function;
-public:
-
-	explicit DynamicOrderOptimization(const std::function<double(const V &)>& firstDistanceFunction,
-									  const std::function<double(const V &, const V &)> &distanceFunction)
-			: distance_function(distanceFunction), first_distance_function(firstDistanceFunction) {
-	}
-
-	const std::vector<V> &getVisitOrdering() const {
-		return visit_ordering;
-	}
-
-	void iterate() {
-
-		// Pick a random index.
-		size_t index = rand() % visit_ordering.size();
-
-		// Remove it.
-		V removed = visit_ordering[index];
-		visit_ordering.erase(visit_ordering.begin() + index);
-
-		// Re-insert it.
-		insert(removed);
-
-	}
-
-	void insert(V item) {
-
-		if (visit_ordering.empty()) {
-			visit_ordering.push_back(item);
-			return;
-		} else {
-
-			size_t best_insertion_spot = 0;
-			double least_costly_distance = first_distance_function(item) + distance_function(item, visit_ordering[0]);
-
-			for (size_t i = 1; i < visit_ordering.size(); ++i) {
-				double distance = distance_function(item, visit_ordering[i]) + distance_function(item, visit_ordering[i-1]);
-				if (distance < least_costly_distance) {
-					least_costly_distance = distance;
-					best_insertion_spot = i;
-				}
-			}
-
-			visit_ordering.insert(visit_ordering.begin() + best_insertion_spot, item);
-
-		}
-
-	}
-
-};
 
 class DynamicConvexHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 
@@ -80,17 +26,15 @@ class DynamicConvexHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm
 
 	StreamingConvexHull convexHull;
 
-	DynamicOrderOptimization<size_t> visit_ordering;
+	AnytimeOptimalInsertion<size_t> visit_ordering;
 public:
-	const DynamicOrderOptimization<size_t> &getVisitOrdering() const;
+	const AnytimeOptimalInsertion<size_t> &getVisitOrdering() const;
 
 private:
 
 	std::vector<std::pair<const Eigen::Vector3d, Eigen::Vector3d>> targetPointsOnChullSurface;
 public:
 	const std::vector<std::pair<const Eigen::Vector3d, Eigen::Vector3d>> &getTargetPointsOnChullSurface() const;
-
-
 
 	const StreamingConvexHull &getConvexHull() const;
 
