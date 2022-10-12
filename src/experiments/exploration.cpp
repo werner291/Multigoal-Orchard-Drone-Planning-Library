@@ -22,7 +22,7 @@
 #include "../utilities/vtk.h"
 #include "../vtk/SimulatedSensor.h"
 #include "../vtk/Viewer.h"
-#include "../exploration/DynamicBoundingSphereAlgorithm.h"
+#include "../exploration/DynamicConvexHullAlgorithm.h"
 #include "../StreamingConvexHull.h"
 #include "../WorkspaceSpec.h"
 #include "../CurrentPathState.h"
@@ -49,23 +49,7 @@ SegmentedPointCloud generateInitialCloud(const SimplifiedOrchard &orchard);
  */
 std::unique_ptr<collision_detection::CollisionEnvFCL> buildOrchardAndRobotFCLCollisionEnvironment(const WorkspaceSpec &spec);
 
-/**
- * Get the leaf points from the given point cloud. It additionally filters out points that are too close to the ground.
- *
- * @param segmentedPointCloud 		The point cloud to get the leaf points from.
- * @return 							The leaf points.
- */
-std::vector<Eigen::Vector3d> isolateLeafPoints(SegmentedPointCloud &segmentedPointCloud) {
-	std::vector<Eigen::Vector3d> points;
 
-	for (const auto &item: segmentedPointCloud.points) {
-		if (item.type == SegmentedPointCloud::PT_SOFT_OBSTACLE && item.position.z() > 1.0e-6) {
-			points.push_back(item.position);
-		}
-	}
-
-	return points;
-}
 
 WorkspaceSpec buildWorkspaceSpec() {
 	auto drone = loadRobotModel();
@@ -94,15 +78,39 @@ int main(int, char*[]) {
 
 	vtkNew<vtkActor> pointCloudActor = buildDepthImagePointCloudActor(sensor.getPointCloudOutputPort());
 
-	StreamingConvexHull convexHull = StreamingConvexHull::fromSpherifiedCube(3);
-
 	ConvexHullActor convexHullActor;
 
-	Viewer viewer = buildViewer(workspaceSpec.orchard, robotModel, fruitSurfaceScanTargetsActor.fruitSurfacePointsActor, pointCloudActor, convexHullActor.actor);
+	vtkNew<vtkPolyData> targetPointData;
+	vtkNew<vtkPolyDataMapper> targetPointMapper;
+	vtkNew<vtkActor> targetPointActor;
+
+	targetPointMapper->SetInputData(targetPointData);
+	targetPointActor->SetMapper(targetPointMapper);
+	targetPointActor->GetProperty()->SetColor(1, 0, 0);
+	targetPointActor->GetProperty()->SetPointSize(10);
+	targetPointActor->GetProperty()->SetLineWidth(5);
+
+	vtkNew<vtkPolyData> visitOrderVisualizationData;
+	vtkNew<vtkPolyDataMapper> visitOrderVisualizationMapper;
+	vtkNew<vtkActor> visitOrderVisualizationActor;
+
+	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
+	visitOrderVisualizationActor->SetMapper(visitOrderVisualizationMapper);
+	visitOrderVisualizationActor->GetProperty()->SetColor(1, 0.5, 0);
+	visitOrderVisualizationActor->GetProperty()->SetLineWidth(10);
+
+	Viewer viewer = buildViewer(workspaceSpec.orchard,robotModel,
+								{fruitSurfaceScanTargetsActor.fruitSurfacePointsActor,
+								 visitOrderVisualizationActor,
+								 targetPointActor,
+								 convexHullActor.actor,
+								 pointCloudActor,
+								}
+	);
 
 	CurrentPathState currentPathState(workspaceSpec.initialState);
 
-	DynamicBoundingSphereAlgorithm dbsa([&](robot_trajectory::RobotTrajectory trajectory) {
+	DynamicConvexHullAlgorithm dbsa(workspaceSpec.initialState, [&](robot_trajectory::RobotTrajectory trajectory) {
 		currentPathState.newPath(trajectory);
 	});
 
@@ -127,10 +135,42 @@ int main(int, char*[]) {
 
 			dbsa.updatePointCloud(currentPathState.getCurrentState(), *points);
 
-			if (convexHull.addPoints(isolateLeafPoints(*points)))
 			{
-				convexHullActor.update(convexHull);
+				vtkNew<vtkPoints> pointsVtk;
+				vtkNew<vtkCellArray> cells;
+				for (const auto &[original, projected]: dbsa.getTargetPointsOnChullSurface()) {
+					cells->InsertNextCell(2);
+					cells->InsertCellPoint(pointsVtk->InsertNextPoint(projected.data()));
+					cells->InsertCellPoint(pointsVtk->InsertNextPoint(original.data()));
+				}
+				targetPointData->SetPoints(pointsVtk);
+				targetPointData->SetLines(cells);
+				targetPointData->Modified();
+
+				convexHullActor.update(dbsa.getConvexHull());
 			}
+
+			{
+				vtkNew<vtkPoints> pointsVtk;
+				vtkNew<vtkCellArray> cells;
+
+				vtkIdType previousPointId = pointsVtk->InsertNextPoint(currentPathState.getCurrentState().getGlobalLinkTransform("end_effector").translation().data());
+
+				for (const auto &point: dbsa.getVisitOrdering().getVisitOrdering()) {
+					vtkIdType new_pt;
+					Eigen::Vector3d pt = dbsa.getTargetPointsOnChullSurface()[point].second;
+
+					cells->InsertNextCell(2);
+					cells->InsertCellPoint(previousPointId);
+					cells->InsertCellPoint(previousPointId = pointsVtk->InsertNextPoint(pt.data()));
+				}
+
+				visitOrderVisualizationData->SetPoints(pointsVtk);
+				visitOrderVisualizationData->SetLines(cells);
+
+				visitOrderVisualizationData->Modified();
+			}
+
 
 			auto scanned_points = scannablePointsIndex
 					.findScannedPoints(eePose.translation(),

@@ -70,9 +70,7 @@ struct ConvexHullActor {
  */
 Viewer buildViewer(const SimplifiedOrchard &orchard,
 				   VtkRobotmodel &robotModel,
-				   vtkNew<vtkActor> &fruitSurfacePointsActor,
-				   vtkNew<vtkActor> &pointCloudActor,
-				   vtkNew<vtkActor> &actor);
+				   const std::vector<vtkActor*>& actors);
 
 /**
  * Build a SimulatedSensor with the specific contents of the given workspace.

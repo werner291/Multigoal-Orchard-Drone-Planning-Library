@@ -32,17 +32,15 @@ void ConvexHullActor::update(const StreamingConvexHull &convexHull) {
 
 Viewer buildViewer(const SimplifiedOrchard &orchard,
 				   VtkRobotmodel &robotModel,
-				   vtkNew<vtkActor> &fruitSurfacePointsActor,
-				   vtkNew<vtkActor> &pointCloudActor,
-				   vtkNew<vtkActor> &actor) {
+				   const std::vector<vtkActor*>& actors) {
 
 	Viewer viewer;
 	viewer.addActorCollection(buildOrchardActors(orchard, false));
 	viewer.addActorCollection(robotModel.getLinkActors());
-	viewer.addActor(fruitSurfacePointsActor);
-	viewer.addActor(actor);
-	// For an unknown reason, things break when this isn't the last actor added.
-	viewer.addActor(pointCloudActor);
+
+	for (auto &actor: actors) {
+		viewer.addActor(actor);
+	}
 
 	viewer.viewerRenderer->GetActiveCamera()->SetPosition(4,4,2.0);
 	viewer.viewerRenderer->GetActiveCamera()->SetFocalPoint(0,0,1.5);
