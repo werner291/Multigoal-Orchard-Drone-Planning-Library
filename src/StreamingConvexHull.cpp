@@ -115,7 +115,6 @@ bool StreamingConvexHull::addPoints(const std::vector<Eigen::Vector3d> &points) 
 	if (points.size() > 0) {
 		ompl::RNG rng;
 
-
 		// We add 100 points at random.
 		for (size_t i = 0; i < 100; i++) {
 			changed |= addPoint(points[rng.uniformInt(0, points.size() - 1)]);

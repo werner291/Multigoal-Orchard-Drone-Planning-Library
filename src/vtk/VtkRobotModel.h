@@ -22,6 +22,8 @@ public:
 
 	explicit VtkRobotmodel(const moveit::core::RobotModelConstPtr &robot_model);
 
+	explicit VtkRobotmodel(const moveit::core::RobotModelConstPtr &robot_model, const moveit::core::RobotState& initial_state);
+
 	void applyState(const moveit::core::RobotState& st);
 
 

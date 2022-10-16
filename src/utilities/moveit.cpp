@@ -1,4 +1,4 @@
-#include <moveit/robot_state/robot_state.h>
+
 #include "moveit.h"
 
 void setBaseTranslation(moveit::core::RobotState &st, const Eigen::Vector3d &offset) {
@@ -25,4 +25,14 @@ void setStateToTrajectoryPoint(moveit::core::RobotState &state,
 	currentTrajectory.getStateAtDurationFromStart(t, state_fakeshared);
 	state.update(true);
 
+}
+
+bool checkCollision(const moveit::core::RobotState &current_state,
+					const collision_detection::CollisionEnvFCL &collision_env) {
+	collision_detection::CollisionRequest collision_request;
+	collision_detection::CollisionResult collision_result;
+	collision_env.checkRobotCollision(collision_request, collision_result, current_state);
+
+	bool collision = collision_result.collision;
+	return collision;
 }

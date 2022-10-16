@@ -4,7 +4,6 @@
 #include <vtkNew.h>
 #include <vtkProperty.h>
 #include <vtkWindowToImageFilter.h>
-#include <vtkDepthImageToPointCloud.h>
 #include <vtkPointData.h>
 #include <vtkCallbackCommand.h>
 
@@ -14,15 +13,12 @@
 
 #include <moveit/collision_detection_fcl/collision_env_fcl.h>
 #include <geometric_shapes/shape_operations.h>
-#include <vtkSphereSource.h>
 
 #include "../utilities/experiment_utils.h"
 #include "../vtk/VtkRobotModel.h"
 #include "../utilities/load_mesh.h"
-#include "../utilities/moveit.h"
 #include "../exploration/StupidAlgorithm.h"
 #include "../exploration/ColorEncoding.h"
-#include "../exploration/VtkToPointCloud.h"
 #include "../utilities/vtk.h"
 #include "../vtk/SimulatedSensor.h"
 #include "../vtk/Viewer.h"
@@ -32,139 +28,162 @@
 
 
 
+#include "../exploration/DynamicConvexHullAlgorithm.h"
+#include "../WorkspaceSpec.h"
+#include "../CurrentPathState.h"
+#include "../utilities/moveit.h"
+#include "../vtk/VisualizationSpecifics.h"
+#include "../OnlineOrderOptimization.h"
 
-std::vector<ScanTargetPoint> buildScanTargetPoints(const shape_msgs::msg::Mesh &mesh, size_t n);
-
+/**
+ * Given a SimplifiedOrchard, create a SegmentedPointCloud that gives an initial hint about the contents
+ * of the workspace, meant to be given initially to the exploration algorithm.
+ *
+ * It can be more or less detailed depending on how difficult you want the exploration to be.
+ *
+ * @param orchard 		The orchard to create the initial hint for.
+ * @return 				The SegmentedPointCloud.
+ */
 SegmentedPointCloud generateInitialCloud(const SimplifiedOrchard &orchard);
+
+/**
+ * Build a MoveIt collision environment from the given workspace specification.
+ *
+ * @param spec 			The workspace specification.
+ *
+ * @return 				The collision environment.
+ */
+std::unique_ptr<collision_detection::CollisionEnvFCL> buildOrchardAndRobotFCLCollisionEnvironment(const WorkspaceSpec &spec);
+
+WorkspaceSpec buildWorkspaceSpec() {
+	auto drone = loadRobotModel();
+	return std::move<WorkspaceSpec>({
+			drone,
+			mkInitialState(drone),
+			{{{ { 0.0, 0.0 }, loadTreeMeshes("appletree") }}}
+	});
+}
 
 int main(int, char*[]) {
 
-	auto drone = loadRobotModel();
-	moveit::core::RobotState current_state = mkInitialState(drone);
+	WorkspaceSpec workspaceSpec = buildWorkspaceSpec();
 
-	VtkRobotmodel robotModel(drone);
-	robotModel.applyState(current_state);
+	auto collision_env = buildOrchardAndRobotFCLCollisionEnvironment(workspaceSpec);
 
-	SimplifiedOrchard orchard = {
-		{
-			{ { 0.0, 0.0 }, loadTreeMeshes("appletree") },
-		}
-	};
+	auto surface_points = buildScanTargetPoints(workspaceSpec.orchard.trees[0].second.fruit_mesh, 2000);
 
-	auto collision_world = std::make_shared<collision_detection::World>();
-
-	for (const auto& [tree_id, tree] : orchard.trees | ranges::views::enumerate) {
-
-		Eigen::Isometry3d tree_pose = Eigen::Isometry3d::Identity();
-		tree_pose.translation() = Eigen::Vector3d(tree.first.x(), tree.first.y(), 0);
-		collision_world->addToObject("tree_" + std::to_string(tree_id) + "_trunk",
-									 shapes::ShapeConstPtr(shapes::constructShapeFromMsg(tree.second.trunk_mesh)),
-									 tree_pose);
-	}
-
-	collision_detection::CollisionEnvFCL collision_env(drone, collision_world);
-
-	auto surface_points = buildScanTargetPoints(orchard.trees[0].second.fruit_mesh, 2000);
-	
 	ScannablePointsIndex scannablePointsIndex(surface_points);
 
-	vtkNew<vtkPolyData> fruitSurfacePolyData = mkVtkPolyDataFromScannablePoints(surface_points);
+	FruitSurfaceScanTargetsActor fruitSurfaceScanTargetsActor(surface_points);
 
-	vtkNew<vtkActor> fruitSurfacePointsActor = constructSimplePolyDataPointCloudActor(fruitSurfacePolyData);
+	VtkRobotmodel robotModel(workspaceSpec.robotModel,workspaceSpec.initialState);
 
-	SimulatedSensor sensor;
-	sensor.addActorCollection(buildOrchardActors(orchard, true));
-	sensor.addActorCollection(robotModel.getLinkActors());
+	SimulatedSensor sensor = buildSensorSimulator(workspaceSpec.orchard, robotModel);
 
 	vtkNew<vtkActor> pointCloudActor = buildDepthImagePointCloudActor(sensor.getPointCloudOutputPort());
 
-	StreamingConvexHull convexHull = StreamingConvexHull::fromSpherifiedCube(3);
+	ConvexHullActor convexHullActor;
 
-	vtkNew<vtkPolyDataMapper> mapper;
-	mapper->SetInputData(rosMeshToVtkPolyData(convexHull.toMesh()));
+	vtkNew<vtkPolyData> targetPointData;
+	vtkNew<vtkPolyDataMapper> targetPointMapper;
+	vtkNew<vtkActor> targetPointActor;
 
-	vtkNew<vtkActor> actor;
-	actor->SetMapper(mapper);
-	actor->GetProperty()->SetColor(0.0, 1.0, 0.0);
-	actor->GetProperty()->SetOpacity(0.8);
+	targetPointMapper->SetInputData(targetPointData);
+	targetPointActor->SetMapper(targetPointMapper);
+	targetPointActor->GetProperty()->SetColor(1, 0, 0);
+	targetPointActor->GetProperty()->SetPointSize(10);
+	targetPointActor->GetProperty()->SetLineWidth(5);
 
-	Viewer viewer;
-	viewer.addActorCollection(buildOrchardActors(orchard, false));
-	viewer.addActorCollection(robotModel.getLinkActors());
-	viewer.addActor(fruitSurfacePointsActor);
-	viewer.addActor(actor);
-	// For an unknown reason, things break when this isn't the last actor added.
-	viewer.addActor(pointCloudActor);
+	vtkNew<vtkPolyData> visitOrderVisualizationData;
+	vtkNew<vtkPolyDataMapper> visitOrderVisualizationMapper;
+	vtkNew<vtkActor> visitOrderVisualizationActor;
 
-	viewer.viewerRenderer->GetActiveCamera()->SetPosition(4,4,2.0);
-	viewer.viewerRenderer->GetActiveCamera()->SetFocalPoint(0,0,1.5);
-	viewer.viewerRenderer->GetActiveCamera()->SetViewUp(0,0,1);
+	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
+	visitOrderVisualizationActor->SetMapper(visitOrderVisualizationMapper);
+	visitOrderVisualizationActor->GetProperty()->SetColor(1, 0.5, 0);
+	visitOrderVisualizationActor->GetProperty()->SetLineWidth(10);
 
-	double pathProgressT = 0.0;
-	std::optional<robot_trajectory::RobotTrajectory> currentTrajectory;
+	Viewer viewer = buildViewer(workspaceSpec.orchard,robotModel,
+								{fruitSurfaceScanTargetsActor.fruitSurfacePointsActor,
+								 visitOrderVisualizationActor,
+								 targetPointActor,
+								 convexHullActor.actor,
+								 pointCloudActor,
+								}
+	);
 
-	DynamicBoundingSphereAlgorithm dbsa([&](robot_trajectory::RobotTrajectory trajectory) {
-		currentTrajectory = std::move(trajectory);
-		pathProgressT = 0.0;
+	CurrentPathState currentPathState(workspaceSpec.initialState);
+
+	DynamicConvexHullAlgorithm dbsa(workspaceSpec.initialState, [&](robot_trajectory::RobotTrajectory trajectory) {
+		currentPathState.newPath(trajectory);
 	});
 
-	dbsa.updatePointCloud(current_state, generateInitialCloud(orchard));
+	dbsa.updatePointCloud(currentPathState.current_state, generateInitialCloud(workspaceSpec.orchard));
 
 	auto callback = [&]() {
 
-		if (currentTrajectory) {
+		currentPathState.advance(0.005);
 
-			pathProgressT += 0.005;
-
-			setStateToTrajectoryPoint(current_state, pathProgressT, *currentTrajectory);
-
-			collision_detection::CollisionRequest collision_request;
-			collision_detection::CollisionResult collision_result;
-			collision_env.checkRobotCollision(collision_request, collision_result, current_state);
-
-			if (collision_result.collision) {
-				std::cout << "Oh no!" << std::endl;
-			}
-
+		if (checkCollision(currentPathState.getCurrentState(), *collision_env)) {
+			std::cout << "Oh no!" << std::endl;
 		}
 
-		std::cout << pathProgressT << std::endl;
+		robotModel.applyState(currentPathState.getCurrentState());
 
-		robotModel.applyState(current_state);
-
-		Eigen::Isometry3d eePose = current_state.getGlobalLinkTransform("end_effector");
+		Eigen::Isometry3d eePose = currentPathState.getCurrentState().getGlobalLinkTransform("end_effector");
 		sensor.requestRender(eePose);
 
 		// Nullptr check to avoid a race condition where the callback is called before the first point cloud is rendered.
 		// FIXME: Ideally, I'd like to make sure the algorithm sees the point cloud exactly once.
-		if (sensor.getPointCloud()->GetPoints() != nullptr) {
+		if (auto points = sensor.extractLatestPointCloud()) {
 
-			SegmentedPointCloud segmentedPointCloud = segmentPointCloudData(sensor.getPointCloud());
+			dbsa.updatePointCloud(currentPathState.getCurrentState(), *points);
 
-			dbsa.updatePointCloud(current_state, segmentedPointCloud);
-
-			std::vector<Eigen::Vector3d> points;
-
-			for (const auto &item: segmentedPointCloud.points) {
-				if (item.type == SegmentedPointCloud::PT_SOFT_OBSTACLE && item.position.z() > 1.0e-6) {
-					points.push_back(item.position);
-				}
-			}
-
-			if (convexHull.addPoints(points))
 			{
-				auto mesh = convexHull.toMesh();
-				mapper->SetInputData(rosMeshToVtkPolyData(convexHull.toMesh()));
-				mapper->Modified();
+				vtkNew<vtkPoints> pointsVtk;
+				vtkNew<vtkCellArray> cells;
+				for (const auto &[original, projected]: dbsa.getTargetPointsOnChullSurface()) {
+					cells->InsertNextCell(2);
+					cells->InsertCellPoint(pointsVtk->InsertNextPoint(projected.data()));
+					cells->InsertCellPoint(pointsVtk->InsertNextPoint(original.data()));
+				}
+				targetPointData->SetPoints(pointsVtk);
+				targetPointData->SetLines(cells);
+				targetPointData->Modified();
+
+				convexHullActor.update(dbsa.getConvexHull());
 			}
+
+			{
+				vtkNew<vtkPoints> pointsVtk;
+				vtkNew<vtkCellArray> cells;
+
+				vtkIdType previousPointId = pointsVtk->InsertNextPoint(currentPathState.getCurrentState().getGlobalLinkTransform("end_effector").translation().data());
+
+				for (const auto &point: dbsa.getVisitOrdering().getVisitOrdering()) {
+					vtkIdType new_pt;
+					Eigen::Vector3d pt = dbsa.getTargetPointsOnChullSurface()[point].second;
+
+					cells->InsertNextCell(2);
+					cells->InsertCellPoint(previousPointId);
+					cells->InsertCellPoint(previousPointId = pointsVtk->InsertNextPoint(pt.data()));
+				}
+
+				visitOrderVisualizationData->SetPoints(pointsVtk);
+				visitOrderVisualizationData->SetLines(cells);
+
+				visitOrderVisualizationData->Modified();
+			}
+
 
 			auto scanned_points = scannablePointsIndex
-					.findScannedPoints(eePose.translation(),eePose.rotation() *Eigen::Vector3d(0, 1, 0),M_PI / 4.0,0.1,segmentedPointCloud);
+					.findScannedPoints(eePose.translation(),
+									   eePose.rotation() * Eigen::Vector3d(0, 1, 0),
+									   M_PI / 4.0,
+									   0.1,
+									   *points);
 
-			for (auto &point: scanned_points) {
-				fruitSurfacePolyData->GetPointData()->GetScalars()->SetTuple3((vtkIdType) point, 255, 0, 255);
-				fruitSurfacePolyData->Modified();
-			}
+			fruitSurfaceScanTargetsActor.markAsScanned(scanned_points);
 		}
 
 		viewer.requestRender();
@@ -176,6 +195,20 @@ int main(int, char*[]) {
 	viewer.start();
 
 	return EXIT_SUCCESS;
+}
+
+std::unique_ptr<collision_detection::CollisionEnvFCL> buildOrchardAndRobotFCLCollisionEnvironment(const WorkspaceSpec &workspaceSpec) {
+	auto collision_world = std::make_shared<collision_detection::World>();
+
+	for (const auto& [tree_id, tree] : workspaceSpec.orchard.trees | ranges::views::enumerate) {
+		Eigen::Isometry3d tree_pose = Eigen::Isometry3d::Identity();
+		tree_pose.translation() = Eigen::Vector3d(tree.first.x(), tree.first.y(), 0);
+		collision_world->addToObject("tree_" + std::to_string(tree_id) + "_trunk",
+									 shapes::ShapeConstPtr(shapes::constructShapeFromMsg(tree.second.trunk_mesh)),
+									 tree_pose);
+	}
+
+	return std::move(std::make_unique<collision_detection::CollisionEnvFCL>(workspaceSpec.robotModel, collision_world));
 }
 
 SegmentedPointCloud generateInitialCloud(const SimplifiedOrchard &orchard) {// Pick a random fruit mesh vertex.

@@ -5,6 +5,7 @@
 #include <moveit/robot_state/robot_state.h>
 #include <Eigen/Core>
 #include <moveit/robot_trajectory/robot_trajectory.h>
+#include <moveit/collision_detection_fcl/collision_env_fcl.h>
 
 /**
  * Assuming the robot has a floating base as the first 7 joint variables, this function sets the translation of the base.
@@ -32,5 +33,15 @@ void setBaseOrientation(moveit::core::RobotState &robotState, Eigen::Quaterniond
 void setStateToTrajectoryPoint(moveit::core::RobotState &state,
 							   double t,
 							   const robot_trajectory::RobotTrajectory &currentTrajectory);
+
+/**
+ * A very simple function that checks whether the given robot state is in collision, and nothing else.
+ *
+ * @param current_state 		The robot state to check.
+ * @param collision_env 		The collision environment to check against.
+ * @return 						True if the robot state is in collision, false otherwise.
+ */
+bool checkCollision(const moveit::core::RobotState &current_state,
+					const collision_detection::CollisionEnvFCL &collision_env);
 
 #endif //NEW_PLANNERS_MOVEIT_H

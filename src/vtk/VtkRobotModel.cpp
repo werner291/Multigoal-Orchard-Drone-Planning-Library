@@ -46,3 +46,8 @@ void VtkRobotmodel::applyState(const moveit::core::RobotState &st) {
 		link_actor->RotateWXYZ(tf_rot.angle() / M_PI * 180.0, tf_rot.axis().x(), tf_rot.axis().y(), tf_rot.axis().z());
 	}
 }
+
+VtkRobotmodel::VtkRobotmodel(const moveit::core::RobotModelConstPtr &robot_model, const moveit::core::RobotState &st)
+		: VtkRobotmodel(robot_model) {
+	applyState(st);
+}
