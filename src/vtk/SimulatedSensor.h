@@ -6,6 +6,7 @@
 #include <vtkRenderWindow.h>
 #include <vtkDepthImageToPointCloud.h>
 #include <Eigen/Geometry>
+#include <vtkRendererSource.h>
 
 /**
  * A simulated sensor that can be used to get point clouds from a vtk environment.
@@ -15,8 +16,11 @@ struct SimulatedSensor {
 	vtkSmartPointer<vtkRenderer> sensorRenderer;
 	/// The render window to render the scene to.
 	vtkSmartPointer<vtkRenderWindow> sensorWindow;
+
 	/// The depth to point cloud filter.
-	vtkSmartPointer<vtkDepthImageToPointCloud> depthToPointCloud;
+	vtkNew<vtkDepthImageToPointCloud> depthToPointCloud;
+
+	vtkNew<vtkRendererSource> rendererSource;
 
 	/**
 	 * Build a simulated sensor.

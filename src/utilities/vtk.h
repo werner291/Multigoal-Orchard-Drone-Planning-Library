@@ -69,14 +69,6 @@ vtkNew<vtkPoints> meshVerticesToVtkPoints(const shape_msgs::msg::Mesh &mesh);
 vtkNew<vtkActor> createActorFromMesh(const shape_msgs::msg::Mesh &mesh);
 
 /**
- * Extract a point cloud (source) from the given renderer. It will update when the renderer outputs a new frame.
- *
- * @param sensorRenderer 		The renderer to extract the point cloud from.
- * @return 						The extracted point cloud.
- */
-vtkNew<vtkDepthImageToPointCloud> extractPointCloudFromRenderer(vtkRenderer *sensorRenderer);
-
-/**
  * A vtkTimerCommand that calls the given callback when the timer fires, to allow the use of lambdas as callbacks in vtk.
  *
  * Do not forget to call setCallback() to set the callback to call when the timer fires.

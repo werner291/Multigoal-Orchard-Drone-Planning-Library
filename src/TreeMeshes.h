@@ -5,6 +5,7 @@
 #include <shape_msgs/msg/mesh.hpp>
 #include <Eigen/Core>
 #include "utilities/load_mesh.h"
+#include <moveit/robot_state/robot_state.h>
 
 struct TreeMeshes {
 	shape_msgs::msg::Mesh leaves_mesh;
@@ -23,5 +24,7 @@ TreeMeshes loadTreeMeshes(const std::string& treeName);
 struct SimplifiedOrchard {
 	std::vector<std::pair<Eigen::Vector2d, TreeMeshes>> trees;
 };
+
+moveit::core::RobotState mkInitialState(const moveit::core::RobotModelPtr &drone);
 
 #endif //NEW_PLANNERS_TREEMESHES_H

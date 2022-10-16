@@ -6,14 +6,19 @@
 #include "../utilities/vtk.h"
 #include <vtkActor.h>
 #include <vtkProperty.h>
+#include <vtkRendererSource.h>
 
 SimulatedSensor::SimulatedSensor() {
 
 	sensorRenderer = buildSensorRenderer();
 	sensorWindow = buildSensorRenderWindow(sensorRenderer);
-	depthToPointCloud = extractPointCloudFromRenderer(sensorRenderer);
 
-//	sensorWindow->Render();
+	rendererSource->DepthValuesOn();
+	rendererSource->SetInput(sensorRenderer);
+
+	depthToPointCloud->SetInputConnection(0, rendererSource->GetOutputPort());
+	depthToPointCloud->SetCamera(sensorRenderer->GetActiveCamera());
+
 }
 
 void SimulatedSensor::addActor(vtkActor *actor) {
@@ -33,8 +38,15 @@ vtkPolyData *SimulatedSensor::getPointCloud() const {
 }
 
 void SimulatedSensor::requestRender(const Eigen::Isometry3d &from_pose) {
+
 	setCameraFromEigen(from_pose, sensorRenderer->GetActiveCamera());
+
 	sensorWindow->Render();
+//	sensorWindow->WaitForCompletion();
+
+	rendererSource->Update();
+	depthToPointCloud->Update();
+
 }
 
 

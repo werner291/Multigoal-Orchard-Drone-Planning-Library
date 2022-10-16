@@ -146,17 +146,6 @@ vtkNew<vtkActor> createActorFromMesh(const shape_msgs::msg::Mesh &mesh) {
 	return actor;
 }
 
-vtkNew<vtkDepthImageToPointCloud> extractPointCloudFromRenderer(vtkRenderer *sensorRenderer) {
-	vtkNew<vtkRendererSource> rendererSource;
-	rendererSource->DepthValuesOn();
-	rendererSource->SetInput(sensorRenderer);
-
-	vtkNew<vtkDepthImageToPointCloud> depthToPointCloud;
-	depthToPointCloud->SetInputConnection(0, rendererSource->GetOutputPort());
-	depthToPointCloud->SetCamera(sensorRenderer->GetActiveCamera());
-	return depthToPointCloud;
-}
-
 
 vtkNew<vtkActor> constructSimplePolyDataPointCloudActor(const vtkNew<vtkPolyData> &fruitSurfacePolyData) {
 	vtkNew<vtkActor> fruitSurfacePointsActor;
