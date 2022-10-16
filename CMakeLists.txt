@@ -70,6 +70,8 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-Og")
 add_library(${PROJECT_NAME}_shared
         src/BulletContinuousMotionValidator.cpp
         src/BulletContinuousMotionValidator.h
+        src/CurrentPathState.cpp
+        src/CurrentPathState.h
         src/DirectApproachVariantSampler.cpp
         src/DirectApproachVariantSampler.h
         src/DistanceHeuristics.cpp
@@ -101,6 +103,8 @@ add_library(${PROJECT_NAME}_shared
         src/ScannablePointsIndex.h
         src/SingleGoalPlannerMethods.cpp
         src/SingleGoalPlannerMethods.h
+        src/StreamingConvexHull.cpp
+        src/StreamingConvexHull.h
         src/TimedCostConvergenceTerminationCondition.cpp
         src/TimedCostConvergenceTerminationCondition.h
         src/TreeMeshes.cpp
@@ -108,6 +112,8 @@ add_library(${PROJECT_NAME}_shared
         src/experiments/exploration.cpp
         src/exploration/ColorEncoding.cpp
         src/exploration/ColorEncoding.h
+        src/exploration/DynamicConvexHullAlgorithm.cpp
+        src/exploration/DynamicConvexHullAlgorithm.h
         src/exploration/OnlinePointCloudMotionControlAlgorithm.cpp
         src/exploration/OnlinePointCloudMotionControlAlgorithm.h
         src/exploration/SegmentedPointCloud.cpp
@@ -171,6 +177,8 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/moveit_conversions.h
         src/utilities/msgs_utilities.cpp
         src/utilities/msgs_utilities.h
+        src/utilities/trajectory_primitives.cpp
+        src/utilities/trajectory_primitives.h
         src/utilities/traveling_salesman.cpp
         src/utilities/traveling_salesman.h
         src/utilities/vtk.cpp
@@ -179,19 +187,10 @@ add_library(${PROJECT_NAME}_shared
         src/vtk/SimulatedSensor.h
         src/vtk/Viewer.cpp
         src/vtk/Viewer.h
+        src/vtk/VisualizationSpecifics.cpp
+        src/vtk/VisualizationSpecifics.h
         src/vtk/VtkRobotModel.cpp
         src/vtk/VtkRobotModel.h
-#        src/NewKnnPlanner.cpp
-#        src/NewKnnPlanner.h
-#        src/planners/shell_path_planner/ApproachPlanning.cpp
-#        src/utilities/TriangleSpheretreeIndex.cpp
-#        src/utilities/TriangleSpheretreeIndex.h
-        src/utilities/trajectory_primitives.cpp
-        src/utilities/trajectory_primitives.h
-        src/StreamingConvexHull.cpp
-        src/StreamingConvexHull.h
-#        src/StreamingAlphaShape.cpp
-#        src/StreamingAlphaShape.h
         )
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
