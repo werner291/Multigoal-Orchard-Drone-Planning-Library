@@ -21,7 +21,11 @@ TEST(VisualiserTest, SensorSyncTest) {
 			}
 	};
 
-	SimulatedSensor sensor;
+	/**
+	 * PHOTOSENITIVITY WARNING: THIS TEST CAUSES SEVERE FLICKERING IN THE OUTPUT WINDOW WHEN `showWindow` IS TRUE.
+	 */
+	SimulatedSensor sensor(false);
+
 	sensor.addActorCollection(buildOrchardActors(orchard, true));
 
 	Eigen::Vector3d pos(0.0,5.0,1.5);

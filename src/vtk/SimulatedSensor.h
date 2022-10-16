@@ -27,8 +27,10 @@ struct SimulatedSensor {
 
 	/**
 	 * Build a simulated sensor.
+	 *
+	 * @param showWindow 		Whether to show the point-of-view of the sensor in a user-visible window.
 	 */
-	SimulatedSensor();
+	SimulatedSensor(bool showWindow = true);
 
 	void addActorCollection(vtkActorCollection* actors);
 

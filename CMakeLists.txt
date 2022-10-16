@@ -186,8 +186,6 @@ add_library(${PROJECT_NAME}_shared
 #        src/planners/shell_path_planner/ApproachPlanning.cpp
 #        src/utilities/TriangleSpheretreeIndex.cpp
 #        src/utilities/TriangleSpheretreeIndex.h
-        src/exploration/DynamicBoundingSphereAlgorithm.cpp
-        src/exploration/DynamicBoundingSphereAlgorithm.h
         src/utilities/trajectory_primitives.cpp
         src/utilities/trajectory_primitives.h
         src/StreamingConvexHull.cpp

@@ -23,17 +23,13 @@
 #include "../vtk/SimulatedSensor.h"
 #include "../vtk/Viewer.h"
 #include "../utilities/msgs_utilities.h"
-#include "../exploration/DynamicBoundingSphereAlgorithm.h"
 #include "../StreamingConvexHull.h"
-
-
 
 #include "../exploration/DynamicConvexHullAlgorithm.h"
 #include "../WorkspaceSpec.h"
 #include "../CurrentPathState.h"
 #include "../utilities/moveit.h"
 #include "../vtk/VisualizationSpecifics.h"
-#include "../OnlineOrderOptimization.h"
 
 /**
  * Given a SimplifiedOrchard, create a SegmentedPointCloud that gives an initial hint about the contents
