@@ -223,8 +223,8 @@ add_executable(${PROJECT_NAME}_tests
         src/shell_space/test/CGALMeshShell_test.cpp
         src/utilities/test/math_utils_test.cpp
         src/shell_space/test/SphereShell_test.cpp
-        test/StreamingConvecHull_test.cpp
-        test/VisualiserTest.cpp)
+        test/StreamingConvexHull_test.cpp
+        test/VisualiserTest.cpp test/TimedConvergenceTerminationCondition_test.cpp)
 
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})

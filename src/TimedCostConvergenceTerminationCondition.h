@@ -11,7 +11,7 @@
  *
  * Optionally, the termination condition will not trigger if no solutions have yet been providing.
  */
-class TimedConversionTerminationCondition : public ompl::base::PlannerTerminationCondition {
+class TimedConvergenceTerminationCondition : public ompl::base::PlannerTerminationCondition {
 
     /// The cost of the last solution, assumed to decrease over time.
     double last_cost_;
@@ -40,9 +40,9 @@ public:
      * @param timeThreshold     The amount of time that must pass before the termination condition is met.
      * @param awaitSolution     Whether the termination condition requires at least one solution.
      */
-    TimedConversionTerminationCondition(ompl::base::ProblemDefinition &pdef,
-                                        ompl::time::duration timeThreshold,
-                                        bool awaitSolution);
+    TimedConvergenceTerminationCondition(ompl::base::ProblemDefinition &pdef,
+										 ompl::time::duration timeThreshold,
+										 bool awaitSolution);
 
 };
 

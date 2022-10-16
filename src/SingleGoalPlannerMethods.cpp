@@ -92,7 +92,7 @@ SingleGoalPlannerMethods::state_to_goal(const ompl::base::State *a, const ompl::
 	std::optional<ompl::geometric::PathGeometric> result;
 
 	auto ptc = useCostConvergence ? plannerOrTerminationCondition(ompl::base::timedPlannerTerminationCondition(
-			timePerAppleSeconds), TimedConversionTerminationCondition(*pdef, ompl::time::seconds(0.025), true))
+			timePerAppleSeconds), TimedConvergenceTerminationCondition(*pdef, ompl::time::seconds(0.025), true))
 								  : ompl::base::timedPlannerTerminationCondition(timePerAppleSeconds);
 
 	if (planner.solve(ptc) == ompl::base::PlannerStatus::EXACT_SOLUTION) {

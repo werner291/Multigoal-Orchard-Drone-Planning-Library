@@ -52,7 +52,7 @@ void DynamicConvexHullAlgorithm::updatePointCloud(const moveit::core::RobotState
 
 	}
 
-	convexHull.addPoints(isolateLeafPoints(segmentedPointCloud));
+	convexHull.addPointsRandomized(isolateLeafPoints(segmentedPointCloud));
 
 	auto chull = convexHull.toMesh();
 

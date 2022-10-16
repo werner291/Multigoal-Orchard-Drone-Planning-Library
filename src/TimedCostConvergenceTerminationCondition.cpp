@@ -1,8 +1,8 @@
 #include "TimedCostConvergenceTerminationCondition.h"
 
-TimedConversionTerminationCondition::TimedConversionTerminationCondition(ompl::base::ProblemDefinition &pdef,
-                                                                         ompl::time::duration timeThreshold,
-                                                                         bool awaitSolution)
+TimedConvergenceTerminationCondition::TimedConvergenceTerminationCondition(ompl::base::ProblemDefinition &pdef,
+																		   ompl::time::duration timeThreshold,
+																		   bool awaitSolution)
         : PlannerTerminationCondition([this]() { return this->should_terminate(); }),
           last_cost_(INFINITY),
           last_time_(ompl::time::now()), time_threshold_(timeThreshold), await_solution(awaitSolution) {
@@ -17,7 +17,7 @@ TimedConversionTerminationCondition::TimedConversionTerminationCondition(ompl::b
 
 }
 
-void TimedConversionTerminationCondition::processNewSolution(const ompl::base::Cost cost) {
+void TimedConvergenceTerminationCondition::processNewSolution(const ompl::base::Cost cost) {
     if (cost.value() < last_cost_) {
         last_cost_ = cost.value();
         last_time_ = ompl::time::now();
@@ -27,6 +27,6 @@ void TimedConversionTerminationCondition::processNewSolution(const ompl::base::C
     }
 }
 
-bool TimedConversionTerminationCondition::should_terminate() const {
+bool TimedConvergenceTerminationCondition::should_terminate() const {
     return !await_solution && ompl::time::now() - this->last_time_ > this->time_threshold_;
 }

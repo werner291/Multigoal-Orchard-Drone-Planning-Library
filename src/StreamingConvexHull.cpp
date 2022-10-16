@@ -6,18 +6,14 @@
 #include <ompl/util/RandomNumbers.h>
 
 double infzero(double x) {
-	if (x > 0) return INFINITY;
-	if (x < 0) return -INFINITY;
+	if (x > 0) return std::numeric_limits<double>::infinity();
+	if (x < 0) return -std::numeric_limits<double>::infinity();
 	return 0;
 }
 
 StreamingConvexHull::StreamingConvexHull(const std::vector<Eigen::Vector3d> &directions) {
 	for (const auto &direction: directions) {
-		supporting_set.emplace_back(direction, Eigen::Vector3d {
-			-infzero(direction.x()),
-			-infzero(direction.y()),
-			-infzero(direction.z())
-		});
+		supporting_set.emplace_back(direction, std::nullopt);
 	}
 }
 
@@ -51,26 +47,31 @@ StreamingConvexHull StreamingConvexHull::fromSpherifiedCube(size_t segments) {
 }
 
 bool StreamingConvexHull::addPoint(const Eigen::Vector3d &point) {
+
+	bool changed = false;
+
 	for (auto &supporting_point: supporting_set) {
 
-		double d1 = supporting_point.first.dot(point);
-		double d2 = supporting_point.first.dot(supporting_point.second);
+		bool has_point = supporting_point.second.has_value();
+		double candidate_coeff = supporting_point.first.dot(point);
+		double original_coeff = has_point ? supporting_point.first.dot(*supporting_point.second) : -std::numeric_limits<double>::infinity();
 
-		if (d1 > d2) {
+		if (candidate_coeff > original_coeff) {
 			supporting_point.second = point;
-			return true;
+			changed = true;
 		}
 	}
-	return false;
+
+	return changed;
 }
 
 
-shape_msgs::msg::Mesh  StreamingConvexHull::toMesh() const {
+shape_msgs::msg::Mesh StreamingConvexHull::toMesh() const {
 
 	auto points =
 			supporting_set
-			| ranges::views::filter([](const auto &pair) { return isfinite(pair.second.x()) && isfinite(pair.second.y()) && isfinite(pair.second.z()); })
-			| ranges::views::transform([](const auto &pair) { return msgFromEigen(pair.second); })
+			| ranges::views::filter([](const auto &pair) { return pair.second.has_value(); })
+			| ranges::views::transform([](const auto &pair) { return msgFromEigen(*pair.second); })
 			| ranges::to<std::vector>();
 
 	// deduplicate
@@ -95,20 +96,24 @@ shape_msgs::msg::Mesh  StreamingConvexHull::toMesh() const {
 	// Check if coplanar
 	Eigen::Vector3d v1 = toEigen(points[1]) - toEigen(points[0]);
 	Eigen::Vector3d v2 = toEigen(points[2]) - toEigen(points[0]);
-	Eigen::Vector3d v3 = toEigen(points[3]) - toEigen(points[0]);
 
-	if (abs(v1.cross(v2).dot(v3)) < 1e-6) {
-		shape_msgs::msg::Mesh mesh;
+	// If we find any non-coplanar points, return the convex hull.
 
-		// Empty.
-		return mesh;
+	for (size_t i = 4; i < points.size(); i++) {
+		Eigen::Vector3d v3 = toEigen(points[i]) - toEigen(points[0]);
+		if (abs(v1.cross(v2).dot(v3)) > 1e-6) {
+			return convexHull(points);
+		}
 	}
 
-	return convexHull(points);
+	shape_msgs::msg::Mesh mesh;
+
+	// Empty.
+	return mesh;
 
 }
 
-bool StreamingConvexHull::addPoints(const std::vector<Eigen::Vector3d> &points) {
+bool StreamingConvexHull::addPointsRandomized(const std::vector<Eigen::Vector3d> &points) {
 
 	bool changed = false;
 
@@ -122,4 +127,9 @@ bool StreamingConvexHull::addPoints(const std::vector<Eigen::Vector3d> &points) 
 	}
 
 	return changed;
+}
+
+const std::vector<std::pair<Eigen::Vector3d, std::optional<Eigen::Vector3d>>> &
+StreamingConvexHull::getSupportingSet() const {
+	return supporting_set;
 }

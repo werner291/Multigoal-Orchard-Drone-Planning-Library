@@ -20,7 +20,9 @@ namespace bgi = boost::geometry::index;
  */
 class StreamingConvexHull {
 
-	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> supporting_set;
+	std::vector<std::pair<Eigen::Vector3d, std::optional<Eigen::Vector3d>>> supporting_set;
+public:
+	const std::vector<std::pair<Eigen::Vector3d, std::optional<Eigen::Vector3d>>> &getSupportingSet() const;
 
 public:
 	explicit StreamingConvexHull(const std::vector<Eigen::Vector3d>& directions);
@@ -29,7 +31,7 @@ public:
 
 	bool addPoint(const Eigen::Vector3d &point);
 
-	bool addPoints(const std::vector<Eigen::Vector3d> &points);
+	bool addPointsRandomized(const std::vector<Eigen::Vector3d> &points);
 
 	[[nodiscard]] shape_msgs::msg::Mesh toMesh() const;
 
