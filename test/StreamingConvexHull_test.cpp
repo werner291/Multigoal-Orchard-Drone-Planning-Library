@@ -5,6 +5,7 @@
 #include "../src/StreamingConvexHull.h"
 #include "../src/utilities/math_utils.h"
 #include "../src/utilities/geogebra.h"
+#include "../src/utilities/msgs_utilities.h"
 
 TEST(StreamingConvexHull_test, deterministic_simple) {
 
@@ -60,9 +61,9 @@ TEST(StreamingConvexHull_test, randomized) {
 		Eigen::Vector3d closest_point;
 		double distance = std::numeric_limits<double>::infinity();
 		for (const auto &triangle: mesh.triangles) {
-			Eigen::Vector3d a(mesh.vertices[triangle.vertex_indices[0]].x, mesh.vertices[triangle.vertex_indices[0]].y, mesh.vertices[triangle.vertex_indices[0]].z);
-			Eigen::Vector3d b(mesh.vertices[triangle.vertex_indices[1]].x, mesh.vertices[triangle.vertex_indices[1]].y, mesh.vertices[triangle.vertex_indices[1]].z);
-			Eigen::Vector3d c(mesh.vertices[triangle.vertex_indices[2]].x, mesh.vertices[triangle.vertex_indices[2]].y, mesh.vertices[triangle.vertex_indices[2]].z);
+			Eigen::Vector3d a = toEigen(mesh.vertices[triangle.vertex_indices[0]]);
+			Eigen::Vector3d b = toEigen(mesh.vertices[triangle.vertex_indices[1]]);
+			Eigen::Vector3d c = toEigen(mesh.vertices[triangle.vertex_indices[2]]);
 			Eigen::Vector3d closest = closest_point_on_triangle(point, a, b, c);
 			double distance_to_triangle = (closest - point).norm();
 			if (distance_to_triangle < distance) {
