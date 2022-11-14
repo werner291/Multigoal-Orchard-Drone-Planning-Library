@@ -113,22 +113,6 @@ shape_msgs::msg::Mesh StreamingConvexHull::toMesh() const {
 
 }
 
-bool StreamingConvexHull::addPointsRandomized(const std::vector<Eigen::Vector3d> &points) {
-
-	bool changed = false;
-
-	if (points.size() > 0) {
-		ompl::RNG rng;
-
-		// We add 100 points at random.
-		for (size_t i = 0; i < 100; i++) {
-			changed |= addPoint(points[rng.uniformInt(0, points.size() - 1)]);
-		}
-	}
-
-	return changed;
-}
-
 const std::vector<std::pair<Eigen::Vector3d, std::optional<Eigen::Vector3d>>> &
 StreamingConvexHull::getSupportingSet() const {
 	return supporting_set;

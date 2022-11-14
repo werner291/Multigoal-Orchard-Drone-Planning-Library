@@ -26,8 +26,8 @@ ConvexHullActor::ConvexHullActor() {
 	actor->GetProperty()->SetOpacity(0.8);
 }
 
-void ConvexHullActor::update(const StreamingConvexHull &convexHull) {
-	mapper->SetInputData(rosMeshToVtkPolyData(convexHull.toMesh()));
+void ConvexHullActor::update(const shape_msgs::msg::Mesh &mesh) {
+	mapper->SetInputData(rosMeshToVtkPolyData(mesh));
 }
 
 Viewer buildViewer(const SimplifiedOrchard &orchard,

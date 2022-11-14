@@ -6,11 +6,8 @@
 #include "ortools/constraint_solver/routing_enums.pb.h"
 #include "ortools/constraint_solver/routing_parameters.h"
 
-#include <boost/range/algorithm/min_element.hpp>
 #include <utility>
 #include <range/v3/numeric/accumulate.hpp>
-#include <range/v3/view/transform.hpp>
-#include <range/v3/view/for_each.hpp>
 #include <range/v3/view/enumerate.hpp>
 #include <boost/range/irange.hpp>
 
@@ -44,7 +41,7 @@ std::tuple<Int64DistanceMatrix, size_t, size_t> mkOpenEndedDistanceMatrix(const 
     // Also, the distance_matrix[..][N] row is built by symmetry.
 
     for (size_t i : boost::irange<size_t>(0,n)) {
-        distance_matrix[i][n] = (int64_t) (from_start(i) * 1000.0);;
+        distance_matrix[i][n] = (int64_t) (from_start(i) * 1000.0);
         distance_matrix[n][i] = distance_matrix[i][n];
     }
 

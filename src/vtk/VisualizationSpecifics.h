@@ -54,7 +54,7 @@ struct ConvexHullActor {
 	 *
 	 * @param convexHull 		The StreamingConvexHull to extract the convex hull from.
 	 */
-	void update(const StreamingConvexHull &convexHull);
+	void update(const shape_msgs::msg::Mesh &mesh);
 };
 
 

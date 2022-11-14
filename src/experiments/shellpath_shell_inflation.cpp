@@ -12,8 +12,6 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/linear_distribute.hpp>
 #include "../run_experiment.h"
-#include "../DronePathLengthObjective.h"
-#include "../utilities/experiment_utils.h"
 
 using namespace std;
 
@@ -32,27 +30,14 @@ int main(int argc, char **argv) {
 				// We optimize for path length only.
 				auto opt = std::make_shared<DronePathLengthObjective>(si);
 
-				// Single-goal planner methods are fairly standard.
-				auto ptp = std::make_shared<SingleGoalPlannerMethods>(
-						// 1s seems to generally work well as a maximum
-						1.0,
-						si, 
-						opt,
-						// PRM star as usual.
-						[](auto si) { return std::make_shared<ompl::geometric::PRMstar>(si);}, 
-						true, 
-						true, 
-						true
-						);
+				auto approach = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
 
 				// This is the important bit that varies between planners: we use a shell with various degrees of inflation here.
-				auto shell_builder = std::make_shared<PaddedSphereShellAroundLeavesBuilder>(padding);
+				MkOmplShellFn<Eigen::Vector3d> shell_builder = [padding](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr& si) {
+					return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(paddedSphericalShellAroundLeaves(scene_info, padding), si);
+				};
 
-				return std::make_shared<ShellPathPlanner>(
-						true, // Yes, we re-pick the shell state
-						ptp,
-						shell_builder
-						);
+				return std::make_shared<ShellPathPlanner<Eigen::Vector3d>>(shell_builder,std::move(approach),true);
 
 			};
 		}) | ranges::to_vector;

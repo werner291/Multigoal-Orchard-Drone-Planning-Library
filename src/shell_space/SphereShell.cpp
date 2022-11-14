@@ -42,6 +42,14 @@ double WorkspaceSphereShell::path_length(const std::shared_ptr<ShellPath<Eigen::
 	return great_circle_path->length();
 }
 
+const Eigen::Vector3d &WorkspaceSphereShell::getCenter() const {
+	return center;
+}
+
+double WorkspaceSphereShell::getRadius() const {
+	return radius;
+}
+
 Eigen::Vector3d GreatCirclePath::at(double t) const {
 
 	// Perform an angle-axis rotation of the start vector.
@@ -68,7 +76,7 @@ double GreatCirclePath::length() {
 	return angle * start_vec.norm();
 }
 
-std::shared_ptr <WorkspaceShell<Eigen::Vector3d>>
+std::shared_ptr<WorkspaceSphereShell>
 paddedSphericalShellAroundLeaves(const AppleTreePlanningScene &scene_info, double padding) {
 
 	// Compute the minimum enclosing sphere of the leaves.

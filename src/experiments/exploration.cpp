@@ -25,11 +25,12 @@
 #include "../utilities/msgs_utilities.h"
 #include "../StreamingConvexHull.h"
 
-#include "../exploration/DynamicConvexHullAlgorithm.h"
+#include "../exploration/DynamicMeshHullAlgorithm.h"
 #include "../WorkspaceSpec.h"
 #include "../CurrentPathState.h"
 #include "../utilities/moveit.h"
 #include "../vtk/VisualizationSpecifics.h"
+#include "../utilities/convex_hull.h"
 
 /**
  * Given a SimplifiedOrchard, create a SegmentedPointCloud that gives an initial hint about the contents
@@ -110,9 +111,11 @@ int main(int, char*[]) {
 
 	CurrentPathState currentPathState(workspaceSpec.initialState);
 
-	DynamicConvexHullAlgorithm dbsa(workspaceSpec.initialState, [&](robot_trajectory::RobotTrajectory trajectory) {
+	auto wrapper_algo = std::make_unique<StreamingConvexHull>(StreamingConvexHull::fromSpherifiedCube(3));
+
+	DynamicMeshHullAlgorithm dbsa(workspaceSpec.initialState, [&](robot_trajectory::RobotTrajectory trajectory) {
 		currentPathState.newPath(trajectory);
-	});
+	}, std::move(wrapper_algo));
 
 	dbsa.updatePointCloud(currentPathState.current_state, generateInitialCloud(workspaceSpec.orchard));
 
@@ -147,7 +150,7 @@ int main(int, char*[]) {
 				targetPointData->SetLines(cells);
 				targetPointData->Modified();
 
-				convexHullActor.update(dbsa.getConvexHull());
+				convexHullActor.update(dbsa.getConvexHull()->toMesh());
 			}
 
 			{

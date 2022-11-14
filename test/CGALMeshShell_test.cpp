@@ -1,11 +1,11 @@
 
 #include <gtest/gtest.h>
 
-#include "../CGALMeshShell.h"
-#include "../CuttingPlaneConvexHullShell.h"
-#include "../../utilities/convex_hull.h"
-#include "../../utilities/geogebra.h"
-#include "../../utilities/experiment_utils.h"
+#include "../src/shell_space/CGALMeshShell.h"
+#include "../src/shell_space/CuttingPlaneConvexHullShell.h"
+#include "../src/utilities/convex_hull.h"
+#include "../src/utilities/geogebra.h"
+#include "../src/utilities/experiment_utils.h"
 
 
 TEST(CGALMeshShellTests, test_prediction_shorter) {

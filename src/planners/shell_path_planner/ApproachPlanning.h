@@ -32,6 +32,7 @@ public:
 
 	virtual std::optional<ApproachPath<ShellPoint>> approach_path(const ompl::base::GoalPtr &goal, const OmplShellSpace<ShellPoint>& shell) const = 0;
 
+	virtual ~ApproachPlanningMethods() = default;
 };
 
 template<typename ShellPoint>

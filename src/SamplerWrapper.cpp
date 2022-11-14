@@ -3,7 +3,6 @@
 //
 
 #include "InformedRobotStateSampler.h"
-#include <utility>
 #include "SamplerWrapper.h"
 
 SamplerWrapper::SamplerWrapper(ompl::base::StateSpace *ss) : ss_(ss) {}

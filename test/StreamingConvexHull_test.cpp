@@ -30,7 +30,6 @@ TEST(StreamingConvexHull_test, deterministic_simple) {
 
 }
 
-
 TEST(StreamingConvexHull_test, randomized) {
 
 	StreamingConvexHull sch = StreamingConvexHull::fromSpherifiedCube(3);
@@ -46,7 +45,6 @@ TEST(StreamingConvexHull_test, randomized) {
 
 		sch.addPoint(points.back());
 	}
-
 
 	// Check if all points of the hull are in the sphere.
 	shape_msgs::msg::Mesh mesh = sch.toMesh();
@@ -73,6 +71,5 @@ TEST(StreamingConvexHull_test, randomized) {
 		}
 		EXPECT_LE((closest_point - point).norm(), 0.2);
 	}
-
 
 }

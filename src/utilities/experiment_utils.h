@@ -28,13 +28,7 @@ struct TreePlanningScene {
     planning_scene::PlanningScenePtr scene;
 };
 
-[[deprecated]]
-TreePlanningScene buildPlanningScene(int numberOfApples, moveit::core::RobotModelPtr &drone);
-
 moveit::core::RobotModelPtr loadRobotModel();
-
-std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>>
-constructAppleGoals(const std::shared_ptr<ompl::base::SpaceInformation> &si, const std::vector<Apple> &apples);
 
 std::vector<ompl::base::GoalPtr> constructNewAppleGoals(const std::shared_ptr<ompl::base::SpaceInformation> &si, const std::vector<Apple> &apples);
 
@@ -78,10 +72,6 @@ struct PtpSpec {
     size_t goal_idx{};
 };
 
-
-std::vector<std::vector<PtpSpec>>
-genPointToPointSpecs(const moveit::core::RobotModelPtr &drone, const Json::Value &trees_data, std::mt19937 &gen,
-                     size_t pairsPerTree);
 
 struct DroneAndStateSpace {
     moveit::core::RobotModelPtr robot;

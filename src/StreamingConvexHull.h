@@ -8,6 +8,7 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 #include <shape_msgs/msg/mesh.hpp>
+#include "StreamingMeshHullAlgorithm.h"
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -18,7 +19,7 @@ namespace bgi = boost::geometry::index;
  * It works by maintaining a set of direction unit vectors and a set of supporting points.
  * The supporting points are the points that are furthest in the direction of the direction unit vectors.
  */
-class StreamingConvexHull {
+class StreamingConvexHull : public StreamingMeshHullAlgorithm {
 
 	std::vector<std::pair<Eigen::Vector3d, std::optional<Eigen::Vector3d>>> supporting_set;
 public:
@@ -29,11 +30,9 @@ public:
 
 	static StreamingConvexHull fromSpherifiedCube(size_t segments);
 
-	bool addPoint(const Eigen::Vector3d &point);
+	virtual bool addPoint(const Eigen::Vector3d &point);
 
-	bool addPointsRandomized(const std::vector<Eigen::Vector3d> &points);
-
-	[[nodiscard]] shape_msgs::msg::Mesh toMesh() const;
+	[[nodiscard]] virtual shape_msgs::msg::Mesh toMesh() const;
 
 };
 

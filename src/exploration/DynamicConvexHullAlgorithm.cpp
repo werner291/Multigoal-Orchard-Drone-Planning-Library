@@ -1,5 +1,5 @@
-
-#include "DynamicConvexHullAlgorithm.h"
+#include <ompl/util/RandomNumbers.h>
+#include "DynamicMeshHullAlgorithm.h"
 #include "../utilities/trajectory_primitives.h"
 #include "../utilities/math_utils.h"
 
@@ -23,7 +23,7 @@ Eigen::Vector3d closestPointOnMesh(const shape_msgs::msg::Mesh &chull, const Eig
 	return closest_point;
 }
 
-void DynamicConvexHullAlgorithm::updatePointCloud(const moveit::core::RobotState &current_state,
+void DynamicMeshHullAlgorithm::updatePointCloud(const moveit::core::RobotState &current_state,
 												  const SegmentedPointCloud &segmentedPointCloud) {
 
 	last_end_effector_position = current_state.getGlobalLinkTransform("end_effector").translation();
@@ -39,7 +39,7 @@ void DynamicConvexHullAlgorithm::updatePointCloud(const moveit::core::RobotState
 		}
 
 		if (item.type == SegmentedPointCloud::PT_SOFT_OBSTACLE) {
-			convexHull.addPoint(item.position);
+			pointstream_to_hull->addPoint(item.position);
 		}
 
 		if (item.type == SegmentedPointCloud::PT_TARGET && !targetPoints.any_within(item.position, 0.05)) {
@@ -52,9 +52,16 @@ void DynamicConvexHullAlgorithm::updatePointCloud(const moveit::core::RobotState
 
 	}
 
-	convexHull.addPointsRandomized(isolateLeafPoints(segmentedPointCloud));
+	// Pick 100 points at random from the point cloud and add them to the hull
+	ompl::RNG rng;
 
-	auto chull = convexHull.toMesh();
+	for (size_t i = 0; i < 100; i++) {
+		size_t index = rng.uniformInt(0, segmentedPointCloud.points.size() - 1);
+		pointstream_to_hull->addPoint(segmentedPointCloud.points[index].position);
+	}
+
+
+	auto chull = pointstream_to_hull->toMesh();
 
 	for (auto& [original, projection] : targetPointsOnChullSurface) {
 
@@ -73,27 +80,30 @@ void DynamicConvexHullAlgorithm::updatePointCloud(const moveit::core::RobotState
 
 }
 
-DynamicConvexHullAlgorithm::DynamicConvexHullAlgorithm(const moveit::core::RobotState &initial_state, const std::function<void(robot_trajectory::RobotTrajectory)> &trajectoryCallback)
-		: OnlinePointCloudMotionControlAlgorithm(trajectoryCallback), convexHull(StreamingConvexHull::fromSpherifiedCube(3)),
+DynamicMeshHullAlgorithm::DynamicMeshHullAlgorithm(const moveit::core::RobotState &initial_state,
+												   const std::function<void(robot_trajectory::RobotTrajectory)> &trajectoryCallback,
+												   std::unique_ptr<StreamingMeshHullAlgorithm> pointstreamToHull)
+		: OnlinePointCloudMotionControlAlgorithm(trajectoryCallback),
 		  targetPoints(0.05, 1000),
 		  visit_ordering([this](size_t i) { return (targetPointsOnChullSurface[i].second - last_end_effector_position).norm(); },
 						 [this](size_t i, size_t j) { return (targetPointsOnChullSurface[i].second - targetPointsOnChullSurface[j].second).norm(); },
-						 [](const std::vector<size_t>&indices) { }) {
+						 [](const std::vector<size_t>&indices) { }),
+						 pointstream_to_hull(std::move(pointstreamToHull)) {
 
 	last_end_effector_position = initial_state.getGlobalLinkTransform("end_effector").translation();
 
 }
 
 
-const StreamingConvexHull &DynamicConvexHullAlgorithm::getConvexHull() const {
-	return convexHull;
-}
-
 const std::vector<std::pair<const Eigen::Vector3d, Eigen::Vector3d>> &
-DynamicConvexHullAlgorithm::getTargetPointsOnChullSurface() const {
+DynamicMeshHullAlgorithm::getTargetPointsOnChullSurface() const {
 	return targetPointsOnChullSurface;
 }
 
-const AnytimeOptimalInsertion<size_t> &DynamicConvexHullAlgorithm::getVisitOrdering() const {
+const AnytimeOptimalInsertion<size_t> &DynamicMeshHullAlgorithm::getVisitOrdering() const {
 	return visit_ordering;
+}
+
+const std::unique_ptr<StreamingMeshHullAlgorithm> &DynamicMeshHullAlgorithm::getConvexHull() const {
+	return pointstream_to_hull;
 }

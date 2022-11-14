@@ -49,8 +49,11 @@ int main(int argc, char **argv) {
 
 	// To prove conclusively that our planner is better than this one, we'll want to test a large number of parameters.
     auto tsp_over_prm_allocators = make_tsp_over_prm_allocators(
+			// Samples per goal.
 			{2,3,4,5,6,7,8,9},
+			// PRM* build-up times.
 			{1.0, 2.0, 5.0, 10.0, 15.0, 20.0},
+			// Whether to optimize the segments of the full path after the fact.
 			{true}
 			);
 

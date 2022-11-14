@@ -2,9 +2,9 @@
 #include <gtest/gtest.h>
 #include <boost/math/special_functions/sign.hpp>
 
-#include "../CuttingPlaneConvexHullShell.h"
-#include "../../utilities/convex_hull.h"
-#include "../../utilities/math_utils.h"
+#include "../src/shell_space/CuttingPlaneConvexHullShell.h"
+#include "../src/utilities/convex_hull.h"
+#include "../src/utilities/math_utils.h"
 
 class ConvexHullShell_test : public ::testing::Test {
 protected:

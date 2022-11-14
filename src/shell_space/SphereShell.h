@@ -60,6 +60,12 @@ class WorkspaceSphereShell : public WorkspaceShell<Eigen::Vector3d> {
 
 	/// Center of the sphere
 	Eigen::Vector3d center;
+public:
+	const Eigen::Vector3d &getCenter() const;
+
+	double getRadius() const;
+
+private:
 
 	/// Radius of the sphere
 	double radius;
@@ -99,7 +105,7 @@ public:
  * @param padding 			The padding to add to the radius of the sphere.
  * @return 					A WorkspaceShell.
  */
-[[nodiscard]] std::shared_ptr<WorkspaceShell<Eigen::Vector3d>> paddedSphericalShellAroundLeaves(const AppleTreePlanningScene &scene_info, double padding);
+[[nodiscard]] std::shared_ptr<WorkspaceSphereShell> paddedSphericalShellAroundLeaves(const AppleTreePlanningScene &scene_info, double padding);
 
 template<typename ShellPoint>
 [[nodiscard]]

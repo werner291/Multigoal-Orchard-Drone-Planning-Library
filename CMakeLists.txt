@@ -113,7 +113,7 @@ add_library(${PROJECT_NAME}_shared
         src/exploration/ColorEncoding.cpp
         src/exploration/ColorEncoding.h
         src/exploration/DynamicConvexHullAlgorithm.cpp
-        src/exploration/DynamicConvexHullAlgorithm.h
+        src/exploration/DynamicMeshHullAlgorithm.h
         src/exploration/OnlinePointCloudMotionControlAlgorithm.cpp
         src/exploration/OnlinePointCloudMotionControlAlgorithm.h
         src/exploration/SegmentedPointCloud.cpp
@@ -191,7 +191,12 @@ add_library(${PROJECT_NAME}_shared
         src/vtk/VisualizationSpecifics.h
         src/vtk/VtkRobotModel.cpp
         src/vtk/VtkRobotModel.h
-        )
+#        src/StreamingAlphaShape.h
+#        src/StreamingAlphaShape.cpp
+        src/ApproximateConvexDecompositions.cpp
+        src/ApproximateConvexDecompositions.h
+        src/BruteForceDedupStreamingAlphashape.cpp
+        src/BruteForceDedupStreamingAlphashape.h src/StreamingMeshHullAlgorithm.cpp src/StreamingMeshHullAlgorithm.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -208,7 +213,6 @@ experiment("shellpath")
 experiment("shellpath_shell_inflation")
 experiment("shellpath_shell_bias")
 experiment("shell_comparison")
-experiment("tsp_over_prm")
 experiment("tsp_over_prm_vs_sphereshell")
 experiment("shell_comparison_sphere_armangle")
 experiment("exploration")
@@ -219,12 +223,19 @@ add_executable(${PROJECT_NAME}_tests
         test/test.cpp
         test/MoveItPathLengthObjectiveTest.cpp
         test/math_test.cpp
-        src/shell_space/test/CuttingPlaneConvexHullShell_test.cpp
-        src/shell_space/test/CGALMeshShell_test.cpp
+        test/CuttingPlaneConvexHullShell_test.cpp
+        test/CGALMeshShell_test.cpp
         src/utilities/test/math_utils_test.cpp
-        src/shell_space/test/SphereShell_test.cpp
+        test/SphereShell_test.cpp
         test/StreamingConvexHull_test.cpp
-        test/VisualiserTest.cpp test/TimedConvergenceTerminationCondition_test.cpp)
+        test/VisualiserTest.cpp
+        test/TimedConvergenceTerminationCondition_test.cpp
+        test/HashedSpatialIndex_test.cpp
+        test/LeavesCollisionChecker_test.cpp
+        test/LeavesCollisionChecker_test.cpp
+        test/OnlineOrderOptimization_test.cpp
+        test/StreamingAlphaShape_test.cpp
+        )
 
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})

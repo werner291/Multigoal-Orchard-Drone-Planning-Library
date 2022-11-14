@@ -31,25 +31,6 @@
 #include "../DroneStateConstraintSampler.h"
 
 
-TreePlanningScene buildPlanningScene(int numberOfApples, moveit::core::RobotModelPtr &drone) {
-
-    planning_scene::PlanningScenePtr scene = std::make_shared<planning_scene::PlanningScene>(drone);
-
-    std::vector<DetachedTreeNode> treeFlattened = make_tree_branches(Eigen::Isometry3d::Identity(), 10, 0.5);
-    std::vector<Eigen::Vector3d> leafVertices = generateLeafVertices(treeFlattened);
-    const double appleRadius = 0.05;
-    std::vector<Apple> apples = spawn_apples(treeFlattened, numberOfApples, appleRadius);
-
-    scene->setPlanningSceneDiffMsg(createPlanningSceneDiff(treeFlattened, leafVertices, appleRadius, apples));
-
-    // Diff message apparently can't handle partial ACM updates?
-    scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
-    scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
-    scene->allocateCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
-
-    return {apples, leafVertices, scene};
-}
-
 std::vector<LeafCollisions> collectLeafCollisionStats(const LeavesCollisionChecker &leavesCollisionChecker,
                                                       const robot_trajectory::RobotTrajectory &trajectory) {
 
@@ -110,17 +91,6 @@ moveit::core::RobotModelPtr loadRobotModel() {
     return robot;
 }
 
-std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>>
-constructAppleGoals(const std::shared_ptr<ompl::base::SpaceInformation> &si, const std::vector<Apple> &apples) {
-    static const double GOAL_END_EFFECTOR_RADIUS = 0.01;
-
-    std::vector<std::shared_ptr<ompl::base::GoalSampleableRegion>> goals;
-    for (const auto &apple: apples)
-        goals.push_back(
-                std::make_shared<DroneEndEffectorNearTarget>(si, GOAL_END_EFFECTOR_RADIUS, apple.center));
-    return goals;
-}
-
 planning_scene::PlanningScenePtr
 constructPlanningScene(const TreeSceneData &tsd, const moveit::core::RobotModelConstPtr &drone) {
 
@@ -134,47 +104,6 @@ constructPlanningScene(const TreeSceneData &tsd, const moveit::core::RobotModelC
     scene->allocateCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
 
     return scene;
-}
-
-std::vector<std::vector<PtpSpec>> genPointToPointSpecs(const moveit::core::RobotModelPtr &drone,
-                                                       const Json::Value &trees_data, std::mt19937 &gen,
-                                                       size_t pairsPerTree) {
-
-    std::vector<std::vector<PtpSpec>> ptp_specs;
-
-    ompl_interface::ModelBasedStateSpaceSpecification spec(drone, "whole_body");
-
-    for (const auto &tree: trees_data) {
-
-        ptp_specs.emplace_back(/* empty vector */);
-
-        auto state_space = std::make_shared<DroneStateSpace>(spec);
-        // Decode the JSON object into tree data.
-        auto tree_data = *treeSceneFromJson(tree);
-
-        // Build the space information, planning scene, etc...
-        auto planning_scene = constructPlanningScene(tree_data, drone);
-        auto si = initSpaceInformation(planning_scene, drone, state_space);
-
-        for (size_t ptp_t = 0; ptp_t < pairsPerTree; ++ptp_t) {
-
-            // Pick a pair of goals to plan between.
-            auto index_pair = generateIndexPairNoReplacement(gen, tree["apples"].size());
-
-            ompl::base::ScopedState from_state(si);
-            DroneEndEffectorNearTarget(si, 0.01, fromJsonVector3d(
-                    tree["apples"][(Json::ArrayIndex) index_pair.first]["center"])).sampleGoal(from_state.get());
-
-            moveit::core::RobotState start_state(drone);
-            state_space->copyToRobotState(start_state, from_state.get());
-            start_state.update(true);
-
-            ptp_specs.back().push_back({start_state, index_pair.first, index_pair.second});
-
-        }
-    }
-
-    return ptp_specs;
 }
 
 planning_scene::PlanningScenePtr
