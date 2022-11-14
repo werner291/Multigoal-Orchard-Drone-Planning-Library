@@ -54,9 +54,16 @@ std::unique_ptr<collision_detection::CollisionEnvFCL> buildOrchardAndRobotFCLCol
 
 WorkspaceSpec buildWorkspaceSpec() {
 	auto drone = loadRobotModel();
+
+	auto initial_state = mkInitialState(drone);
+
+	setBaseOrientation(initial_state, Eigen::Quaterniond(Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitZ())));
+
+	initial_state.update(true);
+
 	return std::move<WorkspaceSpec>({
 			drone,
-			mkInitialState(drone),
+			initial_state,
 			{{{ { 0.0, 0.0 }, loadTreeMeshes("appletree") }}}
 	});
 }
@@ -124,7 +131,7 @@ int main(int, char*[]) {
 
 	auto callback = [&]() {
 
-		currentPathState.advance(0.005);
+		currentPathState.advance(0.05);
 
 		if (checkCollision(currentPathState.getCurrentState(), *collision_env)) {
 			std::cout << "Oh no!" << std::endl;

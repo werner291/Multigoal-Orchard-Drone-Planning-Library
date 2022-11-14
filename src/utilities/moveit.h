@@ -21,7 +21,7 @@ void setBaseTranslation(moveit::core::RobotState &st, const Eigen::Vector3d &off
  * @param robotState 	The robot state to set the base orientation for.
  * @param q 			The orientation to set the base to.
  */
-void setBaseOrientation(moveit::core::RobotState &robotState, Eigen::Quaterniond &q);
+void setBaseOrientation(moveit::core::RobotState &robotState, const Eigen::Quaterniond &q);
 
 /**
  * Set the given robot state to a point at time T in the given trajectory.
