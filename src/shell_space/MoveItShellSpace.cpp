@@ -20,6 +20,8 @@ moveit::core::RobotState robotStateFromPointAndArmvec(const moveit::core::RobotM
 													  const Eigen::Vector3d &desired_ee_pos,
 													  const Eigen::Vector3d &armvec) {
 
+	std::cout << armvec.norm() << std::endl;
+
 	// Ensure armvec is normalized
 	assert(std::abs(armvec.norm() - 1.0) < 1e-6);
 

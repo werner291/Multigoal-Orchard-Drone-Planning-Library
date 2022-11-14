@@ -7,9 +7,7 @@
 #include "../src/utilities/geogebra.h"
 #include "../src/utilities/experiment_utils.h"
 
-
-TEST(CGALMeshShellTests, test_prediction_shorter) {
-
+shape_msgs::msg::Mesh mkConvexMesh() {
 	ompl::RNG rng(44);
 
 	std::vector<geometry_msgs::msg::Point> points;
@@ -23,6 +21,16 @@ TEST(CGALMeshShellTests, test_prediction_shorter) {
 	}
 
 	auto mesh = convexHull(points);
+
+	return mesh;
+}
+
+TEST(CGALMeshShellTests, test_prediction_shorter) {
+
+	ompl::RNG rng(44);
+
+
+	auto mesh = mkConvexMesh();
 
 	CGALMeshShell shell(mesh, 0, 0);
 
@@ -43,6 +51,81 @@ TEST(CGALMeshShellTests, test_prediction_shorter) {
 
 		EXPECT_LE(d1, d2 + 1e-6);
 		EXPECT_GE(d1, d2 * 0.9);
+
+	}
+
+}
+
+TEST(CGALMeshShellTests, test_path_on_surface) {
+
+	ompl::RNG rng(42);
+
+	auto mesh = mkConvexMesh();
+
+	CGALMeshShell shell(mesh, 0, 0);
+
+	for (size_t i = 0; i < 100; ++i) {
+
+		Eigen::Vector3d start(rng.uniformReal(-1, 1), rng.uniformReal(-1, 1), rng.uniformReal(-1, 1));
+		Eigen::Vector3d goal(rng.uniformReal(-1, 1), rng.uniformReal(-1, 1), rng.uniformReal(-1, 1));
+
+		auto start1 = shell.nearest_point_on_shell(start);
+		auto goal1 = shell.nearest_point_on_shell(goal);
+
+		auto path = std::dynamic_pointer_cast<PiecewiseLinearPath<CGALMeshPoint>>(shell.path_from_to(start1, goal1));
+
+		for (auto & point : path->points) {
+			Eigen::Vector3d carthesian = shell.surface_point(point);
+
+			Eigen::Vector3d reprojected = shell.surface_point(shell.nearest_point_on_shell(carthesian));
+
+			ASSERT_LT((carthesian - reprojected).norm(), 1e-6);
+		}
+
+	}
+
+}
+
+bool bool_xor(bool a, bool b) {
+	return (a || b) && !(a && b);
+}
+
+TEST(CGALMeshShellTests, test_path_rotate_xor_move) {
+
+	ompl::RNG rng(42);
+
+	auto mesh = mkConvexMesh();
+
+	CGALMeshShell shell(mesh, 0, 0);
+
+	for (size_t i = 0; i < 100; ++i) {
+
+		Eigen::Vector3d start(rng.uniformReal(-1, 1), rng.uniformReal(-1, 1), rng.uniformReal(-1, 1));
+		Eigen::Vector3d goal(rng.uniformReal(-1, 1), rng.uniformReal(-1, 1), rng.uniformReal(-1, 1));
+
+		auto start1 = shell.nearest_point_on_shell(start);
+		auto goal1 = shell.nearest_point_on_shell(goal);
+
+		auto path = std::dynamic_pointer_cast<PiecewiseLinearPath<CGALMeshPoint>>(shell.path_from_to(start1, goal1));
+
+		for (size_t i = 0; i < path->points.size() - 1; ++i) {
+			auto & p1 = path->points[i];
+			auto & p2 = path->points[i + 1];
+
+			Eigen::Vector3d carthesian1 = shell.surface_point(p1);
+			Eigen::Vector3d carthesian2 = shell.surface_point(p2);
+
+			Eigen::Vector3d normal1 = shell.normalAt(p1);
+			Eigen::Vector3d normal2 = shell.normalAt(p2);
+
+			double angle = acos(std::clamp(normal1.dot(normal2), -1.0, 1.0));
+			double distance = (carthesian1 - carthesian2).norm();
+
+			std::cout << "i: " << i << " angle: " << angle << " distance: " << distance << std::endl;
+
+			ASSERT_TRUE(angle < 1e-6 | distance < 1e-6);
+
+		}
 
 	}
 

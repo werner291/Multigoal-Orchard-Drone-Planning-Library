@@ -71,7 +71,7 @@ void DynamicMeshHullAlgorithm::updatePointCloud(const moveit::core::RobotState &
 
 	if (!visit_ordering.getVisitOrdering().empty() && chull.triangles.size() >= 4) {
 
-		auto shell = std::make_shared<CGALMeshShell>(chull, 1.0, -0.5);
+		auto shell = std::make_shared<CGALMeshShell>(chull, 1.0, 0.0);
 
 		auto flat_shell = std::make_shared<ArmHorizontalDecorator<CGALMeshPoint>>(shell);
 

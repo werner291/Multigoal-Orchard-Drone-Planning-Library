@@ -1,6 +1,7 @@
 
 #include <gtest/gtest.h>
 #include <Eigen/Core>
+#include <ompl/util/RandomNumbers.h>
 
 #include "../src/OnlineOrderOptimization.h"
 #include "../src/AnytimeOptimalInsertion.h"

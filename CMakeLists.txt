@@ -196,7 +196,9 @@ add_library(${PROJECT_NAME}_shared
         src/ApproximateConvexDecompositions.cpp
         src/ApproximateConvexDecompositions.h
         src/BruteForceDedupStreamingAlphashape.cpp
-        src/BruteForceDedupStreamingAlphashape.h src/StreamingMeshHullAlgorithm.cpp src/StreamingMeshHullAlgorithm.h)
+        src/BruteForceDedupStreamingAlphashape.h
+        src/StreamingMeshHullAlgorithm.cpp
+        src/StreamingMeshHullAlgorithm.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -234,7 +236,7 @@ add_executable(${PROJECT_NAME}_tests
         test/LeavesCollisionChecker_test.cpp
         test/LeavesCollisionChecker_test.cpp
         test/OnlineOrderOptimization_test.cpp
-        test/StreamingAlphaShape_test.cpp
+#        test/StreamingAlphaShape_test.cpp
         )
 
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)

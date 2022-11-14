@@ -79,17 +79,16 @@ struct PathVisitor {
 	}
 
 	/**
-	 * The path *exactly* crosses an edge. Since this is exceedingly unikely to happen with randomly-generated
-	 * meshes, we do not implement it here.
+	 * The path *exactly* crosses an edge.
+	 *
+	 * Note: we use the mysterious "Surface_mesh_shortest_path::face_location" function;
+	 * I'm not sure how it chooses which face it's on, but it seems to work?
 	 *
 	 * @param vertex 	The vertex of the edge where the path crosses.
 	 */
 	void operator()(Surface_mesh_shortest_path::vertex_descriptor vertex)
 	{
-		// If we were to implement it, we'd have to somehow know the normals of the faces we just left,
-		// and the faces we're entering. To my knowledge, a halfedge datastructure provides no efficient
-		// way to do this, and the visitor does not appear to receive this information directly. (Could we deduce it from other calls?)
-		throw std::runtime_error("Not implemented");
+		states.push_back(path_algo.face_location(vertex));
 	}
 
 	/**
@@ -109,7 +108,7 @@ struct PathVisitor {
 
 Eigen::Vector3d CGALMeshShell::surface_point(const CGALMeshPoint &pt) const {
 	Surface_mesh_shortest_path shortest_paths(tmesh);
-	return toEigen(shortest_paths.point(pt.first, pt.second));
+	return toEigen(shortest_paths.point(pt.first, pt.second)) + normalAt(pt) * padding;
 }
 
 Eigen::Vector3d CGALMeshShell::normalAt(const CGALMeshPoint &near) const {

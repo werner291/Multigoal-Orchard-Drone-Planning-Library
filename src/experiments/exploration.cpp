@@ -31,6 +31,7 @@
 #include "../utilities/moveit.h"
 #include "../vtk/VisualizationSpecifics.h"
 #include "../utilities/convex_hull.h"
+#include "../utilities/math_utils.h"
 
 /**
  * Given a SimplifiedOrchard, create a SegmentedPointCloud that gives an initial hint about the contents
@@ -157,7 +158,35 @@ int main(int, char*[]) {
 				targetPointData->SetLines(cells);
 				targetPointData->Modified();
 
-				convexHullActor.update(dbsa.getConvexHull()->toMesh());
+				const shape_msgs::msg::Mesh &mesh = dbsa.getConvexHull()->toMesh();
+
+				convexHullActor.update(mesh);
+
+				// Find the closest point on the mesh to the end-effector
+				Eigen::Vector3d ee_pos = currentPathState.getCurrentState().getGlobalLinkTransform("end_effector").translation();
+				double closest_distance = std::numeric_limits<double>::max();
+
+				for (const auto &triangle: mesh.triangles) {
+					Eigen::Vector3d a = Eigen::Vector3d(mesh.vertices[triangle.vertex_indices[0]].x,
+														mesh.vertices[triangle.vertex_indices[0]].y,
+														mesh.vertices[triangle.vertex_indices[0]].z);
+					Eigen::Vector3d b = Eigen::Vector3d(mesh.vertices[triangle.vertex_indices[1]].x,
+														mesh.vertices[triangle.vertex_indices[1]].y,
+														mesh.vertices[triangle.vertex_indices[1]].z);
+					Eigen::Vector3d c = Eigen::Vector3d(mesh.vertices[triangle.vertex_indices[2]].x,
+														mesh.vertices[triangle.vertex_indices[2]].y,
+														mesh.vertices[triangle.vertex_indices[2]].z);
+
+					Eigen::Vector3d closest_point = closest_point_on_triangle(ee_pos, a, b, c);
+
+					double distance = (closest_point - ee_pos).norm();
+
+					if (distance < closest_distance) {
+						closest_distance = distance;
+					}
+				}
+
+				std::cout << "Closest distance: " << closest_distance << std::endl;
 			}
 
 			{

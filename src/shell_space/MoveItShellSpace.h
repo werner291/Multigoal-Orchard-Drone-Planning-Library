@@ -85,10 +85,34 @@ public:
 		RobotPath robot_path;
 
 		if (auto piecewise = std::dynamic_pointer_cast<const PiecewiseLinearPath<ShellPoint>>(path)) {
-			// Convert points one-to-one.
-			for (const auto &point : piecewise->points) {
-				robot_path.waypoints.push_back(stateFromPoint(point));
+
+			assert(!piecewise->points.empty());
+
+			// Initial points
+			Eigen::Vector3d prev_armvec = shell->arm_vector(piecewise->points.front());
+			Eigen::Vector3d prev_surfacePoint = shell->surface_point(piecewise->points.front());
+			robot_path.waypoints.push_back(robotStateFromPointAndArmvec(robot_model, prev_surfacePoint, prev_armvec));
+
+			// Subsequent points:
+			for (size_t i = 1; i < piecewise->points.size(); i++) {
+				Eigen::Vector3d armvec = shell->arm_vector(piecewise->points[i]);
+				Eigen::Vector3d surfacePoint = shell->surface_point(piecewise->points[i]);
+
+				double angle = std::acos(std::clamp(armvec.dot(prev_armvec), -1.0, 1.0));
+
+				auto num_steps = (size_t) std::floor(2.0 * angle);
+
+				for (size_t j = 1; j <= num_steps; j++) {
+					double t = (double) j / (double) num_steps;
+					Eigen::Vector3d armvec_t = (prev_armvec + t * (armvec - prev_armvec)).normalized();
+					Eigen::Vector3d surfacePoint_t = prev_surfacePoint + t * (surfacePoint - prev_surfacePoint);
+					robot_path.waypoints.push_back(robotStateFromPointAndArmvec(robot_model, surfacePoint_t, armvec_t));
+				}
+
+				prev_armvec = armvec;
+				prev_surfacePoint = surfacePoint;
 			}
+
 			return robot_path;
 		} if (auto curve = std::dynamic_pointer_cast<const CurvePath<ShellPoint>>(path)) {
 			// Just take 100 samples.

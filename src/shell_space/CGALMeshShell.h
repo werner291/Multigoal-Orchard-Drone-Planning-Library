@@ -67,15 +67,6 @@ public:
 
 	/**
 	 * For a given CGALMeshPoint (which really is a face index paired with barycentric coordinates),
-	 * compute the carthesian coordinates.
-	 *
-	 * @param pt
-	 * @return
-	 */
-	Eigen::Vector3d toCarthesian(const CGALMeshPoint &pt) const;
-
-	/**
-	 * For a given CGALMeshPoint (which really is a face index paired with barycentric coordinates),
 	 * compute the normal vector of the face.
 	 *
 	 * Note: this is not the normal vector of the triangle, special cases like edges or vertices are not handled explicitly:

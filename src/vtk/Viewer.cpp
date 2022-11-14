@@ -25,6 +25,7 @@ Viewer::Viewer() {
 
 	renderWindowInteractor->SetRenderWindow(visualizerWindow);
 	renderWindowInteractor->CreateRepeatingTimer(33);
+
 }
 
 void Viewer::addActor(vtkActor *actor) {
