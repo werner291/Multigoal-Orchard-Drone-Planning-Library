@@ -83,6 +83,21 @@ public:
 		}
 
 	}
+
+	/**
+	 * Delete an item from the ordering, declaring that it no longer needs to be visited.
+	 *
+	 * @param item 		The item to delete.
+	 */
+	void remove(V item) override {
+
+		auto pos = std::find(visit_ordering.begin(), visit_ordering.end(), item);
+
+		assert(pos != visit_ordering.end());
+
+		visit_ordering.erase(pos);
+	}
+
 };
 
 

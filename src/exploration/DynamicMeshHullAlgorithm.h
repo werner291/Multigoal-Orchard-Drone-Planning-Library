@@ -26,12 +26,18 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 
 	AnytimeOptimalInsertion<size_t> visit_ordering;
 
-	std::vector<std::pair<const Eigen::Vector3d, Eigen::Vector3d>> targetPointsOnChullSurface;
+	struct TargetPoint {
+		const Eigen::Vector3d observed_location;
+		Eigen::Vector3d hull_location;
+		bool visited;
+	};
+
+	std::vector<TargetPoint> targetPointsOnChullSurface;
 
 public:
 	[[nodiscard]] const AnytimeOptimalInsertion<size_t> &getVisitOrdering() const;
 
-	[[nodiscard]] const std::vector<std::pair<const Eigen::Vector3d, Eigen::Vector3d>> &getTargetPointsOnChullSurface() const;
+	[[nodiscard]] const std::vector<TargetPoint> &getTargetPointsOnChullSurface() const;
 
 	[[nodiscard]] const std::shared_ptr<StreamingMeshHullAlgorithm> &getConvexHull() const;
 

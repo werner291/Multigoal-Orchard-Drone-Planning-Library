@@ -151,7 +151,7 @@ int main(int, char*[]) {
 			{
 				vtkNew<vtkPoints> pointsVtk;
 				vtkNew<vtkCellArray> cells;
-				for (const auto &[original, projected]: dbsa.getTargetPointsOnChullSurface()) {
+				for (const auto &[original, projected, visited]: dbsa.getTargetPointsOnChullSurface()) {
 					cells->InsertNextCell(2);
 					cells->InsertCellPoint(pointsVtk->InsertNextPoint(projected.data()));
 					cells->InsertCellPoint(pointsVtk->InsertNextPoint(original.data()));
@@ -171,7 +171,7 @@ int main(int, char*[]) {
 
 				for (const auto &point: dbsa.getVisitOrdering().getVisitOrdering()) {
 					vtkIdType new_pt;
-					Eigen::Vector3d pt = dbsa.getTargetPointsOnChullSurface()[point].second;
+					Eigen::Vector3d pt = dbsa.getTargetPointsOnChullSurface()[point].hull_location;
 
 					cells->InsertNextCell(2);
 					cells->InsertCellPoint(previousPointId);

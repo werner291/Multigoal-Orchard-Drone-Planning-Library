@@ -49,6 +49,13 @@ public:
 	 */
 	virtual void insert(V item) = 0;
 
+	/**
+	 * Delete an item from the ordering, declaring that it no longer needs to be visited.
+	 *
+	 * @param item 		The item to delete.
+	 */
+	virtual void remove(V item) = 0;
+
 };
 
 
