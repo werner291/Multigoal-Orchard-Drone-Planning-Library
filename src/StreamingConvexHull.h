@@ -30,9 +30,9 @@ public:
 
 	static StreamingConvexHull fromSpherifiedCube(size_t segments);
 
-	virtual bool addPoint(const Eigen::Vector3d &point);
+	virtual bool addPoint(const Eigen::Vector3d &point) override;
 
-	[[nodiscard]] virtual shape_msgs::msg::Mesh toMesh() const;
+	[[nodiscard]] virtual shape_msgs::msg::Mesh toMesh() const override;
 
 };
 

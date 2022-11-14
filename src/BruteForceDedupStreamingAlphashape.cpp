@@ -70,5 +70,6 @@ shape_msgs::msg::Mesh BruteForceDedupStreamingAlphashape::toMesh() {
 		mesh.triangles.push_back(triangle);
 	}
 
-}
+	throw std::runtime_error("Not implemented");
 
+}

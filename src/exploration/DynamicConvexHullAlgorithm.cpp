@@ -52,13 +52,15 @@ void DynamicMeshHullAlgorithm::updatePointCloud(const moveit::core::RobotState &
 
 	}
 
-	// Pick 100 points at random from the point cloud and add them to the hull
-	ompl::RNG rng;
-
-	for (size_t i = 0; i < 100; i++) {
-		size_t index = rng.uniformInt(0, segmentedPointCloud.points.size() - 1);
-		pointstream_to_hull->addPoint(segmentedPointCloud.points[index].position);
-	}
+//	if (!segmentedPointCloud.points.empty()) {
+//		// Pick 100 points at random from the point cloud and add them to the hull
+//		ompl::RNG rng;
+//
+//		for (size_t i = 0; i < 100; i++) {
+//			size_t index = rng.uniformInt(0, (int) segmentedPointCloud.points.size() - 1);
+//			pointstream_to_hull->addPoint(segmentedPointCloud.points[index].position);
+//		}
+//	}
 
 
 	auto chull = pointstream_to_hull->toMesh();
@@ -82,7 +84,7 @@ void DynamicMeshHullAlgorithm::updatePointCloud(const moveit::core::RobotState &
 
 DynamicMeshHullAlgorithm::DynamicMeshHullAlgorithm(const moveit::core::RobotState &initial_state,
 												   const std::function<void(robot_trajectory::RobotTrajectory)> &trajectoryCallback,
-												   std::unique_ptr<StreamingMeshHullAlgorithm> pointstreamToHull)
+												   std::shared_ptr<StreamingMeshHullAlgorithm> pointstreamToHull)
 		: OnlinePointCloudMotionControlAlgorithm(trajectoryCallback),
 		  targetPoints(0.05, 1000),
 		  visit_ordering([this](size_t i) { return (targetPointsOnChullSurface[i].second - last_end_effector_position).norm(); },
@@ -104,6 +106,6 @@ const AnytimeOptimalInsertion<size_t> &DynamicMeshHullAlgorithm::getVisitOrderin
 	return visit_ordering;
 }
 
-const std::unique_ptr<StreamingMeshHullAlgorithm> &DynamicMeshHullAlgorithm::getConvexHull() const {
+const std::shared_ptr<StreamingMeshHullAlgorithm> &DynamicMeshHullAlgorithm::getConvexHull() const {
 	return pointstream_to_hull;
 }

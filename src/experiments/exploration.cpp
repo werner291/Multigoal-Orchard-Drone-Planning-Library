@@ -111,7 +111,7 @@ int main(int, char*[]) {
 
 	CurrentPathState currentPathState(workspaceSpec.initialState);
 
-	auto wrapper_algo = std::make_unique<StreamingConvexHull>(StreamingConvexHull::fromSpherifiedCube(3));
+	auto wrapper_algo = std::make_shared<StreamingConvexHull>(StreamingConvexHull::fromSpherifiedCube(3));
 
 	DynamicMeshHullAlgorithm dbsa(workspaceSpec.initialState, [&](robot_trajectory::RobotTrajectory trajectory) {
 		currentPathState.newPath(trajectory);
