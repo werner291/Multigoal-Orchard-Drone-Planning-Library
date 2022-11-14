@@ -114,6 +114,9 @@ int main(int, char*[]) {
 	auto wrapper_algo = std::make_shared<StreamingConvexHull>(StreamingConvexHull::fromSpherifiedCube(3));
 
 	DynamicMeshHullAlgorithm dbsa(workspaceSpec.initialState, [&](robot_trajectory::RobotTrajectory trajectory) {
+
+		std::cout << "Trajectory: " << trajectory.size() << std::endl;
+
 		currentPathState.newPath(trajectory);
 	}, std::move(wrapper_algo));
 
