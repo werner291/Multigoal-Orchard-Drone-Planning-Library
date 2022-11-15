@@ -122,9 +122,14 @@ std::shared_ptr<ShellPath<CGALMeshPoint>> CGALMeshShell::path_from_to(const CGAL
 	// Add pur start point a
 	shortest_paths.add_source_point(a);
 
-	// Compute the path to a from b. This technically computes the reversed path, but this should not make a difference for the path length.
+	// Compute the path to a from b.
 	PathVisitor v(tmesh);
 	shortest_paths.shortest_path_sequence_to_source_points(b.first, b.second, v);
+
+	assert(v.states.size() > 0);
+
+	// CGAL gives us the path from the end to the start, so we reverse it.
+	std::reverse(v.states.begin(), v.states.end());
 
 	return std::make_shared<PiecewiseLinearPath<CGALMeshPoint>>(std::move(v.states));
 
