@@ -167,7 +167,7 @@ int main(int, char*[]) {
 			{
 				vtkNew<vtkPoints> pointsVtk;
 				vtkNew<vtkCellArray> cells;
-				for (const auto &[original, projected, visited]: dbsa.getTargetPointsOnChullSurface()) {
+				for (const auto &[original, projected]: dbsa.getTargetPointsOnChullSurface()) {
 					cells->InsertNextCell(2);
 					cells->InsertCellPoint(pointsVtk->InsertNextPoint(projected.data()));
 					cells->InsertCellPoint(pointsVtk->InsertNextPoint(original.data()));

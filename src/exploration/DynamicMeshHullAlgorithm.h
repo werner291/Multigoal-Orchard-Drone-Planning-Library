@@ -15,12 +15,15 @@
 
 #include "../AnytimeOptimalInsertion.h"
 
+/**
+ * A motion control algorithm that uses a dynamic mesh to represent the outer "shell" of the obstacles,
+ * updating this hull as new data comes in from the robot's sensors.
+ */
 class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 
 	Eigen::Vector3d last_end_effector_position;
 
 	HashedSpatialIndex<std::monostate> targetPoints;
-	size_t next_point_id = 0;
 
 	std::shared_ptr<StreamingMeshHullAlgorithm> pointstream_to_hull;
 
@@ -29,10 +32,11 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	struct TargetPoint {
 		const Eigen::Vector3d observed_location;
 		Eigen::Vector3d hull_location;
-		bool visited;
 	};
 
 	std::vector<TargetPoint> targetPointsOnChullSurface;
+
+	robot_trajectory::RobotTrajectory last_trajectory;
 
 public:
 	[[nodiscard]] const AnytimeOptimalInsertion<size_t> &getVisitOrdering() const;

@@ -1,14 +1,12 @@
 #include <ompl/util/RandomNumbers.h>
 #include "DynamicMeshHullAlgorithm.h"
 #include "../utilities/trajectory_primitives.h"
-#include "../utilities/math_utils.h"
 #include "../shell_space/CGALMeshShell.h"
 #include "../utilities/msgs_utilities.h"
 #include "../utilities/mesh_utils.h"
 
-
 void DynamicMeshHullAlgorithm::updatePointCloud(const moveit::core::RobotState &current_state,
-												  const SegmentedPointCloud &segmentedPointCloud) {
+												const SegmentedPointCloud &segmentedPointCloud) {
 
 	last_end_effector_position = current_state.getGlobalLinkTransform("end_effector").translation();
 
@@ -28,7 +26,7 @@ void DynamicMeshHullAlgorithm::updatePointCloud(const moveit::core::RobotState &
 
 			std::cout << "Adding target point " << item.position.transpose() << std::endl;
 
-			targetPointsOnChullSurface.push_back({item.position, Eigen::Vector3d::Zero(), false});
+			targetPointsOnChullSurface.push_back({item.position, Eigen::Vector3d::Zero()});
 
 			targetPoints.insert(item.position, {});
 
@@ -38,7 +36,7 @@ void DynamicMeshHullAlgorithm::updatePointCloud(const moveit::core::RobotState &
 
 	auto chull = pointstream_to_hull->toMesh();
 
-	for (auto &[original, projection, visited]: targetPointsOnChullSurface) {
+	for (auto &[original, projection]: targetPointsOnChullSurface) {
 
 		// TODO: Could probably benefit from a spatial index of the triangles?
 		projection = closestPointOnMesh(chull, original);
@@ -77,17 +75,14 @@ void DynamicMeshHullAlgorithm::updateTrajectory(const moveit::core::RobotState &
 		if ((targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[0]].hull_location -
 			 last_end_effector_position).norm() < 0.1) {
 
-			targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[0]].visited = true;
-
 			visit_ordering.remove(visit_ordering.getVisitOrdering()[0]);
 		}
 
 		{
 			auto first_on_shell = shell_space.stateFromPoint(shell->nearest_point_on_shell(last_end_effector_position));
 
-			upcoming_trajectory
-				.addSuffixWayPoint(first_on_shell,
-								   upcoming_trajectory.getLastWayPoint().distance(first_on_shell));
+			upcoming_trajectory.addSuffixWayPoint(first_on_shell,
+												  upcoming_trajectory.getLastWayPoint().distance(first_on_shell));
 		}
 
 		for (size_t i = 0; i < visit_ordering.getVisitOrdering().size(); i++) {
@@ -101,8 +96,8 @@ void DynamicMeshHullAlgorithm::updateTrajectory(const moveit::core::RobotState &
 						i - 1]].hull_location);
 			}
 
-			auto to_point = shell->nearest_point_on_shell(targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[
-					i]].hull_location);
+			auto to_point = shell->nearest_point_on_shell(targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[i]]
+																  .hull_location);
 
 			auto shell_path = shell_space.shellPath(from_point, to_point);
 
@@ -125,26 +120,26 @@ void DynamicMeshHullAlgorithm::updateTrajectory(const moveit::core::RobotState &
 }
 
 DynamicMeshHullAlgorithm::DynamicMeshHullAlgorithm(const moveit::core::RobotState &initial_state,
-													   const std::function<void(robot_trajectory::RobotTrajectory)> &trajectoryCallback,
-												   std::shared_ptr<StreamingMeshHullAlgorithm> pointstreamToHull): OnlinePointCloudMotionControlAlgorithm(trajectoryCallback),
+												   const std::function<void(robot_trajectory::RobotTrajectory)> &trajectoryCallback,
+												   std::shared_ptr<StreamingMeshHullAlgorithm> pointstreamToHull)
+		: OnlinePointCloudMotionControlAlgorithm(trajectoryCallback),
 
 		  targetPoints(0.05, 1000),
 		  visit_ordering([this](size_t i) {
-							 return (targetPointsOnChullSurface[i].hull_location - last_end_effector_position).norm();
-						 },
-						 [this](size_t i, size_t j) {
-							 return (targetPointsOnChullSurface[i].hull_location -
-									 targetPointsOnChullSurface[j].hull_location).norm();
-						 },
-						 [](const std::vector<size_t> &indices) {}),
-						 pointstream_to_hull(std::move(pointstreamToHull)) {
+			  return (targetPointsOnChullSurface[i].hull_location - last_end_effector_position).norm();
+		  }, [this](size_t i, size_t j) {
+			  return (targetPointsOnChullSurface[i].hull_location - targetPointsOnChullSurface[j].hull_location).norm();
+		  }, [](const std::vector<size_t> &indices) {}),
+		  pointstream_to_hull(std::move(pointstreamToHull)),
+		  last_trajectory(initial_state.getRobotModel(), "whole_body") {
 
 	last_end_effector_position = initial_state.getGlobalLinkTransform("end_effector").translation();
 
 }
 
 
-const std::vector<DynamicMeshHullAlgorithm::TargetPoint> & DynamicMeshHullAlgorithm::getTargetPointsOnChullSurface() const {
+const std::vector<DynamicMeshHullAlgorithm::TargetPoint> &
+DynamicMeshHullAlgorithm::getTargetPointsOnChullSurface() const {
 	return targetPointsOnChullSurface;
 }
 
