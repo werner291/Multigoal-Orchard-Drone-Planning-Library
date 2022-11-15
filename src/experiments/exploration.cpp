@@ -106,7 +106,8 @@ int main(int, char*[]) {
 
 	Viewer viewer = buildViewer(workspaceSpec.orchard,robotModel,
 								{fruitSurfaceScanTargetsActor.fruitSurfacePointsActor,
-								 visitOrderVisualizationActor,
+//								 visitOrderVisualization.getActor(),
+								 ee_trace_visualization.getActor(),
 								 targetPointActor,
 								 convexHullActor.actor,
 								 pointCloudActor,

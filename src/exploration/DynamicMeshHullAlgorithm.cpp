@@ -91,7 +91,7 @@ void DynamicMeshHullAlgorithm::updateTrajectory() {
 
 		std::vector<moveit::core::RobotState> states {
 				last_robot_state,
-//				shell_space.stateFromPoint(current_state_shell_proj)
+				shell_space.stateFromPoint(current_state_shell_proj)
 		};
 
 		for (size_t i = 0; i < visit_ordering.getVisitOrdering().size(); i++) {
@@ -120,6 +120,12 @@ void DynamicMeshHullAlgorithm::updateTrajectory() {
 				break;
 			}
 
+		}
+
+		while (states.size() >= 2 &&
+		      (states[1].getGlobalLinkTransform("end_effector").translation() - states[0].getGlobalLinkTransform("end_effector").translation()).norm() < 0.1 &&
+			   states[1].distance(states[0]) < 0.5) {
+			states.erase(states.begin()+1);
 		}
 
 		robot_trajectory::RobotTrajectory upcoming_trajectory(last_robot_state.getRobotModel(), "whole_body");
