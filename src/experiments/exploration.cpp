@@ -100,14 +100,9 @@ int main(int, char*[]) {
 	targetPointActor->GetProperty()->SetPointSize(10);
 	targetPointActor->GetProperty()->SetLineWidth(5);
 
-	vtkNew<vtkPolyData> visitOrderVisualizationData;
-	vtkNew<vtkPolyDataMapper> visitOrderVisualizationMapper;
-	vtkNew<vtkActor> visitOrderVisualizationActor;
+	VtkPolyLineVizualization visitOrderVisualization(1.0,0.5,0.5);
 
-	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
-	visitOrderVisualizationActor->SetMapper(visitOrderVisualizationMapper);
-	visitOrderVisualizationActor->GetProperty()->SetColor(1, 0.5, 0);
-	visitOrderVisualizationActor->GetProperty()->SetLineWidth(10);
+	VtkPolyLineVizualization ee_trace_visualization(0.0,0.0,1.0);
 
 	Viewer viewer = buildViewer(workspaceSpec.orchard,robotModel,
 								{fruitSurfaceScanTargetsActor.fruitSurfacePointsActor,
@@ -120,34 +115,28 @@ int main(int, char*[]) {
 
 	CurrentPathState currentPathState(workspaceSpec.initialState);
 
-	auto wrapper_algo = std::make_shared<StreamingConvexHull>(StreamingConvexHull::fromSpherifiedCube(3));
+	auto wrapper_algo = std::make_shared<StreamingConvexHull>(StreamingConvexHull::fromSpherifiedCube(4));
 
 	DynamicMeshHullAlgorithm dbsa(workspaceSpec.initialState, [&](robot_trajectory::RobotTrajectory trajectory) {
+		currentPathState.newPath(trajectory);
 
-		for (size_t waypt_i = 1; waypt_i < trajectory.getWayPointCount(); ++waypt_i) {
-			auto pt = trajectory.getWayPoint(waypt_i);
+		{
+			std::vector<Eigen::Vector3d> points;
 
-			Eigen::Vector3d ee_pos = pt.getGlobalLinkTransform("end_effector").translation();
+			for (size_t wp_idx = 0; wp_idx < trajectory.getWayPointCount(); wp_idx++) {
+				points.push_back(trajectory.getWayPoint(wp_idx).getGlobalLinkTransform("end_effector").translation());
+			}
 
-			auto mesh = dbsa.getConvexHull()->toMesh();
-
-			Eigen::Vector3d surface_pt = closestPointOnMesh(mesh, ee_pos);
-
-			double distance = (surface_pt - ee_pos).norm();
-
-			std::cout << "Distance to surface: " << distance << std::endl;
-
-//			assert(distance < 0.01);
+			ee_trace_visualization.updateLine(points);
 		}
 
-		currentPathState.newPath(trajectory);
 	}, std::move(wrapper_algo));
 
 	dbsa.updatePointCloud(currentPathState.current_state, generateInitialCloud(workspaceSpec.orchard));
 
 	auto callback = [&]() {
 
-		currentPathState.advance(0.05);
+		currentPathState.advance(0.01);
 
 		if (checkCollision(currentPathState.getCurrentState(), *collision_env)) {
 			std::cout << "Oh no!" << std::endl;
@@ -176,55 +165,18 @@ int main(int, char*[]) {
 				targetPointData->SetLines(cells);
 				targetPointData->Modified();
 
-				const shape_msgs::msg::Mesh &mesh = dbsa.getConvexHull()->toMesh();
-
-				convexHullActor.update(mesh);
-
-				// Find the closest point on the mesh to the end-effector
-				Eigen::Vector3d ee_pos = currentPathState.getCurrentState().getGlobalLinkTransform("end_effector").translation();
-				double closest_distance = std::numeric_limits<double>::max();
-
-				for (const auto &triangle: mesh.triangles) {
-					Eigen::Vector3d a = Eigen::Vector3d(mesh.vertices[triangle.vertex_indices[0]].x,
-														mesh.vertices[triangle.vertex_indices[0]].y,
-														mesh.vertices[triangle.vertex_indices[0]].z);
-					Eigen::Vector3d b = Eigen::Vector3d(mesh.vertices[triangle.vertex_indices[1]].x,
-														mesh.vertices[triangle.vertex_indices[1]].y,
-														mesh.vertices[triangle.vertex_indices[1]].z);
-					Eigen::Vector3d c = Eigen::Vector3d(mesh.vertices[triangle.vertex_indices[2]].x,
-														mesh.vertices[triangle.vertex_indices[2]].y,
-														mesh.vertices[triangle.vertex_indices[2]].z);
-
-					Eigen::Vector3d closest_point = closest_point_on_triangle(ee_pos, a, b, c);
-
-					double distance = (closest_point - ee_pos).norm();
-
-					if (distance < closest_distance) {
-						closest_distance = distance;
-					}
-				}
+				convexHullActor.update(dbsa.getConvexHull()->toMesh());
 
 			}
 
 			{
-				vtkNew<vtkPoints> pointsVtk;
-				vtkNew<vtkCellArray> cells;
-
-				vtkIdType previousPointId = pointsVtk->InsertNextPoint(currentPathState.getCurrentState().getGlobalLinkTransform("end_effector").translation().data());
-
+				std::vector<Eigen::Vector3d> visit_order_points {
+					eePose.translation()
+				};
 				for (const auto &point: dbsa.getVisitOrdering().getVisitOrdering()) {
-					vtkIdType new_pt;
-					Eigen::Vector3d pt = dbsa.getTargetPointsOnChullSurface()[point].hull_location;
-
-					cells->InsertNextCell(2);
-					cells->InsertCellPoint(previousPointId);
-					cells->InsertCellPoint(previousPointId = pointsVtk->InsertNextPoint(pt.data()));
+					visit_order_points.push_back(dbsa.getTargetPointsOnChullSurface()[point].hull_location);
 				}
-
-				visitOrderVisualizationData->SetPoints(pointsVtk);
-				visitOrderVisualizationData->SetLines(cells);
-
-				visitOrderVisualizationData->Modified();
+				visitOrderVisualization.updateLine(visit_order_points);
 			}
 
 

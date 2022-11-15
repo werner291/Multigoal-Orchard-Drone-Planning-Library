@@ -186,4 +186,17 @@ vtkNew<vtkActor> buildGroundPlaneActor(bool usePureColor);
  */
 vtkNew<vtkActor> buildDepthImagePointCloudActor(vtkAlgorithmOutput *pointCloudInput);
 
+class VtkPolyLineVizualization {
+	vtkNew<vtkPolyData> visitOrderVisualizationData;
+	vtkNew<vtkPolyDataMapper> visitOrderVisualizationMapper;
+	vtkNew<vtkActor> visitOrderVisualizationActor;
+
+public:
+	VtkPolyLineVizualization(float r, float g, float b);
+
+	vtkActor* getActor();
+
+	void updateLine(const std::vector<Eigen::Vector3d>& points);
+};
+
 #endif //NEW_PLANNERS_VTK_H

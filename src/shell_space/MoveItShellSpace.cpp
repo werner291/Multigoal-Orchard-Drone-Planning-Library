@@ -20,8 +20,6 @@ moveit::core::RobotState robotStateFromPointAndArmvec(const moveit::core::RobotM
 													  const Eigen::Vector3d &desired_ee_pos,
 													  const Eigen::Vector3d &armvec) {
 
-	std::cout << armvec.norm() << std::endl;
-
 	// Ensure armvec is normalized
 	assert(std::abs(armvec.norm() - 1.0) < 1e-6);
 
@@ -55,6 +53,9 @@ moveit::core::RobotState robotStateFromPointAndArmvec(const moveit::core::RobotM
 		actual_armvec.normalize();
 
 		assert((actual_armvec - armvec).norm() < 1e-6);
+
+		Eigen::Vector3d actual_ee_pos = st.getGlobalLinkTransform("end_effector").translation();
+		assert((actual_ee_pos - desired_ee_pos).norm() < 1e-6);
 	}
 
 	return st;

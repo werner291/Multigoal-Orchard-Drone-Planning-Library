@@ -112,7 +112,7 @@ add_library(${PROJECT_NAME}_shared
         src/experiments/exploration.cpp
         src/exploration/ColorEncoding.cpp
         src/exploration/ColorEncoding.h
-        src/exploration/DynamicConvexHullAlgorithm.cpp
+        src/exploration/DynamicMeshHullAlgorithm.cpp
         src/exploration/DynamicMeshHullAlgorithm.h
         src/exploration/OnlinePointCloudMotionControlAlgorithm.cpp
         src/exploration/OnlinePointCloudMotionControlAlgorithm.h

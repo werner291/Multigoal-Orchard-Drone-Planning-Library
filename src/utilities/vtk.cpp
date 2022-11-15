@@ -286,3 +286,35 @@ void vtkFunctionalCallback::Execute(vtkObject *caller, unsigned long eventId, vo
 void vtkFunctionalCallback::setEventId(unsigned long eventId) {
 	event_id = eventId;
 }
+
+VtkPolyLineVizualization::VtkPolyLineVizualization(float r, float g, float b) {
+	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
+	visitOrderVisualizationActor->SetMapper(visitOrderVisualizationMapper);
+	visitOrderVisualizationActor->GetProperty()->SetColor(r,g,b);
+	visitOrderVisualizationActor->GetProperty()->SetLineWidth(10);
+}
+
+vtkActor *VtkPolyLineVizualization::getActor() {
+	return visitOrderVisualizationActor;
+}
+
+void VtkPolyLineVizualization::updateLine(const std::vector<Eigen::Vector3d> &points) {
+
+	assert(!points.empty());
+
+	vtkNew<vtkPoints> pointsVtk;
+	vtkNew<vtkCellArray> cells;
+
+	auto previousPointId = pointsVtk->InsertNextPoint(points[0].data());
+
+	for (size_t i = 1; i < points.size(); ++i) {
+		cells->InsertNextCell(2);
+		cells->InsertCellPoint(previousPointId);
+		cells->InsertCellPoint(previousPointId = pointsVtk->InsertNextPoint(points[i].data()));
+	}
+
+	visitOrderVisualizationData->SetPoints(pointsVtk);
+	visitOrderVisualizationData->SetLines(cells);
+
+	visitOrderVisualizationData->Modified();
+}
