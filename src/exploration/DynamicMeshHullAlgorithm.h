@@ -48,6 +48,7 @@ public:
 	void updatePointCloud(const moveit::core::RobotState &current_state,
 						  const SegmentedPointCloud &segmentedPointCloud) override;
 
+	void updateTrajectory(const moveit::core::RobotState &current_state, const shape_msgs::msg::Mesh &chull);
 };
 
 #endif //NEW_PLANNERS_DYNAMICMESHHULLALGORITHM_H

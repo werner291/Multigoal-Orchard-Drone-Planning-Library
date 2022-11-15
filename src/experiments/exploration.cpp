@@ -32,6 +32,7 @@
 #include "../vtk/VisualizationSpecifics.h"
 #include "../utilities/convex_hull.h"
 #include "../utilities/math_utils.h"
+#include "../utilities/mesh_utils.h"
 
 /**
  * Given a SimplifiedOrchard, create a SegmentedPointCloud that gives an initial hint about the contents
@@ -122,6 +123,23 @@ int main(int, char*[]) {
 	auto wrapper_algo = std::make_shared<StreamingConvexHull>(StreamingConvexHull::fromSpherifiedCube(3));
 
 	DynamicMeshHullAlgorithm dbsa(workspaceSpec.initialState, [&](robot_trajectory::RobotTrajectory trajectory) {
+
+		for (size_t waypt_i = 1; waypt_i < trajectory.getWayPointCount(); ++waypt_i) {
+			auto pt = trajectory.getWayPoint(waypt_i);
+
+			Eigen::Vector3d ee_pos = pt.getGlobalLinkTransform("end_effector").translation();
+
+			auto mesh = dbsa.getConvexHull()->toMesh();
+
+			Eigen::Vector3d surface_pt = closestPointOnMesh(mesh, ee_pos);
+
+			double distance = (surface_pt - ee_pos).norm();
+
+			std::cout << "Distance to surface: " << distance << std::endl;
+
+//			assert(distance < 0.01);
+		}
+
 		currentPathState.newPath(trajectory);
 	}, std::move(wrapper_algo));
 
@@ -186,7 +204,6 @@ int main(int, char*[]) {
 					}
 				}
 
-				std::cout << "Closest distance: " << closest_distance << std::endl;
 			}
 
 			{

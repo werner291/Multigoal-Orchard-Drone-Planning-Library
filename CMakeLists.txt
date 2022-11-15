@@ -198,7 +198,7 @@ add_library(${PROJECT_NAME}_shared
         src/BruteForceDedupStreamingAlphashape.cpp
         src/BruteForceDedupStreamingAlphashape.h
         src/StreamingMeshHullAlgorithm.cpp
-        src/StreamingMeshHullAlgorithm.h)
+        src/StreamingMeshHullAlgorithm.h src/utilities/mesh_utils.h src/utilities/mesh_utils.cpp)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

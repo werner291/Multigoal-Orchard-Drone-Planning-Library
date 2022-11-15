@@ -42,8 +42,8 @@ Viewer buildViewer(const SimplifiedOrchard &orchard,
 		viewer.addActor(actor);
 	}
 
-	viewer.viewerRenderer->GetActiveCamera()->SetPosition(4,4,2.0);
-	viewer.viewerRenderer->GetActiveCamera()->SetFocalPoint(0,0,1.5);
+	viewer.viewerRenderer->GetActiveCamera()->SetPosition(8,4,2.5);
+	viewer.viewerRenderer->GetActiveCamera()->SetFocalPoint(2,0,1.5);
 	viewer.viewerRenderer->GetActiveCamera()->SetViewUp(0,0,1);
 
 	return viewer;

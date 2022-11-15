@@ -6,6 +6,7 @@
 #include <moveit/robot_trajectory/robot_trajectory.h>
 #include <ompl/base/StateSpace.h>
 #include <ompl/geometric/PathGeometric.h>
+#include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 
 ompl::geometric::PathGeometric omplPathFromMoveitTrajectory(const robot_trajectory::RobotTrajectory &trajectory,
                                                             const ompl::base::SpaceInformationPtr &si);
