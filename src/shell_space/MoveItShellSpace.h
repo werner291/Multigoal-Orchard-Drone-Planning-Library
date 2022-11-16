@@ -100,7 +100,7 @@ public:
 
 				double angle = std::acos(std::clamp(armvec.dot(prev_armvec), -1.0, 1.0));
 
-				auto num_steps = 1 + (size_t) std::floor(3.0 * angle);
+				auto num_steps = 1;// + (size_t) std::floor(3.0 * angle);
 
 				for (size_t j = 1; j <= num_steps; j++) {
 					double t = (double) j / (double) num_steps;

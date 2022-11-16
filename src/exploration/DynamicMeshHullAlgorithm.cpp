@@ -3,7 +3,6 @@
 #include "../utilities/trajectory_primitives.h"
 #include "../shell_space/CGALMeshShell.h"
 #include "../utilities/mesh_utils.h"
-#include "../utilities/moveit.h"
 
 void DynamicMeshHullAlgorithm::updatePointCloud(const moveit::core::RobotState &current_state,
 												const SegmentedPointCloud &segmentedPointCloud) {
@@ -59,86 +58,137 @@ void DynamicMeshHullAlgorithm::updatePointCloud(const moveit::core::RobotState &
 
 void DynamicMeshHullAlgorithm::updateTrajectory() {
 
+	// Later portions of the trajectory are likely to be invalidated, so we simply stop computing after a time limit.
+	auto deadline = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(ITERATION_COMPUTE_TIME_LIMIT);
+
 	// Extract the convex hull from the streaming algorithm.
 	auto chull = pointstream_to_hull->toMesh();
 
-	// Update the point on the hull for all target points (TODO: Cache if not modified?)
-	for (auto &[original, projection]: targetPointsOnChullSurface) {
+	// Get a mesh shell based on the latest hull.
+	auto shell =
+			std::make_shared<ArmHorizontalDecorator<CGALMeshPoint>>(
+					std::make_shared<CGALMeshShell>(chull, 1.0, PADDING));
 
-		// TODO: Could probably benefit from a spatial index of the triangles?
-		projection = closestPointOnMesh(chull, original);
-
-	}
-
-	// Update the visit ordering based on the new hull. We only do a single pass,
-	// relying on future updates to progressively refine the ordering.
-	visit_ordering.iterate();
+	// Set up translation between the shell and MoveIt terms.
+	MoveItShellSpace<CGALMeshPoint> shell_space(last_robot_state.getRobotModel(), shell);
 
 	// If we have targets and a hull that's at least a tetrahedron, we can compute a trajectory.
 	if (!visit_ordering.getVisitOrdering().empty() && chull.triangles.size() >= 4) {
 
-		// Get a mesh shell based on the latest hull.
-		auto shell =
-				std::make_shared<ArmHorizontalDecorator<CGALMeshPoint>>(
-						std::make_shared<CGALMeshShell>(chull, 1.0, 0.0));
+		// Update the point on the hull for all target points (TODO: Cache if not modified?)
+		for (auto &[original, projection]: targetPointsOnChullSurface) {
+			projection = shell->surface_point(shell->nearest_point_on_shell(original));
+		}
 
-		// Later portions of the trajectory are likely to be invalidated, so we simply stop computing after a time limit.
-		auto deadline = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(ITERATION_COMPUTE_TIME_LIMIT);
-
-		MoveItShellSpace<CGALMeshPoint> shell_space(last_robot_state.getRobotModel(), shell);
+		// Update the visit ordering based on the new hull. We only do a single pass,
+		// relying on future updates to progressively refine the ordering.
+		visit_ordering.iterate();
 
 		auto current_state_shell_proj = shell->nearest_point_on_shell(last_end_effector_position);
 
-		std::vector<moveit::core::RobotState> states {
-				last_robot_state,
-				shell_space.stateFromPoint(current_state_shell_proj)
-		};
+		// Step 1: Remove the portion of lastPath until we find the robot's current position.
+		advance_path_to_current();
 
-		for (size_t i = 0; i < visit_ordering.getVisitOrdering().size(); i++) {
+		for (size_t segment_i = 0; segment_i < lastPath.size(); segment_i++) {
+			// Need to check: is this segment still valid, and if so, does it still lead to the right target?
+
+			bool on_shell = true;
+
+			for (size_t point_i = 0; point_i < lastPath[segment_i].waypoints.size(); point_i++) {
+				Eigen::Vector3d point = lastPath[segment_i].waypoints[point_i].getGlobalLinkTransform("end_effector").translation();
+				Eigen::Vector3d shell_point = closestPointOnMesh(chull, point);
+				if (abs((point - shell_point).norm() - PADDING) > 0.05) {
+					std::cout << "Not on shell: " << (point - shell_point).norm() << std::endl;
+					on_shell = false;
+					break;
+				}
+			}
+
+			Eigen::Vector3d target_point = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_i]].hull_location;
+			Eigen::Vector3d end_effector_after_segment = lastPath[segment_i].waypoints.back().getGlobalLinkTransform("end_effector").translation();
+
+			bool goes_to_target = (target_point - end_effector_after_segment).norm() < 1.0e-6;
+
+			if (!on_shell || !goes_to_target) {
+				// This segment is no longer valid. Remove it and all subsequent segments.
+				lastPath.erase(lastPath.begin() + (int) segment_i, lastPath.end());
+				std::cout << "Invalidated from segment " << segment_i << " because " << (on_shell ? "doesn't go to target" : "not on shell") << std::endl;
+				break;
+			}
+
+		}
+
+		for (size_t i = lastPath.size(); i < visit_ordering.getVisitOrdering().size(); i++) {
 
 			CGALMeshPoint from_point;
 
 			if (i == 0) {
 				from_point = current_state_shell_proj;
 			} else {
-				from_point = shell->nearest_point_on_shell(targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[
-						i - 1]].hull_location);
+				from_point = shell->nearest_point_on_shell(targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[i - 1]].hull_location);
 			}
 
-			auto to_point = shell->nearest_point_on_shell(targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[i]]
-																  .hull_location);
+			auto to_point = shell->nearest_point_on_shell(targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[i]].hull_location);
 
-			auto shell_path = shell_space.shellPath(from_point, to_point);
+			lastPath.push_back(shell_space.shellPath(from_point, to_point));
 
-			for (const auto &point: shell_path.waypoints) {
-				states.push_back(point);
-			}
-
-			auto now = std::chrono::high_resolution_clock::now();
-
-			if (now > deadline || states.size() > 10) {
+			if (std::chrono::high_resolution_clock::now() > deadline || lastPath.size() > 10) {
 				break;
 			}
 
 		}
 
-		while (states.size() >= 2 &&
-		      (states[1].getGlobalLinkTransform("end_effector").translation() - states[0].getGlobalLinkTransform("end_effector").translation()).norm() < 0.1 &&
-			   states[1].distance(states[0]) < 0.5) {
-			states.erase(states.begin()+1);
-		}
+		emitUpdatedPath();
 
-		robot_trajectory::RobotTrajectory upcoming_trajectory(last_robot_state.getRobotModel(), "whole_body");
-
-		for (const auto &state: states) {
-			upcoming_trajectory.addSuffixWayPoint(state, upcoming_trajectory.getWayPointCount() == 0 ? 0.0 : upcoming_trajectory.getLastWayPoint().distance(state));
-		}
-
-		trajectoryCallback(upcoming_trajectory);
 	} else {
 		// Otherwise, just spin in place until finding something of interest.
 		trajectoryCallback(turnInPlace(last_robot_state, 0.1));
 	}
+}
+
+void DynamicMeshHullAlgorithm::advance_path_to_current() {
+
+	for (size_t path_i = 0; path_i < lastPath.size(); path_i++) {
+
+		for (size_t segment_i = 0; segment_i + 1 < lastPath.front().waypoints.size(); segment_i++) {
+
+			auto from_wp = lastPath.front().waypoints[segment_i];
+			auto to_wp = lastPath.front().waypoints[segment_i + 1];
+
+			double segment_length = from_wp.distance(to_wp);
+
+			double start_to_state = from_wp.distance(last_robot_state);
+			double state_to_end = to_wp.distance(last_robot_state);
+
+			bool on_segment = std::abs(start_to_state + state_to_end - segment_length) < 1.0e-6;
+
+			if (on_segment) {
+
+				lastPath.erase(lastPath.begin(), lastPath.begin() + (int) path_i);
+
+				// We found the current state on the segment. Remove everything before it.
+				lastPath.front().waypoints.erase(lastPath.front().waypoints.begin(),
+												 lastPath.front().waypoints.begin() + segment_i+1);
+			}
+
+		}
+
+	}
+
+}
+
+void DynamicMeshHullAlgorithm::emitUpdatedPath() {
+	robot_trajectory::RobotTrajectory upcoming_trajectory(last_robot_state.getRobotModel(), "whole_body");
+
+	upcoming_trajectory.addSuffixWayPoint(last_robot_state, 0.0);
+
+	for (const auto &segment: lastPath) {
+		for (const auto &substate: segment.waypoints) {
+			upcoming_trajectory.addSuffixWayPoint(substate,  upcoming_trajectory.getLastWayPoint().distance(substate));
+		}
+	}
+
+	trajectoryCallback(upcoming_trajectory);
 }
 
 DynamicMeshHullAlgorithm::DynamicMeshHullAlgorithm(const moveit::core::RobotState &initial_state,

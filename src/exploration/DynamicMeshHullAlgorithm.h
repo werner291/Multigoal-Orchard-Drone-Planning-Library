@@ -21,6 +21,8 @@ static const int ITERATION_COMPUTE_TIME_LIMIT = 30;
 
 static const double DISTANCE_CONSIDERED_SCANNED = 0.1;
 
+static const double PADDING = 0.5;
+
 /**
  * A motion control algorithm that uses a dynamic mesh to represent the outer "shell" of the obstacles,
  * updating this hull as new data comes in from the robot's sensors.
@@ -39,7 +41,7 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	/// An algorithm that computes a mesh that approximately envelops a stream of points. (TODO: guarantees?)
 	std::shared_ptr<StreamingMeshHullAlgorithm> pointstream_to_hull;
 
-	/// An algorithm that computes the optimial visitation order of a set of points, given a starting point.
+	/// An algorithm that computes the optimal visitation order of a set of points, given a starting point.
 	AnytimeOptimalInsertion<size_t> visit_ordering;
 
 	/// A point somewhere in space that must be inspected, paired with the point on the mesh hull that is closest to it.
@@ -54,8 +56,6 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	/// A list of target points to inspect. The indices of this list are used as keys in the visit_ordering,
 	/// so we must not change the order of this list.
 	std::vector<TargetPoint> targetPointsOnChullSurface;
-
-	RobotPath last_path;
 
 public:
 	/// Return the visitation ordering algorithm state, for debugging and visualization
@@ -93,6 +93,27 @@ public:
 	 * Evaluate the current trajectory based on current knowledge of the environment, and update it if needed.
 	 */
 	void updateTrajectory();
+
+	/**
+	 * The current most up-to-date trajectory/path, last emitted from the trajectoryCallback.
+	 *
+	 * Every segment represents a path from somewhere in space to a target point, matching the order from visit_ordering at the time of emission.
+	 *
+	 * Note: the first waypoint in this path is NOT the current robot state; that gets added in emitUpdatedTrajectory().
+	 */
+	std::vector<RobotPath> lastPath;
+
+	/**
+	 * Concatenate the portions of lastPath and prepend the current robot state to it, then emit it.
+	 */
+	void emitUpdatedPath();
+
+	/**
+	 * Check if the current robot state is on any of the segments of lastPath, and delete all leading up to that point.
+	 *
+	 * Postcondition: the current robot state is NOT on the path
+	 */
+	void advance_path_to_current();
 };
 
 #endif //NEW_PLANNERS_DYNAMICMESHHULLALGORITHM_H

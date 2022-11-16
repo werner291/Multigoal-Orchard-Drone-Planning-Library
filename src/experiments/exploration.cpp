@@ -106,7 +106,7 @@ int main(int, char*[]) {
 
 	Viewer viewer = buildViewer(workspaceSpec.orchard,robotModel,
 								{fruitSurfaceScanTargetsActor.fruitSurfacePointsActor,
-//								 visitOrderVisualization.getActor(),
+								 visitOrderVisualization.getActor(),
 								 ee_trace_visualization.getActor(),
 								 targetPointActor,
 								 convexHullActor.actor,
@@ -135,9 +135,16 @@ int main(int, char*[]) {
 
 	dbsa.updatePointCloud(currentPathState.current_state, generateInitialCloud(workspaceSpec.orchard));
 
+//	size_t countdown = 300;
+
 	auto callback = [&]() {
 
-		currentPathState.advance(0.01);
+//		if (countdown > 0) {
+//			countdown--;
+//		} else {
+			currentPathState.advance(0.01);
+//		}
+
 
 		if (checkCollision(currentPathState.getCurrentState(), *collision_env)) {
 			std::cout << "Oh no!" << std::endl;
