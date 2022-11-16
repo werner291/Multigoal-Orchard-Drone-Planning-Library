@@ -133,7 +133,7 @@ int main(int, char*[]) {
 
 	}, std::move(wrapper_algo));
 
-	dbsa.updatePointCloud(currentPathState.current_state, generateInitialCloud(workspaceSpec.orchard));
+	dbsa.update(currentPathState.current_state, generateInitialCloud(workspaceSpec.orchard));
 
 //	size_t countdown = 300;
 
@@ -159,7 +159,7 @@ int main(int, char*[]) {
 		// FIXME: Ideally, I'd like to make sure the algorithm sees the point cloud exactly once.
 		if (auto points = sensor.extractLatestPointCloud()) {
 
-			dbsa.updatePointCloud(currentPathState.getCurrentState(), *points);
+			dbsa.update(currentPathState.getCurrentState(), *points);
 
 			{
 				vtkNew<vtkPoints> pointsVtk;

@@ -42,6 +42,14 @@ struct SegmentedPointCloud {
 	};
 
 	std::vector<Point> points;
+
+	struct ByType {
+		std::vector<Eigen::Vector3d> obstacle;
+		std::vector<Eigen::Vector3d> soft_obstacle;
+		std::vector<Eigen::Vector3d> target;
+	};
+
+	[[nodiscard]] ByType split_by_type() const;
 };
 
 /**

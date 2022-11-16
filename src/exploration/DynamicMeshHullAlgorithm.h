@@ -14,6 +14,7 @@
 #include "../HashedSpatialIndex.h"
 #include "../RobotPath.h"
 #include "../AnytimeOptimalInsertion.h"
+#include "../shell_space/CGALMeshShell.h"
 
 static const double TARGET_POINT_DEDUP_THRESHOLD = 0.05;
 
@@ -57,6 +58,66 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	/// so we must not change the order of this list.
 	std::vector<TargetPoint> targetPointsOnChullSurface;
 
+	/// The mesh hull that represents the outer shell of the obstacle points.
+	/// Will be null if not enough non-coplanar points have been seen to compute a hull
+	std::shared_ptr<CGALMeshShell> cgal_hull {nullptr};
+
+	/**
+	 * Incorporate a new point cloud into the algorithm's knowledge about the world.
+	 *
+	 * @param segmentedPointCloud 		The point cloud to incorporate.
+	 */
+	void updatePointCloud( const SegmentedPointCloud &segmentedPointCloud );
+
+	/**
+	 * Evaluate the current trajectory based on current knowledge of the environment, and update it if needed.
+	 */
+	void updateTrajectory();
+
+	/**
+	 * The current most up-to-date trajectory/path, last emitted from the trajectoryCallback.
+	 *
+	 * Every segment represents a path from somewhere in space to a target point, matching the order from visit_ordering at the time of emission.
+	 *
+	 * Note: the first waypoint in this path is NOT the current robot state; that gets added in emitUpdatedTrajectory().
+	 */
+	std::vector<RobotPath> lastPath;
+
+	/**
+	 * Concatenate the portions of lastPath and prepend the current robot state to it, then emit it.
+	 */
+	void emitUpdatedPath();
+
+	/**
+	 * Check if the current robot state is on any of the segments of lastPath, and delete all leading up to that point.
+	 *
+	 * Postcondition: the current robot state is NOT on the path
+	 */
+	void advance_path_to_current();
+
+	/**
+	 * Search along the current path and compare it to the planned visitation order and convex hull,
+	 * then cut off the path as soon as it starts to deviate or might cause a collision.
+	 */
+	void cut_invalid_future();
+
+	/**
+	 * Extend the current trajectory as much as possible within the given time limit
+	 *
+	 * TODO: This doesn't quite make sense performance-wise, as most of this will be invalidated by the next update.
+	 * It does make for some nice visualizations, though, so we'll maybe want to make this behavior configurable.
+	 *
+	 * @param deadline 			The time at which to stop extending the trajectory. At least one segment will be added.
+	 * @param shell				The mesh shell that represents the outer shell of the obstacle points (TODO: can we replace this with cgal_hull?)
+	 * @param shell_space		The CGAL hull, formulated in terms of MoveIt terms.
+	 *
+	 * TODO: Can we consolidate these parameters?
+	 *
+	 */
+	void extend_plan(const std::chrono::high_resolution_clock::time_point &deadline,
+					 const std::shared_ptr<ArmHorizontalDecorator<CGALMeshPoint>> &shell,
+					 const MoveItShellSpace<CGALMeshPoint> &shell_space);
+
 public:
 	/// Return the visitation ordering algorithm state, for debugging and visualization
 	[[nodiscard]] const AnytimeOptimalInsertion<size_t> &getVisitOrdering() const;
@@ -86,34 +147,16 @@ public:
 	 * @param current_state 			The current state of the robot.
 	 * @param segmentedPointCloud 		The point cloud read from the robot's sensors (assumed pre-segmented in a perfect manner)
 	 */
-	void updatePointCloud(const moveit::core::RobotState &current_state,
-						  const SegmentedPointCloud &segmentedPointCloud) override;
+	void update(const moveit::core::RobotState &current_state,
+				const SegmentedPointCloud &segmentedPointCloud) override;
 
-	/**
-	 * Evaluate the current trajectory based on current knowledge of the environment, and update it if needed.
-	 */
-	void updateTrajectory();
+	void processObstaclePoints(const std::vector<Eigen::Vector3d> &soft_obstacle);
 
-	/**
-	 * The current most up-to-date trajectory/path, last emitted from the trajectoryCallback.
-	 *
-	 * Every segment represents a path from somewhere in space to a target point, matching the order from visit_ordering at the time of emission.
-	 *
-	 * Note: the first waypoint in this path is NOT the current robot state; that gets added in emitUpdatedTrajectory().
-	 */
-	std::vector<RobotPath> lastPath;
+	void processTargetPoints(const std::vector<Eigen::Vector3d> &target);
 
-	/**
-	 * Concatenate the portions of lastPath and prepend the current robot state to it, then emit it.
-	 */
-	void emitUpdatedPath();
+	void updateShell();
 
-	/**
-	 * Check if the current robot state is on any of the segments of lastPath, and delete all leading up to that point.
-	 *
-	 * Postcondition: the current robot state is NOT on the path
-	 */
-	void advance_path_to_current();
+	void removeVisitedTargets();
 };
 
 #endif //NEW_PLANNERS_DYNAMICMESHHULLALGORITHM_H

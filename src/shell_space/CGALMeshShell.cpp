@@ -111,6 +111,11 @@ Eigen::Vector3d CGALMeshShell::surface_point(const CGALMeshPoint &pt) const {
 	return toEigen(shortest_paths.point(pt.first, pt.second)) + normalAt(pt) * padding;
 }
 
+Eigen::Vector3d CGALMeshShell::surface_point_unpadded(const CGALMeshPoint &p) const {
+	Surface_mesh_shortest_path shortest_paths(tmesh);
+	return toEigen(shortest_paths.point(p.first, p.second));
+}
+
 Eigen::Vector3d CGALMeshShell::normalAt(const CGALMeshPoint &near) const {
 	return ::normalAt(tmesh, near);
 }

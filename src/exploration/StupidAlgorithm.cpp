@@ -9,8 +9,8 @@ StupidGoToFirstPointAlgorithm::StupidGoToFirstPointAlgorithm(std::function<void(
 
 
 
-void StupidGoToFirstPointAlgorithm::updatePointCloud(const moveit::core::RobotState &current_state,
-													 const SegmentedPointCloud &segmentedPointCloud) {
+void StupidGoToFirstPointAlgorithm::update(const moveit::core::RobotState &current_state,
+										   const SegmentedPointCloud &segmentedPointCloud) {
 
 	if (!firstPointFound) {
 

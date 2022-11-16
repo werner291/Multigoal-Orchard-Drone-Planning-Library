@@ -1,79 +1,54 @@
 #include <ompl/util/RandomNumbers.h>
 #include "DynamicMeshHullAlgorithm.h"
 #include "../utilities/trajectory_primitives.h"
-#include "../shell_space/CGALMeshShell.h"
 #include "../utilities/mesh_utils.h"
 
-void DynamicMeshHullAlgorithm::updatePointCloud(const moveit::core::RobotState &current_state,
-												const SegmentedPointCloud &segmentedPointCloud) {
+void DynamicMeshHullAlgorithm::update(const moveit::core::RobotState &current_state,
+									  const SegmentedPointCloud &segmentedPointCloud) {
 
 	// Update last-known robot state
 	last_robot_state = current_state;
 	// Compute the cached value of the end-effector position
 	last_end_effector_position = last_robot_state.getGlobalLinkTransform("end_effector").translation();
 
-	// Process the points in the point cloud individually
-	for (const auto &item: segmentedPointCloud.points) {
+	// Process the point cloud
+	updatePointCloud(segmentedPointCloud);
 
-		// Below ground? Ignore it.
-		if (item.position.z() <= 1.0e-6) {
-			continue;
-		}
+	// Delete targets from our to-do list when necessary
+	removeVisitedTargets();
 
-		// We assume that leaves are indicative of the tree crown, and thus we can use these by proxy for the hull.
-		// TODO: This is kind of a bad assumption, but it's a good starting point for now.
-		if (item.type == SegmentedPointCloud::PT_SOFT_OBSTACLE) {
-			// Present the point to the hull algorithm
-			pointstream_to_hull->addPoint(item.position);
-		}
-
-		// If this is a target point, and we haven't seen it before, add it to the list of target points
-		if (item.type == SegmentedPointCloud::PT_TARGET &&
-		    !targetPointsDedupIndex.any_within(item.position, TARGET_POINT_DEDUP_THRESHOLD)) {
-
-			// Add to the list of known points.
-			targetPointsOnChullSurface.push_back({item.position, Eigen::Vector3d::Zero()});
-
-			// Add to the visit ordering algorithm, using the index of the new point in the list as the key
-			visit_ordering.insert(targetPointsOnChullSurface.size() - 1);
-
-			// Add to the dedup index to avoid duplicates in the future
-			targetPointsDedupIndex.insert(item.position, {});
-
-		}
-
-	}
-
-	// Remove target points that are close enough to the end effector
-	if ((targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[0]].hull_location - last_end_effector_position).norm() <
-		DISTANCE_CONSIDERED_SCANNED) {
-
-		visit_ordering.remove(visit_ordering.getVisitOrdering()[0]);
-	}
+	// Recompute the convex hull shell
+	updateShell();
 
 	// Call for a trajectory update based on new knowledge.
 	updateTrajectory();
 
 }
 
+void DynamicMeshHullAlgorithm::removeVisitedTargets() {
+	if (!targetPointsOnChullSurface.empty()) {
+		// Remove target points that are close enough to the end effector
+		if ((targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[0]].hull_location -
+			 last_end_effector_position).norm() < DISTANCE_CONSIDERED_SCANNED) {
+
+			visit_ordering.remove(visit_ordering.getVisitOrdering()[0]);
+		}
+	}
+}
+
 void DynamicMeshHullAlgorithm::updateTrajectory() {
 
 	// Later portions of the trajectory are likely to be invalidated, so we simply stop computing after a time limit.
-	auto deadline = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(ITERATION_COMPUTE_TIME_LIMIT);
-
-	// Extract the convex hull from the streaming algorithm.
-	auto chull = pointstream_to_hull->toMesh();
+	std::chrono::high_resolution_clock::time_point deadline = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(ITERATION_COMPUTE_TIME_LIMIT);
 
 	// Get a mesh shell based on the latest hull.
-	auto shell =
-			std::make_shared<ArmHorizontalDecorator<CGALMeshPoint>>(
-					std::make_shared<CGALMeshShell>(chull, 1.0, PADDING));
+	auto shell = std::make_shared<ArmHorizontalDecorator<CGALMeshPoint>>(cgal_hull);
 
 	// Set up translation between the shell and MoveIt terms.
 	MoveItShellSpace<CGALMeshPoint> shell_space(last_robot_state.getRobotModel(), shell);
 
 	// If we have targets and a hull that's at least a tetrahedron, we can compute a trajectory.
-	if (!visit_ordering.getVisitOrdering().empty() && chull.triangles.size() >= 4) {
+	if (!visit_ordering.getVisitOrdering().empty() && cgal_hull) {
 
 		// Update the point on the hull for all target points (TODO: Cache if not modified?)
 		for (auto &[original, projection]: targetPointsOnChullSurface) {
@@ -84,65 +59,84 @@ void DynamicMeshHullAlgorithm::updateTrajectory() {
 		// relying on future updates to progressively refine the ordering.
 		visit_ordering.iterate();
 
-		auto current_state_shell_proj = shell->nearest_point_on_shell(last_end_effector_position);
+
 
 		// Step 1: Remove the portion of lastPath until we find the robot's current position.
 		advance_path_to_current();
 
-		for (size_t segment_i = 0; segment_i < lastPath.size(); segment_i++) {
-			// Need to check: is this segment still valid, and if so, does it still lead to the right target?
+		cut_invalid_future();
 
-			bool on_shell = true;
-
-			for (size_t point_i = 0; point_i < lastPath[segment_i].waypoints.size(); point_i++) {
-				Eigen::Vector3d point = lastPath[segment_i].waypoints[point_i].getGlobalLinkTransform("end_effector").translation();
-				Eigen::Vector3d shell_point = closestPointOnMesh(chull, point);
-				if (abs((point - shell_point).norm() - PADDING) > 0.05) {
-					std::cout << "Not on shell: " << (point - shell_point).norm() << std::endl;
-					on_shell = false;
-					break;
-				}
-			}
-
-			Eigen::Vector3d target_point = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_i]].hull_location;
-			Eigen::Vector3d end_effector_after_segment = lastPath[segment_i].waypoints.back().getGlobalLinkTransform("end_effector").translation();
-
-			bool goes_to_target = (target_point - end_effector_after_segment).norm() < 1.0e-6;
-
-			if (!on_shell || !goes_to_target) {
-				// This segment is no longer valid. Remove it and all subsequent segments.
-				lastPath.erase(lastPath.begin() + (int) segment_i, lastPath.end());
-				std::cout << "Invalidated from segment " << segment_i << " because " << (on_shell ? "doesn't go to target" : "not on shell") << std::endl;
-				break;
-			}
-
-		}
-
-		for (size_t i = lastPath.size(); i < visit_ordering.getVisitOrdering().size(); i++) {
-
-			CGALMeshPoint from_point;
-
-			if (i == 0) {
-				from_point = current_state_shell_proj;
-			} else {
-				from_point = shell->nearest_point_on_shell(targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[i - 1]].hull_location);
-			}
-
-			auto to_point = shell->nearest_point_on_shell(targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[i]].hull_location);
-
-			lastPath.push_back(shell_space.shellPath(from_point, to_point));
-
-			if (std::chrono::high_resolution_clock::now() > deadline || lastPath.size() > 10) {
-				break;
-			}
-
-		}
+		extend_plan(deadline, shell, shell_space);
 
 		emitUpdatedPath();
 
 	} else {
 		// Otherwise, just spin in place until finding something of interest.
 		trajectoryCallback(turnInPlace(last_robot_state, 0.1));
+	}
+}
+
+void DynamicMeshHullAlgorithm::updateShell() {// Extract the convex hull from the streaming algorithm.
+	auto chull = pointstream_to_hull->toMesh();
+
+	if (chull.triangles.size() >= 4) {
+		cgal_hull = std::make_shared<CGALMeshShell>(chull, 1.0, PADDING);
+	}
+}
+
+void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_clock::time_point &deadline,
+										   const std::shared_ptr<ArmHorizontalDecorator<CGALMeshPoint>> &shell,
+										   const MoveItShellSpace<CGALMeshPoint> &shell_space) {
+
+	auto current_state_shell_proj = shell->nearest_point_on_shell(last_end_effector_position);
+
+	for (size_t i = lastPath.size(); i < visit_ordering.getVisitOrdering().size(); i++) {
+
+		CGALMeshPoint from_point;
+
+		if (i == 0) {
+			from_point = current_state_shell_proj;
+		} else {
+			from_point = shell->nearest_point_on_shell(targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[i - 1]].hull_location);
+		}
+
+		auto to_point = shell->nearest_point_on_shell(targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[i]].hull_location);
+
+		lastPath.push_back(shell_space.shellPath(from_point, to_point));
+
+		if (std::chrono::high_resolution_clock::now() > deadline || lastPath.size() > 10) {
+			break;
+		}
+
+	}
+}
+
+void DynamicMeshHullAlgorithm::cut_invalid_future() {
+	for (size_t segment_i = 0; segment_i < lastPath.size(); segment_i++) {
+		// Need to check: is this segment still valid, and if so, does it still lead to the right target?
+
+		bool on_shell = true;
+
+		for (auto & waypoint : lastPath[segment_i].waypoints) {
+			Eigen::Vector3d point = waypoint.getGlobalLinkTransform("end_effector").translation();
+			Eigen::Vector3d shell_point = cgal_hull->surface_point_unpadded(cgal_hull->nearest_point_on_shell(point));
+			if (abs((point - shell_point).norm() - PADDING) > 0.05) {
+				on_shell = false;
+				break;
+			}
+		}
+
+		Eigen::Vector3d target_point = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_i]].hull_location;
+		Eigen::Vector3d end_effector_after_segment = lastPath[segment_i].waypoints.back().getGlobalLinkTransform("end_effector").translation();
+
+		bool goes_to_target = (target_point - end_effector_after_segment).norm() < 1.0e-6;
+
+		if (!on_shell || !goes_to_target) {
+			// This segment is no longer valid. Remove it and all subsequent segments.
+			lastPath.erase(lastPath.begin() + (int) segment_i, lastPath.end());
+			break;
+		}
+
 	}
 }
 
@@ -221,4 +215,40 @@ const AnytimeOptimalInsertion<size_t> &DynamicMeshHullAlgorithm::getVisitOrderin
 
 const std::shared_ptr<StreamingMeshHullAlgorithm> &DynamicMeshHullAlgorithm::getConvexHull() const {
 	return pointstream_to_hull;
+}
+
+void DynamicMeshHullAlgorithm::updatePointCloud(const SegmentedPointCloud &segmentedPointCloud) {
+
+	const auto& [obstacle, soft_obstacle, target] = segmentedPointCloud.split_by_type();
+
+	processObstaclePoints(soft_obstacle);
+
+	processTargetPoints(target);
+
+}
+
+void DynamicMeshHullAlgorithm::processTargetPoints(const std::vector<Eigen::Vector3d> &target) {
+	for (const auto &tgt_pt: target) {
+		// If this is a target point, and we haven't seen it before, add it to the list of target points
+		if (!targetPointsDedupIndex.any_within(tgt_pt, TARGET_POINT_DEDUP_THRESHOLD)) {
+
+			// Add to the list of known points.
+			targetPointsOnChullSurface.push_back({tgt_pt, Eigen::Vector3d::Zero()});
+
+			// Add to the visit ordering algorithm, using the index of the new point in the list as the key
+			visit_ordering.insert(targetPointsOnChullSurface.size() - 1);
+
+			// Add to the dedup index to avoid duplicates in the future
+			targetPointsDedupIndex.insert(tgt_pt, {});
+
+		}
+	}
+}
+
+void
+DynamicMeshHullAlgorithm::processObstaclePoints(const std::vector<Eigen::Vector3d> &soft_obstacle) {// We assume that leaves are indicative of the tree crown, and thus we can use these by proxy for the hull.
+	// We present the leaves to the hull algorithm
+	for (const auto &obstacle_point: soft_obstacle) {
+		pointstream_to_hull->addPoint(obstacle_point);
+	}
 }

@@ -29,7 +29,7 @@ public:
 	 * @param current_state 			The current state of the robot.
 	 * @param segmentedPointCloud 		The segmented point cloud.
 	 */
-	void updatePointCloud(const moveit::core::RobotState& current_state, const SegmentedPointCloud &segmentedPointCloud) override;
+	void update(const moveit::core::RobotState& current_state, const SegmentedPointCloud &segmentedPointCloud) override;
 
 };
 

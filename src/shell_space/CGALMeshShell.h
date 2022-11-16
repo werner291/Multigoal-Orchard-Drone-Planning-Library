@@ -83,6 +83,8 @@ public:
 
 	Eigen::Vector3d surface_point(const CGALMeshPoint &p) const override;
 
+	Eigen::Vector3d surface_point_unpadded(const CGALMeshPoint &p) const;
+
 	std::shared_ptr<ShellPath<CGALMeshPoint>>
 	path_from_to(const CGALMeshPoint &from, const CGALMeshPoint &to) const override;
 
