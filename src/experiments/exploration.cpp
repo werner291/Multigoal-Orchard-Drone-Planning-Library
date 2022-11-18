@@ -136,7 +136,7 @@ int main(int, char*[]) {
 								   eePose.rotation() * Eigen::Vector3d(0, 1, 0),
 								   M_PI / 4.0,
 								   0.1,
-								   points);
+								   points.target);
 
 		// Update the visualization of the scannable points, recoloring the ones that were just seen.
 		fruitSurfaceScanTargetsActor.markAsScanned(scanned_points);

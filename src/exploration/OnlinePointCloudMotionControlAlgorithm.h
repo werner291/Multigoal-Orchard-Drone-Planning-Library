@@ -44,7 +44,7 @@ public:
 	 * @param current_state 			Current state of the robot.
 	 * @param segmentedPointCloud 		Current point cloud from the sensor, segmented into different types.
 	 */
-	virtual void update(const moveit::core::RobotState& current_state, const SegmentedPointCloud &segmentedPointCloud) = 0;
+	virtual void update(const moveit::core::RobotState& current_state, const SegmentedPointCloud::ByType &segmentedPointCloud) = 0;
 
 };
 

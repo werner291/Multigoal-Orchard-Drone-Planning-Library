@@ -67,7 +67,7 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	 *
 	 * @param segmentedPointCloud 		The point cloud to incorporate.
 	 */
-	void updatePointCloud( const SegmentedPointCloud &segmentedPointCloud );
+	void updatePointCloud(const SegmentedPointCloud::ByType &segmentedPointCloud );
 
 	/**
 	 * Evaluate the current trajectory based on current knowledge of the environment, and update it if needed.
@@ -150,7 +150,7 @@ public:
 	 * @param segmentedPointCloud 		The point cloud read from the robot's sensors (assumed pre-segmented in a perfect manner)
 	 */
 	void update(const moveit::core::RobotState &current_state,
-				const SegmentedPointCloud &segmentedPointCloud) override;
+				const SegmentedPointCloud::ByType &segmentedPointCloud) override;
 
 	void processObstaclePoints(const std::vector<Eigen::Vector3d> &soft_obstacle);
 

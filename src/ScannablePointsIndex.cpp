@@ -29,7 +29,7 @@ std::vector<size_t> ScannablePointsIndex::findScannedPoints(const Eigen::Vector3
 															const Eigen::Vector3d &scanDirection,
 															const double fov,
 															double maxDistance,
-															const SegmentedPointCloud& visiblePoints) const {
+															const std::vector<Eigen::Vector3d>& points) const {
 
 	std::vector<GNATEntry> near_sensor = findNearSensor(scanSource, maxDistance);
 
@@ -37,10 +37,8 @@ std::vector<size_t> ScannablePointsIndex::findScannedPoints(const Eigen::Vector3
 	// But we might still want to index the scanned points by their position at some point.
 	HashedSpatialIndex<std::monostate> scannedPointsIndex(VISIBLE_POINT_MAX_DISTANCE, 1000);
 
-	for (const auto& point : visiblePoints.points) {
-		if (point.type == SegmentedPointCloud::PT_TARGET) {
-			scannedPointsIndex.insert(point.position, {});
-		}
+	for (const auto& point : points) {
+		scannedPointsIndex.insert(point, {});
 	}
 
 	std::vector<size_t> scanned;

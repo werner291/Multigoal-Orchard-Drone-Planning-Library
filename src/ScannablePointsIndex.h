@@ -68,7 +68,7 @@ public:
 										  const Eigen::Vector3d &scanDirection,
 										  double fov,
 										  double maxDistance,
-										  const SegmentedPointCloud& visiblePoints) const;
+										  const std::vector<Eigen::Vector3d>& points) const;
 
 
 };

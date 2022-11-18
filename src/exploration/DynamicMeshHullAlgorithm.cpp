@@ -4,7 +4,7 @@
 #include "../utilities/mesh_utils.h"
 
 void DynamicMeshHullAlgorithm::update(const moveit::core::RobotState &current_state,
-									  const SegmentedPointCloud &segmentedPointCloud) {
+									  const SegmentedPointCloud::ByType &segmentedPointCloud) {
 
 	// Update last-known robot state
 	last_robot_state = current_state;
@@ -217,9 +217,9 @@ const std::shared_ptr<StreamingMeshHullAlgorithm> &DynamicMeshHullAlgorithm::get
 	return pointstream_to_hull;
 }
 
-void DynamicMeshHullAlgorithm::updatePointCloud(const SegmentedPointCloud &segmentedPointCloud) {
+void DynamicMeshHullAlgorithm::updatePointCloud(const SegmentedPointCloud::ByType &segmentedPointCloud) {
 
-	const auto& [obstacle, soft_obstacle, target] = segmentedPointCloud.split_by_type();
+	const auto& [obstacle, soft_obstacle, target] = segmentedPointCloud;
 
 	processObstaclePoints(soft_obstacle);
 

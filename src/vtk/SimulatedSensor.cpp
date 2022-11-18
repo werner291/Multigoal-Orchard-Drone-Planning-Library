@@ -42,7 +42,7 @@ vtkPolyData *SimulatedSensor::getPointCloud() const {
 	return depthToPointCloud->GetOutput();
 }
 
-SegmentedPointCloud SimulatedSensor::renderSnapshot(const Eigen::Isometry3d &from_pose) {
+SegmentedPointCloud::ByType SimulatedSensor::renderSnapshot(const Eigen::Isometry3d &from_pose) {
 
 	setCameraFromEigen(from_pose, sensorRenderer->GetActiveCamera());
 
@@ -51,6 +51,6 @@ SegmentedPointCloud SimulatedSensor::renderSnapshot(const Eigen::Isometry3d &fro
 	rendererSource->Update();
 	depthToPointCloud->Update();
 
-	return segmentPointCloudData(getPointCloud());
+	return segmentPointCloudData(getPointCloud()).split_by_type();
 
 }
