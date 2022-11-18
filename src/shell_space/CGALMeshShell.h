@@ -45,7 +45,7 @@ protected:
 	/// The CGAL mesh (a halfedge datastructure) for topology-aware shortest-paths computation.
 	Triangle_mesh tmesh;
 
-	/// An AABB-tree for quick lookup of the closest point on the mesh (including facet information)
+	/// An AABB-tree for quick lookup of the on_which_mesh point on the mesh (including facet information)
 	CGAL::AABB_tree<AABBTraits> tree;
 
 	/// When computing the path_on_shell, the states will be offset from the shell by this distance.

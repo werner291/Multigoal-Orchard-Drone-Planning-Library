@@ -289,7 +289,7 @@ ConvexHullPoint CuttingPlaneConvexHullShell::firstStep(const Eigen::Vector3d &to
 	} else {
 		const auto &[va, vb, vc] = facet_vertices(current_face);
 
-		// We must be at a corner. Pick the edge whose middle point is closest.
+		// We must be at a corner. Pick the edge whose middle point is on_which_mesh.
 		for (TriangleVertexId v: {TriangleVertexId::VERTEX_A, TriangleVertexId::VERTEX_B, TriangleVertexId::VERTEX_C}) {
 
 			auto f = facet(current_face);
@@ -322,7 +322,7 @@ ConvexHullPoint CuttingPlaneConvexHullShell::stepAroundVertexTowards(const Eigen
 	double d1 = (towards_point - ((p1 + q1) / 2.0)).squaredNorm();
 	double d2 = (towards_point - ((p2 + q2) / 2.0)).squaredNorm();
 
-	// Return a step to the closest one, using the vertex itself as the (carthesian) point being stepped to.
+	// Return a step to the on_which_mesh one, using the vertex itself as the (carthesian) point being stepped to.
 	if (d1 < d2) {
 		return {f.neighbour(adjacent[0]), vertex(f.vertex(v))};
 	} else {

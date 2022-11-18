@@ -12,7 +12,7 @@ closest_point_on_line(const Eigen::ParametrizedLine<double, 3> &l1,
 
 	// Formula from	https://en.wikipedia.org/wiki/Skew_lines#Nearest_points
 
-	// The edge connecting the two points of closest approach must be perpendicular to both vectors.
+	// The edge connecting the two points of on_which_mesh approach must be perpendicular to both vectors.
 	// Hence, we can use the cross product to find a direction vector of the edge. (but not the magnitude)
 	Eigen::Vector3d n = d1.cross(d2);
 

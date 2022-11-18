@@ -12,7 +12,7 @@ SegmentedPointCloud::ByType SegmentedPointCloud::split_by_type() const {
 				result.soft_obstacle.push_back(p.position);
 				break;
 			case PT_TARGET:
-				result.target.push_back(p.position);
+//				result.target.push_back(p.position);
 				break;
 		}
 	}

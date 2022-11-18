@@ -25,6 +25,8 @@
 #include "../WorkspaceSpec.h"
 #include "../CurrentPathState.h"
 #include "../utilities/moveit.h"
+#include "../TriangleAABB.h"
+#include "../utilities/mesh_utils.h"
 
 /**
  * Build a MoveIt collision environment from the given workspace specification.
@@ -52,17 +54,22 @@ WorkspaceSpec buildWorkspaceSpec() {
 }
 
 
+
 int main(int, char*[]) {
 
 	// Build/load an abstract representation of the orchard that is as high-level and declarative as possible.
 	// This includes models of the trees, the fruit within them, the robot, and the initial state of the robot.
 	WorkspaceSpec workspaceSpec = buildWorkspaceSpec();
 
+
+
 	// Build a collision environment that can be used to check for collisions between the robot and the orchard/environment.
 	auto collision_env = buildOrchardAndRobotFCLCollisionEnvironment(workspaceSpec);
 
 	// Sample points from the fruit meshes; the goal of the robot will be to bring the end-effector to as many of these points as possible.
 	auto surface_points = buildScanTargetPoints(workspaceSpec.orchard.trees[0].second.fruit_meshes, 10);
+
+	PointSegmenter apple_surface_lookup(workspaceSpec);
 
 	// Build a spatial index that can be used to quickly find what points are visible to the robot's camera.
 	ScannablePointsIndex scannablePointsIndex(surface_points);
@@ -120,7 +127,7 @@ int main(int, char*[]) {
 		Eigen::Isometry3d eePose = currentPathState.getCurrentState().getGlobalLinkTransform("end_effector");
 
 		// Render the point cloud visible to the robot's camera.
-		auto points = sensor.renderSnapshot(eePose);
+		auto points =  apple_surface_lookup.segmentPointCloudData(sensor.renderSnapshot(eePose));
 
 		// Pass the point cloud to the motion-planning algorithm; it will probably respond by emitting a new path.
 		dbsa.update(currentPathState.getCurrentState(), points);

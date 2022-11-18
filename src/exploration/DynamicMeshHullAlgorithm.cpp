@@ -227,19 +227,19 @@ void DynamicMeshHullAlgorithm::updatePointCloud(const SegmentedPointCloud::ByTyp
 
 }
 
-void DynamicMeshHullAlgorithm::processTargetPoints(const std::vector<Eigen::Vector3d> &target) {
+void DynamicMeshHullAlgorithm::processTargetPoints(const std::vector<SegmentedPointCloud::TargetPoint> &target) {
 	for (const auto &tgt_pt: target) {
 		// If this is a target point, and we haven't seen it before, add it to the list of target points
-		if (!targetPointsDedupIndex.any_within(tgt_pt, TARGET_POINT_DEDUP_THRESHOLD)) {
+		if (!targetPointsDedupIndex.any_within(tgt_pt.position, TARGET_POINT_DEDUP_THRESHOLD)) {
 
 			// Add to the list of known points.
-			targetPointsOnChullSurface.push_back({tgt_pt, Eigen::Vector3d::Zero()});
+			targetPointsOnChullSurface.push_back({tgt_pt.position, Eigen::Vector3d::Zero()});
 
 			// Add to the visit ordering algorithm, using the index of the new point in the list as the key
 			visit_ordering.insert(targetPointsOnChullSurface.size() - 1);
 
 			// Add to the dedup index to avoid duplicates in the future
-			targetPointsDedupIndex.insert(tgt_pt, {});
+			targetPointsDedupIndex.insert(tgt_pt.position, {});
 
 		}
 	}

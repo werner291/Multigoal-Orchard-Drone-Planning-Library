@@ -65,3 +65,35 @@ std::vector<shape_msgs::msg::Mesh> break_down_to_connected_components(const shap
 	}
 	return mesh_components;
 }
+
+shape_msgs::msg::Mesh combine_meshes(const std::vector<shape_msgs::msg::Mesh> &meshes) {
+
+	shape_msgs::msg::Mesh combined_mesh;
+
+	// For every mesh...
+	for (const auto &mesh : meshes) {
+
+		size_t index_offset = combined_mesh.vertices.size();
+
+		// ...and for every vertex in the mesh...
+		for (const auto &vertex : mesh.vertices) {
+			// ...add the vertex to the combined mesh.
+			combined_mesh.vertices.push_back(vertex);
+		}
+
+		// For every triangle in the mesh...
+		for (const auto &triangle : mesh.triangles) {
+			// ...add the triangle to the combined mesh.
+			combined_mesh.triangles.push_back(triangle);
+
+			// ...and adjust the vertex indices to account for the offset.
+			combined_mesh.triangles.back().vertex_indices[0] += index_offset;
+			combined_mesh.triangles.back().vertex_indices[1] += index_offset;
+			combined_mesh.triangles.back().vertex_indices[2] += index_offset;
+		}
+
+	}
+
+	return combined_mesh;
+
+}

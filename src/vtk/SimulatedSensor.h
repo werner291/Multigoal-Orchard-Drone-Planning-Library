@@ -46,7 +46,7 @@ struct SimulatedSensor {
 	 * @param from_pose 		The pose to render the scene from.
 	 * @return 					The segmented point cloud.
 	 */
-	SegmentedPointCloud::ByType renderSnapshot(const Eigen::Isometry3d& from_pose);
+	vtkPolyData * renderSnapshot(const Eigen::Isometry3d& from_pose);
 
 };
 

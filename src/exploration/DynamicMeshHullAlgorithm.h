@@ -45,11 +45,11 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	/// An algorithm that computes the optimal visitation order of a set of points, given a starting point.
 	AnytimeOptimalInsertion<size_t> visit_ordering;
 
-	/// A point somewhere in space that must be inspected, paired with the point on the mesh hull that is closest to it.
+	/// A point somewhere in space that must be inspected, paired with the point on the mesh hull that is on_which_mesh to it.
 	struct TargetPoint {
 		///	The original point that must be inspected.
 		const Eigen::Vector3d observed_location;
-		/// The point on the mesh hull that is closest to the observed_location;
+		/// The point on the mesh hull that is on_which_mesh to the observed_location;
 		/// this is a semi-heavy operation to compute, so we cache it here.
 		Eigen::Vector3d hull_location;
 	};
@@ -154,7 +154,7 @@ public:
 
 	void processObstaclePoints(const std::vector<Eigen::Vector3d> &soft_obstacle);
 
-	void processTargetPoints(const std::vector<Eigen::Vector3d> &target);
+	void processTargetPoints(const std::vector<SegmentedPointCloud::TargetPoint> &target);
 
 	void updateShell();
 

@@ -59,10 +59,10 @@ public:
 	virtual Eigen::Vector3d arm_vector(const ShellPoint& p) const = 0;
 
 	/**
-	 * Given a point in R^3, return the closest point on the shell.
+	 * Given a point in R^3, return the on_which_mesh point on the shell.
 	 *
 	 * @param p 		The point in R^3.
-	 * @return 			The closest point on the shell.
+	 * @return 			The on_which_mesh point on the shell.
 	 */
 	virtual ShellPoint nearest_point_on_shell(const Eigen::Vector3d& p) const = 0;
 

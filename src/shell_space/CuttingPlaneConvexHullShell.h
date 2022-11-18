@@ -81,13 +81,13 @@ class CuttingPlaneConvexHullShell : public WorkspaceShell<ConvexHullPoint> {
 	ompl::NearestNeighborsGNAT<NNGNATEntry> facet_index;
 
 	/**
-	 * Find the facet whose center of gravity is closest to the given point,
-	 * used as an initial guess for locating the facet closest to the point.
+	 * Find the facet whose center of gravity is on_which_mesh to the given point,
+	 * used as an initial guess for locating the facet on_which_mesh to the point.
 	 *
 	 * This operation takes O(log n) time in the number of facets.
 	 *
-	 * @param a 	The point to find the facet closest to.
-	 * @return 		The index of the facet whose COG is closest to the point.
+	 * @param a 	The point to find the facet on_which_mesh to.
+	 * @return 		The index of the facet whose COG is on_which_mesh to the point.
 	 */
 	size_t guess_closest_face(const Eigen::Vector3d &a) const;
 

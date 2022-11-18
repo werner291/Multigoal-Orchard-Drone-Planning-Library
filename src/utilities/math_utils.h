@@ -9,11 +9,11 @@
 #include <Eigen/Geometry>
 
 /**
- * Given two lines, expressed in origin-vector form, find the points of closest approach.
+ * Given two lines, expressed in origin-vector form, find the points of on_which_mesh approach.
  *
  * @param l1 	The first line.
  * @param l2 	The second line.
- * @return 		Parameters t and s, such that l1.pointAt(t) and l2.pointAt(s) are the points of closest approach.
+ * @return 		Parameters t and s, such that l1.pointAt(t) and l2.pointAt(s) are the points of on_which_mesh approach.
  */
 std::pair<double, double> closest_point_on_line(
 		const Eigen::ParametrizedLine<double, 3>& l1,
