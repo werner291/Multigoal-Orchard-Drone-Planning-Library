@@ -118,7 +118,6 @@ add_library(${PROJECT_NAME}_shared
         src/exploration/OnlinePointCloudMotionControlAlgorithm.h
         src/exploration/SegmentedPointCloud.cpp
         src/exploration/SegmentedPointCloud.h
-        src/exploration/StupidAlgorithm.cpp
         src/exploration/VtkToPointCloud.cpp
         src/exploration/VtkToPointCloud.h
         src/exploration/scan_points.cpp

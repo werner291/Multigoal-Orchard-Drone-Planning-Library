@@ -16,6 +16,7 @@ struct WorkspaceSpec {
 	const moveit::core::RobotState initialState;
 	/// The orchard to plan in.
 	const SimplifiedOrchard orchard;
+
 };
 
 moveit::core::RobotState mkInitialState(const moveit::core::RobotModelPtr &drone);

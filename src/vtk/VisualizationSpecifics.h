@@ -11,10 +11,10 @@
 #include <vtkPolyDataMapper.h>
 #include "../exploration/scan_points.h"
 #include "../StreamingConvexHull.h"
-#include "Viewer.h"
 #include "../TreeMeshes.h"
 #include "VtkRobotModel.h"
 #include "SimulatedSensor.h"
+#include "../exploration/DynamicMeshHullAlgorithm.h"
 
 /**
  * A wrapper around the Vtk stuff necessary to visualize the set of scannable/scanned points.
@@ -57,21 +57,6 @@ struct ConvexHullActor {
 	void update(const shape_msgs::msg::Mesh &mesh);
 };
 
-
-/**
- * Build a Viewer with the specific contents of the given workspace.
- *
- * @param orchard 						The orchard to build the viewer for.
- * @param robotModel 					The robot model to build the viewer for.
- * @param fruitSurfacePointsActor 		The actor to use for the fruit surface points.
- * @param pointCloudActor 				The actor to use for the point cloud.
- * @param actor 						The actor to use for the robot.
- * @return 							    The viewer.
- */
-Viewer buildViewer(const SimplifiedOrchard &orchard,
-				   VtkRobotmodel &robotModel,
-				   const std::vector<vtkActor*>& actors);
-
 /**
  * Build a SimulatedSensor with the specific contents of the given workspace.
  *
@@ -80,5 +65,11 @@ Viewer buildViewer(const SimplifiedOrchard &orchard,
  * @return 						        The SimulatedSensor.
  */
 SimulatedSensor buildSensorSimulator(const SimplifiedOrchard &orchard, VtkRobotmodel &robotModel);
+
+std::vector<Eigen::Vector3d> extractEndEffectorTrace(const robot_trajectory::RobotTrajectory &trajectory);
+
+std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> extractTargetHullPointsSegments(const DynamicMeshHullAlgorithm &dbsa);
+
+std::vector<Eigen::Vector3d> extractVisitOrderPoints(const DynamicMeshHullAlgorithm &dbsa, Eigen::Isometry3d &eePose);
 
 #endif //NEW_PLANNERS_VISUALIZATIONSPECIFICS_H

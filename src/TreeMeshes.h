@@ -10,7 +10,7 @@
 struct TreeMeshes {
 	shape_msgs::msg::Mesh leaves_mesh;
 	shape_msgs::msg::Mesh trunk_mesh;
-	shape_msgs::msg::Mesh fruit_mesh;
+	std::vector<shape_msgs::msg::Mesh> fruit_meshes;
 };
 
 /**

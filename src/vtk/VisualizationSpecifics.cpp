@@ -30,28 +30,40 @@ void ConvexHullActor::update(const shape_msgs::msg::Mesh &mesh) {
 	mapper->SetInputData(rosMeshToVtkPolyData(mesh));
 }
 
-Viewer buildViewer(const SimplifiedOrchard &orchard,
-				   VtkRobotmodel &robotModel,
-				   const std::vector<vtkActor*>& actors) {
 
-	Viewer viewer;
-	viewer.addActorCollection(buildOrchardActors(orchard, false));
-	viewer.addActorCollection(robotModel.getLinkActors());
-
-	for (auto &actor: actors) {
-		viewer.addActor(actor);
-	}
-
-	viewer.viewerRenderer->GetActiveCamera()->SetPosition(8,4,2.5);
-	viewer.viewerRenderer->GetActiveCamera()->SetFocalPoint(2,0,1.5);
-	viewer.viewerRenderer->GetActiveCamera()->SetViewUp(0,0,1);
-
-	return viewer;
-}
 
 SimulatedSensor buildSensorSimulator(const SimplifiedOrchard &orchard, VtkRobotmodel &robotModel) {
 	SimulatedSensor sensor;
 	sensor.addActorCollection(buildOrchardActors(orchard, true));
 	sensor.addActorCollection(robotModel.getLinkActors());
 	return sensor;
+}
+
+std::vector<Eigen::Vector3d> extractEndEffectorTrace(const robot_trajectory::RobotTrajectory &trajectory) {
+	std::vector<Eigen::Vector3d> points;
+
+	for (size_t wp_idx = 0; wp_idx < trajectory.getWayPointCount(); wp_idx++) {
+		points.emplace_back(trajectory.getWayPoint(wp_idx).getGlobalLinkTransform("end_effector").translation());
+	}
+	return points;
+}
+
+std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+extractTargetHullPointsSegments(const DynamicMeshHullAlgorithm &dbsa) {
+	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> lines;
+
+	for (const auto &[original, projected]: dbsa.getTargetPointsOnChullSurface()) {
+		lines.push_back({original, projected});
+	}
+	return lines;
+}
+
+std::vector<Eigen::Vector3d> extractVisitOrderPoints(const DynamicMeshHullAlgorithm &dbsa, Eigen::Isometry3d &eePose) {
+	std::vector<Eigen::Vector3d> visit_order_points {
+			eePose.translation()
+	};
+	for (const auto &point: dbsa.getVisitOrdering().getVisitOrdering()) {
+		visit_order_points.push_back(dbsa.getTargetPointsOnChullSurface()[point].hull_location);
+	}
+	return visit_order_points;
 }

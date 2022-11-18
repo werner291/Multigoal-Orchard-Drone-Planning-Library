@@ -18,14 +18,6 @@ struct TargetBoundingBox {
 };
 
 /**
- * Given a SimplifiedOrchard, compute a TargetBoundingBox that contains all points of interest.
- *
- * @param orchard 		The orchard to compute the bounding box for.
- * @return 				The bounding box.
- */
-TargetBoundingBox computeTargetBoundingBox(const SimplifiedOrchard &orchard);
-
-/**
  * Abstract class for online motion control algorithms.
  */
 class OnlinePointCloudMotionControlAlgorithm {

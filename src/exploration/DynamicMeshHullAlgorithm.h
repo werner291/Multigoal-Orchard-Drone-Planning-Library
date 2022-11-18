@@ -107,6 +107,8 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	 * TODO: This doesn't quite make sense performance-wise, as most of this will be invalidated by the next update.
 	 * It does make for some nice visualizations, though, so we'll maybe want to make this behavior configurable.
 	 *
+	 * Alternatively, maybe something based on improving path quality until convergence and/or deadline?
+	 *
 	 * @param deadline 			The time at which to stop extending the trajectory. At least one segment will be added.
 	 * @param shell				The mesh shell that represents the outer shell of the obstacle points (TODO: can we replace this with cgal_hull?)
 	 * @param shell_space		The CGAL hull, formulated in terms of MoveIt terms.

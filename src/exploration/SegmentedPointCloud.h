@@ -52,12 +52,4 @@ struct SegmentedPointCloud {
 	[[nodiscard]] ByType split_by_type() const;
 };
 
-/**
- * Get the leaf points from the given point cloud. It additionally filters out points that are too close to the ground.
- *
- * @param segmentedPointCloud 		The point cloud to get the leaf points from.
- * @return 							The leaf points.
- */
-std::vector<Eigen::Vector3d> isolateLeafPoints(const SegmentedPointCloud &segmentedPointCloud);
-
 #endif //NEW_PLANNERS_SEGMENTEDPOINTCLOUD_H

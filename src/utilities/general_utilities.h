@@ -101,7 +101,7 @@ void generate_combinations(std::vector<T> visitable,
 /**
  * Discovers the connected components of the mesh.
  * Output is a vector of vectors of vertex indices.
- * Each vector is a connected components.
+ * Each vector is a connected component.
  */
 std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::msg::Mesh &mesh);
 

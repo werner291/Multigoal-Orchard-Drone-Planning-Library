@@ -14,6 +14,9 @@ void CurrentPathState::newPath(const robot_trajectory::RobotTrajectory &trajecto
 }
 
 void CurrentPathState::advance(double dt) {
+
+	// TODO: Add some validation here to stop the robot from magically teleporting all over the place
+
 	if (currentTrajectory) {
 		pathProgressT += dt;
 		if (pathProgressT > currentTrajectory->getWayPointDurationFromStart(currentTrajectory->getWayPointCount() - 1)) {

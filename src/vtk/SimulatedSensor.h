@@ -40,14 +40,14 @@ struct SimulatedSensor {
 
 	[[nodiscard]] vtkPolyData* getPointCloud() const;
 
-	void requestRender(const Eigen::Isometry3d& from_pose);
-
 	/**
-	 * Extract the latest point cloud from the sensor in segmented form.
+	 * Render a snapshot of the scene from the given sensor pose, returning the segmented point cloud.
 	 *
-	 * @return 		The segmented point cloud, or std::nullopt if no point cloud was available.
+	 * @param from_pose 		The pose to render the scene from.
+	 * @return 					The segmented point cloud.
 	 */
-	std::optional<SegmentedPointCloud> extractLatestPointCloud();
+	SegmentedPointCloud renderSnapshot(const Eigen::Isometry3d& from_pose);
+
 };
 
 #endif //NEW_PLANNERS_SIMULATEDSENSOR_H

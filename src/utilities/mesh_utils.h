@@ -8,6 +8,7 @@
 
 #include <Eigen/Core>
 #include <shape_msgs/msg/mesh.hpp>
+#include "general_utilities.h"
 
 /**
  * Find the closest point on the surface of the given mesh to the given point.
@@ -19,5 +20,14 @@
  * @return 				The closest point on the mesh to the given point.
  */
 Eigen::Vector3d closestPointOnMesh(const shape_msgs::msg::Mesh &mesh, const Eigen::Vector3d &query_point);
+
+/**
+ * Given a mesh, return a vector of meshes where each mesh is a connected component of the original mesh,
+ * where two vertices are connected if they are connected by at least one triangle.
+ *
+ * @param combined_mesh 		The mesh to split into connected components.
+ * @return 						A vector of meshes, where each mesh is a connected component of the original mesh.
+ */
+std::vector<shape_msgs::msg::Mesh> break_down_to_connected_components(const shape_msgs::msg::Mesh &combined_mesh);
 
 #endif //NEW_PLANNERS_MESH_UTILS_H

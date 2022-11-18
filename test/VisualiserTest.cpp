@@ -39,7 +39,7 @@ TEST(VisualiserTest, SensorSyncTest) {
 			sensor_pose.rotate(Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ()));
 		}
 
-		sensor.requestRender(sensor_pose);
+		sensor.renderSnapshot(sensor_pose);
 
 		SegmentedPointCloud segmentedPointCloud = segmentPointCloudData(sensor.getPointCloud());
 

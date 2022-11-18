@@ -211,12 +211,14 @@ vtkNew<vtkActorCollection> buildTreeActors(const TreeMeshes &meshes, bool usePur
 	auto leaves_actor = createActorFromMesh(meshes.leaves_mesh);
 	setColorsByEncoding(leaves_actor, LEAVES_RGB, usePureColor);
 
-	auto fruit_actor = createActorFromMesh(meshes.fruit_mesh);
-	setColorsByEncoding(fruit_actor, FRUIT_RGB, usePureColor);
-
 	actors->AddItem(tree_actor);
 	actors->AddItem(leaves_actor);
-	actors->AddItem(fruit_actor);
+
+	for (const auto& fruit_mesh : meshes.fruit_meshes) {
+		auto fruit_actor = createActorFromMesh(fruit_mesh);
+		setColorsByEncoding(fruit_actor, FRUIT_RGB, usePureColor);
+		actors->AddItem(fruit_actor);
+	}
 
 	return actors;
 }
@@ -287,18 +289,18 @@ void vtkFunctionalCallback::setEventId(unsigned long eventId) {
 	event_id = eventId;
 }
 
-VtkPolyLineVizualization::VtkPolyLineVizualization(float r, float g, float b) {
+VtkPolyLineVisualization::VtkPolyLineVisualization(float r, float g, float b) {
 	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
 	visitOrderVisualizationActor->SetMapper(visitOrderVisualizationMapper);
 	visitOrderVisualizationActor->GetProperty()->SetColor(r,g,b);
 	visitOrderVisualizationActor->GetProperty()->SetLineWidth(10);
 }
 
-vtkActor *VtkPolyLineVizualization::getActor() {
+vtkActor *VtkPolyLineVisualization::getActor() {
 	return visitOrderVisualizationActor;
 }
 
-void VtkPolyLineVizualization::updateLine(const std::vector<Eigen::Vector3d> &points) {
+void VtkPolyLineVisualization::updateLine(const std::vector<Eigen::Vector3d> &points) {
 
 	assert(!points.empty());
 
@@ -317,4 +319,35 @@ void VtkPolyLineVizualization::updateLine(const std::vector<Eigen::Vector3d> &po
 	visitOrderVisualizationData->SetLines(cells);
 
 	visitOrderVisualizationData->Modified();
+}
+
+VtkLineSegmentsVisualization::VtkLineSegmentsVisualization(float r, float g, float b) {
+	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
+	visitOrderVisualizationActor->SetMapper(visitOrderVisualizationMapper);
+	visitOrderVisualizationActor->GetProperty()->SetColor(r,g,b);
+	visitOrderVisualizationActor->GetProperty()->SetLineWidth(10);
+}
+
+vtkActor *VtkLineSegmentsVisualization::getActor() {
+	return visitOrderVisualizationActor;
+}
+
+void VtkLineSegmentsVisualization::updateLine(const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> &points) {
+
+	assert(!points.empty());
+
+	vtkNew<vtkPoints> pointsVtk;
+	vtkNew<vtkCellArray> cells;
+
+	for (const auto& [p1, p2] : points) {
+		cells->InsertNextCell(2);
+		cells->InsertCellPoint(pointsVtk->InsertNextPoint(p1.data()));
+		cells->InsertCellPoint(pointsVtk->InsertNextPoint(p2.data()));
+	}
+
+	visitOrderVisualizationData->SetPoints(pointsVtk);
+	visitOrderVisualizationData->SetLines(cells);
+
+	visitOrderVisualizationData->Modified();
+
 }
