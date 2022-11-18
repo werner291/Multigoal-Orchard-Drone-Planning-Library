@@ -69,11 +69,18 @@ public:
  */
 class PointOnMeshLookup {
 
+	/// A lookup vector that maps between triangle ID (as returned by TriangleAABB::closest) and mesh ID.
 	std::vector<size_t> triangle_to_fruit;
 
+	/// An index of all triangles that belong to a fruit.
 	TriangleAABB aabb;
 
 public:
+	/**
+	 * Create a new PointOnMeshLookup from a vector of meshes.
+	 *
+	 * @param meshes 		The meshes to create the lookup for.
+	 */
 	explicit PointOnMeshLookup(const std::vector<shape_msgs::msg::Mesh> &meshes);
 
 	std::optional<size_t> on_which_mesh(Eigen::Vector3d &point, double margin) const;

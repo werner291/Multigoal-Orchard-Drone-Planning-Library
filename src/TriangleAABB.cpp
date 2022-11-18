@@ -61,6 +61,8 @@ std::optional<size_t> PointOnMeshLookup::on_which_mesh(Eigen::Vector3d &point, d
 
 	auto triangle_id = aabb.closest(point);
 
+	std::cout << "Triangle id: " << triangle_id.first << " distance: " << triangle_id.second << " mesh id: " << triangle_to_fruit[triangle_id.first] << std::endl;
+
 	if (triangle_id.second < margin) {
 		return triangle_to_fruit[triangle_id.first];
 	} else {
