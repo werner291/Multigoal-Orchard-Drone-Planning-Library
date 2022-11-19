@@ -53,8 +53,6 @@ WorkspaceSpec buildWorkspaceSpec() {
 	});
 }
 
-
-
 int main(int, char*[]) {
 
 	// Build/load an abstract representation of the orchard that is as high-level and declarative as possible.

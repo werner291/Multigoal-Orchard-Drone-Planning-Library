@@ -27,6 +27,7 @@
  */
 class TriangleAABB {
 
+	// CGAL definitions
 	using K = CGAL::Simple_cartesian<double>;
 	using FT = K::FT;
 	using Ray = K::Ray_3;
@@ -56,10 +57,10 @@ public:
 	 * Returns the ID of the on_which_mesh triangle (matching the mesh message) on the mesh to the given point and
 	 * the distance to that point from the query point.
 	 *
-	 * @param point 		The point to find the on_which_mesh triangle to.
+	 * @param query_point 		The point to find the on_which_mesh triangle to.
 	 * @return 				The triangle Id and distance.
 	 */
-	std::pair<size_t, double> closest(Eigen::Vector3d &point) const;
+	std::pair<size_t, double> closest_triangle_to_point(Eigen::Vector3d &query_point) const;
 
 };
 
@@ -69,8 +70,8 @@ public:
  */
 class PointOnMeshLookup {
 
-	/// A lookup vector that maps between triangle ID (as returned by TriangleAABB::closest) and mesh ID.
-	std::vector<size_t> triangle_to_fruit;
+	/// A lookup vector that maps between triangle ID (as returned by TriangleAABB::closest_triangle_to_point) and mesh ID.
+	std::vector<size_t> triangle_id_to_mesh_id;
 
 	/// An index of all triangles that belong to a fruit.
 	TriangleAABB aabb;
