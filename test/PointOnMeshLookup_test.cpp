@@ -11,6 +11,8 @@
 #include <shape_msgs/msg/mesh.hpp>
 #include "../src/TriangleAABB.h"
 #include "../src/utilities/msgs_utilities.h"
+#include "../src/utilities/geogebra.h"
+#include "../src/utilities/math_utils.h"
 
 TEST(PointOnMeshLookup, test) {
 
@@ -30,12 +32,12 @@ TEST(PointOnMeshLookup, test) {
 		p1.z = rng.uniformReal(-1, 1);
 
 		geometry_msgs::msg::Point p2;
-		p1.x = rng.uniformReal(-2, -1);
+		p2.x = rng.uniformReal(-2, -1);
 		p2.y = rng.uniformReal(-1, 1);
 		p2.z = rng.uniformReal(-1, 1);
 
 		geometry_msgs::msg::Point p3;
-		p1.x = rng.uniformReal(-2, -1);
+		p3.x = rng.uniformReal(-2, -1);
 		p3.y = rng.uniformReal(-1, 1);
 		p3.z = rng.uniformReal(-1, 1);
 
@@ -105,7 +107,7 @@ TEST(PointOnMeshLookup, test) {
 		Eigen::Vector3d p2 = toEigen(meshes[mesh_id].vertices[meshes[mesh_id].triangles[triangle_id].vertex_indices[1]]);
 		Eigen::Vector3d p3 = toEigen(meshes[mesh_id].vertices[meshes[mesh_id].triangles[triangle_id].vertex_indices[2]]);
 
-		Eigen::Vector3d p = p1 + rng.uniformReal(0, 1) * (p2 - p1) + rng.uniformReal(0, 1) * (p3 - p1);
+		Eigen::Vector3d p = uniform_point_on_triangle(p1, p2, p3);
 
 		// Check if the lookup returns the correct triangle
 		auto res = lookup.on_which_mesh(p, 1.0e-6);
@@ -114,3 +116,4 @@ TEST(PointOnMeshLookup, test) {
 	}
 
 }
+

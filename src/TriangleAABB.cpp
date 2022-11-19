@@ -37,38 +37,29 @@ std::pair<size_t, double> TriangleAABB::closest(Eigen::Vector3d &point) const {
 
 	auto closest = tree.closest_point_and_primitive(p);
 
-	return {closest.second - triangles.begin(), CGAL::to_double(squared_distance(closest.first,closest.first))};
+	return {closest.second - triangles.begin(), CGAL::to_double(squared_distance(p,closest.first))};
 
 }
 
 PointOnMeshLookup::PointOnMeshLookup(const std::vector<shape_msgs::msg::Mesh> &meshes) : aabb(combine_meshes(meshes)) {
 
-
-		triangle_to_fruit.reserve(meshes.size());
-		for (size_t fruit_id = 0; fruit_id < meshes.size(); fruit_id++) {
-			for (size_t triangle_id = 0; triangle_id <
-										 meshes[fruit_id].triangles
-												 .size(); triangle_id++) {
-				triangle_to_fruit.push_back(fruit_id);
-			}
+	triangle_to_fruit.reserve(meshes.size());
+	for (size_t fruit_id = 0; fruit_id < meshes.size(); fruit_id++) {
+		for (size_t triangle_id = 0; triangle_id < meshes[fruit_id].triangles.size(); triangle_id++) {
+			triangle_to_fruit.push_back(fruit_id);
 		}
-
-
-
+	}
 }
 
 std::optional<size_t> PointOnMeshLookup::on_which_mesh(Eigen::Vector3d &point, double margin) const {
 
 	auto triangle_id = aabb.closest(point);
 
-	std::cout << "Triangle id: " << triangle_id.first << " distance: " << triangle_id.second << " mesh id: " << triangle_to_fruit[triangle_id.first] << std::endl;
-
 	if (triangle_id.second < margin) {
 		return triangle_to_fruit[triangle_id.first];
 	} else {
 		return std::nullopt;
 	}
-
 
 }
 

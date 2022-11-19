@@ -2,6 +2,9 @@
 #include <Eigen/Geometry>
 #include <iostream>
 
+#include <random_numbers/random_numbers.h>
+#include <ompl/util/RandomNumbers.h>
+
 std::pair<double, double>
 closest_point_on_line(const Eigen::ParametrizedLine<double, 3> &l1,
 					  const Eigen::ParametrizedLine<double, 3> &l2) {
@@ -164,5 +167,17 @@ std::array<TriangleVertexId, 2> vertices_in_edge(TriangleEdgeId edge) {
 		default:
 			throw std::runtime_error("Invalid edge id");
 	}
+}
+
+Eigen::Vector3d
+uniform_point_on_triangle(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, const Eigen::Vector3d &p3) {
+
+	ompl::RNG rng;
+
+	// Pick a point on a triangle
+	const double r1 = sqrt(rng.uniform01());
+	const double r2 = sqrt(rng.uniform01());
+
+	return (1 - r1) * p1 + r1 * (1 - r2) * p2 + r1 * r2 * p3;
 }
 

@@ -99,4 +99,16 @@ std::array<TriangleVertexId, 2> vertices_in_edge(TriangleEdgeId edge);
 
 std::array<TriangleEdgeId, 2> edges_adjacent_to_vertex(TriangleVertexId vertex);
 
+/**
+ * Pick a point universally at random on the surface of a triangle.
+ *
+ * @param p1 		The first vertex of the triangle.
+ * @param p2 		The second vertex of the triangle.
+ * @param p3 		The third vertex of the triangle.
+ * @return 			A point uniformly at random on the surface of the triangle.
+ */
+Eigen::Vector3d uniform_point_on_triangle(const Eigen::Vector3d &p1,
+										  const Eigen::Vector3d &p2,
+										  const Eigen::Vector3d &p3);
+
 #endif //NEW_PLANNERS_MATH_UTILS_H

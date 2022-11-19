@@ -61,8 +61,6 @@ int main(int, char*[]) {
 	// This includes models of the trees, the fruit within them, the robot, and the initial state of the robot.
 	WorkspaceSpec workspaceSpec = buildWorkspaceSpec();
 
-
-
 	// Build a collision environment that can be used to check for collisions between the robot and the orchard/environment.
 	auto collision_env = buildOrchardAndRobotFCLCollisionEnvironment(workspaceSpec);
 
