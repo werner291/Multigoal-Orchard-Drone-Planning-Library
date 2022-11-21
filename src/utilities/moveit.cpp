@@ -36,3 +36,19 @@ bool checkCollision(const moveit::core::RobotState &current_state,
 	bool collision = collision_result.collision;
 	return collision;
 }
+
+moveit::core::RobotState setEndEffectorToPosition(moveit::core::RobotState state,
+												  const Eigen::Vector3d &position,
+												  const std::string &endEffectorName) {
+
+	Eigen::Vector3d offset = position - state.getGlobalLinkTransform(endEffectorName).translation();
+
+	state.setVariablePosition(0, state.getVariablePosition(0) + offset.x());
+	state.setVariablePosition(1, state.getVariablePosition(1) + offset.y());
+	state.setVariablePosition(2, state.getVariablePosition(2) + offset.z());
+
+	state.update(true);
+
+	return state;
+
+}

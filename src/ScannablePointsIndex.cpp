@@ -33,8 +33,6 @@ std::vector<size_t> ScannablePointsIndex::findScannedPoints(const Eigen::Vector3
 
 	std::vector<GNATEntry> near_sensor = findNearSensor(scanSource, maxDistance);
 
-	// TODO: Premature optimization is the root of all evil.
-	// But we might still want to index the scanned points by their position at some point.
 	HashedSpatialIndex<std::monostate> scannedPointsIndex(VISIBLE_POINT_MAX_DISTANCE, 1000);
 
 	for (const auto& point : points) {

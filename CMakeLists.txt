@@ -204,7 +204,7 @@ add_library(${PROJECT_NAME}_shared
         src/exploration/InformationGainModel.h
         src/TriangleAABB.cpp
         src/TriangleAABB.h
-        )
+        src/DirectPointCloudCollisionDetection.cpp src/DirectPointCloudCollisionDetection.h src/exploration/CandidatePathGenerator.cpp src/exploration/CandidatePathGenerator.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

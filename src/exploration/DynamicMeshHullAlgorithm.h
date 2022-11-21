@@ -15,6 +15,7 @@
 #include "../RobotPath.h"
 #include "../AnytimeOptimalInsertion.h"
 #include "../shell_space/CGALMeshShell.h"
+#include "../DirectPointCloudCollisionDetection.h"
 
 static const double TARGET_POINT_DEDUP_THRESHOLD = 0.05;
 
@@ -27,6 +28,8 @@ static const double PADDING = 0.5;
 /**
  * A motion control algorithm that uses a dynamic mesh to represent the outer "shell" of the obstacles,
  * updating this hull as new data comes in from the robot's sensors.
+ *
+ * TODO: This is turning into a God class. Refactor if possible.
  */
 class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 
@@ -45,10 +48,12 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	/// An algorithm that computes the optimal visitation order of a set of points, given a starting point.
 	AnytimeOptimalInsertion<size_t> visit_ordering;
 
+	DirectPointCloudCollisionDetection collision_detector;
+
 	/// A point somewhere in space that must be inspected, paired with the point on the mesh hull that is on_which_mesh to it.
 	struct TargetPoint {
 		///	The original point that must be inspected.
-		const Eigen::Vector3d observed_location;
+		const SegmentedPointCloud::TargetPoint observed_location;
 		/// The point on the mesh hull that is on_which_mesh to the observed_location;
 		/// this is a semi-heavy operation to compute, so we cache it here.
 		Eigen::Vector3d hull_location;
@@ -159,6 +164,11 @@ public:
 	void updateShell();
 
 	void removeVisitedTargets();
+
+	RobotPath pathToTargetPoint(const std::shared_ptr<ArmHorizontalDecorator<CGALMeshPoint>> &shell,
+								const MoveItShellSpace<CGALMeshPoint> &shell_space,
+								const DynamicMeshHullAlgorithm::TargetPoint &target_point,
+								const CGALMeshPoint &to_point);
 };
 
 #endif //NEW_PLANNERS_DYNAMICMESHHULLALGORITHM_H

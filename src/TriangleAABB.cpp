@@ -99,6 +99,7 @@ SegmentedPointCloud::ByType PointSegmenter::segmentPointCloudData(vtkPolyData *p
 					// If it's on a mesh, add it to the target points
 					segmented_points.target.push_back({
 						point.position,
+						Eigen::Vector3d(0.0,0.0,0.0), // TODO: Get the normal of the triangle
 						*mesh_id
 					});
 

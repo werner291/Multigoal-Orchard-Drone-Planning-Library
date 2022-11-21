@@ -2,6 +2,7 @@
 #include "DynamicMeshHullAlgorithm.h"
 #include "../utilities/trajectory_primitives.h"
 #include "../utilities/mesh_utils.h"
+#include "CandidatePathGenerator.h"
 
 void DynamicMeshHullAlgorithm::update(const moveit::core::RobotState &current_state,
 									  const SegmentedPointCloud::ByType &segmentedPointCloud) {
@@ -52,14 +53,12 @@ void DynamicMeshHullAlgorithm::updateTrajectory() {
 
 		// Update the point on the hull for all target points (TODO: Cache if not modified?)
 		for (auto &[original, projection]: targetPointsOnChullSurface) {
-			projection = shell->surface_point(shell->nearest_point_on_shell(original));
+			projection = shell->surface_point(shell->nearest_point_on_shell(original.position));
 		}
 
 		// Update the visit ordering based on the new hull. We only do a single pass,
 		// relying on future updates to progressively refine the ordering.
 		visit_ordering.iterate();
-
-
 
 		// Step 1: Remove the portion of lastPath until we find the robot's current position.
 		advance_path_to_current();
@@ -88,21 +87,15 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 										   const std::shared_ptr<ArmHorizontalDecorator<CGALMeshPoint>> &shell,
 										   const MoveItShellSpace<CGALMeshPoint> &shell_space) {
 
-	auto current_state_shell_proj = shell->nearest_point_on_shell(last_end_effector_position);
-
 	for (size_t i = lastPath.size(); i < visit_ordering.getVisitOrdering().size(); i++) {
 
-		CGALMeshPoint from_point;
+		auto target_point = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[i]];
 
-		if (i == 0) {
-			from_point = current_state_shell_proj;
-		} else {
-			from_point = shell->nearest_point_on_shell(targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[i - 1]].hull_location);
-		}
+		auto to_point = shell->nearest_point_on_shell(target_point.hull_location);
 
-		auto to_point = shell->nearest_point_on_shell(targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[i]].hull_location);
+		RobotPath segment = pathToTargetPoint(shell, shell_space, target_point, to_point);
 
-		lastPath.push_back(shell_space.shellPath(from_point, to_point));
+		lastPath.push_back(segment);
 
 		if (std::chrono::high_resolution_clock::now() > deadline || lastPath.size() > 10) {
 			break;
@@ -111,18 +104,44 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 	}
 }
 
+RobotPath
+DynamicMeshHullAlgorithm::pathToTargetPoint(const std::shared_ptr<ArmHorizontalDecorator<CGALMeshPoint>> &shell,
+											const MoveItShellSpace<CGALMeshPoint> &shell_space,
+											const DynamicMeshHullAlgorithm::TargetPoint &target_point,
+											const CGALMeshPoint &to_point) {
+
+	auto current_state_shell_proj = shell->nearest_point_on_shell(last_end_effector_position);
+
+	CGALMeshPoint from_point;
+
+	if (lastPath.empty()) {
+		from_point = current_state_shell_proj;
+	} else {
+		from_point = shell->nearest_point_on_shell(lastPath.back().waypoints.back().getGlobalLinkTransform("end_effector").translation());
+	}
+
+	RobotPath segment = shell_space.shellPath(from_point, to_point);
+
+	CandidatePathGenerator path_generator(segment.waypoints.back(), target_point.observed_location);
+
+	auto approach_path = path_generator.generateCandidatePath();
+
+	segment.append(approach_path);
+
+	return segment;
+}
+
 void DynamicMeshHullAlgorithm::cut_invalid_future() {
+
 	for (size_t segment_i = 0; segment_i < lastPath.size(); segment_i++) {
 		// Need to check: is this segment still valid, and if so, does it still lead to the right target?
 
 		bool on_shell = true;
 
 		for (auto & waypoint : lastPath[segment_i].waypoints) {
-			Eigen::Vector3d point = waypoint.getGlobalLinkTransform("end_effector").translation();
-			Eigen::Vector3d shell_point = cgal_hull->surface_point_unpadded(cgal_hull->nearest_point_on_shell(point));
-			if (abs((point - shell_point).norm() - PADDING) > 0.05) {
+			// TODO Will want to take some intermediate points into account as well.
+			if (collision_detector.checkCollision(waypoint)) {
 				on_shell = false;
-				break;
 			}
 		}
 
@@ -222,6 +241,8 @@ void DynamicMeshHullAlgorithm::updatePointCloud(const SegmentedPointCloud::ByTyp
 	const auto& [obstacle, soft_obstacle, target] = segmentedPointCloud;
 
 	processObstaclePoints(soft_obstacle);
+
+	this->collision_detector.addPoints(obstacle);
 
 	processTargetPoints(target);
 

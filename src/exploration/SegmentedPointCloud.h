@@ -44,8 +44,13 @@ struct SegmentedPointCloud {
 	std::vector<Point> points;
 
 	struct TargetPoint {
+
 		/// Position of the point
 		Eigen::Vector3d position;
+
+		/// Normal of the point
+		Eigen::Vector3d normal;
+
 		/// The index of the target that this point belongs to.
 		size_t target_index;
 	};
