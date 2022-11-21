@@ -93,9 +93,12 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 
 		auto to_point = shell->nearest_point_on_shell(target_point.hull_location);
 
-		RobotPath segment = pathToTargetPoint(shell, shell_space, target_point, to_point);
-
-		lastPath.push_back(segment);
+		if (auto segment = pathToTargetPoint(shell, shell_space, target_point, to_point)) {
+			lastPath.push_back(*segment);
+		} else {
+			// TODO remove the target point from the list of targets
+			continue;
+		}
 
 		if (std::chrono::high_resolution_clock::now() > deadline || lastPath.size() > 10) {
 			break;
@@ -104,7 +107,7 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 	}
 }
 
-RobotPath
+std::optional<RobotPath>
 DynamicMeshHullAlgorithm::pathToTargetPoint(const std::shared_ptr<ArmHorizontalDecorator<CGALMeshPoint>> &shell,
 											const MoveItShellSpace<CGALMeshPoint> &shell_space,
 											const DynamicMeshHullAlgorithm::TargetPoint &target_point,
@@ -128,7 +131,15 @@ DynamicMeshHullAlgorithm::pathToTargetPoint(const std::shared_ptr<ArmHorizontalD
 
 	segment.append(approach_path);
 
-	return segment;
+	// Collision-check.
+
+	for (auto &waypoint: segment.waypoints) {
+		if (collision_detector.checkCollision(waypoint)) {
+			return std::nullopt;
+		}
+	}
+
+	return {segment};
 }
 
 void DynamicMeshHullAlgorithm::cut_invalid_future() {

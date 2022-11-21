@@ -153,7 +153,7 @@ int main(int, char*[]) {
 	auto callback = [&]() {
 
 		// Advance the robot on the most recently-emitted path.
-		currentPathState.advance(0.01);
+		currentPathState.advance(0.02);
 
 		time += 0.01;
 

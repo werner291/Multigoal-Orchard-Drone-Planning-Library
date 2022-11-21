@@ -165,10 +165,10 @@ public:
 
 	void removeVisitedTargets();
 
-	RobotPath pathToTargetPoint(const std::shared_ptr<ArmHorizontalDecorator<CGALMeshPoint>> &shell,
-								const MoveItShellSpace<CGALMeshPoint> &shell_space,
-								const DynamicMeshHullAlgorithm::TargetPoint &target_point,
-								const CGALMeshPoint &to_point);
+	std::optional<RobotPath> pathToTargetPoint(const std::shared_ptr<ArmHorizontalDecorator<CGALMeshPoint>> &shell,
+											   const MoveItShellSpace<CGALMeshPoint> &shell_space,
+											   const DynamicMeshHullAlgorithm::TargetPoint &target_point,
+											   const CGALMeshPoint &to_point);
 };
 
 #endif //NEW_PLANNERS_DYNAMICMESHHULLALGORITHM_H

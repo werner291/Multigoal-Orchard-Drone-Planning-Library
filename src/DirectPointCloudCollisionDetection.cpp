@@ -49,8 +49,6 @@ void DirectPointCloudCollisionDetection::addPoints(std::vector<Eigen::Vector3d> 
 		tree.insert(Point(point.x(), point.y(), point.z()));
 	}
 
-	std::cout << tree.size() << " points in the tree." << std::endl;
-
 }
 
 bool DirectPointCloudCollisionDetection::checkCollision(const shapes::Box &shape, const Eigen::Isometry3d &pose) const {
