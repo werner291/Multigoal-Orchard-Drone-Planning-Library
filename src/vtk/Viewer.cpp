@@ -29,8 +29,8 @@ Viewer::Viewer() :
 	renderWindowInteractor->CreateRepeatingTimer(33);
 
 	addActor(convexHullActor.actor);
-	addActor(targetToHullLineSegments.getActor());
-	addActor(visitOrderVisualization.getActor());
+//	addActor(targetToHullLineSegments.getActor());
+//	addActor(visitOrderVisualization.getActor());
 	addActor(ee_trace_visualization.getActor());
 }
 

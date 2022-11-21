@@ -14,12 +14,8 @@ CandidatePathGenerator::CandidatePathGenerator(const moveit::core::RobotState &s
 
 RobotPath CandidatePathGenerator::generateCandidatePath() {
 
-	moveit::core::RobotState end_state = start_state;
-
-	setEndEffectorToPosition(end_state, target_point.position);
-
 	return RobotPath {
-		{start_state, end_state}
+		{start_state, setEndEffectorToPosition(start_state, target_point.position)}
 	};
 
 }

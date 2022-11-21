@@ -145,7 +145,7 @@ void DynamicMeshHullAlgorithm::cut_invalid_future() {
 			}
 		}
 
-		Eigen::Vector3d target_point = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_i]].hull_location;
+		Eigen::Vector3d target_point = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_i]].observed_location.position;
 		Eigen::Vector3d end_effector_after_segment = lastPath[segment_i].waypoints.back().getGlobalLinkTransform("end_effector").translation();
 
 		bool goes_to_target = (target_point - end_effector_after_segment).norm() < 1.0e-6;

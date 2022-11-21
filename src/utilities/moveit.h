@@ -41,7 +41,7 @@ void setStateToTrajectoryPoint(moveit::core::RobotState &state,
  * @param collision_env 		The collision environment to check against.
  * @return 						True if the robot state is in collision, false otherwise.
  */
-bool checkCollision(const moveit::core::RobotState &current_state,
+[[nodiscard]] bool checkCollision(const moveit::core::RobotState &current_state,
 					const collision_detection::CollisionEnvFCL &collision_env);
 
 /**
@@ -52,7 +52,7 @@ bool checkCollision(const moveit::core::RobotState &current_state,
  * @param endEffectorName 		The name of the end-effector link
  * @return 						A new robot state where the end-effector is moved to the given position.
  */
-moveit::core::RobotState setEndEffectorToPosition(moveit::core::RobotState state,
+[[nodiscard]] moveit::core::RobotState setEndEffectorToPosition(moveit::core::RobotState state,
 							  const Eigen::Vector3d &position,
 							  const std::string &endEffectorName = "end_effector");
 
