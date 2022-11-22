@@ -33,8 +33,9 @@ static const double PADDING = 0.5;
  */
 class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 
-	/// The last-known position of the robot; this is assumed to be very recent.
-	moveit::core::RobotState last_robot_state;
+	/// A number of last-known positions of the robot, from oldest to newest, assumed to be about spaced evenly in time.
+	std::vector<moveit::core::RobotState> last_robot_states;
+
 	/// The end-effector position of the last-known robot state; this is a cached value derived from last_robot_state.
 	Eigen::Vector3d last_end_effector_position;
 
@@ -107,6 +108,12 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	void cut_invalid_future();
 
 	/**
+	 * Deform the currently-planned path to increase desirable properties,
+	 * such as smoothness and sensor coverage.
+	 */
+	void optimizePlan();
+
+	/**
 	 * Extend the current trajectory as much as possible within the given time limit
 	 *
 	 * TODO: This doesn't quite make sense performance-wise, as most of this will be invalidated by the next update.
@@ -168,7 +175,10 @@ public:
 	std::optional<RobotPath> pathToTargetPoint(const std::shared_ptr<ArmHorizontalDecorator<CGALMeshPoint>> &shell,
 											   const MoveItShellSpace<CGALMeshPoint> &shell_space,
 											   const DynamicMeshHullAlgorithm::TargetPoint &target_point,
-											   const CGALMeshPoint &to_point);
+											   const CGALMeshPoint &to_point,
+											   const moveit::core::RobotState &fromState);
+
+	static void removeFrontReversal(const moveit::core::RobotState &from_state, RobotPath &path) ;
 };
 
 #endif //NEW_PLANNERS_DYNAMICMESHHULLALGORITHM_H

@@ -14,6 +14,8 @@
  *
  * It should be possible to add new elements to the set, and change the distance function.
  *
+ * TODO: Take some kind of smoothness parameter into account as well if possible!
+ *
  * @tparam V 		The type of the elements.
  */
 template<typename V>
