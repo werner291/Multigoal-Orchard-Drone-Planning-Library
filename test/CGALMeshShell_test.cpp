@@ -72,7 +72,7 @@ TEST(CGALMeshShellTests, test_path_on_surface) {
 		auto start1 = shell.nearest_point_on_shell(start);
 		auto goal1 = shell.nearest_point_on_shell(goal);
 
-		auto path = std::dynamic_pointer_cast<PiecewiseLinearPath<CGALMeshPoint>>(shell.path_from_to(start1, goal1));
+		auto path = std::dynamic_pointer_cast<PiecewiseLinearPath<CGALMeshShellPoint>>(shell.path_from_to(start1, goal1));
 
 		for (auto & point : path->points) {
 			Eigen::Vector3d carthesian = shell.surface_point(point);
@@ -106,7 +106,7 @@ TEST(CGALMeshShellTests, test_path_rotate_xor_move) {
 		auto start1 = shell.nearest_point_on_shell(start);
 		auto goal1 = shell.nearest_point_on_shell(goal);
 
-		auto path = std::dynamic_pointer_cast<PiecewiseLinearPath<CGALMeshPoint>>(shell.path_from_to(start1, goal1));
+		auto path = std::dynamic_pointer_cast<PiecewiseLinearPath<CGALMeshShellPoint>>(shell.path_from_to(start1, goal1));
 
 		for (size_t i = 0; i < path->points.size() - 1; ++i) {
 			auto & p1 = path->points[i];
@@ -125,6 +125,75 @@ TEST(CGALMeshShellTests, test_path_rotate_xor_move) {
 
 			ASSERT_TRUE(angle < 1e-6 | distance < 1e-6);
 
+		}
+
+	}
+
+}
+
+
+TEST(CGALMeshShellTests, test_surface_point_stable) {
+
+	/*
+	 * In this test, we generate random points in the mesh.
+	 *
+	 * We then convert them to carthesian coordinates, and then back to the surface, then back to carthesian coordinates.
+	 *
+	 * The point should remain in place, within some margin.
+	 */
+
+	ompl::RNG rng(42);
+
+	auto mesh = mkConvexMesh();
+
+	CGALMeshShell shell(mesh, 0, 0.5);
+
+	for (size_t i = 0; i < 100; ++i) {
+
+		Eigen::Vector3d start(rng.uniformReal(-10, 10), rng.uniformReal(-10, 10), rng.uniformReal(-10, 10));
+
+		Eigen::Vector3d carthesian = shell.surface_point(shell.nearest_point_on_shell(start));
+
+		for (size_t ii = 0; ii < 10; ++ii) {
+
+			auto shellpoint = shell.nearest_point_on_shell(carthesian);
+
+			Eigen::Vector3d reprojected = shell.surface_point(shellpoint);
+
+			if ((carthesian - reprojected).norm() > 1e-6) {
+				std::cout << "i: " << i << " ii: " << ii << " carthesian: " << carthesian.transpose() << " reprojected: " << reprojected.transpose() << " distance: " << (carthesian - reprojected).norm() << std::endl;
+				std::cout << "Surface point normal: " << shellpoint.normal.transpose() << std::endl;
+			}
+
+			ASSERT_LT((carthesian - reprojected).norm(), 1e-6);
+
+		}
+
+	}
+
+}
+
+TEST(CGALMeshShellTests, test_surface_point_stable_noisy) {
+
+	ompl::RNG rng(42);
+
+	auto mesh = mkConvexMesh();
+
+	CGALMeshShell shell(mesh, 0, 0.5);
+
+	for (size_t i = 0; i < 100; ++i) {
+
+		Eigen::Vector3d start(rng.uniformReal(-10, 10), rng.uniformReal(-10, 10), rng.uniformReal(-10, 10));
+
+		Eigen::Vector3d carthesian = shell.surface_point(shell.nearest_point_on_shell(start));
+
+		for (size_t ii = 0; ii < 10; ++ii) {
+
+			Eigen::Vector3d noise(rng.uniformReal(-0.01, 0.01), rng.uniformReal(-0.01, 0.01), rng.uniformReal(-0.01, 0.01));
+
+			Eigen::Vector3d reprojected = shell.surface_point(shell.nearest_point_on_shell(carthesian + noise));
+
+			ASSERT_LT((carthesian - reprojected).norm(), noise.norm() * 2.0);
 		}
 
 	}

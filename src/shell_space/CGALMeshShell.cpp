@@ -108,7 +108,7 @@ Eigen::Vector3d CGALMeshShell::surface_point(const CGALMeshShellPoint &pt) const
 }
 
 Eigen::Vector3d CGALMeshShell::normalAt(const CGALMeshShellPoint &near) const {
-	return faceNormal(tmesh, near.point.first);
+	return near.normal;
 }
 
 std::shared_ptr<ShellPath<CGALMeshShellPoint>> CGALMeshShell::path_from_to(const CGALMeshShellPoint &a, const CGALMeshShellPoint &b) const {
