@@ -115,7 +115,7 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 			i -= 1; // I don't like doing this?
 		}
 
-		if (std::chrono::high_resolution_clock::now() > deadline || lastPath.size() > 10) {
+		if (std::chrono::high_resolution_clock::now() > deadline || lastPath.size() >= 2) {
 			break;
 		}
 
@@ -197,6 +197,8 @@ void DynamicMeshHullAlgorithm::cut_invalid_future() {
 		if (!on_shell || !goes_to_target) {
 			// This segment is no longer valid. Remove it and all subsequent segments.
 			lastPath.erase(lastPath.begin() + (int) segment_i, lastPath.end());
+
+			std::cout << "Removed invalid segment " << segment_i << " because it " << (on_shell ? "doesn't go to the target" : "is not on the shell") << std::endl;
 			break;
 		}
 
@@ -226,6 +228,10 @@ void DynamicMeshHullAlgorithm::advance_path_to_current() {
 				// We found the current state on the segment. Remove everything before it.
 				lastPath.front().waypoints.erase(lastPath.front().waypoints.begin(),
 												 lastPath.front().waypoints.begin() + segment_i+1);
+
+				std::cout << "Removed " << path_i << " segments from the path, and " << (segment_i+1) << " waypoints from the first segment." << std::endl;
+
+				return;
 			}
 
 		}
@@ -310,8 +316,8 @@ void DynamicMeshHullAlgorithm::processTargetPoints(const std::vector<SegmentedPo
 	}
 }
 
-void
-DynamicMeshHullAlgorithm::processObstaclePoints(const std::vector<Eigen::Vector3d> &soft_obstacle) {// We assume that leaves are indicative of the tree crown, and thus we can use these by proxy for the hull.
+void DynamicMeshHullAlgorithm::processObstaclePoints(const std::vector<Eigen::Vector3d> &soft_obstacle) {
+	// We assume that leaves are indicative of the tree crown, and thus we can use these by proxy for the hull.
 	// We present the leaves to the hull algorithm
 	for (const auto &obstacle_point: soft_obstacle) {
 		pointstream_to_hull->addPoint(obstacle_point);
@@ -323,6 +329,33 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 	auto shell = std::make_shared<ArmHorizontalDecorator<CGALMeshShellPoint>>(cgal_hull);
 
 	MoveItShellSpace<CGALMeshShellPoint> shell_space(last_robot_states.back().getRobotModel(), shell);
+
+	// First, we break up longer segments by interpolation.
+	for (auto& segment: lastPath) {
+
+		for (size_t waypoint_i = 0; waypoint_i + 1 < segment.waypoints.size(); ++waypoint_i) {
+
+			const auto& start = segment.waypoints[waypoint_i];
+			const auto& end = segment.waypoints[waypoint_i + 1];
+
+			double distance = start.distance(end);
+
+			if (distance > 0.5 && segment.waypoints.size() < 20) {
+				moveit::core::RobotState interpolated(start.getRobotModel());
+
+				start.interpolate(end, 0.5, interpolated);
+
+				interpolated.update();
+
+				segment.waypoints.insert(segment.waypoints.begin() + (int) waypoint_i + 1, interpolated);
+
+				waypoint_i -= 1; // TODO Inelegant and causes uneven spacing
+			}
+
+		}
+
+	}
+
 
 	/**
 	 * Desirable properties of the path:
@@ -336,36 +369,48 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 	 *
 	 */
 
+	std::cout << "Optimizing plan" << std::endl;
 
+	moveit::core::RobotState last_state = last_robot_states.back();
+	double distance_from_path_start = 0.0;
 
 	for (size_t segment_i = 0; segment_i < lastPath.size(); segment_i++) { // NOLINT(modernize-loop-convert) (We might use the index later)
 
 		const auto& segment_target = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_i]];
 
-		for (size_t waypoint_i = 0; waypoint_i < lastPath[segment_i].waypoints.size(); waypoint_i++) { // NOLINT(modernize-loop-convert) (We might use the index later)
+		for (size_t waypoint_i = 0; waypoint_i + 1 < lastPath[segment_i].waypoints.size(); waypoint_i++) { // NOLINT(modernize-loop-convert) (We might use the index later)
 
 			auto &waypoint = lastPath[segment_i].waypoints[waypoint_i];
 
-			double distance_to_target = (waypoint.getGlobalLinkTransform("end_effector").translation() -
-										 segment_target.hull_location).norm();
+			if (distance_from_path_start > 0.5) {
 
-			const double BLEND_FACTOR_SMOOTHNESS = 2.0;
+				double distance_to_target = (waypoint.getGlobalLinkTransform("end_effector").translation() -
+											 segment_target.hull_location).norm();
 
-			double blend_factor = std::tanh(distance_to_target / BLEND_FACTOR_SMOOTHNESS);
+				const double BLEND_FACTOR_SMOOTHNESS = 2.0;
 
-			moveit::core::RobotState on_shell = shell_space.stateFromPoint(shell_space.pointNearState(waypoint));
+				double blend_factor = std::tanh(distance_to_target / BLEND_FACTOR_SMOOTHNESS);
 
-			moveit::core::RobotState interpolated(on_shell.getRobotModel());
+				moveit::core::RobotState on_shell = shell_space.stateFromPoint(shell_space.pointNearState(waypoint));
 
-			on_shell.interpolate(waypoint, blend_factor, interpolated);
+				moveit::core::RobotState interpolated(on_shell.getRobotModel());
 
-			interpolated.update();
+				on_shell.interpolate(waypoint, blend_factor, interpolated);
 
-			if (!collision_detector.checkCollision(interpolated)) {
-				waypoint = interpolated;
-			} else {
-				std::cout << "Rejected." << std::endl;
+				interpolated.update();
+
+				if (!collision_detector.checkCollision(interpolated)) {
+
+					waypoint = interpolated;
+
+					double distance_from_end_effector = (waypoint.getGlobalLinkTransform("end_effector").translation() -
+														last_robot_states.back().getGlobalLinkTransform("end_effector").translation()).norm();
+
+				}
 			}
+
+			distance_from_path_start += waypoint.distance(last_state);
+			last_state = waypoint;
 
 		}
 

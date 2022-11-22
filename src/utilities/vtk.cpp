@@ -294,6 +294,7 @@ VtkPolyLineVisualization::VtkPolyLineVisualization(float r, float g, float b) {
 	visitOrderVisualizationActor->SetMapper(visitOrderVisualizationMapper);
 	visitOrderVisualizationActor->GetProperty()->SetColor(r,g,b);
 	visitOrderVisualizationActor->GetProperty()->SetLineWidth(5);
+	visitOrderVisualizationActor->GetProperty()->SetPointSize(8);
 
 }
 
@@ -308,16 +309,25 @@ void VtkPolyLineVisualization::updateLine(const std::vector<Eigen::Vector3d> &po
 	vtkNew<vtkPoints> pointsVtk;
 	vtkNew<vtkCellArray> cells;
 
+	vtkNew<vtkCellArray> pointsCells;
+
 	auto previousPointId = pointsVtk->InsertNextPoint(points[0].data());
+
+	pointsCells->InsertNextCell(1);
+	pointsCells->InsertCellPoint(previousPointId);
 
 	for (size_t i = 1; i < points.size(); ++i) {
 		cells->InsertNextCell(2);
 		cells->InsertCellPoint(previousPointId);
 		cells->InsertCellPoint(previousPointId = pointsVtk->InsertNextPoint(points[i].data()));
+
+		pointsCells->InsertNextCell(1);
+		pointsCells->InsertCellPoint(previousPointId);
 	}
 
 	visitOrderVisualizationData->SetPoints(pointsVtk);
 	visitOrderVisualizationData->SetLines(cells);
+	visitOrderVisualizationData->SetVerts(pointsCells);
 
 	visitOrderVisualizationData->Modified();
 }
