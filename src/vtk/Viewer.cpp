@@ -5,8 +5,11 @@
 #include <vtkLightCollection.h>
 #include <vtkLight.h>
 #include <vtkProperty.h>
+#include <vtkInteractorStyle3D.h>
 
-Viewer::Viewer() :
+Viewer::Viewer(const SimplifiedOrchard &orchard,
+			   VtkRobotmodel &robotModel,
+			   const std::vector<vtkActor*>& actors) :
 		 targetToHullLineSegments(1,0,0),
 		 visitOrderVisualization(1.0, 0.5, 0.5),
 		 ee_trace_visualization(0.0, 0.0, 1.0) {
@@ -32,6 +35,17 @@ Viewer::Viewer() :
 //	addActor(targetToHullLineSegments.getActor());
 //	addActor(visitOrderVisualization.getActor());
 	addActor(ee_trace_visualization.getActor());
+
+	addActorCollection(buildOrchardActors(orchard, false));
+	addActorCollection(robotModel.getLinkActors());
+
+	for (auto &actor: actors) {
+		addActor(actor);
+	}
+
+	viewerRenderer->GetActiveCamera()->SetPosition(8,4,2.5);
+	viewerRenderer->GetActiveCamera()->SetFocalPoint(2,0,1.5);
+	viewerRenderer->GetActiveCamera()->SetViewUp(0,0,1);
 }
 
 void Viewer::addActor(vtkActor *actor) {
@@ -47,6 +61,7 @@ void Viewer::start() {
 }
 
 void Viewer::requestRender() {
+	viewerRenderer->GetActiveCamera()->SetViewUp(0,0,1);
 	visualizerWindow->Render();
 }
 
@@ -57,21 +72,3 @@ void Viewer::setIntervalCallback(const std::function<void()>& callback) {
 	renderWindowInteractor->AddObserver(vtkCommand::TimerEvent, cb);
 }
 
-Viewer buildViewer(const SimplifiedOrchard &orchard,
-				   VtkRobotmodel &robotModel,
-				   const std::vector<vtkActor*>& actors) {
-
-	Viewer viewer;
-	viewer.addActorCollection(buildOrchardActors(orchard, false));
-	viewer.addActorCollection(robotModel.getLinkActors());
-
-	for (auto &actor: actors) {
-		viewer.addActor(actor);
-	}
-
-	viewer.viewerRenderer->GetActiveCamera()->SetPosition(8,4,2.5);
-	viewer.viewerRenderer->GetActiveCamera()->SetFocalPoint(2,0,1.5);
-	viewer.viewerRenderer->GetActiveCamera()->SetViewUp(0,0,1);
-
-	return viewer;
-}

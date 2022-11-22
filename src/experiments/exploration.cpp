@@ -109,8 +109,11 @@ int main(int, char*[]) {
 
 	// A "package" of visualization-specifics that can be used to visualize the robot for debugging and presentation
 	// purposes, SEPARATE from the visualization that simulates the depth sensor.
-	Viewer viewer = buildViewer(workspaceSpec.orchard,robotModel,
-								{fruitSurfaceScanTargetsActor.fruitSurfacePointsActor,pointCloudActor});
+	VtkRobotmodel &robotModel1 = robotModel;
+	Viewer viewer = Viewer(workspaceSpec.orchard,
+						   robotModel1,
+						   (const std::vector<vtkActor *>) {fruitSurfaceScanTargetsActor.fruitSurfacePointsActor,
+															pointCloudActor});
 
 	// The "current" state of the robot based on the most recent-emitted path and progress of the robot along that path.
 	CurrentPathState currentPathState(workspaceSpec.initialState);
@@ -159,7 +162,7 @@ int main(int, char*[]) {
 
 		// Check if the robot collided with anything.
 		if (checkCollision(currentPathState.getCurrentState(), *collision_env)) {
-			std::cout << "Oh no!" << std::endl;
+//			std::cout << "Oh no!" << std::endl;
 		}
 
 		// Update the robot's visualization to match the current state.

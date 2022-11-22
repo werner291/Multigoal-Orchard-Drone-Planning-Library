@@ -293,7 +293,8 @@ VtkPolyLineVisualization::VtkPolyLineVisualization(float r, float g, float b) {
 	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
 	visitOrderVisualizationActor->SetMapper(visitOrderVisualizationMapper);
 	visitOrderVisualizationActor->GetProperty()->SetColor(r,g,b);
-	visitOrderVisualizationActor->GetProperty()->SetLineWidth(10);
+	visitOrderVisualizationActor->GetProperty()->SetLineWidth(5);
+
 }
 
 vtkActor *VtkPolyLineVisualization::getActor() {
