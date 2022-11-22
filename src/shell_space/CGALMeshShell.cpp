@@ -27,10 +27,6 @@ Eigen::Vector3d faceNormal(const Triangle_mesh& tmesh, const Surface_mesh_shorte
 	return -(vb - va).cross(vc - va).normalized();
 }
 
-Eigen::Vector3d normalAt(const Triangle_mesh& tmesh, const CGALMeshPoint &near) {
-	return faceNormal(tmesh, near.first);
-}
-
 Eigen::Vector3d toEigen(const Kernel::Point_3 &p) {
 	return  { p.x(), p.y(), p.z() };
 }
@@ -106,37 +102,42 @@ struct PathVisitor {
 
 };
 
-Eigen::Vector3d CGALMeshShell::surface_point(const CGALMeshPoint &pt) const {
+Eigen::Vector3d CGALMeshShell::surface_point(const CGALMeshShellPoint &pt) const {
 	Surface_mesh_shortest_path shortest_paths(tmesh);
-	return toEigen(shortest_paths.point(pt.first, pt.second)) + normalAt(pt) * padding;
+	return toEigen(shortest_paths.point(pt.point.first, pt.point.second)) + normalAt(pt) * padding;
 }
 
-Eigen::Vector3d CGALMeshShell::surface_point_unpadded(const CGALMeshPoint &p) const {
-	Surface_mesh_shortest_path shortest_paths(tmesh);
-	return toEigen(shortest_paths.point(p.first, p.second));
+Eigen::Vector3d CGALMeshShell::normalAt(const CGALMeshShellPoint &near) const {
+	return faceNormal(tmesh, near.point.first);
 }
 
-Eigen::Vector3d CGALMeshShell::normalAt(const CGALMeshPoint &near) const {
-	return ::normalAt(tmesh, near);
-}
-
-std::shared_ptr<ShellPath<CGALMeshPoint>> CGALMeshShell::path_from_to(const CGALMeshPoint &a, const CGALMeshPoint &b) const {
+std::shared_ptr<ShellPath<CGALMeshShellPoint>> CGALMeshShell::path_from_to(const CGALMeshShellPoint &a, const CGALMeshShellPoint &b) const {
 
 	// Initialize the shortest path algorithm with a reference to the triangle mesh.
 	Surface_mesh_shortest_path shortest_paths(tmesh);
 	// Add pur start point a
-	shortest_paths.add_source_point(a);
+	shortest_paths.add_source_point(a.point);
 
 	// Compute the path to a from b.
 	PathVisitor v(tmesh);
-	shortest_paths.shortest_path_sequence_to_source_points(b.first, b.second, v);
+	shortest_paths.shortest_path_sequence_to_source_points(b.point.first, b.point.second, v);
 
-	assert(v.states.size() > 0);
+	assert(!v.states.empty());
 
 	// CGAL gives us the path from the end to the start, so we reverse it.
 	std::reverse(v.states.begin(), v.states.end());
 
-	return std::make_shared<PiecewiseLinearPath<CGALMeshPoint>>(std::move(v.states));
+	std::vector<CGALMeshShellPoint> points;
+
+	points.push_back(a);
+
+	for (auto &state : v.states) {
+		points.push_back({state, faceNormal(tmesh, state.first)});
+	}
+
+	points.push_back(b);
+
+	return std::make_shared<PiecewiseLinearPath<CGALMeshShellPoint>>(std::move(points));
 
 }
 
@@ -164,18 +165,42 @@ CGALMeshShell::CGALMeshShell(const shape_msgs::msg::Mesh &mesh, double rotationW
 
 }
 
-CGALMeshPoint CGALMeshShell::nearest_point_on_shell(const Eigen::Vector3d &pt) const {
+CGALMeshShellPoint CGALMeshShell::nearest_point_on_shell(const Eigen::Vector3d &pt) const {
 
 	// initialize the algorithm struct.
 	Surface_mesh_shortest_path shortest_paths(tmesh);
 
-	// Look up the nearest point, using the AABB tree to accelerate the search.
-	return shortest_paths.locate(Kernel::Point_3(pt.x(), pt.y(), pt.z()), tree);
+	auto on_mesh = shortest_paths.locate(Kernel::Point_3(pt.x(), pt.y(), pt.z()), tree);
+
+	auto pt_on_mesh = toEigen(shortest_paths.point(on_mesh.first, on_mesh.second));
+
+	auto offset = pt - pt_on_mesh;
+
+	auto normal = faceNormal(tmesh, on_mesh.first);
+
+	// CHeck if any of the barycentric coordinates are 0 or 1. If so, we're on an edge or vertex.
+	if (on_mesh.second[0] < 1.0e-6 || on_mesh.second[0] > 1.0 - 1.0e-6 ||
+		on_mesh.second[1] < 1.0e-6 || on_mesh.second[1] > 1.0 - 1.0e-6 ||
+		on_mesh.second[2] < 1.0e-6 || on_mesh.second[2] > 1.0 - 1.0e-6) {
+
+		return {
+			on_mesh,
+			offset.normalized()
+		};
+
+	} else {
+
+		return {
+			on_mesh,
+			normal
+		};
+
+	}
 }
 
-double CGALMeshShell::path_length(const std::shared_ptr<ShellPath<CGALMeshPoint>> &path) const {
+double CGALMeshShell::path_length(const std::shared_ptr<ShellPath<CGALMeshShellPoint>> &path) const {
 
-	auto p = std::dynamic_pointer_cast<PiecewiseLinearPath<CGALMeshPoint>>(path);
+	auto p = std::dynamic_pointer_cast<PiecewiseLinearPath<CGALMeshShellPoint>>(path);
 
 	assert(p);
 
@@ -189,11 +214,11 @@ double CGALMeshShell::path_length(const std::shared_ptr<ShellPath<CGALMeshPoint>
 	return length;
 }
 
-Eigen::Vector3d CGALMeshShell::arm_vector(const CGALMeshPoint &p) const {
+Eigen::Vector3d CGALMeshShell::arm_vector(const CGALMeshShellPoint &p) const {
 	return -normalAt(p);
 }
 
-std::shared_ptr<WorkspaceShell<CGALMeshPoint>> convexHullAroundLeavesCGAL(const AppleTreePlanningScene &scene_info,
+std::shared_ptr<WorkspaceShell<CGALMeshShellPoint>> convexHullAroundLeavesCGAL(const AppleTreePlanningScene &scene_info,
 																		  const ompl::base::SpaceInformationPtr &si,
 																		  double rotation_weight,
 																		  double padding) {

@@ -28,6 +28,12 @@ using CGALMeshPoint = Surface_mesh_shortest_path::Face_location;
 
 struct Point_path_visitor_wrapper;
 
+struct CGALMeshShellPoint {
+	CGALMeshPoint point;
+	/// We use an explicit normal here, because the surface normal is poorly defined at the edges and vertices.
+	Eigen::Vector3d normal;
+};
+
 /**
  * A ShellSpace based on the Surface_mesh_shortest_path module in CGAL.
  *
@@ -36,9 +42,15 @@ struct Point_path_visitor_wrapper;
  * It should be noted that no part of the code explicitly assumes mesh convexity,
  * so a concave mesh *might* work as-is, but this is untested.
  *
+ * The surface normals of the mesh are a bit ill-defined at the edges and vertices; for nearest_point_on_shell,
+ * the normal is the normalized offset vector from the nearest point to the projected point.
+ *
+ * Optionally, the user may specify a non-zero "padding" value, which will be used to inflate the mesh
+ * along the normals. This is useful to add a safety margin to the shell.
+ *
  * Paths across the shell are exact shortest-path geodesics between points.
  */
-class CGALMeshShell : public WorkspaceShell<CGALMeshPoint> {
+class CGALMeshShell : public WorkspaceShell<CGALMeshShellPoint> {
 
 protected:
 
@@ -66,32 +78,70 @@ public:
 	explicit CGALMeshShell(const shape_msgs::msg::Mesh &mesh, double rotationWeight, double padding);
 
 	/**
-	 * For a given CGALMeshPoint (which really is a face index paired with barycentric coordinates),
+	 * For a given CGALMeshShellPoint (which really is a face index paired with barycentric coordinates),
 	 * compute the normal vector of the face.
 	 *
 	 * Note: this is not the normal vector of the triangle, special cases like edges or vertices are not handled explicitly:
-	 * we exclusively look at the face index in the CGALMeshPoint.
+	 * we exclusively look at the face index in the CGALMeshShellPoint.
 	 *
 	 * @param near	The point to compute the normal for.
 	 * @return		The normal vector.
 	 */
-	Eigen::Vector3d normalAt(const CGALMeshPoint &near) const;
+	Eigen::Vector3d normalAt(const CGALMeshShellPoint &near) const;
 
-	Eigen::Vector3d arm_vector(const CGALMeshPoint &p) const override;
+	/**
+	 * Returns an "arm vector", which really is just a normal vector.
+	 *
+	 * @param p 		The surface shell point to compute the arm vector for.
+	 * @return 			The arm vector.
+	 */
+	Eigen::Vector3d arm_vector(const CGALMeshShellPoint &p) const override;
 
-	CGALMeshPoint nearest_point_on_shell(const Eigen::Vector3d &p) const override;
+	/**
+	 *
+	 * Find a point on the surface of the mesh that is closest to the given point, including a normal vector.
+	 *
+	 * If this closest point is on an edge or vertex, the normal vector is the normalized offset vector from
+	 * the nearest point to the projected point.
+	 *
+	 * @param p 		The point to project onto the mesh.
+	 * @return 			A CGALMeshShellPoint closest to p.
+	 */
+	CGALMeshShellPoint nearest_point_on_shell(const Eigen::Vector3d &p) const override;
 
-	Eigen::Vector3d surface_point(const CGALMeshPoint &p) const override;
+	/**
+	 * Compute the carthesian coordinates of a CGALMeshShellPoint.
+	 *
+	 * @param p 		The point to compute the coordinates for.
+	 * @return 			The carthesian coordinates.
+	 */
+	Eigen::Vector3d surface_point(const CGALMeshShellPoint &p) const override;
 
-	Eigen::Vector3d surface_point_unpadded(const CGALMeshPoint &p) const;
+	/**
+	 * Compute a path across the surface between two shell points.
+	 *
+	 * TODO: The behavior of this function with start/endpoints near edges and vertices is somewhat poorly defined,
+	 * need to test whether it's really what we're looking for.
+	 *
+	 * @param from 		The start point.
+	 * @param to 		The end point.
+	 * @return 			A piecewise-linear path between the two points.
+	 */
+	std::shared_ptr<ShellPath<CGALMeshShellPoint>>
+	path_from_to(const CGALMeshShellPoint &from, const CGALMeshShellPoint &to) const override;
 
-	std::shared_ptr<ShellPath<CGALMeshPoint>>
-	path_from_to(const CGALMeshPoint &from, const CGALMeshPoint &to) const override;
-
-	double path_length(const std::shared_ptr<ShellPath<CGALMeshPoint>> &path) const override;
+	/**
+	 * Compute the length of a path across the surface between two shell points,
+	 * since a ShellPath does not contain actual information about the mesh, only
+	 * references to points on the mesh surface.
+	 *
+	 * @param path 		The path to compute the length for.
+	 * @return 			The length of the path.
+	 */
+	double path_length(const std::shared_ptr<ShellPath<CGALMeshShellPoint>> &path) const override;
 };
 
-std::shared_ptr<WorkspaceShell<CGALMeshPoint>> convexHullAroundLeavesCGAL(
+std::shared_ptr<WorkspaceShell<CGALMeshShellPoint>> convexHullAroundLeavesCGAL(
 		const AppleTreePlanningScene &scene_info,
 		const ompl::base::SpaceInformationPtr &si,
 		double rotation_weight,

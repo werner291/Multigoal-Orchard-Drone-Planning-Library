@@ -129,8 +129,8 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	 *
 	 */
 	void extend_plan(const std::chrono::high_resolution_clock::time_point &deadline,
-					 const std::shared_ptr<ArmHorizontalDecorator<CGALMeshPoint>> &shell,
-					 const MoveItShellSpace<CGALMeshPoint> &shell_space);
+					 const std::shared_ptr<ArmHorizontalDecorator<CGALMeshShellPoint>> &shell,
+					 const MoveItShellSpace<CGALMeshShellPoint> &shell_space);
 
 public:
 	/// Return the visitation ordering algorithm state, for debugging and visualization
@@ -172,10 +172,10 @@ public:
 
 	void removeVisitedTargets();
 
-	std::optional<RobotPath> pathToTargetPoint(const std::shared_ptr<ArmHorizontalDecorator<CGALMeshPoint>> &shell,
-											   const MoveItShellSpace<CGALMeshPoint> &shell_space,
+	std::optional<RobotPath> pathToTargetPoint(const std::shared_ptr<ArmHorizontalDecorator<CGALMeshShellPoint>> &shell,
+											   const MoveItShellSpace<CGALMeshShellPoint> &shell_space,
 											   const DynamicMeshHullAlgorithm::TargetPoint &target_point,
-											   const CGALMeshPoint &to_point,
+											   const CGALMeshShellPoint &to_point,
 											   const moveit::core::RobotState &fromState);
 
 	static void removeFrontReversal(const moveit::core::RobotState &from_state, RobotPath &path) ;
