@@ -4,7 +4,6 @@
 #include "../utilities/mesh_utils.h"
 #include "CandidatePathGenerator.h"
 
-
 void DynamicMeshHullAlgorithm::update(const moveit::core::RobotState &current_state,
 									  const SegmentedPointCloud::ByType &segmentedPointCloud) {
 
@@ -88,9 +87,9 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 
 	// If lastPath has n segments, that means that n targets in the current visit_ordering have a path planned to them,
 	// and anything after that should visit the entries in visit_ordering in order starting form index n (assuming 0-indexing).
-	for (size_t i = lastPath.size(); i < visit_ordering.getVisitOrdering().size(); i++) {
+	for (size_t i = lastPath.segments.size(); i < visit_ordering.getVisitOrdering().size(); i++) {
 
-		if (std::chrono::high_resolution_clock::now() > deadline || lastPath.size() >= 2) {
+		if (std::chrono::high_resolution_clock::now() > deadline || lastPath.segments.size() >= 2) {
 			break;
 		}
 
@@ -121,7 +120,7 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 			// For now, we patch it by simply prepending the state-at-target form the previous
 			// approach path to the new one as the change is usually only minor.
 			// TODO But we may want to do something more sophisticated in the future.
-			retreat_path_optional->waypoints.push_back(lastPath.back().waypoints.back());
+			retreat_path_optional->waypoints.push_back(lastPath.segments.back().waypoints.back());
 
 			retreat_path = *retreat_path_optional;
 
@@ -150,7 +149,7 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 		segment.append(shell_path);
 		segment.append(*approach_path);
 
-		lastPath.push_back(segment);
+		lastPath.segments.push_back(segment);
 
 
 	}
@@ -169,15 +168,15 @@ DynamicMeshHullAlgorithm::computeInitialApproachPath(const MoveItShellSpace<CGAL
 
 void DynamicMeshHullAlgorithm::cut_invalid_future() {
 
-	for (size_t segment_i = 0; segment_i < lastPath.size(); segment_i++) {
+	for (size_t segment_i = 0; segment_i < lastPath.segments.size(); segment_i++) {
 		// Need to check: is this segment still valid, and if so, does it still lead to the right target?
 
-		bool has_known_collision = collision_detector.checkCollisionInterpolated(lastPath[segment_i],
+		bool has_known_collision = collision_detector.checkCollisionInterpolated(lastPath.segments[segment_i],
 																				 COLLISION_DETECTION_MAX_STEP);
 
 		Eigen::Vector3d target_point = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_i]].observed_location
 				.position;
-		Eigen::Vector3d end_effector_after_segment = lastPath[segment_i].waypoints
+		Eigen::Vector3d end_effector_after_segment = lastPath.segments[segment_i].waypoints
 				.back()
 				.getGlobalLinkTransform("end_effector")
 				.translation();
@@ -186,7 +185,7 @@ void DynamicMeshHullAlgorithm::cut_invalid_future() {
 
 		if (has_known_collision || !goes_to_target) {
 			// This segment is no longer valid. Remove it and all subsequent segments.
-			lastPath.erase(lastPath.begin() + (int) segment_i, lastPath.end());
+			lastPath.segments.erase(lastPath.segments.begin() + (int) segment_i, lastPath.segments.end());
 
 			std::cout << "Deleted all segments from " << segment_i << " onwards because of: "
 					  << (has_known_collision ? "collision" : "wrong target") << std::endl;
@@ -200,56 +199,14 @@ void DynamicMeshHullAlgorithm::advance_path_to_current() {
 
 	double last_step_size = robot_past.lastStepSize();
 
-	for (size_t path_i = 0; path_i < lastPath.size(); path_i++) {
+	while (!lastPath.empty() && lastPath.first_waypoint().distance(robot_past.fromBack(0)) < last_step_size) {
 
-		for (size_t segment_i = 0; segment_i + 1 < lastPath[path_i].waypoints.size(); segment_i++) {
-
-			auto &from_wp = lastPath[path_i].waypoints[segment_i];
-			auto &to_wp = lastPath[path_i].waypoints[segment_i + 1];
-
-			double segment_length = from_wp.distance(to_wp);
-
-			double start_to_state = from_wp.distance(robot_past.lastRobotState());
-			double state_to_end = to_wp.distance(robot_past.lastRobotState());
-
-			if (state_to_end < 2.0 * last_step_size) {
-				// We're at the end of the segment. Remove it.
-				lastPath[path_i].waypoints.erase(lastPath[path_i].waypoints.begin() + (int) segment_i + 1);
-
-				std::cout << "Deleted segment " << segment_i << " from path " << path_i
-						  << " because we're at the end of it." << std::endl;
-				segment_i -= 1;
-
-			} else {
-
-				// TODO: this code seems to work but I need to double-check it once I'm more awake.
-
-				double d = std::abs(start_to_state + state_to_end - segment_length);
-
-				bool on_segment = d < last_step_size * 2.0;
-
-				if (on_segment) {
-
-					from_wp = robot_past.lastRobotState();
-
-					// We found the current state on the segment. Remove everything before it.
-					lastPath[path_i].waypoints
-							.erase(lastPath[path_i].waypoints.begin(), lastPath[path_i].waypoints.begin() + segment_i);
-
-					lastPath.erase(lastPath.begin(), lastPath.begin() + (int) path_i);
-
-					for (size_t path_j = 0; path_j < path_i; path_j++) {
-						std::cout << "Reached target point " << visit_ordering.getVisitOrdering()[path_j] << std::endl;
-						visit_ordering.remove(visit_ordering.getVisitOrdering()[0]);
-
-						std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-					}
-
-					return;
-				}
-			}
-
+		if (lastPath.is_at_target(lastPath.first_waypoint_index())) {
+			std::cout << "Successfully reached target point " << visit_ordering.getVisitOrdering()[0] << std::endl;
+			visit_ordering.remove(visit_ordering.getVisitOrdering()[0]);
 		}
+
+		lastPath.pop_first();
 
 	}
 }
@@ -259,7 +216,7 @@ void DynamicMeshHullAlgorithm::emitUpdatedPath() {
 
 	upcoming_trajectory.addSuffixWayPoint(robot_past.lastRobotState(), 0.0);
 
-	for (const auto &segment: lastPath) {
+	for (const auto &segment: lastPath.segments) {
 		for (const auto &substate: segment.waypoints) {
 			upcoming_trajectory.addSuffixWayPoint(substate, upcoming_trajectory.getLastWayPoint().distance(substate));
 		}
@@ -345,7 +302,7 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 	MoveItShellSpace<CGALMeshShellPoint> shell_space(robot_past.lastRobotState().getRobotModel(), shell);
 
 	// First, we break up longer segments by interpolation.
-	for (auto &segment: lastPath) {
+	for (auto &segment: lastPath.segments) {
 
 		for (size_t waypoint_i = 0; waypoint_i + 1 < segment.waypoints.size(); ++waypoint_i) {
 
@@ -386,15 +343,15 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 	moveit::core::RobotState last_state = robot_past.lastRobotState();
 	double distance_from_path_start = 0.0;
 
-	for (size_t segment_i = 0;
-		 segment_i < lastPath.size(); segment_i++) { // NOLINT(modernize-loop-convert) (We might use the index later)
+	for (size_t segment_i = 0; segment_i < lastPath.segments
+			.size(); segment_i++) { // NOLINT(modernize-loop-convert) (We might use the index later)
 
 		const auto &segment_target = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_i]];
 
-		for (size_t waypoint_i = 0; waypoint_i + 1 < lastPath[segment_i].waypoints
+		for (size_t waypoint_i = 0; waypoint_i + 1 < lastPath.segments[segment_i].waypoints
 				.size(); waypoint_i++) { // NOLINT(modernize-loop-convert) (We might use the index later)
 
-			auto &waypoint = lastPath[segment_i].waypoints[waypoint_i];
+			auto &waypoint = lastPath.segments[segment_i].waypoints[waypoint_i];
 
 			if (distance_from_path_start > 0.5) {
 
@@ -488,4 +445,75 @@ DynamicMeshHullAlgorithm::approachPathForTarget(DynamicMeshHullAlgorithm::target
 	}
 
 
+}
+
+DynamicMeshHullAlgorithm::FuturePath::Index
+DynamicMeshHullAlgorithm::FuturePath::next_waypoint_index(DynamicMeshHullAlgorithm::FuturePath::Index idx) {
+	if (idx.waypoint_index < segments[idx.segment_index].waypoints.size() - 1) {
+		idx.waypoint_index++;
+	} else {
+		idx.segment_index++;
+		idx.waypoint_index = 0;
+	}
+	return idx;
+}
+
+DynamicMeshHullAlgorithm::FuturePath::Index
+DynamicMeshHullAlgorithm::FuturePath::prev_waypoint_index(DynamicMeshHullAlgorithm::FuturePath::Index idx) {
+	if (idx.waypoint_index > 0) {
+		idx.waypoint_index--;
+	} else {
+		idx.segment_index--;
+		idx.waypoint_index = segments[idx.segment_index].waypoints.size() - 1;
+	}
+	return idx;
+}
+
+DynamicMeshHullAlgorithm::FuturePath::Index DynamicMeshHullAlgorithm::FuturePath::first_waypoint_index() {
+	return Index{0, 0};
+}
+
+DynamicMeshHullAlgorithm::FuturePath::Index DynamicMeshHullAlgorithm::FuturePath::last_waypoint_index() {
+	return Index{segments.size() - 1, segments.back().waypoints.size() - 1};
+}
+
+moveit::core::RobotState &
+DynamicMeshHullAlgorithm::FuturePath::waypoint(DynamicMeshHullAlgorithm::FuturePath::Index idx) {
+	return segments[idx.segment_index].waypoints[idx.waypoint_index];
+}
+
+bool DynamicMeshHullAlgorithm::FuturePath::is_at_target(DynamicMeshHullAlgorithm::FuturePath::Index idx) {
+	return segments[idx.segment_index].waypoints.size() == idx.waypoint_index + 1;
+}
+
+bool
+DynamicMeshHullAlgorithm::FuturePath::Index::operator==(const DynamicMeshHullAlgorithm::FuturePath::Index &other) const {
+	return segment_index == other.segment_index && waypoint_index == other.waypoint_index;
+}
+
+bool
+DynamicMeshHullAlgorithm::FuturePath::Index::operator!=(const DynamicMeshHullAlgorithm::FuturePath::Index &other) const {
+	return !(*this == other);
+}
+
+bool
+DynamicMeshHullAlgorithm::FuturePath::Index::operator<(const DynamicMeshHullAlgorithm::FuturePath::Index &other) const {
+	return segment_index < other.segment_index ||
+		   (segment_index == other.segment_index && waypoint_index < other.waypoint_index);
+}
+
+bool
+DynamicMeshHullAlgorithm::FuturePath::Index::operator>(const DynamicMeshHullAlgorithm::FuturePath::Index &other) const {
+	return segment_index > other.segment_index ||
+		   (segment_index == other.segment_index && waypoint_index > other.waypoint_index);
+}
+
+bool
+DynamicMeshHullAlgorithm::FuturePath::Index::operator<=(const DynamicMeshHullAlgorithm::FuturePath::Index &other) const {
+	return *this < other || *this == other;
+}
+
+bool
+DynamicMeshHullAlgorithm::FuturePath::Index::operator>=(const DynamicMeshHullAlgorithm::FuturePath::Index &other) const {
+	return *this > other || *this == other;
 }
