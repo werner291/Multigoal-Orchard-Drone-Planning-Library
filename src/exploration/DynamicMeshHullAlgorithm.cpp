@@ -20,26 +20,12 @@ void DynamicMeshHullAlgorithm::update(const moveit::core::RobotState &current_st
 	// Process the point cloud
 	updatePointCloud(segmentedPointCloud);
 
-	// Delete targets from our to-do list when necessary
-	removeVisitedTargets();
-
 	// Recompute the convex hull shell
 	updateShell();
 
 	// Call for a trajectory update based on new knowledge.
 	updateTrajectory();
 
-}
-
-void DynamicMeshHullAlgorithm::removeVisitedTargets() {
-	if (!targetPointsOnChullSurface.empty()) {
-		// Remove target points that are close enough to the end effector
-		if ((targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[0]].hull_location -
-			 last_end_effector_position).norm() < DISTANCE_CONSIDERED_SCANNED) {
-
-			visit_ordering.remove(visit_ordering.getVisitOrdering()[0]);
-		}
-	}
 }
 
 void DynamicMeshHullAlgorithm::updateTrajectory() {
@@ -78,6 +64,18 @@ void DynamicMeshHullAlgorithm::updateTrajectory() {
 
 		extend_plan(deadline, shell, shell_space);
 
+		for (size_t segment_index = 0; segment_index < lastPath.size(); segment_index++) {
+
+			Eigen::Vector3d ee_position = lastPath[segment_index].waypoints.back().getGlobalLinkTransform("end_effector").translation();
+
+			Eigen::Vector3d expected = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_index]].observed_location.position;
+
+			if ((ee_position - expected).norm() > 1.0e-6) {
+				std::cout << "Expected " << expected.transpose() << " but got " << ee_position.transpose() << std::endl;
+			}
+
+		}
+
 //		optimizePlan();
 
 		emitUpdatedPath();
@@ -104,6 +102,10 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 	// and anything after that should visit the entries in visit_ordering in order starting form index n (assuming 0-indexing).
 	for (size_t i = lastPath.size(); i < visit_ordering.getVisitOrdering().size(); i++) {
 
+		if (std::chrono::high_resolution_clock::now() > deadline || lastPath.size() >= 2) {
+			break;
+		}
+
 		// Try to find a path from the end of lastPath to the target point.
 
 		RobotPath retreat_path;
@@ -125,7 +127,14 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 
 			std::reverse(retreat_path_optional->waypoints.begin(), retreat_path_optional->waypoints.end());
 
+			// Changes to the convex hull can cause minor changes to the state-at-target.
+			// For now, we patch it by simply prepending the state-at-target form the previous
+			// approach path to the new one as the change is usually only minor.
+			// TODO But we may want to do something more sophisticated in the future.
+			retreat_path_optional->waypoints.push_back(lastPath.back().waypoints.back());
+
 			retreat_path = *retreat_path_optional;
+
 		}
 
 		auto approach_path = approachPathForTarget(visit_ordering.getVisitOrdering()[i]);
@@ -154,9 +163,7 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 
 		lastPath.push_back(segment);
 
-		if (std::chrono::high_resolution_clock::now() > deadline || lastPath.size() >= 2) {
-			break;
-		}
+
 
 	}
 }
@@ -199,7 +206,7 @@ void DynamicMeshHullAlgorithm::cut_invalid_future() {
 	for (size_t segment_i = 0; segment_i < lastPath.size(); segment_i++) {
 		// Need to check: is this segment still valid, and if so, does it still lead to the right target?
 
-		bool has_known_collision = collision_detector.checkCollisionInterpolated(lastPath[segment_i], COLLISION_DETECTION_MAX_STEP);
+		bool has_known_collision = collision_detector.checkCollisionInterpolated(lastPath[segment_i], COLLISION_DETECTION_MAX_STEP) && false; // TODO remove
 
 		Eigen::Vector3d target_point = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_i]].observed_location.position;
 		Eigen::Vector3d end_effector_after_segment = lastPath[segment_i].waypoints.back().getGlobalLinkTransform("end_effector").translation();
@@ -210,7 +217,7 @@ void DynamicMeshHullAlgorithm::cut_invalid_future() {
 			// This segment is no longer valid. Remove it and all subsequent segments.
 			lastPath.erase(lastPath.begin() + (int) segment_i, lastPath.end());
 
-			std::cout << "Deleted all segments from " << segment_i << " onwards because of << " << (has_known_collision ? "collision" : "wrong target") << std::endl;
+			std::cout << "Deleted all segments from " << segment_i << " onwards because of: " << (has_known_collision ? "collision" : "wrong target") << std::endl;
 			break;
 		}
 
@@ -219,37 +226,60 @@ void DynamicMeshHullAlgorithm::cut_invalid_future() {
 
 void DynamicMeshHullAlgorithm::advance_path_to_current() {
 
+	double last_step_size = last_robot_states.size() >= 2 ? last_robot_states.back().distance(last_robot_states[last_robot_states.size() - 2]) : 0.0;
+
 	for (size_t path_i = 0; path_i < lastPath.size(); path_i++) {
 
-		for (size_t segment_i = 0; segment_i + 1 < lastPath.front().waypoints.size(); segment_i++) {
+		for (size_t segment_i = 0; segment_i + 1 < lastPath[path_i].waypoints.size(); segment_i++) {
 
-			auto from_wp = lastPath.front().waypoints[segment_i];
-			auto to_wp = lastPath.front().waypoints[segment_i + 1];
+			auto& from_wp = lastPath[path_i].waypoints[segment_i];
+			auto& to_wp = lastPath[path_i].waypoints[segment_i + 1];
 
 			double segment_length = from_wp.distance(to_wp);
 
 			double start_to_state = from_wp.distance(last_robot_states.back());
 			double state_to_end = to_wp.distance(last_robot_states.back());
 
-			bool on_segment = std::abs(start_to_state + state_to_end - segment_length) < 1.0e-6;
+			if (state_to_end < 2.0 * last_step_size) {
+				// We're at the end of the segment. Remove it.
+				lastPath[path_i].waypoints.erase(lastPath[path_i].waypoints.begin() + (int) segment_i + 1);
 
-			if (on_segment) {
+				std::cout << "Deleted segment " << segment_i << " from path " << path_i << " because we're at the end of it." << std::endl;
+				segment_i -= 1;
 
-				lastPath.erase(lastPath.begin(), lastPath.begin() + (int) path_i);
+			} else {
 
-				// We found the current state on the segment. Remove everything before it.
-				lastPath.front().waypoints.erase(lastPath.front().waypoints.begin(),
-												 lastPath.front().waypoints.begin() + segment_i+1);
+				// TODO: this code seems to work but I need to double-check it once I'm more awake.
 
-				std::cout << "Removed " << path_i << " segments from the path, and " << (segment_i+1) << " waypoints from the first segment." << std::endl;
+				double d = std::abs(start_to_state + state_to_end - segment_length);
 
-				return;
+				bool on_segment = d < last_step_size * 2.0;
+
+				if (on_segment) {
+
+					from_wp = last_robot_states.back();
+
+					// We found the current state on the segment. Remove everything before it.
+					lastPath[path_i].waypoints
+							.erase(lastPath[path_i].waypoints.begin(),
+								   lastPath[path_i].waypoints.begin() + segment_i);
+
+					lastPath.erase(lastPath.begin(), lastPath.begin() + (int) path_i);
+
+					for (size_t path_j = 0; path_j < path_i; path_j++) {
+						std::cout << "Reached target point " << visit_ordering.getVisitOrdering()[path_j] << std::endl;
+						visit_ordering.remove(visit_ordering.getVisitOrdering()[0]);
+
+						std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+					}
+
+					return;
+				}
 			}
 
 		}
 
 	}
-
 }
 
 void DynamicMeshHullAlgorithm::emitUpdatedPath() {
@@ -443,8 +473,8 @@ std::optional<RobotPath> DynamicMeshHullAlgorithm::approachPathForTarget(Dynamic
 			return target.approach_path_cache;
 		}
 
-		// Otherwise, we re-check for collisions
-		if (!collision_detector.checkCollisionInterpolated(*target.approach_path_cache, COLLISION_DETECTION_MAX_STEP)) {
+		// Otherwise, we re-check for collisions TODO remove false
+		if (!collision_detector.checkCollisionInterpolated(*target.approach_path_cache, COLLISION_DETECTION_MAX_STEP) && false) {
 			// The path is still valid, so we can use it.
 			// So, we update the collision version and return the path
 			target.collision_version = collision_detector.getVersion();
@@ -459,7 +489,7 @@ std::optional<RobotPath> DynamicMeshHullAlgorithm::approachPathForTarget(Dynamic
 
 	// Compute the shell state from which to approach the target.
 	MoveItShellSpace<CGALMeshShellPoint> shell_space(last_robot_states.back().getRobotModel(), std::make_shared<ArmHorizontalDecorator<CGALMeshShellPoint>>(cgal_hull));
-	auto shell_state = shell_space.stateFromPoint(cgal_hull->nearest_point_on_shell(targetPointsOnChullSurface[target_index].hull_location));
+	auto shell_state = shell_space.stateFromPoint(cgal_hull->nearest_point_on_shell(targetPointsOnChullSurface[target_index].observed_location.position));
 
 	// Create a path generator that will generate possible paths that need to be checked for collisions
 	CandidatePathGenerator gen(shell_state, targetPointsOnChullSurface[target_index].observed_location);
@@ -467,8 +497,8 @@ std::optional<RobotPath> DynamicMeshHullAlgorithm::approachPathForTarget(Dynamic
 	// Generate one candidate path (TODO: generate more than one)
 	auto candidate = gen.generateCandidatePath();
 
-	// Check for collisions
-	if (collision_detector.checkCollisionInterpolated(candidate, COLLISION_DETECTION_MAX_STEP)) {
+	// Check for collisions TODO remove false
+	if (collision_detector.checkCollisionInterpolated(candidate, COLLISION_DETECTION_MAX_STEP) && false) {
 		// The candidate path is in collision; we conclude the target is unreachable.
 		return std::nullopt;
 	} else {
