@@ -1,4 +1,3 @@
-
 #include "moveit.h"
 
 void setBaseTranslation(moveit::core::RobotState &st, const Eigen::Vector3d &offset) {
@@ -51,4 +50,30 @@ moveit::core::RobotState setEndEffectorToPosition(moveit::core::RobotState state
 
 	return state;
 
+}
+
+RobotPastTrace::RobotPastTrace(size_t keep_count, const moveit::core::RobotState &initial_state)
+		: keep_count(keep_count), last_robot_states({initial_state}) {
+}
+
+void RobotPastTrace::addRobotState(const moveit::core::RobotState &robot_state) {
+	last_robot_states.push_back(robot_state);
+	if (last_robot_states.size() > keep_count) {
+		last_robot_states.erase(last_robot_states.begin());
+	}
+}
+
+const moveit::core::RobotState &RobotPastTrace::lastRobotState() const {
+	return last_robot_states.back();
+}
+
+const moveit::core::RobotState &RobotPastTrace::fromBack(size_t i) const {
+
+	assert(i < last_robot_states.size());
+
+	return last_robot_states[last_robot_states.size() - i - 1];
+}
+
+double RobotPastTrace::lastStepSize() const {
+	return last_robot_states.size() >= 2 ? fromBack(0).distance(fromBack(1)) : 0.0;
 }

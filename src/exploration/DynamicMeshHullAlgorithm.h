@@ -16,6 +16,7 @@
 #include "../AnytimeOptimalInsertion.h"
 #include "../shell_space/CGALMeshShell.h"
 #include "../DirectPointCloudCollisionDetection.h"
+#include "../utilities/moveit.h"
 
 static const double TARGET_POINT_DEDUP_THRESHOLD = 0.05;
 
@@ -27,6 +28,7 @@ static const double PADDING = 0.5;
 
 static const double COLLISION_DETECTION_MAX_STEP = 0.2;
 
+
 /**
  * A motion control algorithm that uses a dynamic mesh to represent the outer "shell" of the obstacles,
  * updating this hull as new data comes in from the robot's sensors.
@@ -37,8 +39,7 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 
 	using target_id = size_t;
 
-	/// A number of last-known positions of the robot, from oldest to newest, assumed to be about spaced evenly in time.
-	std::vector<moveit::core::RobotState> last_robot_states;
+	RobotPastTrace robot_past;
 
 	/// The end-effector position of the last-known robot state; this is a cached value derived from last_robot_state.
 	Eigen::Vector3d last_end_effector_position;

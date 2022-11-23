@@ -4,18 +4,15 @@
 #include "../utilities/mesh_utils.h"
 #include "CandidatePathGenerator.h"
 
+
 void DynamicMeshHullAlgorithm::update(const moveit::core::RobotState &current_state,
 									  const SegmentedPointCloud::ByType &segmentedPointCloud) {
 
 	// Update last-known robot state
-	last_robot_states.push_back(current_state);
-
-	if (last_robot_states.size() > 2) {
-		last_robot_states.erase(last_robot_states.begin(), last_robot_states.end() - 2);
-	}
+	robot_past.addRobotState(current_state);
 
 	// Compute the cached value of the end-effector position
-	last_end_effector_position = last_robot_states.back().getGlobalLinkTransform("end_effector").translation();
+	last_end_effector_position = robot_past.lastRobotState().getGlobalLinkTransform("end_effector").translation();
 
 	// Process the point cloud
 	updatePointCloud(segmentedPointCloud);
@@ -38,7 +35,7 @@ void DynamicMeshHullAlgorithm::updateTrajectory() {
 	auto shell = std::make_shared<ArmHorizontalDecorator<CGALMeshShellPoint>>(cgal_hull);
 
 	// Set up translation between the shell and MoveIt terms.
-	MoveItShellSpace<CGALMeshShellPoint> shell_space(last_robot_states.back().getRobotModel(), shell);
+	MoveItShellSpace<CGALMeshShellPoint> shell_space(robot_past.lastRobotState().getRobotModel(), shell);
 
 	// If we have targets and a hull that's at least a tetrahedron, we can compute a trajectory.
 	if (!visit_ordering.getVisitOrdering().empty() && cgal_hull) {
@@ -71,7 +68,7 @@ void DynamicMeshHullAlgorithm::updateTrajectory() {
 
 	} else {
 		// Otherwise, just spin in place until finding something of interest.
-		trajectoryCallback(turnInPlace(last_robot_states.back(), 0.1));
+		trajectoryCallback(turnInPlace(robot_past.lastRobotState(), 0.1));
 	}
 }
 
@@ -160,11 +157,11 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 RobotPath
 DynamicMeshHullAlgorithm::computeInitialApproachPath(const MoveItShellSpace<CGALMeshShellPoint> &shell_space) {
 	RobotPath retreat_path;
-	auto shell_point = shell_space.pointNearState(last_robot_states.back());
+	auto shell_point = shell_space.pointNearState(robot_past.lastRobotState());
 
 	moveit::core::RobotState shell_state = shell_space.stateFromPoint(shell_point);
 
-	retreat_path = {{last_robot_states.back(), shell_state}};
+	retreat_path = {{robot_past.lastRobotState(), shell_state}};
 	return retreat_path;
 }
 
@@ -215,8 +212,7 @@ void DynamicMeshHullAlgorithm::cut_invalid_future() {
 
 void DynamicMeshHullAlgorithm::advance_path_to_current() {
 
-	double last_step_size = last_robot_states.size() >= 2 ? last_robot_states.back()
-			.distance(last_robot_states[last_robot_states.size() - 2]) : 0.0;
+	double last_step_size = robot_past.lastStepSize();
 
 	for (size_t path_i = 0; path_i < lastPath.size(); path_i++) {
 
@@ -227,8 +223,8 @@ void DynamicMeshHullAlgorithm::advance_path_to_current() {
 
 			double segment_length = from_wp.distance(to_wp);
 
-			double start_to_state = from_wp.distance(last_robot_states.back());
-			double state_to_end = to_wp.distance(last_robot_states.back());
+			double start_to_state = from_wp.distance(robot_past.lastRobotState());
+			double state_to_end = to_wp.distance(robot_past.lastRobotState());
 
 			if (state_to_end < 2.0 * last_step_size) {
 				// We're at the end of the segment. Remove it.
@@ -248,7 +244,7 @@ void DynamicMeshHullAlgorithm::advance_path_to_current() {
 
 				if (on_segment) {
 
-					from_wp = last_robot_states.back();
+					from_wp = robot_past.lastRobotState();
 
 					// We found the current state on the segment. Remove everything before it.
 					lastPath[path_i].waypoints
@@ -273,9 +269,9 @@ void DynamicMeshHullAlgorithm::advance_path_to_current() {
 }
 
 void DynamicMeshHullAlgorithm::emitUpdatedPath() {
-	robot_trajectory::RobotTrajectory upcoming_trajectory(last_robot_states.back().getRobotModel(), "whole_body");
+	robot_trajectory::RobotTrajectory upcoming_trajectory(robot_past.lastRobotState().getRobotModel(), "whole_body");
 
-	upcoming_trajectory.addSuffixWayPoint(last_robot_states.back(), 0.0);
+	upcoming_trajectory.addSuffixWayPoint(robot_past.lastRobotState(), 0.0);
 
 	for (const auto &segment: lastPath) {
 		for (const auto &substate: segment.waypoints) {
@@ -298,7 +294,7 @@ DynamicMeshHullAlgorithm::DynamicMeshHullAlgorithm(const moveit::core::RobotStat
 			  return (targetPointsOnChullSurface[i].hull_location - targetPointsOnChullSurface[j].hull_location).norm();
 		  }, [](const std::vector<size_t> &indices) {}),
 		  pointstream_to_hull(std::move(pointstreamToHull)),
-		  last_robot_states({initial_state}) {
+		  robot_past(2, initial_state) {
 
 	last_end_effector_position = initial_state.getGlobalLinkTransform("end_effector").translation();
 
@@ -360,7 +356,7 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 
 	auto shell = std::make_shared<ArmHorizontalDecorator<CGALMeshShellPoint>>(cgal_hull);
 
-	MoveItShellSpace<CGALMeshShellPoint> shell_space(last_robot_states.back().getRobotModel(), shell);
+	MoveItShellSpace<CGALMeshShellPoint> shell_space(robot_past.lastRobotState().getRobotModel(), shell);
 
 	// First, we break up longer segments by interpolation.
 	for (auto &segment: lastPath) {
@@ -401,7 +397,7 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 	 *
 	 */
 
-	moveit::core::RobotState last_state = last_robot_states.back();
+	moveit::core::RobotState last_state = robot_past.lastRobotState();
 	double distance_from_path_start = 0.0;
 
 	for (size_t segment_i = 0;
@@ -436,7 +432,7 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 					waypoint = interpolated;
 
 					double distance_from_end_effector = (waypoint.getGlobalLinkTransform("end_effector").translation() -
-														 last_robot_states.back()
+							robot_past.lastRobotState()
 																 .getGlobalLinkTransform("end_effector")
 																 .translation()).norm();
 
@@ -481,7 +477,7 @@ DynamicMeshHullAlgorithm::approachPathForTarget(DynamicMeshHullAlgorithm::target
 	// If we got to this point, we will compute a new path from scratch.
 
 	// Compute the shell state from which to approach the target.
-	MoveItShellSpace<CGALMeshShellPoint> shell_space(last_robot_states.back().getRobotModel(),
+	MoveItShellSpace<CGALMeshShellPoint> shell_space(robot_past.lastRobotState().getRobotModel(),
 													 std::make_shared<ArmHorizontalDecorator<CGALMeshShellPoint>>(
 															 cgal_hull));
 	auto shell_state = shell_space.stateFromPoint(cgal_hull->nearest_point_on_shell(targetPointsOnChullSurface[target_index]

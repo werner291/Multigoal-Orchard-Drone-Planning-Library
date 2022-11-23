@@ -53,7 +53,51 @@ void setStateToTrajectoryPoint(moveit::core::RobotState &state,
  * @return 						A new robot state where the end-effector is moved to the given position.
  */
 [[nodiscard]] moveit::core::RobotState setEndEffectorToPosition(moveit::core::RobotState state,
-							  const Eigen::Vector3d &position,
-							  const std::string &endEffectorName = "end_effector");
+																const Eigen::Vector3d &position,
+																const std::string &endEffectorName = "end_effector");
+
+/**
+ * A small class that can be fed subsequent samples of robot states over time,
+ * and can be used to determine useful statistics
+ */
+class RobotPastTrace {
+	/// A number of last-known positions of the robot, from oldest to newest, assumed to be about spaced evenly in time.
+	std::vector<moveit::core::RobotState> last_robot_states;
+
+	size_t keep_count;
+
+public:
+
+	/**
+	 * Constructor.
+	 *
+	 * @param keep_count 		The number of last-known positions to keep.
+	 * @param initial_state 		The initial state of the robot.
+	 */
+	RobotPastTrace(size_t keep_count, const moveit::core::RobotState &initial_state);
+
+	/**
+	 * Add a new robot state to the trace. Will discard the oldest state if the trace is full in a ring-buffer-like fashion.
+	 *
+	 * @param state 		The new robot state to add.
+	 */
+	void addRobotState(const moveit::core::RobotState &robot_state);
+
+	/**
+	 * @return 	The last-added robot state.
+	 */
+	[[nodiscard]] const moveit::core::RobotState &lastRobotState() const;
+
+	/**
+	 * @brief Return the i-th most recently-added element.
+	 */
+	[[nodiscard]] const moveit::core::RobotState &fromBack(size_t i) const;
+
+	/**
+	 * @brief Return the distance between the last two states, or 0 if there are less than two states.
+	 */
+	[[nodiscard]] double lastStepSize() const;
+};
+
 
 #endif //NEW_PLANNERS_MOVEIT_H
