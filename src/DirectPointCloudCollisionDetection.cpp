@@ -49,6 +49,10 @@ void DirectPointCloudCollisionDetection::addPoints(std::vector<Eigen::Vector3d> 
 		tree.insert(Point(point.x(), point.y(), point.z()));
 	}
 
+	if (!filtered_points.empty()) {
+		version += 1;
+	}
+
 }
 
 bool DirectPointCloudCollisionDetection::checkCollision(const shapes::Box &shape, const Eigen::Isometry3d &pose) const {
@@ -81,4 +85,50 @@ bool DirectPointCloudCollisionDetection::checkCollision(const shapes::Box &shape
 
 	return false;
 
+}
+
+bool DirectPointCloudCollisionDetection::checkCollisionInterpolated(const moveit::core::RobotState &state1,
+																	const moveit::core::RobotState &state2,
+																	double maxStep) const {
+
+	moveit::core::RobotState interpolated_state(state1.getRobotModel());
+
+	double distance = state1.distance(state2);
+
+	size_t n_steps = std::max((size_t) 1,(size_t) std::ceil(distance / maxStep));
+
+	// TODO: Possible optimization: work with upper/lower margins, similar to how spherical ray marching works.
+
+	for (size_t step_i = 0; step_i <= n_steps; step_i++) {
+		double t = (double) step_i / (double) n_steps;
+		// Starting interpolation at the far end, hoping I get a collision sooner if there is one.
+		state2.interpolate(state1, t, interpolated_state);
+		interpolated_state.update();
+
+		if (checkCollision(interpolated_state)) {
+			return true;
+		}
+	}
+
+	return false;
+
+}
+
+bool DirectPointCloudCollisionDetection::checkCollisionInterpolated(const RobotPath &path, double maxStep) const {
+	for (size_t waypoint_i = 0; waypoint_i + 1 < path.waypoints.size(); waypoint_i++) {
+
+		const auto &before = path.waypoints[waypoint_i];
+		const auto &after = path.waypoints[waypoint_i + 1];
+
+		const double MAX_STEP = 0.2;
+
+		if (checkCollisionInterpolated(before, after, MAX_STEP)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+size_t DirectPointCloudCollisionDetection::getVersion() const {
+	return version;
 }

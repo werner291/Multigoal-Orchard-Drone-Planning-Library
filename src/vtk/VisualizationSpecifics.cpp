@@ -52,7 +52,7 @@ std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
 extractTargetHullPointsSegments(const DynamicMeshHullAlgorithm &dbsa) {
 	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> lines;
 
-	for (const auto &[original, projected]: dbsa.getTargetPointsOnChullSurface()) {
+	for (const auto &[original, projected,_1,_2]: dbsa.getTargetPointsOnChullSurface()) {
 		lines.push_back({original.position, projected});
 	}
 	return lines;

@@ -122,8 +122,6 @@ std::shared_ptr<ShellPath<CGALMeshShellPoint>> CGALMeshShell::path_from_to(const
 	PathVisitor v(tmesh);
 	shortest_paths.shortest_path_sequence_to_source_points(b.point.first, b.point.second, v);
 
-	assert(!v.states.empty());
-
 	// CGAL gives us the path from the end to the start, so we reverse it.
 	std::reverse(v.states.begin(), v.states.end());
 

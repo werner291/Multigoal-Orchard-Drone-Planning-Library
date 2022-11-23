@@ -12,6 +12,8 @@
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Orthogonal_incremental_neighbor_search.h>
 
+#include "RobotPath.h"
+
 /**
  * A collision detector that checks for collisions between a point cloud and robot states.
  */
@@ -28,7 +30,19 @@ class DirectPointCloudCollisionDetection {
 	// so it needs to be rebuilt after every point cloud update.
 	Tree tree;
 
+	/// A version number that is incremented every time that points are added.
+	size_t version = 0;
 public:
+
+	/**
+	 * Get the version number, which will be different every time that points are added.
+	 *
+	 * Useful for checking whether the point cloud has changed since the last time that
+	 * a collision check was performed.
+	 *
+	 * @return 		The version number.
+	 */
+	size_t getVersion() const;
 
 	/**
 	 * Add points to collide with.
@@ -41,9 +55,15 @@ public:
 
 	[[nodiscard]] bool checkCollision(const moveit::core::RobotState &state) const;
 
+	[[nodiscard]] bool checkCollisionInterpolated(const moveit::core::RobotState &state1, const moveit::core::RobotState &state2, double maxStep) const;
+
+	[[nodiscard]] bool checkCollisionInterpolated(const RobotPath& path, double maxStep) const;
+
 	[[nodiscard]] bool checkCollision(const shapes::ShapeConstPtr &shape, const Eigen::Isometry3d &pose) const;
 
 	bool checkCollision(const shapes::Box &shape, const Eigen::Isometry3d &pose) const;
+
+
 
 };
 

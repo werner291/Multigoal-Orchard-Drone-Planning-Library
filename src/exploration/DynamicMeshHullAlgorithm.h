@@ -25,6 +25,8 @@ static const double DISTANCE_CONSIDERED_SCANNED = 0.1;
 
 static const double PADDING = 0.5;
 
+static const double COLLISION_DETECTION_MAX_STEP = 0.2;
+
 /**
  * A motion control algorithm that uses a dynamic mesh to represent the outer "shell" of the obstacles,
  * updating this hull as new data comes in from the robot's sensors.
@@ -32,6 +34,8 @@ static const double PADDING = 0.5;
  * TODO: This is turning into a God class. Refactor if possible.
  */
 class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
+
+	using target_id = size_t;
 
 	/// A number of last-known positions of the robot, from oldest to newest, assumed to be about spaced evenly in time.
 	std::vector<moveit::core::RobotState> last_robot_states;
@@ -53,16 +57,26 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 
 	/// A point somewhere in space that must be inspected, paired with the point on the mesh hull that is on_which_mesh to it.
 	struct TargetPoint {
+
 		///	The original point that must be inspected.
 		const SegmentedPointCloud::TargetPoint observed_location;
+
 		/// The point on the mesh hull that is on_which_mesh to the observed_location;
 		/// this is a semi-heavy operation to compute, so we cache it here.
 		Eigen::Vector3d hull_location;
+
+		/// If optional has a value, contains a RobotPath that can be used to reach the target point
+		/// from the shell; it was collision-free when it was computed.
+		std::optional<RobotPath> approach_path_cache;
+
+		size_t collision_version = 0;
+
 	};
 
 	/// A list of target points to inspect. The indices of this list are used as keys in the visit_ordering,
 	/// so we must not change the order of this list.
 	std::vector<TargetPoint> targetPointsOnChullSurface;
+
 
 	/// The mesh hull that represents the outer shell of the obstacle points.
 	/// Will be null if not enough non-coplanar points have been seen to compute a hull
@@ -132,6 +146,17 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 					 const std::shared_ptr<ArmHorizontalDecorator<CGALMeshShellPoint>> &shell,
 					 const MoveItShellSpace<CGALMeshShellPoint> &shell_space);
 
+	/**
+	 * Compute an approach path to a target point. That is: a path from a shell state near the target point to the target point.
+	 *
+	 * This operation is fairly expensive, but we cache the result if the shell hasn't changed since the last time we computed it,
+	 * and if no collisions have been introduced since then.
+	 *
+	 * @param target_index		The index of the target point to compute an approach path to.
+	 * @return					A path from a shell state near the target point to the target point.
+	 */
+	std::optional<RobotPath> approachPathForTarget(target_id target_index);
+
 public:
 	/// Return the visitation ordering algorithm state, for debugging and visualization
 	[[nodiscard]] const AnytimeOptimalInsertion<size_t> &getVisitOrdering() const;
@@ -172,13 +197,9 @@ public:
 
 	void removeVisitedTargets();
 
-	std::optional<RobotPath> pathToTargetPoint(const std::shared_ptr<ArmHorizontalDecorator<CGALMeshShellPoint>> &shell,
-											   const MoveItShellSpace<CGALMeshShellPoint> &shell_space,
-											   const DynamicMeshHullAlgorithm::TargetPoint &target_point,
-											   const CGALMeshShellPoint &to_point,
-											   const moveit::core::RobotState &fromState);
-
 	static void removeFrontReversal(const moveit::core::RobotState &from_state, RobotPath &path) ;
+
+	RobotPath computeInitialApproachPath(const MoveItShellSpace<CGALMeshShellPoint> &shell_space);
 };
 
 #endif //NEW_PLANNERS_DYNAMICMESHHULLALGORITHM_H
