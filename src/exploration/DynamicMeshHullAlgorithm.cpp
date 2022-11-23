@@ -28,8 +28,7 @@ void DynamicMeshHullAlgorithm::update(const moveit::core::RobotState &current_st
 void DynamicMeshHullAlgorithm::updateTrajectory() {
 
 	// Later portions of the trajectory are likely to be invalidated, so we simply stop computing after a time limit.
-	std::chrono::high_resolution_clock::time_point deadline =
-			std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(ITERATION_COMPUTE_TIME_LIMIT);
+	auto deadline = std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(ITERATION_COMPUTE_TIME_LIMIT);
 
 	// Get a mesh shell based on the latest hull.
 	auto shell = std::make_shared<ArmHorizontalDecorator<CGALMeshShellPoint>>(cgal_hull);
@@ -40,16 +39,7 @@ void DynamicMeshHullAlgorithm::updateTrajectory() {
 	// If we have targets and a hull that's at least a tetrahedron, we can compute a trajectory.
 	if (!visit_ordering.getVisitOrdering().empty() && cgal_hull) {
 
-		// Update the point on the hull for all target points (TODO: Cache if not modified?)
-		for (auto &[original, projection, cached_approach, _]: targetPointsOnChullSurface) {
-
-			auto new_projection = shell->surface_point(shell->nearest_point_on_shell(original.position));
-
-			if (new_projection != projection) {
-				projection = new_projection;
-				cached_approach = std::nullopt;
-			}
-		}
+		updateTargetPointProjections();
 
 		// Update the visit ordering based on the new hull. We only do a single pass,
 		// relying on future updates to progressively refine the ordering.
@@ -69,6 +59,18 @@ void DynamicMeshHullAlgorithm::updateTrajectory() {
 	} else {
 		// Otherwise, just spin in place until finding something of interest.
 		trajectoryCallback(turnInPlace(robot_past.lastRobotState(), 0.1));
+	}
+}
+
+void DynamicMeshHullAlgorithm::updateTargetPointProjections() {
+	for (auto &[original, projection, cached_approach, _]: targetPointsOnChullSurface) {
+
+		auto new_projection = cgal_hull->surface_point(cgal_hull->nearest_point_on_shell(original.position));
+
+		if (new_projection != projection) {
+			projection = new_projection;
+			cached_approach = std::nullopt;
+		}
 	}
 }
 
@@ -163,22 +165,6 @@ DynamicMeshHullAlgorithm::computeInitialApproachPath(const MoveItShellSpace<CGAL
 
 	retreat_path = {{robot_past.lastRobotState(), shell_state}};
 	return retreat_path;
-}
-
-void DynamicMeshHullAlgorithm::removeFrontReversal(const moveit::core::RobotState &from_state, RobotPath &path) {
-
-	if (path.waypoints.size() >= 2) {
-		Eigen::Vector3d ee_0 = from_state.getGlobalLinkTransform("end_effector").translation();
-		Eigen::Vector3d ee_1 = path.waypoints[0].getGlobalLinkTransform("end_effector").translation();
-		Eigen::Vector3d ee_2 = path.waypoints[1].getGlobalLinkTransform("end_effector").translation();
-
-		Eigen::Vector3d dir_0 = ee_1 - ee_0;
-		Eigen::Vector3d dir_1 = ee_2 - ee_1;
-
-		if (dir_0.dot(dir_1) < 0) {
-			path.waypoints.erase(path.waypoints.begin(), path.waypoints.begin() + 1);
-		}
-	}
 }
 
 void DynamicMeshHullAlgorithm::cut_invalid_future() {

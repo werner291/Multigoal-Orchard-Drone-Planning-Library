@@ -196,11 +196,12 @@ public:
 
 	void updateShell();
 
-	void removeVisitedTargets();
-
-	static void removeFrontReversal(const moveit::core::RobotState &from_state, RobotPath &path) ;
-
 	RobotPath computeInitialApproachPath(const MoveItShellSpace<CGALMeshShellPoint> &shell_space);
+
+	/**
+	 * @brief Update the point on the hull for all target points
+	 */
+	void updateTargetPointProjections();
 };
 
 #endif //NEW_PLANNERS_DYNAMICMESHHULLALGORITHM_H
