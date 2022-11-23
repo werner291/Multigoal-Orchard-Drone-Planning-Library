@@ -197,7 +197,7 @@ int main(int, char*[]) {
 			if (!scanned_points[i]) {
 				scanned_points[i] = true;
 
-				std::cout << "Scanned " << i << std::endl;
+//				std::cout << "Scanned " << i << std::endl;
 			}
 		}
 

@@ -64,19 +64,7 @@ void DynamicMeshHullAlgorithm::updateTrajectory() {
 
 		extend_plan(deadline, shell, shell_space);
 
-		for (size_t segment_index = 0; segment_index < lastPath.size(); segment_index++) {
-
-			Eigen::Vector3d ee_position = lastPath[segment_index].waypoints.back().getGlobalLinkTransform("end_effector").translation();
-
-			Eigen::Vector3d expected = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_index]].observed_location.position;
-
-			if ((ee_position - expected).norm() > 1.0e-6) {
-				std::cout << "Expected " << expected.transpose() << " but got " << ee_position.transpose() << std::endl;
-			}
-
-		}
-
-//		optimizePlan();
+		optimizePlan();
 
 		emitUpdatedPath();
 
@@ -206,7 +194,7 @@ void DynamicMeshHullAlgorithm::cut_invalid_future() {
 	for (size_t segment_i = 0; segment_i < lastPath.size(); segment_i++) {
 		// Need to check: is this segment still valid, and if so, does it still lead to the right target?
 
-		bool has_known_collision = collision_detector.checkCollisionInterpolated(lastPath[segment_i], COLLISION_DETECTION_MAX_STEP) && false; // TODO remove
+		bool has_known_collision = collision_detector.checkCollisionInterpolated(lastPath[segment_i], COLLISION_DETECTION_MAX_STEP);
 
 		Eigen::Vector3d target_point = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_i]].observed_location.position;
 		Eigen::Vector3d end_effector_after_segment = lastPath[segment_i].waypoints.back().getGlobalLinkTransform("end_effector").translation();
@@ -411,8 +399,6 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 	 *
 	 */
 
-	std::cout << "Optimizing plan" << std::endl;
-
 	moveit::core::RobotState last_state = last_robot_states.back();
 	double distance_from_path_start = 0.0;
 
@@ -473,8 +459,8 @@ std::optional<RobotPath> DynamicMeshHullAlgorithm::approachPathForTarget(Dynamic
 			return target.approach_path_cache;
 		}
 
-		// Otherwise, we re-check for collisions TODO remove false
-		if (!collision_detector.checkCollisionInterpolated(*target.approach_path_cache, COLLISION_DETECTION_MAX_STEP) && false) {
+		// Otherwise, we re-check for collisions
+		if (!collision_detector.checkCollisionInterpolated(*target.approach_path_cache, COLLISION_DETECTION_MAX_STEP)) {
 			// The path is still valid, so we can use it.
 			// So, we update the collision version and return the path
 			target.collision_version = collision_detector.getVersion();
@@ -497,8 +483,8 @@ std::optional<RobotPath> DynamicMeshHullAlgorithm::approachPathForTarget(Dynamic
 	// Generate one candidate path (TODO: generate more than one)
 	auto candidate = gen.generateCandidatePath();
 
-	// Check for collisions TODO remove false
-	if (collision_detector.checkCollisionInterpolated(candidate, COLLISION_DETECTION_MAX_STEP) && false) {
+	// Check for collisions
+	if (collision_detector.checkCollisionInterpolated(candidate, COLLISION_DETECTION_MAX_STEP)) {
 		// The candidate path is in collision; we conclude the target is unreachable.
 		return std::nullopt;
 	} else {
