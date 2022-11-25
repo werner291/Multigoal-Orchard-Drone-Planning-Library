@@ -8,14 +8,13 @@
 #include <utility>
 
 CandidatePathGenerator::CandidatePathGenerator(const moveit::core::RobotState &start_state,
-											   SegmentedPointCloud::TargetPoint target_point)
+											   Eigen::Vector3d target_point)
 		: start_state(start_state), target_point(std::move(target_point)) {
 }
 
 RobotPath CandidatePathGenerator::generateCandidatePath() {
 
-	return RobotPath {
-		{start_state, setEndEffectorToPosition(start_state, target_point.position)}
+	return RobotPath {{start_state, setEndEffectorToPosition(start_state, target_point)}
 	};
 
 }

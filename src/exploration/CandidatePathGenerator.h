@@ -13,12 +13,11 @@ class CandidatePathGenerator {
 
 	moveit::core::RobotState start_state;
 
-	SegmentedPointCloud::TargetPoint target_point;
+	Eigen::Vector3d target_point;
 
 public:
 
-	CandidatePathGenerator(const moveit::core::RobotState &start_state,
-	                       SegmentedPointCloud::TargetPoint target_point);
+	CandidatePathGenerator(const moveit::core::RobotState &start_state, Eigen::Vector3d target_point);
 
 	/**
 	 * Generate a candidate path.

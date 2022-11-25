@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <moveit/robot_state/robot_state.h>
+#include <moveit/robot_trajectory/robot_trajectory.h>
 #include "../RobotPath.h"
 
 /**
@@ -52,9 +53,11 @@ public:
 
 	void pop_first();
 
-	bool empty() const;
+	[[nodiscard]] bool empty() const;
 
 	std::vector<RobotPath> segments;
+
+	robot_trajectory::RobotTrajectory toConstantSpeedTrajectoryWithPrefix(const moveit::core::RobotState &prefix_state);
 };
 
 #endif //NEW_PLANNERS_SEGMENTEDROBOTPATH_H

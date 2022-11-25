@@ -59,6 +59,20 @@ bool SegmentedRobotPath::empty() const {
 	return segments.empty();
 }
 
+robot_trajectory::RobotTrajectory
+SegmentedRobotPath::toConstantSpeedTrajectoryWithPrefix(const moveit::core::RobotState &prefix_state) {
+
+	robot_trajectory::RobotTrajectory upcoming_trajectory(prefix_state.getRobotModel());
+
+	upcoming_trajectory.addSuffixWayPoint(prefix_state, 0.0);
+
+	for (auto wp_ix = first_waypoint_index(); wp_ix <= last_waypoint_index(); wp_ix = next_waypoint_index(wp_ix)) {
+		upcoming_trajectory.addSuffixWayPoint(waypoint(wp_ix), 0.0);
+	}
+
+	return upcoming_trajectory;
+}
+
 bool SegmentedRobotPath::Index::operator==(const SegmentedRobotPath::Index &other) const {
 	return segment_index == other.segment_index && waypoint_index == other.waypoint_index;
 }

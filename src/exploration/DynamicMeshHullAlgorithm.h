@@ -18,6 +18,9 @@
 #include "../DirectPointCloudCollisionDetection.h"
 #include "../utilities/moveit.h"
 
+#include "SegmentedRobotPath.h"
+#include "ApproachPathGenerator.h"
+
 static const double TARGET_POINT_DEDUP_THRESHOLD = 0.05;
 
 static const int ITERATION_COMPUTE_TIME_LIMIT = 30;
@@ -25,9 +28,6 @@ static const int ITERATION_COMPUTE_TIME_LIMIT = 30;
 static const double DISTANCE_CONSIDERED_SCANNED = 0.1;
 
 static const double PADDING = 0.5;
-
-static const double COLLISION_DETECTION_MAX_STEP = 0.2;
-
 
 /**
  * A motion control algorithm that uses a dynamic mesh to represent the outer "shell" of the obstacles,
@@ -66,18 +66,11 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 		/// this is a semi-heavy operation to compute, so we cache it here.
 		Eigen::Vector3d hull_location;
 
-		/// If optional has a value, contains a RobotPath that can be used to reach the target point
-		/// from the shell; it was collision-free when it was computed.
-		std::optional<RobotPath> approach_path_cache;
-
-		size_t collision_version = 0;
-
 	};
 
 	/// A list of target points to inspect. The indices of this list are used as keys in the visit_ordering,
 	/// so we must not change the order of this list.
 	std::vector<TargetPoint> targetPointsOnChullSurface;
-
 
 	/// The mesh hull that represents the outer shell of the obstacle points.
 	/// Will be null if not enough non-coplanar points have been seen to compute a hull
@@ -95,7 +88,6 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	 */
 	void updateTrajectory();
 
-
 	/**
 	 * The current most up-to-date trajectory/path, last emitted from the trajectoryCallback.
 	 *
@@ -104,11 +96,6 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	 * Note: the first waypoint in this path is NOT the current robot state; that gets added in emitUpdatedTrajectory().
 	 */
 	SegmentedRobotPath lastPath;
-
-	/**
-	 * Concatenate the portions of lastPath and prepend the current robot state to it, then emit it.
-	 */
-	void emitUpdatedPath();
 
 	/**
 	 * Check if the current robot state is on any of the segments of lastPath, and delete all leading up to that point.
@@ -147,6 +134,8 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	void extend_plan(const std::chrono::high_resolution_clock::time_point &deadline,
 					 const std::shared_ptr<ArmHorizontalDecorator<CGALMeshShellPoint>> &shell,
 					 const MoveItShellSpace<CGALMeshShellPoint> &shell_space);
+
+	ApproachPaths<CGALMeshShellPoint> approach_path_planner;
 
 	/**
 	 * Compute an approach path to a target point. That is: a path from a shell state near the target point to the target point.
@@ -203,6 +192,8 @@ public:
 	 * @brief Update the point on the hull for all target points
 	 */
 	void updateTargetPointProjections();
+
+	std::optional<RobotPath> computeApproachPath(unsigned long target_index) const;
 };
 
 #endif //NEW_PLANNERS_DYNAMICMESHHULLALGORITHM_H

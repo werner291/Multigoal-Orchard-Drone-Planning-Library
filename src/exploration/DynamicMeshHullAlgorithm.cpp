@@ -3,6 +3,7 @@
 #include "../utilities/trajectory_primitives.h"
 #include "../utilities/mesh_utils.h"
 #include "CandidatePathGenerator.h"
+#include "VersionedRevalidableKeyValueCache.h"
 
 void DynamicMeshHullAlgorithm::update(const moveit::core::RobotState &current_state,
 									  const SegmentedPointCloud::ByType &segmentedPointCloud) {
@@ -53,7 +54,7 @@ void DynamicMeshHullAlgorithm::updateTrajectory() {
 
 		optimizePlan();
 
-		emitUpdatedPath();
+		trajectoryCallback(lastPath.toConstantSpeedTrajectoryWithPrefix(robot_past.lastRobotState()));
 
 	} else {
 		// Otherwise, just spin in place until finding something of interest.
@@ -62,13 +63,14 @@ void DynamicMeshHullAlgorithm::updateTrajectory() {
 }
 
 void DynamicMeshHullAlgorithm::updateTargetPointProjections() {
-	for (auto &[original, projection, cached_approach, _]: targetPointsOnChullSurface) {
+	for (target_id target = 0; target < targetPointsOnChullSurface.size(); target++) {
+		auto new_projection = cgal_hull->surface_point(cgal_hull->nearest_point_on_shell(targetPointsOnChullSurface[target]
+																								 .observed_location
+																								 .position));
 
-		auto new_projection = cgal_hull->surface_point(cgal_hull->nearest_point_on_shell(original.position));
-
-		if (new_projection != projection) {
-			projection = new_projection;
-			cached_approach = std::nullopt;
+		if (new_projection != targetPointsOnChullSurface[target].hull_location) {
+			targetPointsOnChullSurface[target].hull_location = new_projection;
+			approach_path_planner.invalidate(targetPointsOnChullSurface[target].observed_location.position);
 		}
 	}
 }
@@ -145,9 +147,9 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 
 		// Compose it all together.
 		RobotPath segment;
-		segment.append(retreat_path);
+		//		segment.append(retreat_path);
 		segment.append(shell_path);
-		segment.append(*approach_path);
+		//		segment.append(*approach_path);
 
 		lastPath.segments.push_back(segment);
 
@@ -176,6 +178,7 @@ void DynamicMeshHullAlgorithm::cut_invalid_future() {
 
 		Eigen::Vector3d target_point = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_i]].observed_location
 				.position;
+
 		Eigen::Vector3d end_effector_after_segment = lastPath.segments[segment_i].waypoints
 				.back()
 				.getGlobalLinkTransform("end_effector")
@@ -211,25 +214,10 @@ void DynamicMeshHullAlgorithm::advance_path_to_current() {
 	}
 }
 
-void DynamicMeshHullAlgorithm::emitUpdatedPath() {
-	robot_trajectory::RobotTrajectory upcoming_trajectory(robot_past.lastRobotState().getRobotModel(), "whole_body");
-
-	upcoming_trajectory.addSuffixWayPoint(robot_past.lastRobotState(), 0.0);
-
-	for (const auto &segment: lastPath.segments) {
-		for (const auto &substate: segment.waypoints) {
-			upcoming_trajectory.addSuffixWayPoint(substate, upcoming_trajectory.getLastWayPoint().distance(substate));
-		}
-	}
-
-	trajectoryCallback(upcoming_trajectory);
-}
-
 DynamicMeshHullAlgorithm::DynamicMeshHullAlgorithm(const moveit::core::RobotState &initial_state,
 												   const std::function<void(robot_trajectory::RobotTrajectory)> &trajectoryCallback,
 												   std::shared_ptr<StreamingMeshHullAlgorithm> pointstreamToHull)
 		: OnlinePointCloudMotionControlAlgorithm(trajectoryCallback),
-
 		  targetPointsDedupIndex(0.05, 1000),
 		  visit_ordering([this](size_t i) {
 			  return (targetPointsOnChullSurface[i].hull_location - last_end_effector_position).norm();
@@ -237,7 +225,8 @@ DynamicMeshHullAlgorithm::DynamicMeshHullAlgorithm(const moveit::core::RobotStat
 			  return (targetPointsOnChullSurface[i].hull_location - targetPointsOnChullSurface[j].hull_location).norm();
 		  }, [](const std::vector<size_t> &indices) {}),
 		  pointstream_to_hull(std::move(pointstreamToHull)),
-		  robot_past(2, initial_state) {
+		  robot_past(2, initial_state),
+		  approach_path_planner() {
 
 	last_end_effector_position = initial_state.getGlobalLinkTransform("end_effector").translation();
 
@@ -370,55 +359,12 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 
 std::optional<RobotPath>
 DynamicMeshHullAlgorithm::approachPathForTarget(DynamicMeshHullAlgorithm::target_id target_index) {
-
-	// Look up the target point
-	TargetPoint &target = targetPointsOnChullSurface[target_index];
-
-	// There is a path in the cache, let's see if it's still valid
-	if (target.approach_path_cache) {
-
-		// There were no new obstacles since the last time we calculated the path, so we can use the cached path
-		if (target.collision_version == collision_detector.getVersion()) {
-			return target.approach_path_cache;
-		}
-
-		// Otherwise, we re-check for collisions
-		if (!collision_detector.checkCollisionInterpolated(*target.approach_path_cache, COLLISION_DETECTION_MAX_STEP)) {
-			// The path is still valid, so we can use it.
-			// So, we update the collision version and return the path
-			target.collision_version = collision_detector.getVersion();
-			return target.approach_path_cache;
-		} else {
-			// The path is no longer valid, so we delete the cache entry
-			target.approach_path_cache = std::nullopt;
-		}
-	}
-
-	// If we got to this point, we will compute a new path from scratch.
-
-	// Compute the shell state from which to approach the target.
-	MoveItShellSpace<CGALMeshShellPoint> shell_space(robot_past.lastRobotState().getRobotModel(),
-													 std::make_shared<ArmHorizontalDecorator<CGALMeshShellPoint>>(
-															 cgal_hull));
-	auto shell_state = shell_space.stateFromPoint(cgal_hull->nearest_point_on_shell(targetPointsOnChullSurface[target_index]
-																							.observed_location
-																							.position));
-
-	// Create a path generator that will generate possible paths that need to be checked for collisions
-	CandidatePathGenerator gen(shell_state, targetPointsOnChullSurface[target_index].observed_location);
-
-	// Generate one candidate path (TODO: generate more than one)
-	auto candidate = gen.generateCandidatePath();
-
-	// Check for collisions
-	if (collision_detector.checkCollisionInterpolated(candidate, COLLISION_DETECTION_MAX_STEP)) {
-		// The candidate path is in collision; we conclude the target is unreachable.
-		return std::nullopt;
-	} else {
-		// The candidate path is valid, so we can use it.
-		target.approach_path_cache = candidate;
-		target.collision_version = collision_detector.getVersion();
-		return target.approach_path_cache;
-	}
-
+	return approach_path_planner.approachPathForTarget(targetPointsOnChullSurface[target_index].observed_location
+															   .position,
+													   collision_detector,
+													   *cgal_hull,
+													   MoveItShellSpace<CGALMeshShellPoint>(robot_past.lastRobotState()
+																									.getRobotModel(),
+																							std::make_shared<ArmHorizontalDecorator<CGALMeshShellPoint>>(
+																									cgal_hull)));
 }

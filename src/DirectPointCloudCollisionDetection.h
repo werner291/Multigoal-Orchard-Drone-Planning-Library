@@ -14,6 +14,8 @@
 
 #include "RobotPath.h"
 
+static const double COLLISION_DETECTION_MAX_STEP = 0.2;
+
 /**
  * A collision detector that checks for collisions between a point cloud and robot states.
  */
