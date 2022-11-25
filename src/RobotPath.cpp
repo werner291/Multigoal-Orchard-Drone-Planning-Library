@@ -26,7 +26,7 @@ void RobotPath::split_long_segments(double max_segment_length) {
 
 		double distance = start.distance(end);
 
-		if (distance > 0.5) {
+		if (distance > max_segment_length) {
 			moveit::core::RobotState interpolated(start.getRobotModel());
 
 			start.interpolate(end, 0.5, interpolated);

@@ -147,9 +147,9 @@ void DynamicMeshHullAlgorithm::extend_plan(const std::chrono::high_resolution_cl
 
 		// Compose it all together.
 		RobotPath segment;
-		//		segment.append(retreat_path);
+		segment.append(retreat_path);
 		segment.append(shell_path);
-		//		segment.append(*approach_path);
+		segment.append(*approach_path);
 
 		lastPath.segments.push_back(segment);
 
@@ -225,8 +225,7 @@ DynamicMeshHullAlgorithm::DynamicMeshHullAlgorithm(const moveit::core::RobotStat
 			  return (targetPointsOnChullSurface[i].hull_location - targetPointsOnChullSurface[j].hull_location).norm();
 		  }, [](const std::vector<size_t> &indices) {}),
 		  pointstream_to_hull(std::move(pointstreamToHull)),
-		  robot_past(2, initial_state),
-		  approach_path_planner() {
+		  robot_past(2, initial_state) {
 
 	last_end_effector_position = initial_state.getGlobalLinkTransform("end_effector").translation();
 
@@ -290,10 +289,10 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 
 	MoveItShellSpace<CGALMeshShellPoint> shell_space(robot_past.lastRobotState().getRobotModel(), shell);
 
-	// First, we break up longer segments by interpolation.
-	for (auto &segment: lastPath.segments) {
-		segment.split_long_segments(0.2);
-	}
+	//	// First, we break up longer segments by interpolation.
+	//	for (auto &segment: lastPath.segments) {
+	//		segment.split_long_segments(0.5);
+	//	}
 
 	/**
 	 * Desirable properties of the path:

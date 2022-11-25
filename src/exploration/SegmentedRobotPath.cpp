@@ -67,7 +67,8 @@ SegmentedRobotPath::toConstantSpeedTrajectoryWithPrefix(const moveit::core::Robo
 	upcoming_trajectory.addSuffixWayPoint(prefix_state, 0.0);
 
 	for (auto wp_ix = first_waypoint_index(); wp_ix <= last_waypoint_index(); wp_ix = next_waypoint_index(wp_ix)) {
-		upcoming_trajectory.addSuffixWayPoint(waypoint(wp_ix), 0.0);
+		upcoming_trajectory.addSuffixWayPoint(waypoint(wp_ix),
+											  upcoming_trajectory.getLastWayPoint().distance(waypoint(wp_ix)));
 	}
 
 	return upcoming_trajectory;
