@@ -1,3 +1,4 @@
+#include <ompl/util/RandomNumbers.h>
 #include "moveit.h"
 
 void setBaseTranslation(moveit::core::RobotState &st, const Eigen::Vector3d &offset) {
@@ -49,6 +50,49 @@ moveit::core::RobotState setEndEffectorToPosition(moveit::core::RobotState state
 	state.update(true);
 
 	return state;
+
+}
+
+Eigen::Quaterniond getBaseOrientation(const moveit::core::RobotState &robotState) {
+	return Eigen::Quaterniond(robotState.getVariablePosition(6),
+							  robotState.getVariablePosition(3),
+							  robotState.getVariablePosition(4),
+							  robotState.getVariablePosition(5));
+}
+
+Eigen::Vector3d getBaseTranslation(const moveit::core::RobotState &robotState) {
+	return Eigen::Vector3d(robotState.getVariablePosition(0),
+						   robotState.getVariablePosition(1),
+						   robotState.getVariablePosition(2));
+}
+
+moveit::core::RobotState sampleStateNearByUpright(const moveit::core::RobotState &st, double distance) {
+
+	ompl::RNG rng;
+
+	moveit::core::RobotState out = st;
+
+	// Sample a point uniformly in a sphere, then add to the translation of the reference state.
+	std::vector<double> translation_delta(3);
+	rng.uniformInBall(distance, translation_delta);
+	// Also write it into the result variables.
+	setBaseTranslation(out, getBaseTranslation(st) + Eigen::Vector3d(translation_delta[0], translation_delta[1], translation_delta[2]));
+
+	// Extract the rotation from the current set of variables.
+	// Add a random yaw-rotation to the reference rotation.
+	// Write it into the result.
+	setBaseOrientation(out, getBaseOrientation(st) * Eigen::AngleAxisd(rng.uniformReal(-distance, distance), Eigen::Vector3d::UnitZ()));
+
+	// Add random angles to the arm joints.
+	out.setVariablePosition(7, std::clamp(out.getVariablePosition(7) + rng.uniformReal(-distance, distance), -1.0, 1.0));
+	out.setVariablePosition(8, std::clamp(out.getVariablePosition(8) + rng.uniformReal(-distance, distance), -1.0, 1.0));
+	out.setVariablePosition(9, std::clamp(out.getVariablePosition(8) + rng.uniformReal(-distance, distance), -1.0, 1.0));
+	out.setVariablePosition(10, out.getVariablePosition(10) + rng.uniformReal(-distance, distance));
+
+	// Force-update
+	out.update(true);
+
+	return out;
 
 }
 

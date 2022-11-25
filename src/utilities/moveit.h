@@ -15,6 +15,8 @@
  */
 void setBaseTranslation(moveit::core::RobotState &st, const Eigen::Vector3d &offset);
 
+Eigen::Vector3d getBaseTranslation(const moveit::core::RobotState &robotState);
+
 /**
  * Assuming the robot has a floating base as the first 7 joint variables, this function sets the orientation of the base.
  *
@@ -22,6 +24,8 @@ void setBaseTranslation(moveit::core::RobotState &st, const Eigen::Vector3d &off
  * @param q 			The orientation to set the base to.
  */
 void setBaseOrientation(moveit::core::RobotState &robotState, const Eigen::Quaterniond &q);
+
+Eigen::Quaterniond getBaseOrientation(const moveit::core::RobotState &robotState);
 
 /**
  * Set the given robot state to a point at time T in the given trajectory.
@@ -55,6 +59,8 @@ void setStateToTrajectoryPoint(moveit::core::RobotState &state,
 [[nodiscard]] moveit::core::RobotState setEndEffectorToPosition(moveit::core::RobotState state,
 																const Eigen::Vector3d &position,
 																const std::string &endEffectorName = "end_effector");
+
+moveit::core::RobotState sampleStateNearByUpright(const moveit::core::RobotState& st, double distance);
 
 /**
  * A small class that can be fed subsequent samples of robot states over time,

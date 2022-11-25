@@ -289,10 +289,10 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 
 	MoveItShellSpace<CGALMeshShellPoint> shell_space(robot_past.lastRobotState().getRobotModel(), shell);
 
-	//	// First, we break up longer segments by interpolation.
-	//	for (auto &segment: lastPath.segments) {
-	//		segment.split_long_segments(0.5);
-	//	}
+		// First, we break up longer segments by interpolation.
+		for (auto &segment: lastPath.segments) {
+			segment.split_long_segments(1.0);
+		}
 
 	/**
 	 * Desirable properties of the path:
@@ -311,44 +311,52 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 	for (size_t segment_i = 0; segment_i < lastPath.segments
 			.size(); segment_i++) { // NOLINT(modernize-loop-convert) (We might use the index later)
 
-		const auto &segment_target = targetPointsOnChullSurface[visit_ordering.getVisitOrdering()[segment_i]];
-
-		for (size_t waypoint_i = 0; waypoint_i + 1 < lastPath.segments[segment_i].waypoints
+		for (size_t waypoint_i = 1; waypoint_i + 2 < lastPath.segments[segment_i].waypoints
 				.size(); waypoint_i++) { // NOLINT(modernize-loop-convert) (We might use the index later)
 
 			auto &waypoint = lastPath.segments[segment_i].waypoints[waypoint_i];
 
+			distance_from_path_start += waypoint.distance(last_state);
+			last_state = waypoint;
+
 			if (distance_from_path_start > 0.5) {
 
-				double distance_to_target = (waypoint.getGlobalLinkTransform("end_effector").translation() -
-											 segment_target.hull_location).norm();
+				const auto &next_waypoint = lastPath.segments[segment_i].waypoints[waypoint_i + 1];
+				const auto &prev_waypoint = lastPath.segments[segment_i].waypoints[waypoint_i - 1];
 
-				const double BLEND_FACTOR_SMOOTHNESS = 2.0;
+				double straight_distance = next_waypoint.distance(prev_waypoint);
 
-				double blend_factor = std::tanh(distance_to_target / BLEND_FACTOR_SMOOTHNESS);
+				moveit::core::RobotState candidate = sampleStateNearByUpright(waypoint, 0.05);
 
-				moveit::core::RobotState on_shell = shell_space.stateFromPoint(shell_space.pointNearState(waypoint));
+				Eigen::Vector3d prev_ee = prev_waypoint.getGlobalLinkTransform("base_link").translation();
+				Eigen::Vector3d next_ee = next_waypoint.getGlobalLinkTransform("base_link").translation();
+				Eigen::Vector3d old_ee = waypoint.getGlobalLinkTransform("base_link").translation();
+				Eigen::Vector3d candidate_ee = candidate.getGlobalLinkTransform("base_link").translation();
 
-				moveit::core::RobotState interpolated(on_shell.getRobotModel());
+				double old_to_next = (next_ee - old_ee).norm();
+				double old_to_prev = (prev_ee - old_ee).norm();
+				double candidate_to_next = (next_ee - candidate_ee).norm();
+				double candidate_to_prev = (prev_ee - candidate_ee).norm();
+				double prev_to_next = (next_ee - prev_ee).norm();
 
-				on_shell.interpolate(waypoint, blend_factor, interpolated);
+				double new_roughness = (candidate_to_next + candidate_to_prev) / prev_to_next;
+				double old_roughness = (old_to_next + old_to_prev) / prev_to_next;
 
-				interpolated.update();
+				std::cout << "Old roughness: " << old_roughness << ", new roughness: " << new_roughness << std::endl;
 
-				if (!collision_detector.checkCollision(interpolated)) {
+				if (new_roughness < old_roughness && !collision_detector.checkCollisionInterpolated(prev_waypoint,
+																									candidate,
+																									COLLISION_DETECTION_MAX_STEP) &&
+					!collision_detector.checkCollisionInterpolated(candidate,
+																   next_waypoint,
+																   COLLISION_DETECTION_MAX_STEP)) {
 
-					waypoint = interpolated;
 
-					double distance_from_end_effector = (waypoint.getGlobalLinkTransform("end_effector").translation() -
-							robot_past.lastRobotState()
-																 .getGlobalLinkTransform("end_effector")
-																 .translation()).norm();
+					waypoint = candidate;
 
 				}
 			}
 
-			distance_from_path_start += waypoint.distance(last_state);
-			last_state = waypoint;
 
 		}
 
