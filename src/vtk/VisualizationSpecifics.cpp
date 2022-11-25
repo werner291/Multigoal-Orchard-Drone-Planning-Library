@@ -1,5 +1,4 @@
 
-
 #include "VisualizationSpecifics.h"
 #include "../utilities/vtk.h"
 

@@ -95,58 +95,6 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	 */
 	void updateTrajectory();
 
-	class FuturePath {
-
-	public:
-		struct Index {
-			size_t segment_index;
-			size_t waypoint_index;
-
-			bool operator==(const Index &other) const;
-
-			bool operator!=(const Index &other) const;
-
-			bool operator<(const Index &other) const;
-
-			bool operator>(const Index &other) const;
-
-			bool operator<=(const Index &other) const;
-
-			bool operator>=(const Index &other) const;
-		};
-
-		Index next_waypoint_index(Index idx);
-
-		Index prev_waypoint_index(Index idx);
-
-		Index first_waypoint_index();
-
-		Index last_waypoint_index();
-
-		bool is_at_target(Index idx);
-
-		moveit::core::RobotState &waypoint(Index idx);
-
-		moveit::core::RobotState &first_waypoint() {
-			return waypoint(first_waypoint_index());
-		}
-
-		void pop_first() {
-
-			assert(!segments.empty() && !segments.front().waypoints.empty());
-
-			segments.front().waypoints.erase(segments.front().waypoints.begin());
-			if (segments.front().waypoints.empty()) {
-				segments.erase(segments.begin());
-			}
-		}
-
-		bool empty() {
-			return segments.empty();
-		}
-
-		std::vector<RobotPath> segments;
-	};
 
 	/**
 	 * The current most up-to-date trajectory/path, last emitted from the trajectoryCallback.
@@ -155,7 +103,7 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	 *
 	 * Note: the first waypoint in this path is NOT the current robot state; that gets added in emitUpdatedTrajectory().
 	 */
-	FuturePath lastPath;
+	SegmentedRobotPath lastPath;
 
 	/**
 	 * Concatenate the portions of lastPath and prepend the current robot state to it, then emit it.

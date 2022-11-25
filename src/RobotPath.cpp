@@ -7,23 +7,47 @@
 
 double RobotPath::length() const {
 	// Sum up the distances between the waypoints.
-    return ranges::accumulate(pairwise(waypoints) | ranges::views::transform([&](auto pair) {
-        return pair.first.distance(pair.second);
-    }), 0.0);
+	return ranges::accumulate(pairwise(waypoints) | ranges::views::transform([&](auto pair) {
+		return pair.first.distance(pair.second);
+	}), 0.0);
 }
 
 void RobotPath::append(const RobotPath &other) {
 	// Append the other path to this one by adding the waypoints.
-    waypoints.insert(waypoints.end(), other.waypoints.begin(), other.waypoints.end());
+	waypoints.insert(waypoints.end(), other.waypoints.begin(), other.waypoints.end());
 }
 
-RobotPath omplPathToRobotPath(const ompl::geometric::PathGeometric& ompl_path) {
+void RobotPath::split_long_segments(double max_segment_length) {
+
+	for (size_t waypoint_i = 0; waypoint_i + 1 < waypoints.size(); ++waypoint_i) {
+
+		const auto &start = waypoints[waypoint_i];
+		const auto &end = waypoints[waypoint_i + 1];
+
+		double distance = start.distance(end);
+
+		if (distance > 0.5) {
+			moveit::core::RobotState interpolated(start.getRobotModel());
+
+			start.interpolate(end, 0.5, interpolated);
+
+			interpolated.update();
+
+			waypoints.insert(waypoints.begin() + (int) waypoint_i + 1, interpolated);
+
+			waypoint_i -= 1; // TODO Inelegant and causes uneven spacing
+		}
+
+	}
+}
+
+RobotPath omplPathToRobotPath(const ompl::geometric::PathGeometric &ompl_path) {
 
 	// Create a RobotPath.
-    RobotPath path;
+	RobotPath path;
 
 	// Get the state space and convert it to a ModelBasedStateSpace.
-    auto state_space = ompl_path.getSpaceInformation()->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>();
+	auto state_space = ompl_path.getSpaceInformation()->getStateSpace()->as<ompl_interface::ModelBasedStateSpace>();
 
 	// Get the number of waypoints in the OMPL path and reserve a vector of that size.
     path.waypoints.reserve(ompl_path.getStateCount());

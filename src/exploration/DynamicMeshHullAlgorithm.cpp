@@ -303,30 +303,8 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 
 	// First, we break up longer segments by interpolation.
 	for (auto &segment: lastPath.segments) {
-
-		for (size_t waypoint_i = 0; waypoint_i + 1 < segment.waypoints.size(); ++waypoint_i) {
-
-			const auto &start = segment.waypoints[waypoint_i]; // TODO use collision detector?
-			const auto &end = segment.waypoints[waypoint_i + 1];
-
-			double distance = start.distance(end);
-
-			if (distance > 0.5 && segment.waypoints.size() < 20) {
-				moveit::core::RobotState interpolated(start.getRobotModel());
-
-				start.interpolate(end, 0.5, interpolated);
-
-				interpolated.update();
-
-				segment.waypoints.insert(segment.waypoints.begin() + (int) waypoint_i + 1, interpolated);
-
-				waypoint_i -= 1; // TODO Inelegant and causes uneven spacing
-			}
-
-		}
-
+		segment.split_long_segments(0.2);
 	}
-
 
 	/**
 	 * Desirable properties of the path:
@@ -339,7 +317,6 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 	 * 6. Should avoid changing the path near the head?
 	 *
 	 */
-
 	moveit::core::RobotState last_state = robot_past.lastRobotState();
 	double distance_from_path_start = 0.0;
 
@@ -444,76 +421,4 @@ DynamicMeshHullAlgorithm::approachPathForTarget(DynamicMeshHullAlgorithm::target
 		return target.approach_path_cache;
 	}
 
-
-}
-
-DynamicMeshHullAlgorithm::FuturePath::Index
-DynamicMeshHullAlgorithm::FuturePath::next_waypoint_index(DynamicMeshHullAlgorithm::FuturePath::Index idx) {
-	if (idx.waypoint_index < segments[idx.segment_index].waypoints.size() - 1) {
-		idx.waypoint_index++;
-	} else {
-		idx.segment_index++;
-		idx.waypoint_index = 0;
-	}
-	return idx;
-}
-
-DynamicMeshHullAlgorithm::FuturePath::Index
-DynamicMeshHullAlgorithm::FuturePath::prev_waypoint_index(DynamicMeshHullAlgorithm::FuturePath::Index idx) {
-	if (idx.waypoint_index > 0) {
-		idx.waypoint_index--;
-	} else {
-		idx.segment_index--;
-		idx.waypoint_index = segments[idx.segment_index].waypoints.size() - 1;
-	}
-	return idx;
-}
-
-DynamicMeshHullAlgorithm::FuturePath::Index DynamicMeshHullAlgorithm::FuturePath::first_waypoint_index() {
-	return Index{0, 0};
-}
-
-DynamicMeshHullAlgorithm::FuturePath::Index DynamicMeshHullAlgorithm::FuturePath::last_waypoint_index() {
-	return Index{segments.size() - 1, segments.back().waypoints.size() - 1};
-}
-
-moveit::core::RobotState &
-DynamicMeshHullAlgorithm::FuturePath::waypoint(DynamicMeshHullAlgorithm::FuturePath::Index idx) {
-	return segments[idx.segment_index].waypoints[idx.waypoint_index];
-}
-
-bool DynamicMeshHullAlgorithm::FuturePath::is_at_target(DynamicMeshHullAlgorithm::FuturePath::Index idx) {
-	return segments[idx.segment_index].waypoints.size() == idx.waypoint_index + 1;
-}
-
-bool
-DynamicMeshHullAlgorithm::FuturePath::Index::operator==(const DynamicMeshHullAlgorithm::FuturePath::Index &other) const {
-	return segment_index == other.segment_index && waypoint_index == other.waypoint_index;
-}
-
-bool
-DynamicMeshHullAlgorithm::FuturePath::Index::operator!=(const DynamicMeshHullAlgorithm::FuturePath::Index &other) const {
-	return !(*this == other);
-}
-
-bool
-DynamicMeshHullAlgorithm::FuturePath::Index::operator<(const DynamicMeshHullAlgorithm::FuturePath::Index &other) const {
-	return segment_index < other.segment_index ||
-		   (segment_index == other.segment_index && waypoint_index < other.waypoint_index);
-}
-
-bool
-DynamicMeshHullAlgorithm::FuturePath::Index::operator>(const DynamicMeshHullAlgorithm::FuturePath::Index &other) const {
-	return segment_index > other.segment_index ||
-		   (segment_index == other.segment_index && waypoint_index > other.waypoint_index);
-}
-
-bool
-DynamicMeshHullAlgorithm::FuturePath::Index::operator<=(const DynamicMeshHullAlgorithm::FuturePath::Index &other) const {
-	return *this < other || *this == other;
-}
-
-bool
-DynamicMeshHullAlgorithm::FuturePath::Index::operator>=(const DynamicMeshHullAlgorithm::FuturePath::Index &other) const {
-	return *this > other || *this == other;
 }

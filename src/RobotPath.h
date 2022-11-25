@@ -9,11 +9,13 @@
  * A path through space defined by a vector of robot states, without an associated time component.
  */
 struct RobotPath {
-    std::vector<moveit::core::RobotState> waypoints;
+	std::vector<moveit::core::RobotState> waypoints;
 
-    [[nodiscard]] double length() const;
+	[[nodiscard]] double length() const;
 
-    void append(const RobotPath &other);
+	void append(const RobotPath &other);
+
+	void split_long_segments(double max_segment_length);
 };
 
 /**
