@@ -61,7 +61,6 @@ struct SegmentedPointCloud {
 		std::vector<TargetPoint> target;
 	};
 
-	[[nodiscard]] ByType split_by_type() const;
 };
 
 #endif //NEW_PLANNERS_SEGMENTEDPOINTCLOUD_H
