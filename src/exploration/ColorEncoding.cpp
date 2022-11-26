@@ -1,4 +1,4 @@
-
+#include <iostream>
 #include "ColorEncoding.h"
 
 /**
@@ -10,7 +10,7 @@
  * @return 				True if the color component matches the specified color, false otherwise
  */
 bool isComponentSame(const Eigen::Vector3d &color, const std::array<double, 3> &rgb, int component) {
-	return abs(color[component] - floor(255.0 * rgb[component])) < 1.0e-6;
+	return abs(color[component] - 255.0 * rgb[component]) < 1.0;
 }
 
 /**
