@@ -285,14 +285,21 @@ void DynamicMeshHullAlgorithm::processObstaclePoints(const std::vector<Eigen::Ve
 
 void DynamicMeshHullAlgorithm::optimizePlan() {
 
+	// TODO: When computing an entirely new plan, maybe we can blend it with the old one,
+	// to avoid wasting some of the local optimization in the old one.
+
 	auto shell = std::make_shared<ArmHorizontalDecorator<CGALMeshShellPoint>>(cgal_hull);
 
 	MoveItShellSpace<CGALMeshShellPoint> shell_space(robot_past.lastRobotState().getRobotModel(), shell);
 
-		// First, we break up longer segments by interpolation.
-		for (auto &segment: lastPath.segments) {
-			segment.split_long_segments(1.0);
-		}
+	// First, we break up longer segments by interpolation.
+	for (auto &segment: lastPath.segments) {
+		segment.split_long_segments(1.0);
+	}
+
+	for (auto &segment: lastPath.segments) {
+		segment.collapse_short_segments(0.05);
+	}
 
 	/**
 	 * Desirable properties of the path:
@@ -308,62 +315,68 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 	moveit::core::RobotState last_state = robot_past.lastRobotState();
 	double distance_from_path_start = 0.0;
 
-	for (auto & segment : lastPath.segments) {
+	for (auto ix = lastPath.first_waypoint_index(); ix < lastPath.last_waypoint_index(); ix = lastPath.next_waypoint_index(ix)) {
 
-		for (size_t waypoint_i = 1; waypoint_i + 2 < segment.waypoints.size(); waypoint_i++) {
+		const auto &prev_waypoint = ix == lastPath.first_waypoint_index() ? robot_past.lastRobotState()
+																		  : lastPath.waypoint(lastPath.prev_waypoint_index(
+						ix));
+		const auto &waypoint = lastPath.waypoint(ix);
+		const auto &next_waypoint = lastPath.waypoint(lastPath.next_waypoint_index(ix));
 
-			auto &waypoint = segment.waypoints[waypoint_i];
+		double straight_distance = next_waypoint.distance(prev_waypoint);
 
-			distance_from_path_start += waypoint.distance(last_state);
-			last_state = waypoint;
+		moveit::core::RobotState candidate = sampleStateNearByUpright(waypoint, 0.01);
 
-			if (distance_from_path_start > 0.5) {
-
-				const auto &next_waypoint = segment.waypoints[waypoint_i + 1];
-				const auto &prev_waypoint = segment.waypoints[waypoint_i - 1];
-
-				double straight_distance = next_waypoint.distance(prev_waypoint);
-
-				moveit::core::RobotState candidate = sampleStateNearByUpright(waypoint, 0.01);
-
-				double old_to_next = waypoint.distance(next_waypoint);
-				double old_to_prev = waypoint.distance(prev_waypoint);
-				double candidate_to_next = candidate.distance(next_waypoint);
-				double candidate_to_prev = candidate.distance(prev_waypoint);
-				double prev_to_next = prev_waypoint.distance(next_waypoint);
-
-				const double PREFERRED_MINIMUM_CLEARANCE = 2.0;
-
-				double candidate_clearance = collision_detector.distanceToCollision(candidate, PREFERRED_MINIMUM_CLEARANCE);
-				double old_clearance = collision_detector.distanceToCollision(waypoint, PREFERRED_MINIMUM_CLEARANCE);
-
-				double new_smoothness = prev_to_next / (candidate_to_next + candidate_to_prev);
-				double old_smoothness = prev_to_next / (old_to_next + old_to_prev);
-
-				double old_distance = waypoint.distance(next_waypoint);
-				double new_distance = candidate.distance(next_waypoint);
-
-				double old_score = std::pow(old_smoothness, 2) + std::pow(old_clearance, 2);// - std::pow(old_distance, 2);
-				double candidate_score = std::pow(new_smoothness, 2) + std::pow(candidate_clearance, 2);// - std::pow(new_distance, 2);
-
-				if (old_score < candidate_score && !collision_detector.checkCollisionInterpolated(prev_waypoint,
-																									candidate,
-																									COLLISION_DETECTION_MAX_STEP) &&
-					!collision_detector.checkCollisionInterpolated(candidate,
-																   next_waypoint,
-																   COLLISION_DETECTION_MAX_STEP)) {
-
-
-					waypoint = candidate;
-
-				}
-			}
-
-
+		if (lastPath.is_at_target(ix)) {
+			candidate = setEndEffectorToPosition(std::move(candidate), getEndEffectorPosition(waypoint));
 		}
 
-	}
+		double old_to_next = waypoint.distance(next_waypoint);
+		double old_to_prev = waypoint.distance(prev_waypoint);
+		double candidate_to_next = candidate.distance(next_waypoint);
+		double candidate_to_prev = candidate.distance(prev_waypoint);
+		double prev_to_next = prev_waypoint.distance(next_waypoint);
 
+		const double PREFERRED_MINIMUM_CLEARANCE = 1.0;
+
+		double candidate_clearance = collision_detector.distanceToCollision(candidate, PREFERRED_MINIMUM_CLEARANCE);
+		double old_clearance = collision_detector.distanceToCollision(waypoint, PREFERRED_MINIMUM_CLEARANCE);
+		double clearance_improvement = candidate_clearance - old_clearance;
+
+		double new_smoothness = prev_to_next / (candidate_to_next + candidate_to_prev);
+		double old_smoothness = prev_to_next / (old_to_next + old_to_prev);
+		double smoothness_improvement = new_smoothness - old_smoothness;
+
+		double old_distance = waypoint.distance(next_waypoint);
+		double new_distance = candidate.distance(next_waypoint);
+		double distance_improvement = old_distance - new_distance;
+
+		Eigen::Vector3d old_ee_motion = getEndEffectorPosition(next_waypoint) - getEndEffectorPosition(prev_waypoint);
+		Eigen::Vector3d old_ee_front = getEndEffectorFacing(waypoint);
+		Eigen::Vector3d new_ee_front = getEndEffectorFacing(candidate);
+		double old_alignment = old_ee_motion.dot(old_ee_front);
+		double candidate_alignment = old_ee_motion.dot(new_ee_front);
+		double alignment_improvement = candidate_alignment - old_alignment;
+
+		const double DISTANCE_WEIGHT = 0.3;
+		const double SMOOTHNESS_WEIGHT = 0.05;
+		const double ALIGNMENT_WEIGHT = 1.0;
+		const double CLEARANCE_WEIGHT = 0.1;
+
+		//			double overall_improvement = alignment_improvement;
+		double overall_improvement =
+				SMOOTHNESS_WEIGHT * smoothness_improvement + DISTANCE_WEIGHT * distance_improvement +
+				ALIGNMENT_WEIGHT * alignment_improvement + CLEARANCE_WEIGHT * clearance_improvement;
+
+		if (overall_improvement > 0.0 &&
+			!collision_detector.checkCollisionInterpolated(prev_waypoint, candidate, COLLISION_DETECTION_MAX_STEP) &&
+			!collision_detector.checkCollisionInterpolated(candidate, next_waypoint, COLLISION_DETECTION_MAX_STEP)) {
+
+
+			lastPath.waypoint(ix) = candidate;
+
+		}
+	}
 }
 
 std::optional<RobotPath>

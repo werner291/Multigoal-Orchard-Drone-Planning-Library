@@ -60,6 +60,22 @@ void setStateToTrajectoryPoint(moveit::core::RobotState &state,
 																const Eigen::Vector3d &position,
 																const std::string &endEffectorName = "end_effector");
 
+Eigen::Isometry3d getEndEffectorTransform(const moveit::core::RobotState &state,
+										  const std::string &endEffectorName = "end_effector");
+
+Eigen::Vector3d getEndEffectorFacing(const moveit::core::RobotState &state,
+									 const std::string &endEffectorName = "end_effector");
+
+/**
+ * Return the center of the translation of the end-effector in the given robot state.
+ *
+ * @param state 				The robot state to get the end-effector position from.
+ * @param endEffectorName 		The name of the end-effector link (default: "end_effector")
+ * @return 						The center of the translation of the end-effector in the given robot state.
+ */
+Eigen::Vector3d getEndEffectorPosition(const moveit::core::RobotState &state,
+									   const std::string &endEffectorName = "end_effector");
+
 moveit::core::RobotState sampleStateNearByUpright(const moveit::core::RobotState& st, double distance);
 
 /**

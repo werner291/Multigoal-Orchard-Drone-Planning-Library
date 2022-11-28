@@ -16,6 +16,8 @@ struct RobotPath {
 	void append(const RobotPath &other);
 
 	void split_long_segments(double max_segment_length);
+
+	void collapse_short_segments(double min_segment_length);
 };
 
 /**

@@ -96,6 +96,19 @@ moveit::core::RobotState sampleStateNearByUpright(const moveit::core::RobotState
 
 }
 
+
+Eigen::Vector3d getEndEffectorPosition(const moveit::core::RobotState &state, const std::string &endEffectorName) {
+	return state.getGlobalLinkTransform(endEffectorName).translation();
+}
+
+Eigen::Vector3d getEndEffectorFacing(const moveit::core::RobotState &state, const std::string &endEffectorName) {
+	return getEndEffectorTransform(state, endEffectorName).rotation() * Eigen::Vector3d::UnitY();
+}
+
+Eigen::Isometry3d getEndEffectorTransform(const moveit::core::RobotState &state, const std::string &endEffectorName) {
+	return state.getGlobalLinkTransform(endEffectorName);
+}
+
 RobotPastTrace::RobotPastTrace(size_t keep_count, const moveit::core::RobotState &initial_state)
 		: keep_count(keep_count), last_robot_states({initial_state}) {
 }

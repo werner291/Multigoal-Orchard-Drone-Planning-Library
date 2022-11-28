@@ -41,6 +41,33 @@ void RobotPath::split_long_segments(double max_segment_length) {
 	}
 }
 
+void RobotPath::collapse_short_segments(double min_segment_length) {
+
+	for (size_t waypoint_i = 0; waypoint_i + 1 < waypoints.size(); ++waypoint_i) {
+
+		const auto &start = waypoints[waypoint_i];
+		const auto &end = waypoints[waypoint_i + 1];
+
+		double distance = start.distance(end);
+
+		if (distance < min_segment_length) {
+			moveit::core::RobotState interpolated(start.getRobotModel());
+
+			start.interpolate(end, 0.5, interpolated);
+
+			interpolated.update();
+
+			waypoints.erase(waypoints.begin() + (int) waypoint_i + 1);
+			waypoints[waypoint_i] = interpolated;
+
+			waypoint_i -= 1; // TODO Inelegant and causes uneven spacing
+		}
+
+	}
+
+
+}
+
 RobotPath omplPathToRobotPath(const ompl::geometric::PathGeometric &ompl_path) {
 
 	// Create a RobotPath.
