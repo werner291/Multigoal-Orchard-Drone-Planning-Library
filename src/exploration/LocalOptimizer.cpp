@@ -20,7 +20,7 @@ void localOptimizeSegmentedPath(const RobotPastTrace &robot_past,
 								const DirectPointCloudCollisionDetection &collision_detector) {
 
 
-	const double PREFERRED_MINIMUM_CLEARANCE = 0.5;
+	const double PREFERRED_MINIMUM_CLEARANCE = 1.0;
 
 	// TODO: When computing an entirely new plan, maybe we can blend it with the old one,
 	// to avoid wasting some of the local optimization in the old one.
@@ -74,16 +74,16 @@ void localOptimizeSegmentedPath(const RobotPastTrace &robot_past,
 
 		}
 
-		{
-
-			Eigen::Vector3d old_ee_motion = (getEndEffectorPosition(next_waypoint) - getEndEffectorPosition(prev_waypoint)).normalized();
-
-			Eigen::Vector3d old_ee_pos = getEndEffectorPosition(waypoint);
-
-			// TODO: This could use some IK gradients as well!
-			proposed_states.push_back(robotStateFromPointAndArmvec(waypoint.getRobotModel(), old_ee_pos, old_ee_motion));
-
-		}
+//		{
+//
+//			Eigen::Vector3d old_ee_motion = (getEndEffectorPosition(next_waypoint) - getEndEffectorPosition(prev_waypoint)).normalized();
+//
+//			Eigen::Vector3d old_ee_pos = getEndEffectorPosition(waypoint);
+//
+//			// TODO: This could use some IK gradients as well!
+//			proposed_states.push_back(robotStateFromPointAndArmvec(waypoint.getRobotModel(), old_ee_pos, old_ee_motion));
+//
+//		}
 
 		moveit::core::RobotState candidate = waypoint;
 
@@ -94,13 +94,16 @@ void localOptimizeSegmentedPath(const RobotPastTrace &robot_past,
 			candidate.interpolate(proposed_state, 0.1 / std::max(distance,1.0), candidate);
 		}
 
+		if (lastPath.is_at_target(ix)) {
+			candidate = setEndEffectorToPosition(std::move(candidate), getEndEffectorPosition(waypoint));
+		}
+
 		candidate.update();
 
 		if (!collision_detector.checkCollisionInterpolated(prev_waypoint, candidate, COLLISION_DETECTION_MAX_STEP) &&
 			!collision_detector.checkCollisionInterpolated(candidate, next_waypoint, COLLISION_DETECTION_MAX_STEP)) {
 
 			waypoint = candidate;
-
 		}
 	}
 }
