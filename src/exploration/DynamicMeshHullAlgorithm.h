@@ -111,12 +111,6 @@ class DynamicMeshHullAlgorithm : public OnlinePointCloudMotionControlAlgorithm {
 	void cut_invalid_future();
 
 	/**
-	 * Deform the currently-planned path to increase desirable properties,
-	 * such as smoothness and sensor coverage.
-	 */
-	void optimizePlan();
-
-	/**
 	 * Extend the current trajectory as much as possible within the given time limit
 	 *
 	 * TODO: This doesn't quite make sense performance-wise, as most of this will be invalidated by the next update.

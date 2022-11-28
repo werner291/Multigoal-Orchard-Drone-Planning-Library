@@ -11,6 +11,7 @@
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Orthogonal_incremental_neighbor_search.h>
+#include <geometric_shapes/shapes.h>
 
 #include "RobotPath.h"
 
