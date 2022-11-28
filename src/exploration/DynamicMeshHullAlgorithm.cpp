@@ -50,9 +50,7 @@ void DynamicMeshHullAlgorithm::updateTrajectory() {
 
 		extend_plan(deadline, shell, shell_space);
 
-		for (size_t i = 0; i < 10; i++) {
-			localOptimizeSegmentedPath(robot_past, lastPath, collision_detector);
-		}
+		localOptimizeSegmentedPath(robot_past, lastPath, collision_detector);
 
 		trajectoryCallback(lastPath.toConstantSpeedTrajectoryWithPrefix(robot_past.lastRobotState()));
 

@@ -217,3 +217,89 @@ double DirectPointCloudCollisionDetection::distanceToCollision(const shapes::Box
 	return closest;
 
 }
+
+std::optional<DirectPointCloudCollisionDetection::ClosestPointOnRobot>
+DirectPointCloudCollisionDetection::closestPoint(const moveit::core::RobotState &state, double maxDistance) const {
+
+	/*
+	 * TODO: Could a Barnes-Hut tree be used to get some softer notion of distance?
+	 */
+
+	std::optional<DirectPointCloudCollisionDetection::ClosestPointOnRobot> closest_point = {};
+
+	for (const auto& lm : state.getRobotModel()->getLinkModelsWithCollisionGeometry()) {
+
+		assert(lm->getShapes().size() == 1);
+		auto shape = lm->getShapes()[0];
+		auto transform = lm->getCollisionOriginTransforms()[0];
+		const auto &tf = state.getGlobalLinkTransform(lm);
+		auto total_tf = tf * transform;
+		auto cp = closestPoint(shape, total_tf,maxDistance);
+		if (cp && (!closest_point || cp->distance < closest_point->distance)) {
+			closest_point = {{
+				.point = cp->point_on_obstacle,
+				.on_robot = cp->point_on_query,
+				.link = lm,
+				.distance = cp->distance,
+			}};
+		}
+
+	}
+
+	return closest_point;
+
+}
+
+std::optional<DirectPointCloudCollisionDetection::ClosestPoint> DirectPointCloudCollisionDetection::closestPoint(const shapes::ShapeConstPtr &shape, const Eigen::Isometry3d &pose, double maxDistance) const {
+
+	switch (shape->type) {
+		case shapes::ShapeType::BOX:
+			return closestPoint(*std::static_pointer_cast<const shapes::Box>(shape), pose, maxDistance);
+		default:
+			throw std::runtime_error("Unsupported shape type");
+	}
+
+}
+
+std::optional<DirectPointCloudCollisionDetection::ClosestPoint> DirectPointCloudCollisionDetection::closestPoint(const shapes::Box &shape,
+																			 const Eigen::Isometry3d &pose,
+																			 double maxDistance) const {
+	// Get the bounding sphere.
+	auto radius = Eigen::Vector3d(shape.size).norm() / 2 + maxDistance;
+
+	// Get the center of the bounding sphere.
+	Eigen::Vector3d center = pose.translation();
+
+	Eigen::Isometry3d inv_pose = pose.inverse();
+
+	// Perform a spherical range query.
+
+	NN_incremental_search search(tree, Point(center.x(), center.y(), center.z()));
+
+	std::optional<ClosestPoint> cp = {};
+
+	// Iterate on the points one by one until we either find a collision or find a point outside the sphere.
+
+	for (NN_incremental_iterator it = search.begin(); it != search.end() && it->second <= (radius * radius); ++it) {
+
+		Eigen::Vector3d point(it->first.x(), it->first.y(), it->first.z());
+
+		Eigen::Vector3d transformed_point = inv_pose * point;
+
+		Eigen::Vector3d shape_halfsize(shape.size[0] / 2, shape.size[1] / 2, shape.size[2] / 2);
+
+		Eigen::Vector3d closest_point_in_box = transformed_point.cwiseMin(shape_halfsize).cwiseMax(-shape_halfsize);
+
+		double distance = (transformed_point - closest_point_in_box).norm();
+
+		if ((!cp || distance < cp->distance) && distance <= maxDistance) {
+			cp = {{
+						  .point_on_obstacle = point,
+						  .point_on_query = pose * closest_point_in_box,
+						  .distance = distance,
+				  }};
+		}
+	}
+
+	return cp;
+}

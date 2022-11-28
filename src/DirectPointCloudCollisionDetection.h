@@ -19,6 +19,8 @@ static const double COLLISION_DETECTION_MAX_STEP = 0.2;
 
 /**
  * A collision detector that checks for collisions between a point cloud and robot states.
+ *
+ * TODO: A lot of redundancy in this class due to slightly different queries. Can this be refactored?
  */
 class DirectPointCloudCollisionDetection {
 
@@ -71,6 +73,25 @@ public:
 	double distanceToCollision(const shapes::ShapeConstPtr &shape, const Eigen::Isometry3d &pose, double maxDistance) const;
 
 	double distanceToCollision(const shapes::Box &shape, const Eigen::Isometry3d &pose, double maxDistance) const;
+
+	struct ClosestPointOnRobot {
+		Eigen::Vector3d point;
+		Eigen::Vector3d on_robot;
+		const moveit::core::LinkModel* link;
+		double distance;
+	};
+
+	struct ClosestPoint {
+		Eigen::Vector3d point_on_obstacle;
+		Eigen::Vector3d point_on_query;
+		double distance;
+	};
+
+	[[nodiscard]] std::optional<ClosestPointOnRobot> closestPoint(const moveit::core::RobotState &state, double maxDistance) const;
+
+	[[nodiscard]] std::optional<ClosestPoint> closestPoint(const shapes::ShapeConstPtr &shape, const Eigen::Isometry3d &pose, double maxDistance) const;
+
+	[[nodiscard]] std::optional<ClosestPoint> closestPoint(const shapes::Box &shape, const Eigen::Isometry3d &pose, double maxDistance) const;
 
 };
 

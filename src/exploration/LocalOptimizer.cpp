@@ -3,6 +3,7 @@
 //
 
 #include "LocalOptimizer.h"
+#include "../shell_space/MoveItShellSpace.h"
 
 void adjustSegmentation(SegmentedRobotPath &lastPath) {// First, we break up longer segments by interpolation.
 	for (auto &segment: lastPath.segments) {
@@ -17,6 +18,9 @@ void adjustSegmentation(SegmentedRobotPath &lastPath) {// First, we break up lon
 void localOptimizeSegmentedPath(const RobotPastTrace &robot_past,
 								SegmentedRobotPath &lastPath,
 								const DirectPointCloudCollisionDetection &collision_detector) {
+
+
+	const double PREFERRED_MINIMUM_CLEARANCE = 0.5;
 
 	// TODO: When computing an entirely new plan, maybe we can blend it with the old one,
 	// to avoid wasting some of the local optimization in the old one.
@@ -44,50 +48,55 @@ void localOptimizeSegmentedPath(const RobotPastTrace &robot_past,
 
 		double straight_distance = next_waypoint.distance(prev_waypoint);
 
-		moveit::core::RobotState candidate = sampleStateNearByUpright(waypoint, 0.01);
+		std::vector<moveit::core::RobotState> proposed_states;
 
-		if (lastPath.is_at_target(ix)) {
-			candidate = setEndEffectorToPosition(std::move(candidate), getEndEffectorPosition(waypoint));
+		if (auto clearance_info = collision_detector.closestPoint(waypoint, PREFERRED_MINIMUM_CLEARANCE)) {
+
+			assert(clearance_info->distance <= PREFERRED_MINIMUM_CLEARANCE);
+
+			Eigen::Vector3d direction = clearance_info->on_robot - clearance_info->point;
+
+			// TODO: Do proper IK gradients here instead of this translation! We don't consider arm angle changes here.
+
+			moveit::core::RobotState proposed_state = waypoint;
+
+			setBaseTranslation(proposed_state, getBaseTranslation(waypoint) + direction * 0.1);
+
+			proposed_states.push_back(proposed_state);
+
 		}
 
-		double old_to_next = waypoint.distance(next_waypoint);
-		double old_to_prev = waypoint.distance(prev_waypoint);
-		double candidate_to_next = candidate.distance(next_waypoint);
-		double candidate_to_prev = candidate.distance(prev_waypoint);
-		double prev_to_next = prev_waypoint.distance(next_waypoint);
+		{
 
-		const double PREFERRED_MINIMUM_CLEARANCE = 0.5;
+			moveit::core::RobotState proposed_state = waypoint;
+			prev_waypoint.interpolate(next_waypoint, 0.5, proposed_state);
+			proposed_states.push_back(proposed_state);
 
-		double candidate_clearance = collision_detector.distanceToCollision(candidate, PREFERRED_MINIMUM_CLEARANCE);
-		double old_clearance = collision_detector.distanceToCollision(waypoint, PREFERRED_MINIMUM_CLEARANCE);
-		double clearance_improvement = candidate_clearance - old_clearance;
+		}
 
-		double new_roughness = candidate_to_next + candidate_to_prev - prev_to_next;
-		double old_roughness = old_to_next + old_to_prev - prev_to_next;
-		double roughness_change = new_roughness - old_roughness;
+		{
 
-		double old_distance = waypoint.distance(next_waypoint);
-		double new_distance = candidate.distance(next_waypoint);
-		double distance_increase = new_distance - old_distance;
+			Eigen::Vector3d old_ee_motion = (getEndEffectorPosition(next_waypoint) - getEndEffectorPosition(prev_waypoint)).normalized();
 
-		Eigen::Vector3d old_ee_motion = getEndEffectorPosition(next_waypoint) - getEndEffectorPosition(prev_waypoint);
-		Eigen::Vector3d old_ee_front = getEndEffectorFacing(waypoint);
-		Eigen::Vector3d new_ee_front = getEndEffectorFacing(candidate);
-		double old_alignment = old_ee_motion.dot(old_ee_front);
-		double candidate_alignment = old_ee_motion.dot(new_ee_front);
-		double alignment_improvement = candidate_alignment - old_alignment;
+			Eigen::Vector3d old_ee_pos = getEndEffectorPosition(waypoint);
 
-		const double DISTANCE_WEIGHT = 1.0;
-		const double SMOOTHNESS_WEIGHT = 0.0;
-		const double ALIGNMENT_WEIGHT = 1.0;
-		const double CLEARANCE_WEIGHT = 1.0;
+			// TODO: This could use some IK gradients as well!
+			proposed_states.push_back(robotStateFromPointAndArmvec(waypoint.getRobotModel(), old_ee_pos, old_ee_motion));
 
-		double overall_improvement =
-				-SMOOTHNESS_WEIGHT * std::pow(roughness_change, 2) - DISTANCE_WEIGHT * std::pow(distance_increase, 2) +
-				ALIGNMENT_WEIGHT * std::pow(alignment_improvement, 2) + CLEARANCE_WEIGHT * std::pow(clearance_improvement, 2);
+		}
 
-		if (overall_improvement > 0.0 &&
-			!collision_detector.checkCollisionInterpolated(prev_waypoint, candidate, COLLISION_DETECTION_MAX_STEP) &&
+		moveit::core::RobotState candidate = waypoint;
+
+		for (const auto &proposed_state: proposed_states) {
+			double distance = proposed_state.distance(waypoint);
+			// TODO: Ideally I'd like to do an equal-weighted average here instead of this ordered stuff.
+			// Should average out over the iterations, though.
+			candidate.interpolate(proposed_state, 0.1 / std::max(distance,1.0), candidate);
+		}
+
+		candidate.update();
+
+		if (!collision_detector.checkCollisionInterpolated(prev_waypoint, candidate, COLLISION_DETECTION_MAX_STEP) &&
 			!collision_detector.checkCollisionInterpolated(candidate, next_waypoint, COLLISION_DETECTION_MAX_STEP)) {
 
 			waypoint = candidate;
@@ -95,3 +104,4 @@ void localOptimizeSegmentedPath(const RobotPastTrace &robot_past,
 		}
 	}
 }
+
