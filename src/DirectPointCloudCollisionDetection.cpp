@@ -31,7 +31,6 @@ bool DirectPointCloudCollisionDetection::checkCollision(const shapes::ShapeConst
 }
 
 void DirectPointCloudCollisionDetection::addPoints(std::vector<Eigen::Vector3d> points) {
-
 	// Delete all points that are already close to another point in the tree
 
 	std::vector<Eigen::Vector3d> filtered_points;
@@ -50,6 +49,10 @@ void DirectPointCloudCollisionDetection::addPoints(std::vector<Eigen::Vector3d> 
 	}
 
 	if (!filtered_points.empty()) {
+		auto begin_time = std::chrono::high_resolution_clock::now();
+		tree.build();
+		auto end_time = std::chrono::high_resolution_clock::now();
+		std::cout << "Tree built in " << std::chrono::duration_cast<std::chrono::microseconds>(end_time - begin_time).count() << "us" << std::endl;
 		version += 1;
 	}
 
@@ -71,7 +74,7 @@ bool DirectPointCloudCollisionDetection::checkCollision(const shapes::Box &shape
 
 	// Iterate on the points one by one until we either find a collision or find a point outside the sphere.
 
-	for (NN_iterator it = search.begin(); it != search.end() && it->second <= radius; ++it) {
+	for (auto it = search.begin(); it != search.end() && it->second <= radius; ++it) {
 
 		Eigen::Vector3d point(it->first.x(), it->first.y(), it->first.z());
 		Eigen::Vector3d transformed_point = inv_pose * point;
@@ -131,4 +134,86 @@ bool DirectPointCloudCollisionDetection::checkCollisionInterpolated(const RobotP
 
 size_t DirectPointCloudCollisionDetection::getVersion() const {
 	return version;
+}
+
+double
+DirectPointCloudCollisionDetection::distanceToCollision(const moveit::core::RobotState &state,
+															   double maxDistance) const {
+
+	/*
+	 * TODO: Could a Barnes-Hut tree be used to get some softer notion of distance?
+	 */
+
+	double minimum_distance = maxDistance;
+
+    for (const auto& lm : state.getRobotModel()->getLinkModelsWithCollisionGeometry()) {
+
+		assert(lm->getShapes().size() == 1);
+		auto shape = lm->getShapes()[0];
+		auto transform = lm->getCollisionOriginTransforms()[0];
+		const auto &tf = state.getGlobalLinkTransform(lm);
+		auto total_tf = tf * transform;
+		double distance = distanceToCollision(shape, total_tf, maxDistance);
+		if (distance < minimum_distance) {
+			minimum_distance = distance;
+		}
+
+	}
+
+	return minimum_distance;
+
+}
+
+double DirectPointCloudCollisionDetection::distanceToCollision(const shapes::ShapeConstPtr &shape,
+															   const Eigen::Isometry3d &pose,
+															   double maxDistance) const {
+
+	switch (shape->type) {
+		case shapes::ShapeType::BOX:
+			return distanceToCollision(*std::static_pointer_cast<const shapes::Box>(shape), pose, maxDistance);
+		default:
+			throw std::runtime_error("Unsupported shape type");
+	}
+
+}
+
+double DirectPointCloudCollisionDetection::distanceToCollision(const shapes::Box &shape,
+															   const Eigen::Isometry3d &pose,
+															   double maxDistance) const {
+
+
+	// Get the bounding sphere.
+	auto radius = Eigen::Vector3d(shape.size).norm() / 2 + maxDistance;
+
+	// Get the center of the bounding sphere.
+	Eigen::Vector3d center = pose.translation();
+
+	Eigen::Isometry3d inv_pose = pose.inverse();
+
+	// Perform a spherical range query.
+
+	NN_incremental_search search(tree, Point(center.x(), center.y(), center.z()));
+
+	double closest = std::numeric_limits<double>::infinity();
+
+	// Iterate on the points one by one until we either find a collision or find a point outside the sphere.
+
+	for (NN_incremental_iterator it = search.begin(); it != search.end() && it->second <= (radius * radius); ++it) {
+
+		Eigen::Vector3d point(it->first.x(), it->first.y(), it->first.z());
+
+		Eigen::Vector3d transformed_point = inv_pose * point;
+
+		Eigen::Vector3d shape_halfsize(shape.size[0] / 2, shape.size[1] / 2, shape.size[2] / 2);
+
+		Eigen::Vector3d closest_point_in_box = transformed_point.cwiseMin(shape_halfsize).cwiseMax(-shape_halfsize);
+
+		double distance = (transformed_point - closest_point_in_box).norm();
+
+		closest = std::min(closest, distance);
+
+	}
+
+	return closest;
+
 }

@@ -308,43 +308,45 @@ void DynamicMeshHullAlgorithm::optimizePlan() {
 	moveit::core::RobotState last_state = robot_past.lastRobotState();
 	double distance_from_path_start = 0.0;
 
-	for (size_t segment_i = 0; segment_i < lastPath.segments
-			.size(); segment_i++) { // NOLINT(modernize-loop-convert) (We might use the index later)
+	for (auto & segment : lastPath.segments) {
 
-		for (size_t waypoint_i = 1; waypoint_i + 2 < lastPath.segments[segment_i].waypoints
-				.size(); waypoint_i++) { // NOLINT(modernize-loop-convert) (We might use the index later)
+		for (size_t waypoint_i = 1; waypoint_i + 2 < segment.waypoints.size(); waypoint_i++) {
 
-			auto &waypoint = lastPath.segments[segment_i].waypoints[waypoint_i];
+			auto &waypoint = segment.waypoints[waypoint_i];
 
 			distance_from_path_start += waypoint.distance(last_state);
 			last_state = waypoint;
 
 			if (distance_from_path_start > 0.5) {
 
-				const auto &next_waypoint = lastPath.segments[segment_i].waypoints[waypoint_i + 1];
-				const auto &prev_waypoint = lastPath.segments[segment_i].waypoints[waypoint_i - 1];
+				const auto &next_waypoint = segment.waypoints[waypoint_i + 1];
+				const auto &prev_waypoint = segment.waypoints[waypoint_i - 1];
 
 				double straight_distance = next_waypoint.distance(prev_waypoint);
 
-				moveit::core::RobotState candidate = sampleStateNearByUpright(waypoint, 0.05);
+				moveit::core::RobotState candidate = sampleStateNearByUpright(waypoint, 0.01);
 
-				Eigen::Vector3d prev_ee = prev_waypoint.getGlobalLinkTransform("base_link").translation();
-				Eigen::Vector3d next_ee = next_waypoint.getGlobalLinkTransform("base_link").translation();
-				Eigen::Vector3d old_ee = waypoint.getGlobalLinkTransform("base_link").translation();
-				Eigen::Vector3d candidate_ee = candidate.getGlobalLinkTransform("base_link").translation();
+				double old_to_next = waypoint.distance(next_waypoint);
+				double old_to_prev = waypoint.distance(prev_waypoint);
+				double candidate_to_next = candidate.distance(next_waypoint);
+				double candidate_to_prev = candidate.distance(prev_waypoint);
+				double prev_to_next = prev_waypoint.distance(next_waypoint);
 
-				double old_to_next = (next_ee - old_ee).norm();
-				double old_to_prev = (prev_ee - old_ee).norm();
-				double candidate_to_next = (next_ee - candidate_ee).norm();
-				double candidate_to_prev = (prev_ee - candidate_ee).norm();
-				double prev_to_next = (next_ee - prev_ee).norm();
+				const double PREFERRED_MINIMUM_CLEARANCE = 2.0;
 
-				double new_roughness = (candidate_to_next + candidate_to_prev) / prev_to_next;
-				double old_roughness = (old_to_next + old_to_prev) / prev_to_next;
+				double candidate_clearance = collision_detector.distanceToCollision(candidate, PREFERRED_MINIMUM_CLEARANCE);
+				double old_clearance = collision_detector.distanceToCollision(waypoint, PREFERRED_MINIMUM_CLEARANCE);
 
-				std::cout << "Old roughness: " << old_roughness << ", new roughness: " << new_roughness << std::endl;
+				double new_smoothness = prev_to_next / (candidate_to_next + candidate_to_prev);
+				double old_smoothness = prev_to_next / (old_to_next + old_to_prev);
 
-				if (new_roughness < old_roughness && !collision_detector.checkCollisionInterpolated(prev_waypoint,
+				double old_distance = waypoint.distance(next_waypoint);
+				double new_distance = candidate.distance(next_waypoint);
+
+				double old_score = std::pow(old_smoothness, 2) + std::pow(old_clearance, 2);// - std::pow(old_distance, 2);
+				double candidate_score = std::pow(new_smoothness, 2) + std::pow(candidate_clearance, 2);// - std::pow(new_distance, 2);
+
+				if (old_score < candidate_score && !collision_detector.checkCollisionInterpolated(prev_waypoint,
 																									candidate,
 																									COLLISION_DETECTION_MAX_STEP) &&
 					!collision_detector.checkCollisionInterpolated(candidate,

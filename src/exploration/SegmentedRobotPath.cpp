@@ -30,10 +30,12 @@ SegmentedRobotPath::Index SegmentedRobotPath::prev_waypoint_index(SegmentedRobot
 }
 
 SegmentedRobotPath::Index SegmentedRobotPath::first_waypoint_index() {
+	assert(!segments.empty());
 	return Index{0, 0};
 }
 
 SegmentedRobotPath::Index SegmentedRobotPath::last_waypoint_index() {
+	assert(!segments.empty());
 	return Index{segments.size() - 1, segments.back().waypoints.size() - 1};
 }
 

@@ -25,7 +25,7 @@ class DirectPointCloudCollisionDetection {
 	using Point = K::Point_3;
 	using TreeTraits = CGAL::Search_traits_3<K>;
 	using NN_incremental_search = CGAL::Orthogonal_incremental_neighbor_search<TreeTraits>;
-	using NN_iterator = NN_incremental_search::iterator;
+	using NN_incremental_iterator = NN_incremental_search::iterator;
 	using Tree = NN_incremental_search::Tree;
 
 	// TODO: Is this the right structure? KdTree cannot be dynamically updated,
@@ -65,7 +65,11 @@ public:
 
 	bool checkCollision(const shapes::Box &shape, const Eigen::Isometry3d &pose) const;
 
+	double distanceToCollision(const moveit::core::RobotState &state, double maxDistance) const;
 
+	double distanceToCollision(const shapes::ShapeConstPtr &shape, const Eigen::Isometry3d &pose, double maxDistance) const;
+
+	double distanceToCollision(const shapes::Box &shape, const Eigen::Isometry3d &pose, double maxDistance) const;
 
 };
 
