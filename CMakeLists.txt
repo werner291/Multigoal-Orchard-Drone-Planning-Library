@@ -208,7 +208,7 @@ add_library(${PROJECT_NAME}_shared
         src/DirectPointCloudCollisionDetection.h
         src/exploration/CandidatePathGenerator.cpp
         src/exploration/CandidatePathGenerator.h
-        src/exploration/SegmentedRobotPath.cpp src/exploration/SegmentedRobotPath.h src/exploration/LocalOptimizer.cpp src/exploration/LocalOptimizer.h src/exploration/logging.cpp src/exploration/logging.h)
+        src/exploration/SegmentedRobotPath.cpp src/exploration/SegmentedRobotPath.h src/exploration/LocalOptimizer.cpp src/exploration/LocalOptimizer.h src/exploration/logging.cpp src/exploration/logging.h src/exploration/KnownFreeSpaceModel.cpp src/exploration/KnownFreeSpaceModel.h src/experiments/ScannedSurfaceTracker.cpp src/experiments/ScannedSurfaceTracker.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

@@ -23,6 +23,7 @@ SimulatedSensor::SimulatedSensor(bool showWindow) {
 
 	depthToPointCloud->SetInputConnection(0, rendererSource->GetOutputPort());
 	depthToPointCloud->SetCamera(sensorRenderer->GetActiveCamera());
+	depthToPointCloud->CullFarPointsOff();
 
 }
 

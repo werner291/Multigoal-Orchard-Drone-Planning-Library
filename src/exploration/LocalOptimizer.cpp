@@ -218,17 +218,6 @@ void localOptimizeSegmentedPath(const RobotPastTrace &robot_past,
 
 		}
 
-//		{
-//
-//			Eigen::Vector3d old_ee_motion = (getEndEffectorPosition(next_waypoint) - getEndEffectorPosition(prev_waypoint)).normalized();
-//
-//			Eigen::Vector3d old_ee_pos = getEndEffectorPosition(waypoint);
-//
-//			// TODO: This could use some IK gradients as well!
-//			proposed_states.push_back(robotStateFromPointAndArmvec(waypoint.getRobotModel(), old_ee_pos, old_ee_motion));
-//
-//		}
-
 		moveit::core::RobotState candidate = waypoint;
 
 		for (const auto &proposed_state: proposed_states) {

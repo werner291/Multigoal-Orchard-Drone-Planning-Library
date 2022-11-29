@@ -26,6 +26,7 @@
 #include "../WorkspaceSpec.h"
 #include "../CurrentPathState.h"
 #include "../TriangleAABB.h"
+#include "ScannedSurfaceTracker.h"
 
 /**
  * Build a MoveIt collision environment from the given workspace specification.
@@ -36,7 +37,6 @@
  */
 std::unique_ptr<collision_detection::CollisionEnvFCL> buildOrchardAndRobotFCLCollisionEnvironment(const WorkspaceSpec &spec);
 
-static const double SCAN_MAX_DISTANCE = 1.0;
 
 WorkspaceSpec buildWorkspaceSpec() {
 
@@ -53,9 +53,6 @@ WorkspaceSpec buildWorkspaceSpec() {
 	});
 }
 
-const size_t POINTS_PER_TARGET = 10;
-
-
 int main(int, char*[]) {
 
 	// Build/load an abstract representation of the orchard that is as high-level and declarative as possible.
@@ -65,19 +62,16 @@ int main(int, char*[]) {
 	// Build a collision environment that can be used to check for collisions between the robot and the orchard/environment.
 	auto collision_env = buildOrchardAndRobotFCLCollisionEnvironment(workspaceSpec);
 
-	// Sample points from the fruit meshes; the goal of the robot will be to bring the end-effector to as many of these points as possible.
-	auto surface_points = buildScanTargetPoints(workspaceSpec.orchard.trees[0].second.fruit_meshes, POINTS_PER_TARGET);
-
 	PointSegmenter apple_surface_lookup(workspaceSpec);
 
-	// Build a spatial index that can be used to quickly find what points are visible to the robot's camera.
-	ScannablePointsIndex scannablePointsIndex(surface_points);
-
 	// Create a VTK actor to visualize the scannable points.
-	FruitSurfaceScanTargetsActor fruitSurfaceScanTargetsActor(surface_points);
+	//	FruitSurfaceScanTargetsActor fruitSurfaceScanTargetsActor(surface_points);`
+
+	auto surface_scan_tracker = ScannedSurfaceTracker::buildForMeshes(workspaceSpec.orchard.trees[0].second
+																			  .fruit_meshes);
 
 	// Create a VTK actor to visualize the robot itself
-	VtkRobotmodel robotModel(workspaceSpec.robotModel,workspaceSpec.initialState);
+	VtkRobotmodel robotModel(workspaceSpec.robotModel, workspaceSpec.initialState);
 
 	// Create a simulated sensor that can be used to simulate the robot's camera; it can be used to extract point clouds visible to the robot.
 	SimulatedSensor sensor = buildSensorSimulator(workspaceSpec.orchard, robotModel);
@@ -89,8 +83,8 @@ int main(int, char*[]) {
 	// purposes, SEPARATE from the visualization that simulates the depth sensor.
 	Viewer viewer = Viewer(workspaceSpec.orchard,
 						   robotModel,
-						   (const std::vector<vtkActor *>) {fruitSurfaceScanTargetsActor.fruitSurfacePointsActor,
-															pointCloudActor});
+						   (const std::vector<vtkActor *>) {//fruitSurfaceScanTargetsActor.fruitSurfacePointsActor,
+								   pointCloudActor});
 
 	// The "current" state of the robot based on the most recent-emitted path and progress of the robot along that path.
 	CurrentPathState currentPathState(workspaceSpec.initialState);
@@ -116,7 +110,6 @@ int main(int, char*[]) {
 
 	auto log_file = open_new_logfile(workspaceSpec.orchard.trees[0].second.fruit_meshes.size());
 
-	std::vector<bool> scanned_points(surface_points.size(), false);
 
 	size_t frames = 0;
 
@@ -140,43 +133,21 @@ int main(int, char*[]) {
 		Eigen::Isometry3d eePose = currentPathState.getCurrentState().getGlobalLinkTransform("end_effector");
 
 		// Render the point cloud visible to the robot's camera.
-		auto points =  apple_surface_lookup.segmentPointCloudData(sensor.renderSnapshot(eePose));
+		auto points = apple_surface_lookup.segmentPointCloudData(sensor.renderSnapshot(eePose));
+
+		surface_scan_tracker.snapshot(eePose, points.target);
 
 		// Pass the point cloud to the motion-planning algorithm; it will probably respond by emitting a new path.
 		dbsa.update(currentPathState.getCurrentState(), points);
 
 		viewer.updateAlgorithmVisualization(dbsa);
 
-		// Find which of the scannable points are visible to the robot's camera.
-		auto new_scanned_points = scannablePointsIndex
-				.findScannedPoints(eePose.translation(),
-								   eePose.rotation() * Eigen::Vector3d(0, 1, 0),
-								   M_PI / 4.0, SCAN_MAX_DISTANCE,
-								   points.target);
-
 		// Update the visualization of the scannable points, recoloring the ones that were just seen.
-		fruitSurfaceScanTargetsActor.markAsScanned(new_scanned_points);
-
-		for (auto i : new_scanned_points) {
-
-			if (!scanned_points[i]) {
-				scanned_points[i] = true;
-
-//				std::cout << "Scanned " << i << std::endl;
-			}
-		}
+		//		fruitSurfaceScanTargetsActor.markAsScanned(new_scanned_points);
 
 		if (frames++ % 100 == 0) {
-			ExperimentLogPoint log_point;
-			log_point.time = time;
-			log_point.per_fruit_scan_proportion.resize(workspaceSpec.orchard.trees[0].second.fruit_meshes.size());
-
-			for (size_t scan_point_id = 0; scan_point_id < surface_points.size(); scan_point_id++) {
-				log_point.per_fruit_scan_proportion[surface_points[scan_point_id].apple_id] +=
-						scanned_points[scan_point_id] / (double) POINTS_PER_TARGET;
-			}
-
-			write_log_csv_line(log_file, log_point);
+			write_log_csv_line(log_file,
+							   {.time = time, .per_fruit_scan_proportion = surface_scan_tracker.per_target_scan_portion();});
 		}
 
 		viewer.requestRender();
