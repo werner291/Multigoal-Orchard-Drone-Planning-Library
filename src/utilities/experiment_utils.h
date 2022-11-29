@@ -28,7 +28,7 @@ struct TreePlanningScene {
     planning_scene::PlanningScenePtr scene;
 };
 
-moveit::core::RobotModelPtr loadRobotModel();
+moveit::core::RobotModelPtr loadRobotModel(double base_joint_weight = 1.0);
 
 std::vector<ompl::base::GoalPtr> constructNewAppleGoals(const std::shared_ptr<ompl::base::SpaceInformation> &si, const std::vector<Apple> &apples);
 

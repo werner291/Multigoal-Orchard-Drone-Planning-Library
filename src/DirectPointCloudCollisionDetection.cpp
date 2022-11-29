@@ -55,10 +55,6 @@ void DirectPointCloudCollisionDetection::addPoints(std::vector<Eigen::Vector3d> 
 	}
 
 	if (!filtered_points.empty()) {
-		auto begin_time = std::chrono::high_resolution_clock::now();
-		tree.build();
-		auto end_time = std::chrono::high_resolution_clock::now();
-		std::cout << "Tree built in " << std::chrono::duration_cast<std::chrono::microseconds>(end_time - begin_time).count() << "us" << std::endl;
 		version += 1;
 	}
 

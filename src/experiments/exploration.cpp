@@ -39,7 +39,8 @@ std::unique_ptr<collision_detection::CollisionEnvFCL> buildOrchardAndRobotFCLCol
 static const double SCAN_MAX_DISTANCE = 1.0;
 
 WorkspaceSpec buildWorkspaceSpec() {
-	auto drone = loadRobotModel();
+
+	auto drone = loadRobotModel(1.0);
 
 	auto initial_state = mkInitialState(drone);
 
@@ -47,9 +48,7 @@ WorkspaceSpec buildWorkspaceSpec() {
 
 	initial_state.update(true);
 
-	return std::move<WorkspaceSpec>({
-			drone,
-			initial_state,
+	return std::move<WorkspaceSpec>({drone, initial_state,
 			{{{ { 0.0, 0.0 }, loadTreeMeshes("appletree") }}}
 	});
 }
