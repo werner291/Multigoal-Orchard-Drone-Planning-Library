@@ -13,6 +13,8 @@
 #include <moveit/collision_detection_fcl/collision_env_fcl.h>
 #include <geometric_shapes/shape_operations.h>
 
+#include "../exploration/logging.h"
+
 #include "../utilities/experiment_utils.h"
 #include "../vtk/VtkRobotModel.h"
 #include "../utilities/load_mesh.h"
@@ -23,7 +25,6 @@
 
 #include "../WorkspaceSpec.h"
 #include "../CurrentPathState.h"
-#include "../utilities/moveit.h"
 #include "../TriangleAABB.h"
 
 /**
@@ -55,28 +56,6 @@ WorkspaceSpec buildWorkspaceSpec() {
 
 const size_t POINTS_PER_TARGET = 10;
 
-struct ExperimentLogPoint {
-
-	double time;
-
-	std::vector<double> per_fruit_scan_proportion;
-
-};
-
-void write_log_csv_line(std::ofstream &log_file, const ExperimentLogPoint &log_point) {
-
-	log_file << log_point.time << ",";
-
-	for (size_t i = 0; i < log_point.per_fruit_scan_proportion.size(); i++) {
-		log_file << log_point.per_fruit_scan_proportion[i];
-		if (i != log_point.per_fruit_scan_proportion.size() - 1) {
-			log_file << ",";
-		}
-	}
-
-	log_file << std::endl << std::flush;
-
-}
 
 int main(int, char*[]) {
 
@@ -109,9 +88,8 @@ int main(int, char*[]) {
 
 	// A "package" of visualization-specifics that can be used to visualize the robot for debugging and presentation
 	// purposes, SEPARATE from the visualization that simulates the depth sensor.
-	VtkRobotmodel &robotModel1 = robotModel;
 	Viewer viewer = Viewer(workspaceSpec.orchard,
-						   robotModel1,
+						   robotModel,
 						   (const std::vector<vtkActor *>) {fruitSurfaceScanTargetsActor.fruitSurfacePointsActor,
 															pointCloudActor});
 
@@ -137,16 +115,7 @@ int main(int, char*[]) {
 
 	// Generate a log file name with the current date and time
 
-	std::stringstream log_file_name;
-	log_file_name << "analysis/data/log_" << std::time(nullptr) << ".csv";
-
-	std::ofstream log_file(log_file_name.str());
-
-	log_file << "time" << std::endl;
-
-	for (size_t i = 0; i < surface_points.size(); i++) {
-		log_file << ", fruit_" << i << "_pct";
-	}
+	auto log_file = open_new_logfile(workspaceSpec.orchard.trees[0].second.fruit_meshes.size());
 
 	std::vector<bool> scanned_points(surface_points.size(), false);
 
@@ -162,7 +131,7 @@ int main(int, char*[]) {
 
 		// Check if the robot collided with anything.
 		if (checkCollision(currentPathState.getCurrentState(), *collision_env)) {
-//			std::cout << "Oh no!" << std::endl;
+			std::cout << "Collision!" << std::endl;
 		}
 
 		// Update the robot's visualization to match the current state.
@@ -177,10 +146,7 @@ int main(int, char*[]) {
 		// Pass the point cloud to the motion-planning algorithm; it will probably respond by emitting a new path.
 		dbsa.update(currentPathState.getCurrentState(), points);
 
-		// Update the visualization of the algorithm internals
-		viewer.targetToHullLineSegments.updateLine(extractTargetHullPointsSegments(dbsa));
-		viewer.convexHullActor.update(dbsa.getConvexHull()->toMesh());
-		viewer.visitOrderVisualization.updateLine(extractVisitOrderPoints(dbsa, eePose));
+		viewer.updateAlgorithmVisualization(dbsa);
 
 		// Find which of the scannable points are visible to the robot's camera.
 		auto new_scanned_points = scannablePointsIndex

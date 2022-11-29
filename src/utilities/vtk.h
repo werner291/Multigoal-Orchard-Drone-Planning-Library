@@ -212,6 +212,18 @@ public:
 	void updateLine(const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>& points);
 };
 
+class VtkPointCloudVisualization {
 
+public:
+	vtkNew<vtkPolyData> visitOrderVisualizationData;
+	vtkNew<vtkPolyDataMapper> visitOrderVisualizationMapper;
+	vtkNew<vtkActor> visitOrderVisualizationActor;
+
+	VtkPointCloudVisualization(float r, float g, float b);
+
+	vtkActor *getActor();
+
+	void updatePoints(const std::vector<Eigen::Vector3d> &points);
+};
 
 #endif //NEW_PLANNERS_VTK_H

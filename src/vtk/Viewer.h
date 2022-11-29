@@ -29,9 +29,10 @@ public:
 	// A visualization of the robot's end-effector as the line it will trace out according to the last-emitted path
 	VtkPolyLineVisualization ee_trace_visualization;
 
-	Viewer(const SimplifiedOrchard &orchard,
-		   VtkRobotmodel &robotModel,
-		   const std::vector<vtkActor*>& actors);
+	/// A visualization of the robot's model of the hard surface of the tree.
+	VtkPointCloudVisualization obstacleSurfacepoints;
+
+	Viewer(const SimplifiedOrchard &orchard, VtkRobotmodel &robotModel, const std::vector<vtkActor *> &actors);
 
 	void addActor(vtkActor *actor);
 
@@ -41,7 +42,9 @@ public:
 
 	void start();
 
-	void setIntervalCallback(const std::function<void()>& callback);
+	void setIntervalCallback(const std::function<void()> &callback);
+
+	void updateAlgorithmVisualization(const DynamicMeshHullAlgorithm &algorithm);
 };
 
 #endif //NEW_PLANNERS_VIEWER_H

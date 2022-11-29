@@ -58,11 +58,15 @@ public:
 	 */
 	void addPoints(std::vector<Eigen::Vector3d> points);
 
+	std::vector<Eigen::Vector3d> extractPoints() const;
+
 	[[nodiscard]] bool checkCollision(const moveit::core::RobotState &state) const;
 
-	[[nodiscard]] bool checkCollisionInterpolated(const moveit::core::RobotState &state1, const moveit::core::RobotState &state2, double maxStep) const;
+	[[nodiscard]] bool checkCollisionInterpolated(const moveit::core::RobotState &state1,
+												  const moveit::core::RobotState &state2,
+												  double maxStep) const;
 
-	[[nodiscard]] bool checkCollisionInterpolated(const RobotPath& path, double maxStep) const;
+	[[nodiscard]] bool checkCollisionInterpolated(const RobotPath &path, double maxStep) const;
 
 	[[nodiscard]] bool checkCollision(const shapes::ShapeConstPtr &shape, const Eigen::Isometry3d &pose) const;
 
@@ -70,7 +74,8 @@ public:
 
 	double distanceToCollision(const moveit::core::RobotState &state, double maxDistance) const;
 
-	double distanceToCollision(const shapes::ShapeConstPtr &shape, const Eigen::Isometry3d &pose, double maxDistance) const;
+	double
+	distanceToCollision(const shapes::ShapeConstPtr &shape, const Eigen::Isometry3d &pose, double maxDistance) const;
 
 	double distanceToCollision(const shapes::Box &shape, const Eigen::Isometry3d &pose, double maxDistance) const;
 

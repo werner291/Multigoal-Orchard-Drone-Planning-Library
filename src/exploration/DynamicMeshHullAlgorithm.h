@@ -188,6 +188,8 @@ public:
 	void updateTargetPointProjections();
 
 	std::optional<RobotPath> computeApproachPath(unsigned long target_index) const;
+
+	const DirectPointCloudCollisionDetection &getCollisionDetector() const;
 };
 
 #endif //NEW_PLANNERS_DYNAMICMESHHULLALGORITHM_H

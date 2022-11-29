@@ -1,16 +1,17 @@
-
 #include <geometric_shapes/shapes.h>
 #include "DirectPointCloudCollisionDetection.h"
+
+static const double POINT_MINIMUM_DISTANCE = 0.001;
 
 bool DirectPointCloudCollisionDetection::checkCollision(const moveit::core::RobotState &state) const {
 
 	// Extract all collision shapes and their transforms, and check for collisions one-by-one.
 
 	return std::any_of(state.getRobotModel()->getLinkModelsWithCollisionGeometry().begin(),
-				state.getRobotModel()->getLinkModelsWithCollisionGeometry().end(),
-				[&](const moveit::core::LinkModel* lm) {
-					auto shape = lm->getShapes()[0];
-					auto transform = lm->getCollisionOriginTransforms()[0];
+					   state.getRobotModel()->getLinkModelsWithCollisionGeometry().end(),
+					   [&](const moveit::core::LinkModel *lm) {
+						   auto shape = lm->getShapes()[0];
+						   auto transform = lm->getCollisionOriginTransforms()[0];
 					const auto& tf = state.getGlobalLinkTransform(lm);
 					auto total_tf = tf * transform;
 					return checkCollision(shape, total_tf);
@@ -36,9 +37,14 @@ void DirectPointCloudCollisionDetection::addPoints(std::vector<Eigen::Vector3d> 
 	std::vector<Eigen::Vector3d> filtered_points;
 
 	for (auto & point : points) {
+
+		if (point.z() < 0.01) {
+			continue; // Exclude ground points for now.
+		}
+
 		NN_incremental_search search(tree, Point(point.x(), point.y(), point.z()));
 		// TODO could do some kinda LOD thing?
-		if (search.begin() == search.end() || search.begin()->second > 0.05) {
+		if (search.begin() == search.end() || search.begin()->second > POINT_MINIMUM_DISTANCE) {
 			filtered_points.push_back(point);
 		}
 	}
@@ -293,13 +299,21 @@ std::optional<DirectPointCloudCollisionDetection::ClosestPoint> DirectPointCloud
 		double distance = (transformed_point - closest_point_in_box).norm();
 
 		if ((!cp || distance < cp->distance) && distance <= maxDistance) {
-			cp = {{
-						  .point_on_obstacle = point,
-						  .point_on_query = pose * closest_point_in_box,
-						  .distance = distance,
-				  }};
+			cp = {{.point_on_obstacle = point, .point_on_query = pose * closest_point_in_box, .distance = distance,}};
 		}
 	}
 
 	return cp;
+}
+
+std::vector<Eigen::Vector3d> DirectPointCloudCollisionDetection::extractPoints() const {
+
+	std::vector<Eigen::Vector3d> points;
+
+	for (const auto &itr: tree) {
+		points.emplace_back(itr.x(), itr.y(), itr.z());
+	}
+
+	return points;
+
 }

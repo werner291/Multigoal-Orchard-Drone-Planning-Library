@@ -293,3 +293,7 @@ DynamicMeshHullAlgorithm::approachPathForTarget(DynamicMeshHullAlgorithm::target
 																							std::make_shared<ArmHorizontalDecorator<CGALMeshShellPoint>>(
 																									cgal_hull)));
 }
+
+const DirectPointCloudCollisionDetection &DynamicMeshHullAlgorithm::getCollisionDetector() const {
+	return collision_detector;
+}
