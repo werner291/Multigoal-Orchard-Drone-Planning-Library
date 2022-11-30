@@ -109,7 +109,6 @@ add_library(${PROJECT_NAME}_shared
         src/TimedCostConvergenceTerminationCondition.h
         src/TreeMeshes.cpp
         src/TreeMeshes.h
-        src/experiments/exploration.cpp
         src/exploration/ColorEncoding.cpp
         src/exploration/ColorEncoding.h
         src/exploration/DynamicMeshHullAlgorithm.cpp
@@ -208,7 +207,7 @@ add_library(${PROJECT_NAME}_shared
         src/DirectPointCloudCollisionDetection.h
         src/exploration/CandidatePathGenerator.cpp
         src/exploration/CandidatePathGenerator.h
-        src/exploration/SegmentedRobotPath.cpp src/exploration/SegmentedRobotPath.h src/exploration/LocalOptimizer.cpp src/exploration/LocalOptimizer.h src/exploration/logging.cpp src/exploration/logging.h src/exploration/KnownFreeSpaceModel.cpp src/exploration/KnownFreeSpaceModel.h src/experiments/ScannedSurfaceTracker.cpp src/experiments/ScannedSurfaceTracker.h)
+        src/exploration/SegmentedRobotPath.cpp src/exploration/SegmentedRobotPath.h src/exploration/LocalOptimizer.cpp src/exploration/LocalOptimizer.h src/exploration/logging.cpp src/exploration/logging.h src/exploration/KnownFreeSpaceModel.cpp src/exploration/KnownFreeSpaceModel.h src/experiments/ScannedSurfaceTracker.cpp src/experiments/ScannedSurfaceTracker.h src/exploration/SurfletExplorationFrontier.cpp src/exploration/SurfletExplorationFrontier.h src/exploration/SurfletVolume.cpp src/utilities/shape_generation.cpp src/utilities/shape_generation.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -246,8 +245,8 @@ add_executable(${PROJECT_NAME}_tests
         test/LeavesCollisionChecker_test.cpp
         test/LeavesCollisionChecker_test.cpp
         test/OnlineOrderOptimization_test.cpp
-#        test/StreamingAlphaShape_test.cpp
-        test/PointOnMeshLookup_test.cpp)
+        #        test/StreamingAlphaShape_test.cpp
+        test/PointOnMeshLookup_test.cpp test/SurfletVolume_test.cpp)
 
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})

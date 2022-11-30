@@ -23,17 +23,17 @@ class StreamingConvexHull : public StreamingMeshHullAlgorithm {
 
 	std::vector<std::pair<Eigen::Vector3d, std::optional<Eigen::Vector3d>>> supporting_set;
 public:
-	const std::vector<std::pair<Eigen::Vector3d, std::optional<Eigen::Vector3d>>> &getSupportingSet() const;
+	[[nodiscard]] const std::vector<std::pair<Eigen::Vector3d, std::optional<Eigen::Vector3d>>> &
+	getSupportingSet() const;
 
 public:
 	explicit StreamingConvexHull(const std::vector<Eigen::Vector3d>& directions);
 
 	static StreamingConvexHull fromSpherifiedCube(size_t segments);
 
-	virtual bool addPoint(const Eigen::Vector3d &point) override;
+	bool addPoint(const Eigen::Vector3d &point) override;
 
-	[[nodiscard]] virtual shape_msgs::msg::Mesh toMesh() const override;
-
+	[[nodiscard]] shape_msgs::msg::Mesh toMesh() const override;
 };
 
 

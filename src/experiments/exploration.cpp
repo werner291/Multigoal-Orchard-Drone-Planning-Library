@@ -147,7 +147,7 @@ int main(int, char*[]) {
 
 		if (frames++ % 100 == 0) {
 			write_log_csv_line(log_file,
-							   {.time = time, .per_fruit_scan_proportion = surface_scan_tracker.per_target_scan_portion();});
+							   {.time = time, .per_fruit_scan_proportion = surface_scan_tracker.per_target_scan_portion()});
 		}
 
 		viewer.requestRender();
