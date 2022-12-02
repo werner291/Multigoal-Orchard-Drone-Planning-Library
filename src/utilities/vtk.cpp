@@ -335,8 +335,8 @@ void VtkPolyLineVisualization::updateLine(const std::vector<Eigen::Vector3d> &po
 VtkLineSegmentsVisualization::VtkLineSegmentsVisualization(float r, float g, float b) {
 	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
 	visitOrderVisualizationActor->SetMapper(visitOrderVisualizationMapper);
-	visitOrderVisualizationActor->GetProperty()->SetColor(r,g,b);
-	visitOrderVisualizationActor->GetProperty()->SetLineWidth(10);
+	visitOrderVisualizationActor->GetProperty()->SetColor(r, g, b);
+	visitOrderVisualizationActor->GetProperty()->SetLineWidth(5);
 }
 
 vtkActor *VtkLineSegmentsVisualization::getActor() {
@@ -344,8 +344,6 @@ vtkActor *VtkLineSegmentsVisualization::getActor() {
 }
 
 void VtkLineSegmentsVisualization::updateLine(const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> &points) {
-
-	assert(!points.empty());
 
 	vtkNew<vtkPoints> pointsVtk;
 	vtkNew<vtkCellArray> cells;

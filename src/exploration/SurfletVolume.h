@@ -35,7 +35,10 @@ public:
 
 private:
 
-	std::vector<Surflet> surflets; // TODO Will wanna make this a KD-tree or other spatial datastructure at some point
+	std::vector<Surflet> surflets;
+public:
+	[[nodiscard]] const std::vector<Surflet> &getSurflets() const;
+	// TODO Will wanna make this a KD-tree or other spatial datastructure at some point
 
 public:
 
@@ -44,11 +47,21 @@ public:
 		double distance_squared;
 	};
 
-	[[nodiscard]] NearbySurflet closest(const Eigen::Vector3d &query) const;
+	[[nodiscard]] std::optional<NearbySurflet> closest(const Eigen::Vector3d &query) const;
 
 	SurfletVolume unionWith(const SurfletVolume &other);
 
 	void add(Surflet s);
+
+	[[nodiscard]] double signedDistance(const Eigen::Vector3d &p) const;
+
+	/*
+	 * Change the normals of every point to match that of the implicit surface at that point.
+	 *
+	 * The existing normal is used as an "anchor" to determine whether to flip the normal or not
+	 * to keep the inside/outside orientation consistent.
+	 */
+	//	void recalculateNormals(double radius);
 
 	[[nodiscard]] bool isInside(const Eigen::Vector3d &p) const;
 };

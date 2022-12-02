@@ -80,6 +80,29 @@ public:
 	}
 
 
+	std::vector<size_t> query(Eigen::Vector3d query_center) {
+
+		std::vector<size_t> result;
+
+		Eigen::Vector3i rounded = cellIndex(query_center);
+
+		for (int x = -1; x <= 1; x++) {
+			for (int y = -1; y <= 1; y++) {
+				for (int z = -1; z <= 1; z++) {
+					Eigen::Vector3i cell = rounded + Eigen::Vector3i(x, y, z);
+					size_t hash = hashCellIndex(cell);
+					for (const auto &entry: spatial_hash_index[hash]) {
+						if ((entry.first - query_center).squaredNorm() <= resolution * resolution) {
+							result.push_back(hash);
+						}
+					}
+				}
+			}
+		}
+
+		return result;
+
+	}
 };
 
 #endif //NEW_PLANNERS_HASHEDSPATIALINDEX_H

@@ -25,9 +25,9 @@
 class ScannedSurfaceTracker {
 
 	/// The maximum distance that a point can be from the robot's camera to be considered well-enough scanned.
-	const double SCAN_MAX_DISTANCE = 1.0;
+	constexpr static const double SCAN_MAX_DISTANCE = 1.0;
 	/// The number of points to place on each mesh.
-	const size_t POINTS_PER_TARGET = 10;
+	constexpr static const size_t POINTS_PER_TARGET = 10;
 
 	/// The biggest target ID; using this, we can make the various vectors the right size.
 	size_t max_target = 0;
@@ -58,7 +58,7 @@ public:
 	 * @param meshes 		The meshes to build the ScannedSurfaceTracker for.
 	 * @return 				A ScannedSurfaceTracker for the given meshes.
 	 */
-	ScannedSurfaceTracker buildForMeshes(const std::vector<shape_msgs::msg::Mesh> &meshes);
+	static ScannedSurfaceTracker buildForMeshes(const std::vector<shape_msgs::msg::Mesh> &meshes);
 
 	/**
 	 * Update the tracker with a new snapshot of the robot's camera.
