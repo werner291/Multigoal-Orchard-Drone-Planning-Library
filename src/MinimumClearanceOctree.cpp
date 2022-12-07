@@ -63,7 +63,7 @@ MinimumClearanceOctree::updateInternal(const std::function<std::pair<double, Eig
 		return;
 	}
 
-	if (abs(distance_at_center) > half_extent_magnitude) {
+	if (abs(node.minimum_distance_at_center) > half_extent_magnitude) {
 		node.children.reset();
 	} else {
 		if (!node.children) {

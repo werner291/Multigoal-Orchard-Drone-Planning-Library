@@ -298,6 +298,7 @@ int main(int, char *[]) {
 		surface_scan_tracker.snapshot(eePose, points.target);
 
 		seen_space.update([&](const Eigen::Vector3d &p) -> std::pair<double, Eigen::Vector3d> {
+
 			Eigen::Vector3d delta = eePose.translation() - p;
 
 			return {1.0 - delta.norm(), -delta.normalized()};
