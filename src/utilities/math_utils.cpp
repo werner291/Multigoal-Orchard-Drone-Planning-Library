@@ -115,15 +115,25 @@ Eigen::Vector3d closest_point_on_triangle(const Eigen::Vector3d &p,
 
 }
 
+Eigen::Vector3d closest_point_on_open_triangle(const Eigen::Vector3d &p, const OpenTriangle &triangle) {
+
+	Eigen::Vector3d barycentric = project_barycentric(p,
+													  triangle.apex,
+													  triangle.apex + triangle.dir1,
+													  triangle.apex + triangle.dir2);
+
+
+}
+
 Eigen::Vector3d cheat_away_from_vertices(const Eigen::Vector3d &p,
 										 const Eigen::Vector3d &va,
 										 const Eigen::Vector3d &vb,
 										 const Eigen::Vector3d &vc,
 										 const double margin) {
 
-	if ((p - va).squaredNorm() < margin*margin) {
+	if ((p - va).squaredNorm() < margin * margin) {
 		return va + ((vb + vc) / 2.0 - va).normalized() * margin;
-	} else if ((p - vb).squaredNorm() < margin*margin) {
+	} else if ((p - vb).squaredNorm() < margin * margin) {
 		return vb + ((vc + va) / 2.0 - vb).normalized() * margin;
 	} else if ((p - vc).squaredNorm() < margin*margin) {
 		return vc + ((va + vb) / 2.0 - vc).normalized() * margin;

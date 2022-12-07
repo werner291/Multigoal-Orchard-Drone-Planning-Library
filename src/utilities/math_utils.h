@@ -54,6 +54,17 @@ Eigen::Vector3d closest_point_on_triangle(const Eigen::Vector3d &p,
 										  const Eigen::Vector3d &vb,
 										  const Eigen::Vector3d &vc);
 
+struct OpenTriangle {
+	Eigen::Vector3d apex;
+	Eigen::Vector3d dir1;
+	Eigen::Vector3d dir2;
+};
+
+/*
+ * Compute the closest point on an "open triangle", the triangle defined by a pair of rays with a common origin.
+ */
+Eigen::Vector3d closest_point_on_open_triangle(const Eigen::Vector3d &p, const OpenTriangle &triangle);
+
 /**
  * If the point p is within a given margin distance from one of the vertices of the triangle,
  * return a point slightly towards the other two vertices.
