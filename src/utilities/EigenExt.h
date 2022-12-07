@@ -8,7 +8,7 @@
 #include <Eigen/src/Geometry/Hyperplane.h>
 
 namespace EigenExt {
-	using Plane3d = Hyperplane<double, 3>;
+	using Plane3d = Eigen::Hyperplane<double, 3>;
 }
 
 #endif //NEW_PLANNERS_EIGENEXT_H

@@ -107,8 +107,46 @@ std::array<TriangleEdgeId, 2> edges_adjacent_to_vertex(TriangleVertexId vertex);
  * @param p3 		The third vertex of the triangle.
  * @return 			A point uniformly at random on the surface of the triangle.
  */
-Eigen::Vector3d uniform_point_on_triangle(const Eigen::Vector3d &p1,
-										  const Eigen::Vector3d &p2,
-										  const Eigen::Vector3d &p3);
+Eigen::Vector3d
+uniform_point_on_triangle(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, const Eigen::Vector3d &p3);
+
+/**
+ * Returns whether there exists an intersection between the given sphere and AABB.
+ *
+ * @param sphere_center 		The center of the sphere.
+ * @param sphere_radius 		The radius of the sphere.
+ * @param aabb 					The AABB.
+ * @return 						True if there exists an intersection, false otherwise.
+ */
+bool hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sphere_center,
+										  double sphere_radius,
+										  const Eigen::AlignedBox3d &aabb);
+
+
+struct OctantIterator {
+	size_t i;
+	const Eigen::AlignedBox3d bounds;
+
+private:
+	OctantIterator(size_t i, const Eigen::AlignedBox3d &bounds);
+
+public:
+
+	explicit OctantIterator(const Eigen::AlignedBox3d &bounds);
+
+	static OctantIterator end();
+
+	OctantIterator &operator++();
+
+	OctantIterator operator++(int);
+
+	bool operator==(const OctantIterator &other) const;
+
+	bool operator!=(const OctantIterator &other) const;
+
+	Eigen::AlignedBox3d operator*() const;
+
+
+};
 
 #endif //NEW_PLANNERS_MATH_UTILS_H

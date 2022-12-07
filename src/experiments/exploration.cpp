@@ -29,6 +29,7 @@
 #include "ScannedSurfaceTracker.h"
 #include "../exploration/SurfletVolume.h"
 #include "../utilities/shape_generation.h"
+#include "../MinimumClearanceOctree.h"
 
 /**
  * Build a MoveIt collision environment from the given workspace specification.
@@ -263,11 +264,12 @@ int main(int, char *[]) {
 
 	auto log_file = open_new_logfile(workspaceSpec.orchard.trees[0].second.fruit_meshes.size());
 
-	SurfletVolume seen_space;
+	MinimumClearanceOctree seen_space(Eigen::AlignedBox3d(Eigen::Vector3d(-10.0, -10.0, -10.0),
+														  Eigen::Vector3d(10.0, 10.0, 10.0)), 0.2);
 
 	size_t frames = 0;
 
-	VtkLineSegmentsVisualization seen_space_visualization({1.0, 0.0, 1.0});
+	VtkPointCloudVisualization seen_space_visualization({1.0, 0.0, 1.0});
 
 	viewer.addActor(seen_space_visualization.getActor());
 
@@ -295,17 +297,14 @@ int main(int, char *[]) {
 
 		surface_scan_tracker.snapshot(eePose, points.target);
 
-		seen_space = seen_space.unionWith(visibleVolumeFromPointCloud(points.soft_obstacle, eePose, 2.0));
+		seen_space.update([&](const Eigen::Vector3d &p) -> std::pair<double, Eigen::Vector3d> {
+			Eigen::Vector3d delta = eePose.translation() - p;
 
-		{
-			std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> seen_space_lines_with_normals;
+			return {1.0 - delta.norm(), -delta.normalized()};
 
-			for (auto &point: seen_space.getSurflets()) {
-				seen_space_lines_with_normals.emplace_back(point.point, point.point + point.normal * 0.5);
-			}
+		});
 
-			seen_space_visualization.updateLine(seen_space_lines_with_normals);
-		}
+		seen_space_visualization.updatePoints(implicitSurfacePoints(seen_space));
 
 		// Pass the point cloud to the motion-planning algorithm; it will probably respond by emitting a new path.
 		//		dbsa.update(currentPathState.getCurrentState(), points);

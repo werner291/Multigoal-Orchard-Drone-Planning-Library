@@ -181,3 +181,88 @@ uniform_point_on_triangle(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, 
 	return (1 - r1) * p1 + r1 * (1 - r2) * p2 + r1 * r2 * p3;
 }
 
+bool hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sphere_center,
+										  const double sphere_radius,
+										  const Eigen::AlignedBox3d &aabb) {
+
+	// Check if the boundary of the sphere is within the bounds of the node.
+	// Algorithm from https://stackoverflow.com/a/41457896 (hollow sphere case)
+
+	double dmin = 0; // Distance from the sphere center to the closest point on the AABB
+	double dmax = 0; // Distance from the sphere center to the farthest point on the AABB
+	bool face = false;
+
+	double square_radius = std::pow(sphere_radius, 2);
+
+	for (int dim = 0; dim < 3; dim++) {
+		// Square distances between the sphere center and the extended planes of the AABB in this dimension
+		double a = std::pow(sphere_center[dim] - aabb.min()[dim], 2);
+		double b = std::pow(sphere_center[dim] - aabb.max()[dim], 2);
+
+		// std::max(a, b) would be the greatest squared distance from the sphere center to the extended planes of the AABB in this dimension
+		// So, we add this squared distance to the total, building up one component of the squared distance from the sphere center to the AABB
+		// in every iteration. ( x^2 + y^2 + z^2, where each term gets added in a different iteration )
+		dmax += std::max(a, b);
+
+
+		if (sphere_center[dim] < aabb.min()[dim]) {
+			face = true;
+			dmin += a;
+		} else if (sphere_center[dim] > aabb.max()[dim]) {
+			face = true;
+			dmin += b;
+		} else if (std::min(a, b) <= square_radius)
+			face = true;
+	}
+
+	return (face && (dmin <= square_radius) && (square_radius <= dmax));
+}
+
+OctantIterator::OctantIterator(size_t i, const Eigen::AlignedBox3d &bounds) : i(i), bounds(bounds) {
+}
+
+OctantIterator::OctantIterator(const Eigen::AlignedBox3d &bounds) : i(0), bounds(bounds) {
+}
+
+OctantIterator OctantIterator::end() {
+	return {8, Eigen::AlignedBox3d()};
+}
+
+OctantIterator &OctantIterator::operator++() {
+	++i;
+	return *this;
+}
+
+bool OctantIterator::operator==(const OctantIterator &other) const {
+	return i == other.i && bounds.min() == other.bounds.min() && bounds.max() == other.bounds.max();
+}
+
+bool OctantIterator::operator!=(const OctantIterator &other) const {
+	return !(*this == other);
+}
+
+Eigen::AlignedBox3d OctantIterator::operator*() const {
+
+	Eigen::AlignedBox3d result;
+
+	Eigen::Vector3d center = bounds.center();
+
+	result.min().x() = (i & 1) ? bounds.min().x() : center.x();
+	result.min().y() = (i & 2) ? bounds.min().y() : center.y();
+	result.min().z() = (i & 4) ? bounds.min().z() : center.z();
+
+	result.max().x() = (i & 1) ? center.x() : bounds.max().x();
+	result.max().y() = (i & 2) ? center.y() : bounds.max().y();
+	result.max().z() = (i & 4) ? center.z() : bounds.max().z();
+
+	return result;
+
+}
+
+OctantIterator OctantIterator::operator++(int) {
+
+	OctantIterator result = *this;
+	++(*this);
+	return result;
+
+}
