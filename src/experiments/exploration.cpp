@@ -230,34 +230,17 @@ int main(int, char *[]) {
 	// The shell/wrapper algorithm to use as a parameter to the motion-planning algorithm
 	auto wrapper_algo = std::make_shared<StreamingConvexHull>(StreamingConvexHull::fromSpherifiedCube(4));
 
-//	// Initialize the motion-planning algorithm with the robot's initial state,
-//	// and a callback for when the algorithm has found a new path.
-//	DynamicMeshHullAlgorithm dbsa(workspaceSpec.initialState, [&](robot_trajectory::RobotTrajectory trajectory) {
-//
-//		// Simply hand it off to the current-path-state object; it'll take care of moving the robot.
-//		currentPathState.newPath(trajectory);
-//
-//		// Extract the end-effector trace from the trajectory and visualize it.
-//		viewer.ee_trace_visualization.updateLine(extractEndEffectorTrace(trajectory));
-//
-//	}, std::move(wrapper_algo));
-
-	{
-		robot_trajectory::RobotTrajectory trajectory(workspaceSpec.robotModel);
-
-		trajectory.addSuffixWayPoint(workspaceSpec.initialState, 0.0);
+	// Initialize the motion-planning algorithm with the robot's initial state,
+	// and a callback for when the algorithm has found a new path.
+	DynamicMeshHullAlgorithm dbsa(workspaceSpec.initialState, [&](robot_trajectory::RobotTrajectory trajectory) {
 
 		// Simply hand it off to the current-path-state object; it'll take care of moving the robot.
-		moveit::core::RobotState rs2 = trajectory.getLastWayPoint();
-		setBaseTranslation(rs2, getBaseTranslation(workspaceSpec.initialState) + Eigen::Vector3d(2.0, 0.0, 0.0));
-		trajectory.addSuffixWayPoint(rs2, 1.0);
-
-		moveit::core::RobotState rs3 = trajectory.getLastWayPoint();
-		setBaseTranslation(rs3, getBaseTranslation(workspaceSpec.initialState) + Eigen::Vector3d(2.0, 2.0, 0.0));
-		trajectory.addSuffixWayPoint(rs3, 2.0);
-
 		currentPathState.newPath(trajectory);
-	}
+
+		// Extract the end-effector trace from the trajectory and visualize it.
+		viewer.ee_trace_visualization.updateLine(extractEndEffectorTrace(trajectory));
+
+	}, std::move(wrapper_algo));
 
 	double time = 0.0;
 
@@ -344,10 +327,10 @@ int main(int, char *[]) {
 
 		seen_space_visualization.updatePoints(implicitSurfacePoints(seen_space));
 
-//		// Pass the point cloud to the motion-planning algorithm; it will probably respond by emitting a new path.
-//		dbsa.update(currentPathState.getCurrentState(), points);
-//
-//		viewer.updateAlgorithmVisualization(dbsa);
+		// Pass the point cloud to the motion-planning algorithm; it will probably respond by emitting a new path.
+		dbsa.update(currentPathState.getCurrentState(), points);
+
+		viewer.updateAlgorithmVisualization(dbsa);
 
 		// Update the visualization of the scannable points, recoloring the ones that were just seen.
 		//		fruitSurfaceScanTargetsActor.markAsScanned(new_scanned_points);
