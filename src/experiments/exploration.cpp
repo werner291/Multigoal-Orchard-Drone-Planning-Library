@@ -325,13 +325,8 @@ int main(int, char *[]) {
 
 			Eigen::Hyperplane<double, 3> top_plane((top_left - center).cross(top_right - center).normalized(), center);
 			Eigen::Hyperplane<double, 3> bottom_plane((bottom_right - center).cross(bottom_left - center).normalized(), center);
-			Eigen::Hyperplane<double, 3> left_plane((top_left - center).cross(bottom_left - center).normalized(), center);
+			Eigen::Hyperplane<double, 3> left_plane((bottom_left - center).cross(top_left - center).normalized(), center);
 			Eigen::Hyperplane<double, 3> right_plane((top_right - center).cross(bottom_right - center).normalized(), center);
-
-			assert(top_plane.normal().z() < 0.0);
-			assert(bottom_plane.normal().z() > 0.0);
-			assert(right_plane.normal().x() < 0.0);
-			assert(left_plane.normal().x() > 0.0);
 
 			bool is_in_frustum = top_plane.signedDistance(p) > 0.0 && right_plane.signedDistance(p) > 0.0 &&
 								 bottom_plane.signedDistance(p) > 0.0 && left_plane.signedDistance(p) > 0.0;
