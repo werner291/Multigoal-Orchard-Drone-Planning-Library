@@ -85,10 +85,10 @@ SurfletVolume SurfletVolume::unionWith(const SurfletVolume &other) {
 							(s.normal + nearest->surflet.normal).normalized()});
 			}
 
-
 		}
 
 	}
+
 	return result;
 
 }

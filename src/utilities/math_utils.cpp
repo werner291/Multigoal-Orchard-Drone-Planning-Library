@@ -67,62 +67,40 @@ Eigen::Vector3d closest_point_on_triangle(const Eigen::Vector3d &p,
 
 	Eigen::Vector3d barycentric = project_barycentric(p, va, vb, vc);
 
-	Eigen::Vector3d closest_point;
-	double closest_distance = std::numeric_limits<double>::max();
-
 	if (0 <= barycentric[0] && barycentric[0] <= 1 && 0 <= barycentric[1] && barycentric[1] <= 1 && 0 <= barycentric[2] && barycentric[2] <= 1) {
-		closest_point = va * barycentric[0] + vb * barycentric[1] + vc * barycentric[2];
+		return va * barycentric[0] + vb * barycentric[1] + vc * barycentric[2];
 	} else {
 
-		Eigen::ParametrizedLine<double, 3> ab(va, vb - va);
-		Eigen::ParametrizedLine<double, 3> bc(vb, vc - vb);
-		Eigen::ParametrizedLine<double, 3> ca(vc, va - vc);
+		Eigen::Vector3d pt_ab = Segment3d(va, vb).closest_point(p);
+		Eigen::Vector3d pt_bc = Segment3d(vb, vc).closest_point(p);
+		Eigen::Vector3d pt_ca = Segment3d(vc, va).closest_point(p);
 
-		double t_ab = projectionParameter(ab, p);
-		double t_bc = projectionParameter(bc, p);
-		double t_ca = projectionParameter(ca, p);
-
-		t_ab = std::clamp(t_ab, 0.0, 1.0);
-		t_bc = std::clamp(t_bc, 0.0, 1.0);
-		t_ca = std::clamp(t_ca, 0.0, 1.0);
-
-		Eigen::Vector3d pt_ab = ab.pointAt(t_ab);
-		Eigen::Vector3d pt_bc = bc.pointAt(t_bc);
-		Eigen::Vector3d pt_ca = ca.pointAt(t_ca);
-
-		double d_ab = (pt_ab - p).squaredNorm();
-		double d_bc = (pt_bc - p).squaredNorm();
-		double d_ca = (pt_ca - p).squaredNorm();
-
-		if (d_ab < closest_distance) {
-			closest_distance = d_ab;
-			closest_point = pt_ab;
-		}
-
-		if (d_bc < closest_distance) {
-			closest_distance = d_bc;
-			closest_point = pt_bc;
-		}
-
-		if (d_ca < closest_distance) {
-			closest_distance = d_ca;
-			closest_point = pt_ca;
-		}
+		return closest_point_in_list({pt_ab, pt_bc, pt_ca}, p);
 
 	}
-
-	return closest_point;
 
 }
 
 Eigen::Vector3d closest_point_on_open_triangle(const Eigen::Vector3d &p, const OpenTriangle &triangle) {
+
+	// Same as closest_point_on_triangle, but we don't limit one side of the triangle.
 
 	Eigen::Vector3d barycentric = project_barycentric(p,
 													  triangle.apex,
 													  triangle.apex + triangle.dir1,
 													  triangle.apex + triangle.dir2);
 
+	assert(abs(barycentric[0] + barycentric[1] + barycentric[2]-1) < 1e-6);
 
+	// Note: 0 <= barycentric[0] case deliberately omitted.
+	if (barycentric[0] <= 1 && 0 <= barycentric[1] && 0 <= barycentric[2]) {
+		return triangle.apex * barycentric[0] + (triangle.apex + triangle.dir1) * barycentric[1] + (triangle.apex + triangle.dir2) * barycentric[2];
+	} else {
+		return closest_point_in_list({
+			Ray3d(triangle.apex, triangle.dir1).closest_point(p),
+			Ray3d(triangle.apex, triangle.dir2).closest_point(p),
+			}, p);
+	}
 }
 
 Eigen::Vector3d cheat_away_from_vertices(const Eigen::Vector3d &p,
@@ -228,6 +206,23 @@ bool hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sphere_center,
 	return (face && (dmin <= square_radius) && (square_radius <= dmax));
 }
 
+Eigen::Vector3d closest_point_in_list(std::initializer_list<Eigen::Vector3d> points, const Eigen::Vector3d &p) {
+
+	assert(points.begin() != points.end());
+
+	Eigen::Vector3d closest_point = *points.begin();
+	double min_distance = (closest_point - p).squaredNorm();
+	for (const auto &point : points) {
+		double distance = (point - p).squaredNorm();
+		if (distance < min_distance) {
+			min_distance = distance;
+			closest_point = point;
+		}
+	}
+
+	return closest_point;
+}
+
 OctantIterator::OctantIterator(size_t i, const Eigen::AlignedBox3d &bounds) : i(i), bounds(bounds) {
 }
 
@@ -275,4 +270,22 @@ OctantIterator OctantIterator::operator++(int) {
 	++(*this);
 	return result;
 
+}
+
+Segment3d::Segment3d(const Eigen::Vector3d &start, const Eigen::Vector3d &end) : start(start), end(end) {}
+
+Eigen::Vector3d Segment3d::closest_point(const Eigen::Vector3d &p) const {
+	Eigen::ParametrizedLine<double, 3> ab(start, end - start);
+	double t_ab = projectionParameter(ab, p);
+	t_ab = std::clamp(t_ab, 0.0, 1.0);
+	return ab.pointAt(t_ab);
+}
+
+Ray3d::Ray3d(const Eigen::Vector3d &origin, const Eigen::Vector3d &direction) : origin(origin), direction(direction) {}
+
+Eigen::Vector3d Ray3d::closest_point(const Eigen::Vector3d &p) const {
+	Eigen::ParametrizedLine<double, 3> ab(origin, direction);
+	double t_ab = projectionParameter(ab, p);
+	t_ab = std::max(t_ab, 0.0);
+	return ab.pointAt(t_ab);
 }

@@ -164,12 +164,12 @@ smoothWaypoint(std::pair<const moveit::core::RobotState &, const moveit::core::R
 
 }
 
+
 void localOptimizeSegmentedPath(const RobotPastTrace &robot_past,
 								SegmentedRobotPath &lastPath,
 								const DirectPointCloudCollisionDetection &collision_detector) {
 
 
-	const double PREFERRED_MINIMUM_CLEARANCE = 1.0;
 
 	// TODO: When computing an entirely new plan, maybe we can blend it with the old one,
 	// to avoid wasting some of the local optimization in the old one.

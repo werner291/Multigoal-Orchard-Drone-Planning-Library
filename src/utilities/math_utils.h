@@ -160,4 +160,42 @@ public:
 
 };
 
+struct Segment3d {
+	Eigen::Vector3d start;
+	Eigen::Vector3d end;
+
+	Segment3d(const Eigen::Vector3d &start, const Eigen::Vector3d &end);
+
+	/**
+	 * Compute the point on the segment closest to the given point.
+	 *
+	 * @param p 	The point to compute the closest point to.
+	 * @return 		The point on the segment closest to p.
+	 */
+	[[nodiscard]] Eigen::Vector3d closest_point(const Eigen::Vector3d &p) const;
+};
+
+struct Ray3d {
+	Eigen::Vector3d origin;
+	Eigen::Vector3d direction;
+
+	Ray3d(const Eigen::Vector3d &origin, const Eigen::Vector3d &direction);
+
+	/**
+	 * Compute the point on the ray closest to the given point.
+	 *
+	 * @param p 	The point to compute the closest point to.
+	 * @return 		The point on the ray closest to p.
+	 */
+	[[nodiscard]] Eigen::Vector3d closest_point(const Eigen::Vector3d &p) const;
+};
+
+/**
+ * Among a number of points, find the one closest to a given point.
+ * @param points 		The points to search.
+ * @param p 			The point to search for.
+ * @return 				The index of the point closest to p.
+ */
+Eigen::Vector3d closest_point_in_list(std::initializer_list<Eigen::Vector3d> points, const Eigen::Vector3d &p);
+
 #endif //NEW_PLANNERS_MATH_UTILS_H

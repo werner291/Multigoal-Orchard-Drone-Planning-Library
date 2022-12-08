@@ -5,6 +5,7 @@
 #ifndef NEW_PLANNERS_LOCALOPTIMIZER_H
 #define NEW_PLANNERS_LOCALOPTIMIZER_H
 
+const double PREFERRED_MINIMUM_CLEARANCE = 1.0;
 
 #include "../utilities/moveit.h"
 #include "../DirectPointCloudCollisionDetection.h"

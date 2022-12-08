@@ -1,4 +1,3 @@
-
 #include <vtkActor.h>
 #include <vtkCamera.h>
 #include <vtkNew.h>
@@ -191,6 +190,7 @@ SurfletVolume visibleVolumeFromPointCloud(const std::vector<Eigen::Vector3d> &po
 
 }
 
+
 int main(int, char *[]) {
 
 	// Build/load an abstract representation of the orchard that is as high-level and declarative as possible.
@@ -230,17 +230,34 @@ int main(int, char *[]) {
 	// The shell/wrapper algorithm to use as a parameter to the motion-planning algorithm
 	auto wrapper_algo = std::make_shared<StreamingConvexHull>(StreamingConvexHull::fromSpherifiedCube(4));
 
-	// Initialize the motion-planning algorithm with the robot's initial state,
-	// and a callback for when the algorithm has found a new path.
-	DynamicMeshHullAlgorithm dbsa(workspaceSpec.initialState, [&](robot_trajectory::RobotTrajectory trajectory) {
+//	// Initialize the motion-planning algorithm with the robot's initial state,
+//	// and a callback for when the algorithm has found a new path.
+//	DynamicMeshHullAlgorithm dbsa(workspaceSpec.initialState, [&](robot_trajectory::RobotTrajectory trajectory) {
+//
+//		// Simply hand it off to the current-path-state object; it'll take care of moving the robot.
+//		currentPathState.newPath(trajectory);
+//
+//		// Extract the end-effector trace from the trajectory and visualize it.
+//		viewer.ee_trace_visualization.updateLine(extractEndEffectorTrace(trajectory));
+//
+//	}, std::move(wrapper_algo));
+
+	{
+		robot_trajectory::RobotTrajectory trajectory(workspaceSpec.robotModel);
+
+		trajectory.addSuffixWayPoint(workspaceSpec.initialState, 0.0);
 
 		// Simply hand it off to the current-path-state object; it'll take care of moving the robot.
+		moveit::core::RobotState rs2 = trajectory.getLastWayPoint();
+		setBaseTranslation(rs2, getBaseTranslation(workspaceSpec.initialState) + Eigen::Vector3d(2.0, 0.0, 0.0));
+		trajectory.addSuffixWayPoint(rs2, 1.0);
+
+		moveit::core::RobotState rs3 = trajectory.getLastWayPoint();
+		setBaseTranslation(rs3, getBaseTranslation(workspaceSpec.initialState) + Eigen::Vector3d(2.0, 2.0, 0.0));
+		trajectory.addSuffixWayPoint(rs3, 2.0);
+
 		currentPathState.newPath(trajectory);
-
-		// Extract the end-effector trace from the trajectory and visualize it.
-		viewer.ee_trace_visualization.updateLine(extractEndEffectorTrace(trajectory));
-
-	}, std::move(wrapper_algo));
+	}
 
 	double time = 0.0;
 
@@ -248,8 +265,8 @@ int main(int, char *[]) {
 
 	auto log_file = open_new_logfile(workspaceSpec.orchard.trees[0].second.fruit_meshes.size());
 
-	MinimumClearanceOctree seen_space(Eigen::AlignedBox3d(Eigen::Vector3d(-10.0, -10.0, -10.0),
-														  Eigen::Vector3d(10.0, 10.0, 10.0)), 0.5);
+	MinimumClearanceOctree seen_space(Eigen::AlignedBox3d(Eigen::Vector3d(-5.0, -5.0, -5.0),
+														  Eigen::Vector3d(5.0, 5.0, 5.0)), 0.2);
 
 	size_t frames = 0;
 
@@ -281,37 +298,61 @@ int main(int, char *[]) {
 
 		surface_scan_tracker.snapshot(eePose, points.target);
 
-		seen_space.update([&](const Eigen::Vector3d &p) -> std::pair<double, Eigen::Vector3d> {
+		seen_space.update([&](Eigen::Vector3d p) -> std::pair<double, Eigen::Vector3d> {
 
 			Eigen::Vector3d center = eePose.translation();
 
-			//			Eigen::Vector3d top_left = eePose * Eigen::Vector3d(-0.5, 0.5, 1.0);
-			//			Eigen::Vector3d top_right = eePose * Eigen::Vector3d(0.5, 0.5, 1.0);
-			//			Eigen::Vector3d bottom_left = eePose * Eigen::Vector3d(-0.5, -0.5, 1.0);
-			//			Eigen::Vector3d bottom_right = eePose * Eigen::Vector3d(0.5, -0.5, 1.0);
-			//
-			//			auto top_plane = Eigen::Hyperplane<double, 3>::Through(top_left, top_right, center);
-			//			auto right_plane = Eigen::Hyperplane<double, 3>::Through(top_right, bottom_right, center);
-			//			auto bottom_plane = Eigen::Hyperplane<double, 3>::Through(bottom_right, bottom_left, center);
-			//			auto left_plane = Eigen::Hyperplane<double, 3>::Through(bottom_left, top_left, center);
-			//
-			//			bool is_in_frustum = top_plane.signedDistance(p) > 0.0 &&
-			//								 right_plane.signedDistance(p) > 0.0 &&
-			//								 bottom_plane.signedDistance(p) > 0.0 &&
-			//								 left_plane.signedDistance(p) > 0.0;
-			//
-			//			// Now, project the point
-			//
-			//			project_barycentric(p, center, top_left, top_right);
+			Eigen::Vector3d top_left = eePose * (Eigen::Vector3d(-0.5, 1.0, 0.5));
+			Eigen::Vector3d top_right = eePose * (Eigen::Vector3d(0.5, 1.0, 0.5));
+			Eigen::Vector3d bottom_left = eePose * (Eigen::Vector3d(-0.5, 1.0, -0.5));
+			Eigen::Vector3d bottom_right = eePose * (Eigen::Vector3d(0.5, 1.0, -0.5));
+
+			OpenTriangle top_triangle {center, (top_left - center).normalized(), (top_right - center).normalized()};
+
+			OpenTriangle bottom_triangle{center, (bottom_left - center).normalized(),
+										 (bottom_right - center).normalized()};
+
+			OpenTriangle left_triangle{center, (top_left - center).normalized(), (bottom_left - center).normalized()};
+
+			OpenTriangle right_triangle{center, (top_right - center).normalized(),
+										(bottom_right - center).normalized()};
+
+			Eigen::Vector3d closest_point = closest_point_in_list({closest_point_on_open_triangle(p, top_triangle),
+																   closest_point_on_open_triangle(p, bottom_triangle),
+																   closest_point_on_open_triangle(p, left_triangle),
+																   closest_point_on_open_triangle(p, right_triangle)},
+																  p);
+
+			Eigen::Hyperplane<double, 3> top_plane((top_left - center).cross(top_right - center).normalized(), center);
+			Eigen::Hyperplane<double, 3> bottom_plane((bottom_right - center).cross(bottom_left - center).normalized(), center);
+			Eigen::Hyperplane<double, 3> left_plane((top_left - center).cross(bottom_left - center).normalized(), center);
+			Eigen::Hyperplane<double, 3> right_plane((top_right - center).cross(bottom_right - center).normalized(), center);
+
+			assert(top_plane.normal().z() < 0.0);
+			assert(bottom_plane.normal().z() > 0.0);
+			assert(right_plane.normal().x() < 0.0);
+			assert(left_plane.normal().x() > 0.0);
+
+			bool is_in_frustum = top_plane.signedDistance(p) > 0.0 && right_plane.signedDistance(p) > 0.0 &&
+								 bottom_plane.signedDistance(p) > 0.0 && left_plane.signedDistance(p) > 0.0;
+
+			double distance = (p - closest_point).norm();
+			Eigen::Vector3d normal = (closest_point - p).normalized();
+
+			return {
+				is_in_frustum ? distance : -distance,
+				is_in_frustum ? normal : -normal
+			};
+
 
 		});
 
 		seen_space_visualization.updatePoints(implicitSurfacePoints(seen_space));
 
-		// Pass the point cloud to the motion-planning algorithm; it will probably respond by emitting a new path.
-		dbsa.update(currentPathState.getCurrentState(), points);
-
-		viewer.updateAlgorithmVisualization(dbsa);
+//		// Pass the point cloud to the motion-planning algorithm; it will probably respond by emitting a new path.
+//		dbsa.update(currentPathState.getCurrentState(), points);
+//
+//		viewer.updateAlgorithmVisualization(dbsa);
 
 		// Update the visualization of the scannable points, recoloring the ones that were just seen.
 		//		fruitSurfaceScanTargetsActor.markAsScanned(new_scanned_points);
@@ -334,10 +375,11 @@ int main(int, char *[]) {
 	return EXIT_SUCCESS;
 }
 
-std::unique_ptr<collision_detection::CollisionEnvFCL> buildOrchardAndRobotFCLCollisionEnvironment(const WorkspaceSpec &workspaceSpec) {
+std::unique_ptr<collision_detection::CollisionEnvFCL>
+buildOrchardAndRobotFCLCollisionEnvironment(const WorkspaceSpec &workspaceSpec) {
 	auto collision_world = std::make_shared<collision_detection::World>();
 
-	for (const auto& [tree_id, tree] : workspaceSpec.orchard.trees | ranges::views::enumerate) {
+	for (const auto &[tree_id, tree]: workspaceSpec.orchard.trees | ranges::views::enumerate) {
 		Eigen::Isometry3d tree_pose = Eigen::Isometry3d::Identity();
 		tree_pose.translation() = Eigen::Vector3d(tree.first.x(), tree.first.y(), 0);
 		collision_world->addToObject("tree_" + std::to_string(tree_id) + "_trunk",
