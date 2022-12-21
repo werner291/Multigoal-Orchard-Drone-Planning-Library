@@ -20,7 +20,9 @@ struct SegmentedPointCloud {
 		/// Point lies on the surface of a soft obstacle: it may be passed, but you cannot see through it.
 		PT_SOFT_OBSTACLE,
 		/// Point lies on the surface of a target object.
-		PT_TARGET
+		PT_TARGET,
+		/// Point was classified as "background" which means the ray passing through the point was unobstructed.
+		PT_BACKGROUND
 	};
 
 	/**
@@ -53,6 +55,7 @@ struct SegmentedPointCloud {
 
 		/// The index of the target that this point belongs to.
 		size_t target_index;
+
 	};
 
 	struct ByType {

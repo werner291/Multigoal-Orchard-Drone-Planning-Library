@@ -7,6 +7,8 @@
 
 #include <utility>
 #include <Eigen/Geometry>
+#include <optional>
+#include "EigenExt.h"
 
 /**
  * Given two lines, expressed in origin-vector form, find the points of on_which_mesh approach.
@@ -15,9 +17,8 @@
  * @param l2 	The second line.
  * @return 		Parameters t and s, such that l1.pointAt(t) and l2.pointAt(s) are the points of on_which_mesh approach.
  */
-std::pair<double, double> closest_point_on_line(
-		const Eigen::ParametrizedLine<double, 3>& l1,
-		const Eigen::ParametrizedLine<double, 3>& l2);
+std::pair<double, double>
+closest_point_on_line(const Eigen::ParametrizedLine<double, 3> &l1, const Eigen::ParametrizedLine<double, 3> &l2);
 
 /**
  * Given a line and a point, find the projection of the point onto the line, expressed as a parameter for the line.
@@ -26,7 +27,7 @@ std::pair<double, double> closest_point_on_line(
  * @param point 	The point.
  * @return 			The parameter t, such that line.pointAt(t) is the projection of the point onto the line.
  */
-double projectionParameter(const Eigen::ParametrizedLine<double, 3>& line, const Eigen::Vector3d& point);
+double projectionParameter(const Eigen::ParametrizedLine<double, 3> &line, const Eigen::Vector3d &point);
 
 /**
  *
@@ -58,6 +59,10 @@ struct OpenTriangle {
 	Eigen::Vector3d apex;
 	Eigen::Vector3d dir1;
 	Eigen::Vector3d dir2;
+
+	[[nodiscard]] EigenExt::UVector3d normal() const {
+		return EigenExt::UVector3d(dir1.cross(dir2).normalized());
+	}
 };
 
 /*
@@ -95,15 +100,11 @@ using Plane3d = Eigen::Hyperplane<double, 3>;
 Plane3d plane_from_points(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, const Eigen::Vector3d &p3);
 
 enum TriangleEdgeId {
-	EDGE_AB = 0,
-	EDGE_BC = 1,
-	EDGE_CA = 2
+	EDGE_AB = 0, EDGE_BC = 1, EDGE_CA = 2
 };
 
 enum TriangleVertexId {
-	VERTEX_A = 0,
-	VERTEX_B = 1,
-	VERTEX_C = 2
+	VERTEX_A = 0, VERTEX_B = 1, VERTEX_C = 2
 };
 
 std::array<TriangleVertexId, 2> vertices_in_edge(TriangleEdgeId edge);
@@ -133,7 +134,21 @@ bool hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sphere_center,
 										  double sphere_radius,
 										  const Eigen::AlignedBox3d &aabb);
 
-
+/**
+ *
+ * Iterator over the octants of a Eigen::AlignedBox3d.
+ *
+ * Specifically, in the order:
+ *
+ * 1. +x;+y;+z
+ * 2. -x;+y;+z
+ * 3. +x;-y;+z
+ * 4. -x;+y;+z
+ * 5. +x;+y;-z
+ * 6. -x;+y;-z
+ * 7. +x;-y;-z
+ * 8. -x;+y;-z
+ */
 struct OctantIterator {
 	size_t i;
 	const Eigen::AlignedBox3d bounds;
@@ -173,7 +188,52 @@ struct Segment3d {
 	 * @return 		The point on the segment closest to p.
 	 */
 	[[nodiscard]] Eigen::Vector3d closest_point(const Eigen::Vector3d &p) const;
+
+	[[nodiscard]] Eigen::Vector3d displacement() const;
+
+	[[nodiscard]] Eigen::ParametrizedLine<double, 3> extended_line() const;
+
 };
+
+namespace math_utils {
+
+	/**
+	 * Returns the parameter value of the given parametrized line at the plane defined by the given
+	 * dimension and value. If the line is parallel to the plane, returns NaN.
+	 *
+	 * @param p The parametrized line.
+	 * @param d The dimension of the plane.
+	 * @param value The value at the given dimension of the plane.
+	 * @return The parameter value at the plane, or NaN if the line is parallel to the plane.
+	 */
+	double param_at_plane(const EigenExt::ParametrizedLine3d &p, size_t d, double value);
+
+	/**
+	 * @brief Check whether the given AABB fully contains the given line segment.
+	 */
+	bool box_contains_segment(const Eigen::AlignedBox3d &box, const Segment3d &segment);
+
+	/**
+ 	 * @brief Computes the intersection parameters of the given line segment with the given AABB.
+     * If the line segment intersects the AABB, returns the parameters at which the line intersects
+     * the minimum and maximum corner of the AABB. If the line segment does not intersect the AABB,
+     * returns an empty optional.
+     * @param box The AABB to intersect with the line segment.
+     * @param segment The line segment to intersect with the AABB.
+     * @return The intersection parameters of the line segment with the AABB, or an empty optional if no intersection.
+     */
+	std::optional<std::array<double, 2>>
+	line_aabb_intersection_params(const Eigen::AlignedBox3d &box, const EigenExt::ParametrizedLine3d &segment);
+
+	/**
+	  *	@brief Determines whether the given line segment intersects the given AABB.
+	  *	@param box The AABB to test for intersection with the line segment.
+	  *	@param segment The line segment to test for intersection with the AABB.
+	  *	@return True if the line segment intersects the AABB, false otherwise.
+	  */
+	bool segment_intersects_aabb(const Eigen::AlignedBox3d &box, const Segment3d &segment);
+}
+
 
 struct Ray3d {
 	Eigen::Vector3d origin;

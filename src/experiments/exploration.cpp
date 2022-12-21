@@ -28,7 +28,8 @@
 #include "ScannedSurfaceTracker.h"
 #include "../exploration/SurfletVolume.h"
 #include "../utilities/shape_generation.h"
-#include "../MinimumClearanceOctree.h"
+#include "../occupancy_mapping/MinimumClearanceOctree.h"
+#include "../utilities/signed_distance_fields.h"
 
 /**
  * Build a MoveIt collision environment from the given workspace specification.
@@ -191,6 +192,7 @@ SurfletVolume visibleVolumeFromPointCloud(const std::vector<Eigen::Vector3d> &po
 }
 
 
+
 int main(int, char *[]) {
 
 	// Build/load an abstract representation of the orchard that is as high-level and declarative as possible.
@@ -281,48 +283,28 @@ int main(int, char *[]) {
 
 		surface_scan_tracker.snapshot(eePose, points.target);
 
+		auto sdf = sdf::IsometrySdf(eePose, sdf::open_view_pyramid_local({0.5, 0.5})) +
+				   // Ground plane
+				   sdf::PlaneSdf{EigenExt::Plane3d(Eigen::Vector3d(0.0, 0.0, 1.0), 0.0)};// +
+		//				// Ceiling
+		//				sdf::PlaneSdf { EigenExt::Plane3d(Eigen::Vector3d(0.0, 0.0, -1.0), 5.0) } +
+		//				// Y+ wall
+		//				sdf::PlaneSdf { EigenExt::Plane3d(Eigen::Vector3d(0.0, 1.0, 0.0), -5.0) } +
+		//				// Y- wall
+		//				sdf::PlaneSdf { EigenExt::Plane3d(Eigen::Vector3d(0.0, -1.0, 0.0), 5.0) } +
+		//				// X+ wall
+		//				sdf::PlaneSdf { EigenExt::Plane3d(Eigen::Vector3d(1.0, 0.0, 0.0), -5.0) } +
+		//				// X- wall
+		//				sdf::PlaneSdf { EigenExt::Plane3d(Eigen::Vector3d(-1.0, 0.0, 0.0), 5.0) };
+
+		Eigen::Vector3d in_front = eePose * Eigen::Vector3d(0.4, 1.0, 0.0);
+		std::cout << "in_front: " << in_front.transpose() << " sd " << sdf(in_front).signed_distance << " normal "
+				  << sdf(in_front).normal->transpose() << std::endl;
+
 		seen_space.update([&](Eigen::Vector3d p) -> std::pair<double, Eigen::Vector3d> {
-
-			Eigen::Vector3d center = eePose.translation();
-
-			Eigen::Vector3d top_left = eePose * (Eigen::Vector3d(-0.5, 1.0, 0.5));
-			Eigen::Vector3d top_right = eePose * (Eigen::Vector3d(0.5, 1.0, 0.5));
-			Eigen::Vector3d bottom_left = eePose * (Eigen::Vector3d(-0.5, 1.0, -0.5));
-			Eigen::Vector3d bottom_right = eePose * (Eigen::Vector3d(0.5, 1.0, -0.5));
-
-			OpenTriangle top_triangle {center, (top_left - center).normalized(), (top_right - center).normalized()};
-
-			OpenTriangle bottom_triangle{center, (bottom_left - center).normalized(),
-										 (bottom_right - center).normalized()};
-
-			OpenTriangle left_triangle{center, (top_left - center).normalized(), (bottom_left - center).normalized()};
-
-			OpenTriangle right_triangle{center, (top_right - center).normalized(),
-										(bottom_right - center).normalized()};
-
-			Eigen::Vector3d closest_point = closest_point_in_list({closest_point_on_open_triangle(p, top_triangle),
-																   closest_point_on_open_triangle(p, bottom_triangle),
-																   closest_point_on_open_triangle(p, left_triangle),
-																   closest_point_on_open_triangle(p, right_triangle)},
-																  p);
-
-			Eigen::Hyperplane<double, 3> top_plane((top_left - center).cross(top_right - center).normalized(), center);
-			Eigen::Hyperplane<double, 3> bottom_plane((bottom_right - center).cross(bottom_left - center).normalized(), center);
-			Eigen::Hyperplane<double, 3> left_plane((bottom_left - center).cross(top_left - center).normalized(), center);
-			Eigen::Hyperplane<double, 3> right_plane((top_right - center).cross(bottom_right - center).normalized(), center);
-
-			bool is_in_frustum = top_plane.signedDistance(p) > 0.0 && right_plane.signedDistance(p) > 0.0 &&
-								 bottom_plane.signedDistance(p) > 0.0 && left_plane.signedDistance(p) > 0.0;
-
-			double distance = (p - closest_point).norm();
-			Eigen::Vector3d normal = (closest_point - p).normalized();
-
-			return {
-				is_in_frustum ? distance : -distance,
-				is_in_frustum ? normal : -normal
-			};
-
-
+			//			p.z() = eePose.translation().z();
+			auto sdf_value = sdf(p);
+			return {sdf_value.signed_distance, sdf_value.normal};
 		});
 
 		seen_space_visualization.updatePoints(implicitSurfacePoints(seen_space));

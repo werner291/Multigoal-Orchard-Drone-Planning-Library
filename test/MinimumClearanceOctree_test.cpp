@@ -6,7 +6,7 @@
 
 #include <ompl/util/RandomNumbers.h>
 
-#include "../src/MinimumClearanceOctree.h"
+#include "../src/occupancy_mapping/MinimumClearanceOctree.h"
 
 TEST(MinimumClearanceOctree, single_sphere) {
 

@@ -246,6 +246,7 @@ bool OctantIterator::operator!=(const OctantIterator &other) const {
 	return !(*this == other);
 }
 
+
 Eigen::AlignedBox3d OctantIterator::operator*() const {
 
 	Eigen::AlignedBox3d result;
@@ -272,7 +273,8 @@ OctantIterator OctantIterator::operator++(int) {
 
 }
 
-Segment3d::Segment3d(const Eigen::Vector3d &start, const Eigen::Vector3d &end) : start(start), end(end) {}
+Segment3d::Segment3d(const Eigen::Vector3d &start, const Eigen::Vector3d &end) : start(start), end(end) {
+}
 
 Eigen::Vector3d Segment3d::closest_point(const Eigen::Vector3d &p) const {
 	Eigen::ParametrizedLine<double, 3> ab(start, end - start);
@@ -281,11 +283,87 @@ Eigen::Vector3d Segment3d::closest_point(const Eigen::Vector3d &p) const {
 	return ab.pointAt(t_ab);
 }
 
-Ray3d::Ray3d(const Eigen::Vector3d &origin, const Eigen::Vector3d &direction) : origin(origin), direction(direction) {}
+Eigen::Vector3d Segment3d::displacement() const {
+	return end - start;
+}
+
+Eigen::ParametrizedLine<double, 3> Segment3d::extended_line() const {
+	return {start, displacement()};
+}
+
+Ray3d::Ray3d(const Eigen::Vector3d &origin, const Eigen::Vector3d &direction) : origin(origin), direction(direction) {
+}
 
 Eigen::Vector3d Ray3d::closest_point(const Eigen::Vector3d &p) const {
 	Eigen::ParametrizedLine<double, 3> ab(origin, direction);
 	double t_ab = projectionParameter(ab, p);
 	t_ab = std::max(t_ab, 0.0);
 	return ab.pointAt(t_ab);
+}
+
+double math_utils::param_at_plane(const EigenExt::ParametrizedLine3d &p, size_t d, double value) {
+	double dir_dim = p.direction()[d];
+	if (dir_dim == 0.0) {
+		return NAN;
+	} else {
+		double delta = value - p.origin()[d];
+		return delta / dir_dim;
+	}
+}
+
+bool math_utils::box_contains_segment(const Eigen::AlignedBox3d &box, const Segment3d &segment) {
+	return box.contains(segment.start) && box.contains(segment.end);
+}
+
+std::optional<std::array<double, 2>>
+math_utils::line_aabb_intersection_params(const Eigen::AlignedBox3d &box, const EigenExt::ParametrizedLine3d &segment) {
+
+	// We will look at each dimension. For each, we look for the two parameters where the line exists and enters
+	// the slice of space delimited by the two planes of the AABB.
+
+	// Initialize to the two extremes.
+	double min_param = std::numeric_limits<double>::infinity();
+	double max_param = -std::numeric_limits<double>::infinity();
+
+	// Iterate over the dimensions.
+	for (size_t d = 0; d < 3; d++) {
+
+		// Find the intersection parameters for both planes.
+		double min_plane_param = param_at_plane(segment, d, box.min()[d]);
+		double max_plane_param = param_at_plane(segment, d, box.max()[d]);
+
+		// Check if we actually have an intersection (we won't if the line is parallel to the plane)
+		if (std::isfinite(min_plane_param) && std::isfinite(max_plane_param)) {
+
+			// Keep ordering consistent.
+			if (min_plane_param > max_plane_param) {
+				std::swap(min_plane_param, max_plane_param);
+			}
+
+			// Find the closest furthest intersection
+			max_param = std::min(max_param, max_param);
+			// And vice-versa.
+			min_param = std::max(min_param, min_plane_param);
+		}
+	}
+
+	// The intersections with the planes must be outside of the boundary of the box.
+	if (min_param > max_param) {
+		return std::nullopt;
+	}
+
+	return std::array<double, 2>{min_param, max_param};
+}
+
+bool math_utils::segment_intersects_aabb(const Eigen::AlignedBox3d &box, const Segment3d &segment) {
+
+	auto intersections = line_aabb_intersection_params(box, segment.extended_line());
+
+	if (!intersections) {
+		return false;
+	} else {
+		return (*intersections)[0] >= 0.0 && (*intersections)[0] <= 1.0 && (*intersections)[1] >= 0.0 &&
+			   (*intersections)[1] <= 1.0;
+	}
+
 }

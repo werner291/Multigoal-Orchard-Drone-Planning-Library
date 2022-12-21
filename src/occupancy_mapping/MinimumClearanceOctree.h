@@ -14,7 +14,7 @@
 #include <memory>
 #include <optional>
 #include <Eigen/Geometry>
-#include "utilities/EigenExt.h"
+#include "../utilities/EigenExt.h"
 
 /**
  *

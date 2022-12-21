@@ -68,12 +68,18 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
 #SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
 add_library(${PROJECT_NAME}_shared
+        src/ApproximateConvexDecompositions.cpp
+        src/ApproximateConvexDecompositions.h
+        src/BruteForceDedupStreamingAlphashape.cpp
+        src/BruteForceDedupStreamingAlphashape.h
         src/BulletContinuousMotionValidator.cpp
         src/BulletContinuousMotionValidator.h
         src/CurrentPathState.cpp
         src/CurrentPathState.h
         src/DirectApproachVariantSampler.cpp
         src/DirectApproachVariantSampler.h
+        src/DirectPointCloudCollisionDetection.cpp
+        src/DirectPointCloudCollisionDetection.h
         src/DistanceHeuristics.cpp
         src/DistanceHeuristics.h
         src/DronePathLengthObjective.cpp
@@ -105,22 +111,55 @@ add_library(${PROJECT_NAME}_shared
         src/SingleGoalPlannerMethods.h
         src/StreamingConvexHull.cpp
         src/StreamingConvexHull.h
+        src/StreamingMeshHullAlgorithm.cpp
+        src/StreamingMeshHullAlgorithm.h
         src/TimedCostConvergenceTerminationCondition.cpp
         src/TimedCostConvergenceTerminationCondition.h
         src/TreeMeshes.cpp
         src/TreeMeshes.h
+        src/TriangleAABB.cpp
+        src/TriangleAABB.h
+        src/experiments/ScannedSurfaceTracker.cpp
+        src/experiments/ScannedSurfaceTracker.h
+        src/exploration/CandidatePathGenerator.cpp
+        src/exploration/CandidatePathGenerator.h
         src/exploration/ColorEncoding.cpp
         src/exploration/ColorEncoding.h
         src/exploration/DynamicMeshHullAlgorithm.cpp
         src/exploration/DynamicMeshHullAlgorithm.h
+        src/exploration/InformationGainModel.cpp
+        src/exploration/InformationGainModel.h
+        src/exploration/KnownFreeSpaceModel.cpp
+        src/exploration/KnownFreeSpaceModel.h
+        src/exploration/LocalOptimizer.cpp
+        src/exploration/LocalOptimizer.h
         src/exploration/OnlinePointCloudMotionControlAlgorithm.cpp
         src/exploration/OnlinePointCloudMotionControlAlgorithm.h
         src/exploration/SegmentedPointCloud.cpp
         src/exploration/SegmentedPointCloud.h
+        src/exploration/SegmentedRobotPath.cpp
+        src/exploration/SegmentedRobotPath.h
+        src/exploration/SurfletExplorationFrontier.cpp
+        src/exploration/SurfletExplorationFrontier.h
+        src/exploration/SurfletVolume.cpp
         src/exploration/VtkToPointCloud.cpp
         src/exploration/VtkToPointCloud.h
+        src/exploration/logging.cpp
+        src/exploration/logging.h
         src/exploration/scan_points.cpp
         src/exploration/scan_points.h
+        src/occupancy_mapping/HierarchicalBoundaryCellAnnotatedRegionOctree.cpp
+        src/occupancy_mapping/HierarchicalBoundaryCellAnnotatedRegionOctree.h
+        src/occupancy_mapping/HierarchicalCategoricalOccupancyOctree.cpp
+        src/occupancy_mapping/HierarchicalCategoricalOccupancyOctree.h
+        src/occupancy_mapping/MinimumClearanceOctree.cpp
+        src/occupancy_mapping/MinimumClearanceOctree.h
+        src/occupancy_mapping/OccupancyMap.cpp
+        src/occupancy_mapping/OccupancyMap.h
+        src/occupancy_mapping/Octree.cpp
+        src/occupancy_mapping/Octree.cpp
+        src/occupancy_mapping/Octree.h
+        src/occupancy_mapping/Octree.h
         src/ompl_custom.cpp
         src/ompl_custom.h
         src/planners/MultiGoalPlanner.cpp
@@ -153,6 +192,7 @@ add_library(${PROJECT_NAME}_shared
         src/shell_space/SphereShell.h
         src/shell_space/WorkspaceShell.cpp
         src/shell_space/WorkspaceShell.h
+        src/utilities/EigenExt.h
         src/utilities/convex_hull.cpp
         src/utilities/convex_hull.h
         src/utilities/experiment_utils.cpp
@@ -167,6 +207,8 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/load_mesh.h
         src/utilities/math_utils.cpp
         src/utilities/math_utils.h
+        src/utilities/mesh_utils.cpp
+        src/utilities/mesh_utils.h
         src/utilities/moveit.cpp
         src/utilities/moveit.cpp
         src/utilities/moveit.h
@@ -175,6 +217,10 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/moveit_conversions.h
         src/utilities/msgs_utilities.cpp
         src/utilities/msgs_utilities.h
+        src/utilities/shape_generation.cpp
+        src/utilities/shape_generation.h
+        src/utilities/signed_distance_fields.cpp
+        src/utilities/signed_distance_fields.h
         src/utilities/trajectory_primitives.cpp
         src/utilities/trajectory_primitives.h
         src/utilities/traveling_salesman.cpp
@@ -189,25 +235,9 @@ add_library(${PROJECT_NAME}_shared
         src/vtk/VisualizationSpecifics.h
         src/vtk/VtkRobotModel.cpp
         src/vtk/VtkRobotModel.h
-#        src/StreamingAlphaShape.h
-#        src/StreamingAlphaShape.cpp
-        src/ApproximateConvexDecompositions.cpp
-        src/ApproximateConvexDecompositions.h
-        src/BruteForceDedupStreamingAlphashape.cpp
-        src/BruteForceDedupStreamingAlphashape.h
-        src/StreamingMeshHullAlgorithm.cpp
-        src/StreamingMeshHullAlgorithm.h
-        src/utilities/mesh_utils.h
-        src/utilities/mesh_utils.cpp
-        src/exploration/InformationGainModel.cpp
-        src/exploration/InformationGainModel.h
-        src/TriangleAABB.cpp
-        src/TriangleAABB.h
-        src/DirectPointCloudCollisionDetection.cpp
-        src/DirectPointCloudCollisionDetection.h
-        src/exploration/CandidatePathGenerator.cpp
-        src/exploration/CandidatePathGenerator.h
-        src/exploration/SegmentedRobotPath.cpp src/exploration/SegmentedRobotPath.h src/exploration/LocalOptimizer.cpp src/exploration/LocalOptimizer.h src/exploration/logging.cpp src/exploration/logging.h src/exploration/KnownFreeSpaceModel.cpp src/exploration/KnownFreeSpaceModel.h src/experiments/ScannedSurfaceTracker.cpp src/experiments/ScannedSurfaceTracker.h src/exploration/SurfletExplorationFrontier.cpp src/exploration/SurfletExplorationFrontier.h src/exploration/SurfletVolume.cpp src/utilities/shape_generation.cpp src/utilities/shape_generation.h src/MinimumClearanceOctree.cpp src/MinimumClearanceOctree.h src/utilities/EigenExt.h)
+        #        src/StreamingAlphaShape.cpp
+        #        src/StreamingAlphaShape.h
+        src/occupancy_mapping/VisibilityBoundary.h src/utilities/Grid.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

@@ -3,7 +3,7 @@
 // All rights reserved.
 
 #include "MinimumClearanceOctree.h"
-#include "utilities/math_utils.h"
+#include "../utilities/math_utils.h"
 
 MinimumClearanceOctree::MinimumClearanceOctree(const Eigen::AlignedBox3d &bounds, double minLeafSize)
 		: bounds(bounds), min_leaf_size(minLeafSize) {
@@ -51,6 +51,7 @@ MinimumClearanceOctree::updateInternal(const std::function<std::pair<double, Eig
 	Eigen::Vector3d cell_center = node_bounds.center();
 
 	const auto &[distance_at_center, gradient_at_center] = signedDistanceFunction(cell_center);
+
 
 	if (node.minimum_distance_at_center < distance_at_center) {
 		node.minimum_distance_at_center = distance_at_center;
@@ -107,7 +108,7 @@ std::vector<Eigen::Vector3d> implicitSurfacePoints(const MinimumClearanceOctree 
 
 		if (!node->children) {
 			points.emplace_back(
-					bounds.center() + node->gradient_at_center.normalized() * node->minimum_distance_at_center);
+					bounds.center() - node->gradient_at_center.normalized() * node->minimum_distance_at_center);
 		} else {
 			auto octant = OctantIterator(bounds);
 			for (size_t i = 0; i < 8; i++) {
