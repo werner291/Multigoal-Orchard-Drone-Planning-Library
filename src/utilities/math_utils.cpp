@@ -367,3 +367,12 @@ bool math_utils::segment_intersects_aabb(const Eigen::AlignedBox3d &box, const S
 	}
 
 }
+
+OctantIterator math_utils::find_octant_containing_point(const Eigen::AlignedBox3d &box, const Eigen::Vector3d &point) {
+	for (OctantIterator iter(box); iter != OctantIterator::end(); iter++) {
+		if (iter.bounds.contains(point)) {
+			return iter;
+		}
+	}
+	assert(false && "Point not contained in any octant!");
+}

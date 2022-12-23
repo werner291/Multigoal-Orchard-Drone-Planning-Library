@@ -172,8 +172,8 @@ public:
 
 	Eigen::AlignedBox3d operator*() const;
 
-
 };
+
 
 struct Segment3d {
 	Eigen::Vector3d start;
@@ -198,6 +198,14 @@ struct Segment3d {
 namespace math_utils {
 
 	/**
+	 * @brief Finds the octant containing the given point in the given bounding box.
+	 * @param box The bounding box to search within.
+	 * @param point The point to search for.
+	 * @return The OctantIterator of the octant containing the point.
+	 */
+	OctantIterator find_octant_containing_point(const Eigen::AlignedBox3d &box, const Eigen::Vector3d &point);
+
+	/**
 	 * Returns the parameter value of the given parametrized line at the plane defined by the given
 	 * dimension and value. If the line is parallel to the plane, returns NaN.
 	 *
@@ -212,6 +220,17 @@ namespace math_utils {
 	 * @brief Check whether the given AABB fully contains the given line segment.
 	 */
 	bool box_contains_segment(const Eigen::AlignedBox3d &box, const Segment3d &segment);
+
+	/**
+
+    @brief Check if a given point is closer to the center of the given bounding box than the edge length.
+    @param point The point to check.
+    @param box The bounding box to check within.
+    @return true if the point is closer to the center of the box than the edge length, false otherwise.
+    */
+	bool point_closer_to_center_than_edge(const Eigen::Vector3d &point, const Eigen::AlignedBox3d &box) {
+		return (point - box.center()).norm() <= box.sizes()[0] * sqrt(3);
+	}
 
 	/**
  	 * @brief Computes the intersection parameters of the given line segment with the given AABB.

@@ -12,6 +12,7 @@
 #include <variant>
 #include <memory>
 #include <Eigen/Geometry>
+#include "../utilities/math_utils.h"
 
 template<typename SplitData, typename LeafData>
 class Octree {
@@ -79,6 +80,40 @@ public:
 			(*split_cell.children)[i] = LeafCell{cell.data};
 		}
 		return split_cell;
+	}
+
+	/**
+
+		@brief Retrieve the leaf cell data at the given query point.
+
+		@param query_point The point to retrieve data for.
+
+		@return The data of the leaf cell at the given query point.
+
+		@throws std::logic_error If the query point is not contained within the octree.
+		*/
+	LeafData get_leaf_data_at(const Eigen::Vector3d &query_point) const {
+		// Ensure that the query point is contained within the octree's bounding box
+		assert(box.contains(query_point));
+
+		// Current cell that we are searching within
+		Cell *current_cell = &root;
+
+		// Iterate through the octree until we reach a leaf cell
+		while (true) {
+
+			if (auto *split_cell = std::get_if<SplitCell>(current_cell)) {
+				// If the current cell is a split cell, find the child octant that contains the query point
+				auto child_octant = math_utils::find_octant_containing_point(box, query_point);
+
+				current_cell = split_cell->children[child_octant.i];
+				box = child_octant.bounds;
+
+			} else {
+				// If the current cell is a leaf cell, return the data
+				return std::get<LeafCell>(*current_cell).data;
+			}
+		}
 	}
 
 };

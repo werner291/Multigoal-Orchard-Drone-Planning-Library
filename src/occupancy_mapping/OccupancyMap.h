@@ -12,6 +12,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include "../exploration/SegmentedPointCloud.h"
+#include "VisibilityBoundary.h"
 
 class OccupancyMap {
 
@@ -31,6 +32,8 @@ public:
 	};
 
 	virtual void incorporate(const Eigen::Vector3d &eye_center, const SegmentedPointCloud &pointCloud) = 0;
+
+	virtual void incorporate(const RegionDefinitionFn& region_fn) = 0;
 
 	virtual RegionType query_at(const Eigen::Vector3d &query_point) = 0;
 

@@ -18,8 +18,13 @@ enum BoundaryType {
 };
 
 /**
- * A sample of a boundary surface bounding observable by the robot at a specific point in time.
- */
+  *  @struct BoundarySample
+  *  A sample of a boundary surface bounding observable by the robot at a specific point in time.
+  *  @var surface_point
+  *  The surface point at which this boundary exists.
+  *  @var boundary_type
+  *  The type of boundary: whether it merely occludes, or also obstructs.
+  */
 struct BoundarySample {
 	/// The surface point at which this boundary exists.
 	Eigen::Vector3d surface_point;
@@ -28,11 +33,9 @@ struct BoundarySample {
 };
 
 /**
- * A function that, given a point in space, returns the closest point on any of the boundary surfaces
- * that currently limit the robot's vision.
- *
- * The bounding surfaces are assumed to be star-shaped, centered on the robot's sensor center.
- */
+  * @using RegionDefinitionFn
+  * A function that, given a point in space, returns the closest point on any of the boundary surfaces that currently limit the robot's vision. The bounding surfaces are assumed to be star-shaped, centered on the robot's sensor center.
+  */
 using RegionDefinitionFn = std::function<BoundarySample(const Eigen::Vector3d &)>;
 
 #endif //NEW_PLANNERS_VISIBILITYBOUNDARY_H
