@@ -11,6 +11,7 @@
 
 #include <variant>
 #include <memory>
+#include <iostream>
 #include <Eigen/Geometry>
 #include "../utilities/math_utils.h"
 
@@ -102,13 +103,13 @@ public:
 
 		// Iterate through the octree until we reach a leaf cell
 		while (true) {
-
 			if (auto *split_cell = std::get_if<SplitCell>(current_cell)) {
+
 				// If the current cell is a split cell, find the child octant that contains the query point
 				auto child_octant = math_utils::find_octant_containing_point(current_box, query_point);
 
 				current_cell = &(*split_cell->children)[child_octant.i];
-				current_box = child_octant.bounds;
+				current_box = *child_octant;
 
 			} else {
 				// If the current cell is a leaf cell, return the data
@@ -136,9 +137,11 @@ private:
 
 		// If the cell is a leaf cell, check if it should be split.
 		if (auto *leaf_cell = std::get_if<LeafCell>(&cell)) {
-			if (max_depth == 0 || split_rule(box, *leaf_cell)) {
+			if (max_depth != 0 && split_rule(box, *leaf_cell)) {
 				// If the cell should be split, split it and recurse on the children
 				cell = split_by_copy(*leaf_cell, SplitData{});
+				std::cout << "Splitting cell at depth " << max_depth << " with box [" << box.min().transpose() << "], ["
+						  << box.max().transpose() << "]" << std::endl;
 			} else {
 				// If the cell should not be split, call the callback and return
 				at_highest_lod(box, *leaf_cell);
@@ -152,12 +155,14 @@ private:
 		// Iterate over the 8 child cells
 		for (auto &child_cell: *split_cell.children) {
 			// Recursively update the child cells with the current point cloud data
-			traverse_from_cell(iter++.bounds, child_cell, max_depth - 1, at_highest_lod, split_rule);
+			traverse_from_cell(*iter++, child_cell, max_depth - 1, at_highest_lod, split_rule);
 		}
 
 		// If all children are leaf cells with the same data, collapse the split cell into a leaf cell
 		if (split_cell.has_uniform_leaves()) {
 			cell = LeafCell{std::get<LeafCell>(split_cell.children->operator[](0)).data};
+			std::cout << "Merging cell at depth " << max_depth << " with box [" << box.min().transpose() << "], ["
+					  << box.max().transpose() << "]" << std::endl;
 		}
 	}
 

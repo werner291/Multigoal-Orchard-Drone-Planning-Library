@@ -174,7 +174,7 @@ bool hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sphere_center,
 										  const double sphere_radius,
 										  const Eigen::AlignedBox3d &aabb) {
 
-	// Check if the boundary of the sphere is within the bounds of the node.
+	// Check if the boundary of the sphere is within the total_box of the node.
 	// Algorithm from https://stackoverflow.com/a/41457896 (hollow sphere case)
 
 	double dmin = 0; // Distance from the sphere center to the closest point on the AABB
@@ -224,10 +224,10 @@ Eigen::Vector3d closest_point_in_list(std::initializer_list<Eigen::Vector3d> poi
 	return closest_point;
 }
 
-OctantIterator::OctantIterator(size_t i, const Eigen::AlignedBox3d &bounds) : i(i), bounds(bounds) {
+OctantIterator::OctantIterator(size_t i, const Eigen::AlignedBox3d &bounds) : i(i), total_box(bounds) {
 }
 
-OctantIterator::OctantIterator(const Eigen::AlignedBox3d &bounds) : i(0), bounds(bounds) {
+OctantIterator::OctantIterator(const Eigen::AlignedBox3d &bounds) : i(0), total_box(bounds) {
 }
 
 OctantIterator OctantIterator::end() {
@@ -240,7 +240,7 @@ OctantIterator &OctantIterator::operator++() {
 }
 
 bool OctantIterator::operator==(const OctantIterator &other) const {
-	return i == other.i && bounds.min() == other.bounds.min() && bounds.max() == other.bounds.max();
+	return i == other.i && total_box.min() == other.total_box.min() && total_box.max() == other.total_box.max();
 }
 
 bool OctantIterator::operator!=(const OctantIterator &other) const {
@@ -252,15 +252,15 @@ Eigen::AlignedBox3d OctantIterator::operator*() const {
 
 	Eigen::AlignedBox3d result;
 
-	Eigen::Vector3d center = bounds.center();
+	Eigen::Vector3d center = total_box.center();
 
-	result.min().x() = (i & 1) ? bounds.min().x() : center.x();
-	result.min().y() = (i & 2) ? bounds.min().y() : center.y();
-	result.min().z() = (i & 4) ? bounds.min().z() : center.z();
+	result.min().x() = (i & 1) ? total_box.min().x() : center.x();
+	result.min().y() = (i & 2) ? total_box.min().y() : center.y();
+	result.min().z() = (i & 4) ? total_box.min().z() : center.z();
 
-	result.max().x() = (i & 1) ? center.x() : bounds.max().x();
-	result.max().y() = (i & 2) ? center.y() : bounds.max().y();
-	result.max().z() = (i & 4) ? center.z() : bounds.max().z();
+	result.max().x() = (i & 1) ? center.x() : total_box.max().x();
+	result.max().y() = (i & 2) ? center.y() : total_box.max().y();
+	result.max().z() = (i & 4) ? center.z() : total_box.max().z();
 
 	return result;
 
@@ -371,7 +371,7 @@ bool math_utils::segment_intersects_aabb(const Eigen::AlignedBox3d &box, const S
 
 OctantIterator math_utils::find_octant_containing_point(const Eigen::AlignedBox3d &box, const Eigen::Vector3d &point) {
 	for (OctantIterator iter(box); iter != OctantIterator::end(); iter++) {
-		if (iter.bounds.contains(point)) {
+		if ((*iter).contains(point)) {
 			return iter;
 		}
 	}

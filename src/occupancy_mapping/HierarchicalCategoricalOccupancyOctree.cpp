@@ -35,7 +35,7 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 	// If yes, the center is currently visible to the robot's sensor.
 	bool center_inside_region = (box.center() - boundary_sample.surface_point).squaredNorm() < box.diagonal().squaredNorm() / 2;
 
-	// Check if the sample point indicates that the boundary of the region may lie inside of the cell bounds.
+	// Check if the sample point indicates that the boundary of the region may lie inside of the cell total_box.
 	bool boundary_may_lie_inside_cell = (box.center() - boundary_sample.surface_point).norm() <= box.sizes()[0] * sqrt(3);
 
 	if (maxDepth == 0) {
@@ -132,7 +132,33 @@ OccupancyMap::RegionType HierarchicalCategoricalOccupancyOctree::query_at(const 
 
 void HierarchicalCategoricalOccupancyOctree::incorporate(const Eigen::Vector3d &eye_center,
 														 const RegionDefinitionFn &region_fn) {
-	incorporate_internal(tree.box, tree.root, region_fn, maxDepth);
+
+	tree.traverse(maxDepth,
+				  [&](const Eigen::AlignedBox3d &box, LeafCell &leaf_cell) {
+
+						// Split a cell if the boundary of the region may lie inside of it.
+						BoundarySample boundary_sample = region_fn(box.center());
+
+						double eye_sample_distance = (eye_center - boundary_sample.surface_point).norm();
+						double center_eye_distance = (box.center() - eye_center).norm();
+
+						if (center_eye_distance < eye_sample_distance) {
+							leaf_cell.data = OccupancyMap::FREE;
+							std::cout << "Free cell at center: " << box.center().transpose() << std::endl;
+						} else {
+							std::cout << "Unseen cell at center: " << box.center().transpose() << " sample distance: " << eye_sample_distance << " center distance: " << center_eye_distance << std::endl;
+						}
+
+				  },
+				  [&](const Eigen::AlignedBox3d &box, LeafCell &leaf_cell) {
+
+					  // Split a cell if the boundary of the region may lie inside of it.
+					  BoundarySample boundary_sample = region_fn(box.center());
+
+					  return (box.center() - boundary_sample.surface_point).norm() <= box.sizes()[0] * sqrt(3)/2.0;
+
+				  });
+
 }
 
 HierarchicalCategoricalOccupancyOctree::HierarchicalCategoricalOccupancyOctree(const Eigen::Vector3d &center,

@@ -151,7 +151,7 @@ bool hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sphere_center,
  */
 struct OctantIterator {
 	size_t i;
-	const Eigen::AlignedBox3d bounds;
+	const Eigen::AlignedBox3d total_box;
 
 private:
 	OctantIterator(size_t i, const Eigen::AlignedBox3d &bounds);

@@ -12,7 +12,7 @@
 #include "../occupancy_mapping/HierarchicalCategoricalOccupancyOctree.h"
 #include "../occupancy_mapping/HierarchicalBoundaryCellAnnotatedRegionOctree.h"
 
-static const double TEST_POINT_DISTANCE_FROM_BOUNDARY = 0.1;
+static const double TEST_POINT_DISTANCE_FROM_BOUNDARY = 0.5;
 // Struct to represent a sphere
 struct Sphere {
 	Eigen::Vector3d center;
@@ -217,7 +217,7 @@ Eigen::AlignedBox3d computeBoundingBox(const std::vector<Sphere> &spheres) {
 
 int main() {
 	// Generate 100 random spheres
-	std::vector<Sphere> spheres = generateRandomSpheres(100);
+	std::vector<Sphere> spheres = generateRandomSpheres(10);
 
 	Eigen::AlignedBox3d bounding_box = computeBoundingBox(spheres);
 
@@ -228,7 +228,7 @@ int main() {
 	// Create a vector to store the OccupancyMap objects and their names
 	std::vector<std::pair<std::string, std::unique_ptr<OccupancyMap>>> maps;
 	maps.emplace_back("HierarchicalCategoricalOccupancyOctree", std::make_unique<HierarchicalCategoricalOccupancyOctree>(center, cube_size, 5));
-	//  maps.emplace_back("HierarchicalBoundaryCellAnnotatedRegionOctree", std::make_unique<HierarchicalBoundaryCellAnnotatedRegionOctree>(Eigen::Vector3d::Zero(), 10.0));
+//	maps.emplace_back("HierarchicalBoundaryCellAnnotatedRegionOctree", std::make_unique<HierarchicalBoundaryCellAnnotatedRegionOctree>(center, cube_size, 5));
 
 	// Incorporate the spheres into all OccupancyMap objects
 	for (auto &map_pair: maps) {
@@ -244,35 +244,60 @@ int main() {
 		}
 	}
 
-	std::vector<std::pair<Eigen::Vector3d, bool>> test_points = generateTestPointsOnSpheres(spheres, 1000,
+	std::cout << "At center: " << OccupancyMap::region_type_to_string(maps[0].second->query_at(center)) << std::endl;
+
+	std::vector<std::pair<Eigen::Vector3d, bool>> test_points = generateTestPointsOnSpheres(spheres, 10000,
 																							TEST_POINT_DISTANCE_FROM_BOUNDARY);
 
+	enum ErrorType {
+		EXPECTED_FREE_BUT_OCCUPIED,
+		EXPECTED_OCCUPIED_BUT_FREE,
+		CORRECT_FREE,
+		CORRECT_OCCUPIED
+	};
+
 	// Create a map to store the results of the tests, with the map names as the keys
-	std::vector<std::pair<std::string, std::vector<bool>>> results;
+	std::vector<std::pair<std::string, std::vector<ErrorType>>> results;
 
 	// Iterate over the occupancy maps
 	for (const auto &[name, map]: maps) {
 
-		results.emplace_back(name, std::vector<bool>());
+		results.emplace_back(name, std::vector<ErrorType>());
 
 		// Iterate over the test points
 		for (const auto &[point, expected_result]: test_points) {
 
-			// Test the point against the map
-			bool actual_result = (map->query_at(point) == OccupancyMap::RegionType::OCCUPIED);
+			auto expected = expected_result ? OccupancyMap::RegionType::FREE : OccupancyMap::RegionType::UNSEEN;
+			auto actual = map->query_at(point);
 
-			// Record the result of the test
-			results.back().second.push_back(actual_result == expected_result);
+			ErrorType error_type;
+			if (expected_result) {
+				if (actual == expected) {
+					error_type = CORRECT_FREE;
+				} else {
+					error_type = EXPECTED_FREE_BUT_OCCUPIED;
+				}
+			} else {
+				if (actual == expected) {
+					error_type = CORRECT_OCCUPIED;
+				} else {
+					error_type = EXPECTED_OCCUPIED_BUT_FREE;
+				}
+			}
 
-			std::cout << "Point: " << point.transpose() << " Expected: " << expected_result << " Actual: " << actual_result << std::endl;
+			results.back().second.push_back(error_type);
 		}
 	}
 
 	for (const auto &[name, result]: results) {
-		std::cout << name << ": " << std::count(result.begin(), result.end(), true) << "/" << result.size() << std::endl;
+		std::cout << name << std::endl;
+		std::cout << "Expected free but occupied: " << std::count(result.begin(), result.end(), EXPECTED_FREE_BUT_OCCUPIED) << std::endl;
+		std::cout << "Expected occupied but free: " << std::count(result.begin(), result.end(), EXPECTED_OCCUPIED_BUT_FREE) << std::endl;
+		std::cout << "Correct free: " << std::count(result.begin(), result.end(), CORRECT_FREE) << std::endl;
+		std::cout << "Correct occupied: " << std::count(result.begin(), result.end(), CORRECT_OCCUPIED) << std::endl;
 	}
 
-	writeResults(spheres, test_points, results);
+//	writeResults(spheres, test_points, results);
 
 	return 0;
 }

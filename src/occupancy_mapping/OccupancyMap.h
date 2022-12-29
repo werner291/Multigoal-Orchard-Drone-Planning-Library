@@ -32,6 +32,22 @@ public:
 	};
 
 	/**
+	 * Convert the given RegionType to a string.
+	 */
+	static std::string region_type_to_string(RegionType type) {
+		switch (type) {
+			case UNSEEN:
+				return "UNSEEN";
+			case FREE:
+				return "FREE";
+			case OCCUPIED:
+				return "OCCUPIED";
+			default:
+				return "UNKNOWN";
+		}
+	}
+
+	/**
 	 * @fn virtual void incorporate(const Eigen::Vector3d &eye_center, const SegmentedPointCloud &pointCloud)
 	 *
 	 * Incorporate a segmented point cloud into the occupancy map.
