@@ -15,80 +15,6 @@ using LeafCell = CatOctree::LeafCell;
 using SplitCell = CatOctree::SplitCell;
 using Cell = CatOctree::Cell;
 
-// The resolution at which to stop recursing and update the leaf cells
-const double RESOLUTION = 0.1;
-
-/**
- * @fn void incorporate_internal(const Eigen::AlignedBox3d &box, Cell &cell, const Eigen::Vector3d &eye_center, const SegmentedPointCloud::Point &pt)
- * A helper function for incorporate() that recursively updates the octree cells with the given point cloud data.
- *
- * @param box The bounding box of the current octree cell.
- *
- *  @param cell The current octree cell to be updated.
- *
- * @param eye_center The center of the robot's sensor, used as a reference point for incorporating the point cloud.
- *
- * @param pt The current point in the point cloud being incorporated into the octree.
- */
-void incorporate_internal(const Eigen::AlignedBox3d &box,
-						  Cell &cell,
-						  const Eigen::Vector3d &eye_center,
-						  const SegmentedPointCloud::Point &pt) {
-
-	// Create a line segment from the eye center to the point in the point cloud
-	Segment3d segment{eye_center, pt.position};
-
-	// Check if the current cell is at the bottom of the octree (i.e. smallest resolution)
-	bool at_bottom = box.sizes()[0] <= RESOLUTION;
-
-	// Check if the line segment intersects the current cell's bounding box
-	bool intersection = math_utils::segment_intersects_aabb(box, segment);
-
-	// If the line segment does not intersect the cell, return without updating the cell
-	if (!intersection) {
-		return;
-	}
-
-	// If the current cell is at the bottom of the octree:
-	if (at_bottom) {
-
-		// The cell must be a leaf cell, therefore we extract the LeafCell from the variant.
-		auto &leaf_cell = std::get<LeafCell>(cell);
-
-		// - Unseen cells are updated to free cells
-		if (leaf_cell.data == OccupancyMap::UNSEEN) {
-			leaf_cell.data = OccupancyMap::FREE;
-		}
-
-		// For hard obstacles, we set the cell to "occupied" instead
-		if (box.contains(segment.end) && pt.type == SegmentedPointCloud::PT_OBSTACLE) {
-			leaf_cell.data = OccupancyMap::OCCUPIED;
-		}
-
-	} else {
-		// Else, we are not at maximum resolution.
-
-		// If the cell is a leaf cell, split it into 8 sub-cells with identical label.
-		if (const auto &leaf = std::get_if<LeafCell>(&cell)) {
-			cell = {CatOctree::split_by_copy(*leaf, {})};
-		}
-
-		OctantIterator iter(box);
-
-		auto &split_cell = std::get<SplitCell>(cell);
-		// Iterate over the 8 child cells
-		for (auto &child_cell : *split_cell.children) {
-			// Recursively update the child cells with the current point cloud data
-			incorporate_internal(*iter++, child_cell, eye_center, pt);
-		}
-
-		// If all of the child cells have the same data, collapse the split cell back into a leaf cell
-		if (split_cell.has_uniform_leaves()) {
-			cell = std::get<LeafCell>(*split_cell.children->begin());
-		}
-
-	}
-}
 
 /**
  *
@@ -99,7 +25,8 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
  */
 void incorporate_internal(const Eigen::AlignedBox3d &box,
 						  Cell &cell,
-						  const RegionDefinitionFn &region_fn) {
+						  const RegionDefinitionFn &region_fn,
+						  const int maxDepth) {
 
 	// Get the closest boundary point to the center of the current cell
 	BoundarySample boundary_sample = region_fn(box.center());
@@ -111,7 +38,7 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 	// Check if the sample point indicates that the boundary of the region may lie inside of the cell bounds.
 	bool boundary_may_lie_inside_cell = (box.center() - boundary_sample.surface_point).norm() <= box.sizes()[0] * sqrt(3);
 
-	if (box.sizes()[0] <= RESOLUTION) {
+	if (maxDepth == 0) {
 
 		auto &leaf_cell = std::get<LeafCell>(cell);
 
@@ -147,13 +74,14 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 			OctantIterator iter(box);
 			for (size_t octant_i = 0; octant_i < 8; ++octant_i) {
 				const auto &octant = *(iter++);
-				incorporate_internal(octant, (*split_cell.children)[octant_i], region_fn);
+				incorporate_internal(octant, (*split_cell.children)[octant_i], region_fn, maxDepth - 1);
 			}
 
 			// If all the child cells have the same data, collapse the split cell back into a leaf cell
 			if (split_cell.has_uniform_leaves()) {
 				cell = std::get<LeafCell>(*split_cell.children->begin());
 			}
+
 		} else if (center_inside_region) {
 
 			// If the cell lies fully inside the region, it must be free.
@@ -172,8 +100,27 @@ void HierarchicalCategoricalOccupancyOctree::incorporate(const Eigen::Vector3d &
 														 const SegmentedPointCloud &pointCloud) {
 
 	for (const SegmentedPointCloud::Point &pt: pointCloud.points) {
+
+		// Create a line segment from the eye center to the point in the point cloud
+		Segment3d segment{eye_center, pt.position};
+
 		// Update the octree cells with the current point cloud data using the incorporate_internal() helper function
-		incorporate_internal(tree.box, tree.root, eye_center, pt);
+		tree.traverse(
+							 maxDepth,
+							 [&](const Eigen::AlignedBox3d &box, LeafCell &leaf_cell) {
+								 // - Unseen cells are updated to free cells
+								 if (leaf_cell.data == OccupancyMap::UNSEEN) {
+									 leaf_cell.data = OccupancyMap::FREE;
+								 }
+
+								 // For hard obstacles, we set the cell to "occupied" instead
+								 if (box.contains(segment.end) && pt.type == SegmentedPointCloud::PT_OBSTACLE) {
+									 leaf_cell.data = OccupancyMap::OCCUPIED;
+								 }
+							 },
+							 [&](const Eigen::AlignedBox3d &box, LeafCell &leaf_cell) {
+								 return math_utils::segment_intersects_aabb(box, segment);
+							 });
 	}
 
 }
@@ -185,5 +132,25 @@ OccupancyMap::RegionType HierarchicalCategoricalOccupancyOctree::query_at(const 
 
 void HierarchicalCategoricalOccupancyOctree::incorporate(const Eigen::Vector3d &eye_center,
 														 const RegionDefinitionFn &region_fn) {
-	incorporate_internal(tree.box, tree.root, region_fn);
+	incorporate_internal(tree.box, tree.root, region_fn, maxDepth);
+}
+
+HierarchicalCategoricalOccupancyOctree::HierarchicalCategoricalOccupancyOctree(const Eigen::Vector3d &center,
+																			   const double baseEdgeLength,
+																			   const int maxDepth) : maxDepth(maxDepth) {
+
+	// Initialize the octree bounding box with the given center and base edge length
+	tree.box = Eigen::AlignedBox3d(center - Eigen::Vector3d(baseEdgeLength / 2, baseEdgeLength / 2, baseEdgeLength / 2),
+								   center + Eigen::Vector3d(baseEdgeLength / 2, baseEdgeLength / 2, baseEdgeLength / 2));
+
+	// Initialize the root cell to be a leaf cell with the default value
+	tree.root = LeafCell {
+		OccupancyMap::UNSEEN
+	};
+
+
+}
+
+double HierarchicalCategoricalOccupancyOctree::getMinEdgeLength() const {
+	return tree.box.sizes()[0] / pow(2, maxDepth);
 }

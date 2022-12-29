@@ -38,9 +38,9 @@ public:
 		std::unique_ptr<std::array<Cell, 8> > children;
 
 		/**
- * @brief Check if all children of this SplitCell are LeafCells.
- * @return `true` if all children are LeafCells, `false` otherwise.
- */
+		 * @brief Check if all children of this SplitCell are LeafCells.
+		 * @return `true` if all children are LeafCells, `false` otherwise.
+		 */
 		[[nodiscard]] bool all_children_are_leaves() const {
 			return std::all_of(children->begin(),
 							   children->end(),
@@ -48,9 +48,9 @@ public:
 		}
 
 		/**
- * @brief Check if all children of this SplitCell are LeafCells and if they all have the same data.
- * @return `true` if all children are LeafCells with the same data, `false` otherwise.
- */
+		 * @brief Check if all children of this SplitCell are LeafCells and if they all have the same data.
+		 * @return `true` if all children are LeafCells with the same data, `false` otherwise.
+		 */
 		[[nodiscard]] bool has_uniform_leaves() const {
 			if (!all_children_are_leaves()) {
 				return false;
@@ -116,6 +116,65 @@ public:
 			}
 		}
 	}
+
+private:
+
+	/**
+	 * Internal: traverse the octree and call the given function on each leaf cell.
+	 *
+	 * @param box 					The bounding box of the current cell.
+	 * @param cell 					The current cell.
+	 * @param max_depth 			The maximum depth to traverse to, starting from the current cell.
+	 * @param at_highest_lod 		Callback to call when the current cell is at the maximum depth.
+	 * @param split_rule 			Callback to call whether a given leaf cell should be split.
+	 */
+	void traverse_from_cell(const Eigen::AlignedBox3d &box,
+							Cell &cell,
+							const int max_depth,
+							const std::function<void(const Eigen::AlignedBox3d &, LeafCell &)> &at_highest_lod,
+							const std::function<bool(const Eigen::AlignedBox3d &, LeafCell &)> &split_rule) {
+
+		// If the cell is a leaf cell, check if it should be split.
+		if (auto *leaf_cell = std::get_if<LeafCell>(&cell)) {
+			if (max_depth == 0 || split_rule(box, *leaf_cell)) {
+				// If the cell should be split, split it and recurse on the children
+				cell = split_by_copy(*leaf_cell, SplitData{});
+			} else {
+				// If the cell should not be split, call the callback and return
+				at_highest_lod(box, *leaf_cell);
+				return;
+			}
+		}
+
+		// If we got here, the cell is a split cell. Recurse on the children.
+		SplitCell &split_cell = std::get<SplitCell>(cell);
+		OctantIterator iter(box);
+		// Iterate over the 8 child cells
+		for (auto &child_cell: *split_cell.children) {
+			// Recursively update the child cells with the current point cloud data
+			traverse_from_cell(iter++.bounds, child_cell, max_depth - 1, at_highest_lod, split_rule);
+		}
+
+		// If all children are leaf cells with the same data, collapse the split cell into a leaf cell
+		if (split_cell.has_uniform_leaves()) {
+			cell = LeafCell{std::get<LeafCell>(split_cell.children->operator[](0)).data};
+		}
+	}
+
+public:
+	/**
+	 * Traverse and update the octree from the root.
+	 *
+	 * @param max_depth 			The maximum depth of the traversal.
+	 * @param at_highest_lod 		A function to call when the traversal reaches the highest LOD.
+	 * @param split_rule 			A function to call to determine whether to split a cell, assuming that the cell is not at the maximum depth.
+	 */
+	void traverse(const int max_depth,
+				  const std::function<void(const Eigen::AlignedBox3d &, LeafCell &)> &at_highest_lod,
+				  const std::function<bool(const Eigen::AlignedBox3d &, LeafCell &)> &split_rule) {
+		traverse_from_cell(box, root, max_depth, at_highest_lod, split_rule);
+	}
+
 
 };
 

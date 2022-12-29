@@ -67,6 +67,25 @@ public:
      */
 	CategoricalOctree tree{OccupancyMap::RegionType::UNSEEN};
 
+	/**
+	 * Constructor.
+	 *
+	 * @param center The center of the octree.
+	 * @param baseEdgeLength The base edge length of the octree.
+	 * @param maxDepth The maximum depth of the octree.
+	 *
+	 * This will make the octree cover a cube with the given center and base edge length.
+	 *
+	 * The smallest cell will have edge length baseEdgeLength / 2^maxDepth.
+	 */
+	HierarchicalCategoricalOccupancyOctree(const Eigen::Vector3d &center, const double baseEdgeLength, const int maxDepth);
+
+	const int maxDepth;
+
+	/**
+	 * Return the minimum edge length of the octree.
+	 */
+	double getMinEdgeLength() const;
 };
 
 #endif //NEW_PLANNERS_HIERARCHICALCATEGORICALOCCUPANCYOCTREE_H
