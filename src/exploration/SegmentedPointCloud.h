@@ -5,6 +5,7 @@
 #include <array>
 #include <Eigen/Core>
 #include <optional>
+#include <vector>
 
 /**
  * A point cloud, segmented into different categories.

@@ -42,57 +42,6 @@ double trajLen(robot_trajectory::RobotTrajectory &traj) {
     return length;
 }
 
-
-Json::Value toJSON(const Eigen::Vector3d &v) {
-    Json::Value json;
-    json["x"] = v.x();
-    json["y"] = v.y();
-    json["z"] = v.z();
-    return json;
-}
-
-Eigen::Vector3d fromJsonVector3d(const Json::Value &json) {
-    return Eigen::Vector3d(
-            json["x"].asDouble(),
-            json["y"].asDouble(),
-            json["z"].asDouble()
-    );
-}
-
-Json::Value toJSON(const Eigen::Quaterniond &q) {
-    Json::Value json;
-    json["x"] = q.x();
-    json["y"] = q.y();
-    json["z"] = q.z();
-    json["w"] = q.w();
-    return json;
-}
-
-Eigen::Quaterniond fromJsonQuaternion3d(const Json::Value &json) {
-    return {
-            json["w"].asDouble(),
-            json["x"].asDouble(),
-            json["y"].asDouble(),
-            json["z"].asDouble()
-    };
-}
-
-Json::Value toJSON(const Eigen::Isometry3d &isom) {
-    Json::Value json;
-    json["translation"] = toJSON(isom.translation());
-    json["orientation"] = toJSON(Eigen::Quaterniond(isom.rotation()));
-    return json;
-}
-
-Eigen::Isometry3d fromJsonIsometry3d(const Json::Value &json) {
-
-    Eigen::Isometry3d iso;
-    iso.setIdentity();
-    iso.translate(fromJsonVector3d(json["translation"]));
-    iso.rotate(fromJsonQuaternion3d(json["orientation"]));
-    return iso;
-}
-
 Json::Value toJSON(const TreeSceneData &tree_scene) {
     Json::Value output;
 

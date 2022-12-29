@@ -14,9 +14,17 @@
 #include <optional>
 #include <variant>
 #include "../utilities/EigenExt.h"
+#include "OccupancyMap.h"
 
-class HierarchicalBoundaryCellAnnotatedRegionOctree {
+class HierarchicalBoundaryCellAnnotatedRegionOctree : public OccupancyMap {
+public:
+	void incorporate(const Eigen::Vector3d &eye_center, const SegmentedPointCloud &pointCloud) override;
 
+	void incorporate(const Eigen::Vector3d &eye_center, const RegionDefinitionFn &region_fn) override;
+
+	RegionType query_at(const Eigen::Vector3d &query_point) override;
+
+private:
 	/**
 	 * A leaf cell in the octree, labeled with a region,
 	 * and optionally a plane that linearly approximates
@@ -51,7 +59,7 @@ class HierarchicalBoundaryCellAnnotatedRegionOctree {
 
 
 public:
-	HierarchicalBoundaryCellAnnotatedRegionOctree(const Eigen::Vector3d &center, const double baseEdgeLength);
+	HierarchicalBoundaryCellAnnotatedRegionOctree(const Eigen::Vector3d &center, double baseEdgeLength);
 };
 
 

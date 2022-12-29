@@ -12,3 +12,17 @@ HierarchicalBoundaryCellAnnotatedRegionOctree::HierarchicalBoundaryCellAnnotated
 																							 const double baseEdgeLength)
 		: center(center), base_edge_length(baseEdgeLength) {
 }
+
+void HierarchicalBoundaryCellAnnotatedRegionOctree::incorporate(const Eigen::Vector3d &eye_center,
+																const SegmentedPointCloud &pointCloud) {
+	throw std::runtime_error("Not implemented");
+}
+
+void HierarchicalBoundaryCellAnnotatedRegionOctree::incorporate(const Eigen::Vector3d &eye_center,
+																const RegionDefinitionFn &region_fn) {
+	throw std::runtime_error("Not implemented");
+}
+
+OccupancyMap::RegionType HierarchicalBoundaryCellAnnotatedRegionOctree::query_at(const Eigen::Vector3d &query_point) {
+	throw std::runtime_error("Not implemented");
+}

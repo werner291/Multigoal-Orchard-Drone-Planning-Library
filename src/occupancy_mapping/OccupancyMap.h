@@ -31,11 +31,40 @@ public:
 		UNSEEN, FREE, OCCUPIED
 	};
 
+	/**
+	 * @fn virtual void incorporate(const Eigen::Vector3d &eye_center, const SegmentedPointCloud &pointCloud)
+	 *
+	 * Incorporate a segmented point cloud into the occupancy map.
+	 *
+	 * @param eye_center 		The center of the robot's sensor, used as a reference point for incorporating the point cloud.
+	 * @param pointCloud 		The segmented point cloud to be incorporated into the occupancy map.
+	 */
 	virtual void incorporate(const Eigen::Vector3d &eye_center, const SegmentedPointCloud &pointCloud) = 0;
 
-	virtual void incorporate(const RegionDefinitionFn& region_fn) = 0;
+	/**
+	 * @fn virtual void incorporate(const Eigen::Vector3d &eye_center, const RegionDefinitionFn &region_fn)
+	 *
+	 * Incorporate a region defined by the given function into the occupancy map. The function should return the closest point
+	 * on any of the boundary surfaces that currently limit the robot's vision. The bounding surfaces are assumed to be
+	 * star-shaped, centered on the robot's sensor center.
+	 *
+	 * @param eye_center	The center of the robot's sensor, used as a reference point for incorporating the region.
+	 * @param region_fn  	The function defining the region to be incorporated into the occupancy map.
+	 */
+	virtual void incorporate(const Eigen::Vector3d &eye_center, const RegionDefinitionFn &region_fn) = 0;
 
+	/**
+	 * @fn virtual RegionType getRegionType(const Eigen::Vector3d &point) const
+	 *
+	 * Query the occupancy map for the type of region at the given point.
+	 *
+	 * @param query_point 		The point at which to query the occupancy map.
+	 * @return 					The type of region at the given point.
+	 */
 	virtual RegionType query_at(const Eigen::Vector3d &query_point) = 0;
+
+	/// Destructor.
+	virtual ~OccupancyMap() = default;
 
 };
 

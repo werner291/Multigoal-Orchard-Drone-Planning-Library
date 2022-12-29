@@ -44,7 +44,7 @@ public:
      *
      * @param region_fn The function defining the region to be incorporated into the octree.
     */
-	void incorporate(const RegionDefinitionFn &region_fn) override;
+	void incorporate(const Eigen::Vector3d &eye_center, const RegionDefinitionFn &region_fn) override;
 
 	/**
      * @fn RegionType query_at(const Eigen::Vector3d &query_point)

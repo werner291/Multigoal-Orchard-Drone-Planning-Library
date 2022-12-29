@@ -1,12 +1,47 @@
 #include <random>
 #include <Eigen/Dense>
 #include <vector>
+#include <range/v3/all.hpp>
+#include <iomanip>
+#include <json/json.h>
+#include <fstream>
+
+#include "../utilities/math_utils.h"
+#include "../occupancy_mapping/OccupancyMap.h"
+#include "../occupancy_mapping/HierarchicalCategoricalOccupancyOctree.h"
+#include "../occupancy_mapping/HierarchicalBoundaryCellAnnotatedRegionOctree.h"
 
 // Struct to represent a sphere
 struct Sphere {
   Eigen::Vector3d center;
   double radius;
 };
+
+/**
+ * Convert a Sphere struct to a JSON object
+ *
+ * @param sphere  Sphere struct
+ * @return JSON object
+ */
+Json::Value toJSON(const Sphere &sphere) {
+	  Json::Value json;
+  json["center"] = toJSON(sphere.center);
+  json["radius"] = sphere.radius;
+  return json;
+}
+
+/**
+ * Convert a JSON object to a Sphere struct
+ *
+ * @param json  JSON object
+ * @return Sphere struct
+ */
+Sphere sphereFromJSON(const Json::Value &json) {
+	return Sphere{
+		fromJsonVector3d(json["center"]),
+		json["radius"].asDouble()
+	};
+}
 
 /**
  * Generates a vector of randomly generated spheres
@@ -51,31 +86,29 @@ std::vector<Sphere> generateRandomSpheres(int num_spheres) {
  * @return Vector of 3D points on the surface of the sphere
  */
 std::vector<Eigen::Vector3d> generateSurfacePoints(const Sphere& sphere, int num_points) {
-  // Set the random seed
-  std::random_device rd;
-  std::mt19937 gen(rd());
+	// Set the random seed
+	std::random_device rd;
+	std::mt19937 gen(rd());
 
-  // Create a normal distribution for generating random points on the surface of the sphere
-  std::normal_distribution<> coord_dist(0.0, 1.0);
+	// Create a normal distribution for generating random points on the surface of the sphere
+	std::normal_distribution<> coord_dist(0.0, 1.0);
 
-  // Use the generator function constructor of std::vector to generate the points
-  std::vector<Eigen::Vector3d> points(num_points, [&](int) {
-    // Generate random Cartesian coordinates
-    Eigen::Vector3d coords(coord_dist(gen), coord_dist(gen), coord_dist(gen));
+	// Use a range-v3 view to generate the points and convert the view to a std::vector
+	return ranges::views::iota(0, num_points) | ranges::views::transform([&](int) {
+		// Generate random Cartesian coordinates
+		Eigen::Vector3d coords(coord_dist(gen), coord_dist(gen), coord_dist(gen));
 
-    // Normalize the coordinates
-    coords.normalize();
+		// Normalize the coordinates
+		coords.normalize();
 
-    // Scale the coordinates by the radius of the sphere
-    coords *= sphere.radius;
+		// Scale the coordinates by the radius of the sphere
+		coords *= sphere.radius;
 
-    // Shift the point by the center of the sphere
-    Eigen::Vector3d point = sphere.center + coords;
+		// Shift the point by the center of the sphere
+		Eigen::Vector3d point = sphere.center + coords;
 
-    return point;
-  });
-
-  return points;
+		return point;
+	}) | ranges::to_vector;
 }
 
 /**
@@ -132,19 +165,24 @@ std::vector<Eigen::Vector3d> generateTestPoints(const Sphere& sphere, int n, dou
  * @param max_distance  Maximum distance from the boundary surface of each sphere to generate test points
  * @return Vector of point/boolean pairs indicating whether each point lies within the union of all the spheres in the given vector
  */
-std::vector<Eigen::Vector3d> generateTestPoints(
+std::vector<std::pair<Eigen::Vector3d,bool>> generateTestPointsOnSpheres(
     const std::vector<Sphere>& spheres, int num_test_points, double max_distance) {
+
   // Generate test points near the boundary surface of each sphere
   return
       // Generate test points for each sphere
       spheres
-      | ranges::view::transform([&](const Sphere& sphere) {
+      | ranges::views::transform([&](const Sphere& sphere) {
           return generateTestPoints(sphere, num_test_points, max_distance);
         })
-      // Concatenate all the test points into a single range
-      | ranges::view::concat
-      // Convert the range to a vector
-      | ranges::to_vector;
+      // Flatten the vector of vectors into a single vector
+	  | ranges::views::join
+	  // Pair each up with a boolean
+	  | ranges::views::transform([&](const Eigen::Vector3d& point) -> std::pair<Eigen::Vector3d,bool> {
+		  return {point, pointInSpheres(point, spheres)};
+	  })
+	  // Convert the view to a std::vector
+	  | ranges::to_vector;
 }
 
 
@@ -156,25 +194,30 @@ int main() {
 
   // Do something with the spheres (e.g., add them to a list or scene)
   // Create a vector to store the OccupancyMap objects and their names
-  std::vector<std::pair<std::string, std::unique_ptr<OccupancyMap>>> maps {
-    {"HierarchicalCategoricalOccupancyOctree", std::make_unique<HierarchicalCategoricalOccupancyOctree>()},
-    {"HierarchicalBoundaryCellAnnotatedRegionOctree", std::make_unique<HierarchicalBoundaryCellAnnotatedRegionOctree>()}
-  };
+  std::vector<std::pair<std::string, std::unique_ptr<OccupancyMap>>> maps;
+  maps.emplace_back("HierarchicalCategoricalOccupancyOctree", std::make_unique<HierarchicalCategoricalOccupancyOctree>());
+//  maps.emplace_back("HierarchicalBoundaryCellAnnotatedRegionOctree", std::make_unique<HierarchicalBoundaryCellAnnotatedRegionOctree>(Eigen::Vector3d::Zero(), 10.0));
 
   // Incorporate the spheres into all OccupancyMap objects
   for (auto& map_pair : maps) {
     OccupancyMap& map = *map_pair.second;
     for (const Sphere& sphere : spheres) {
-      map.incorporate(sphere.center, [&](const Eigen::Vector3d& point) {
-        return (point - sphere.center).norm() < sphere.radius;
+      map.incorporate(sphere.center, [&](const Eigen::Vector3d& point) -> BoundarySample {
+
+		  Eigen::Vector3d point_on_sphere = sphere.center + (point - sphere.center).normalized() * sphere.radius;
+
+		  return {
+			  point_on_sphere, BoundaryType::OCCLUDING
+		  };
+
       });
     }
   }
-  
-  std::vector<std::pair<Eigen::Vector3d, bool>> test_points = generateTestPoints(spheres, 1000, 0.1);
-  
+
+  std::vector<std::pair<Eigen::Vector3d, bool>> test_points = generateTestPointsOnSpheres(spheres, 1000, 0.1);
+
   // Create a map to store the results of the tests, with the map names as the keys
-  std::map<std::string, std::vector<bool>> test_results;
+  std::vector<std::pair<std::string, std::vector<bool>>> results;
 
   // Iterate over the test points
   for (const auto& [point, expected_result] : test_points) {
@@ -184,7 +227,7 @@ int main() {
       bool actual_result = (map->query_at(point) == OccupancyMap::RegionType::OCCUPIED);
 
       // Record the result of the test
-      test_results[name].emplace_back(actual_result == expected_result);
+      results.emplace_back(name, actual_result == expected_result);
     }
   }
 
@@ -200,10 +243,7 @@ int main() {
   // Add the spheres to the JSON object
   Json::Value spheres_json(Json::arrayValue);
   for (const auto& sphere : spheres) {
-    Json::Value sphere_json;
-    sphere_json["center"] = toJson(sphere.center);
-    sphere_json["radius"] = sphere.radius;
-    spheres_json.append(sphere_json);
+    spheres_json.append(toJSON(sphere));
   }
   root["spheres"] = spheres_json;
 
@@ -211,7 +251,7 @@ int main() {
   Json::Value points_json(Json::arrayValue);
   for (const auto& point : test_points) {
     Json::Value point_json;
-    point_json["point"] = toJson(point.first);
+    point_json["point"] = toJSON(point.first);
     point_json["expected_result"] = point.second;
     points_json.append(point_json);
   }
@@ -219,9 +259,9 @@ int main() {
 
   // Add the test results to the JSON object
   Json::Value results_json(Json::objectValue);
-  for (const auto& [name, results] : test_results) {
+  for (const auto& [name, resultss] : results) {
     Json::Value results_array(Json::arrayValue);
-    for (const auto& result : results) {
+    for (bool result : resultss) {
       results_array.append(result);
     }
     results_json[name] = results_array;

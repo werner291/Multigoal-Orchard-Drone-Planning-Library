@@ -116,11 +116,11 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 		auto &leaf_cell = std::get<LeafCell>(cell);
 
 		if (center_inside_region && leaf_cell.data == OccupancyMap::UNSEEN) {
-			leaf_cell.data == OccupancyMap::FREE;
+			leaf_cell.data = OccupancyMap::FREE;
 		}
 
 		if (boundary_may_lie_inside_cell && boundary_sample.boundary_type == OBSTRUCTING) {
-			leaf_cell.data == OccupancyMap::OCCUPIED;
+			leaf_cell.data = OccupancyMap::OCCUPIED;
 		}
 
 	}
@@ -183,6 +183,7 @@ OccupancyMap::RegionType HierarchicalCategoricalOccupancyOctree::query_at(const 
 }
 
 
-void HierarchicalCategoricalOccupancyOctree::incorporate(const RegionDefinitionFn &region_fn) {
+void HierarchicalCategoricalOccupancyOctree::incorporate(const Eigen::Vector3d &eye_center,
+														 const RegionDefinitionFn &region_fn) {
 	incorporate_internal(tree.box, tree.root, region_fn);
 }

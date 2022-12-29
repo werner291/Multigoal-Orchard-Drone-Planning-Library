@@ -97,17 +97,18 @@ public:
 		assert(box.contains(query_point));
 
 		// Current cell that we are searching within
-		Cell *current_cell = &root;
+		const Cell *current_cell = &root;
+		Eigen::AlignedBox3d current_box = box;
 
 		// Iterate through the octree until we reach a leaf cell
 		while (true) {
 
 			if (auto *split_cell = std::get_if<SplitCell>(current_cell)) {
 				// If the current cell is a split cell, find the child octant that contains the query point
-				auto child_octant = math_utils::find_octant_containing_point(box, query_point);
+				auto child_octant = math_utils::find_octant_containing_point(current_box, query_point);
 
-				current_cell = split_cell->children[child_octant.i];
-				box = child_octant.bounds;
+				current_cell = &(*split_cell->children)[child_octant.i];
+				current_box = child_octant.bounds;
 
 			} else {
 				// If the current cell is a leaf cell, return the data

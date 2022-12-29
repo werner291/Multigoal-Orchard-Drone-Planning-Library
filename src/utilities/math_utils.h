@@ -228,9 +228,7 @@ namespace math_utils {
     @param box The bounding box to check within.
     @return true if the point is closer to the center of the box than the edge length, false otherwise.
     */
-	bool point_closer_to_center_than_edge(const Eigen::Vector3d &point, const Eigen::AlignedBox3d &box) {
-		return (point - box.center()).norm() <= box.sizes()[0] * sqrt(3);
-	}
+	bool point_closer_to_center_than_edge(const Eigen::Vector3d &point, const Eigen::AlignedBox3d &box);
 
 	/**
  	 * @brief Computes the intersection parameters of the given line segment with the given AABB.
@@ -276,5 +274,59 @@ struct Ray3d {
  * @return 				The index of the point closest to p.
  */
 Eigen::Vector3d closest_point_in_list(std::initializer_list<Eigen::Vector3d> points, const Eigen::Vector3d &p);
+
+#if JSON_FUNCTIONS
+
+#include <json/json.h>
+
+/**
+ * Convert an Eigen::Vector3d to a JSON array
+ *
+ * @param v  Eigen::Vector3d
+ * @return JSON array
+ */
+Json::Value toJSON(const Eigen::Vector3d &v);
+
+/**
+ * Convert a JSON array to an Eigen::Vector3d
+ *
+ * @param json  JSON array
+ * @return Eigen::Vector3d
+ */
+Eigen::Vector3d fromJsonVector3d(const Json::Value &json);
+
+/**
+ * Convert an Eigen::Quaterniond to a JSON array
+ *
+ * @param q  Eigen::Quaterniond
+ * @return JSON array
+ */
+Json::Value toJSON(const Eigen::Quaterniond &q);
+
+/**
+ * Convert a JSON array to an Eigen::Quaterniond
+ *
+ * @param json  JSON array
+ * @return Eigen::Quaterniond
+ */
+Eigen::Quaterniond fromJsonQuaternion3d(const Json::Value &json);
+
+/**
+ * Convert an Eigen::Isometry3d to a JSON object
+ *
+ * @param isom  Eigen::Isometry3d
+ * @return JSON object
+ */
+Json::Value toJSON(const Eigen::Isometry3d &isom);
+
+/**
+ * Convert a JSON object to an Eigen::Isometry3d
+ *
+ * @param json  JSON object
+ * @return Eigen::Isometry3d
+ */
+Eigen::Isometry3d fromJsonIsometry3d(const Json::Value &json);
+
+#endif
 
 #endif //NEW_PLANNERS_MATH_UTILS_H

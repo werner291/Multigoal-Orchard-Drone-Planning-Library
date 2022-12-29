@@ -1,9 +1,7 @@
 #include "math_utils.h"
 #include <Eigen/Geometry>
 #include <iostream>
-
-#include <random_numbers/random_numbers.h>
-#include <ompl/util/RandomNumbers.h>
+#include <random>
 
 std::pair<double, double>
 closest_point_on_line(const Eigen::ParametrizedLine<double, 3> &l1,
@@ -160,11 +158,14 @@ std::array<TriangleVertexId, 2> vertices_in_edge(TriangleEdgeId edge) {
 Eigen::Vector3d
 uniform_point_on_triangle(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, const Eigen::Vector3d &p3) {
 
-	ompl::RNG rng;
+	// Pick s,t from [0,1] using std::uniform_real_distribution
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<> dis(0, 1);
 
 	// Pick a point on a triangle
-	const double r1 = sqrt(rng.uniform01());
-	const double r2 = sqrt(rng.uniform01());
+	const double r1 = sqrt(dis(gen));
+	const double r2 = sqrt(dis(gen));
 
 	return (1 - r1) * p1 + r1 * (1 - r2) * p2 + r1 * r2 * p3;
 }
@@ -376,3 +377,62 @@ OctantIterator math_utils::find_octant_containing_point(const Eigen::AlignedBox3
 	}
 	assert(false && "Point not contained in any octant!");
 }
+
+bool math_utils::point_closer_to_center_than_edge(const Eigen::Vector3d &point, const Eigen::AlignedBox3d &box) {
+	return (point - box.center()).norm() <= box.sizes()[0] * sqrt(3);
+}
+
+#if JSON_FUNCTIONS
+
+
+Json::Value toJSON(const Eigen::Vector3d &v) {
+    Json::Value json;
+    json["x"] = v.x();
+    json["y"] = v.y();
+    json["z"] = v.z();
+    return json;
+}
+
+Eigen::Vector3d fromJsonVector3d(const Json::Value &json) {
+    return Eigen::Vector3d(
+            json["x"].asDouble(),
+            json["y"].asDouble(),
+            json["z"].asDouble()
+    );
+}
+
+Json::Value toJSON(const Eigen::Quaterniond &q) {
+    Json::Value json;
+    json["x"] = q.x();
+    json["y"] = q.y();
+    json["z"] = q.z();
+    json["w"] = q.w();
+    return json;
+}
+
+Eigen::Quaterniond fromJsonQuaternion3d(const Json::Value &json) {
+    return {
+            json["w"].asDouble(),
+            json["x"].asDouble(),
+            json["y"].asDouble(),
+            json["z"].asDouble()
+    };
+}
+
+Json::Value toJSON(const Eigen::Isometry3d &isom) {
+    Json::Value json;
+    json["translation"] = toJSON(isom.translation());
+    json["orientation"] = toJSON(Eigen::Quaterniond(isom.rotation()));
+    return json;
+}
+
+Eigen::Isometry3d fromJsonIsometry3d(const Json::Value &json) {
+
+    Eigen::Isometry3d iso;
+    iso.setIdentity();
+    iso.translate(fromJsonVector3d(json["translation"]));
+    iso.rotate(fromJsonQuaternion3d(json["orientation"]));
+    return iso;
+}
+
+#endif
