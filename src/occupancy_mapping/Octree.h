@@ -234,7 +234,10 @@ public:
 	[[nodiscard]] NodeCount count_nodes() const {
 
 		// Keep track of the number of leaf and split cells, starting at zero.
-		NodeCount count;
+		NodeCount count {
+			.leaf_count = 0,
+			.split_count = 0
+		};
 
 		// A queue of the cells to visit after this one; initialize with the root cell.
 		std::vector<const Cell *> cell_queue = {&root};
@@ -260,6 +263,8 @@ public:
 				}
 			}
 		}
+
+		return count;
 	}
 
 

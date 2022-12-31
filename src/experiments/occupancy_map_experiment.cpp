@@ -231,30 +231,43 @@ NodeCount countNodes(const OccupancyMap* map) {
 
 }
 
+
+/**
+ * @brief Main function that generates random spheres, constructs occupancy maps based on those spheres, and tests the accuracy of the maps.
+ * @return The exit code of the program.
+ */
 int main() {
+
 	// Generate 100 random spheres
 	std::vector<Sphere> spheres = generateRandomSpheres(10);
 
+	// Compute the bounding box that contains all of the spheres
 	Eigen::AlignedBox3d bounding_box = computeBoundingBox(spheres);
 
+	// Set the center of the bounding box as the center of the occupancy maps
 	Eigen::Vector3d center = bounding_box.center();
+
+	// Set the size of the occupancy maps as the maximum dimension of the bounding box, with a small buffer added
 	double cube_size = bounding_box.sizes().maxCoeff() + TEST_POINT_DISTANCE_FROM_BOUNDARY * 2.0;
 
 	// Do something with the spheres (e.g., add them to a list or scene)
 	// Create a vector to store the OccupancyMap objects and their names
 	std::vector<std::pair<std::string, std::unique_ptr<OccupancyMap>>> maps;
 
+	// Create HierarchicalCategoricalOccupancyOctree and HierarchicalBoundaryCellAnnotatedRegionOctree objects with depths ranging from 2 to 5
 	for (size_t i = 2; i < 6; i++) {
-		maps.emplace_back("HierarchicalCategoricalOccupancyOctree_"+std::to_string(i), std::make_unique<HierarchicalCategoricalOccupancyOctree>(center, cube_size, 5));
-		maps.emplace_back("HierarchicalBoundaryCellAnnotatedRegionOctree_"+std::to_string(i), std::make_unique<HierarchicalBoundaryCellAnnotatedRegionOctree>(center, cube_size, 5));
+		maps.emplace_back("HierarchicalCategoricalOccupancyOctree_"+std::to_string(i), std::make_unique<HierarchicalCategoricalOccupancyOctree>(center, cube_size, i));
+		maps.emplace_back("HierarchicalBoundaryCellAnnotatedRegionOctree_"+std::to_string(i), std::make_unique<HierarchicalBoundaryCellAnnotatedRegionOctree>(center, cube_size, i));
 	}
 
 	// Incorporate the spheres into all OccupancyMap objects
 	for (auto &map_pair: maps) {
 		OccupancyMap &map = *map_pair.second;
 		for (const Sphere &sphere: spheres) {
+			// Incorporate each sphere into the map by adding a boundary sample at the point on the sphere's surface closest to the map's center
 			map.incorporate(sphere.center, [&](const Eigen::Vector3d &point) -> BoundarySample {
 
+				// Compute the point on the sphere's surface that is closest to the map's center
 				Eigen::Vector3d point_on_sphere = sphere.center + (point - sphere.center).normalized() * sphere.radius;
 
 				return {point_on_sphere, BoundaryType::OCCLUDING};
@@ -262,13 +275,16 @@ int main() {
 			});
 		}
 
+		// Print the number of nodes in the map
 		NodeCount node_count = countNodes(&map);
 		std::cout << map_pair.first << " has " << (node_count.split_count + node_count.leaf_count) << " nodes (" << node_count.split_count << " splits, " << node_count.leaf_count << " leaves)" << std::endl;
 	}
 
+	// Generate test points on the surface of the spheres
 	std::vector<std::pair<Eigen::Vector3d, bool>> test_points = generateTestPointsOnSpheres(spheres, 10000,
 																							TEST_POINT_DISTANCE_FROM_BOUNDARY);
 
+	// Enumeration to keep track of different error types
 	enum ErrorType {
 		EXPECTED_FREE_BUT_OCCUPIED,
 		EXPECTED_OCCUPIED_BUT_FREE,
@@ -287,9 +303,13 @@ int main() {
 		// Iterate over the test points
 		for (const auto &[point, expected_result]: test_points) {
 
+			// Determine the expected result of the query (either FREE or UNSEEN)
 			auto expected = expected_result ? OccupancyMap::RegionType::FREE : OccupancyMap::RegionType::UNSEEN;
+
+			// Query the map at the test point
 			auto actual = map->query_at(point);
 
+			// Determine the type of error based on the expected and actual results
 			ErrorType error_type;
 			if (expected_result) {
 				if (actual == expected) {
@@ -305,10 +325,12 @@ int main() {
 				}
 			}
 
+			// Add the error type to the result vector for this map
 			results.back().second.push_back(error_type);
 		}
 	}
 
+	// Print the results
 	for (const auto &[name, result]: results) {
 
 		std::cout << "Expected free but occupied: " << std::count(result.begin(), result.end(), EXPECTED_FREE_BUT_OCCUPIED) << std::endl;
@@ -316,8 +338,6 @@ int main() {
 		std::cout << "Correct free: " << std::count(result.begin(), result.end(), CORRECT_FREE) << std::endl;
 		std::cout << "Correct occupied: " << std::count(result.begin(), result.end(), CORRECT_OCCUPIED) << std::endl;
 	}
-
-//	writeResults(spheres, test_points, results);
 
 	return 0;
 }
