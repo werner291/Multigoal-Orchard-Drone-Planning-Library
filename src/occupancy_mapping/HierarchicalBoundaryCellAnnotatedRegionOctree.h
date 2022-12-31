@@ -45,9 +45,15 @@ public:
 
 	PointAnnotatedOctree tree;
 
+	const PointAnnotatedOctree &getTree() const;
+
+	const unsigned int getMaxDepth() const;
+
 	HierarchicalBoundaryCellAnnotatedRegionOctree(const Eigen::Vector3d &center, double baseEdgeLength, const unsigned int maxDepth);
 
 	const unsigned int max_depth;
+
+
 };
 
 

@@ -130,6 +130,7 @@ OccupancyMap::RegionType HierarchicalCategoricalOccupancyOctree::query_at(const 
 }
 
 
+
 void HierarchicalCategoricalOccupancyOctree::incorporate(const Eigen::Vector3d &eye_center,
 														 const RegionDefinitionFn &region_fn) {
 
@@ -144,20 +145,11 @@ void HierarchicalCategoricalOccupancyOctree::incorporate(const Eigen::Vector3d &
 
 						if (center_eye_distance < eye_sample_distance) {
 							leaf_cell.data = OccupancyMap::FREE;
-							std::cout << "Free cell at center: " << box.center().transpose() << std::endl;
-						} else {
-							std::cout << "Unseen cell at center: " << box.center().transpose() << " sample distance: " << eye_sample_distance << " center distance: " << center_eye_distance << std::endl;
 						}
 
 				  },
-				  [&](const Eigen::AlignedBox3d &box, LeafCell &leaf_cell) {
-
-					  // Split a cell if the boundary of the region may lie inside of it.
-					  BoundarySample boundary_sample = region_fn(box.center());
-
-					  return (box.center() - boundary_sample.surface_point).norm() <= box.sizes()[0] * sqrt(3)/2.0;
-
-				  });
+				  SplitIfBoundaryMaybeInsideCell<LeafCell>{eye_center, region_fn}
+				  );
 
 }
 
@@ -179,4 +171,9 @@ HierarchicalCategoricalOccupancyOctree::HierarchicalCategoricalOccupancyOctree(c
 
 double HierarchicalCategoricalOccupancyOctree::getMinEdgeLength() const {
 	return tree.box.sizes()[0] / pow(2, maxDepth);
+}
+
+const HierarchicalCategoricalOccupancyOctree::CategoricalOctree &
+HierarchicalCategoricalOccupancyOctree::getOctree() const {
+	return tree;
 }

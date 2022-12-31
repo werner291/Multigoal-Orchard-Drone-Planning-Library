@@ -14,6 +14,30 @@
 #include "../exploration/SegmentedPointCloud.h"
 #include "VisibilityBoundary.h"
 
+/**
+* A struct for determining if a cell should be split based on the distance between the center
+* of the cell and the surface point of the region boundary.
+*/
+template<typename LeafCell>
+struct SplitIfBoundaryMaybeInsideCell {
+	const Eigen::Vector3d &eye_center;
+	const RegionDefinitionFn &region_fn;
+
+	/**
+	 * The call operator for determining if a cell should be split.
+	 *
+	 * @param box The bounding box of the cell.
+	 * @param leaf_cell The cell to potentially split.
+	 * @return True if the cell should be split, false otherwise.
+	 */
+	bool operator()(const Eigen::AlignedBox3d &box, LeafCell &leaf_cell) const {
+		// Split a cell if the boundary of the region may lie inside of it.
+		BoundarySample boundary_sample = region_fn(box.center());
+
+		return (box.center() - boundary_sample.surface_point).norm() <= box.sizes()[0] * sqrt(3)/2.0;
+	}
+};
+
 class OccupancyMap {
 
 public:

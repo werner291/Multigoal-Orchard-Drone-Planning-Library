@@ -51,38 +51,76 @@ void HierarchicalBoundaryCellAnnotatedRegionOctree::incorporate(const Eigen::Vec
 		assert(leaf.data.region != OCCUPIED); // Also, we don't look at occupied cells yet.
 
 		// Assuming the observed region is star-shaped, determine whether the box center is inside or outside the region.
+		// TODO: If this proves unreliable, we can also simply add an inside/outside flag to the BoundarySample struct.
 		double sample_distance_to_eye = (sample.surface_point - eye_center).norm();
 		double box_center_distance_to_eye = (box.center() - eye_center).norm();
+		double distance_to_center = (sample.surface_point - box.center()).norm();
+
+		bool cell_may_cross_boundary = distance_to_center <= box.sizes()[0] * sqrt(3)/2.0;
+
 		bool is_inside = box_center_distance_to_eye < sample_distance_to_eye;
 
-		EigenExt::Plane3d new_occluding_plane(
-				(sample.surface_point - box.center()).normalized() * (is_inside ? 1.0 : -1.0), sample.surface_point);
+		enum LeafCases {
+			WHOLE_UNSEEN = 0,
+			PARTIAL_SEEN = 1,
+			FULLY_SEEN = 2,
+		};
 
-		double old_signed_distance = leaf.data.plane ? leaf.data.plane->signedDistance(box.center())
-													 : std::numeric_limits<double>::infinity();
-		double new_signed_distance = new_occluding_plane.signedDistance(box.center());
+		LeafCases old_leaf_case;
 
-		if (leaf.data.region == UNSEEN || new_signed_distance > old_signed_distance) {
-			leaf.data.region = FREE;
-
-			if (abs(new_signed_distance) > sqrt(3) * box.sizes()[0] / 2.0) {
-				// The new plane is too far away from the box center to be considered a boundary.
-				leaf.data.plane = std::nullopt;
+		if (leaf.data.region == UNSEEN) {
+			assert(!leaf.data.plane.has_value());
+			old_leaf_case = WHOLE_UNSEEN;
+		} else if (leaf.data.region == FREE) {
+			if (leaf.data.plane.has_value()) {
+				old_leaf_case = PARTIAL_SEEN;
 			} else {
-				leaf.data.plane = new_occluding_plane;
+				old_leaf_case = FULLY_SEEN;
 			}
 		}
 
-	}, [&](const Eigen::AlignedBox3d &box, LeafCell &leaf) {
+		EigenExt::Plane3d new_occluding_plane((sample.surface_point - box.center()).normalized() * (is_inside ? -1.0 : 1.0), sample.surface_point);
 
-		// Return whether to split the cell. We do if a sample from the region_fn closest to the eye_center lies within sqrt(3) * edge_length of the center of the cell.
+		LeafCases new_leaf_case;
 
-		BoundarySample sample = region_fn(box.center());
+		if (cell_may_cross_boundary) {
+			// The cell may cross the boundary. We need to split it.
+			new_leaf_case = PARTIAL_SEEN;
+		} else {
+			if (is_inside) {
+				new_leaf_case = FULLY_SEEN;
+			} else {
+				new_leaf_case = WHOLE_UNSEEN;
+			}
+		}
 
-		double d = (sample.surface_point - eye_center).norm();
+		if (new_leaf_case > old_leaf_case) {
+			// The new sample is stronger than the old one. Replace it.
+			leaf.data.region = FREE;
+			leaf.data.plane = (cell_may_cross_boundary) ? std::optional(new_occluding_plane) : std::nullopt;
+		} else if (new_leaf_case == old_leaf_case) {
 
-		return d < sqrt(3) * box.sizes()[0] / 2;
-	});
+			switch (new_leaf_case) {
+				case WHOLE_UNSEEN:
+					// Nothing to do.
+					break;
+				case PARTIAL_SEEN:
+								// The new sample is as strong as the old one. Keep the one that's closer to the box center.
+								if (new_occluding_plane.signedDistance(box.center()) > leaf.data.plane->signedDistance(box.center())) {
+									leaf.data.region = FREE;
+									leaf.data.plane = new_occluding_plane;
+								}
+					break;
+				case FULLY_SEEN:
+					leaf.data.region = FREE;
+					leaf.data.plane = std::nullopt;
+					break;
+			}
+
+
+		}
+
+	}, SplitIfBoundaryMaybeInsideCell<LeafCell>{eye_center, region_fn});
 
 }
 
@@ -101,4 +139,13 @@ OccupancyMap::RegionType HierarchicalBoundaryCellAnnotatedRegionOctree::query_at
 		return data.region;
 	}
 
+}
+
+const HierarchicalBoundaryCellAnnotatedRegionOctree::PointAnnotatedOctree &
+HierarchicalBoundaryCellAnnotatedRegionOctree::getTree() const {
+	return tree;
+}
+
+const unsigned int HierarchicalBoundaryCellAnnotatedRegionOctree::getMaxDepth() const {
+	return max_depth;
 }

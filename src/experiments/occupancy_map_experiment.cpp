@@ -215,6 +215,22 @@ Eigen::AlignedBox3d computeBoundingBox(const std::vector<Sphere> &spheres) {
 	return bounding_box;
 }
 
+NodeCount countNodes(const OccupancyMap* map) {
+
+	// Try downcasting it to the various types of OccupancyMap and count the nodes.
+
+	if (auto categorical = dynamic_cast<const HierarchicalCategoricalOccupancyOctree*>(map)) {
+		return categorical->getOctree().count_nodes();
+	}
+
+	if (auto sample_annotated = dynamic_cast<const HierarchicalBoundaryCellAnnotatedRegionOctree*>(map)) {
+		return sample_annotated->getTree().count_nodes();
+	}
+
+	throw std::runtime_error("Unknown occupancy map type");
+
+}
+
 int main() {
 	// Generate 100 random spheres
 	std::vector<Sphere> spheres = generateRandomSpheres(10);
@@ -227,8 +243,11 @@ int main() {
 	// Do something with the spheres (e.g., add them to a list or scene)
 	// Create a vector to store the OccupancyMap objects and their names
 	std::vector<std::pair<std::string, std::unique_ptr<OccupancyMap>>> maps;
-	maps.emplace_back("HierarchicalCategoricalOccupancyOctree", std::make_unique<HierarchicalCategoricalOccupancyOctree>(center, cube_size, 5));
-//	maps.emplace_back("HierarchicalBoundaryCellAnnotatedRegionOctree", std::make_unique<HierarchicalBoundaryCellAnnotatedRegionOctree>(center, cube_size, 5));
+
+	for (size_t i = 2; i < 6; i++) {
+		maps.emplace_back("HierarchicalCategoricalOccupancyOctree_"+std::to_string(i), std::make_unique<HierarchicalCategoricalOccupancyOctree>(center, cube_size, 5));
+		maps.emplace_back("HierarchicalBoundaryCellAnnotatedRegionOctree_"+std::to_string(i), std::make_unique<HierarchicalBoundaryCellAnnotatedRegionOctree>(center, cube_size, 5));
+	}
 
 	// Incorporate the spheres into all OccupancyMap objects
 	for (auto &map_pair: maps) {
@@ -242,9 +261,10 @@ int main() {
 
 			});
 		}
-	}
 
-	std::cout << "At center: " << OccupancyMap::region_type_to_string(maps[0].second->query_at(center)) << std::endl;
+		NodeCount node_count = countNodes(&map);
+		std::cout << map_pair.first << " has " << (node_count.split_count + node_count.leaf_count) << " nodes (" << node_count.split_count << " splits, " << node_count.leaf_count << " leaves)" << std::endl;
+	}
 
 	std::vector<std::pair<Eigen::Vector3d, bool>> test_points = generateTestPointsOnSpheres(spheres, 10000,
 																							TEST_POINT_DISTANCE_FROM_BOUNDARY);
@@ -290,7 +310,7 @@ int main() {
 	}
 
 	for (const auto &[name, result]: results) {
-		std::cout << name << std::endl;
+
 		std::cout << "Expected free but occupied: " << std::count(result.begin(), result.end(), EXPECTED_FREE_BUT_OCCUPIED) << std::endl;
 		std::cout << "Expected occupied but free: " << std::count(result.begin(), result.end(), EXPECTED_OCCUPIED_BUT_FREE) << std::endl;
 		std::cout << "Correct free: " << std::count(result.begin(), result.end(), CORRECT_FREE) << std::endl;

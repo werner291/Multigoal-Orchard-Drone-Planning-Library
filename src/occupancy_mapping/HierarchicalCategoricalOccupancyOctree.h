@@ -86,6 +86,11 @@ public:
 	 * Return the minimum edge length of the octree.
 	 */
 	double getMinEdgeLength() const;
+
+	/**
+	 * Return the underlying octree.
+	 */
+	const CategoricalOctree &getOctree() const;
 };
 
 #endif //NEW_PLANNERS_HIERARCHICALCATEGORICALOCCUPANCYOCTREE_H

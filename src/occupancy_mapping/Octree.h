@@ -15,6 +15,11 @@
 #include <Eigen/Geometry>
 #include "../utilities/math_utils.h"
 
+struct NodeCount {
+	size_t leaf_count = 0;
+	size_t split_count = 0;
+};
+
 template<typename SplitData, typename LeafData>
 class Octree {
 
@@ -140,8 +145,6 @@ private:
 			if (max_depth != 0 && split_rule(box, *leaf_cell)) {
 				// If the cell should be split, split it and recurse on the children
 				cell = split_by_copy(*leaf_cell, SplitData{});
-				std::cout << "Splitting cell at depth " << max_depth << " with box [" << box.min().transpose() << "], ["
-						  << box.max().transpose() << "]" << std::endl;
 			} else {
 				// If the cell should not be split, call the callback and return
 				at_highest_lod(box, *leaf_cell);
@@ -161,8 +164,6 @@ private:
 		// If all children are leaf cells with the same data, collapse the split cell into a leaf cell
 		if (split_cell.has_uniform_leaves()) {
 			cell = LeafCell{std::get<LeafCell>(split_cell.children->operator[](0)).data};
-			std::cout << "Merging cell at depth " << max_depth << " with box [" << box.min().transpose() << "], ["
-					  << box.max().transpose() << "]" << std::endl;
 		}
 	}
 
@@ -178,6 +179,34 @@ public:
 				  const std::function<void(const Eigen::AlignedBox3d &, LeafCell &)> &at_highest_lod,
 				  const std::function<bool(const Eigen::AlignedBox3d &, LeafCell &)> &split_rule) {
 		traverse_from_cell(box, root, max_depth, at_highest_lod, split_rule);
+	}
+
+
+
+	/**
+	 * Count the number of leaf and split cells in the octree.
+	 *
+	 * @return A struct containing the number of leaf and split cells.
+	 */
+	NodeCount count_nodes() const {
+		NodeCount count;
+
+		std::vector<const Cell *> cell_queue = {&root};
+
+		while (!cell_queue.empty()) {
+			const Cell *cell = cell_queue.back();
+			cell_queue.pop_back();
+
+			if (std::holds_alternative<LeafCell>(*cell)) {
+				count.leaf_count++;
+			} else {
+				count.split_count++;
+				const SplitCell &split_cell = std::get<SplitCell>(*cell);
+				for (const Cell &child_cell: *split_cell.children) {
+					cell_queue.push_back(&child_cell);
+				}
+			}
+		}
 	}
 
 
