@@ -34,7 +34,7 @@ struct SplitIfBoundaryMaybeInsideCell {
 		// Split a cell if the boundary of the region may lie inside of it.
 		BoundarySample boundary_sample = region_fn(box.center());
 
-		return (box.center() - boundary_sample.surface_point).norm() <= box.sizes()[0] * sqrt(3)/2.0;
+		return (box.center() - boundary_sample.surface_point).norm() <= box.sizes()[0] * sqrt(3) / 2.0;
 	}
 };
 

@@ -14,15 +14,14 @@ using SplitCell = PtOctree::SplitCell;
 using Cell = PtOctree::Cell;
 
 HierarchicalBoundaryCellAnnotatedRegionOctree::HierarchicalBoundaryCellAnnotatedRegionOctree(const Eigen::Vector3d &center,
-																							 const double baseEdgeLength, const unsigned int maxDepth)
-		: max_depth(maxDepth), tree(LeafData {
-		.region = UNSEEN,
-		.plane = std::nullopt
-		}) {
+																							 const double baseEdgeLength,
+																							 const unsigned int maxDepth)
+		: max_depth(maxDepth), tree(LeafData{.region = UNSEEN, .plane = std::nullopt}) {
 
 	// Initialize the octree bounding box with the given center and base edge length
 	tree.box = Eigen::AlignedBox3d(center - Eigen::Vector3d(baseEdgeLength / 2, baseEdgeLength / 2, baseEdgeLength / 2),
-								   center + Eigen::Vector3d(baseEdgeLength / 2, baseEdgeLength / 2, baseEdgeLength / 2));
+								   center +
+								   Eigen::Vector3d(baseEdgeLength / 2, baseEdgeLength / 2, baseEdgeLength / 2));
 
 }
 
@@ -47,7 +46,8 @@ void HierarchicalBoundaryCellAnnotatedRegionOctree::incorporate(const Eigen::Vec
 
 		BoundarySample sample = region_fn(box.center());
 
-		assert(sample.boundary_type == OCCLUDING); // Save ourselves the headache: we only support occluding boundaries for now.
+		assert(sample.boundary_type ==
+			   OCCLUDING); // Save ourselves the headache: we only support occluding boundaries for now.
 		assert(leaf.data.region != OCCUPIED); // Also, we don't look at occupied cells yet.
 
 		// Assuming the observed region is star-shaped, determine whether the box center is inside or outside the region.
@@ -56,14 +56,12 @@ void HierarchicalBoundaryCellAnnotatedRegionOctree::incorporate(const Eigen::Vec
 		double box_center_distance_to_eye = (box.center() - eye_center).norm();
 		double distance_to_center = (sample.surface_point - box.center()).norm();
 
-		bool cell_may_cross_boundary = distance_to_center <= box.sizes()[0] * sqrt(3)/2.0;
+		bool cell_may_cross_boundary = distance_to_center <= box.sizes()[0] * sqrt(3) / 2.0;
 
 		bool is_inside = box_center_distance_to_eye < sample_distance_to_eye;
 
 		enum LeafCases {
-			WHOLE_UNSEEN = 0,
-			PARTIAL_SEEN = 1,
-			FULLY_SEEN = 2,
+			WHOLE_UNSEEN = 0, PARTIAL_SEEN = 1, FULLY_SEEN = 2,
 		};
 
 		LeafCases old_leaf_case;
@@ -79,7 +77,8 @@ void HierarchicalBoundaryCellAnnotatedRegionOctree::incorporate(const Eigen::Vec
 			}
 		}
 
-		EigenExt::Plane3d new_occluding_plane((sample.surface_point - box.center()).normalized() * (is_inside ? -1.0 : 1.0), sample.surface_point);
+		EigenExt::Plane3d new_occluding_plane(
+				(sample.surface_point - box.center()).normalized() * (is_inside ? -1.0 : 1.0), sample.surface_point);
 
 		LeafCases new_leaf_case;
 
@@ -105,11 +104,12 @@ void HierarchicalBoundaryCellAnnotatedRegionOctree::incorporate(const Eigen::Vec
 					// Nothing to do.
 					break;
 				case PARTIAL_SEEN:
-								// The new sample is as strong as the old one. Keep the one that's closer to the box center.
-								if (new_occluding_plane.signedDistance(box.center()) > leaf.data.plane->signedDistance(box.center())) {
-									leaf.data.region = FREE;
-									leaf.data.plane = new_occluding_plane;
-								}
+					// The new sample is as strong as the old one. Keep the one that's closer to the box center.
+					if (new_occluding_plane.signedDistance(box.center()) >
+						leaf.data.plane->signedDistance(box.center())) {
+						leaf.data.region = FREE;
+						leaf.data.plane = new_occluding_plane;
+					}
 					break;
 				case FULLY_SEEN:
 					leaf.data.region = FREE;

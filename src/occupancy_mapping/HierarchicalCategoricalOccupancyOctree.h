@@ -78,8 +78,11 @@ public:
 	 *
 	 * The smallest cell will have edge length baseEdgeLength / 2^maxDepth.
 	 */
-	HierarchicalCategoricalOccupancyOctree(const Eigen::Vector3d &center, const double baseEdgeLength, const int maxDepth);
+	HierarchicalCategoricalOccupancyOctree(const Eigen::Vector3d &center,
+										   const double baseEdgeLength,
+										   const int maxDepth);
 
+	/// The maximum depth of the octree. The smallest cell will have edge length baseEdgeLength / 2^maxDepth.
 	const int maxDepth;
 
 	/**
