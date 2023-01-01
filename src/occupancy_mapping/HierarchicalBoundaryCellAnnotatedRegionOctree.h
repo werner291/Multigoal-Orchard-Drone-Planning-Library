@@ -54,7 +54,7 @@ public:
 	 *
 	 * Causes assertion failure if the query point is not inside the tree's bounding box.
 	 */
-	RegionType query_at(const Eigen::Vector3d &query_point) override;
+	RegionType query_at(const Eigen::Vector3d &query_point) const override;
 
 	/**
 	 * A leaf cell in the octree, labeled with a region, and optionally a plane that linearly approximates

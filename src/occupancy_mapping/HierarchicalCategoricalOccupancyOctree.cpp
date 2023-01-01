@@ -126,7 +126,7 @@ void HierarchicalCategoricalOccupancyOctree::incorporate(const Eigen::Vector3d &
 
 }
 
-OccupancyMap::RegionType HierarchicalCategoricalOccupancyOctree::query_at(const Eigen::Vector3d &query_point) {
+OccupancyMap::RegionType HierarchicalCategoricalOccupancyOctree::query_at(const Eigen::Vector3d &query_point) const {
 	return tree.get_leaf_data_at(query_point);
 }
 

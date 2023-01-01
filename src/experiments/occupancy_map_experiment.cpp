@@ -102,29 +102,44 @@ bool pointInSpheres(const Eigen::Vector3d &point, const std::vector<Sphere> &sph
 	});
 }
 
-std::vector<Eigen::Vector3d> generateTestPoints(const Sphere &sphere, int n, double max_distance) {
+/**
+ * Generates a set of random points within a margin around the boundary of the given sphere.
+ *
+ * @param sphere       The sphere for which the margin should be calculated.
+ * @param n            The number of points to generate.
+ * @param margin       The margin around the boundary of the sphere within which points should be generated.
+ * @return             A vector of 3D points.
+ */
+std::vector<Eigen::Vector3d> generateTestPoints(const Sphere &sphere, int n, double margin) {
+	// Vector to store the generated points
 	std::vector<Eigen::Vector3d> points;
 	points.reserve(n);
 
-	// Generate random points within a bounding box that encloses the sphere
+	// Setup random number generation
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> dis_x(sphere.center.x() - sphere.radius - max_distance,
-										   sphere.center.x() + sphere.radius + max_distance);
-	std::uniform_real_distribution<> dis_y(sphere.center.y() - sphere.radius - max_distance,
-										   sphere.center.y() + sphere.radius + max_distance);
-	std::uniform_real_distribution<> dis_z(sphere.center.z() - sphere.radius - max_distance,
-										   sphere.center.z() + sphere.radius + max_distance);
+	std::normal_distribution dis;
+	std::uniform_real_distribution margin_dis(-margin, margin);
 
+	// Generate random points until we have the desired number of points
 	while (points.size() < n) {
-		Eigen::Vector3d point(dis_x(gen), dis_y(gen), dis_z(gen));
-		if ((point - sphere.center).norm() < sphere.radius + max_distance) {
-			points.push_back(point);
-		}
+		// Generate a random point and normalize it
+		Eigen::Vector3d point(dis(gen), dis(gen), dis(gen));
+		point.normalize();
+
+		// Scale the point to be within the margin around the sphere
+		point *= sphere.radius + margin_dis(gen);
+
+		// Offset the point by the center of the sphere
+		point += sphere.center;
+
+		// Add the point to the vector
+		points.push_back(point);
 	}
 
 	return points;
 }
+
 
 /**
  * Generate a vector of point/boolean pairs indicating whether each point lies within the union of all the spheres in the given vector
@@ -231,6 +246,122 @@ NodeCount countNodes(const OccupancyMap* map) {
 
 }
 
+// Enumeration to keep track of different error types
+enum ErrorType {
+	EXPECTED_FREE_BUT_OCCUPIED,
+	EXPECTED_OCCUPIED_BUT_FREE,
+	CORRECT_FREE,
+	CORRECT_OCCUPIED
+};
+
+struct ConfusionMatrix {
+
+	size_t expected_free_but_occupied = 0;
+	size_t expected_occupied_but_free = 0;
+	size_t correct_free = 0;
+	size_t correct_occupied = 0;
+
+};
+
+Json::Value toJSON(const ConfusionMatrix &confusion_matrix) {
+	Json::Value json;
+	json["expected_free_but_occupied"] = (int) confusion_matrix.expected_free_but_occupied;
+	json["expected_occupied_but_free"] = (int) confusion_matrix.expected_occupied_but_free;
+	json["correct_free"] = (int) confusion_matrix.correct_free;
+	json["correct_occupied"] = (int) confusion_matrix.correct_occupied;
+	return json;
+}
+
+/**
+* @brief Determines the type of error based on the expected and actual results.
+*
+* @param expected_result The expected result of the function.
+* @param expected The expected output of the function.
+* @param actual The actual output of the function.
+* @return The type of error that occurred.
+*/
+ErrorType getErrorType(const bool expected_result,
+					   const OccupancyMap::RegionType &expected,
+					   const OccupancyMap::RegionType &actual) {
+	ErrorType error_type;
+	if (expected_result) {
+		if (actual == expected) {
+			error_type = CORRECT_FREE;
+		} else {
+			error_type = EXPECTED_FREE_BUT_OCCUPIED;
+		}
+	} else {
+		if (actual == expected) {
+			error_type = CORRECT_OCCUPIED;
+		} else {
+			error_type = EXPECTED_OCCUPIED_BUT_FREE;
+		}
+	}
+	return error_type;
+}
+
+// Define a struct to store map names, pointers to OccupancyMap objects, and the maximum depth of each map
+struct MapInfo {
+	std::string name;
+	std::unique_ptr<OccupancyMap> map;
+	size_t max_depth;
+};
+
+/**
+ * @brief Tests the given occupancy map against the given test points, returning a confusion matrix.
+ *
+ * @param occupancyMap The occupancy map to test.
+ * @param test_points The test points to test the map against (each point is paired with a boolean indicating whether the point is expected to be free (true) or unseen (false)).
+ *
+ * @return A confusion matrix
+ */
+ConfusionMatrix testMap(const OccupancyMap& occupancyMap,
+						const std::vector<std::pair<Eigen::Vector3d, bool>> &test_points) {
+	ConfusionMatrix confusion_matrix;
+
+	size_t processed = 0;
+
+	// Iterate over the test points
+	for (const auto&[point, expected_result]: test_points) {
+		// Get the expected region type
+		OccupancyMap::RegionType expected_region_type;
+		if (expected_result) {
+			expected_region_type = OccupancyMap::RegionType::FREE;
+		} else {
+			expected_region_type = OccupancyMap::RegionType::UNSEEN;
+		}
+
+		// Get the actual region type
+		OccupancyMap::RegionType actual_region_type = occupancyMap.query_at(point);
+
+		// Determine the type of error that occurred
+		ErrorType error_type = getErrorType(expected_result, expected_region_type, actual_region_type);
+
+		// Update the confusion matrix
+		switch (error_type) {
+			case EXPECTED_FREE_BUT_OCCUPIED:
+				confusion_matrix.expected_free_but_occupied++;
+				break;
+			case EXPECTED_OCCUPIED_BUT_FREE:
+				confusion_matrix.expected_occupied_but_free++;
+				break;
+			case CORRECT_FREE:
+				confusion_matrix.correct_free++;
+				break;
+			case CORRECT_OCCUPIED:
+				confusion_matrix.correct_occupied++;
+				break;
+		}
+
+		if (processed ++ % 10000 == 0) {
+			std::cout << "Processed " << processed << "/" << test_points.size() << " test points" << std::endl;
+		}
+	}
+
+	return confusion_matrix;
+
+}
+
 
 /**
  * @brief Main function that generates random spheres, constructs occupancy maps based on those spheres, and tests the accuracy of the maps.
@@ -252,17 +383,27 @@ int main() {
 
 	// Do something with the spheres (e.g., add them to a list or scene)
 	// Create a vector to store the OccupancyMap objects and their names
-	std::vector<std::pair<std::string, std::unique_ptr<OccupancyMap>>> maps;
+	std::vector<MapInfo> maps;
 
 	// Create HierarchicalCategoricalOccupancyOctree and HierarchicalBoundaryCellAnnotatedRegionOctree objects with depths ranging from 2 to 5
-	for (size_t i = 2; i < 6; i++) {
-		maps.emplace_back("HierarchicalCategoricalOccupancyOctree_"+std::to_string(i), std::make_unique<HierarchicalCategoricalOccupancyOctree>(center, cube_size, i));
-		maps.emplace_back("HierarchicalBoundaryCellAnnotatedRegionOctree_"+std::to_string(i), std::make_unique<HierarchicalBoundaryCellAnnotatedRegionOctree>(center, cube_size, i));
+	for (size_t i = 2; i <= 10; i++) {
+		maps.push_back({
+							   "HierarchicalCategoricalOccupancyOctree",
+							   std::make_unique<HierarchicalCategoricalOccupancyOctree>(center, cube_size, i),
+							   i
+					   });
+		maps.push_back({
+							   "HierarchicalBoundaryCellAnnotatedRegionOctree",
+							   std::make_unique<HierarchicalBoundaryCellAnnotatedRegionOctree>(center, cube_size, i),
+							   i
+					   });
 	}
 
+	std::vector<NodeCount> node_counts;
+
 	// Incorporate the spheres into all OccupancyMap objects
-	for (auto &map_pair: maps) {
-		OccupancyMap &map = *map_pair.second;
+	for (auto &mapInfo: maps) {
+		OccupancyMap &map = *mapInfo.map;
 		for (const Sphere &sphere: spheres) {
 			// Incorporate each sphere into the map by adding a boundary sample at the point on the sphere's surface closest to the map's center
 			map.incorporate(sphere.center, [&](const Eigen::Vector3d &point) -> BoundarySample {
@@ -277,67 +418,48 @@ int main() {
 
 		// Print the number of nodes in the map
 		NodeCount node_count = countNodes(&map);
-		std::cout << map_pair.first << " has " << (node_count.split_count + node_count.leaf_count) << " nodes (" << node_count.split_count << " splits, " << node_count.leaf_count << " leaves)" << std::endl;
+		std::cout << mapInfo.name << " has " << (node_count.split_count + node_count.leaf_count) << " nodes (" << node_count.split_count << " splits, " << node_count.leaf_count << " leaves)" << std::endl;
+		node_counts.push_back(node_count);
 	}
 
 	// Generate test points on the surface of the spheres
-	std::vector<std::pair<Eigen::Vector3d, bool>> test_points = generateTestPointsOnSpheres(spheres, 10000,
-																							TEST_POINT_DISTANCE_FROM_BOUNDARY);
+	std::vector<std::pair<Eigen::Vector3d, bool>> test_points = generateTestPointsOnSpheres(spheres, 10000, TEST_POINT_DISTANCE_FROM_BOUNDARY);
+	std::vector<ConfusionMatrix> confusion_matrices = maps | ranges::views::transform([&](const MapInfo &mapInfo) {
+		return testMap(*mapInfo.map, test_points);
+	}) | ranges::to_vector;
 
-	// Enumeration to keep track of different error types
-	enum ErrorType {
-		EXPECTED_FREE_BUT_OCCUPIED,
-		EXPECTED_OCCUPIED_BUT_FREE,
-		CORRECT_FREE,
-		CORRECT_OCCUPIED
-	};
+	Json::Value root;
 
-	// Create a map to store the results of the tests, with the map names as the keys
-	std::vector<std::pair<std::string, std::vector<ErrorType>>> results;
+	for (const auto& [map_info, confusion_matrix, node_count]: ranges::views::zip(maps, confusion_matrices, node_counts)) {
 
-	// Iterate over the occupancy maps
-	for (const auto &[name, map]: maps) {
+		std::cout << map_info.name << " (depth " << map_info.max_depth << ") has " << node_count.split_count << " splits, " << node_count.leaf_count << " leaves, and " << node_count.leaf_count * 8 << " cells" << std::endl;
+		std::cout << "Confusion matrix:" << std::endl;
+		std::cout << "  Expected free but occupied: " << confusion_matrix.expected_free_but_occupied << std::endl;
+		std::cout << "  Expected occupied but free: " << confusion_matrix.expected_occupied_but_free << std::endl;
+		std::cout << "  Correct free: " << confusion_matrix.correct_free << std::endl;
+		std::cout << "  Correct occupied: " << confusion_matrix.correct_occupied << std::endl;
 
-		results.emplace_back(name, std::vector<ErrorType>());
+		Json::Value map_json;
+		map_json["name"] = map_info.name;
+		map_json["max_depth"] = (int) map_info.max_depth;
+		map_json["split_count"] = (int) node_count.split_count;
+		map_json["leaf_count"] = (int) node_count.leaf_count;
+		map_json["total_count"] = (int) node_count.split_count + (int) node_count.leaf_count;
+		map_json["confusion"] = toJSON(confusion_matrix);
 
-		// Iterate over the test points
-		for (const auto &[point, expected_result]: test_points) {
-
-			// Determine the expected result of the query (either FREE or UNSEEN)
-			auto expected = expected_result ? OccupancyMap::RegionType::FREE : OccupancyMap::RegionType::UNSEEN;
-
-			// Query the map at the test point
-			auto actual = map->query_at(point);
-
-			// Determine the type of error based on the expected and actual results
-			ErrorType error_type;
-			if (expected_result) {
-				if (actual == expected) {
-					error_type = CORRECT_FREE;
-				} else {
-					error_type = EXPECTED_FREE_BUT_OCCUPIED;
-				}
-			} else {
-				if (actual == expected) {
-					error_type = CORRECT_OCCUPIED;
-				} else {
-					error_type = EXPECTED_OCCUPIED_BUT_FREE;
-				}
-			}
-
-			// Add the error type to the result vector for this map
-			results.back().second.push_back(error_type);
-		}
+		root.append(map_json);
 	}
 
-	// Print the results
-	for (const auto &[name, result]: results) {
+	// Generate a file path for the output file with stringstream; include a timestamp
+	std::stringstream ss;
+	ss << "analysis/data/occmap_";
+	ss << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	ss << ".json";
 
-		std::cout << "Expected free but occupied: " << std::count(result.begin(), result.end(), EXPECTED_FREE_BUT_OCCUPIED) << std::endl;
-		std::cout << "Expected occupied but free: " << std::count(result.begin(), result.end(), EXPECTED_OCCUPIED_BUT_FREE) << std::endl;
-		std::cout << "Correct free: " << std::count(result.begin(), result.end(), CORRECT_FREE) << std::endl;
-		std::cout << "Correct occupied: " << std::count(result.begin(), result.end(), CORRECT_OCCUPIED) << std::endl;
-	}
+	// Write the JSON to the output file
+	std::ofstream file(ss.str());
+	file << root;
+	file.close();
 
 	return 0;
 }

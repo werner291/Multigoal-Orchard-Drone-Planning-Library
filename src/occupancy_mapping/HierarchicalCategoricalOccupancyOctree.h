@@ -52,7 +52,7 @@ public:
      * @param query_point The point at which to query the octree for categorical data.
      * @return The categorical data (either UNSEEN, FREE, or OCCUPIED) at the given query point. See RegionType for more information.
     */
-	RegionType query_at(const Eigen::Vector3d &query_point) override;
+	RegionType query_at(const Eigen::Vector3d &query_point) const override;
 
 	/**
 	 * @using CategoricalOctree A typedef for an octree that stores categorical data (either UNSEEN, FREE, or OCCUPIED)

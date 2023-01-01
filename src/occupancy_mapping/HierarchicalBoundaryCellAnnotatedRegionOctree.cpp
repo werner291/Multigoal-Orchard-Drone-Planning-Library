@@ -124,7 +124,7 @@ void HierarchicalBoundaryCellAnnotatedRegionOctree::incorporate(const Eigen::Vec
 
 }
 
-OccupancyMap::RegionType HierarchicalBoundaryCellAnnotatedRegionOctree::query_at(const Eigen::Vector3d &query_point) {
+OccupancyMap::RegionType HierarchicalBoundaryCellAnnotatedRegionOctree::query_at(const Eigen::Vector3d &query_point) const {
 	const LeafData &data = tree.get_leaf_data_at(query_point);
 
 	assert(data.region != OCCUPIED); // We don't look at occupied cells yet.

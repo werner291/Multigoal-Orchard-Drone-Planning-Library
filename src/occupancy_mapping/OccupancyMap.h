@@ -101,7 +101,7 @@ public:
 	 * @param query_point 		The point at which to query the occupancy map.
 	 * @return 					The type of region at the given point.
 	 */
-	virtual RegionType query_at(const Eigen::Vector3d &query_point) = 0;
+	virtual RegionType query_at(const Eigen::Vector3d &query_point) const = 0;
 
 	/// Destructor.
 	virtual ~OccupancyMap() = default;
