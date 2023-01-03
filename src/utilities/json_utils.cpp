@@ -18,6 +18,7 @@
 #include "../LeavesCollisionChecker.h"
 #include "../ompl_custom.h"
 #include "json_utils.h"
+#include "math_utils.h"
 
 Json::Value jsonFromGzipFile(const std::string &path);
 
@@ -215,19 +216,19 @@ Json::Value vectorToJSON(const std::vector<T> v) {
 Json::Value toJSON(const ompl::base::ScopedStatePtr& state) {
     return vectorToJSON(state->reals());
 }
-
-Json::Value toJSON(const Sphere &sphere) {
-  Json::Value json;
-  json["center"] = toJSON(sphere.center);
-  json["radius"] = sphere.radius;
-  return json;
-}
-
-std::optional<Sphere> sphereFromJSON(const Json::Value &json) {
-  if (!json.isObject()) return std::nullopt;
-
-  Sphere sphere;
-  sphere.center = fromJsonVector3d(json["center"]);
-  sphere.radius = json["radius"].asDouble();
-  return sphere;
-}
+//
+//Json::Value toJSON(const Sphere &sphere) {
+//  Json::Value json;
+//  json["center"] = toJSON(sphere.center);
+//  json["radius"] = sphere.radius;
+//  return json;
+//}
+//
+//std::optional<Sphere> sphereFromJSON(const Json::Value &json) {
+//  if (!json.isObject()) return std::nullopt;
+//
+//  Sphere sphere;
+//  sphere.center = fromJsonVector3d(json["center"]);
+//  sphere.radius = json["radius"].asDouble();
+//  return sphere;
+//}

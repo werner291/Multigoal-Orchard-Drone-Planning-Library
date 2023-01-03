@@ -26,10 +26,7 @@
 #include "../CurrentPathState.h"
 #include "../TriangleAABB.h"
 #include "ScannedSurfaceTracker.h"
-#include "../exploration/SurfletVolume.h"
 #include "../utilities/shape_generation.h"
-#include "../occupancy_mapping/MinimumClearanceOctree.h"
-#include "../utilities/signed_distance_fields.h"
 
 /**
  * Build a MoveIt collision environment from the given workspace specification.
@@ -40,7 +37,6 @@
  */
 std::unique_ptr<collision_detection::CollisionEnvFCL>
 buildOrchardAndRobotFCLCollisionEnvironment(const WorkspaceSpec &spec);
-
 
 WorkspaceSpec buildWorkspaceSpec() {
 
@@ -54,144 +50,6 @@ WorkspaceSpec buildWorkspaceSpec() {
 
 	return std::move<WorkspaceSpec>({drone, initial_state, {{{{0.0, 0.0}, loadTreeMeshes("appletree")}}}});
 }
-
-SurfletVolume visibleVolumeFromPointCloud(const std::vector<Eigen::Vector3d> &points,
-										  const Eigen::Isometry3d &sensor_pose,
-										  double max_range) {
-
-	SurfletVolume volume1;
-
-	// For testing purposes, generate a simple circle around the sensor in the XY plane.
-
-	const size_t NUM_POINTS = 16;
-
-	for (size_t i = 0; i < NUM_POINTS; ++i) {
-
-		Eigen::Vector3d ray(cos(2.0 * M_PI * i / NUM_POINTS), sin(2.0 * M_PI * i / NUM_POINTS), 0.0);
-
-		SurfletVolume::Surflet s;
-		s.point = sensor_pose.translation() + ray * 0.5;
-		s.normal = ray;
-
-		volume1.add(s);
-	}
-
-	return volume1;
-
-	//
-	//	for (const auto &pt: spherifiedCubeVertices(3)) {
-	//		SurfletVolume::Surflet s;
-	//		s.point = pt * 0.5 + sensor_pose.translation();
-	//		s.normal = pt;
-	//		volume1.add(s);
-	//	}
-	//
-	//	return volume1;
-
-	struct PointWithDepth {
-		Eigen::Vector2d point;
-		double depth;
-	};
-
-	std::vector<PointWithDepth> points_with_depth;
-
-	for (const auto &point: points) {
-		Eigen::Vector3d point_in_sensor_frame = sensor_pose.inverse() * point;
-
-		points_with_depth.push_back({{point_in_sensor_frame.x() / point_in_sensor_frame.y(), // Y is the depth axis
-									  point_in_sensor_frame.z() / point_in_sensor_frame.y()},
-									 point_in_sensor_frame.y()});
-
-	}
-
-	Eigen::AlignedBox2d bounding_box;
-
-	for (const auto &point: points_with_depth) {
-		bounding_box.extend(point.point);
-	}
-
-	size_t grid_size = 10;
-
-	std::vector<double> depth_grid(grid_size * grid_size, std::numeric_limits<double>::infinity());
-
-	for (const auto &point: points_with_depth) {
-
-		Eigen::Vector2d grid_cell_size = (bounding_box.max() - bounding_box.min()) / ((double) grid_size - 1.0);
-
-		Eigen::Vector2d point_in_grid = (point.point - bounding_box.min()).cwiseQuotient(grid_cell_size);
-
-		size_t x = std::floor(point_in_grid.x());
-		size_t y = std::floor(point_in_grid.y());
-
-		assert(x < grid_size);
-		assert(y < grid_size);
-
-		depth_grid[x + y * grid_size] = std::min(depth_grid[x + y * grid_size], point.depth);
-	}
-
-	SurfletVolume volume;
-
-	for (size_t x = 0; x < grid_size; x++) {
-		for (size_t y = 0; y < grid_size; y++) {
-			if (depth_grid[x + y * grid_size] < max_range) {
-
-				Eigen::Vector3d point = sensor_pose * Eigen::Vector3d(bounding_box.min().x() + ((double) x) *
-																							   (bounding_box.max().x() -
-																								bounding_box.min()
-																										.x()) /
-																							   ((double) grid_size -
-																								1.0),
-																	  depth_grid[x + y * grid_size],
-																	  bounding_box.min().y() + ((double) y) *
-																							   (bounding_box.max().y() -
-																								bounding_box.min()
-																										.y()) /
-																							   ((double) grid_size -
-																								1.0));
-
-				Eigen::Vector3d normal = -(sensor_pose.translation() - point).normalized();
-
-				//				volume.add({point, normal});
-
-				if (x == 0 || x == grid_size - 1 || y == 0 || y == grid_size - 1) {
-
-					size_t pts = 5;//std::floor(depth_grid[x + y * grid_size] / 0.5);
-
-					for (size_t i = 1; i < pts; i++) {
-
-						double t = ((double) i) / ((double) pts - 1.0);
-
-						Eigen::Vector3d interpolated = sensor_pose.translation() * (1.0 - t) + point * t;
-
-						Eigen::Vector3d interpolated_normal;
-
-						if (x == 0) {
-							interpolated_normal = Eigen::Vector3d(-1.0, 0.0, 0.0);
-						} else if (x == grid_size - 1) {
-							interpolated_normal = Eigen::Vector3d(1.0, 0.0, 0.0);
-						} else if (y == 0) {
-							interpolated_normal = Eigen::Vector3d(0.0, 0.0, -1.0);
-						} else if (y == grid_size - 1) {
-							interpolated_normal = Eigen::Vector3d(0.0, 0.0, 1.0);
-						}
-
-						volume.add({interpolated, sensor_pose.rotation() * interpolated_normal});
-					}
-
-				}
-			}
-
-
-		}
-	}
-
-	// TODO Cap near the eye position
-
-	return volume;
-
-}
-
-
 
 int main(int, char *[]) {
 
@@ -250,9 +108,6 @@ int main(int, char *[]) {
 
 	auto log_file = open_new_logfile(workspaceSpec.orchard.trees[0].second.fruit_meshes.size());
 
-	MinimumClearanceOctree seen_space(Eigen::AlignedBox3d(Eigen::Vector3d(-5.0, -5.0, -5.0),
-														  Eigen::Vector3d(5.0, 5.0, 5.0)), 0.2);
-
 	size_t frames = 0;
 
 	VtkPointCloudVisualization seen_space_visualization({1.0, 0.0, 1.0});
@@ -282,32 +137,6 @@ int main(int, char *[]) {
 		auto points = apple_surface_lookup.segmentPointCloudData(sensor.renderSnapshot(eePose));
 
 		surface_scan_tracker.snapshot(eePose, points.target);
-
-		auto sdf = sdf::IsometrySdf(eePose, sdf::open_view_pyramid_local({0.5, 0.5})) +
-				   // Ground plane
-				   sdf::PlaneSdf{EigenExt::Plane3d(Eigen::Vector3d(0.0, 0.0, 1.0), 0.0)};// +
-		//				// Ceiling
-		//				sdf::PlaneSdf { EigenExt::Plane3d(Eigen::Vector3d(0.0, 0.0, -1.0), 5.0) } +
-		//				// Y+ wall
-		//				sdf::PlaneSdf { EigenExt::Plane3d(Eigen::Vector3d(0.0, 1.0, 0.0), -5.0) } +
-		//				// Y- wall
-		//				sdf::PlaneSdf { EigenExt::Plane3d(Eigen::Vector3d(0.0, -1.0, 0.0), 5.0) } +
-		//				// X+ wall
-		//				sdf::PlaneSdf { EigenExt::Plane3d(Eigen::Vector3d(1.0, 0.0, 0.0), -5.0) } +
-		//				// X- wall
-		//				sdf::PlaneSdf { EigenExt::Plane3d(Eigen::Vector3d(-1.0, 0.0, 0.0), 5.0) };
-
-		Eigen::Vector3d in_front = eePose * Eigen::Vector3d(0.4, 1.0, 0.0);
-		std::cout << "in_front: " << in_front.transpose() << " sd " << sdf(in_front).signed_distance << " normal "
-				  << sdf(in_front).normal->transpose() << std::endl;
-
-		seen_space.update([&](Eigen::Vector3d p) -> std::pair<double, Eigen::Vector3d> {
-			//			p.z() = eePose.translation().z();
-			auto sdf_value = sdf(p);
-			return {sdf_value.signed_distance, sdf_value.normal};
-		});
-
-		seen_space_visualization.updatePoints(implicitSurfacePoints(seen_space));
 
 		// Pass the point cloud to the motion-planning algorithm; it will probably respond by emitting a new path.
 		dbsa.update(currentPathState.getCurrentState(), points);
