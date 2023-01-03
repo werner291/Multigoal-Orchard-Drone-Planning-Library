@@ -9,7 +9,6 @@
 #include "HierarchicalCategoricalOccupancyOctree.h"
 #include "../utilities/Grid.h"
 #include "../utilities/math_utils.h"
-#include "math_utils.h"
 
 using CatOctree = HierarchicalCategoricalOccupancyOctree::CategoricalOctree;
 using LeafCell = CatOctree::LeafCell;
@@ -45,7 +44,7 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 	if (maxDepth == 0) {
 
 		// Get the leaf cell data from the variant.
-		auto &leaf_cell = std::get<LeafCell>(cell);
+		auto &leaf_cell = cell.get_leaf();
 
 		// If the center of the cell lies inside the region, the cell is currently visible to the robot's sensor.
 		if (center_inside_region && leaf_cell.data == OccupancyMap::UNSEEN) {
@@ -66,17 +65,17 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 			// Recursive case: split cell and recurse
 
 			// If not split, do so now.
-			if (auto *leaf_cell = std::get_if<LeafCell>(&cell)) {
+			if (auto *leaf_cell = std::get_if<LeafCell>(&cell.cell)) {
 
 				if (leaf_cell->data == OccupancyMap::FREE) {
 					// Full cell is free; this will not change, so we can early-return.
 					return;
 				}
 
-				cell = CatOctree::split_by_copy(*leaf_cell, std::monostate{});
+				cell.split_by_copy({});
 			}
 
-			auto &split_cell = std::get<SplitCell>(cell);
+			auto &split_cell = cell.get_split();
 
 			OctantIterator iter(box);
 			for (size_t octant_i = 0; octant_i < 8; ++octant_i) {
@@ -86,13 +85,13 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 
 			// If all the child cells have the same data, collapse the split cell back into a leaf cell
 			if (split_cell.has_uniform_leaves()) {
-				cell = std::get<LeafCell>(*split_cell.children->begin());
+				cell.merge_cell();
 			}
 
 		} else if (center_inside_region) {
 
 			// If the cell lies fully inside the region, it must be free.
-			cell = LeafCell{OccupancyMap::FREE};
+			cell.cell = LeafCell{OccupancyMap::FREE};
 
 		} else {
 			// Cell lies fully outside the region, so do nothing.
@@ -101,13 +100,15 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 	}
 }
 
-void HierarchicalCategoricalOccupancyOctree::incorporate(const Eigen::Vector3d &eye_center,
-														 const SegmentedPointCloud &pointCloud) {
+void HierarchicalCategoricalOccupancyOctree::incorporate(const SegmentedPointCloud &pointCloud,
+														 const Eigen::Isometry3d &eye_transform,
+														 double fovX,
+														 double fovY) {
 
 	for (const SegmentedPointCloud::Point &pt: pointCloud.points) {
 
 		// Create a line segment from the eye center to the point in the point cloud
-		math_utils::Segment3d segment{eye_center, pt.position};
+		math_utils::Segment3d segment{eye_transform.translation(), pt.position};
 
 		// Update the octree cells with the current point cloud data using the incorporate_internal() helper function
 		tree.traverse(maxDepth, [&](const Eigen::AlignedBox3d &box, LeafCell &leaf_cell) {
@@ -162,7 +163,7 @@ HierarchicalCategoricalOccupancyOctree::HierarchicalCategoricalOccupancyOctree(c
 								   Eigen::Vector3d(baseEdgeLength / 2, baseEdgeLength / 2, baseEdgeLength / 2));
 
 	// Initialize the root cell to be a leaf cell with the default value
-	tree.root = LeafCell{OccupancyMap::UNSEEN};
+	tree.root.cell = LeafCell{OccupancyMap::UNSEEN};
 
 
 }

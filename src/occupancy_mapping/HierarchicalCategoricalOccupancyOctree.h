@@ -29,12 +29,15 @@ public:
 	/**
      * @fn void incorporate(const Eigen::Vector3d &eye_center, const SegmentedPointCloud &pointCloud)
      * Incorporates a segmented point cloud into the octree, using the given eye center as a reference point.
-     * @param eye_center
+     * @param eye_transform
      * The center of the robot's sensor, used as a reference point for incorporating the point cloud.
      * @param pointCloud
      * The segmented point cloud to be incorporated into the octree.
      */
-	void incorporate(const Eigen::Vector3d &eye_center, const SegmentedPointCloud &pointCloud) override;
+	void incorporate(const SegmentedPointCloud &pointCloud,
+					 const Eigen::Isometry3d &eye_transform,
+					 double fovX,
+					 double fovY) override;
 
 	/**
      * @fn void incorporate(const RegionDefinitionFn &region_fn)

@@ -6,6 +6,7 @@
 #include <json/json.h>
 #include <fstream>
 #include <iostream>
+#include <chrono>
 
 #include "../utilities/math_utils.h"
 #include "../occupancy_mapping/OccupancyMap.h"
@@ -140,7 +141,6 @@ std::vector<Eigen::Vector3d> generateTestPoints(const Sphere &sphere, int n, dou
 	return points;
 }
 
-
 /**
  * Generate a vector of point/boolean pairs indicating whether each point lies within the union of all the spheres in the given vector
  *
@@ -153,20 +153,19 @@ std::vector<Eigen::Vector3d> generateTestPoints(const Sphere &sphere, int n, dou
 std::vector<std::pair<Eigen::Vector3d, bool>>
 generateTestPointsOnSpheres(const std::vector<Sphere> &spheres, int num_test_points, double max_distance) {
 
-	// Generate test points near the boundary surface of each sphere
-	return
-		// Generate test points for each sphere
-			spheres | ranges::views::transform([&](const Sphere &sphere) {
-				return generateTestPoints(sphere, num_test_points, max_distance);
-			})
-			// Flatten the vector of vectors into a single vector
-			| ranges::views::join
-			// Pair each up with a boolean
-			| ranges::views::transform([&](const Eigen::Vector3d &point) -> std::pair<Eigen::Vector3d, bool> {
-				return {point, pointInSpheres(point, spheres)};
-			})
-			// Convert the view to a std::vector
-			| ranges::to_vector;
+	std::vector<std::pair<Eigen::Vector3d, bool>> test_points;
+
+	for (const Sphere &sphere : spheres) {
+		// Generate test points within the margin around the boundary of the sphere
+		std::vector<Eigen::Vector3d> points = generateTestPoints(sphere, num_test_points, max_distance);
+
+		// Add the test points to the vector
+		for (const Eigen::Vector3d &point : points) {
+			test_points.emplace_back(point, pointInSpheres(point, spheres));
+		}
+	}
+
+	return test_points;
 }
 
 

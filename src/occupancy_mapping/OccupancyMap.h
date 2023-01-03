@@ -52,7 +52,7 @@ public:
 	 * Note: there is an order of priority: UNSEEN, then SEEN_FREE, then SEEN_OCCUPIED.
 	 */
 	enum RegionType {
-		UNSEEN, FREE, OCCUPIED
+		UNSEEN, FREE, OCCUPIED // TODO I think I'm thinking of this wrong; occupied volumes don't exist, since we can't see inside obstacles!
 	};
 
 	/**
@@ -76,10 +76,13 @@ public:
 	 *
 	 * Incorporate a segmented point cloud into the occupancy map.
 	 *
-	 * @param eye_center 		The center of the robot's sensor, used as a reference point for incorporating the point cloud.
+	 * @param eye_transform 		The center of the robot's sensor, used as a reference point for incorporating the point cloud.
 	 * @param pointCloud 		The segmented point cloud to be incorporated into the occupancy map.
 	 */
-	virtual void incorporate(const Eigen::Vector3d &eye_center, const SegmentedPointCloud &pointCloud) = 0;
+	virtual void incorporate(const SegmentedPointCloud &pointCloud,
+							 const Eigen::Isometry3d &eye_transform,
+							 double fovX,
+							 double fovY) = 0;
 
 	/**
 	 * @fn virtual void incorporate(const Eigen::Vector3d &eye_center, const RegionDefinitionFn &region_fn)

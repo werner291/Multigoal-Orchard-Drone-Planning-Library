@@ -198,6 +198,26 @@ namespace math_utils {
 	 */
 	double param_at_plane(const EigenExt::ParametrizedLine3d &p, size_t d, double value);
 
+	struct Segment3d {
+		Eigen::Vector3d start;
+		Eigen::Vector3d end;
+
+		Segment3d(const Eigen::Vector3d &start, const Eigen::Vector3d &end);
+
+		/**
+		 * Compute the point on the segment closest to the given point.
+		 *
+		 * @param p 	The point to compute the closest point to.
+		 * @return 		The point on the segment closest to p.
+		 */
+		[[nodiscard]] Eigen::Vector3d closest_point(const Eigen::Vector3d &p) const;
+
+		[[nodiscard]] Eigen::Vector3d displacement() const;
+
+		[[nodiscard]] Eigen::ParametrizedLine<double, 3> extended_line() const;
+
+	};
+
 	/**
 	 * @brief Check whether the given AABB fully contains the given line segment.
 	 */
@@ -237,25 +257,7 @@ namespace math_utils {
 											  const double sphere_radius,
 											  const Eigen::AlignedBox3d &aabb);
 
-	struct Segment3d {
-		Eigen::Vector3d start;
-		Eigen::Vector3d end;
 
-		Segment3d(const Eigen::Vector3d &start, const Eigen::Vector3d &end);
-
-		/**
-		 * Compute the point on the segment closest to the given point.
-		 *
-		 * @param p 	The point to compute the closest point to.
-		 * @return 		The point on the segment closest to p.
-		 */
-		[[nodiscard]] Eigen::Vector3d closest_point(const Eigen::Vector3d &p) const;
-
-		[[nodiscard]] Eigen::Vector3d displacement() const;
-
-		[[nodiscard]] Eigen::ParametrizedLine<double, 3> extended_line() const;
-
-	};
 
 	/**
 	 * Finds the point in the given list of points that is closest to the given point.
@@ -265,22 +267,7 @@ namespace math_utils {
 	 *
 	 * @return The point in the list that is closest to p.
 	 */
-	Eigen::Vector3d closest_point_in_list(std::initializer_list<Eigen::Vector3d> points, const Eigen::Vector3d &p) {
-
-		assert(points.begin() != points.end());
-
-		Eigen::Vector3d closest_point = *points.begin();
-		double min_distance = (closest_point - p).squaredNorm();
-		for (const auto &point: points) {
-			double distance = (point - p).squaredNorm();
-			if (distance < min_distance) {
-				min_distance = distance;
-				closest_point = point;
-			}
-		}
-
-		return closest_point;
-	}
+	Eigen::Vector3d closest_point_in_list(std::initializer_list<Eigen::Vector3d> points, const Eigen::Vector3d &p);
 
 	struct Ray3d {
 		Eigen::Vector3d origin;
@@ -320,6 +307,29 @@ namespace math_utils {
 	 * @return 				True if the ray intersects the AABB, false otherwise.
 	 */
 	bool intersects(const Eigen::AlignedBox3d &box, const Ray3d &ray3D);
+
+	struct ViewPyramidPlanes {
+		Eigen::Hyperplane<double, 3> left;
+		Eigen::Hyperplane<double, 3> right;
+		Eigen::Hyperplane<double, 3> top;
+		Eigen::Hyperplane<double, 3> bottom;
+	};
+
+	/**
+	 * @brief Computes the view pyramid planes for the given camera.
+	 * @param tf The camera transform.
+	 * @param fovX The horizontal field of view of the camera.
+	 * @param fovY The vertical field of view of the camera.
+	 */
+	ViewPyramidPlanes compute_view_pyramid_planes(const Eigen::Isometry3d &tf, double fovX, double fovY);
+
+	/**
+	 * @brief Test whether the given AABB intersects with a plane.
+	 * @param box 		The AABB to test for intersection with the plane.
+	 * @param plane 	The plane to test for intersection with the AABB.
+	 * @return 			True if the plane intersects the AABB, false otherwise.
+	 */
+	bool intersects(const Eigen::AlignedBox3d &box, const EigenExt::Plane3d &plane);
 }
 
 /**

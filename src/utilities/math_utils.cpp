@@ -427,3 +427,77 @@ bool math_utils::hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sph
 
 	return (face && (dmin <= square_radius) && (square_radius <= dmax));
 }
+
+math_utils::ViewPyramidPlanes
+math_utils::compute_view_pyramid_planes(const Eigen::Isometry3d &tf, double fovX, double fovY) {
+
+	double x_slope = tan(fovX / 2);
+	double y_slope = tan(fovY / 2);
+
+	Eigen::Vector3d top_left = tf * Eigen::Vector3d(-x_slope, 1.0, y_slope);
+	Eigen::Vector3d top_right = tf * Eigen::Vector3d(x_slope, 1.0, y_slope);
+	Eigen::Vector3d bottom_left = tf * Eigen::Vector3d(-x_slope, 1.0, -y_slope);
+	Eigen::Vector3d bottom_right = tf * Eigen::Vector3d(x_slope, 1.0, -y_slope);
+
+	// TODO test that the normals are consistent.
+	return {EigenExt::Plane3d::Through(top_left, bottom_left, tf.translation()),
+			EigenExt::Plane3d::Through(top_right, bottom_right, tf.translation()),
+			EigenExt::Plane3d::Through(top_left, top_right, tf.translation()),
+			EigenExt::Plane3d::Through(bottom_left, bottom_right, tf.translation())};
+
+
+}
+
+bool math_utils::intersects(const Eigen::AlignedBox3d &box, const Plane3d &plane) {
+
+	// Compute the corners of the AABB.
+	std::array<Eigen::Vector3d, 8> corners = {
+			box.corner(Eigen::AlignedBox3d::BottomLeftFloor),
+			box.corner(Eigen::AlignedBox3d::BottomRightFloor),
+			box.corner(Eigen::AlignedBox3d::TopLeftFloor),
+			box.corner(Eigen::AlignedBox3d::TopRightFloor),
+			box.corner(Eigen::AlignedBox3d::BottomLeftCeil),
+			box.corner(Eigen::AlignedBox3d::BottomRightCeil),
+			box.corner(Eigen::AlignedBox3d::TopLeftCeil),
+			box.corner(Eigen::AlignedBox3d::TopRightCeil)
+	};
+
+	// Then we check if we find both a positive and a negative signed distance to the plane.
+
+	bool positive = false;
+	bool negative = false;
+
+	for (const auto &corner: corners) {
+		double signed_distance = plane.signedDistance(corner);
+		if (signed_distance > 0) {
+			positive = true;
+		} else if (signed_distance < 0) {
+			negative = true;
+		}
+
+		if (positive && negative) {
+			return true;
+		}
+	}
+
+	return false;
+
+}
+
+Eigen::Vector3d
+math_utils::closest_point_in_list(std::initializer_list<Eigen::Vector3d> points, const Eigen::Vector3d &p) {
+
+	assert(points.begin() != points.end());
+
+	Eigen::Vector3d closest_point = *points.begin();
+	double min_distance = (closest_point - p).squaredNorm();
+	for (const auto &point: points) {
+		double distance = (point - p).squaredNorm();
+		if (distance < min_distance) {
+			min_distance = distance;
+			closest_point = point;
+		}
+	}
+
+	return closest_point;
+}

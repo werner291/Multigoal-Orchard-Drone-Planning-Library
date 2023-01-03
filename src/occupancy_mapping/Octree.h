@@ -99,9 +99,23 @@ public:
 		}
 
 		/**
+		 * Get the SplitCell of this cell.
+		 */
+		[[nodiscard]] const SplitCell &get_split() const {
+			return std::get<SplitCell>(cell);
+		}
+
+		/**
 		 * Get the LeafCell of this cell.
 		 */
 		[[nodiscard]] LeafCell &get_leaf() {
+			return std::get<LeafCell>(cell);
+		}
+
+		/**
+		 * Get the LeafCell of this cell.
+		 */
+		[[nodiscard]] const LeafCell &get_leaf() const {
 			return std::get<LeafCell>(cell);
 		}
 
@@ -131,13 +145,9 @@ public:
 		 * Merge a split cell, creating a leaf cell. Cell data will be a move of the data from the first child.
 		 * @return 	The data held by the split cell, by move.
 		 */
-		SplitData merge_cell() {
-			auto split = std::get<SplitCell>(cell);
-			auto first_leaf = std::get<LeafCell>(split.children[0].cell);
-
+		void merge_cell() {
+			auto first_leaf = std::get<LeafCell>((*std::get<SplitCell>(cell).children)[0].cell);
 			cell = LeafCell{.data = first_leaf.data};
-
-			return std::move(split.data);
 		}
 	};
 
@@ -160,7 +170,7 @@ public:
 			// Check if all children are leaf nodes.
 			return std::all_of(children->begin(),
 							   children->end(),
-							   [](const auto &child) { return std::holds_alternative<LeafCell>(child); });
+							   [](const auto &child) { return child.is_leaf(); });
 		}
 
 		/**
@@ -178,10 +188,10 @@ public:
 			}
 
 			// Check if all children have the same data as the first child.
-			const LeafData &first_data = std::get<LeafCell>(children->operator[](0)).data;
+			const LeafData &first_data = std::get<LeafCell>(children->operator[](0).cell).data;
 			return std::all_of(children->begin() + 1,
 							   children->end(),
-							   [&](const auto &child) { return std::get<LeafCell>(child).data == first_data; });
+							   [&](const auto &child) { return child.get_leaf().data == first_data; });
 		}
 
 	};
@@ -240,18 +250,19 @@ public:
 		Eigen::AlignedBox3d current_box = box;
 
 		// Iterate through the octree until we reach a leaf cell
-		while (auto *split_cell = std::get_if<SplitCell>(current_cell)) {
+		while (current_cell->is_split()) {
 
 			// If the current cell is a split cell, find the child octant that contains the query point
 			auto child_octant = math_utils::find_octant_containing_point(current_box, query_point);
 
 			// Update the current cell and bounding box to the child cell
-			current_cell = &(*split_cell->children)[child_octant.i];
+			current_cell = &(*current_cell->get_split().children)[child_octant.i];
 			current_box = *child_octant;
+
 		}
 
 		// If the current cell is a leaf cell, return the data
-		return std::get<LeafCell>(*current_cell).data;
+		return current_cell->get_leaf().data;
 	}
 
 private:
@@ -272,10 +283,10 @@ private:
 							const std::function<bool(const Eigen::AlignedBox3d &, LeafCell &)> &split_rule) {
 
 		// If the cell is a leaf cell, check if it should be split.
-		if (auto *leaf_cell = std::get_if<LeafCell>(&cell)) {
+		if (auto *leaf_cell = std::get_if<LeafCell>(&cell.cell)) {
 			if (max_depth != 0 && split_rule(box, *leaf_cell)) {
 				// If the cell should be split, split it and recurse on the children
-				cell = split_by_copy(*leaf_cell, SplitData{});
+				cell.split_by_copy({});
 			} else {
 				// If the cell should not be split, call the callback and return
 				at_highest_lod(box, *leaf_cell);
@@ -284,7 +295,7 @@ private:
 		}
 
 		// If we got here, the cell is a split cell. Recurse on the children.
-		SplitCell &split_cell = std::get<SplitCell>(cell);
+		SplitCell &split_cell = cell.get_split();
 		OctantIterator iter(box);
 		// Iterate over the 8 child cells
 		for (auto &child_cell: *split_cell.children) {
@@ -294,7 +305,7 @@ private:
 
 		// If all children are leaf cells with the same data, collapse the split cell into a leaf cell
 		if (split_cell.has_uniform_leaves()) {
-			cell = LeafCell{std::get<LeafCell>(split_cell.children->operator[](0)).data};
+			cell.cell = split_cell.children->operator[](0).get_leaf();
 		}
 	}
 
@@ -337,14 +348,14 @@ public:
 			cell_queue.pop_back();
 
 			// If the cell is a leaf cell, increment the leaf cell count.
-			if (std::holds_alternative<LeafCell>(*cell)) {
+			if (cell->is_leaf()) {
 				count.leaf_count++;
 			} else {
 				// If the cell is a split cell, increment the split cell count...
 				count.split_count++;
 
 				// ...and add the children to the queue.
-				const SplitCell &split_cell = std::get<SplitCell>(*cell);
+				const SplitCell &split_cell = std::get<SplitCell>(cell->cell);
 				for (const Cell &child_cell: *split_cell.children) {
 					cell_queue.push_back(&child_cell);
 				}
@@ -362,9 +373,12 @@ void Octree<SplitData, LeafData>::Cell::split_by_copy(SplitData data) {
 
 	const LeafData &leaf_data = std::get<LeafCell>(this->cell).data;
 
-	std::array<Cell, 8> children{Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}},
-								 Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}},
-								 Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}}};
+	std::array<Cell, 8> children{
+		Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}},
+		Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}},
+		Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}},
+		Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}}
+	};
 
 	SplitCell split_cell;
 	split_cell.data = std::move(data);

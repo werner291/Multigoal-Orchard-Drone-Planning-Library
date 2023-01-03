@@ -28,12 +28,15 @@ public:
 	/**
 	 * @brief Incorporate a segmented point cloud into the octree.
 	 *
-	 * @param eye_center The center of the eye used to view the point cloud.
+	 * @param eye_transform The center of the eye used to view the point cloud.
 	 * @param pointCloud The segmented point cloud to incorporate into the octree.
 	 *
 	 * Adds the points in the given point cloud to the octree, updating the region data as necessary.
 	 */
-	void incorporate(const Eigen::Vector3d &eye_center, const SegmentedPointCloud &pointCloud) override;
+	void incorporate(const SegmentedPointCloud &pointCloud,
+					 const Eigen::Isometry3d &eye_transform,
+					 double fovX,
+					 double fovY) override;
 
 	/**
 	 * @brief Incorporate a region defined by a function into the octree.
@@ -57,29 +60,47 @@ public:
 	RegionType query_at(const Eigen::Vector3d &query_point) const override;
 
 	/**
-	 * A leaf cell in the octree, labeled with a region, and optionally a plane that linearly approximates
-	 * the boundary region where the labeled region starts.
-	 *
-	 * By convention, the normal points AWAY from the labeled region.
+	 * A cell in the octree that is either fully seen or unseen.
 	 */
+	struct UniformCell {
+		bool seen;
+	};
+
+	/**
+	 * A cell in the octree that is partially seen, containing a linear approximation of the boundary
+	 * of the observed region.
+	 */
+	struct BoundaryCell {
+		// Linear approximation of the boundary of the observed region.
+		// By convention, the normal points into the seen region.
+		EigenExt::Plane3d plane;
+		bool hard;
+	};
+
 	struct LeafData {
+		std::variant<UniformCell, BoundaryCell> data;
 
-		/// The region type of the cell.
-		RegionType region = UNSEEN;
-
-		/**
-		 * The plane that linearly approximates the boundary of the labeled region.
-		 * If present, the cell is to be considered partially filled with the labeled region,
-		 * delimited by the plane; the normal points AWAY from the labeled region.
-		 */
-		std::optional<EigenExt::Plane3d> plane{};
-
-		/**
-		 * Equality operator for LeafData, true if the region and plane are exactly equal (beware of floating point errors!).
-		 */
-		bool operator==(const LeafData &other) const {
-			return region == other.region && plane->coeffs() == other.plane->coeffs();
+		UniformCell &get_uniform_cell() {
+			return std::get<UniformCell>(data);
 		}
+
+		const UniformCell &get_uniform_cell() const {
+			return std::get<UniformCell>(data);
+		}
+
+		BoundaryCell &get_boundary_cell() {
+			return std::get<BoundaryCell>(data);
+		}
+
+		const BoundaryCell &get_boundary_cell() const {
+			return std::get<BoundaryCell>(data);
+		}
+
+		void setFullySeen();
+
+		bool isUniform() const;
+
+		void updateBoundary(const EigenExt::Plane3d &plane, bool hard, const Eigen::Vector3d &cell_center);
 	};
 
 	/// The Octree type; SplitCells are not annotated (monostate), LeafCells are annotated with a LeafData.
