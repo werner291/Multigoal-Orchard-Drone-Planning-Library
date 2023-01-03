@@ -7,6 +7,7 @@
 //
 
 #include "HierarchicalBoundaryCellAnnotatedRegionOctree.h"
+#include "../utilities/math_utils.h"
 
 using PtOctree = HierarchicalBoundaryCellAnnotatedRegionOctree::PointAnnotatedOctree;
 using LeafCell = PtOctree::LeafCell;
@@ -22,6 +23,91 @@ HierarchicalBoundaryCellAnnotatedRegionOctree::HierarchicalBoundaryCellAnnotated
 	tree.box = Eigen::AlignedBox3d(center - Eigen::Vector3d(baseEdgeLength / 2, baseEdgeLength / 2, baseEdgeLength / 2),
 								   center +
 								   Eigen::Vector3d(baseEdgeLength / 2, baseEdgeLength / 2, baseEdgeLength / 2));
+
+}
+
+/**
+ * @brief Recursive function to incorporate a point cloud into the octree.
+ *
+ * @param box The bounding box of the current cell.
+ * @param cell The current cell to incorporate the point cloud into.
+ * @param occluding_points Vector of points to be incorporated; to be interpreted as rays from the eye_center
+ * @param maxDepth The maximum depth of the octree.
+ * @param eye_center The center of the eye.
+ */
+void incorporate_internal(const Eigen::AlignedBox3d &box,
+						  Cell &cell,
+						  std::vector<SegmentedPointCloud::Point> &occluding_points,
+						  const int maxDepth,
+						  const Eigen::Vector3d &eye_center) {
+
+	// If no rays touch the current cell, we can leave it unmodified since no new information is available.
+	if (occluding_points.empty()) {
+		return;
+	}
+
+	bool highest_lod = maxDepth == 0;
+
+	bool occluding_points_inside = std::any_of(occluding_points.begin(),
+											   occluding_points.end(),
+											   [&](const SegmentedPointCloud::Point &point) {
+												   return box.contains(point.position);
+											   });
+
+	// TODO: This call *should* be redundant, since we call it when recursing/
+	bool occluded_by_any_points = std::any_of(occluding_points.begin(),
+											  occluding_points.end(),
+											  [&](const SegmentedPointCloud::Point &point) {
+												  return math_utils::intersects(box,
+																				math_utils::Ray3d(eye_center,
+																								  point.position -
+																								  eye_center));
+											  });
+
+	assert(occluded_by_any_points);
+
+	bool should_be_split = !highest_lod && occluding_points_inside && occluded_by_any_points;
+
+	if (should_be_split && cell.is_leaf()) {
+		cell.split_by_copy({});
+	}
+
+	if (cell.is_split()) {
+		SplitCell &split_cell = cell.get_split();
+
+		OctantIterator octant_iterator(box);
+
+		for (size_t i = 0; i < 8; i++) {
+			Eigen::AlignedBox3d child_box = *(octant_iterator++);
+
+			// extract the points whose continued ray intersects the child's box
+			std::vector<SegmentedPointCloud::Point> child_occluding_points;
+
+			std::copy_if(occluding_points.begin(),
+						 occluding_points.end(),
+						 std::back_inserter(child_occluding_points),
+						 [&](const SegmentedPointCloud::Point &point) {
+							 // TODO Do I need to add a margin here?
+							 return math_utils::intersects(child_box,
+														   math_utils::Ray3d(eye_center, point.position - eye_center));
+						 });
+
+			// Recurse.
+			incorporate_internal(child_box, split_cell.children[i], child_occluding_points, maxDepth - 1, eye_center);
+		}
+	} else {
+
+		// We're in a leaf cell.
+
+		bool hard_points_inside = std::any_of(occluding_points.begin(),
+											  occluding_points.end(),
+											  [&](const SegmentedPointCloud::Point &point) {
+												  return box.contains(point.position) &&
+														 point.type == SegmentedPointCloud::PointType::PT_OBSTACLE;
+											  });
+
+
+	}
 
 }
 

@@ -9,6 +9,7 @@
 #include "HierarchicalCategoricalOccupancyOctree.h"
 #include "../utilities/Grid.h"
 #include "../utilities/math_utils.h"
+#include "math_utils.h"
 
 using CatOctree = HierarchicalCategoricalOccupancyOctree::CategoricalOctree;
 using LeafCell = CatOctree::LeafCell;
@@ -106,7 +107,7 @@ void HierarchicalCategoricalOccupancyOctree::incorporate(const Eigen::Vector3d &
 	for (const SegmentedPointCloud::Point &pt: pointCloud.points) {
 
 		// Create a line segment from the eye center to the point in the point cloud
-		Segment3d segment{eye_center, pt.position};
+		math_utils::Segment3d segment{eye_center, pt.position};
 
 		// Update the octree cells with the current point cloud data using the incorporate_internal() helper function
 		tree.traverse(maxDepth, [&](const Eigen::AlignedBox3d &box, LeafCell &leaf_cell) {

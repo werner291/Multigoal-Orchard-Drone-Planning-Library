@@ -52,8 +52,94 @@ public:
 	/// Forward declaration of SplitCell since we use it in the Cell variant.
 	struct SplitCell;
 
-	/// Cell, variant of either an internal cell (with children) or a leaf cell.
-	using Cell = std::variant<SplitCell, LeafCell>;
+	/**
+	 * A Cell; either a leaf cell or a split cell.
+	 */
+	struct Cell {
+
+		/// Underlying variant type; either a leaf cell or a split cell.
+		std::variant<SplitCell, LeafCell> cell;
+
+		explicit Cell(std::variant<SplitCell, LeafCell> cell) : cell(std::move(cell)) {
+		}
+
+		explicit Cell(SplitData split_data) : cell(SplitCell(std::move(split_data))) {
+		}
+
+		explicit Cell(LeafData leaf_data) : cell(LeafCell(std::move(leaf_data))) {
+		}
+
+		explicit Cell(SplitCell split_cell) : cell(std::move(split_cell)) {
+		}
+
+		explicit Cell(LeafCell leaf_cell) : cell(std::move(leaf_cell)) {
+		}
+
+		/**
+		 * Check if this cell is a split cell.
+		 * @return True if this cell is a split cell, false otherwise.
+		 */
+		[[nodiscard]] bool is_split() const {
+			return std::holds_alternative<SplitCell>(cell);
+		}
+
+		/**
+		 * Check if this cell is a leaf cell.
+		 * @return True if this cell is a leaf cell, false otherwise.
+		 */
+		[[nodiscard]] bool is_leaf() const {
+			return std::holds_alternative<LeafCell>(cell);
+		}
+
+		/**
+		 * Get the SplitCell of this cell.
+		 */
+		[[nodiscard]] SplitCell &get_split() {
+			return std::get<SplitCell>(cell);
+		}
+
+		/**
+		 * Get the LeafCell of this cell.
+		 */
+		[[nodiscard]] LeafCell &get_leaf() {
+			return std::get<LeafCell>(cell);
+		}
+
+		/**
+		 * Check whether this is a split cell and all of its children are leaf cells.
+		 * @return True if this is a split cell and all of its children are leaf cells, false otherwise.
+		 */
+		[[nodiscard]] bool is_split_with_all_leaves() const {
+			if (is_split()) {
+				SplitCell split_cell = std::get<SplitCell>(cell);
+				return std::all_of(split_cell.children.begin(), split_cell.children.end(), [](const Cell &child_cell) {
+					return child_cell.is_leaf();
+				});
+			}
+			return false;
+		}
+
+		/**
+		 * Split a leaf cell, creating 8 children and copying the data from the leaf cell into the children.
+		 * @param data 		The data to place into the split cell.
+		 *
+		 * Asserts that this cell is a leaf cell.
+		 */
+		void split_by_copy(SplitData data);
+
+		/**
+		 * Merge a split cell, creating a leaf cell. Cell data will be a move of the data from the first child.
+		 * @return 	The data held by the split cell, by move.
+		 */
+		SplitData merge_cell() {
+			auto split = std::get<SplitCell>(cell);
+			auto first_leaf = std::get<LeafCell>(split.children[0].cell);
+
+			cell = LeafCell{.data = first_leaf.data};
+
+			return std::move(split.data);
+		}
+	};
 
 	/// A cell with 8 children. Children cover an octant of the parent,
 	/// in the order defined by OctantIterator in math_utils.h
@@ -106,14 +192,14 @@ public:
 	/**
 	 * @brief Construct a new Octree object from a cell with possible subtree.
 	 */
-	explicit Octree(const Cell &root) : root(root) {
+	explicit Octree(Cell root) : root(std::move(root)) {
 	}
 
 	/**
 	 * @brief Construct a new Octree as a single leaf with the given data.
 	 * @param root_data 		The data to store at the root node.
 	 */
-	explicit Octree(const LeafData &root_data) : root(LeafCell{root_data}) {
+	explicit Octree(LeafData root_data) : root(std::move(LeafCell{root_data})) {
 	}
 
 	/**
@@ -133,6 +219,7 @@ public:
 		}
 		return split_cell;
 	}
+
 
 	/**
 	 * @brief Retrieve the leaf cell data at the given query point.
@@ -270,5 +357,20 @@ public:
 
 };
 
+template<typename SplitData, typename LeafData>
+void Octree<SplitData, LeafData>::Cell::split_by_copy(SplitData data) {
+
+	const LeafData &leaf_data = std::get<LeafCell>(this->cell).data;
+
+	std::array<Cell, 8> children{Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}},
+								 Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}},
+								 Cell{LeafCell{leaf_data}}, Cell{LeafCell{leaf_data}}};
+
+	SplitCell split_cell;
+	split_cell.data = std::move(data);
+	split_cell.children = std::make_unique<std::array<Cell, 8>>(std::move(children));
+
+	cell = {std::move(split_cell)};
+}
 
 #endif //NEW_PLANNERS_OCTREE_H

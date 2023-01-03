@@ -5,6 +5,8 @@
 #ifndef NEW_PLANNERS_MATH_UTILS_H
 #define NEW_PLANNERS_MATH_UTILS_H
 
+#include <random>
+#include <iostream>
 #include <utility>
 #include <Eigen/Geometry>
 #include <optional>
@@ -175,26 +177,6 @@ public:
 };
 
 
-struct Segment3d {
-	Eigen::Vector3d start;
-	Eigen::Vector3d end;
-
-	Segment3d(const Eigen::Vector3d &start, const Eigen::Vector3d &end);
-
-	/**
-	 * Compute the point on the segment closest to the given point.
-	 *
-	 * @param p 	The point to compute the closest point to.
-	 * @return 		The point on the segment closest to p.
-	 */
-	[[nodiscard]] Eigen::Vector3d closest_point(const Eigen::Vector3d &p) const;
-
-	[[nodiscard]] Eigen::Vector3d displacement() const;
-
-	[[nodiscard]] Eigen::ParametrizedLine<double, 3> extended_line() const;
-
-};
-
 namespace math_utils {
 
 	/**
@@ -243,29 +225,102 @@ namespace math_utils {
 	line_aabb_intersection_params(const Eigen::AlignedBox3d &box, const EigenExt::ParametrizedLine3d &segment);
 
 	/**
+	 * This function checks whether a hollow sphere intersects with a hollow axis-aligned bounding box (AABB).
+	 *
+	 * @param sphere_center The center point of the sphere.
+	 * @param sphere_radius The radius of the sphere.
+	 * @param aabb The AABB to check for intersection with the sphere.
+	 *
+	 * @return True if the sphere intersects with the AABB, false otherwise.
+	 */
+	bool hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sphere_center,
+											  const double sphere_radius,
+											  const Eigen::AlignedBox3d &aabb);
+
+	struct Segment3d {
+		Eigen::Vector3d start;
+		Eigen::Vector3d end;
+
+		Segment3d(const Eigen::Vector3d &start, const Eigen::Vector3d &end);
+
+		/**
+		 * Compute the point on the segment closest to the given point.
+		 *
+		 * @param p 	The point to compute the closest point to.
+		 * @return 		The point on the segment closest to p.
+		 */
+		[[nodiscard]] Eigen::Vector3d closest_point(const Eigen::Vector3d &p) const;
+
+		[[nodiscard]] Eigen::Vector3d displacement() const;
+
+		[[nodiscard]] Eigen::ParametrizedLine<double, 3> extended_line() const;
+
+	};
+
+	/**
+	 * Finds the point in the given list of points that is closest to the given point.
+	 *
+	 * @param points The list of points to search for the closest point.
+	 * @param p The point to find the closest point to.
+	 *
+	 * @return The point in the list that is closest to p.
+	 */
+	Eigen::Vector3d closest_point_in_list(std::initializer_list<Eigen::Vector3d> points, const Eigen::Vector3d &p) {
+
+		assert(points.begin() != points.end());
+
+		Eigen::Vector3d closest_point = *points.begin();
+		double min_distance = (closest_point - p).squaredNorm();
+		for (const auto &point: points) {
+			double distance = (point - p).squaredNorm();
+			if (distance < min_distance) {
+				min_distance = distance;
+				closest_point = point;
+			}
+		}
+
+		return closest_point;
+	}
+
+	struct Ray3d {
+		Eigen::Vector3d origin;
+		Eigen::Vector3d direction;
+
+		Ray3d(const Eigen::Vector3d &origin, const Eigen::Vector3d &direction);
+
+		/**
+		 * Compute the point on the ray closest to the given point.
+		 *
+		 * @param p 	The point to compute the closest point to.
+		 * @return 		The point on the ray closest to p.
+		 */
+		[[nodiscard]] Eigen::Vector3d closest_point(const Eigen::Vector3d &p) const;
+
+		/**
+		 * Extend to a ParametrizedLine3d.
+		 *
+		 * @return The extended line.
+		 */
+		[[nodiscard]] EigenExt::ParametrizedLine3d extended_line() const;
+	};
+
+	/**
 	  *	@brief Determines whether the given line segment intersects the given AABB.
 	  *	@param box The AABB to test for intersection with the line segment.
 	  *	@param segment The line segment to test for intersection with the AABB.
 	  *	@return True if the line segment intersects the AABB, false otherwise.
 	  */
 	bool segment_intersects_aabb(const Eigen::AlignedBox3d &box, const Segment3d &segment);
-}
-
-
-struct Ray3d {
-	Eigen::Vector3d origin;
-	Eigen::Vector3d direction;
-
-	Ray3d(const Eigen::Vector3d &origin, const Eigen::Vector3d &direction);
 
 	/**
-	 * Compute the point on the ray closest to the given point.
+	 * Return whether given ray intersects given AABB.
+	 * @param box 			The AABB to test for intersection with the ray.
+	 * @param ray3D 		The ray to test for intersection with the AABB.
 	 *
-	 * @param p 	The point to compute the closest point to.
-	 * @return 		The point on the ray closest to p.
+	 * @return 				True if the ray intersects the AABB, false otherwise.
 	 */
-	[[nodiscard]] Eigen::Vector3d closest_point(const Eigen::Vector3d &p) const;
-};
+	bool intersects(const Eigen::AlignedBox3d &box, const Ray3d &ray3D);
+}
 
 /**
  * Among a number of points, find the one closest to a given point.

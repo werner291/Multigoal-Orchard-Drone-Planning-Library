@@ -69,11 +69,11 @@ Eigen::Vector3d closest_point_on_triangle(const Eigen::Vector3d &p,
 		return va * barycentric[0] + vb * barycentric[1] + vc * barycentric[2];
 	} else {
 
-		Eigen::Vector3d pt_ab = Segment3d(va, vb).closest_point(p);
-		Eigen::Vector3d pt_bc = Segment3d(vb, vc).closest_point(p);
-		Eigen::Vector3d pt_ca = Segment3d(vc, va).closest_point(p);
+		Eigen::Vector3d pt_ab = math_utils::Segment3d(va, vb).closest_point(p);
+		Eigen::Vector3d pt_bc = math_utils::Segment3d(vb, vc).closest_point(p);
+		Eigen::Vector3d pt_ca = math_utils::Segment3d(vc, va).closest_point(p);
 
-		return closest_point_in_list({pt_ab, pt_bc, pt_ca}, p);
+		return math_utils::closest_point_in_list({pt_ab, pt_bc, pt_ca}, p);
 
 	}
 
@@ -94,10 +94,9 @@ Eigen::Vector3d closest_point_on_open_triangle(const Eigen::Vector3d &p, const O
 	if (barycentric[0] <= 1 && 0 <= barycentric[1] && 0 <= barycentric[2]) {
 		return triangle.apex * barycentric[0] + (triangle.apex + triangle.dir1) * barycentric[1] + (triangle.apex + triangle.dir2) * barycentric[2];
 	} else {
-		return closest_point_in_list({
-			Ray3d(triangle.apex, triangle.dir1).closest_point(p),
-			Ray3d(triangle.apex, triangle.dir2).closest_point(p),
-			}, p);
+		return math_utils::closest_point_in_list({math_utils::Ray3d(triangle.apex, triangle.dir1).closest_point(p),
+												  math_utils::Ray3d(triangle.apex, triangle.dir2).closest_point(p),},
+												 p);
 	}
 }
 
@@ -170,60 +169,6 @@ uniform_point_on_triangle(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, 
 	return (1 - r1) * p1 + r1 * (1 - r2) * p2 + r1 * r2 * p3;
 }
 
-bool hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sphere_center,
-										  const double sphere_radius,
-										  const Eigen::AlignedBox3d &aabb) {
-
-	// Check if the boundary of the sphere is within the total_box of the node.
-	// Algorithm from https://stackoverflow.com/a/41457896 (hollow sphere case)
-
-	double dmin = 0; // Distance from the sphere center to the closest point on the AABB
-	double dmax = 0; // Distance from the sphere center to the farthest point on the AABB
-	bool face = false;
-
-	double square_radius = std::pow(sphere_radius, 2);
-
-	for (int dim = 0; dim < 3; dim++) {
-		// Square distances between the sphere center and the extended planes of the AABB in this dimension
-		double a = std::pow(sphere_center[dim] - aabb.min()[dim], 2);
-		double b = std::pow(sphere_center[dim] - aabb.max()[dim], 2);
-
-		// std::max(a, b) would be the greatest squared distance from the sphere center to the extended planes of the AABB in this dimension
-		// So, we add this squared distance to the total, building up one component of the squared distance from the sphere center to the AABB
-		// in every iteration. ( x^2 + y^2 + z^2, where each term gets added in a different iteration )
-		dmax += std::max(a, b);
-
-
-		if (sphere_center[dim] < aabb.min()[dim]) {
-			face = true;
-			dmin += a;
-		} else if (sphere_center[dim] > aabb.max()[dim]) {
-			face = true;
-			dmin += b;
-		} else if (std::min(a, b) <= square_radius)
-			face = true;
-	}
-
-	return (face && (dmin <= square_radius) && (square_radius <= dmax));
-}
-
-Eigen::Vector3d closest_point_in_list(std::initializer_list<Eigen::Vector3d> points, const Eigen::Vector3d &p) {
-
-	assert(points.begin() != points.end());
-
-	Eigen::Vector3d closest_point = *points.begin();
-	double min_distance = (closest_point - p).squaredNorm();
-	for (const auto &point : points) {
-		double distance = (point - p).squaredNorm();
-		if (distance < min_distance) {
-			min_distance = distance;
-			closest_point = point;
-		}
-	}
-
-	return closest_point;
-}
-
 OctantIterator::OctantIterator(size_t i, const Eigen::AlignedBox3d &bounds) : i(i), total_box(bounds) {
 }
 
@@ -274,32 +219,37 @@ OctantIterator OctantIterator::operator++(int) {
 
 }
 
-Segment3d::Segment3d(const Eigen::Vector3d &start, const Eigen::Vector3d &end) : start(start), end(end) {
+math_utils::Segment3d::Segment3d(const Eigen::Vector3d &start, const Eigen::Vector3d &end) : start(start), end(end) {
 }
 
-Eigen::Vector3d Segment3d::closest_point(const Eigen::Vector3d &p) const {
+Eigen::Vector3d math_utils::Segment3d::closest_point(const Eigen::Vector3d &p) const {
 	Eigen::ParametrizedLine<double, 3> ab(start, end - start);
 	double t_ab = projectionParameter(ab, p);
 	t_ab = std::clamp(t_ab, 0.0, 1.0);
 	return ab.pointAt(t_ab);
 }
 
-Eigen::Vector3d Segment3d::displacement() const {
+Eigen::Vector3d math_utils::Segment3d::displacement() const {
 	return end - start;
 }
 
-Eigen::ParametrizedLine<double, 3> Segment3d::extended_line() const {
+Eigen::ParametrizedLine<double, 3> math_utils::Segment3d::extended_line() const {
 	return {start, displacement()};
 }
 
-Ray3d::Ray3d(const Eigen::Vector3d &origin, const Eigen::Vector3d &direction) : origin(origin), direction(direction) {
+math_utils::Ray3d::Ray3d(const Eigen::Vector3d &origin, const Eigen::Vector3d &direction)
+		: origin(origin), direction(direction) {
 }
 
-Eigen::Vector3d Ray3d::closest_point(const Eigen::Vector3d &p) const {
+Eigen::Vector3d math_utils::Ray3d::closest_point(const Eigen::Vector3d &p) const {
 	Eigen::ParametrizedLine<double, 3> ab(origin, direction);
 	double t_ab = projectionParameter(ab, p);
 	t_ab = std::max(t_ab, 0.0);
 	return ab.pointAt(t_ab);
+}
+
+EigenExt::ParametrizedLine3d math_utils::Ray3d::extended_line() const {
+	return EigenExt::ParametrizedLine3d(origin, direction);
 }
 
 double math_utils::param_at_plane(const EigenExt::ParametrizedLine3d &p, size_t d, double value) {
@@ -428,11 +378,52 @@ Json::Value toJSON(const Eigen::Isometry3d &isom) {
 
 Eigen::Isometry3d fromJsonIsometry3d(const Json::Value &json) {
 
-    Eigen::Isometry3d iso;
-    iso.setIdentity();
-    iso.translate(fromJsonVector3d(json["translation"]));
-    iso.rotate(fromJsonQuaternion3d(json["orientation"]));
-    return iso;
+	Eigen::Isometry3d iso;
+	iso.setIdentity();
+	iso.translate(fromJsonVector3d(json["translation"]));
+	iso.rotate(fromJsonQuaternion3d(json["orientation"]));
+	return iso;
 }
 
 #endif
+
+bool math_utils::intersects(const Eigen::AlignedBox3d &box, const Ray3d &ray3D) {
+	return line_aabb_intersection_params(box, ray3D.extended_line()) != std::nullopt;
+}
+
+bool math_utils::hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sphere_center,
+													  const double sphere_radius,
+													  const Eigen::AlignedBox3d &aabb) {
+
+	// Check if the boundary of the sphere is within the total_box of the node.
+	// Algorithm from https://stackoverflow.com/a/41457896 (hollow sphere case)
+
+	double dmin = 0; // Distance from the sphere center to the closest point on the AABB
+	double dmax = 0; // Distance from the sphere center to the farthest point on the AABB
+	bool face = false;
+
+	double square_radius = std::pow(sphere_radius, 2);
+
+	for (int dim = 0; dim < 3; dim++) {
+		// Square distances between the sphere center and the extended planes of the AABB in this dimension
+		double a = std::pow(sphere_center[dim] - aabb.min()[dim], 2);
+		double b = std::pow(sphere_center[dim] - aabb.max()[dim], 2);
+
+		// std::max(a, b) would be the greatest squared distance from the sphere center to the extended planes of the AABB in this dimension
+		// So, we add this squared distance to the total, building up one component of the squared distance from the sphere center to the AABB
+		// in every iteration. ( x^2 + y^2 + z^2, where each term gets added in a different iteration )
+		dmax += std::max(a, b);
+
+
+		if (sphere_center[dim] < aabb.min()[dim]) {
+			face = true;
+			dmin += a;
+		} else if (sphere_center[dim] > aabb.max()[dim]) {
+			face = true;
+			dmin += b;
+		} else if (std::min(a, b) <= square_radius)
+			face = true;
+	}
+
+	return (face && (dmin <= square_radius) && (square_radius <= dmax));
+}
