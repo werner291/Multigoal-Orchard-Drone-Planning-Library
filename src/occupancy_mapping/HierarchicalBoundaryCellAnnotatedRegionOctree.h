@@ -33,31 +33,10 @@ public:
 	 *
 	 * Adds the points in the given point cloud to the octree, updating the region data as necessary.
 	 */
-	void incorporate(const SegmentedPointCloud &pointCloud,
+	void incorporate(const std::vector<OccupancyMap::OccludingPoint> &occluding_points,
 					 const Eigen::Isometry3d &eye_transform,
 					 double fovX,
 					 double fovY) override;
-
-	/**
-	 * @brief Incorporate a region defined by a function into the octree.
-	 *
-	 * @param eye_center The center of the eye used to view the region.
-	 * @param region_fn A function that returns true for points that are within the region, false otherwise.
-	 *
-	 * Adds the points in the region defined by the given function to the octree, updating the region data as necessary.
-	 */
-	void incorporate(const Eigen::Vector3d &eye_center, const RegionDefinitionFn &region_fn) override;
-
-	/**
-	 * @brief Query the region at the given point in the octree.
-	 *
-	 * @param query_point The point to query the region for.
-	 *
-	 * @return The region at the given point in the octree.
-	 *
-	 * Causes assertion failure if the query point is not inside the tree's bounding box.
-	 */
-	RegionType query_at(const Eigen::Vector3d &query_point) const override;
 
 	/**
 	 * A cell in the octree that is either fully seen or unseen.
@@ -133,7 +112,6 @@ public:
 
 	/// Maximum depth of the octree.
 	const unsigned int max_depth;
-
 
 };
 

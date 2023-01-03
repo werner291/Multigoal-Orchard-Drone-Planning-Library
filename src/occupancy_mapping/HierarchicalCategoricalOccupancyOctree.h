@@ -25,6 +25,11 @@
 class HierarchicalCategoricalOccupancyOctree : public OccupancyMap {
 
 public:
+	enum RegionType {
+		UNSEEN,
+		FREE,
+		OCCUPIED
+	};
 
 	/**
      * @fn void incorporate(const Eigen::Vector3d &eye_center, const SegmentedPointCloud &pointCloud)
@@ -34,28 +39,10 @@ public:
      * @param pointCloud
      * The segmented point cloud to be incorporated into the octree.
      */
-	void incorporate(const SegmentedPointCloud &pointCloud,
+	void incorporate(const std::vector<OccupancyMap::OccludingPoint> &occluding_points,
 					 const Eigen::Isometry3d &eye_transform,
 					 double fovX,
 					 double fovY) override;
-
-	/**
-     * @fn void incorporate(const RegionDefinitionFn &region_fn)
-     * Incorporates a region defined by the given function into the octree. The function should return the closest point
-     * on any of the boundary surfaces that currently limit the robot's vision. The bounding surfaces are assumed to be
-     * star-shaped, centered on the robot's sensor center.
-     *
-     * @param region_fn The function defining the region to be incorporated into the octree.
-    */
-	void incorporate(const Eigen::Vector3d &eye_center, const RegionDefinitionFn &region_fn) override;
-
-	/**
-     * @fn RegionType query_at(const Eigen::Vector3d &query_point)
-     * Returns the categorical data (either UNSEEN, FREE, or OCCUPIED) at the given query point in the octree.
-     * @param query_point The point at which to query the octree for categorical data.
-     * @return The categorical data (either UNSEEN, FREE, or OCCUPIED) at the given query point. See RegionType for more information.
-    */
-	RegionType query_at(const Eigen::Vector3d &query_point) const override;
 
 	/**
 	 * @using CategoricalOctree A typedef for an octree that stores categorical data (either UNSEEN, FREE, or OCCUPIED)
@@ -68,7 +55,7 @@ public:
      * @var CategoricalOctree tree The underlying octree data structure for the HierarchicalCategoricalOccupancyOctree class. This octree stores categorical data (either UNSEEN, FREE, or OCCUPIED) at its leaf nodes.
      * @see HierarchicalCategoricalOccupancyOctree, CategoricalOctree, RegionType
      */
-	CategoricalOctree tree{OccupancyMap::RegionType::UNSEEN};
+	CategoricalOctree tree{RegionType::UNSEEN};
 
 	/**
 	 * Constructor.
@@ -82,8 +69,8 @@ public:
 	 * The smallest cell will have edge length baseEdgeLength / 2^maxDepth.
 	 */
 	HierarchicalCategoricalOccupancyOctree(const Eigen::Vector3d &center,
-										   const double baseEdgeLength,
-										   const int maxDepth);
+										   double baseEdgeLength,
+										   int maxDepth);
 
 	/// The maximum depth of the octree. The smallest cell will have edge length baseEdgeLength / 2^maxDepth.
 	const int maxDepth;
@@ -96,7 +83,9 @@ public:
 	/**
 	 * Return the underlying octree.
 	 */
-	const CategoricalOctree &getOctree() const;
+	[[nodiscard]] const CategoricalOctree &getOctree() const;
+
+	[[nodiscard]] RegionType query_at(const Eigen::Vector3d &query_point) const;
 };
 
 #endif //NEW_PLANNERS_HIERARCHICALCATEGORICALOCCUPANCYOCTREE_H

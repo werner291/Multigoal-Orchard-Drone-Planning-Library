@@ -14,7 +14,7 @@ using CatOctree = HierarchicalCategoricalOccupancyOctree::CategoricalOctree;
 using LeafCell = CatOctree::LeafCell;
 using SplitCell = CatOctree::SplitCell;
 using Cell = CatOctree::Cell;
-
+using RegionType = HierarchicalCategoricalOccupancyOctree::RegionType;
 
 /**
  *
@@ -47,14 +47,14 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 		auto &leaf_cell = cell.get_leaf();
 
 		// If the center of the cell lies inside the region, the cell is currently visible to the robot's sensor.
-		if (center_inside_region && leaf_cell.data == OccupancyMap::UNSEEN) {
-			leaf_cell.data = OccupancyMap::FREE;
+		if (center_inside_region && leaf_cell.data == RegionType::UNSEEN) {
+			leaf_cell.data = RegionType::FREE;
 		}
 
 		// If the boundary of the region may lie inside of the cell, and the boundary is a hard boundary,
 		// the cell is occupied by a hard obstacle.
 		if (boundary_may_lie_inside_cell && boundary_sample.boundary_type == OBSTRUCTING) {
-			leaf_cell.data = OccupancyMap::OCCUPIED;
+			leaf_cell.data = RegionType::OCCUPIED;
 		}
 
 	} else {
@@ -67,7 +67,7 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 			// If not split, do so now.
 			if (auto *leaf_cell = std::get_if<LeafCell>(&cell.cell)) {
 
-				if (leaf_cell->data == OccupancyMap::FREE) {
+				if (leaf_cell->data == RegionType::FREE) {
 					// Full cell is free; this will not change, so we can early-return.
 					return;
 				}
@@ -91,7 +91,7 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 		} else if (center_inside_region) {
 
 			// If the cell lies fully inside the region, it must be free.
-			cell.cell = LeafCell{OccupancyMap::FREE};
+			cell.cell = LeafCell{RegionType::FREE};
 
 		} else {
 			// Cell lies fully outside the region, so do nothing.
@@ -100,27 +100,29 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 	}
 }
 
-void HierarchicalCategoricalOccupancyOctree::incorporate(const SegmentedPointCloud &pointCloud,
+void HierarchicalCategoricalOccupancyOctree::incorporate(const std::vector<OccludingPoint> &occluding_points,
 														 const Eigen::Isometry3d &eye_transform,
 														 double fovX,
 														 double fovY) {
 
-	for (const SegmentedPointCloud::Point &pt: pointCloud.points) {
+	for (const auto& pt: occluding_points) {
 
 		// Create a line segment from the eye center to the point in the point cloud
-		math_utils::Segment3d segment{eye_transform.translation(), pt.position};
+		math_utils::Segment3d segment{eye_transform.translation(), pt.point};
 
 		// Update the octree cells with the current point cloud data using the incorporate_internal() helper function
 		tree.traverse(maxDepth, [&](const Eigen::AlignedBox3d &box, LeafCell &leaf_cell) {
+
 			// - Unseen cells are updated to free cells
-			if (leaf_cell.data == OccupancyMap::UNSEEN) {
-				leaf_cell.data = OccupancyMap::FREE;
+			if (leaf_cell.data == UNSEEN) {
+				leaf_cell.data = FREE;
 			}
 
 			// For hard obstacles, we set the cell to "occupied" instead
-			if (box.contains(segment.end) && pt.type == SegmentedPointCloud::PT_OBSTACLE) {
-				leaf_cell.data = OccupancyMap::OCCUPIED;
+			if (box.contains(segment.end) && pt.hard) {
+				leaf_cell.data = OCCUPIED;
 			}
+
 		}, [&](const Eigen::AlignedBox3d &box, LeafCell &leaf_cell) {
 			return math_utils::segment_intersects_aabb(box, segment);
 		});
@@ -128,28 +130,8 @@ void HierarchicalCategoricalOccupancyOctree::incorporate(const SegmentedPointClo
 
 }
 
-OccupancyMap::RegionType HierarchicalCategoricalOccupancyOctree::query_at(const Eigen::Vector3d &query_point) const {
+HierarchicalCategoricalOccupancyOctree::RegionType HierarchicalCategoricalOccupancyOctree::query_at(const Eigen::Vector3d &query_point) const {
 	return tree.get_leaf_data_at(query_point);
-}
-
-
-void HierarchicalCategoricalOccupancyOctree::incorporate(const Eigen::Vector3d &eye_center,
-														 const RegionDefinitionFn &region_fn) {
-
-	tree.traverse(maxDepth, [&](const Eigen::AlignedBox3d &box, LeafCell &leaf_cell) {
-
-		// Split a cell if the boundary of the region may lie inside of it.
-		BoundarySample boundary_sample = region_fn(box.center());
-
-		double eye_sample_distance = (eye_center - boundary_sample.surface_point).norm();
-		double center_eye_distance = (box.center() - eye_center).norm();
-
-		if (center_eye_distance < eye_sample_distance) {
-			leaf_cell.data = OccupancyMap::FREE;
-		}
-
-	}, SplitIfBoundaryMaybeInsideCell<LeafCell>{eye_center, region_fn});
-
 }
 
 HierarchicalCategoricalOccupancyOctree::HierarchicalCategoricalOccupancyOctree(const Eigen::Vector3d &center,
@@ -163,7 +145,7 @@ HierarchicalCategoricalOccupancyOctree::HierarchicalCategoricalOccupancyOctree(c
 								   Eigen::Vector3d(baseEdgeLength / 2, baseEdgeLength / 2, baseEdgeLength / 2));
 
 	// Initialize the root cell to be a leaf cell with the default value
-	tree.root.cell = LeafCell{OccupancyMap::UNSEEN};
+	tree.root.cell = LeafCell{UNSEEN};
 
 
 }

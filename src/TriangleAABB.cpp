@@ -115,6 +115,9 @@ SegmentedPointCloud::ByType PointSegmenter::segmentPointCloudData(vtkPolyData *p
 				// Same for soft obstacles
 				segmented_points.soft_obstacle.push_back(point.position);
 				break;
+			default:
+				// Ignore all other points
+				break;
 		}
 
 	}

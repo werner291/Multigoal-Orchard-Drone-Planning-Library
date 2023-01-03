@@ -27,6 +27,8 @@ find_package(shape_msgs REQUIRED)
 
 add_compile_definitions(JSON_FUNCTIONS ON)
 
+add_compile_definitions(MYSOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}")
+
 include_directories(
         ${EIGEN3_INCLUDE_DIRS}
         ${FCL_INCLUDE_DIRS}
@@ -69,6 +71,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
 #SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
+add_library(occupancy_maps
+        src/occupancy_mapping/Octree.h
+        src/occupancy_mapping/Octree.cpp
+        src/occupancy_mapping/VisibilityBoundary.h
+        src/occupancy_mapping/OccupancyMap.h
+        src/occupancy_mapping/OccupancyMap.cpp
+        src/occupancy_mapping/HierarchicalCategoricalOccupancyOctree.h
+        src/occupancy_mapping/HierarchicalCategoricalOccupancyOctree.cpp
+        src/occupancy_mapping/HierarchicalBoundaryCellAnnotatedRegionOctree.h
+        src/occupancy_mapping/HierarchicalBoundaryCellAnnotatedRegionOctree.cpp
+        )
+
 add_library(${PROJECT_NAME}_shared
         src/BulletContinuousMotionValidator.cpp
         src/BulletContinuousMotionValidator.h
@@ -85,6 +99,7 @@ add_library(${PROJECT_NAME}_shared
         src/DroneStateSampler.h
         src/EndEffectorOnShellGoal.cpp
         src/EndEffectorOnShellGoal.h
+        src/utilities/math_utils.h src/utilities/math_utils.cpp
         src/ExperimentVisualTools.cpp
         src/ExperimentVisualTools.h
         src/GreatCircleMetric.cpp
@@ -222,7 +237,7 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/shape_generation.cpp
         src/utilities/shape_generation.h)
 
-target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
+link_libraries(occupancy_maps)
 
 set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "rclcpp" "ompl")
 
