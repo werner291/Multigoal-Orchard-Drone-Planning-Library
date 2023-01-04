@@ -141,6 +141,8 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 			leaf_cell.data.setFullySeen();
 		}
 
+		// TODO This "closest point" stuff might not work; we'll want to do some kind of normal estimation instead.
+
 //		std::optional<OccupancyMap::OccludingPoint> closest_point;
 //
 //		// Find the closest occluding point to the box center.
