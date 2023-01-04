@@ -10,6 +10,7 @@
 #include <utility>
 #include <Eigen/Geometry>
 #include <optional>
+#include <variant>
 #include "EigenExt.h"
 
 /**
@@ -125,12 +126,12 @@ Eigen::Vector3d
 uniform_point_on_triangle(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, const Eigen::Vector3d &p3);
 
 /**
- * Returns whether there exists an intersection between the given sphere and AABB.
+ * Returns whether there exists an find_intersection between the given sphere and AABB.
  *
  * @param sphere_center 		The center of the sphere.
  * @param sphere_radius 		The radius of the sphere.
  * @param aabb 					The AABB.
- * @return 						True if there exists an intersection, false otherwise.
+ * @return 						True if there exists an find_intersection, false otherwise.
  */
 bool hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sphere_center,
 										  double sphere_radius,
@@ -233,13 +234,13 @@ namespace math_utils {
 	bool point_closer_to_center_than_edge(const Eigen::Vector3d &point, const Eigen::AlignedBox3d &box);
 
 	/**
- 	 * @brief Computes the intersection parameters of the given line segment with the given AABB.
+ 	 * @brief Computes the find_intersection parameters of the given line segment with the given AABB.
      * If the line segment intersects the AABB, returns the parameters at which the line intersects
      * the minimum and maximum corner of the AABB. If the line segment does not intersect the AABB,
      * returns an empty optional.
      * @param box The AABB to intersect with the line segment.
      * @param segment The line segment to intersect with the AABB.
-     * @return The intersection parameters of the line segment with the AABB, or an empty optional if no intersection.
+     * @return The find_intersection parameters of the line segment with the AABB, or an empty optional if no find_intersection.
      */
 	std::optional<std::array<double, 2>>
 	line_aabb_intersection_params(const Eigen::AlignedBox3d &box, const EigenExt::ParametrizedLine3d &segment);
@@ -249,7 +250,7 @@ namespace math_utils {
 	 *
 	 * @param sphere_center The center point of the sphere.
 	 * @param sphere_radius The radius of the sphere.
-	 * @param aabb The AABB to check for intersection with the sphere.
+	 * @param aabb The AABB to check for find_intersection with the sphere.
 	 *
 	 * @return True if the sphere intersects with the AABB, false otherwise.
 	 */
@@ -293,16 +294,35 @@ namespace math_utils {
 
 	/**
 	  *	@brief Determines whether the given line segment intersects the given AABB.
-	  *	@param box The AABB to test for intersection with the line segment.
-	  *	@param segment The line segment to test for intersection with the AABB.
+	  *	@param box The AABB to test for find_intersection with the line segment.
+	  *	@param segment The line segment to test for find_intersection with the AABB.
 	  *	@return True if the line segment intersects the AABB, false otherwise.
 	  */
 	bool segment_intersects_aabb(const Eigen::AlignedBox3d &box, const Segment3d &segment);
 
 	/**
+	 * @brief Return the find_intersection of the given line with the given plane.
+	 * @param segment The line to intersect with the plane.
+	 * @param plane The plane to intersect with the line segment.
+	 * @return Variant of either nothing, the find_intersection point (as a parameter), or the line segment if the line segment is coplanar with the plane.
+	 */
+	std::variant<std::monostate, double, Eigen::ParametrizedLine<double, 3>> find_intersection(
+			const EigenExt::ParametrizedLine3d &segment, const Eigen::Hyperplane<double, 3> &plane);
+
+
+	/**
+	 * @brief Return the find_intersection of the given line segment with the given plane.
+	 * @param segment The line segment to intersect with the plane.
+	 * @param plane The plane to intersect with the line segment.
+	 * @return Variant of either nothing, the find_intersection point, or the line segment if the line segment is coplanar with the plane.
+	 */
+	std::variant<std::monostate, Eigen::Vector3d, Segment3d>
+	find_intersection(const Segment3d &segment, const Eigen::Hyperplane<double, 3> &plane);
+
+	/**
 	 * Return whether given ray intersects given AABB.
-	 * @param box 			The AABB to test for intersection with the ray.
-	 * @param ray3D 		The ray to test for intersection with the AABB.
+	 * @param box 			The AABB to test for find_intersection with the ray.
+	 * @param ray3D 		The ray to test for find_intersection with the AABB.
 	 *
 	 * @return 				True if the ray intersects the AABB, false otherwise.
 	 */
@@ -325,11 +345,35 @@ namespace math_utils {
 
 	/**
 	 * @brief Test whether the given AABB intersects with a plane.
-	 * @param box 		The AABB to test for intersection with the plane.
-	 * @param plane 	The plane to test for intersection with the AABB.
+	 * @param box 		The AABB to test for find_intersection with the plane.
+	 * @param plane 	The plane to test for find_intersection with the AABB.
 	 * @return 			True if the plane intersects the AABB, false otherwise.
 	 */
 	bool intersects(const Eigen::AlignedBox3d &box, const EigenExt::Plane3d &plane);
+
+	struct Triangle3d {
+		Eigen::Vector3d a;
+		Eigen::Vector3d b;
+		Eigen::Vector3d c;
+	};
+
+	struct Quad3d {
+		Eigen::Vector3d a;
+		Eigen::Vector3d b;
+		Eigen::Vector3d c;
+		Eigen::Vector3d d;
+	};
+
+	std::array<Segment3d, 12> aabb_edges(const Eigen::AlignedBox3d &box);
+
+	/**
+		 * Return the find_intersection of a plane and an AABB, as the section of the plane inside of the AABB.
+		 *
+		 * @param box 			The AABB to intersect with the plane.
+		 * @param plane 		The plane to intersect with the AABB.
+		 * @return 				The find_intersection of the plane and the AABB, as a variant of either nothing, a triangle or a quad.
+		 */
+	std::variant<std::monostate, Triangle3d, Quad3d> find_intersection(const Eigen::AlignedBox3d &box, const EigenExt::Plane3d &plane);
 }
 
 /**
@@ -391,6 +435,8 @@ Json::Value toJSON(const Eigen::Isometry3d &isom);
  * @return Eigen::Isometry3d
  */
 Eigen::Isometry3d fromJsonIsometry3d(const Json::Value &json);
+
+
 
 #endif
 

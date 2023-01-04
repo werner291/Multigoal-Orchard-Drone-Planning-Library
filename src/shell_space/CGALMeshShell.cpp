@@ -58,7 +58,7 @@ struct PathVisitor {
 	/**
 	 * Called when the path leaves a face through a half-edge.
 	 * @param edge 		The half-edge for leaving the face (NOT the opposite half-edge where we enter the face!)
-	 * @param t 		Interpolation value between the two vertices of the half-edge where the intersection occurs.
+	 * @param t 		Interpolation value between the two vertices of the half-edge where the find_intersection occurs.
 	 */
 	void operator()(Surface_mesh_shortest_path::halfedge_descriptor edge, Surface_mesh_shortest_path::FT t)
 	{

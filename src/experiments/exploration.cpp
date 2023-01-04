@@ -39,6 +39,8 @@
 std::unique_ptr<collision_detection::CollisionEnvFCL>
 buildOrchardAndRobotFCLCollisionEnvironment(const WorkspaceSpec &spec);
 
+std::vector<OccupancyMap::OccludingPoint> extractOccludingPoints(SegmentedPointCloud::ByType &points);
+
 WorkspaceSpec buildWorkspaceSpec() {
 
 	auto drone = loadRobotModel(1.0);
@@ -50,6 +52,23 @@ WorkspaceSpec buildWorkspaceSpec() {
 	initial_state.update(true);
 
 	return std::move<WorkspaceSpec>({drone, initial_state, {{{{0.0, 0.0}, loadTreeMeshes("appletree")}}}});
+}
+
+/**
+ * Distill a set of OccludingPoint from a SegmentedPointCloud, dropping unnecessary information.
+ *
+ * @param points 		The SegmentedPointCloud to extract OccludingPoints from.
+ * @return 				The extracted OccludingPoints.
+ */
+std::vector<OccupancyMap::OccludingPoint> extractOccludingPoints(SegmentedPointCloud::ByType &points) {// Concat the hard and soft obstacles into a single vector where each point is flagged.
+	std::vector<OccupancyMap::OccludingPoint> occluding_points;
+	for (auto &p : points.obstacle) {
+		occluding_points.push_back({p, true});
+	}
+	for (auto &p : points.soft_obstacle) {
+		occluding_points.push_back({p, false});
+	}
+	return occluding_points;
 }
 
 int main(int, char *[]) {
@@ -111,7 +130,7 @@ int main(int, char *[]) {
 
 	size_t frames = 0;
 
-	VtkPointCloudVisualization seen_space_visualization({1.0, 0.0, 1.0});
+	HierarchicalBoundaryCellAnnotatedRegionOctreeVtk seen_space_visualization;
 
 	viewer.addActor(seen_space_visualization.getActor());
 
@@ -139,16 +158,9 @@ int main(int, char *[]) {
 		// Render the point cloud visible to the robot's camera.
 		auto points = apple_surface_lookup.segmentPointCloudData(sensor.renderSnapshot(eePose));
 
-		// Concat the hard and soft obstacles into a single vector where each point is flagged.
-		std::vector<OccupancyMap::OccludingPoint> occluding_points;
-		for (auto &p : points.obstacle) {
-			occluding_points.push_back({p, true});
-		}
-		for (auto &p : points.soft_obstacle) {
-			occluding_points.push_back({p, false});
-		}
+		occupancy_map.incorporate(extractOccludingPoints(points), eePose, M_PI / 2.0, M_PI / 2.0); // Correct these, or perhaps derive them from the point cloud
 
-		occupancy_map.incorporate(occluding_points, eePose, M_PI/2.0, M_PI/2.0); // Correct these, or perhaps derive them from the point cloud
+		seen_space_visualization.updateTree(occupancy_map);
 
 		surface_scan_tracker.snapshot(eePose, points.target);
 
@@ -177,6 +189,8 @@ int main(int, char *[]) {
 
 	return EXIT_SUCCESS;
 }
+
+
 
 std::unique_ptr<collision_detection::CollisionEnvFCL>
 buildOrchardAndRobotFCLCollisionEnvironment(const WorkspaceSpec &workspaceSpec) {

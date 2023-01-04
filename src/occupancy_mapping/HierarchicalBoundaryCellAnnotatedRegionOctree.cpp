@@ -8,8 +8,8 @@
 
 #include <range/v3/view/filter.hpp>
 #include <range/v3/range/conversion.hpp>
-#include "HierarchicalBoundaryCellAnnotatedRegionOctree.h"
 #include "../utilities/math_utils.h"
+#include "HierarchicalBoundaryCellAnnotatedRegionOctree.h"
 
 using PtOctree = HierarchicalBoundaryCellAnnotatedRegionOctree::PointAnnotatedOctree;
 using LeafCell = PtOctree::LeafCell;
@@ -199,4 +199,8 @@ void HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData::updateBoundary(con
 
 
 
+}
+
+bool HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData::isBoundary() const {
+	return std::holds_alternative<BoundaryCell>(data);
 }

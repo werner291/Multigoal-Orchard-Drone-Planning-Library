@@ -299,7 +299,7 @@ ConvexHullPoint CuttingPlaneConvexHullShell::firstStep(const Eigen::Vector3d &to
 			}
 		}
 
-		throw std::runtime_error("No corner on the cutting plane. Is there an intersection at all?");
+		throw std::runtime_error("No corner on the cutting plane. Is there an find_intersection at all?");
 	}
 
 
@@ -416,7 +416,7 @@ ConvexHullPoint CuttingPlaneConvexHullShell::nextStep(const ConvexHullPoint &cur
 		}
 	}
 
-	throw std::runtime_error("Could not find an exit point. There may not be an intersection?");
+	throw std::runtime_error("Could not find an exit point. There may not be an find_intersection?");
 }
 
 std::array<Eigen::Vector3d, 2> CuttingPlaneConvexHullShell::facet_edge_vertices(size_t face_i, TriangleEdgeId edge_id) const {

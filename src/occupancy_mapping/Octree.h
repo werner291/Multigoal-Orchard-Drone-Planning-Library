@@ -365,6 +365,69 @@ public:
 		return count;
 	}
 
+	struct DepthFirstIterator {
+		struct CellVisit {
+			const Cell *cell;
+			Eigen::AlignedBox3d box;
+		};
+
+		std::vector<CellVisit> stack;
+
+		bool operator==(const DepthFirstIterator &other) const {
+			return stack == other.stack;
+		}
+
+		bool operator!=(const DepthFirstIterator &other) const {
+			return !(*this == other);
+		}
+
+		DepthFirstIterator operator++() {
+			// Pop the current cell off the stack
+			stack.pop_back();
+
+			// If the stack is empty, we're done
+			if (stack.empty()) {
+				return *this;
+			}
+
+			// Get the current cell and bounding box
+			const Cell *cell = stack.back().cell;
+			const Eigen::AlignedBox3d &box = stack.back().box;
+
+			// If the current cell is a leaf cell, we're done
+			if (cell->is_leaf()) {
+				return *this;
+			}
+
+			// If the current cell is a split cell, push the children onto the stack
+			const SplitCell &split_cell = cell->get_split();
+			OctantIterator octant_iterator(box);
+			for (const Cell &child_cell: *split_cell.children) {
+				stack.push_back({&child_cell, *octant_iterator++});
+			}
+
+			return *this;
+		}
+
+		[[nodiscard]] const CellVisit& operator*() const {
+			return stack.back();
+		}
+
+		[[nodiscard]] const CellVisit* operator->() const {
+			return &stack.back();
+		}
+
+		bool is_end() const {
+			return stack.empty();
+		}
+
+	};
+
+	DepthFirstIterator depth_first_begin() const {
+		return DepthFirstIterator {
+			.stack = {{&root, box}}
+		};
+	}
 
 };
 

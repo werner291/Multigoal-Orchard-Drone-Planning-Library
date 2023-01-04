@@ -3,6 +3,7 @@
 #include <iostream>
 #include <random>
 
+
 std::pair<double, double>
 closest_point_on_line(const Eigen::ParametrizedLine<double, 3> &l1,
 					  const Eigen::ParametrizedLine<double, 3> &l2) {
@@ -500,4 +501,104 @@ math_utils::closest_point_in_list(std::initializer_list<Eigen::Vector3d> points,
 	}
 
 	return closest_point;
+}
+
+std::variant<std::monostate, double, Eigen::ParametrizedLine<double, 3>> math_utils::find_intersection(
+		const EigenExt::ParametrizedLine3d &segment, const Eigen::Hyperplane<double, 3> &plane) {
+
+	// Check if the line is parallel to the plane.
+	if (std::abs(segment.direction().dot(plane.normal())) < 1e-6) {
+		// Check if the line is coplanar with the plane.
+		if (std::abs(segment.origin().dot(plane.normal()) - plane.offset()) < 1e-6) {
+			// The line is coplanar with the plane.
+			return segment;
+		} else {
+			// The line is parallel to the plane, but not coplanar.
+			return std::monostate();
+		}
+	} else {
+		// The line is not parallel to the plane.
+		const double t = (plane.offset() - plane.normal().dot(segment.origin())) / plane.normal().dot(segment.direction());
+		return t;
+	}
+
+}
+
+std::variant<std::monostate, Eigen::Vector3d, math_utils::Segment3d>
+math_utils::find_intersection(const math_utils::Segment3d &segment, const Eigen::Hyperplane<double, 3> &plane) {
+
+	const Eigen::ParametrizedLine<double, 3> &parametrizedLine = segment.extended_line();
+	const auto isect = find_intersection(parametrizedLine, plane);
+
+	if (std::holds_alternative<std::monostate>(isect)) {
+		// The line is parallel to the plane.
+		return std::monostate();
+	} else if (std::holds_alternative<Eigen::ParametrizedLine<double, 3>>(isect)) {
+		// The line is coplanar with the plane.
+		return segment;
+	} else {
+		// The line is not parallel to the plane.
+		const double t = std::get<double>(isect);
+		if (t >= 0 && t <= 1) {
+			// The intersection point is on the line segment.
+			return parametrizedLine.pointAt(t);
+		} else {
+			// The intersection point is not on the line segment.
+			return std::monostate();
+		}
+	}
+
+
+
+}
+
+std::array<math_utils::Segment3d, 12> math_utils::aabb_edges(const Eigen::AlignedBox3d &box) {
+	std::array<Segment3d, 12> edges {
+			Segment3d(box.corner(Eigen::AlignedBox3d::BottomLeftFloor), box.corner(Eigen::AlignedBox3d::BottomRightFloor)),
+			Segment3d(box.corner(Eigen::AlignedBox3d::BottomRightFloor), box.corner(Eigen::AlignedBox3d::TopRightFloor)),
+			Segment3d(box.corner(Eigen::AlignedBox3d::TopRightFloor), box.corner(Eigen::AlignedBox3d::TopLeftFloor)),
+			Segment3d(box.corner(Eigen::AlignedBox3d::TopLeftFloor), box.corner(Eigen::AlignedBox3d::BottomLeftFloor)),
+			Segment3d(box.corner(Eigen::AlignedBox3d::BottomLeftCeil), box.corner(Eigen::AlignedBox3d::BottomRightCeil)),
+			Segment3d(box.corner(Eigen::AlignedBox3d::BottomRightCeil), box.corner(Eigen::AlignedBox3d::TopRightCeil)),
+			Segment3d(box.corner(Eigen::AlignedBox3d::TopRightCeil), box.corner(Eigen::AlignedBox3d::TopLeftCeil)),
+			Segment3d(box.corner(Eigen::AlignedBox3d::TopLeftCeil), box.corner(Eigen::AlignedBox3d::BottomLeftCeil)),
+			Segment3d(box.corner(Eigen::AlignedBox3d::BottomLeftFloor), box.corner(Eigen::AlignedBox3d::BottomLeftCeil)),
+			Segment3d(box.corner(Eigen::AlignedBox3d::BottomRightFloor), box.corner(Eigen::AlignedBox3d::BottomRightCeil)),
+			Segment3d(box.corner(Eigen::AlignedBox3d::TopRightFloor), box.corner(Eigen::AlignedBox3d::TopRightCeil)),
+			Segment3d(box.corner(Eigen::AlignedBox3d::TopLeftFloor), box.corner(Eigen::AlignedBox3d::TopLeftCeil))
+	};
+	return edges;
+}
+
+std::variant<std::monostate, math_utils::Triangle3d, math_utils::Quad3d>
+math_utils::find_intersection(const Eigen::AlignedBox3d &box, const Plane3d &plane) {
+
+	// Find intersections between the plane and the AABB's edges.
+
+	std::vector<Eigen::Vector3d> intersections;
+	intersections.reserve(4);
+
+	std::array<Segment3d, 12> edges = aabb_edges(box);
+
+	for (const auto &edge : edges) {
+		auto isect = find_intersection(edge, plane);
+		if (std::holds_alternative<Eigen::Vector3d>(isect)) {
+			intersections.push_back(std::get<Eigen::Vector3d>(isect));
+		}
+	}
+
+	switch (intersections.size()) {
+		case 0:
+			return std::monostate();
+		case 1:
+		case 2:
+			throw std::runtime_error("Plane does not intersect AABB in a way that can be represented as a triangle or quad.");
+		case 3:
+			return Triangle3d{intersections[0], intersections[1], intersections[2]};
+		case 4:
+			return Quad3d{intersections[0], intersections[1], intersections[2], intersections[3]};
+		default:
+			throw std::runtime_error("Unexpected number of intersections.");
+	}
+
 }

@@ -277,14 +277,14 @@ protected:
 							  const std::vector<ConvexHullPoint> &walk) const;
 
 	/**
-	 * Compute the intersection with the given edge of the given facet, if any.
+	 * Compute the find_intersection with the given edge of the given facet, if any.
 	 *
-	 * The method is "strict" in the sense that nullopt will be returned if the intersection is on a vertex.
+	 * The method is "strict" in the sense that nullopt will be returned if the find_intersection is on a vertex.
 	 *
 	 * @param face_id			The index of the facet.
 	 * @param edge				The edge to intersect with.
 	 * @param cutting_plane		The cutting plane.
-	 * @return					The intersection point, if any.
+	 * @return					The find_intersection point, if any.
 	 */
 	std::optional<ConvexHullPoint> strictEdgeTraversal(size_t face_id,
 													   TriangleEdgeId edge,

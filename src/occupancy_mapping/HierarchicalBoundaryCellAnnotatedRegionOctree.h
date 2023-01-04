@@ -79,6 +79,8 @@ public:
 
 		bool isUniform() const;
 
+		bool isBoundary() const;
+
 		void updateBoundary(const EigenExt::Plane3d &plane, bool hard, const Eigen::Vector3d &cell_center);
 	};
 

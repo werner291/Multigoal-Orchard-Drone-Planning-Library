@@ -12,6 +12,7 @@
 #include <vtkPlaneSource.h>
 #include "vtk.h"
 #include "../exploration/ColorEncoding.h"
+#include "../occupancy_mapping/HierarchicalBoundaryCellAnnotatedRegionOctree.h"
 
 vtkNew<vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel *lm) {
 
@@ -356,7 +357,6 @@ void VtkLineSegmentsVisualization::updateLine(const std::vector<std::pair<Eigen:
 
 	visitOrderVisualizationData->SetPoints(pointsVtk);
 	visitOrderVisualizationData->SetLines(cells);
-
 	visitOrderVisualizationData->Modified();
 
 }
@@ -388,5 +388,72 @@ void VtkPointCloudVisualization::updatePoints(const std::vector<Eigen::Vector3d>
 	visitOrderVisualizationData->SetVerts(cells);
 
 	visitOrderVisualizationData->Modified();
+
+}
+
+vtkActor *HierarchicalBoundaryCellAnnotatedRegionOctreeVtk::getActor() {
+	return actor;
+}
+
+void HierarchicalBoundaryCellAnnotatedRegionOctreeVtk::updateTree(const HierarchicalBoundaryCellAnnotatedRegionOctree &tree) {
+
+	// Using the DFS iterator of the octree, find all the leaves.
+	// For those that have a plane, intersect the plane with the octree cell and add it to the polydata.
+
+	// Create empty arrays.
+	vtkNew<vtkPoints> points;
+	vtkNew<vtkCellArray> cells;
+
+	// Use the DFS iterator in a for-loop to iterate over all the nodes.
+	for (auto it = tree.getTree().depth_first_begin(); !it.is_end(); ++it) {
+
+		if (it->cell->is_leaf() && it->cell->get_leaf().data.isBoundary()) {
+
+			auto plane = it->cell->get_leaf().data.get_boundary_cell().plane;
+
+			auto intersection = math_utils::find_intersection(it->box, plane);
+
+			if (std::holds_alternative<math_utils::Triangle3d>(intersection)) {
+
+				auto triangle = std::get<math_utils::Triangle3d>(intersection);
+
+				auto p1 = points->InsertNextPoint(triangle.a.data());
+				auto p2 = points->InsertNextPoint(triangle.b.data());
+				auto p3 = points->InsertNextPoint(triangle.c.data());
+
+				cells->InsertNextCell(3);
+				cells->InsertCellPoint(p1);
+				cells->InsertCellPoint(p2);
+				cells->InsertCellPoint(p3);
+
+			} else if (std::holds_alternative<math_utils::Quad3d>(intersection)) {
+
+				auto quad = std::get<math_utils::Quad3d>(intersection);
+
+				auto p1 = points->InsertNextPoint(quad.a.data());
+				auto p2 = points->InsertNextPoint(quad.b.data());
+				auto p3 = points->InsertNextPoint(quad.c.data());
+				auto p4 = points->InsertNextPoint(quad.d.data());
+
+				cells->InsertNextCell(4);
+				cells->InsertCellPoint(p1);
+				cells->InsertCellPoint(p2);
+				cells->InsertCellPoint(p3);
+				cells->InsertCellPoint(p4);
+
+			}
+
+		}
+
+	}
+
+	// Set the points and cells.
+	polyData->SetPoints(points);
+	polyData->SetPolys(cells);
+	polyData->Modified();
+
+	// Update the actor.
+	actor->Modified();
+
 
 }

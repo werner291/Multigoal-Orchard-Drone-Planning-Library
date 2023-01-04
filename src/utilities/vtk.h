@@ -15,6 +15,8 @@
 #include <shape_msgs/msg/mesh.hpp>
 #include "../ScannablePointsIndex.h"
 #include "../TreeMeshes.h"
+#include "../occupancy_mapping/HierarchicalBoundaryCellAnnotatedRegionOctree.h"
+
 
 static const int SENSOR_RESOLUTION = 200;
 
@@ -199,19 +201,39 @@ public:
 	void updateLine(const std::vector<Eigen::Vector3d>& points);
 };
 
+/**
+ * @brief Visualizes a series of line segments in VTK.
+ */
 class VtkLineSegmentsVisualization {
 	vtkNew<vtkPolyData> visitOrderVisualizationData;
 	vtkNew<vtkPolyDataMapper> visitOrderVisualizationMapper;
 	vtkNew<vtkActor> visitOrderVisualizationActor;
 
 public:
+	/**
+	 * @brief Constructs a VtkLineSegmentsVisualization object with the given color.
+	 * @param r The red component of the color.
+	 * @param g The green component of the color.
+	 * @param b The blue component of the color.
+	 */
 	VtkLineSegmentsVisualization(float r, float g, float b);
 
+	/**
+	 * @brief Gets the VTK actor for this visualization.
+	 * @return The VTK actor.
+	 */
 	vtkActor* getActor();
 
+	/**
+	 * @brief Updates the line segments in this visualization with the given points.
+	 * @param points The line segment points.
+	 */
 	void updateLine(const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>& points);
 };
 
+/**
+ * @brief Visualizes a point cloud in VTK.
+ */
 class VtkPointCloudVisualization {
 
 public:
@@ -219,11 +241,37 @@ public:
 	vtkNew<vtkPolyDataMapper> visitOrderVisualizationMapper;
 	vtkNew<vtkActor> visitOrderVisualizationActor;
 
+	/**
+	 * @brief Constructs a VtkPointCloudVisualization object with the given color.
+	 * @param r The red component of the color.
+	 * @param g The green component of the color.
+	 * @param b The blue component of the color.
+	 */
 	VtkPointCloudVisualization(float r, float g, float b);
 
+	/**
+	 * @brief Gets the VTK actor for this visualization.
+	 * @return The VTK actor.
+	 */
 	vtkActor *getActor();
 
+	/**
+	 * @brief Updates the points in this visualization with the given points.
+	 * @param points The new points.
+	 */
 	void updatePoints(const std::vector<Eigen::Vector3d> &points);
+};
+
+class HierarchicalBoundaryCellAnnotatedRegionOctreeVtk {
+	vtkNew<vtkPolyData> polyData;
+	vtkNew<vtkPolyDataMapper> mapper;
+	vtkNew<vtkActor> actor;
+
+public:
+
+	vtkActor* getActor();
+
+	void updateTree(const HierarchicalBoundaryCellAnnotatedRegionOctree &tree);
 };
 
 #endif //NEW_PLANNERS_VTK_H
