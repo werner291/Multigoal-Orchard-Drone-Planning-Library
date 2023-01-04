@@ -160,6 +160,8 @@ int main(int, char *[]) {
 
 		occupancy_map.incorporate(extractOccludingPoints(points), eePose, M_PI / 2.0, M_PI / 2.0); // Correct these, or perhaps derive them from the point cloud
 
+		std::cout << "Map size: " << occupancy_map.getTree().count_nodes().leaf_count << std::endl;
+
 		seen_space_visualization.updateTree(occupancy_map);
 
 		surface_scan_tracker.snapshot(eePose, points.target);

@@ -382,28 +382,25 @@ public:
 		}
 
 		DepthFirstIterator operator++() {
+
+			assert(!stack.empty());
+
+			CellVisit &visit = stack.back();
+
 			// Pop the current cell off the stack
 			stack.pop_back();
 
-			// If the stack is empty, we're done
-			if (stack.empty()) {
-				return *this;
-			}
-
 			// Get the current cell and bounding box
-			const Cell *cell = stack.back().cell;
-			const Eigen::AlignedBox3d &box = stack.back().box;
+			const Cell *cell = visit.cell;
+			const Eigen::AlignedBox3d &box = visit.box;
 
-			// If the current cell is a leaf cell, we're done
-			if (cell->is_leaf()) {
-				return *this;
-			}
-
-			// If the current cell is a split cell, push the children onto the stack
-			const SplitCell &split_cell = cell->get_split();
-			OctantIterator octant_iterator(box);
-			for (const Cell &child_cell: *split_cell.children) {
-				stack.push_back({&child_cell, *octant_iterator++});
+			if (cell->is_split()) {
+				// If the current cell is a split cell, push the children onto the stack
+				const SplitCell &split_cell = cell->get_split();
+				OctantIterator octant_iterator(box);
+				for (const Cell &child_cell: *split_cell.children) {
+					stack.push_back({&child_cell, *octant_iterator++});
+				}
 			}
 
 			return *this;

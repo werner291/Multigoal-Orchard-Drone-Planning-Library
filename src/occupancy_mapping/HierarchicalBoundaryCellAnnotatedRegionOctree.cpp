@@ -188,10 +188,10 @@ void HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData::updateBoundary(con
 		}
 
 		// Same type of boundary, so we update based on whichever expands the seen space the most.
-		double old_sd = boundary_cell.plane.signedDistance(cell_center);
-		double new_sd = plane.signedDistance(cell_center);
+		double old_sd = boundary_cell.plane.absDistance(cell_center);
+		double new_sd = plane.absDistance(cell_center);
 
-		if (new_sd > old_sd) {
+		if (new_sd < old_sd) {
 			boundary_cell.plane = plane;
 		}
 	}

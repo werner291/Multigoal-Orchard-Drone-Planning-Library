@@ -269,6 +269,8 @@ class HierarchicalBoundaryCellAnnotatedRegionOctreeVtk {
 
 public:
 
+	HierarchicalBoundaryCellAnnotatedRegionOctreeVtk();
+
 	vtkActor* getActor();
 
 	void updateTree(const HierarchicalBoundaryCellAnnotatedRegionOctree &tree);
