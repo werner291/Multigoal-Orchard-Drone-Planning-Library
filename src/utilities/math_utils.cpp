@@ -441,12 +441,10 @@ math_utils::compute_view_pyramid_planes(const Eigen::Isometry3d &tf, double fovX
 	Eigen::Vector3d bottom_right = tf * Eigen::Vector3d(x_slope, 1.0, -y_slope);
 
 	// TODO test that the normals are consistent.
-	return {EigenExt::Plane3d::Through(top_left, bottom_left, tf.translation()),
-			EigenExt::Plane3d::Through(top_right, bottom_right, tf.translation()),
-			EigenExt::Plane3d::Through(top_left, top_right, tf.translation()),
-			EigenExt::Plane3d::Through(bottom_left, bottom_right, tf.translation())};
-
-
+	return {EigenExt::Plane3d::Through(tf.translation(), top_left, bottom_left),
+			EigenExt::Plane3d::Through(tf.translation(), bottom_right, top_right),
+			EigenExt::Plane3d::Through(tf.translation(), top_right, top_left),
+			EigenExt::Plane3d::Through(tf.translation(), bottom_left, bottom_right)};
 }
 
 bool math_utils::intersects(const Eigen::AlignedBox3d &box, const Plane3d &plane) {
@@ -583,6 +581,7 @@ math_utils::find_intersection(const Eigen::AlignedBox3d &box, const Plane3d &pla
 	for (const auto &edge : edges) {
 		auto isect = find_intersection(edge, plane);
 		if (std::holds_alternative<Eigen::Vector3d>(isect)) {
+			std::cout << "Found intersection: " << std::get<Eigen::Vector3d>(isect).transpose() << std::endl;
 			intersections.push_back(std::get<Eigen::Vector3d>(isect));
 		}
 	}

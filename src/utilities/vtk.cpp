@@ -403,6 +403,7 @@ void HierarchicalBoundaryCellAnnotatedRegionOctreeVtk::updateTree(const Hierarch
 	// Create empty arrays.
 	vtkNew<vtkPoints> points;
 	vtkNew<vtkCellArray> cells;
+	vtkNew<vtkCellArray> vertices;
 
 	// Use the DFS iterator in a for-loop to iterate over all the nodes.
 	for (auto it = tree.getTree().depth_first_begin(); !it.is_end(); ++it) {
@@ -411,56 +412,43 @@ void HierarchicalBoundaryCellAnnotatedRegionOctreeVtk::updateTree(const Hierarch
 
 			auto plane = it->cell->get_leaf().data.get_boundary_cell().plane;
 
-			Eigen::Vector3d projection = plane.projection(it->box.center());
+			Eigen::Vector3d projection = it->box.center();//plane.projection(it->box.center());
 
-			std::cout << "pt: " << projection.transpose() << std::endl;
+			auto normal = plane.normal();
 
 			auto pt = points->InsertNextPoint(projection.data());
+			Eigen::Vector3d p2 = (projection + normal * 0.1);
+			auto pt1 = points->InsertNextPoint(p2.data());
 
-			cells->InsertNextCell(1);
+			cells->InsertNextCell(2);
 			cells->InsertCellPoint(pt);
+			cells->InsertCellPoint(pt1);
 
-//			auto intersection = math_utils::find_intersection(it->box, plane);
-//
-//			if (std::holds_alternative<math_utils::Triangle3d>(intersection)) {
-//
-//				auto triangle = std::get<math_utils::Triangle3d>(intersection);
-//
-//				auto p1 = points->InsertNextPoint(triangle.a.data());
-//				auto p2 = points->InsertNextPoint(triangle.b.data());
-//				auto p3 = points->InsertNextPoint(triangle.c.data());
-//
-//				cells->InsertNextCell(3);
-//				cells->InsertCellPoint(p1);
-//				cells->InsertCellPoint(p2);
-//				cells->InsertCellPoint(p3);
-//
-//			} else if (std::holds_alternative<math_utils::Quad3d>(intersection)) {
-//
-//				auto quad = std::get<math_utils::Quad3d>(intersection);
-//
-//				auto p1 = points->InsertNextPoint(quad.a.data());
-//				auto p2 = points->InsertNextPoint(quad.b.data());
-//				auto p3 = points->InsertNextPoint(quad.c.data());
-//				auto p4 = points->InsertNextPoint(quad.d.data());
-//
-//				cells->InsertNextCell(4);
-//				cells->InsertCellPoint(p1);
-//				cells->InsertCellPoint(p2);
-//				cells->InsertCellPoint(p3);
-//				cells->InsertCellPoint(p4);
-//
-//			}
+			vertices->InsertNextCell(1);
+			vertices->InsertCellPoint(pt);
 
 		}
 
-	}
+//		if (it->cell->is_leaf() && it->cell->get_leaf().data.isUniform()) {
+//
+//			if (it->cell->get_leaf().data.get_uniform_cell().seen) {
+//
+//				Eigen::Vector3d c = it->box.center();
+//
+//				auto pt = points->InsertNextPoint(c.data());
+//
+//				vertices->InsertNextCell(1);
+//				vertices->InsertCellPoint(pt);
+//			}
+//
+//		}
 
-	std::cout << "Number of points: " << points->GetNumberOfPoints() << std::endl;
+	}
 
 	// Set the points and cells.
 	polyData->SetPoints(points);
-	polyData->SetVerts(cells);
+	polyData->SetVerts(vertices);
+	polyData->SetLines(cells);
 	polyData->Modified();
 
 }
@@ -468,8 +456,6 @@ void HierarchicalBoundaryCellAnnotatedRegionOctreeVtk::updateTree(const Hierarch
 HierarchicalBoundaryCellAnnotatedRegionOctreeVtk::HierarchicalBoundaryCellAnnotatedRegionOctreeVtk() {
 	mapper->SetInputData(polyData);
 	actor->SetMapper(mapper);
-
-	actor->GetProperty()->SetPointSize(50);
 	actor->GetProperty()->SetColor(1, 0, 1);
-
+	actor->GetProperty()->SetPointSize(3);
 }

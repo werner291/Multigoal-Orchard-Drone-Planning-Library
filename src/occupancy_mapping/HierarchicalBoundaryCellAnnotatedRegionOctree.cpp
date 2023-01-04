@@ -83,7 +83,21 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 		return math_utils::intersects(box, math_utils::Ray3d(p.point, p.point - eye_transform.translation()));
 	}) | ranges::to_vector;
 
-	bool should_split = maxDepth > 0 && (view_pyramid_intersections > 1 || !occluding_points.empty());
+	bool points_inside = std::any_of(occluding_points.begin(), occluding_points.end(), [&](const auto &p) {
+		return box.contains(p.point);
+	});
+
+	bool fully_free = cell_center_inside_view_pyramid && view_pyramid_intersections == 0;// && !points_inside;
+
+	if (fully_free) {
+		// The cell is completely free of occluding points.
+		cell.cell = LeafCell{.data = {HierarchicalBoundaryCellAnnotatedRegionOctree::UniformCell {
+			.seen = true
+		}}};
+		return;
+	}
+
+	bool should_split = maxDepth > 0 && (view_pyramid_intersections || !occluding_points.empty());
 
 	if (cell.is_leaf() && should_split) {
 		cell.split_by_copy({});
@@ -114,23 +128,30 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 		}
 
 		if (left_intersects) {
-			leaf_cell.data.updateBoundary(planes.left, true, box.center());
+			leaf_cell.data.updateBoundary(planes.left, false, box.center());
 		}
 
 		if (right_intersects) {
-			leaf_cell.data.updateBoundary(planes.right, true, box.center());
+			leaf_cell.data.updateBoundary(planes.right, false, box.center());
 		}
 
-		for (const auto &p : occluding_points) {
-
-			Eigen::Vector3d normal = (p.point - box.center()).normalized();
-
-			if (normal.dot(eye_transform.translation() - p.point) < 0) {
-				normal = -normal;
-			}
-
-			leaf_cell.data.updateBoundary(EigenExt::Plane3d(normal, p.point), p.hard, box.center());
-		}
+//		std::optional<OccupancyMap::OccludingPoint> closest_point;
+//
+//		// Find the closest occluding point to the box center.
+//		for (const auto &p : occluding_points) {
+//			if (!closest_point.has_value() || (p.point - box.center()).norm() < (closest_point->point - box.center()).norm()) {
+//				closest_point = p;
+//			}
+//		}
+//
+//		if (closest_point.has_value()) {
+//			// If there is an occluding point, mark the cell as seen.
+//			leaf_cell.data.updateBoundary(
+//					EigenExt::Plane3d(((closest_point->point - box.center())).normalized(),
+//									  closest_point->point),
+//									  closest_point->hard,
+//									  box.center());
+//		}
 
 	}
 
@@ -140,6 +161,16 @@ void HierarchicalBoundaryCellAnnotatedRegionOctree::incorporate(const std::vecto
 																const Eigen::Isometry3d &eye_transform,
 																double fovX,
 																double fovY) {
+
+	auto planes = math_utils::compute_view_pyramid_planes(eye_transform, fovX, fovY);
+
+	Eigen::Vector3d point_before = eye_transform * Eigen::Vector3d::UnitY();
+
+	// Check that it lies inside the view pyramid.
+	assert(planes.bottom.signedDistance(point_before) > 0);
+	assert(planes.top.signedDistance(point_before) > 0);
+	assert(planes.left.signedDistance(point_before) > 0);
+	assert(planes.right.signedDistance(point_before) > 0);
 
 	incorporate_internal(tree.box, tree.root, occluding_points, max_depth, eye_transform, fovX, fovY);
 
@@ -188,10 +219,10 @@ void HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData::updateBoundary(con
 		}
 
 		// Same type of boundary, so we update based on whichever expands the seen space the most.
-		double old_sd = boundary_cell.plane.absDistance(cell_center);
-		double new_sd = plane.absDistance(cell_center);
+		double old_sd = boundary_cell.plane.signedDistance(cell_center);
+		double new_sd = plane.signedDistance(cell_center);
 
-		if (new_sd < old_sd) {
+		if (new_sd > old_sd) {
 			boundary_cell.plane = plane;
 		}
 	}
