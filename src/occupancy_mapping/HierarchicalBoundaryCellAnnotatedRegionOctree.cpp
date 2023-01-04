@@ -119,6 +119,8 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 
 		LeafCell &leaf_cell = cell.get_leaf();
 
+		// FIXME this is currently broken because the intersection with one plane may lie outside the other planes
+
 		if (bottom_intersects) {
 			leaf_cell.data.updateBoundary(planes.bottom, false, box.center());
 		}
@@ -133,6 +135,10 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 
 		if (right_intersects) {
 			leaf_cell.data.updateBoundary(planes.right, false, box.center());
+		}
+
+		if (leaf_cell.data.isBoundary() && !math_utils::intersects(box, leaf_cell.data.get_boundary_cell().plane)) {
+			leaf_cell.data.setFullySeen();
 		}
 
 //		std::optional<OccupancyMap::OccludingPoint> closest_point;

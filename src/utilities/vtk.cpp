@@ -412,7 +412,7 @@ void HierarchicalBoundaryCellAnnotatedRegionOctreeVtk::updateTree(const Hierarch
 
 			auto plane = it->cell->get_leaf().data.get_boundary_cell().plane;
 
-			Eigen::Vector3d projection = it->box.center();//plane.projection(it->box.center());
+			Eigen::Vector3d projection = plane.projection(it->box.center());
 
 			auto normal = plane.normal();
 
