@@ -20,7 +20,7 @@ HierarchicalBoundaryCellAnnotatedRegionOctree::HierarchicalBoundaryCellAnnotated
 
 	// Initialize the octree bounding box with the given center and base edge length
 	Eigen::Vector3d half_extent(baseEdgeLength / 2, baseEdgeLength / 2, baseEdgeLength / 2);
-	tree.box = Eigen::AlignedBox3d(center - half_extent,center + half_extent);
+	tree.box = Eigen::AlignedBox3d(center - half_extent, center + half_extent);
 }
 
 /**
@@ -32,9 +32,8 @@ HierarchicalBoundaryCellAnnotatedRegionOctree::HierarchicalBoundaryCellAnnotated
  * @param eye The point towards which the plane should be oriented.
  * @return The created plane, as an approximation of the surface.
  */
-EigenExt::Plane3d plane_from_sample(const Eigen::AlignedBox3d &box,
-									const Eigen::Vector3d &point,
-									const Eigen::Vector3d &eye) {
+EigenExt::Plane3d
+plane_from_sample(const Eigen::AlignedBox3d &box, const Eigen::Vector3d &point, const Eigen::Vector3d &eye) {
 
 	// The surface normal is the vector from the sample point to the center of the bounding box, normalized.
 	// with enough samples, this should be a good approximation of the surface normal.
@@ -46,7 +45,7 @@ EigenExt::Plane3d plane_from_sample(const Eigen::AlignedBox3d &box,
 	}
 
 	// Create the plane and return it.
-	return { normal, point };
+	return {normal, point};
 }
 
 /**
@@ -89,7 +88,7 @@ void updateLeafData(const Eigen::AlignedBox3d &box,
 					HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData &data,
 					const EigenExt::Plane3d &plane,
 					const HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryType &boundaryType) {
-	
+
 	// Don't touch fully-seen cells.
 	if (data.isUniform()) {
 
@@ -159,36 +158,127 @@ bool occludingRayCrossesCell(const Eigen::AlignedBox3d &box,
  * @param eye_center 	The center of the eye (origin of the occlusion ray).
  * @return 				True if the point fully occludes the box, false otherwise.
  */
-bool fullyOccludesBox(const Eigen::AlignedBox3d &box, const OccupancyMap::OccludingPoint &point, const Eigen::Vector3d &eye_center) {
+bool fullyOccludesBox(const Eigen::AlignedBox3d &box,
+					  const OccupancyMap::OccludingPoint &point,
+					  const Eigen::Vector3d &eye_center) {
 	return occludingRayCrossesCell(box, point, eye_center) && !box.contains(point.point);
 }
 
-bool box_may_intersect_view_pyramid_sides(const Eigen::AlignedBox3d &box,
-										  const math_utils::ViewPyramidFaces &planes) {// Sample the points closest to the cell center on the view pyramid planes.
+/**
+ * Determines whether the given 3D axis-aligned bounding box may intersect the sides of the view pyramid.
+ * If the distance between the point on the view pyramid planes closest to the center of the bounding box
+ * and the center of the bounding box is less than half the size of the bounding box, it is likely that
+ * one or more sides of the bounding box intersect the view pyramid planes.
+ *
+ * @param box The 3D axis-aligned bounding box to check.
+ * @param planes The view pyramid planes.
+ * @return True if the bounding box may intersect the sides of the view pyramid, false otherwise.
+ */
+bool box_may_intersect_view_pyramid_sides(const Eigen::AlignedBox3d &box, const math_utils::ViewPyramidFaces &planes) {
+	// Sample the point on the view pyramid planes closest to the center of the bounding box.
 	Eigen::Vector3d closest_view_pyramid_point = planes.closest_point_on_any_plane(box.center());
 
+	// Check if the distance between the closest point on the view pyramid planes and the center of the bounding box
+	// is less than half the size of the bounding box.
 	bool may_intersect_planes = (closest_view_pyramid_point - box.center()).norm() < box.sizes().norm() / 2;
 	return may_intersect_planes;
 }
 
+
+/**
+ * Filters a list of occluding points and returns only those that may affect the given 3D axis-aligned bounding box.
+ * An occluding point affects the bounding box if the ray from the eye transform to the occluding point intersects the bounding box.
+ *
+ * @param box The 3D axis-aligned bounding box to check.
+ * @param candidate_occluding_points The list of candidate occluding points to filter.
+ * @param eye_transform The eye transform.
+ * @return The list of occluding points that may affect the bounding box.
+ */
 std::vector<OccupancyMap::OccludingPoint> filterAffectingPoints(const Eigen::AlignedBox3d &box,
 																const std::vector<OccupancyMap::OccludingPoint> &candidate_occluding_points,
 																const Eigen::Isometry3d &eye_transform) {
+	// Use a range-based for loop to filter the candidate occluding points.
+	// Only keep the occluding points for which the ray from the eye transform to the occluding point intersects the bounding box.
 	return candidate_occluding_points | ranges::views::filter([&](const auto &p) {
-					return math_utils::intersects(box,
-												  math_utils::Ray3d(eye_transform.translation(),
-																	p.point - eye_transform.translation()));
-				}) | ranges::to_vector;
+		// Create a ray from the eye center to the occluding point.
+		math_utils::Ray3d ray(eye_transform.translation(), p.point - eye_transform.translation());
+		// Check if the ray intersects the bounding box.
+		return math_utils::intersects(box, ray);
+	}) | ranges::to_vector;
 }
 
+
+/**
+ * Determines whether any of the given points are inside the given 3D axis-aligned bounding box.
+ *
+ * @param box The 3D axis-aligned bounding box to check.
+ * @param affecting_points The points to check.
+ * @return True if any of the points are inside the bounding box, false otherwise.
+ */
 bool checkPointsInside(const Eigen::AlignedBox3d &box, std::vector<OccupancyMap::OccludingPoint> &affecting_points) {
 	return std::any_of(affecting_points.begin(), affecting_points.end(), [&box](const auto &point) {
-			return box.contains(point.point);
-		});
+		return box.contains(point.point);
+	});
 }
 
+/**
+ * Determines whether the given cell is a leaf cell and is fully seen.
+ *
+ * @param cell The cell to check.
+ * @return True if the cell is a leaf cell and is fully seen, false otherwise.
+ */
 bool cellIsFullySeen(Cell &cell) {
 	return cell.is_leaf() && cell.get_leaf().data.isUniform() && cell.get_leaf().data.get_uniform_cell().seen;
+}
+
+/**
+ * Updates the data in the given leaf cell with information about the given view pyramid planes.
+ *
+ * @warning This function does not check whether the cell is obscured by any points or features outside of it.
+ *
+ * @param box The 3D axis-aligned bounding box of the cell.
+ * @param eye_transform The eye transform.
+ * @param planes The view pyramid planes.
+ * @param leaf The leaf cell to update.
+ */
+void updateLeafData(const Eigen::AlignedBox3d &box,
+					const Eigen::Isometry3d &eye_transform,
+					const math_utils::ViewPyramidFaces &planes,
+					LeafCell &leaf) {
+	updateLeafData(box,
+				   leaf.data,
+				   plane_from_sample(box, planes.closest_point_on_any_plane(box.center()), eye_transform.translation()),
+				   HierarchicalBoundaryCellAnnotatedRegionOctree::VIEW_PYRAMID_PLANE);
+}
+
+/**
+ * Updates the data in the given leaf cell with information about the given occluding points.
+ *
+ * @warning This function does not check whether the cell is extinguished by any points outside of it.
+ *          It is the responsibility of the caller to ensure that the cell is not extinguished by anything outside of it.
+ *
+ * @param box The 3D axis-aligned bounding box of the cell.
+ * @param eye_transform The eye transform.
+ * @param affecting_points The occluding points.
+ * @param leaf The leaf cell to update.
+ */
+void updateLeafData(const Eigen::AlignedBox3d &box,
+					const Eigen::Isometry3d &eye_transform,
+					std::vector<OccupancyMap::OccludingPoint> &affecting_points,
+					LeafCell &leaf) {
+	for (const auto &point: affecting_points) {
+		// If the point is outside the cell, ignore it.
+		if (!box.contains(point.point)) {
+			continue;
+		}
+
+		updateLeafData(box,
+					   leaf.data,
+					   plane_from_sample(box, point.point, eye_transform.translation()),
+					   point.hard ? HierarchicalBoundaryCellAnnotatedRegionOctree::HARD_OBSTACLE
+								  : HierarchicalBoundaryCellAnnotatedRegionOctree::SOFT_OBSTACLE);
+
+	}
 }
 
 /**
@@ -213,12 +303,26 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 		return;
 	}
 
+	bool may_intersect_planes = box_may_intersect_view_pyramid_sides(box, planes);
+
+	// Check if the cell is fully outside the view pyramid.
+	if (!planes.contains(box.center()) && !may_intersect_planes) {
+		return;
+	}
+
 	// Also, go find the points whose eye ray passes through the cell at all. This is essentially pre-filtering step on the input.
 	auto affecting_points = filterAffectingPoints(box, candidate_occluding_points, eye_transform);
 
-	bool may_intersect_planes = box_may_intersect_view_pyramid_sides(box, planes);
-
 	bool points_inside = checkPointsInside(box, affecting_points);
+
+	// If the cell cannot intersect the planes, and contains no occluding points, then it is fully visible.
+	if (!may_intersect_planes && !points_inside) {
+		// Set fully-seen.
+		cell.cell = LeafCell {
+			.data = {HierarchicalBoundaryCellAnnotatedRegionOctree::UniformCell {.seen = true}}
+		};
+		return;
+	}
 
 	bool should_split = (points_inside || may_intersect_planes) && maxDepth > 0;
 
@@ -244,41 +348,17 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 
 	} else {
 
-		auto &leaf = cell.get_leaf();
-
 		// Check if any of the points fully occlude this cell. If so, leave untouched.
 		// A point fully occludes the cell if the ray cast from the point away from the eye center
 		// intersects the cell, without the point itself being inside the cell.
-		if (checkPointsFullyOccludingCell(box, affecting_points, eye_transform.translation()) || planes.contains(box.center()) && !may_intersect_planes) {
+		if (checkPointsFullyOccludingCell(box, affecting_points, eye_transform.translation())) {
 			return;
 		}
 
-		// If the cell cannot intersect the planes, and contains no occluding points, then it is fully visible.
-		if (!may_intersect_planes && !points_inside) {
-			leaf.data = {HierarchicalBoundaryCellAnnotatedRegionOctree::UniformCell{.seen = true}};
-			return;
-		}
+		auto &leaf = cell.get_leaf();
 
-		updateLeafData(box,
-					   leaf.data,
-					   plane_from_sample(box,
-										 planes.closest_point_on_any_plane(box.center()),
-										 eye_transform.translation()),
-					   HierarchicalBoundaryCellAnnotatedRegionOctree::VIEW_PYRAMID_PLANE);
-
-		for (const auto &point: affecting_points) {
-			// If the point is outside the cell, ignore it.
-			if (!box.contains(point.point)) {
-				continue;
-			}
-
-			updateLeafData(box,
-						   leaf.data,
-						   plane_from_sample(box, point.point, eye_transform.translation()),
-						   point.hard ? HierarchicalBoundaryCellAnnotatedRegionOctree::HARD_OBSTACLE
-									  : HierarchicalBoundaryCellAnnotatedRegionOctree::SOFT_OBSTACLE);
-
-		}
+		updateLeafData(box, eye_transform, planes, leaf);
+		updateLeafData(box, eye_transform, affecting_points, leaf);
 
 	}
 
