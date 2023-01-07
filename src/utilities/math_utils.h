@@ -333,6 +333,20 @@ namespace math_utils {
 		OpenTriangle right;
 		OpenTriangle top;
 		OpenTriangle bottom;
+
+		/**
+		 * @brief Check whether a point lies inside of the view pyramid.
+		 * @param point The point to check.
+		 */
+		[[nodiscard]] bool contains(const Eigen::Vector3d &point) const;
+
+		/**
+		 * @brief Finds the closest point on any of the faces of the view pyramid to the given point.
+		 *
+		 * @param point 		The point to find the closest point to.
+		 * @return 				The closest point on any of the faces of the view pyramid to the given point.
+		 */
+		[[nodiscard]] Eigen::Vector3d closest_point_on_any_plane(const Eigen::Vector3d &point) const;
 	};
 
 	/**

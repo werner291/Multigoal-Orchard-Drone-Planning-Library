@@ -603,3 +603,19 @@ math_utils::find_intersection(const Eigen::AlignedBox3d &box, const Plane3d &pla
 	}
 
 }
+
+bool math_utils::ViewPyramidFaces::contains(const Eigen::Vector3d &point) const {
+	return
+			(point - left.apex).dot(*left.normal()) >= 0 &&
+			(point - right.apex).dot(*right.normal()) >= 0 &&
+			(point - top.apex).dot(*top.normal()) >= 0 &&
+			(point - bottom.apex).dot(*bottom.normal()) >= 0;
+}
+
+Eigen::Vector3d math_utils::ViewPyramidFaces::closest_point_on_any_plane(const Eigen::Vector3d &point) const {
+	return closest_point_in_list({closest_point_on_open_triangle(point, left),
+								  closest_point_on_open_triangle(point, right),
+								  closest_point_on_open_triangle(point, top),
+								  closest_point_on_open_triangle(point, bottom)},
+								 point);
+}

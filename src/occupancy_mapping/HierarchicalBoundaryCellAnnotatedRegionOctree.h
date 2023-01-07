@@ -43,6 +43,14 @@ public:
 	 */
 	struct UniformCell {
 		bool seen;
+
+		bool operator==(const UniformCell &other) const {
+			return seen == other.seen;
+		}
+
+		bool operator!=(const UniformCell &other) const {
+			return !(*this == other);
+		}
 	};
 
 	/**
@@ -70,16 +78,32 @@ public:
 		// By convention, the normal points into the seen region.
 		EigenExt::Plane3d plane;
 		BoundaryType boundaryType;
+
+		bool operator==(const BoundaryCell &other) const {
+			return plane.coeffs() == other.plane.coeffs() && boundaryType == other.boundaryType;
+		}
+
+		bool operator!=(const BoundaryCell &other) const {
+			return !(*this == other);
+		}
 	};
 
 	struct LeafData {
 		std::variant<UniformCell, BoundaryCell> data;
 
+		bool operator==(const LeafData &other) const {
+			return data == other.data;
+		}
+
+		bool operator!=(const LeafData &other) const {
+			return !(*this == other);
+		}
+
 		UniformCell &get_uniform_cell() {
 			return std::get<UniformCell>(data);
 		}
 
-		const UniformCell &get_uniform_cell() const {
+		[[nodiscard]] const UniformCell &get_uniform_cell() const {
 			return std::get<UniformCell>(data);
 		}
 
@@ -87,15 +111,17 @@ public:
 			return std::get<BoundaryCell>(data);
 		}
 
-		const BoundaryCell &get_boundary_cell() const {
+		[[nodiscard]] const BoundaryCell &get_boundary_cell() const {
 			return std::get<BoundaryCell>(data);
 		}
 
 		void setFullySeen();
 
-		bool isUniform() const;
+		void setBoundaryCell(const EigenExt::Plane3d &plane, BoundaryType boundaryType);
 
-		bool isBoundary() const;
+		[[nodiscard]] bool isUniform() const;
+
+		[[nodiscard]] bool isBoundary() const;
 	};
 
 	/// The Octree type; SplitCells are not annotated (monostate), LeafCells are annotated with a LeafData.
