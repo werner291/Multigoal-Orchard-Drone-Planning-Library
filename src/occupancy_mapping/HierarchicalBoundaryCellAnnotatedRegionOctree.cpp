@@ -217,22 +217,25 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 			return;
 		}
 
-		// By De-Morgan's law: either a plane intersects the cell, or the cell contains a point.
-
-
-		EigenExt::Plane3d closest_point;
-		auto closest_point_type = HierarchicalBoundaryCellAnnotatedRegionOctree::VIEW_PYRAMID_PLANE;
-		double closest_sd = std::numeric_limits<double>::infinity();
+		Eigen::Vector3d closest_view_pyramid_point;
+		double closest_view_pyramid_point_distance = std::numeric_limits<double>::infinity();
 
 		for (const auto& plane: {planes.bottom, planes.top, planes.left, planes.right}) {
-			updateLeafData(
-					box,
-					cell.get_leaf().data,
-					closest_point_on_open_triangle(center, plane),
-					HierarchicalBoundaryCellAnnotatedRegionOctree::VIEW_PYRAMID_PLANE,
-					eye_transform.translation()
-					);
+			Eigen::Vector3d point = closest_point_on_open_triangle(center, plane);
+			double distance = (point - center).norm();
+			if (distance < closest_view_pyramid_point_distance) {
+				closest_view_pyramid_point_distance = distance;
+				closest_view_pyramid_point = point;
+			}
 		}
+
+		updateLeafData(
+				box,
+				cell.get_leaf().data,
+				closest_view_pyramid_point,
+				HierarchicalBoundaryCellAnnotatedRegionOctree::VIEW_PYRAMID_PLANE,
+				eye_transform.translation()
+				);
 
 		for (const auto &point: candidate_occluding_points) {
 			// If the point is outside the cell, ignore it.
