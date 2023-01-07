@@ -328,11 +328,11 @@ namespace math_utils {
 	 */
 	bool intersects(const Eigen::AlignedBox3d &box, const Ray3d &ray3D);
 
-	struct ViewPyramidPlanes {
-		Eigen::Hyperplane<double, 3> left;
-		Eigen::Hyperplane<double, 3> right;
-		Eigen::Hyperplane<double, 3> top;
-		Eigen::Hyperplane<double, 3> bottom;
+	struct ViewPyramidFaces {
+		OpenTriangle left;
+		OpenTriangle right;
+		OpenTriangle top;
+		OpenTriangle bottom;
 	};
 
 	/**
@@ -341,7 +341,7 @@ namespace math_utils {
 	 * @param fovX The horizontal field of view of the camera.
 	 * @param fovY The vertical field of view of the camera.
 	 */
-	ViewPyramidPlanes compute_view_pyramid_planes(const Eigen::Isometry3d &tf, double fovX, double fovY);
+	ViewPyramidFaces compute_view_pyramid_planes(const Eigen::Isometry3d &tf, double fovX, double fovY);
 
 	/**
 	 * @brief Test whether the given AABB intersects with a plane.

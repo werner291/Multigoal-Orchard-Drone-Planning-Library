@@ -429,7 +429,7 @@ bool math_utils::hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sph
 	return (face && (dmin <= square_radius) && (square_radius <= dmax));
 }
 
-math_utils::ViewPyramidPlanes
+math_utils::ViewPyramidFaces
 math_utils::compute_view_pyramid_planes(const Eigen::Isometry3d &tf, double fovX, double fovY) {
 
 	double x_slope = tan(fovX / 2);
@@ -441,10 +441,12 @@ math_utils::compute_view_pyramid_planes(const Eigen::Isometry3d &tf, double fovX
 	Eigen::Vector3d bottom_right = tf * Eigen::Vector3d(x_slope, 1.0, -y_slope);
 
 	// TODO test that the normals are consistent.
-	return {EigenExt::Plane3d::Through(tf.translation(), top_left, bottom_left),
-			EigenExt::Plane3d::Through(tf.translation(), bottom_right, top_right),
-			EigenExt::Plane3d::Through(tf.translation(), top_right, top_left),
-			EigenExt::Plane3d::Through(tf.translation(), bottom_left, bottom_right)};
+	return {
+		OpenTriangle { tf.translation(), top_left, bottom_left },
+		OpenTriangle { tf.translation(), bottom_right, top_right },
+		OpenTriangle { tf.translation(), top_left, top_right },
+		OpenTriangle { tf.translation(), bottom_left, bottom_right }
+	};
 }
 
 bool math_utils::intersects(const Eigen::AlignedBox3d &box, const Plane3d &plane) {

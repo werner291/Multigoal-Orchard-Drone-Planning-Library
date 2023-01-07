@@ -7,23 +7,23 @@ project(new_planners)
 
 ## System dependencies are found with CMake's conventions
 find_package(Eigen3 REQUIRED)
-find_package(jsoncpp REQUIRED)
-find_package(fcl REQUIRED)
+#find_package(jsoncpp REQUIRED)
+#find_package(fcl REQUIRED)
 find_package(Boost REQUIRED)
-find_package(Bullet REQUIRED)
-find_package(ompl REQUIRED)
-find_package(range-v3 REQUIRED)
-find_package(Qhull REQUIRED)
-find_package(CGAL REQUIRED)
-find_package(VTK REQUIRED)
+#find_package(Bullet REQUIRED)
+#find_package(ompl REQUIRED)
+#find_package(range-v3 REQUIRED)
+#find_package(Qhull REQUIRED)
+#find_package(CGAL REQUIRED)
+#find_package(VTK REQUIRED)
 
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(moveit_core REQUIRED)
-find_package(moveit_msgs REQUIRED)
-find_package(moveit_ros_planning REQUIRED)
-find_package(moveit_planners_ompl REQUIRED)
-find_package(shape_msgs REQUIRED)
+#find_package(ament_cmake REQUIRED)
+#find_package(rclcpp REQUIRED)
+#find_package(moveit_core REQUIRED)
+#find_package(moveit_msgs REQUIRED)
+#find_package(moveit_ros_planning REQUIRED)
+#find_package(moveit_planners_ompl REQUIRED)
+#find_package(shape_msgs REQUIRED)
 
 add_compile_definitions(JSON_FUNCTIONS ON)
 
@@ -39,7 +39,7 @@ include_directories(
         ${OMPL_INCLUDE_DIRS}
         ${QHULL_INCLUDE_DIRS}
         ${VTK_INCLUDE_DIRS}
-        #{CGAL_INCLUDE_DIRS}
+        {CGAL_INCLUDE_DIRS}
         ortools/include
         miniball/cpp/main
 )
@@ -71,6 +71,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
 #SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
+add_library(math_utils
+        src/utilities/math_utils.h src/utilities/math_utils.cpp
+        )
+
+link_libraries(math_utils)
+
 add_library(occupancy_maps
         src/occupancy_mapping/Octree.h
         src/occupancy_mapping/Octree.cpp
@@ -99,7 +105,6 @@ add_library(${PROJECT_NAME}_shared
         src/DroneStateSampler.h
         src/EndEffectorOnShellGoal.cpp
         src/EndEffectorOnShellGoal.h
-        src/utilities/math_utils.h src/utilities/math_utils.cpp
         src/ExperimentVisualTools.cpp
         src/ExperimentVisualTools.h
         src/GreatCircleMetric.cpp
@@ -239,9 +244,9 @@ add_library(${PROJECT_NAME}_shared
 
 link_libraries(occupancy_maps)
 
-set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "rclcpp" "ompl")
+#set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "rclcpp" "ompl")
 
-ament_target_dependencies(${PROJECT_NAME}_shared ${AMENT_DEPS})
+#ament_target_dependencies(${PROJECT_NAME}_shared ${AMENT_DEPS})
 
 function(experiment name)
     add_executable(${PROJECT_NAME}_experiment_${name} src/experiments/${name}.cpp)
@@ -277,5 +282,5 @@ add_executable(${PROJECT_NAME}_tests
         test/PointOnMeshLookup_test.cpp test/SurfletVolume_test.cpp)
 
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
-ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})
+#ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})
 gtest_discover_tests(${PROJECT_NAME}_tests)

@@ -8,8 +8,19 @@
 
 #include <range/v3/view/filter.hpp>
 #include <range/v3/range/conversion.hpp>
+#include <range/v3/view/transform.hpp>
 #include "../utilities/math_utils.h"
 #include "HierarchicalBoundaryCellAnnotatedRegionOctree.h"
+
+bool isPointInsideViewPyramid(const math_utils::ViewPyramidFaces &planes, const Eigen::Vector3d &center) {
+	for (const auto &plane : {planes.bottom, planes.top, planes.left, planes.right}) {
+		if ((center-plane.apex).dot(*plane.normal()) < 0) {
+			return false;
+		}
+	}
+
+	return true;
+}
 
 using PtOctree = HierarchicalBoundaryCellAnnotatedRegionOctree::PointAnnotatedOctree;
 using LeafCell = PtOctree::LeafCell;
@@ -49,117 +60,177 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 						  double fovX,
 						  double fovY) {
 
+	// If the cell is fully-seen, we can stop here.
+	if (cell.is_leaf() && cell.get_leaf().data.isUniform() && cell.get_leaf().data.get_uniform_cell().seen) {
+		return;
+	}
+
+	// Also, go find the points whose eye ray passes through the cell at all. This is essentially pre-filtering step on the input.
+	std::vector<OccupancyMap::OccludingPoint> affecting_points = candidate_occluding_points | ranges::views::filter([&](const auto &p) {
+		return math_utils::intersects(box, math_utils::Ray3d(eye_transform.translation(), p.point - eye_transform.translation()));
+	}) | ranges::to_vector;
+
 	// Compute the delimiting planes of the view pyramid.
 	auto planes = math_utils::compute_view_pyramid_planes(eye_transform, fovX, fovY);
 
 	// Check whether the cell bounding box intersects the view pyramid planes.
-	bool bottom_intersects = math_utils::intersects(box, planes.bottom);
-	bool top_intersects = math_utils::intersects(box, planes.top);
-	bool left_intersects = math_utils::intersects(box, planes.left);
-	bool right_intersects = math_utils::intersects(box, planes.right);
+	Eigen::Vector3d center = box.center();
 
-	int view_pyramid_intersections = bottom_intersects + top_intersects + left_intersects + right_intersects;
+	// Sample the points closest to the cell center on the view pyramid planes.
+	std::array<Eigen::Vector3d, 4> sample_points {
+		closest_point_on_open_triangle(center, planes.bottom),
+		closest_point_on_open_triangle(center, planes.top),
+		closest_point_on_open_triangle(center, planes.left),
+		closest_point_on_open_triangle(center, planes.right)
+	};
 
-	// Check if the cell center is inside the view pyramid.
-	bool cell_center_inside_view_pyramid =
-			planes.bottom.signedDistance(box.center()) > 0 &&
-			planes.top.signedDistance(box.center()) > 0 &&
-			planes.left.signedDistance(box.center()) > 0 &&
-			planes.right.signedDistance(box.center()) > 0;
-
-	// Check if the cell is completely outside the view pyramid.
-	bool lies_fully_outside = view_pyramid_intersections == 0 && !cell_center_inside_view_pyramid;
-
-	if (lies_fully_outside) {
-		// The cell is completely out of view; don't touch it.
-		return;
+	bool may_intersect_planes = false;
+	for (const auto &sample_point : sample_points) {
+		if ((sample_point - center).norm() < box.sizes().norm() / 2) {
+			may_intersect_planes = true;
+			break;
+		}
 	}
 
-	// Else, at least some point of the cell lies inside the view pyramid.
+	bool points_inside = std::any_of(candidate_occluding_points.begin(), candidate_occluding_points.end(),
+									 [&box](const auto &point) {
+										 return box.contains(point.point);
+									 });
 
-	// Then, find out which of the given candidate occluding points are actually occluding some part of the cell.
-	// That is: the ray from the point away from the eye center intersects the cell.
-	std::vector<OccupancyMap::OccludingPoint> occluding_points = candidate_occluding_points | ranges::views::filter([&](const auto &p) {
-		return math_utils::intersects(box, math_utils::Ray3d(p.point, p.point - eye_transform.translation()));
-	}) | ranges::to_vector;
-
-	bool points_inside = std::any_of(occluding_points.begin(), occluding_points.end(), [&](const auto &p) {
-		return box.contains(p.point);
-	});
-
-	bool fully_free = cell_center_inside_view_pyramid && view_pyramid_intersections == 0;// && !points_inside;
-
-	if (fully_free) {
-		// The cell is completely free of occluding points.
-		cell.cell = LeafCell{.data = {HierarchicalBoundaryCellAnnotatedRegionOctree::UniformCell {
-			.seen = true
-		}}};
-		return;
-	}
-
-	bool should_split = maxDepth > 0 && (view_pyramid_intersections || !occluding_points.empty());
+	bool should_split = (points_inside || may_intersect_planes) && maxDepth > 0;
 
 	if (cell.is_leaf() && should_split) {
 		cell.split_by_copy({});
 	}
 
 	if (cell.is_split()) {
+
 		SplitCell &split_cell = cell.get_split();
 
 		OctantIterator octant_iterator(box);
 
-		for (Cell& child : *split_cell.children) {
+		for (Cell &child: *split_cell.children) {
 			// Recurse.
-			incorporate_internal(*(octant_iterator++), child, occluding_points, maxDepth - 1, eye_transform, fovX, fovY);
+			incorporate_internal(*(octant_iterator++),
+								 child,
+								 affecting_points,
+								 maxDepth - 1,
+								 eye_transform,
+								 fovX,
+								 fovY);
 		}
+
 	} else {
 
-		// We are in the leaf case.
-		// We know that at least some part of the cell lies inside the view pyramid.
+		// Check if any of the points fully occlude this cell. If so, leave untouched.
+		// A point fully occludes the cell if the ray cast from the point away from the eye center
+		// intersects the cell, without the point itself being inside the cell.
+		bool fully_occluded = std::any_of(affecting_points.begin(), affecting_points.end(), [&](const auto &point) {
+			return math_utils::intersects(box, math_utils::Ray3d(point.point, eye_transform.translation() - point.point)) &&
+				   !box.contains(point.point);
+		});
 
-		LeafCell &leaf_cell = cell.get_leaf();
-
-		// FIXME this is currently broken because the intersection with one plane may lie outside the other planes
-
-		if (bottom_intersects) {
-			leaf_cell.data.updateBoundary(planes.bottom, false, box.center());
+		if (fully_occluded) {
+			return;
 		}
 
-		if (top_intersects) {
-			leaf_cell.data.updateBoundary(planes.top, false, box.center());
+		// Now, check if the cell is fully completely outside of the view pyramid.
+		// If it is, then it is invisible, and we also early-return.
+		if (isPointInsideViewPyramid(planes, center) && !may_intersect_planes) {
+			return;
 		}
 
-		if (left_intersects) {
-			leaf_cell.data.updateBoundary(planes.left, false, box.center());
+		// If the cell cannot intersect the planes, and contains no occluding points, then it is fully visible.
+		if (!may_intersect_planes && !points_inside) {
+			cell.cell = LeafCell {
+				.data = {HierarchicalBoundaryCellAnnotatedRegionOctree::UniformCell {
+					.seen = true
+				}}
+			};
+			return;
 		}
 
-		if (right_intersects) {
-			leaf_cell.data.updateBoundary(planes.right, false, box.center());
+		// By De-Morgan's law: either a plane intersects the cell, or the cell contains a point.
+
+		// We'll want to find whichever one expands the cell the *least*, since we can always expand the cell, but never contract it.
+
+		EigenExt::Plane3d closest_point;
+		bool closest_point_is_hard = false;
+		double closest_sd = std::numeric_limits<double>::infinity();
+
+		for (const auto& plane: {planes.bottom, planes.top, planes.left, planes.right}) {
+			Eigen::Vector3d point = closest_point_on_open_triangle(center, plane);
+			EigenExt::Plane3d point_plane = EigenExt::Plane3d((point - center).normalized(), point);
+			double sd = (point - center).dot(*plane.normal());
+
+			if (sd < closest_sd) {
+				closest_sd = sd;
+				closest_point = point_plane;
+				closest_point_is_hard = false;
+			}
 		}
 
-		if (leaf_cell.data.isBoundary() && !math_utils::intersects(box, leaf_cell.data.get_boundary_cell().plane)) {
-			leaf_cell.data.setFullySeen();
+		for (const auto &point: candidate_occluding_points) {
+			// If the point is outside the cell, ignore it.
+			if (!box.contains(point.point)) {
+				continue;
+			}
+
+			EigenExt::Plane3d point_plane = EigenExt::Plane3d((point.point - center).normalized(), point.point);
+
+			// If the normal points away from the eye center, flip it.
+			if (point_plane.normal().dot(point.point - eye_transform.translation()) > 0) {
+				point_plane.normal() *= -1;
+			}
+
+			double sd = (point.point - center).dot(point_plane.normal());
+
+			if (sd < closest_sd) {
+				closest_sd = sd;
+				closest_point = point_plane;
+				closest_point_is_hard = point.hard;
+			}
+
 		}
 
-		// TODO This "closest point" stuff might not work; we'll want to do some kind of normal estimation instead.
+		assert(cell.is_leaf());
 
-//		std::optional<OccupancyMap::OccludingPoint> closest_point;
-//
-//		// Find the closest occluding point to the box center.
-//		for (const auto &p : occluding_points) {
-//			if (!closest_point.has_value() || (p.point - box.center()).norm() < (closest_point->point - box.center()).norm()) {
-//				closest_point = p;
-//			}
-//		}
-//
-//		if (closest_point.has_value()) {
-//			// If there is an occluding point, mark the cell as seen.
-//			leaf_cell.data.updateBoundary(
-//					EigenExt::Plane3d(((closest_point->point - box.center())).normalized(),
-//									  closest_point->point),
-//									  closest_point->hard,
-//									  box.center());
-//		}
+		// If the cell is fully-seen, we can stop here.
+		if (cell.get_leaf().data.isUniform() && cell.get_leaf().data.get_uniform_cell().seen) {
+			return;
+		}
+
+		// If the existing point is harder than the new point, we can stop here.
+		if (cell.get_leaf().data.isBoundary() && cell.get_leaf().data.get_boundary_cell().hard && !closest_point_is_hard) {
+			return;
+		}
+
+		// If the cell is uniform and unseen update now and return.
+		if (cell.get_leaf().data.isUniform() && !cell.get_leaf().data.get_uniform_cell().seen) {
+			cell.cell = LeafCell {
+				.data = {HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryCell {
+						.plane = closest_point,
+						.hard = closest_point_is_hard,
+				}}
+			};
+			return;
+		}
+
+		// Extract the plane from the cell.
+		EigenExt::Plane3d existing_plane = cell.get_leaf().data.get_boundary_cell().plane;
+		double old_sd = existing_plane.signedDistance(center);
+
+		if (old_sd < closest_sd) {
+			return;
+		}
+
+		cell.cell = LeafCell {
+			.data = {HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryCell {
+					.plane = closest_point,
+					.hard = closest_point_is_hard,
+			}}
+		};
+
 
 	}
 
@@ -171,14 +242,6 @@ void HierarchicalBoundaryCellAnnotatedRegionOctree::incorporate(const std::vecto
 																double fovY) {
 
 	auto planes = math_utils::compute_view_pyramid_planes(eye_transform, fovX, fovY);
-
-	Eigen::Vector3d point_before = eye_transform * Eigen::Vector3d::UnitY();
-
-	// Check that it lies inside the view pyramid.
-	assert(planes.bottom.signedDistance(point_before) > 0);
-	assert(planes.top.signedDistance(point_before) > 0);
-	assert(planes.left.signedDistance(point_before) > 0);
-	assert(planes.right.signedDistance(point_before) > 0);
 
 	incorporate_internal(tree.box, tree.root, occluding_points, max_depth, eye_transform, fovX, fovY);
 
@@ -199,45 +262,6 @@ bool HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData::isUniform() const 
 
 void HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData::setFullySeen() {
 	data = UniformCell{true};
-}
-
-void HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData::updateBoundary(const Plane3d &plane,
-																			 bool hard,
-																			 const Eigen::Vector3d &cell_center) {
-
-	if (isUniform()) {
-		auto uniform_cell = std::get<UniformCell>(data);
-		if (!uniform_cell.seen) {
-			data = BoundaryCell{plane, hard};
-		}
-	} else {
-		// It's a boundary cell, so we need to update the boundary.
-		auto &boundary_cell = std::get<BoundaryCell>(data);
-
-		if (boundary_cell.hard && !hard) {
-			// Hard boundary takes precedence over soft boundary.
-			return;
-		}
-
-		if (!boundary_cell.hard && hard) {
-			// Hard boundary takes precedence over soft boundary.
-			boundary_cell.plane = plane;
-			boundary_cell.hard = hard;
-			return;
-		}
-
-		// Same type of boundary, so we update based on whichever expands the seen space the most.
-		double old_sd = boundary_cell.plane.signedDistance(cell_center);
-		double new_sd = plane.signedDistance(cell_center);
-
-		if (new_sd > old_sd) {
-			boundary_cell.plane = plane;
-		}
-	}
-
-
-
-
 }
 
 bool HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData::isBoundary() const {
