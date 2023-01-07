@@ -46,6 +46,22 @@ public:
 	};
 
 	/**
+	 * For cells that are partially seen in the octree, they contain a linear approximation
+	 * of the boundary of the explored region.
+	 *
+	 * There are three types of boundary cells, depending on what exactly caused the boundary to be there:
+	 *
+	 * 1. One of the delimiting planes of the view pyramid (assumed mobile, but representation is exact)
+	 * 2. A surface sample from a soft obstacle. (asumed static, but representation is sample_based)
+	 * 3. A surface sample from a hard obstacle.
+	 */
+	 enum BoundaryType {
+		VIEW_PYRAMID_PLANE = 0,
+		SOFT_OBSTACLE = 1,
+		HARD_OBSTACLE = 2
+	 };
+
+	/**
 	 * A cell in the octree that is partially seen, containing a linear approximation of the boundary
 	 * of the observed region.
 	 */
@@ -53,7 +69,7 @@ public:
 		// Linear approximation of the boundary of the observed region.
 		// By convention, the normal points into the seen region.
 		EigenExt::Plane3d plane;
-		bool hard;
+		BoundaryType boundaryType;
 	};
 
 	struct LeafData {

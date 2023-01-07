@@ -41,6 +41,73 @@ HierarchicalBoundaryCellAnnotatedRegionOctree::HierarchicalBoundaryCellAnnotated
 
 }
 
+void updateLeafData(const Eigen::AlignedBox3d &box, HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData& data, const Eigen::Vector3d& point, const HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryType& boundaryType, const Eigen::Vector3d& eye) {
+
+	EigenExt::Plane3d plane((point - box.center()).normalized(), point);
+
+	// If the plane is not facing the eye, flip it
+	if ((eye - point).dot(plane.normal()) < 0) {
+		plane.normal() *= -1;
+	}
+	// Don't touch fully-seen cells.
+	if (data.isUniform()) {
+
+		if (data.get_uniform_cell().seen) {
+			return;
+		} else {
+			// Fully unseen cells are updated with the new plane.
+			data.data = HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryCell {
+				.plane = plane,
+				.boundaryType = boundaryType
+			};
+		}
+
+	} else {
+
+		// The cell is an existing boundary cell.
+
+		double old_distance = data.get_boundary_cell().plane.signedDistance(box.center());
+		double new_distance = plane.signedDistance(box.center());
+
+		if (boundaryType > data.get_boundary_cell().boundaryType) {
+			// The new boundary is more important than the old one.
+			data.data = HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryCell {
+				.plane = plane,
+				.boundaryType = boundaryType
+			};
+		} else if (boundaryType == data.get_boundary_cell().boundaryType) {
+
+			if (boundaryType == HierarchicalBoundaryCellAnnotatedRegionOctree::VIEW_PYRAMID_PLANE) {
+				// The new boundary is as important as the old one.
+				if (std::abs(new_distance) < std::abs(old_distance)) {
+					// The new boundary is closer to the cell center than the old one.
+					data.data = HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryCell {
+							.plane = plane,
+							.boundaryType = boundaryType
+					};
+				}
+			} else {
+				if (new_distance > old_distance) {
+					// The new boundary is closer to the cell center than the old one.
+					data.data = HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryCell {
+							.plane = plane,
+							.boundaryType = boundaryType
+					};
+				}
+			}
+		}
+
+		// Now, if the plane no longer intersects the cell, we need to mark it as fully-seen.
+		if (!math_utils::intersects(box, data.get_boundary_cell().plane)) {
+			data.data = HierarchicalBoundaryCellAnnotatedRegionOctree::UniformCell {
+				.seen = true
+			};
+		}
+
+	}
+
+}
+
 /**
  * @brief Recursive function to incorporate a point cloud into the octree.
  *
@@ -152,22 +219,19 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 
 		// By De-Morgan's law: either a plane intersects the cell, or the cell contains a point.
 
-		// We'll want to find whichever one expands the cell the *least*, since we can always expand the cell, but never contract it.
 
 		EigenExt::Plane3d closest_point;
-		bool closest_point_is_hard = false;
+		auto closest_point_type = HierarchicalBoundaryCellAnnotatedRegionOctree::VIEW_PYRAMID_PLANE;
 		double closest_sd = std::numeric_limits<double>::infinity();
 
 		for (const auto& plane: {planes.bottom, planes.top, planes.left, planes.right}) {
-			Eigen::Vector3d point = closest_point_on_open_triangle(center, plane);
-			EigenExt::Plane3d point_plane = EigenExt::Plane3d((point - center).normalized(), point);
-			double sd = (point - center).dot(*plane.normal());
-
-			if (sd < closest_sd) {
-				closest_sd = sd;
-				closest_point = point_plane;
-				closest_point_is_hard = false;
-			}
+			updateLeafData(
+					box,
+					cell.get_leaf().data,
+					closest_point_on_open_triangle(center, plane),
+					HierarchicalBoundaryCellAnnotatedRegionOctree::VIEW_PYRAMID_PLANE,
+					eye_transform.translation()
+					);
 		}
 
 		for (const auto &point: candidate_occluding_points) {
@@ -176,62 +240,15 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 				continue;
 			}
 
-			EigenExt::Plane3d point_plane = EigenExt::Plane3d((point.point - center).normalized(), point.point);
-
-			// If the normal points away from the eye center, flip it.
-			if (point_plane.normal().dot(point.point - eye_transform.translation()) > 0) {
-				point_plane.normal() *= -1;
-			}
-
-			double sd = (point.point - center).dot(point_plane.normal());
-
-			if (sd < closest_sd) {
-				closest_sd = sd;
-				closest_point = point_plane;
-				closest_point_is_hard = point.hard;
-			}
+			updateLeafData(
+					box,
+					cell.get_leaf().data,
+					point.point,
+					point.hard ? HierarchicalBoundaryCellAnnotatedRegionOctree::HARD_OBSTACLE : HierarchicalBoundaryCellAnnotatedRegionOctree::SOFT_OBSTACLE,
+					eye_transform.translation()
+					);
 
 		}
-
-		assert(cell.is_leaf());
-
-		// If the cell is fully-seen, we can stop here.
-		if (cell.get_leaf().data.isUniform() && cell.get_leaf().data.get_uniform_cell().seen) {
-			return;
-		}
-
-		// If the existing point is harder than the new point, we can stop here.
-		if (cell.get_leaf().data.isBoundary() && cell.get_leaf().data.get_boundary_cell().hard && !closest_point_is_hard) {
-			return;
-		}
-
-		// If the cell is uniform and unseen update now and return.
-		if (cell.get_leaf().data.isUniform() && !cell.get_leaf().data.get_uniform_cell().seen) {
-			cell.cell = LeafCell {
-				.data = {HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryCell {
-						.plane = closest_point,
-						.hard = closest_point_is_hard,
-				}}
-			};
-			return;
-		}
-
-		// Extract the plane from the cell.
-		EigenExt::Plane3d existing_plane = cell.get_leaf().data.get_boundary_cell().plane;
-		double old_sd = existing_plane.signedDistance(center);
-
-		if (old_sd < closest_sd) {
-			return;
-		}
-
-		cell.cell = LeafCell {
-			.data = {HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryCell {
-					.plane = closest_point,
-					.hard = closest_point_is_hard,
-			}}
-		};
-
-
 	}
 
 }
