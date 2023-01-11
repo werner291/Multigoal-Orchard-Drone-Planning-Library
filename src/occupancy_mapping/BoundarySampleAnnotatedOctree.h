@@ -6,8 +6,8 @@
 // Created by werner on 21-12-22.
 //
 
-#ifndef NEW_PLANNERS_HIERARCHICALBOUNDARYCELLANNOTATEDREGIONOCTREE_H
-#define NEW_PLANNERS_HIERARCHICALBOUNDARYCELLANNOTATEDREGIONOCTREE_H
+#ifndef NEW_PLANNERS_BOUNDARYSAMPLEANNOTATEDOCTREE_H
+#define NEW_PLANNERS_BOUNDARYSAMPLEANNOTATEDOCTREE_H
 
 #include <Eigen/Core>
 #include <memory>
@@ -21,7 +21,7 @@
  * An octree occupancy map that can be explicitly annotated with a linear approximation of the
  * boundary of the occupied region in each of the leaf cells.
  */
-class HierarchicalBoundaryCellAnnotatedRegionOctree : public OccupancyMap {
+class BoundarySampleAnnotatedOctree : public OccupancyMap {
 
 public:
 
@@ -143,14 +143,12 @@ public:
 
 
 	/**
-	 * @brief Construct a HierarchicalBoundaryCellAnnotatedRegionOctree with the given center, base edge length, and maximum depth.
+	 * @brief Construct a BoundarySampleAnnotatedOctree with the given center, base edge length, and maximum depth.
 	 * @param center The center point of the octree.
 	 * @param baseEdgeLength The length of the edges of the root cell.
 	 * @param maxDepth The maximum depth of the octree.
 	 */
-	HierarchicalBoundaryCellAnnotatedRegionOctree(const Eigen::Vector3d &center,
-												  double baseEdgeLength,
-												  const unsigned int maxDepth);
+	BoundarySampleAnnotatedOctree(const Eigen::Vector3d &center, double baseEdgeLength, const unsigned int maxDepth);
 
 	/// Maximum depth of the octree.
 	const unsigned int max_depth;
@@ -158,4 +156,4 @@ public:
 };
 
 
-#endif //NEW_PLANNERS_HIERARCHICALBOUNDARYCELLANNOTATEDREGIONOCTREE_H
+#endif //NEW_PLANNERS_BOUNDARYSAMPLEANNOTATEDOCTREE_H

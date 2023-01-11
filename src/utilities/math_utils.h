@@ -66,6 +66,10 @@ struct OpenTriangle {
 	[[nodiscard]] EigenExt::UVector3d normal() const {
 		return EigenExt::UVector3d(dir1.cross(dir2).normalized());
 	}
+
+	[[nodiscard]] EigenExt::Plane3d plane() const {
+		return {normal(), apex};
+	}
 };
 
 /*
@@ -197,7 +201,7 @@ namespace math_utils {
 	 * @param value The value at the given dimension of the plane.
 	 * @return The parameter value at the plane, or NaN if the line is parallel to the plane.
 	 */
-	double param_at_plane(const EigenExt::ParametrizedLine3d &p, size_t d, double value);
+	double param_at_plane(const EigenExt::ParametrizedLine3d &p, int d, double value);
 
 	struct Segment3d {
 		Eigen::Vector3d start;

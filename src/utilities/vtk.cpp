@@ -12,7 +12,7 @@
 #include <vtkPlaneSource.h>
 #include "vtk.h"
 #include "../exploration/ColorEncoding.h"
-#include "../occupancy_mapping/HierarchicalBoundaryCellAnnotatedRegionOctree.h"
+#include "../occupancy_mapping/BoundarySampleAnnotatedOctree.h"
 
 vtkNew<vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel *lm) {
 
@@ -395,7 +395,7 @@ vtkActor *HierarchicalBoundaryCellAnnotatedRegionOctreeVtk::getActor() {
 	return actor;
 }
 
-void HierarchicalBoundaryCellAnnotatedRegionOctreeVtk::updateTree(const HierarchicalBoundaryCellAnnotatedRegionOctree &tree) {
+void HierarchicalBoundaryCellAnnotatedRegionOctreeVtk::updateTree(const BoundarySampleAnnotatedOctree &tree) {
 
 	// Using the DFS iterator of the octree, find all the leaves.
 	// For those that have a plane, intersect the plane with the octree cell and add it to the polydata.
@@ -404,6 +404,10 @@ void HierarchicalBoundaryCellAnnotatedRegionOctreeVtk::updateTree(const Hierarch
 	vtkNew<vtkPoints> points;
 	vtkNew<vtkCellArray> cells;
 	vtkNew<vtkCellArray> vertices;
+
+	// Colors.
+	vtkNew<vtkUnsignedCharArray> colors;
+	colors->SetNumberOfComponents(3);
 
 	// Use the DFS iterator in a for-loop to iterate over all the nodes.
 	for (auto it = tree.getTree().depth_first_begin(); !it.is_end(); ++it) {
@@ -427,21 +431,39 @@ void HierarchicalBoundaryCellAnnotatedRegionOctreeVtk::updateTree(const Hierarch
 			vertices->InsertNextCell(1);
 			vertices->InsertCellPoint(pt);
 
+
+			switch (it->cell->get_leaf().data.get_boundary_cell().boundaryType) {
+				case BoundarySampleAnnotatedOctree::VIEW_PYRAMID_PLANE:
+					colors->InsertNextTuple3(255, 0, 0);
+					colors->InsertNextTuple3(255, 0, 0);
+
+					break;
+				case BoundarySampleAnnotatedOctree::SOFT_OBSTACLE:
+					colors->InsertNextTuple3(0, 255, 0);
+					colors->InsertNextTuple3(0, 255, 0);
+					break;
+				case BoundarySampleAnnotatedOctree::HARD_OBSTACLE:
+					colors->InsertNextTuple3(0, 0, 255);
+					colors->InsertNextTuple3(0, 0, 255);
+					break;
+			}
+
 		}
 
-//		if (it->cell->is_leaf() && it->cell->get_leaf().data.isUniform()) {
-//
-//			if (it->cell->get_leaf().data.get_uniform_cell().seen) {
-//
-//				Eigen::Vector3d c = it->box.center();
-//
-//				auto pt = points->InsertNextPoint(c.data());
-//
-//				vertices->InsertNextCell(1);
-//				vertices->InsertCellPoint(pt);
-//			}
-//
-//		}
+		if (it->cell->is_leaf() && it->cell->get_leaf().data.isUniform()) {
+
+			if (it->cell->get_leaf().data.get_uniform_cell().seen) {
+
+				Eigen::Vector3d c = it->box.center();
+
+				auto pt = points->InsertNextPoint(c.data());
+
+				vertices->InsertNextCell(1);
+				vertices->InsertCellPoint(pt);
+				colors->InsertNextTuple3(255, 0, 255);
+			}
+
+		}
 
 	}
 
@@ -449,6 +471,10 @@ void HierarchicalBoundaryCellAnnotatedRegionOctreeVtk::updateTree(const Hierarch
 	polyData->SetPoints(points);
 	polyData->SetVerts(vertices);
 	polyData->SetLines(cells);
+
+	// Set the colors.
+	polyData->GetPointData()->SetScalars(colors);
+
 	polyData->Modified();
 
 }

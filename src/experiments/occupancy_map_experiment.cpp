@@ -11,7 +11,7 @@
 #include "../utilities/math_utils.h"
 #include "../occupancy_mapping/OccupancyMap.h"
 #include "../occupancy_mapping/HierarchicalCategoricalOccupancyOctree.h"
-#include "../occupancy_mapping/HierarchicalBoundaryCellAnnotatedRegionOctree.h"
+#include "../occupancy_mapping/BoundarySampleAnnotatedOctree.h"
 
 static const double TEST_POINT_DISTANCE_FROM_BOUNDARY = 0.5;
 // Struct to represent a sphere

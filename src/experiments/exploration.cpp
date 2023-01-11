@@ -27,7 +27,7 @@
 #include "../TriangleAABB.h"
 #include "ScannedSurfaceTracker.h"
 #include "../utilities/shape_generation.h"
-#include "../occupancy_mapping/HierarchicalBoundaryCellAnnotatedRegionOctree.h"
+#include "../occupancy_mapping/BoundarySampleAnnotatedOctree.h"
 
 /**
  * Build a MoveIt collision environment from the given workspace specification.
@@ -134,7 +134,7 @@ int main(int, char *[]) {
 
 	viewer.addActor(seen_space_visualization.getActor());
 
-	HierarchicalBoundaryCellAnnotatedRegionOctree occupancy_map(Eigen::Vector3d::Zero(), 5.0, 5);
+	BoundarySampleAnnotatedOctree occupancy_map(Eigen::Vector3d::Zero(), 10.0, 7);
 
 	// The "main loop" (interval callback) of the program.
 	auto callback = [&]() {
@@ -158,7 +158,7 @@ int main(int, char *[]) {
 		// Render the point cloud visible to the robot's camera.
 		auto points = apple_surface_lookup.segmentPointCloudData(sensor.renderSnapshot(eePose));
 
-		occupancy_map.incorporate(extractOccludingPoints(points), eePose, M_PI / 2.0, M_PI / 2.0); // Correct these, or perhaps derive them from the point cloud
+		occupancy_map.incorporate(extractOccludingPoints(points), eePose, M_PI / 6.0, M_PI / 6.0);
 
 		std::cout << "Map size: " << occupancy_map.getTree().count_nodes().leaf_count << std::endl;
 

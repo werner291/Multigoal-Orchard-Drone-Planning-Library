@@ -15,7 +15,7 @@
 #include <shape_msgs/msg/mesh.hpp>
 #include "../ScannablePointsIndex.h"
 #include "../TreeMeshes.h"
-#include "../occupancy_mapping/HierarchicalBoundaryCellAnnotatedRegionOctree.h"
+#include "../occupancy_mapping/BoundarySampleAnnotatedOctree.h"
 
 
 static const int SENSOR_RESOLUTION = 200;
@@ -273,7 +273,7 @@ public:
 
 	vtkActor* getActor();
 
-	void updateTree(const HierarchicalBoundaryCellAnnotatedRegionOctree &tree);
+	void updateTree(const BoundarySampleAnnotatedOctree &tree);
 };
 
 #endif //NEW_PLANNERS_VTK_H

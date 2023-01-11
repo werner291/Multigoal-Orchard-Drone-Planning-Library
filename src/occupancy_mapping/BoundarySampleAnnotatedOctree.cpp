@@ -6,16 +6,16 @@
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/transform.hpp>
 #include "../utilities/math_utils.h"
-#include "HierarchicalBoundaryCellAnnotatedRegionOctree.h"
+#include "BoundarySampleAnnotatedOctree.h"
 
-using PtOctree = HierarchicalBoundaryCellAnnotatedRegionOctree::PointAnnotatedOctree;
+using PtOctree = BoundarySampleAnnotatedOctree::PointAnnotatedOctree;
 using LeafCell = PtOctree::LeafCell;
 using SplitCell = PtOctree::SplitCell;
 using Cell = PtOctree::Cell;
 
-HierarchicalBoundaryCellAnnotatedRegionOctree::HierarchicalBoundaryCellAnnotatedRegionOctree(const Eigen::Vector3d &center,
-																							 const double baseEdgeLength,
-																							 const unsigned int maxDepth)
+BoundarySampleAnnotatedOctree::BoundarySampleAnnotatedOctree(const Eigen::Vector3d &center,
+															 const double baseEdgeLength,
+															 const unsigned int maxDepth)
 		: max_depth(maxDepth), tree(LeafData{.data = UniformCell{.seen = false}}) {
 
 	// Initialize the octree bounding box with the given center and base edge length
@@ -60,18 +60,18 @@ plane_from_sample(const Eigen::AlignedBox3d &box, const Eigen::Vector3d &point, 
  */
 bool shouldUpdateBoundaryCell(const Eigen::AlignedBox3d &box,
 							  const Plane3d &plane,
-							  const HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryType &boundaryType,
-							  const HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryCell &boundaryCell) {
+							  const BoundarySampleAnnotatedOctree::BoundaryType &boundaryType,
+							  const BoundarySampleAnnotatedOctree::BoundaryCell &boundaryCell) {
 
 	if (boundaryType != boundaryCell.boundaryType) {
 		return boundaryType > boundaryCell.boundaryType;
 	}
 
 	// If the boundary type is a view pyramid plane:
-	if (boundaryType == HierarchicalBoundaryCellAnnotatedRegionOctree::VIEW_PYRAMID_PLANE) {
-		return plane.absDistance(box.center()) < boundaryCell.plane.absDistance(box.center());
-	} else {
+	if (boundaryType == BoundarySampleAnnotatedOctree::VIEW_PYRAMID_PLANE) {
 		return plane.signedDistance(box.center()) > boundaryCell.plane.signedDistance(box.center());
+	} else {
+		return plane.absDistance(box.center()) < boundaryCell.plane.absDistance(box.center());
 	}
 
 }
@@ -85,12 +85,17 @@ bool shouldUpdateBoundaryCell(const Eigen::AlignedBox3d &box,
  * @param boundaryType 	The type of boundary represented by the plane.
  */
 void updateLeafData(const Eigen::AlignedBox3d &box,
-					HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData &data,
+					BoundarySampleAnnotatedOctree::LeafData &data,
 					const EigenExt::Plane3d &plane,
-					const HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryType &boundaryType) {
+					const BoundarySampleAnnotatedOctree::BoundaryType &boundaryType) {
 
 	// Don't touch fully-seen cells.
 	if (data.isUniform()) {
+
+		if (boundaryType == BoundarySampleAnnotatedOctree::SOFT_OBSTACLE) {
+			std::cout << "Point: " << boundaryType << (data.get_uniform_cell().seen ? " seen" : " unseen") << std::endl;
+			assert(!data.get_uniform_cell().seen);
+		}
 
 		if (!data.get_uniform_cell().seen) {
 			// Fully unseen cells are updated with the new plane.
@@ -104,12 +109,39 @@ void updateLeafData(const Eigen::AlignedBox3d &box,
 			// Update the leaf data with the new boundary cell information.
 			data.setBoundaryCell(plane, boundaryType);
 		}
-
-		// Now, if the plane no longer intersects the cell, we need to mark it as fully-seen.
-		if (!math_utils::intersects(box, boundaryCell.plane)) {
-			data.setFullySeen();
-		}
 	}
+}
+
+
+
+/**
+ * Check whether the ray that is occluded by this point crosses through a given bounding box.
+ *
+ * That is, the ray originating from the point and pointing away from the eye center must intersect the box.
+ *
+ * @param box 				The bounding box to check.
+ * @param point 			The occluding point.
+ * @param eye_center 		The eye point.
+ * @return 					True if the ray is occluded by the point and crosses through the box, false otherwise.
+ */
+bool occludingRayCrossesCell(const Eigen::AlignedBox3d &box,
+							 const OccupancyMap::OccludingPoint &point,
+							 const Eigen::Vector3d &eye_center) {
+	return math_utils::intersects(box, math_utils::Ray3d(point.point, point.point - eye_center));
+}
+
+/**
+ * Check if the given point occludes the given box.
+ *
+ * @param box 			The box to check for occlusion.
+ * @param point 		The point to check for occlusion.
+ * @param eye_center 	The center of the eye (origin of the occlusion ray).
+ * @return 				True if the point fully occludes the box, false otherwise.
+ */
+bool fullyOccludesBox(const Eigen::AlignedBox3d &box,
+					  const OccupancyMap::OccludingPoint &point,
+					  const Eigen::Vector3d &eye_center) {
+	return occludingRayCrossesCell(box, point, eye_center) && !box.contains(point.point);
 }
 
 /**
@@ -135,36 +167,6 @@ bool checkPointsFullyOccludingCell(const Eigen::AlignedBox3d &box,
 }
 
 /**
- * Check whether the ray that is occluded by this point crosses through a given bounding box.
- *
- * That is, the ray originating from the point and pointing away from the eye center must intersect the box.
- *
- * @param box 				The bounding box to check.
- * @param point 			The occluding point.
- * @param eye_center 		The eye point.
- * @return 					True if the ray is occluded by the point and crosses through the box, false otherwise.
- */
-bool occludingRayCrossesCell(const Eigen::AlignedBox3d &box,
-							 const OccupancyMap::OccludingPoint &point,
-							 const Eigen::Vector3d &eye_center) {
-	return math_utils::intersects(box, math_utils::Ray3d(point.point, eye_center - point.point));
-}
-
-/**
- * Check if the given point occludes the given box.
- *
- * @param box 			The box to check for occlusion.
- * @param point 		The point to check for occlusion.
- * @param eye_center 	The center of the eye (origin of the occlusion ray).
- * @return 				True if the point fully occludes the box, false otherwise.
- */
-bool fullyOccludesBox(const Eigen::AlignedBox3d &box,
-					  const OccupancyMap::OccludingPoint &point,
-					  const Eigen::Vector3d &eye_center) {
-	return occludingRayCrossesCell(box, point, eye_center) && !box.contains(point.point);
-}
-
-/**
  * Determines whether the given 3D axis-aligned bounding box may intersect the sides of the view pyramid.
  * If the distance between the point on the view pyramid planes closest to the center of the bounding box
  * and the center of the bounding box is less than half the size of the bounding box, it is likely that
@@ -180,8 +182,7 @@ bool box_may_intersect_view_pyramid_sides(const Eigen::AlignedBox3d &box, const 
 
 	// Check if the distance between the closest point on the view pyramid planes and the center of the bounding box
 	// is less than half the size of the bounding box.
-	bool may_intersect_planes = (closest_view_pyramid_point - box.center()).norm() < box.sizes().norm() / 2;
-	return may_intersect_planes;
+	return (closest_view_pyramid_point - box.center()).norm() < box.sizes().norm() / 2;
 }
 
 
@@ -245,10 +246,20 @@ void updateLeafData(const Eigen::AlignedBox3d &box,
 					const Eigen::Isometry3d &eye_transform,
 					const math_utils::ViewPyramidFaces &planes,
 					LeafCell &leaf) {
-	updateLeafData(box,
-				   leaf.data,
-				   plane_from_sample(box, planes.closest_point_on_any_plane(box.center()), eye_transform.translation()),
-				   HierarchicalBoundaryCellAnnotatedRegionOctree::VIEW_PYRAMID_PLANE);
+
+	EigenExt::Plane3d closest_plane;
+	double closest_sd = std::numeric_limits<double>::infinity();
+
+	for (const auto &face: {planes.bottom, planes.top, planes.left, planes.right}) {
+		auto plane = face.plane();
+		double sd = plane.signedDistance(box.center());
+		if (sd < closest_sd) {
+			closest_sd = sd;
+			closest_plane = plane;
+		}
+	}
+
+	updateLeafData(box, leaf.data, closest_plane, BoundarySampleAnnotatedOctree::VIEW_PYRAMID_PLANE);
 }
 
 /**
@@ -266,7 +277,9 @@ void updateLeafData(const Eigen::AlignedBox3d &box,
 					const Eigen::Isometry3d &eye_transform,
 					std::vector<OccupancyMap::OccludingPoint> &affecting_points,
 					LeafCell &leaf) {
+
 	for (const auto &point: affecting_points) {
+
 		// If the point is outside the cell, ignore it.
 		if (!box.contains(point.point)) {
 			continue;
@@ -275,8 +288,8 @@ void updateLeafData(const Eigen::AlignedBox3d &box,
 		updateLeafData(box,
 					   leaf.data,
 					   plane_from_sample(box, point.point, eye_transform.translation()),
-					   point.hard ? HierarchicalBoundaryCellAnnotatedRegionOctree::HARD_OBSTACLE
-								  : HierarchicalBoundaryCellAnnotatedRegionOctree::SOFT_OBSTACLE);
+					   point.hard ? BoundarySampleAnnotatedOctree::HARD_OBSTACLE
+								  : BoundarySampleAnnotatedOctree::SOFT_OBSTACLE);
 
 	}
 }
@@ -298,6 +311,8 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 						  const Eigen::Isometry3d &eye_transform,
 						  const math_utils::ViewPyramidFaces &planes) {
 
+	auto affecting_points = filterAffectingPoints(box, candidate_occluding_points, eye_transform);
+
 	// If the cell is fully-seen, we can stop here.
 	if (cellIsFullySeen(cell)) {
 		return;
@@ -310,20 +325,28 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 		return;
 	}
 
-	// Also, go find the points whose eye ray passes through the cell at all. This is essentially pre-filtering step on the input.
-	auto affecting_points = filterAffectingPoints(box, candidate_occluding_points, eye_transform);
+	// TODO: could look for some kind if deltas in neighboring pixels to see if we should split or not in terms of occluding cells.
+	// That, or some kinda variety measure.
+
+	bool points_occluding = checkPointsFullyOccludingCell(box, affecting_points, eye_transform.translation());
+
+	if (points_occluding) {
+		// If the cell is fully occluded by points, we can stop here.
+		return;
+	}
 
 	bool points_inside = checkPointsInside(box, affecting_points);
+
+	// FIXME WRONG, this should be occluding points, not affecting points
 
 	// If the cell cannot intersect the planes, and contains no occluding points, then it is fully visible.
 	if (!may_intersect_planes && !points_inside) {
 		// Set fully-seen.
-		cell.cell = LeafCell {
-			.data = {HierarchicalBoundaryCellAnnotatedRegionOctree::UniformCell {.seen = true}}
-		};
+		cell.cell = LeafCell{.data = {BoundarySampleAnnotatedOctree::UniformCell{.seen = true}}};
 		return;
 	}
 
+	// TODO investigate why second condition is needed or not
 	bool should_split = (points_inside || may_intersect_planes) && maxDepth > 0;
 
 	if (cell.is_leaf() && should_split) {
@@ -357,50 +380,53 @@ void incorporate_internal(const Eigen::AlignedBox3d &box,
 
 		auto &leaf = cell.get_leaf();
 
-		updateLeafData(box, eye_transform, planes, leaf);
 		updateLeafData(box, eye_transform, affecting_points, leaf);
+		updateLeafData(box, eye_transform, planes, leaf);
+
+		// Now, if the plane no longer intersects the cell, we need to mark it as fully-seen.
+		if (leaf.data.isBoundary() && !math_utils::intersects(box, leaf.data.get_boundary_cell().plane)) {
+
+			bool seen = leaf.data.get_boundary_cell().plane.signedDistance(eye_transform.translation()) > 0;
+
+			leaf.data = {BoundarySampleAnnotatedOctree::UniformCell{.seen = seen}};
+		}
 
 	}
 
 }
 
-void
-HierarchicalBoundaryCellAnnotatedRegionOctree::incorporate(const std::vector<OccupancyMap::OccludingPoint> &occluding_points,
-														   const Eigen::Isometry3d &eye_transform,
-														   double fovX,
-														   double fovY) {
+void BoundarySampleAnnotatedOctree::incorporate(const std::vector<OccupancyMap::OccludingPoint> &occluding_points,
+												const Eigen::Isometry3d &eye_transform,
+												double fovX,
+												double fovY) {
 
 	auto planes = math_utils::compute_view_pyramid_planes(eye_transform, fovX, fovY);
-
-	Eigen::Vector3d in_front = eye_transform * Eigen::Vector3d(0, 1, 0);
-	assert(planes.contains(in_front));
 
 	incorporate_internal(tree.box, tree.root, occluding_points, max_depth, eye_transform, planes);
 
 }
 
-const HierarchicalBoundaryCellAnnotatedRegionOctree::PointAnnotatedOctree &
-HierarchicalBoundaryCellAnnotatedRegionOctree::getTree() const {
+const BoundarySampleAnnotatedOctree::PointAnnotatedOctree &BoundarySampleAnnotatedOctree::getTree() const {
 	return tree;
 }
 
-const unsigned int HierarchicalBoundaryCellAnnotatedRegionOctree::getMaxDepth() const {
+const unsigned int BoundarySampleAnnotatedOctree::getMaxDepth() const {
 	return max_depth;
 }
 
-bool HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData::isUniform() const {
+bool BoundarySampleAnnotatedOctree::LeafData::isUniform() const {
 	return std::holds_alternative<UniformCell>(data);
 }
 
-void HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData::setFullySeen() {
+void BoundarySampleAnnotatedOctree::LeafData::setFullySeen() {
 	data = UniformCell{true};
 }
 
-bool HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData::isBoundary() const {
+bool BoundarySampleAnnotatedOctree::LeafData::isBoundary() const {
 	return std::holds_alternative<BoundaryCell>(data);
 }
 
-void HierarchicalBoundaryCellAnnotatedRegionOctree::LeafData::setBoundaryCell(const Plane3d &plane,
-																			  HierarchicalBoundaryCellAnnotatedRegionOctree::BoundaryType boundaryType) {
+void BoundarySampleAnnotatedOctree::LeafData::setBoundaryCell(const Plane3d &plane,
+															  BoundarySampleAnnotatedOctree::BoundaryType boundaryType) {
 	data = BoundaryCell{plane, boundaryType};
 }

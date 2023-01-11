@@ -253,7 +253,7 @@ EigenExt::ParametrizedLine3d math_utils::Ray3d::extended_line() const {
 	return EigenExt::ParametrizedLine3d(origin, direction);
 }
 
-double math_utils::param_at_plane(const EigenExt::ParametrizedLine3d &p, size_t d, double value) {
+double math_utils::param_at_plane(const EigenExt::ParametrizedLine3d &p, int d, double value) {
 	double dir_dim = p.direction()[d];
 	if (dir_dim == 0.0) {
 		return NAN;
@@ -270,41 +270,32 @@ bool math_utils::box_contains_segment(const Eigen::AlignedBox3d &box, const Segm
 std::optional<std::array<double, 2>>
 math_utils::line_aabb_intersection_params(const Eigen::AlignedBox3d &box, const EigenExt::ParametrizedLine3d &segment) {
 
-	// We will look at each dimension. For each, we look for the two parameters where the line exists and enters
-	// the slice of space delimited by the two planes of the AABB.
-
-	// Initialize to the two extremes.
-	double min_param = std::numeric_limits<double>::infinity();
-	double max_param = -std::numeric_limits<double>::infinity();
-
-	// Iterate over the dimensions.
-	for (size_t d = 0; d < 3; d++) {
-
-		// Find the intersection parameters for both planes.
-		double min_plane_param = param_at_plane(segment, d, box.min()[d]);
-		double max_plane_param = param_at_plane(segment, d, box.max()[d]);
-
-		// Check if we actually have an intersection (we won't if the line is parallel to the plane)
-		if (std::isfinite(min_plane_param) && std::isfinite(max_plane_param)) {
-
-			// Keep ordering consistent.
-			if (min_plane_param > max_plane_param) {
-				std::swap(min_plane_param, max_plane_param);
-			}
-
-			// Find the closest furthest intersection
-			max_param = std::min(max_param, max_param);
-			// And vice-versa.
-			min_param = std::max(min_param, min_plane_param);
-		}
+	double x_entry = param_at_plane(segment, 0, box.min().x());
+	double x_exit = param_at_plane(segment, 0, box.max().x());
+	if (x_entry > x_exit) {
+		std::swap(x_entry, x_exit);
 	}
 
-	// The intersections with the planes must be outside of the boundary of the box.
-	if (min_param > max_param) {
+	double y_entry = param_at_plane(segment, 1, box.min().y());
+	double y_exit = param_at_plane(segment, 1, box.max().y());
+	if (y_entry > y_exit) {
+		std::swap(y_entry, y_exit);
+	}
+
+	double z_entry = param_at_plane(segment, 2, box.min().z());
+	double z_exit = param_at_plane(segment, 2, box.max().z());
+	if (z_entry > z_exit) {
+		std::swap(z_entry, z_exit);
+	}
+
+	double entry = std::max({x_entry, y_entry, z_entry});
+	double exit = std::min({x_exit, y_exit, z_exit});
+
+	if (entry > exit) {
 		return std::nullopt;
+	} else {
+		return std::array<double, 2>{entry, exit};
 	}
-
-	return std::array<double, 2>{min_param, max_param};
 }
 
 bool math_utils::segment_intersects_aabb(const Eigen::AlignedBox3d &box, const Segment3d &segment) {
@@ -389,7 +380,13 @@ Eigen::Isometry3d fromJsonIsometry3d(const Json::Value &json) {
 #endif
 
 bool math_utils::intersects(const Eigen::AlignedBox3d &box, const Ray3d &ray3D) {
-	return line_aabb_intersection_params(box, ray3D.extended_line()) != std::nullopt;
+	auto intersections = line_aabb_intersection_params(box, ray3D.extended_line());
+
+	if (!intersections) {
+		return false;
+	} else {
+		return (*intersections)[1] >= 0.0;
+	}
 }
 
 bool math_utils::hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sphere_center,
@@ -435,18 +432,21 @@ math_utils::compute_view_pyramid_planes(const Eigen::Isometry3d &tf, double fovX
 	double x_slope = tan(fovX / 2);
 	double y_slope = tan(fovY / 2);
 
-	Eigen::Vector3d top_left = tf * Eigen::Vector3d(-x_slope, 1.0, y_slope);
-	Eigen::Vector3d top_right = tf * Eigen::Vector3d(x_slope, 1.0, y_slope);
-	Eigen::Vector3d bottom_left = tf * Eigen::Vector3d(-x_slope, 1.0, -y_slope);
-	Eigen::Vector3d bottom_right = tf * Eigen::Vector3d(x_slope, 1.0, -y_slope);
+	Eigen::Vector3d top_left = tf.rotation() * Eigen::Vector3d(-x_slope, 1.0, y_slope);
+	Eigen::Vector3d top_right = tf.rotation() * Eigen::Vector3d(x_slope, 1.0, y_slope);
+	Eigen::Vector3d bottom_left = tf.rotation() * Eigen::Vector3d(-x_slope, 1.0, -y_slope);
+	Eigen::Vector3d bottom_right = tf.rotation() * Eigen::Vector3d(x_slope, 1.0, -y_slope);
 
-	// TODO test that the normals are consistent.
-	return {
-		OpenTriangle { tf.translation(), top_left, bottom_left },
-		OpenTriangle { tf.translation(), bottom_right, top_right },
-		OpenTriangle { tf.translation(), top_left, top_right },
-		OpenTriangle { tf.translation(), bottom_left, bottom_right }
-	};
+	OpenTriangle left{tf.translation(), bottom_left, top_left};
+	OpenTriangle right{tf.translation(), top_right, bottom_right};
+	OpenTriangle top{tf.translation(), top_left, top_right};
+	OpenTriangle bottom{tf.translation(), bottom_right, bottom_left};
+
+	math_utils::ViewPyramidFaces faces{left, right, top, bottom};
+
+	assert(faces.contains(tf * Eigen::Vector3d::UnitY()));
+
+	return faces;
 }
 
 bool math_utils::intersects(const Eigen::AlignedBox3d &box, const Plane3d &plane) {
