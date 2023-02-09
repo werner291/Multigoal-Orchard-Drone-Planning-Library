@@ -207,7 +207,7 @@ add_library(${PROJECT_NAME}_shared
         src/DirectPointCloudCollisionDetection.h
         src/exploration/CandidatePathGenerator.cpp
         src/exploration/CandidatePathGenerator.h
-        src/exploration/SegmentedRobotPath.cpp src/exploration/SegmentedRobotPath.h src/exploration/LocalOptimizer.cpp src/exploration/LocalOptimizer.h src/exploration/logging.cpp src/exploration/logging.h src/exploration/KnownFreeSpaceModel.cpp src/exploration/KnownFreeSpaceModel.h src/experiments/ScannedSurfaceTracker.cpp src/experiments/ScannedSurfaceTracker.h src/exploration/SurfletExplorationFrontier.cpp src/exploration/SurfletExplorationFrontier.h src/exploration/SurfletVolume.cpp src/utilities/shape_generation.cpp src/utilities/shape_generation.h)
+        src/exploration/SegmentedRobotPath.cpp src/exploration/SegmentedRobotPath.h src/exploration/LocalOptimizer.cpp src/exploration/LocalOptimizer.h src/exploration/logging.cpp src/exploration/logging.h src/exploration/KnownFreeSpaceModel.cpp src/exploration/KnownFreeSpaceModel.h src/experiments/ScannedSurfaceTracker.cpp src/experiments/ScannedSurfaceTracker.h src/exploration/SurfletExplorationFrontier.cpp src/exploration/SurfletExplorationFrontier.h src/exploration/SurfletVolume.cpp src/utilities/shape_generation.cpp src/utilities/shape_generation.h src/abstract/path_traits.h src/abstract/static_shell_approach.h src/abstract/approach_paths.h src/abstract/tsp_on_shell.h src/abstract/tsp_on_shell.h src/abstract/StateVectorPath.h src/abstract/shell_space.h src/abstract/dynamic_shell_approach.h src/abstract/goal_to_goal_via_shell.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -227,6 +227,7 @@ experiment("shell_comparison")
 experiment("tsp_over_prm_vs_sphereshell")
 experiment("shell_comparison_sphere_armangle")
 experiment("exploration")
+experiment("ignoring_vs_passive_discovery")
 
 include(GoogleTest)
 
