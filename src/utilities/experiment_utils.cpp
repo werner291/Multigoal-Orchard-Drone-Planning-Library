@@ -223,17 +223,18 @@ std::vector<ompl::base::GoalPtr> constructNewAppleGoals(
 }
 
 bodies::BoundingSphere
-compute_enclosing_sphere(const moveit_msgs::msg::PlanningScene &planning_scene_message, const double padding) {
+compute_enclosing_sphere_around_leaves(const moveit_msgs::msg::PlanningScene &planning_scene_message,
+									   const double padding) {
 
-    typedef double FT;
-    typedef Seb::Point<FT> Point;
-    typedef std::vector<Point> PointVector;
-    typedef Seb::Smallest_enclosing_ball<FT> Miniball;
+	typedef double FT;
+	typedef Seb::Point<FT> Point;
+	typedef std::vector<Point> PointVector;
+	typedef Seb::Smallest_enclosing_ball<FT> Miniball;
 
-    std::vector<Point> points;
+	std::vector<Point> points;
 
-    for (const auto& col : planning_scene_message.world.collision_objects) {
-        if (col.id == "leaves") {
+	for (const auto &col: planning_scene_message.world.collision_objects) {
+		if (col.id == "leaves") {
             for (const auto& mesh : col.meshes) {
                 for (auto v : mesh.vertices) {
                     std::vector<FT> point_vect { v.x, v.y, v.z };
@@ -270,4 +271,27 @@ std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const AppleTreePlan
 		}
 	}
 	return mesh_points;
+}
+
+std::vector<moveit::core::RobotState> randomStatesOutsideTree(const AppleTreePlanningScene &scene,
+															  const moveit::core::RobotModelConstPtr &model,
+															  const int n) {
+
+	using namespace ranges;
+
+	return views::iota(0, n) | views::transform([&](int i) {
+		return randomStateOutsideTree(model, i);
+	}) | to_vector;
+
+}
+
+ompl::base::SpaceInformationPtr
+loadSpaceInformation(const std::shared_ptr<DroneStateSpace> &stateSpace, const AppleTreePlanningScene &scene_info) {
+	auto scene = setupPlanningScene(scene_info.scene_msg, stateSpace->getRobotModel());
+	return initSpaceInformation(scene, scene->getRobotModel(), stateSpace);
+}
+
+std::shared_ptr<DroneStateSpace> omplStateSpaceForDrone(const moveit::core::RobotModelConstPtr &model) {
+	ompl_interface::ModelBasedStateSpaceSpecification spec(model, "whole_body");
+	return std::make_shared<DroneStateSpace>(spec, TRANSLATION_BOUND);
 }

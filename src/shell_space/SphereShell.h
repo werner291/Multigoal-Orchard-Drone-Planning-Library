@@ -105,7 +105,8 @@ public:
  * @param padding 			The padding to add to the radius of the sphere.
  * @return 					A WorkspaceShell.
  */
-[[nodiscard]] std::shared_ptr<WorkspaceSphereShell> paddedSphericalShellAroundLeaves(const AppleTreePlanningScene &scene_info, double padding);
+[[nodiscard]] std::shared_ptr<WorkspaceSphereShell>
+paddedSphericalShellAroundLeaves(const AppleTreePlanningScene &scene_info, double padding);
 
 template<typename ShellPoint>
 [[nodiscard]]
