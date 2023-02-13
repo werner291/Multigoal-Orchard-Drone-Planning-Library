@@ -1,22 +1,21 @@
-// Copyright (c) 2022 University College Roosevelt
-//
-// All rights reserved.
 
 #ifndef NEW_PLANNERS_PATH_TRAITS_H
 #define NEW_PLANNERS_PATH_TRAITS_H
 
+#include <vector>
+
 /**
  * @brief A traits class for paths that defines operations that can be performed on them.
  *
- * @tparam Path 	The type of the path.
+ * @tparam PathType 	The type of the path.
  */
-template<typename Path>
+template <typename PathType>
 struct path_traits {
 
 	/**
 	 * @brief The type of state used in the path.
 	 */
-	using state_type = typename Path::state_type;
+	using state_type = typename PathType::state_type;
 
 	/**
 	 * @brief Concatenates two paths into one path.
@@ -26,7 +25,7 @@ struct path_traits {
 	 *
 	 * @return The concatenated path.
 	 */
-	static Path concatenate_path(const Path &path1, const Path &path2);
+	static PathType concatenate_path(const PathType &path1, const PathType &path2);
 
 	/**
 	 * @brief Returns the initial state of the path.
@@ -35,7 +34,7 @@ struct path_traits {
 	 *
 	 * @return The initial state of the path.
 	 */
-	static state_type initial_state(const Path &path);
+	static state_type initial_state(const PathType &path);
 
 	/**
 	 * @brief Returns the final state of the path.
@@ -44,7 +43,7 @@ struct path_traits {
 	 *
 	 * @return The final state of the path.
 	 */
-	static state_type final_state(const Path &path);
+	static state_type final_state(const PathType &path);
 
 };
 

@@ -230,7 +230,8 @@ add_library(${PROJECT_NAME}_shared
         src/abstract/StateVectorPath.h
         src/abstract/shell_space.h
         src/abstract/dynamic_shell_approach.h
-        src/abstract/goal_to_goal_via_shell.h src/abstract/path_traits.h)
+        src/abstract/goal_to_goal_via_shell.h
+        src/abstract/path_traits.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

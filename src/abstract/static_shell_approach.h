@@ -35,7 +35,8 @@ template<typename State, typename Goal, typename Path, typename ShellPoint, type
 		const Goal &)>, typename StateApproachPathPlanner = std::function<std::optional<Path>(const State &)>, typename OnShellPathPlanner = std::function<Path(
 		const ShellPoint &a,
 		const ShellPoint &b)>, typename TSPPlanner = std::function<std::vector<int>(const ShellPoint &,
-																					const std::vector<ShellPoint &> &)>, typename PathOptimizer = std::function<Path(
+																					const std::vector<ShellPoint &> &)>,
+																							typename PathOptimizer = std::function<Path(
 		const Path &)> >
 Path plan_path_static_goalset(const State &initial_state,
 							  const std::vector<Goal> &goal_set,
@@ -54,7 +55,9 @@ Path plan_path_static_goalset(const State &initial_state,
 	auto initial_path = plan_approach_path_to_state(initial_state);
 
 	// Determine the shell points for the goals.
-	auto visit_order = plan_approach_path_to_goal(approach_paths, initial_path);
+	auto visit_order = tsp_planner(initial_path->shell_point, approach_paths | ranges::views::transform([](const auto &path) {
+		return path->shell_point;
+	}) | ranges::to_vector);
 
 	// Plan the goal-to-goal paths.
 	std::vector<Path> goal_to_goal;

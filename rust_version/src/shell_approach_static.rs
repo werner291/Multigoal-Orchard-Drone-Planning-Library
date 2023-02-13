@@ -1,9 +1,7 @@
 use std::iter::once;
 use itertools::Itertools;
 
-trait State : Copy {
 
-}
 
 trait Goal {
 
