@@ -125,11 +125,67 @@ struct MultiApplePlanResult {
 
 };
 
+/**
+ * @brief Generates a random state for a drone model that lies outside of the tree.
+ *
+ * @param drone A shared pointer to the constant robot model for the drone.
+ * @param seed The seed for the random number generator.
+ * @return The generated random state for the drone.
+ */
 moveit::core::RobotState randomStateOutsideTree(const moveit::core::RobotModelConstPtr &drone, const int seed);
 
-bodies::BoundingSphere
-compute_enclosing_sphere(const moveit_msgs::msg::PlanningScene &planning_scene_message, const double padding);
+/**
+ * @brief Generates a set of `n` random states for a drone model that lie outside of the tree.
+ *
+ * @param scene The planning scene that contains information about the tree and the world.
+ * @param model A shared pointer to the constant robot model for the drone.
+ * @param n The number of random states to generate.
+ * @return A vector of `n` generated random states for the drone.
+ */
+std::vector<moveit::core::RobotState>
+randomStatesOutsideTree(const AppleTreePlanningScene &scene, const moveit::core::RobotModelConstPtr &model, int n);
 
+/**
+ * @brief Computes an enclosing sphere around the leaves of an apple tree.
+ *
+ * @param planning_scene_message The planning scene message that contains information about the apple tree.
+ * @param padding A value to add to the size of the enclosing sphere.
+ * @return The bounding sphere that encloses the leaves of the apple tree.
+ */
+bodies::BoundingSphere
+compute_enclosing_sphere_around_leaves(const moveit_msgs::msg::PlanningScene &planning_scene_message,
+									   const double padding);
+
+/**
+ * @brief Extracts the vertices of the leaves of an apple tree.
+ *
+ * @param scene_info The planning scene information that contains information about the apple tree.
+ * @return A vector of points that represent the vertices of the leaves of the apple tree.
+ */
 std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const AppleTreePlanningScene &scene_info);
+
+/**
+ * @brief Load a Moveit-based state space with the drone.
+ *
+ * @warning This function nor the returned value are not thread-safe, even if const. The cause is unknown.
+ *
+ * @param model The Moveit robot model.
+ *
+ * @return A shared pointer to the loaded state space.
+ */
+std::shared_ptr<DroneStateSpace> omplStateSpaceForDrone(const moveit::core::RobotModelConstPtr &model);
+
+/**
+ * @brief Load the space information that represents the given scene, including all the weird idiosyncracies of how we do planning.
+ *
+ * @warning This function is not thread-safe.
+ *
+ * @param stateSpace The state space to be loaded.
+ * @param scene_info The information about the planning scene.
+ *
+ * @return A shared pointer to the loaded space information.
+ */
+ompl::base::SpaceInformationPtr
+loadSpaceInformation(const std::shared_ptr<DroneStateSpace> &stateSpace, const AppleTreePlanningScene &scene_info);
 
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

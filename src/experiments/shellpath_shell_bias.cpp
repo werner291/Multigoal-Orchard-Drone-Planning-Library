@@ -29,7 +29,7 @@ public:
 	shared_ptr<OMPLShellSpaceWrapper>
 	buildShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) override {
 
-		auto enclosing = compute_enclosing_sphere(scene_info.scene_msg, 0.0);
+		auto enclosing = compute_enclosing_sphere_around_leaves(scene_info.scene_msg, 0.0);
 
 		enclosing.radius += 0.1;
 

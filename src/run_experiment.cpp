@@ -32,21 +32,6 @@ std::vector<std::string> model_names_from_directory();
 
 using namespace std;
 
-/// Load a Moveit-based statespace with the drone.
-std::shared_ptr<DroneStateSpace> loadStateSpace(const moveit::core::RobotModelConstPtr &model) {
-	ompl_interface::ModelBasedStateSpaceSpecification spec(model, "whole_body");
-	return make_shared<DroneStateSpace>(spec, TRANSLATION_BOUND);
-}
-
-/// Load the space information that represents the given scene,
-/// including all the weird idiosyncracies of how we do planning.
-ompl::base::SpaceInformationPtr
-loadSpaceInformation(const std::shared_ptr<DroneStateSpace> &stateSpace,
-					 const AppleTreePlanningScene &scene_info) {
-	auto scene = setupPlanningScene(scene_info.scene_msg, stateSpace->getRobotModel());
-	return initSpaceInformation(scene, scene->getRobotModel(), stateSpace);
-}
-
 /// Convert a PlanResult to JSON
 Json::Value toJson(const MultiGoalPlanner::PlanResult &result) {
 	Json::Value run_stats;
@@ -219,7 +204,7 @@ Json::Value run_task(const moveit::core::RobotModelConstPtr &drone, const Run &r
 
 	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
 	// So, we just re-create the state space every time just to be safe.
-	auto threadLocalStateSpace = loadStateSpace(drone);
+	auto threadLocalStateSpace = omplStateSpaceForDrone(drone);
 
 	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
 	// we'll need to copy this every time.
@@ -337,7 +322,7 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
 	auto rng = std::mt19937(42); // NOLINT(cert-msc51-cpp)
 
 	// Generate the list of planning problems to solve (this is deterministic thanks to seeding the Rng.
-	const auto planning_problems = genPlanningProblems(num_runs, napples, loadStateSpace(drone), scenes, rng);
+	const auto planning_problems = genPlanningProblems(num_runs, napples, omplStateSpaceForDrone(drone), scenes, rng);
 
 	// Generate the planner-problem pairs.
 	const auto runs = genRuns(allocators, planning_problems, rng);

@@ -5,7 +5,7 @@
 //std::shared_ptr<OMPLShellSpaceWrapper<Eigen::Vector3d> > PaddedSphereShellAroundLeavesBuilder::buildShell(const AppleTreePlanningScene &scene_info,
 //																										  const ompl::base::SpaceInformationPtr &si) const {
 //
-//	auto enclosing = compute_enclosing_sphere(scene_info.scene_msg, 0.0);
+//	auto enclosing = compute_enclosing_sphere_around_leaves(scene_info.scene_msg, 0.0);
 //
 //	enclosing.radius += padding * (enclosing.center.z() - enclosing.radius);
 //
