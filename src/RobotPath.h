@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <moveit/robot_state/robot_state.h>
+#include <moveit/robot_trajectory/robot_trajectory.h>
 #include <ompl/geometric/PathGeometric.h>
 
 /**
@@ -38,5 +39,13 @@ RobotPath omplPathToRobotPath(const ompl::geometric::PathGeometric& ompl_path);
 ompl::geometric::PathGeometric
 robotPathToOmplPath(const RobotPath &robot_path, const ompl::base::SpaceInformationPtr &si);
 
+/**
+ * Convert a RobotPath to a MoveIt RobotTrajectory.
+ *
+ * @param robot_path 			The RobotPath to convert.
+ * @return 						The RobotTrajectory.
+ */
+robot_trajectory::RobotTrajectory
+robotPathToConstantSpeedRobotTrajectory(const RobotPath &robot_path, const double speed);
 
 #endif //NEW_PLANNERS_ROBOTPATH_H

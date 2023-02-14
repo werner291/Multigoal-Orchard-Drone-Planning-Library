@@ -119,3 +119,22 @@ ompl::geometric::PathGeometric robotPathToOmplPath(const RobotPath &robot_path, 
 	return ompl_path;
 
 }
+
+robot_trajectory::RobotTrajectory
+robotPathToConstantSpeedRobotTrajectory(const RobotPath &robot_path, const double speed) {
+
+	// Create a RobotTrajectory.
+	robot_trajectory::RobotTrajectory trajectory(robot_path.waypoints.front().getRobotModel(), "manipulator");
+
+	// Loop through the waypoints in the RobotPath.
+	for (const auto &state: robot_path.waypoints) {
+
+		// Distance from the previous waypoint (or 0.0 if this is the first waypoint).
+		double distance = trajectory.getWayPointCount() == 0 ? 0.0 : state.distance(trajectory.getLastWayPoint());
+
+		// Add the waypoint to the RobotTrajectory.
+		trajectory.addSuffixWayPoint(state, distance / speed);
+
+	}
+	return std::move(trajectory);
+}
