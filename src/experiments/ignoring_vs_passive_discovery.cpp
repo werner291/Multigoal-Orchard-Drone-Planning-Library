@@ -7,14 +7,16 @@
 #include "../shell_space/SphereShell.h"
 #include "../planners/shell_path_planner/ApproachPlanning.h"
 #include "../planners/ShellPathPlanner.h"
-#include "../vtk/VtkRobotModel.h"
 #include "../vtk/Viewer.h"
 #include "../CurrentPathState.h"
+#include "../vtk/SimpleVtkViewer.h"
 
 struct PlanningProblem {
 	moveit::core::RobotState start_state;
 	std::vector<AppleDiscoverabilityType> apple_discoverability;
 };
+
+void quickVisualizePath(const TreeMeshes &meshes, const RobotPath &path);
 
 Apple appleFromMesh(const shape_msgs::msg::Mesh &mesh) {
 	return Apple{mesh_aabb(mesh).center(), {0.0, 0.0, 0.0}};
@@ -83,61 +85,9 @@ int main(int argc, char **argv) {
 
 	RobotPath path = omplPathToRobotPath(result.combined());
 
-	robot_trajectory::RobotTrajectory traj = robotPathToConstantSpeedRobotTrajectory(path, 1.0);
-
-	// Create a VTK actor to visualize the robot itself
-	VtkRobotmodel robotModel(robot, start_state);
-
-	vtkNew <vtkRenderer> viewerRenderer;
-	vtkNew <vtkRenderWindow> visualizerWindow;
-	vtkNew <vtkRenderWindowInteractor> renderWindowInteractor;
-
-	visualizerWindow->SetSize(800, 600);
-	visualizerWindow->SetWindowName("PointCloud");
-	visualizerWindow->AddRenderer(viewerRenderer);
-
-	renderWindowInteractor->SetRenderWindow(visualizerWindow);
-	renderWindowInteractor->CreateRepeatingTimer(33);
-
-	auto tree_actors = buildTreeActors(meshes, false);
-	for (int i = 0; i < tree_actors->GetNumberOfItems(); i++) {
-		viewerRenderer->AddActor(vtkActor::SafeDownCast(tree_actors->GetItemAsObject(i)));
-	}
-
-	for (int i = 0; i < robotModel.getLinkActors()->GetNumberOfItems(); i++) {
-		viewerRenderer->AddActor(vtkActor::SafeDownCast(robotModel.getLinkActors()->GetItemAsObject(i)));
-	}
-
-	// The shell/wrapper algorithm to use as a parameter to the motion-planning algorithm
-	auto wrapper_algo = std::make_shared<StreamingConvexHull>(StreamingConvexHull::fromSpherifiedCube(4));
-
-	double time = 0.0;
-
-	// The "main loop" (interval callback) of the program.
-	auto callback = [&]() {
-
-		time += 0.01;
-
-		// Update the robot's visualization to match the current state.
-
-		moveit::core::RobotState state(robot);
-		setStateToTrajectoryPoint(state, time, traj);
-		robotModel.applyState(state);
-
-		visualizerWindow->Render();
-
-	};
-
-	// Set our "main loop" callback to be called every frame.
-	vtkNew<vtkFunctionalCallback> cb;
-	cb->setEventId(vtkCommand::TimerEvent);
-	cb->setCallback(callback);
-	renderWindowInteractor->AddObserver(vtkCommand::TimerEvent, cb);
-
-	// Run the app until termination.
-	renderWindowInteractor->Start();
+	quickVisualizePath(meshes, path);
 
 	return EXIT_SUCCESS;
 
-
 }
+
