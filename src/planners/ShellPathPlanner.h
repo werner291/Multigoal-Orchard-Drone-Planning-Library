@@ -43,7 +43,7 @@ public:
 
 	[[nodiscard]] ompl::geometric::PathGeometric buildInitialApproach(const ompl::base::SpaceInformationPtr &si,
 																	  const OmplShellSpace<ShellPoint> &shell,
-																	  const std::optional<InitialApproachPath<ShellPoint>> &initial_approach,
+																	  const std::optional<OmplApproachPath<ShellPoint>> &initial_approach,
 																	  const std::vector<OmplApproachPath<ShellPoint>> &approach_paths) const;
 
 	std::vector<OmplApproachPath<ShellPoint>>

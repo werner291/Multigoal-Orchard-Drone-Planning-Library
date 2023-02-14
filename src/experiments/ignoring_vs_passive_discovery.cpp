@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 	auto threadLocalStateSpace = omplStateSpaceForDrone(robot);
 
 	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
-	// we'll need to copy this every time.
+	// we'll need to copy this for every thread
 	auto si = loadSpaceInformation(threadLocalStateSpace, scene);
 
 	const auto start_state = randomStateOutsideTree(robot, 0);

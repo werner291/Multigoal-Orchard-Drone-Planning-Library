@@ -9,7 +9,7 @@
  * @param shell 			The shell space.
  */
 template<typename ShellPoint>
-void orderWithOrTools(const InitialApproachPath<ShellPoint> &start,
+void orderWithOrTools(const OmplApproachPath<ShellPoint> &start,
 					  std::vector<OmplApproachPath<ShellPoint>> &approaches,
 					  const OmplShellSpace<ShellPoint> &shell) {
 
@@ -45,7 +45,7 @@ MultiGoalPlanner::PlanResult ShellPathPlanner<ShellPoint>::plan(const ompl::base
 
 	PlanResult result{{}};
 
-	std::optional<InitialApproachPath<ShellPoint>> initial_approach = methods->initial_approach_path(start, *shell);
+	std::optional<OmplApproachPath<ShellPoint>> initial_approach = methods->approach_path(start, *shell);
 
 	if (!initial_approach) {
 		return result;
@@ -94,7 +94,7 @@ template<typename ShellPoint>
 ompl::geometric::PathGeometric
 ShellPathPlanner<ShellPoint>::buildInitialApproach(const ompl::base::SpaceInformationPtr &si,
 												   const OmplShellSpace<ShellPoint> &shell,
-												   const std::optional<InitialApproachPath<ShellPoint>> &initial_approach,
+												   const std::optional<OmplApproachPath<ShellPoint>> &initial_approach,
 												   const std::vector<OmplApproachPath<ShellPoint>> &approach_paths) const {
 	ompl::geometric::PathGeometric path(si);
 	path.append(initial_approach->robot_path);

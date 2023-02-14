@@ -18,17 +18,12 @@ struct OmplApproachPath {
 };
 
 template<typename ShellPoint>
-struct InitialApproachPath {
-	ShellPoint shell_point;
-	ompl::geometric::PathGeometric robot_path;
-};
-
-template<typename ShellPoint>
 class ApproachPlanningMethods {
 
 public:
 
-	virtual std::optional<InitialApproachPath<ShellPoint>> initial_approach_path(const ompl::base::State *start, const OmplShellSpace<ShellPoint>& shell) const = 0;
+	virtual std::optional<OmplApproachPath<ShellPoint>>
+	approach_path(const ompl::base::State *start, const OmplShellSpace<ShellPoint> &shell) const = 0;
 
 	virtual std::optional<OmplApproachPath<ShellPoint>>
 	approach_path(const ompl::base::GoalPtr &goal, const OmplShellSpace<ShellPoint> &shell) const = 0;
@@ -58,9 +53,8 @@ public:
 
 	}
 
-	std::optional<InitialApproachPath<ShellPoint>> initial_approach_path(
-			const ompl::base::State *start,
-			const OmplShellSpace<ShellPoint> &shell) const override {
+	std::optional<OmplApproachPath<ShellPoint>>
+	approach_path(const ompl::base::State *start, const OmplShellSpace<ShellPoint> &shell) const override {
 
 		std::scoped_lock lock(mutex);
 
@@ -73,7 +67,7 @@ public:
 		auto path = single_goal_planner_methods->state_to_state(start, shell_state.get());
 		
 		if (path) {
-			return InitialApproachPath<ShellPoint>{shellPoint, *path};
+			return OmplApproachPath<ShellPoint>{shellPoint, *path};
 		} else {
 			return std::nullopt;
 		}
