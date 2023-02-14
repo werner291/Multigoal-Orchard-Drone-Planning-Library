@@ -222,16 +222,7 @@ add_library(${PROJECT_NAME}_shared
         src/exploration/SurfletVolume.cpp
         src/utilities/shape_generation.cpp
         src/utilities/shape_generation.h
-        src/abstract/path_traits.h
-        src/abstract/static_shell_approach.h
-        src/abstract/approach_paths.h
-        src/abstract/tsp_on_shell.h
-        src/abstract/tsp_on_shell.h
-        src/abstract/StateVectorPath.h
-        src/abstract/shell_space.h
-        src/abstract/dynamic_shell_approach.h
-        src/abstract/goal_to_goal_via_shell.h
-        src/abstract/path_traits.h)
+        )
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

@@ -18,10 +18,9 @@
 #include "shell_path_planner/OrderingMethod.h"
 
 template<typename ShellPoint>
-void orderWithOrTools(
-		const InitialApproachPath<ShellPoint>& start,
-		std::vector<ApproachPath<ShellPoint>>& approaches,
-		const OmplShellSpace<ShellPoint>& shell) {
+void orderWithOrTools(const InitialApproachPath<ShellPoint> &start,
+					  std::vector<OmplApproachPath<ShellPoint>> &approaches,
+					  const OmplShellSpace<ShellPoint> &shell) {
 
 	auto ordering = tsp_open_end(
 			[&](auto i) {
@@ -33,7 +32,7 @@ void orderWithOrTools(
 			approaches.size()
 	);
 
-	std::vector<ApproachPath<ShellPoint>> ordered_approaches;
+	std::vector<OmplApproachPath<ShellPoint>> ordered_approaches;
 	for (auto [i, j] : ranges::views::enumerate(ordering)) {
 		ordered_approaches.push_back(approaches[j]);
 	}
@@ -72,7 +71,7 @@ public:
 			return result;
 		}
 
-		std::vector<ApproachPath<ShellPoint>> approach_paths = mkApproachPaths(goals, *shell);
+		std::vector<OmplApproachPath<ShellPoint>> approach_paths = mkApproachPaths(goals, *shell);
 
 		if (approach_paths.empty()) {
 			return result;
@@ -94,9 +93,9 @@ public:
 	}
 
 	[[nodiscard]] ompl::geometric::PathGeometric buildGoalToGoal(const ompl::base::SpaceInformationPtr &si,
-												   const OmplShellSpace<ShellPoint> &shell,
-												   const std::vector<ApproachPath<ShellPoint>> &approach_paths,
-												   size_t i) const {
+																 const OmplShellSpace<ShellPoint> &shell,
+																 const std::vector<OmplApproachPath<ShellPoint>> &approach_paths,
+																 size_t i) const {
 		ompl::geometric::PathGeometric path(si);
 		path.append(approach_paths[i].robot_path);
 		path.reverse();
@@ -110,9 +109,9 @@ public:
 	}
 
 	[[nodiscard]] ompl::geometric::PathGeometric buildInitialApproach(const ompl::base::SpaceInformationPtr &si,
-														const OmplShellSpace<ShellPoint> &shell,
-														const std::optional<InitialApproachPath<ShellPoint>> &initial_approach,
-														const std::vector<ApproachPath<ShellPoint>> &approach_paths) const {
+																	  const OmplShellSpace<ShellPoint> &shell,
+																	  const std::optional<InitialApproachPath<ShellPoint>> &initial_approach,
+																	  const std::vector<OmplApproachPath<ShellPoint>> &approach_paths) const {
 		ompl::geometric::PathGeometric path(si);
 		path.append(initial_approach->robot_path);
 		shell.shellPath(initial_approach->shell_point, approach_paths.front().shell_point);
@@ -124,9 +123,9 @@ public:
 		return path;
 	}
 
-	std::vector<ApproachPath<ShellPoint>>
+	std::vector<OmplApproachPath<ShellPoint>>
 	mkApproachPaths(const std::vector<ompl::base::GoalPtr> &goals, const OmplShellSpace<ShellPoint> &shell) const {
-		std::vector<ApproachPath<ShellPoint>> approach_paths;
+		std::vector<OmplApproachPath<ShellPoint>> approach_paths;
 
 		for (auto &goal : goals) {
 			auto approach_path = methods->approach_path(goal, shell);

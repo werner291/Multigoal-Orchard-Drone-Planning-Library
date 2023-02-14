@@ -107,8 +107,20 @@ std::array<TriangleEdgeId, 2> edges_adjacent_to_vertex(TriangleVertexId vertex);
  * @param p3 		The third vertex of the triangle.
  * @return 			A point uniformly at random on the surface of the triangle.
  */
-Eigen::Vector3d uniform_point_on_triangle(const Eigen::Vector3d &p1,
-										  const Eigen::Vector3d &p2,
-										  const Eigen::Vector3d &p3);
+Eigen::Vector3d
+uniform_point_on_triangle(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, const Eigen::Vector3d &p3);
+
+/**
+ * An AABB with (inf, inf, inf) as the minimum and (-inf, -inf, -inf) as the maximum,
+ * such that adding a point to it will automatically make the box a singleton around
+ * that point.
+ *
+ * By convention, this is the standard "empty" box within this project.
+ */
+const Eigen::AlignedBox3d INVERTED_INFINITE_BOX = {
+		Eigen::Vector3d{std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(),
+						std::numeric_limits<double>::infinity()},
+		Eigen::Vector3d{-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(),
+						-std::numeric_limits<double>::infinity()}};
 
 #endif //NEW_PLANNERS_MATH_UTILS_H

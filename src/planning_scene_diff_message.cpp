@@ -180,7 +180,8 @@ void spawnFloorInPlanningScene(moveit_msgs::msg::PlanningScene &planning_scene_d
 moveit_msgs::msg::PlanningScene
 createPlanningSceneDiff(const std::vector<DetachedTreeNode> &treeFlattened,
                         const std::vector<Eigen::Vector3d> &leafVertices,
-                        const double appleRadius, const std::vector<Apple> &apples) {
+                        const double appleRadius,
+                        const std::vector<Apple> &apples) {
     moveit_msgs::msg::PlanningScene planning_scene_diff;
     createTrunkInPlanningSceneMessage(treeFlattened, planning_scene_diff);
     spawnLeavesInPlanningScene(leafVertices, planning_scene_diff);
@@ -188,6 +189,53 @@ createPlanningSceneDiff(const std::vector<DetachedTreeNode> &treeFlattened,
     spawnFloorInPlanningScene(planning_scene_diff);
     planning_scene_diff.is_diff = true;
     return planning_scene_diff;
+}
+
+
+moveit_msgs::msg::PlanningScene treeMeshesToMoveitSceneMsg(const TreeMeshes &tree_meshes, bool include_ground_plane) {
+
+    moveit_msgs::msg::PlanningScene planning_scene_message;
+
+    planning_scene_message.is_diff = true;
+
+    {
+        const shape_msgs::msg::Mesh mesh = tree_meshes.trunk_mesh;
+
+        const std::vector<shape_msgs::msg::Mesh> decomposition = convex_decomposition(mesh, 2.0);
+        for (auto convex: decomposition | boost::adaptors::indexed(0)) {
+            addColoredMeshCollisionShape(planning_scene_message,
+                                         {0.5, 0.2, 0.1},
+                                         "trunk" + std::to_string(convex.index()),
+                                         convex.value());
+        }
+    }
+
+    for (const auto &[i, apple]: tree_meshes.fruit_meshes | boost::adaptors::indexed(0)) {
+        addColoredMeshCollisionShape(planning_scene_message, {1.0, 0.0, 0.0}, "apple" + std::to_string(i), apple);
+    }
+
+    {
+        const shape_msgs::msg::Mesh mesh = tree_meshes.leaves_mesh;
+        addColoredMeshCollisionShape(planning_scene_message, {0.1, 0.7, 0.1}, "leaves", mesh);
+    }
+
+    // Make a ground plane.
+    if (include_ground_plane) {
+        moveit_msgs::msg::CollisionObject ground;
+        ground.primitives.resize(1);
+        ground.primitives[0].type = shape_msgs::msg::SolidPrimitive::BOX;
+        ground.primitives[0].dimensions.resize(3);
+        ground.primitives[0].dimensions[0] = 50.0;
+        ground.primitives[0].dimensions[1] = 50.0;
+        ground.primitives[0].dimensions[2] = 50.0;
+        ground.primitive_poses.resize(1);
+        ground.primitive_poses[0].position.z = -25.0;
+        ground.header.frame_id = "world";
+        ground.id = "ground";
+        planning_scene_message.world.collision_objects.push_back(std::move(ground));
+    }
+
+    return planning_scene_message;
 }
 
 AppleTreePlanningScene
@@ -211,30 +259,32 @@ createMeshBasedAppleTreePlanningSceneMessage(const std::string &model_name, bool
 
         planning_scene_message.is_diff = true;
 
-		{
+        {
             const shape_msgs::msg::Mesh mesh = meshMsgFromResource(prefix + "_trunk.dae");
 
             const std::vector<shape_msgs::msg::Mesh> decomposition = convex_decomposition(mesh, 2.0);
             for (auto convex: decomposition | boost::adaptors::indexed(0)) {
-                addColoredMeshCollisionShape(planning_scene_message, {0.5, 0.2, 0.1},
-                                             "trunk" + std::to_string(convex.index()), convex.value());
+                addColoredMeshCollisionShape(planning_scene_message,
+                                             {0.5, 0.2, 0.1},
+                                             "trunk" + std::to_string(convex.index()),
+                                             convex.value());
             }
         }
 
-		{
-			const shape_msgs::msg::Mesh apples = meshMsgFromResource(prefix + "_fruit.dae");
+        {
+            const shape_msgs::msg::Mesh apples = meshMsgFromResource(prefix + "_fruit.dae");
 
-			addColoredMeshCollisionShape(planning_scene_message, {1.0, 0.0, 0.0}, "apples", apples);
-		}
+            addColoredMeshCollisionShape(planning_scene_message, {1.0, 0.0, 0.0}, "apples", apples);
+        }
 
-		{
-			addColoredMeshCollisionShape(planning_scene_message,
-										 {0.1, 0.7, 0.1},
-										 "leaves",
-										 meshMsgFromResource(prefix + "_leaves.dae"));
+        {
+            addColoredMeshCollisionShape(planning_scene_message,
+                                         {0.1, 0.7, 0.1},
+                                         "leaves",
+                                         meshMsgFromResource(prefix + "_leaves.dae"));
 
-			planning_scene_message.name = model_name;
-		}
+            planning_scene_message.name = model_name;
+        }
 
         save_ros_msg(cache_filename, planning_scene_message);
 
@@ -245,29 +295,29 @@ createMeshBasedAppleTreePlanningSceneMessage(const std::string &model_name, bool
         planning_scene_message = *cached_scene_info;
     }
 
-	shape_msgs::msg::Mesh apples;
-	for (const auto &collision_shape: planning_scene_message.world.collision_objects) {
-		if (collision_shape.id == "apples") {
-			apples = collision_shape.meshes[0];
-			break;
-		}
-	}
+    shape_msgs::msg::Mesh apples;
+    for (const auto &collision_shape: planning_scene_message.world.collision_objects) {
+        if (collision_shape.id == "apples") {
+            apples = collision_shape.meshes[0];
+            break;
+        }
+    }
 
-	// Make a ground plane.
-	if (include_ground_plane) {
-		moveit_msgs::msg::CollisionObject ground;
-		ground.primitives.resize(1);
-		ground.primitives[0].type = shape_msgs::msg::SolidPrimitive::BOX;
-		ground.primitives[0].dimensions.resize(3);
-		ground.primitives[0].dimensions[0] = 50.0;
-		ground.primitives[0].dimensions[1] = 50.0;
-		ground.primitives[0].dimensions[2] = 50.0;
-		ground.primitive_poses.resize(1);
-		ground.primitive_poses[0].position.z = -25.0;
-		ground.header.frame_id = "world";
-		ground.id = "ground";
-		planning_scene_message.world.collision_objects.push_back(ground);
-	}
+    // Make a ground plane.
+    if (include_ground_plane) {
+        moveit_msgs::msg::CollisionObject ground;
+        ground.primitives.resize(1);
+        ground.primitives[0].type = shape_msgs::msg::SolidPrimitive::BOX;
+        ground.primitives[0].dimensions.resize(3);
+        ground.primitives[0].dimensions[0] = 50.0;
+        ground.primitives[0].dimensions[1] = 50.0;
+        ground.primitives[0].dimensions[2] = 50.0;
+        ground.primitive_poses.resize(1);
+        ground.primitive_poses[0].position.z = -25.0;
+        ground.header.frame_id = "world";
+        ground.id = "ground";
+        planning_scene_message.world.collision_objects.push_back(ground);
+    }
 
     return {planning_scene_message, apples_from_connected_components(apples)};
 }

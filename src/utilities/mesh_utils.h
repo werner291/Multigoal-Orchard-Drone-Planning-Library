@@ -9,6 +9,7 @@
 #include <Eigen/Core>
 #include <shape_msgs/msg/mesh.hpp>
 #include "general_utilities.h"
+#include "msgs_utilities.h"
 
 /**
  * Find the on_which_mesh point on the surface of the given mesh to the given point.
@@ -41,6 +42,13 @@ std::vector<shape_msgs::msg::Mesh> break_down_to_connected_components(const shap
  */
 shape_msgs::msg::Mesh combine_meshes(const std::vector<shape_msgs::msg::Mesh> &meshes);
 
-
+/**
+ * Compute the AABB of the vertices of the given mesh.
+ *
+ * @param mesh 		The mesh to compute the AABB of.
+ *
+ * @return 			The AABB of the vertices of the given mesh.
+ */
+Eigen::AlignedBox3d mesh_aabb(const shape_msgs::msg::Mesh &mesh);
 
 #endif //NEW_PLANNERS_MESH_UTILS_H

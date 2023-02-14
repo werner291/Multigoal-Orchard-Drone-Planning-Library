@@ -3,21 +3,33 @@
 
 #include "../planning_scene_diff_message.h"
 #include "../utilities/experiment_utils.h"
-#include "../abstract/static_shell_approach.h"
-#include "../abstract/approach_paths.h"
 #include "../shell_space/MoveItShellSpace.h"
 #include "../shell_space/SphereShell.h"
 #include "../planners/shell_path_planner/ApproachPlanning.h"
+#include "../planners/ShellPathPlanner.h"
 #include "../utilities/traveling_salesman.h"
+#include "../vtk/VtkRobotModel.h"
+#include "../vtk/Viewer.h"
+#include "../CurrentPathState.h"
+#include "../utilities/msgs_utilities.h"
 
 struct PlanningProblem {
 	moveit::core::RobotState start_state;
 	std::vector<AppleDiscoverabilityType> apple_discoverability;
 };
 
+
 int main(int argc, char **argv) {
 
-	const auto scene = createMeshBasedAppleTreePlanningSceneMessage("apple_tree", true);
+	TreeMeshes meshes = loadTreeMeshes("appletree");
+
+	const auto scene_msg = treeMeshesToMoveitSceneMsg(meshes);
+
+	const auto scene = AppleTreePlanningScene{scene_msg, meshes.fruit_meshes |
+														 ranges::views::transform([](const auto &mesh) {
+															 return Apple{mesh_aabb(mesh).center(), {0.0, 0.0, 0.0}};
+														 }) | ranges::to_vector};
+
 	const auto robot = loadRobotModel();
 	const int N_INITIAL_STATES = 100;
 
@@ -26,110 +38,89 @@ int main(int argc, char **argv) {
 	boost::asio::thread_pool pool(4);
 
 	auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene, 0.1));
-
 	auto shell = std::make_shared<MoveItShellSpace<Eigen::Vector3d>>(robot, workspaceShell);
 
-	for (int i = 0; i < N_INITIAL_STATES; i++) {
-		boost::asio::post(pool, [&]() {
+	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
+	// So, we just re-create the state space every time just to be safe.
+	auto threadLocalStateSpace = omplStateSpaceForDrone(robot);
 
-			const auto start_state = randomStateOutsideTree(robot, i);
-			auto apple_discoverability = generateAppleDiscoverability((int) scene.apples.size());
+	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
+	// we'll need to copy this every time.
+	auto si = loadSpaceInformation(threadLocalStateSpace, scene);
 
-			using GoalId = size_t;
+	const auto start_state = randomStateOutsideTree(robot, 0);
+	auto apple_discoverability = generateAppleDiscoverability((int) scene.apples.size());
 
-			std::vector<GoalId> initial_goals = views::ints(0, (int) scene.apples.size()) | views::filter[&](GoalId
-			goal_id) {
-			return apple_discoverability[goal_id];
-		} | views::transform([&](int goal_id) {
-			return (GoalId) goal_id;
-		}) | to_vector;
+	auto approach_methods = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
+	auto shellBuilder = [](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
 
-			// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
-			// So, we just re-create the state space every time just to be safe.
-			auto threadLocalStateSpace = omplStateSpaceForDrone(robot);
+		auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene_info, 0.1));
 
-			// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
-			// we'll need to copy this every time.
-			auto si = loadSpaceInformation(threadLocalStateSpace, scene);
+		return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(workspaceShell, si);
+	};
 
-			OmplShellSpace<Eigen::Vector3d> omplShell(si, shell);
+	auto static_planner = std::make_shared<ShellPathPlanner<Eigen::Vector3d>>(shellBuilder,
+																			  std::move(approach_methods),
+																			  true);
 
-			auto approach_methods = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
+	ompl::base::ScopedState start(si);
+	threadLocalStateSpace->copyToOMPLState(start.get(), start_state);
 
-			auto plan_goal_approach = [&](const GoalId &goal) -> std::optional<abstract::ApproachPath<RobotPath, Eigen::Vector3d>> {
-				auto ompl_goal = std::make_shared<DroneEndEffectorNearTarget>(si, 0.0, scene.apples[goal].center);
-				auto path = approach_methods->approach_path(ompl_goal, omplShell);
+	std::vector<ompl::base::GoalPtr> goals =
+			views::ints(0, (int) scene.apples.size()) | views::filter([&](int goal_id) {
+				return apple_discoverability[goal_id];
+			}) | views::transform([&](int goal_id) {
+				auto goal = std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, scene.apples[goal_id].center);
+				return std::static_pointer_cast<ompl::base::Goal>(goal);
+			}) | to_vector;
 
-				if (!path) {
-					std::cout << "No path found to goal " << goal << std::endl;
-					return std::nullopt;
-				}
+	auto ptc = ompl::base::plannerNonTerminatingCondition();
 
-				return {
-						abstract::ApproachPath<RobotPath, Eigen::Vector3d>{
-								omplPathToRobotPath(path->robot_path),
-								path->shell_point
-						}
-				};
-			};
+	auto result = static_planner->plan(si, start.get(), goals, scene, ptc);
 
-			auto plan_state_approach = [&](const moveit::core::RobotState &goal) -> std::optional<abstract::ApproachPath<RobotPath, Eigen::Vector3d>> {
+	RobotPath path = omplPathToRobotPath(result.combined());
 
-				// Convert to OMPL state
-				ompl::base::ScopedState state(si);
 
-				threadLocalStateSpace->copyToOMPLState(state.get(), goal);
+	// Create a VTK actor to visualize the robot itself
+	VtkRobotmodel robotModel(robot, start_state);
 
-				auto path = approach_methods->initial_approach_path(state.get(), omplShell);
+	vtkNew<vtkRenderer> viewerRenderer;
+	vtkNew<vtkRenderWindow> visualizerWindow;
+	vtkNew<vtkRenderWindowInteractor> renderWindowInteractor;
 
-				if (!path) {
-					std::cout << "No path found to goal " << goal << std::endl;
-					return std::nullopt;
-				}
-
-				return {
-						abstract::ApproachPath<RobotPath, Eigen::Vector3d>{
-								omplPathToRobotPath(path->robot_path),
-								path->shell_point
-						}
-				};
-			};
-
-			auto plan_shell_path = [&](const Eigen::Vector3d &from, const Eigen::Vector3d &to) -> RobotPath {
-				auto path = shell->shellPath(from, to);
-			};
-
-			auto tsp_planner = [&](const Eigen::Vector3d &from, const std::vector<Eigen::Vector3d>& shell_states) {
-
-				// We'll want to invoke our favorite TSP solver on the shell states.
-				return tsp_open_end(
-						[&](size_t i) {
-							return shell->predict_path_length(from, shell_states[i]);
-						},
-						[&](size_t i, size_t j) {
-							return shell->predict_path_length(shell_states[i], shell_states[j]);
-						},
-						shell_states.size()
-				);
-
-			};
-
-			auto path_optimizer = [&](const RobotPath &path) -> RobotPath {
-				return path;
-			};
-
-			plan_path_static_goalset<moveit::core::RobotState, GoalId, RobotPath, Eigen::Vector3d>(
-					start_state,
-					initial_goals,
-					plan_goal_approach,
-					plan_state_approach,
-					plan_shell_path,
-					tsp_planner,
-					path_optimizer
-					);
-		});
+	auto tree_actors = buildTreeActors(meshes, false);
+	for (int i = 0; i < tree_actors->GetNumberOfItems(); i++) {
+		viewerRenderer->AddActor(vtkActor::SafeDownCast(tree_actors->GetItemAsObject(i)));
 	}
 
-	pool.join();
+	// The shell/wrapper algorithm to use as a parameter to the motion-planning algorithm
+	auto wrapper_algo = std::make_shared<StreamingConvexHull>(StreamingConvexHull::fromSpherifiedCube(4));
+
+
+	double time = 0.0;
+
+	// The "main loop" (interval callback) of the program.
+	auto callback = [&]() {
+
+		time += 0.01;
+
+		// Update the robot's visualization to match the current state.
+		//		robotModel.applyState(currentPathState.getCurrentState());
+
+		visualizerWindow->Render();
+
+	};
+
+	// Set our "main loop" callback to be called every frame.
+	vtkNew<vtkFunctionalCallback> cb;
+	cb->setEventId(vtkCommand::TimerEvent);
+	cb->setCallback(callback);
+	renderWindowInteractor->AddObserver(vtkCommand::TimerEvent, cb);
+
+	// Run the app until termination.
+	renderWindowInteractor->Start();
+
+	return EXIT_SUCCESS;
+
 
 }

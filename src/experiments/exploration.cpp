@@ -40,7 +40,6 @@
 std::unique_ptr<collision_detection::CollisionEnvFCL>
 buildOrchardAndRobotFCLCollisionEnvironment(const WorkspaceSpec &spec);
 
-
 WorkspaceSpec buildWorkspaceSpec() {
 
 	auto drone = loadRobotModel(1.0);

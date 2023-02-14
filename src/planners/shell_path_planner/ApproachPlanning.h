@@ -12,7 +12,7 @@
 #include "../../SingleGoalPlannerMethods.h"
 
 template<typename ShellPoint>
-struct ApproachPath {
+struct OmplApproachPath {
 	ShellPoint shell_point;
 	ompl::geometric::PathGeometric robot_path;
 };
@@ -30,7 +30,8 @@ public:
 
 	virtual std::optional<InitialApproachPath<ShellPoint>> initial_approach_path(const ompl::base::State *start, const OmplShellSpace<ShellPoint>& shell) const = 0;
 
-	virtual std::optional<ApproachPath<ShellPoint>> approach_path(const ompl::base::GoalPtr &goal, const OmplShellSpace<ShellPoint>& shell) const = 0;
+	virtual std::optional<OmplApproachPath<ShellPoint>>
+	approach_path(const ompl::base::GoalPtr &goal, const OmplShellSpace<ShellPoint> &shell) const = 0;
 
 	virtual ~ApproachPlanningMethods() = default;
 };
@@ -78,7 +79,7 @@ public:
 		}
 	}
 
-	std::optional<ApproachPath<ShellPoint>>
+	std::optional<OmplApproachPath<ShellPoint>>
 	approach_path(const ompl::base::GoalPtr &goal, const OmplShellSpace<ShellPoint> &shell) const override {
 
 		std::scoped_lock lock(mutex);
@@ -92,7 +93,7 @@ public:
 		auto path = single_goal_planner_methods->state_to_goal(shell_state.get(), goal);
 
 		if (path) {
-			return ApproachPath<ShellPoint>{shellPoint, *path};
+			return OmplApproachPath<ShellPoint>{shellPoint, *path};
 		} else {
 			return std::nullopt;
 		}
