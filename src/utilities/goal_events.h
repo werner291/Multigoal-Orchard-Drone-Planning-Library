@@ -9,6 +9,7 @@
 #include <vector>
 #include <moveit/robot_trajectory/robot_trajectory.h>
 #include "../procedural_tree_generation.h"
+#include "../DynamicMultiGoalPlanner.h"
 
 namespace utilities {
 
@@ -45,6 +46,28 @@ namespace utilities {
 									   double discovery_max_distance);
 
 
+	struct RecomputationEvent {
+		DynamicMultiGoalPlanner::GoalChanges goal_changes;
+		double at_t;
+	};
+
+	enum DiscoveryStatus {
+		VISITED, KNOWN_TO_ROBOT, EXISTS_BUT_UNKNOWN_TO_ROBOT
+	};
+
+	/**
+	 * Scan through the events and find the first recomputation event,
+	 * recording all the goals that were visited in the meantime as well.
+	 *
+	 * @param events            Events to scan through.
+	 * @param goals             Goals to look up by ID.
+	 * @param discovery_status  Discovery status of each goal (will be modified!)
+	 * @return                  Recomputation event, or nullopt if no recomputation event is found.
+	 */
+	[[nodiscard]]
+	std::optional<RecomputationEvent> find_recomputation_event(const std::vector<utilities::GoalEvent> &events,
+															   const std::vector<ompl::base::GoalPtr> &goals,
+															   std::vector<DiscoveryStatus> &discovery_status);
 }
 
 #endif //NEW_PLANNERS_GOAL_EVENTS_H

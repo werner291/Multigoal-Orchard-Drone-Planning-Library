@@ -63,11 +63,11 @@ namespace utilities {
 		std::vector<GoalEvent> events;
 
 		for (size_t goal_id = 0; goal_id < apples.size(); ++goal_id) {
-			if (std::is_finite(event_times[goal_id].discovery_time)) {
-				events.emplace_back(GoalSighting{goal_id, event_times[goal_id].discovery_time});
+			if (std::isfinite(event_times[goal_id].discovery_time)) {
+				events.emplace_back(GoalSighting{(int) goal_id, event_times[goal_id].discovery_time});
 			}
-			if (std::is_finite(event_times[goal_id].visit_time)) {
-				events.emplace_back(GoalVisit{goal_id, event_times[goal_id].visit_time});
+			if (std::isfinite(event_times[goal_id].visit_time)) {
+				events.emplace_back(GoalVisit{(int) goal_id, event_times[goal_id].visit_time});
 			}
 		}
 
@@ -77,6 +77,50 @@ namespace utilities {
 		});
 
 		return events;
+	}
+
+	std::optional<RecomputationEvent> find_recomputation_event(const std::vector<utilities::GoalEvent> &events,
+															   const std::vector<ompl::base::GoalPtr> &goals,
+															   std::vector<DiscoveryStatus> &discovery_status) {
+
+		RecomputationEvent re;
+
+		for (const auto &event: events) {
+
+			// Check if the current event is a GoalVisit
+			if (std::holds_alternative<utilities::GoalVisit>(event)) {
+
+				const auto &visit = std::get<utilities::GoalVisit>(event);
+
+				// Mark the goal as visited
+				discovery_status[visit.goal_id] = DiscoveryStatus::VISITED;
+
+				// Add the visited goal to the recomputation event
+				re.goal_changes.visited_goals.push_back(goals[visit.goal_id]);
+
+				// Check if the current event is a GoalSighting
+			} else if (std::holds_alternative<utilities::GoalSighting>(event)) {
+
+				const auto &discover = std::get<utilities::GoalSighting>(event);
+
+				// Check if the goal has not been seen before by the robot
+				if (discovery_status[discover.goal_id] == DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT) {
+
+					// Mark the goal as known to the robot
+					discovery_status[discover.goal_id] = DiscoveryStatus::KNOWN_TO_ROBOT;
+
+					// Add the newly discovered goal to the recomputation event
+					re.goal_changes.new_goals.push_back(goals[discover.goal_id]);
+
+					// Return the recomputation event
+					return re;
+
+				}
+			}
+		}
+
+		// No recomputation event was found
+		return std::nullopt;
 	}
 
 }
