@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
 	// The "main loop" of the program, called every frame.
 	auto callback = [&]() {
 
-		time += 0.01;
+		time += 0.05;
 
 		if (eval.getRe() && eval.getRe()->at_t > time) {
 			time = 0.0;

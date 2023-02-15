@@ -58,6 +58,8 @@ namespace utilities {
 				event_times[goal_id].discovery_time = std::min(event_times[goal_id].discovery_time, t);
 			}
 
+			t += 0.1; // Too big? Too small? Just right??? Maybe change based on end-effector distance traveled?
+
 		}
 
 		std::vector<GoalEvent> events;

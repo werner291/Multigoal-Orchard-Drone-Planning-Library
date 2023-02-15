@@ -2,6 +2,8 @@
 //
 // All rights reserved.
 
+#include <range/v3/view/enumerate.hpp>
+#include <range/v3/view/filter.hpp>
 #include "DynamicGoalVisitationEvaluation.h"
 
 DynamicGoalVisitationEvaluation::DynamicGoalVisitationEvaluation(std::shared_ptr<DynamicMultiGoalPlanner> planner,
@@ -10,6 +12,8 @@ DynamicGoalVisitationEvaluation::DynamicGoalVisitationEvaluation(std::shared_ptr
 																 const std::vector<AppleDiscoverabilityType> &discoverability,
 																 const ompl::base::SpaceInformationPtr &si) : planner(
 		std::move(planner)), robot_state(initial_state), scene(scene), si(si) {
+
+	ss = std::dynamic_pointer_cast<DroneStateSpace>(si->getStateSpace());
 
 	// Construct goals using the scene and discoverability vector
 	goals = ranges::views::ints(0, (int) scene.apples.size()) | ranges::views::filter([&](int goal_id) {
@@ -43,11 +47,21 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 	auto ptc = ompl::base::plannerNonTerminatingCondition();
 
 	// Plan or replan depending on whether a recomputation event occurred in the previous iteration
-	auto result = re ? planner->replan(si, start.get(), re->goal_changes, scene, ptc) : planner->plan(si,
-																									  start.get(),
-																									  goals,
-																									  scene,
-																									  ptc);
+	DynamicMultiGoalPlanner::PlanResult result;
+	if (re) {
+		result = planner->replan(si, start.get(), re->goal_changes, scene, ptc);
+	} else {
+
+		auto known_goals = goals | ranges::views::enumerate | ranges::views::filter([&](const auto &pair) {
+			const auto &[goal_id, _] = pair;
+			return discovery_status[goal_id] == utilities::DiscoveryStatus::KNOWN_TO_ROBOT;
+		}) | ranges::views::transform([&](const auto &pair) {
+			const auto &[_, goal] = pair;
+			return goal;
+		}) | ranges::to_vector;
+
+		result = planner->plan(si, start.get(), known_goals, scene, ptc);
+	}
 
 	// Convert the result path to a RobotPath
 	RobotPath path = omplPathToRobotPath(result.combined());
@@ -60,4 +74,7 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 
 	// Find the next recomputation event using the goal events and discovery status
 	re = find_recomputation_event(events, goals, discovery_status);
+
+	// TODO: Make sure we actually return nullopt when done; maybe use discovery status vector to determine this?
+	return traj;
 }
