@@ -222,7 +222,7 @@ add_library(${PROJECT_NAME}_shared
         src/exploration/SurfletVolume.cpp
         src/utilities/shape_generation.cpp
         src/utilities/shape_generation.h
-        src/vtk/SimpleVtkViewer.cpp src/vtk/SimpleVtkViewer.h src/vtk/visualize_path.cpp src/vtk/visualize_path.h)
+        src/vtk/SimpleVtkViewer.cpp src/vtk/SimpleVtkViewer.h src/vtk/visualize_path.cpp src/vtk/visualize_path.h src/planners/shell_path_planner/ApproachPlanning.cpp src/planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.cpp src/planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.cpp)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

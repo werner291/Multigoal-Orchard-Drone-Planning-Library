@@ -6,6 +6,7 @@
 
 #include <range/v3/range/conversion.hpp>
 #include "../run_experiment.h"
+#include "MakeshiftPrmApproachPlanningMethods.h"
 
 int main(int argc, char **argv) {
 

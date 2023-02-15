@@ -12,6 +12,7 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/linear_distribute.hpp>
 #include "../run_experiment.h"
+#include "MakeshiftPrmApproachPlanningMethods.h"
 
 using namespace std;
 

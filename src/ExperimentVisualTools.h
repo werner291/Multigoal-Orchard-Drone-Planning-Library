@@ -26,17 +26,6 @@ public:
 	 */
 	void publishPlanningScene(const moveit_msgs::msg::PlanningScene &scene_msg);
 
-	/**
-	 * For a set of apple-approach-path pairs, publishes a MarkerArray topic that visualizes the end-effector
-	 * position at the start of the path connected with the target postion, to give an idea of where the path
-	 * starts relative to the target without visualizing the full path (and causing visual clutter).
-	 *
-	 * @param apples 		The vector of apple-approach-path pairs.
-	 * @param topic_name 	The ROS topic name.
-	 */
-	void dumpProjections(const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &apples,
-						 const std::string &topic_name);
-
 	void pincushion(const std::vector<std::pair<ompl::base::Goal *, ompl::base::State *>> &apples,
 					const ompl::base::StateSpace* space,
 					const std::string &topic_name);

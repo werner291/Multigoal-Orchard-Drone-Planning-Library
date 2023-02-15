@@ -35,68 +35,6 @@ geometry_msgs::msg::Point pointEigenToMsg(const Eigen::Vector3d& p) {
 	return msg;
 }
 
-void ExperimentVisualTools::dumpProjections(const std::vector<std::pair<Apple, ompl::geometric::PathGeometric>> &apples,
-											const std::string &topic_name) {
-
-	std_msgs::msg::ColorRGBA color;
-
-	ompl::RNG rng;
-	color.a = 1.0;
-	color.r = (float) rng.uniform01();
-	color.g = (float) rng.uniform01();
-	color.b = (float) rng.uniform01();
-
-	auto sphere_projections = this->create_publisher<visualization_msgs::msg::MarkerArray>(topic_name, default_qos());
-
-	visualization_msgs::msg::MarkerArray projections_msg;
-
-	visualization_msgs::msg::Marker balls;
-	balls.header.frame_id = "world";
-	balls.type = visualization_msgs::msg::Marker::POINTS;
-	balls.points.resize(apples.size());
-	balls.color = color;
-	balls.scale.x = 0.05;
-	balls.scale.y = 0.05;
-	balls.scale.z = 0.05;
-	balls.pose.orientation.w = 1.0;
-
-	visualization_msgs::msg::Marker lines;
-	lines.header.frame_id = "world";
-	lines.id = 1;
-	lines.type = visualization_msgs::msg::Marker::LINE_LIST;
-	lines.scale.x = 0.01;
-	lines.color = color;
-	lines.pose.orientation.w = 1.0;
-	lines.points.resize(2 * apples.size());
-
-	for (const auto &[apple_id, approach_pair]: apples | ranges::views::enumerate) {
-
-		const auto& approach_path = approach_pair.second;
-
-		auto ss = approach_path.getSpaceInformation()
-				->getStateSpace()
-				->as<ompl_interface::ModelBasedStateSpace>();
-
-		auto approach_state= approach_path.getState(0);
-		moveit::core::RobotState approach_state_robot_state(ss->getRobotModel());
-		ss->copyToRobotState(approach_state_robot_state, approach_state);
-		Eigen::Vector3d ee_pos = approach_state_robot_state.getGlobalLinkTransform("end_effector").translation();
-
-		balls.points[apple_id] = pointEigenToMsg(ee_pos);
-
-		lines.points[apple_id * 2] = pointEigenToMsg(approach_pair.first.center);
-		lines.points[apple_id * 2 + 1] = pointEigenToMsg(ee_pos);
-
-	}
-
-	projections_msg.markers.push_back(balls);
-	projections_msg.markers.push_back(lines);
-
-	sphere_projections->publish(projections_msg);
-
-	publisher_handles.push_back(sphere_projections);
-}
-
 void ExperimentVisualTools::pincushion(const std::vector<std::pair<ompl::base::Goal *, ompl::base::State *>> &apples,
 									   const ompl::base::StateSpace* space,
 									   const std::string &topic_name) {

@@ -6,9 +6,11 @@
 #include "../shell_space/MoveItShellSpace.h"
 #include "../shell_space/SphereShell.h"
 #include "../planners/shell_path_planner/ApproachPlanning.h"
+#include "../planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"
 #include "../planners/ShellPathPlanner.h"
 #include "../vtk/Viewer.h"
 #include "../CurrentPathState.h"
+
 #include "../vtk/SimpleVtkViewer.h"
 
 struct PlanningProblem {

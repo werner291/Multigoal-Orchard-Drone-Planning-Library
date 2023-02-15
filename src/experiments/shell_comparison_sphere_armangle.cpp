@@ -5,6 +5,7 @@
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <range/v3/view/linear_distribute.hpp>
 #include "../run_experiment.h"
+#include "MakeshiftPrmApproachPlanningMethods.h"
 
 using namespace std;
 
