@@ -296,16 +296,17 @@ std::shared_ptr<DroneStateSpace> omplStateSpaceForDrone(const moveit::core::Robo
 	return std::make_shared<DroneStateSpace>(spec, TRANSLATION_BOUND);
 }
 
-std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(int num_apples) {
-	auto rng = std::default_random_engine(num_apples);
+std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(int num_apples, double p) {
 
-	double p = std::uniform_real_distribution<double>(0.1, 1.0)(rng);
+	auto rng = std::default_random_engine(num_apples);
 
 	std::vector<AppleDiscoverabilityType> apple_discoverability(num_apples);
 
 	std::generate(apple_discoverability.begin(), apple_discoverability.end(), [&]() {
-		return std::bernoulli_distribution(p)(rng) ? AppleDiscoverabilityType::GIVEN : AppleDiscoverabilityType::DISCOVERABLE;
+		return std::bernoulli_distribution(p)(rng) ? AppleDiscoverabilityType::GIVEN
+												   : AppleDiscoverabilityType::DISCOVERABLE;
 	});
 
 	return apple_discoverability;
+
 }

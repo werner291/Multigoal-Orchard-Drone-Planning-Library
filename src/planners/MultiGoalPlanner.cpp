@@ -10,9 +10,11 @@ double MultiGoalPlanner::PlanResult::length() const {
 
 ompl::geometric::PathGeometric MultiGoalPlanner::PlanResult::combined() const {
 
+	assert(!segments.empty());
+
 	ompl::geometric::PathGeometric combined_path(segments[0].path_.getSpaceInformation());
 
-	for (const auto &segment : segments) {
+	for (const auto &segment: segments) {
 		combined_path.append(segment.path_);
 	}
 
