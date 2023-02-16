@@ -296,9 +296,9 @@ std::shared_ptr<DroneStateSpace> omplStateSpaceForDrone(const moveit::core::Robo
 	return std::make_shared<DroneStateSpace>(spec, TRANSLATION_BOUND);
 }
 
-std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(int num_apples, double p) {
+std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(int num_apples, double p, int seed) {
 
-	auto rng = std::default_random_engine(num_apples);
+	auto rng = std::default_random_engine(seed);
 
 	std::vector<AppleDiscoverabilityType> apple_discoverability(num_apples);
 

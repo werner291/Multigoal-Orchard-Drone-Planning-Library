@@ -198,6 +198,6 @@ enum AppleDiscoverabilityType {
  * @param num_apples The number of apples in the scene
  * @return std::vector<bool> A vector of booleans indicating the discoverability of each apple
  */
-std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(int num_apples, double p);
+std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(int num_apples, double p, int seed);
 
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

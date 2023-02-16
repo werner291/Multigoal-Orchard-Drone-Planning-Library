@@ -124,7 +124,7 @@ robot_trajectory::RobotTrajectory
 robotPathToConstantSpeedRobotTrajectory(const RobotPath &robot_path, const double speed) {
 
 	// Create a RobotTrajectory.
-	robot_trajectory::RobotTrajectory trajectory(robot_path.waypoints.front().getRobotModel(), "manipulator");
+	robot_trajectory::RobotTrajectory trajectory(robot_path.waypoints.front().getRobotModel());
 
 	// Loop through the waypoints in the RobotPath.
 	for (const auto &state: robot_path.waypoints) {
