@@ -78,3 +78,7 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 	// TODO: Make sure we actually return nullopt when done; maybe use discovery status vector to determine this?
 	return traj;
 }
+
+const std::vector<utilities::DiscoveryStatus> &DynamicGoalVisitationEvaluation::getDiscoveryStatus() const {
+	return discovery_status;
+}

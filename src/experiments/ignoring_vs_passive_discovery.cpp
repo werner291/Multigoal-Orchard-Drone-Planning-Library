@@ -17,6 +17,7 @@
 #include "../exploration/ColorEncoding.h"
 #include "../utilities/goal_events.h"
 #include "../DynamicGoalVisitationEvaluation.h"
+#include "../vtk/visualize_dynamic.h"
 
 #include <vtkProperty.h>
 
@@ -27,42 +28,6 @@ struct PlanningProblem {
 
 Apple appleFromMesh(const shape_msgs::msg::Mesh &mesh) {
 	return Apple{mesh_aabb(mesh).center(), {0.0, 0.0, 0.0}};
-}
-
-void createActors(const TreeMeshes &meshes,
-				  const std::vector<AppleDiscoverabilityType> &apple_discoverability,
-				  std::vector<vtkActor *> &apple_actors,
-				  SimpleVtkViewer &viewer) {
-	vtkNew<vtkActorCollection> actors;
-
-	auto tree_actor = createActorFromMesh(meshes.trunk_mesh);
-	setColorsByEncoding(tree_actor, TRUNK_RGB, false);
-
-	auto leaves_actor = createActorFromMesh(meshes.leaves_mesh);
-	setColorsByEncoding(leaves_actor, LEAVES_RGB, false);
-
-	actors->AddItem(tree_actor);
-	actors->AddItem(leaves_actor);
-
-	for (const auto &[fruit_index, fruit_mesh]: meshes.fruit_meshes | ranges::views::enumerate) {
-		auto fruit_actor = createActorFromMesh(fruit_mesh);
-
-		std::array<double, 3> rgb{0.0, 0.0, 0.0};
-
-		if (apple_discoverability[fruit_index]) {
-			rgb = {1.0, 0.0, 0.0};
-		} else {
-			rgb = {0.0, 0.0, 1.0};
-		}
-
-		fruit_actor->GetProperty()->SetDiffuseColor(rgb.data());
-
-		actors->AddItem(fruit_actor);
-
-		apple_actors.push_back(fruit_actor);
-	}
-
-	viewer.addActorCollection(actors);
 }
 
 int main(int argc, char **argv) {
@@ -81,8 +46,6 @@ int main(int argc, char **argv) {
 
 	using namespace ranges;
 
-	boost::asio::thread_pool pool(4);
-
 	auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene, 0.1));
 	auto shell = std::make_shared<MoveItShellSpace<Eigen::Vector3d >>(robot, workspaceShell);
 
@@ -97,71 +60,63 @@ int main(int argc, char **argv) {
 	// we'll need to copy this for every thread
 	auto si = loadSpaceInformation(ss, scene);
 
-	auto approach_methods = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
+	using DynamicPlannerAllocatorFn = std::function<std::shared_ptr<DynamicMultiGoalPlanner>(const ompl::base::SpaceInformationPtr&)>;
 
-	auto shellBuilder = [](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
+	DynamicPlannerAllocatorFn planner_allocator = [](const ompl::base::SpaceInformationPtr& si) -> std::shared_ptr<DynamicMultiGoalPlanner> {
 
-		auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene_info, 0.1));
+		auto approach_methods = std::make_unique < MakeshiftPrmApproachPlanningMethods < Eigen::Vector3d >> (si);
 
-		return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(workspaceShell, si);
+		auto shellBuilder = [](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
 
+			auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene_info, 0.1));
+
+			return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(workspaceShell, si);
+
+		};
+
+		auto static_planner = std::make_shared < ShellPathPlanner <
+							  Eigen::Vector3d >> (shellBuilder, std::move(approach_methods), true);
+
+		return std::make_shared<ChangeIgnoringReplannerAdapter>(static_planner);
 	};
 
-	auto static_planner = std::make_shared<ShellPathPlanner<Eigen::Vector3d>>(shellBuilder,
-																			  std::move(approach_methods),
-																			  true);
+	boost::asio::thread_pool pool(4);
 
-	auto change_ignoring = std::make_shared<ChangeIgnoringReplannerAdapter>(static_planner);
+	const size_t REPETITIONS = 10;
 
-	DynamicGoalVisitationEvaluation eval(change_ignoring, start_state, scene, apple_discoverability, si);
+	std::mutex mutex;
+	std::vector<int> n_visited_all;
 
-	robot_trajectory::RobotTrajectory traj = *eval.computeNextTrajectory();
+	boost::asio::post(pool, [&] {
+		auto change_ignoring = planner_allocator(si);
 
-	std::vector<vtkActor *> apple_actors;
+		DynamicGoalVisitationEvaluation eval(change_ignoring, start_state, scene, apple_discoverability, si);
 
-	// Create a VtkRobotmodel object to visualize the robot itself.
-	VtkRobotmodel robotModel(robot, start_state);
+		eval.computeNextTrajectory();
 
-	SimpleVtkViewer viewer;
-
-	// Add the robot model to the viewer.
-	viewer.addActorCollection(robotModel.getLinkActors());
-
-	// Add the tree meshes to the viewer.
-	createActors(meshes, apple_discoverability, apple_actors, viewer);
-
-	double time = 0.0;
-
-	// The "main loop" of the program, called every frame.
-	auto callback = [&]() {
-
-		time += 0.05;
-
-		if (eval.getRe() && eval.getRe()->at_t > time) {
-			time = 0.0;
-			traj = *eval.computeNextTrajectory();
+		while (eval.getRe()) {
+			eval.computeNextTrajectory();
 		}
 
-		// Update the robot's visualization to match the current state.
-		moveit::core::RobotState state(robot);
+		int n_visited = ranges::count_if(eval.getDiscoveryStatus(), [](const auto &status) { return status == utilities::VISITED; });
 
-		setStateToTrajectoryPoint(state, time, traj);
+		std::lock_guard<std::mutex> lock(mutex);
+		n_visited_all.push_back(n_visited);
 
-		robotModel.applyState(state);
+	});
 
-		for (const auto &[apple_actor, apple]: views::zip(apple_actors, scene.apples)) {
-			if ((state.getGlobalLinkTransform("end_effector").translation() - apple.center).norm() < 0.05) {
-				apple_actor->GetProperty()->SetDiffuseColor(0.0, 1.0, 0.0);
-			}
-		}
+	pool.join();
 
-	};
+	Json::Value result;
 
-	viewer.addTimerCallback(callback);
+	for (size_t i = 0; i < n_visited_all.size(); i++) {
+		result["change_ignoring"][(int) i] = n_visited_all[i];
+	}
 
-	viewer.start();
+	std::ofstream out("analysis/dynamic.json");
+	out << result;
 
-	return EXIT_SUCCESS;
+//	return visualizeEvaluation(meshes, scene, robot, start_state, apple_discoverability, eval);
 
 }
 

@@ -202,6 +202,17 @@ Json::Value loadJsonFromFile(const std::string &path) {
     return stats;
 }
 
+void saveJsonToFile(const std::string &path, const Json::Value& json) {
+	std::ofstream file(path);
+
+	if (file.is_open()) {
+		file << json;
+		file.close();
+	} else {
+		throw std::runtime_error("Could not open file " + path);
+	};
+}
+
 std::vector<std::vector<PtpSpec>> ptpSpecsFromJson(const moveit::core::RobotModelPtr &drone, const Json::Value &stats) {
     std::vector<std::vector<PtpSpec>> ptp_specs;
 

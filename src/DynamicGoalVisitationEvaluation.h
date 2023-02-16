@@ -28,7 +28,12 @@ class DynamicGoalVisitationEvaluation {
 	moveit::core::RobotState robot_state; ///< The initial state of the robot.
 	std::optional<utilities::RecomputationEvent> re; ///< An optional recomputation event.
 
-	std::vector<utilities::DiscoveryStatus> discovery_status; ///< A vector of discovery statuses.
+	std::vector<utilities::DiscoveryStatus> discovery_status;
+public:
+	const std::vector<utilities::DiscoveryStatus> &getDiscoveryStatus() const;
+
+private:
+	///< A vector of discovery statuses.
 
 	ompl::base::SpaceInformationPtr si; ///< A pointer to the space information object.
 	std::shared_ptr<DroneStateSpace> ss; ///< A pointer to the drone state space.

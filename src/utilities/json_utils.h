@@ -30,6 +30,8 @@ void jsonToGzipFile(const Json::Value &all_trees, const std::string &path);
 
 Json::Value loadJsonFromFile(const std::string &path);
 
+void saveJsonToFile(const Json::Value &json, const std::string &path);
+
 std::vector<std::vector<PtpSpec>> ptpSpecsFromJson(const moveit::core::RobotModelPtr &drone,
                                                    const Json::Value &stats);
 
