@@ -58,6 +58,7 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 		// If there is an upcoming goal event, feed the information to the planner and request a replan
 		if (upcoming_goal_event) {
 			segment = replanFromEvent(start.get());
+
 		} else {
 			// If there is no upcoming goal event, plan from scratch
 			segment = planner->plan(si, start.get(), goals, scene);
@@ -69,13 +70,24 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 			return std::nullopt;
 		}
 
+		// Validate to ensure the segment starts at the current robot state
+		if (si->distance(start.get(), segment->path_.getState(0)) > 1e-6) {
+			throw std::runtime_error("Planner returned a path that does not start at the current robot state");
+		}
+
 		// Convert the result path to a RobotPath
 		RobotPath path = omplPathToRobotPath(segment->path_);
 
 		// Check if the robot will discover any apples during the trajectory
-		auto event = utilities::find_earliest_discovery_event(path, scene.apples, 1.0);
+		auto event = utilities::find_earliest_discovery_event(path, scene.apples, 1.0, discovery_status);
 
 		if (event) {
+
+			// FIXME Something's broken here? Or perhaps it isn't
+
+			std::cout << "Truncating path after WP " << event->time.waypoints_passed << " at time "
+					  << event->time.to_next_waypoint_interpolation << std::endl;
+
 			// If the robot will discover an apple, set the upcoming goal event to the discovery event
 			upcoming_goal_event = *event;
 
@@ -84,8 +96,8 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 
 			path.truncateUpTo(event->time);
 
-
 		} else {
+
 			// If the robot will not discover any apples, set the upcoming goal event
 			// to the visitation event, coinciding with the planned end of the trajectory
 			upcoming_goal_event = utilities::GoalVisit{(int) segment->to_goal_id_};
@@ -93,8 +105,8 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 			// Update the discovery status vector to reflect the visitation
 			discovery_status[segment->to_goal_id_] = utilities::DiscoveryStatus::VISITED;
 
-
 		}
+
 		// Set the robot state to the end of the trajectory
 		robot_state = path.waypoints.back();
 

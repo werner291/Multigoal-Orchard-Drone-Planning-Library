@@ -26,12 +26,14 @@ namespace utilities {
 
 	using GoalEvent = std::variant<GoalVisit, GoalSighting>;
 
-	std::optional<GoalSighting>
-	find_earliest_discovery_event(RobotPath &traj, const std::vector<Apple> &apples, double discovery_max_distance);
-
 	enum DiscoveryStatus {
 		VISITED, KNOWN_TO_ROBOT, EXISTS_BUT_UNKNOWN_TO_ROBOT
 	};
+
+	std::optional<GoalSighting> find_earliest_discovery_event(RobotPath &traj,
+															  const std::vector<Apple> &apples,
+															  double discovery_max_distance,
+															  const std::vector<DiscoveryStatus> &discovery_status);
 
 }
 
