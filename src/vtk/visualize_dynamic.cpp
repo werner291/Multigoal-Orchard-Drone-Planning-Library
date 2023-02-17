@@ -82,7 +82,7 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 
 		time += 0.05;
 
-		if (eval.getRe() && eval.getRe()->at_t > time) {
+		if (eval.getUpcomingGoalEvent() && time > traj.getDuration()) {
 			time = 0.0;
 			traj = *eval.computeNextTrajectory();
 		}

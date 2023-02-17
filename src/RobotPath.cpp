@@ -68,6 +68,21 @@ void RobotPath::collapse_short_segments(double min_segment_length) {
 
 }
 
+void RobotPath::truncateUpTo(PathInterrupt interrupt) {
+
+	assert(interrupt.waypoints_passed + 1 < waypoints.size());
+
+	const auto &start = waypoints[interrupt.waypoints_passed];
+	const auto &end = waypoints[interrupt.waypoints_passed + 1];
+
+	moveit::core::RobotState interpolated(start.getRobotModel());
+	start.interpolate(end, interrupt.to_next_waypoint_interpolation, interpolated);
+
+	waypoints.erase(waypoints.begin() + interrupt.waypoints_passed + 1, waypoints.end());
+	waypoints[interrupt.waypoints_passed] = interpolated;
+
+}
+
 RobotPath omplPathToRobotPath(const ompl::geometric::PathGeometric &ompl_path) {
 
 	// Create a RobotPath.

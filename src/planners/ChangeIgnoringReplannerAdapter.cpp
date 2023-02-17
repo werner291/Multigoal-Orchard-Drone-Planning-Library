@@ -4,25 +4,52 @@
 
 #include "ChangeIgnoringReplannerAdapter.h"
 
-DynamicMultiGoalPlanner::PlanResult ChangeIgnoringReplannerAdapter::plan(const ompl::base::SpaceInformationPtr &si,
-																		 const ompl::base::State *start,
-																		 const std::vector<ompl::base::GoalPtr> &goals,
-																		 const AppleTreePlanningScene &planning_scene,
-																		 ompl::base::PlannerTerminationCondition &ptc) {
-
-	last_plan_result = static_planner->plan(si, start, goals, planning_scene, ptc);
-
-	return *last_plan_result;
-}
-
-DynamicMultiGoalPlanner::PlanResult ChangeIgnoringReplannerAdapter::replan(const ompl::base::SpaceInformationPtr &si,
-																		   const ompl::base::State *current_state,
-																		   const DynamicMultiGoalPlanner::GoalChanges &goal_changes,
-																		   const AppleTreePlanningScene &planning_scene,
-																		   ompl::base::PlannerTerminationCondition &ptc) {
-	return *last_plan_result;
-}
-
 ChangeIgnoringReplannerAdapter::ChangeIgnoringReplannerAdapter(const std::shared_ptr<MultiGoalPlanner> &staticPlanner)
 		: static_planner(staticPlanner) {
+}
+
+std::optional<DynamicMultiGoalPlanner::PathSegment>
+ChangeIgnoringReplannerAdapter::plan(const ompl::base::SpaceInformationPtr &si,
+									 const ompl::base::State *start,
+									 const std::vector<ompl::base::GoalPtr> &goals,
+									 const AppleTreePlanningScene &planning_scene) {
+	auto ptc = ompl::base::plannerNonTerminatingCondition();
+	static_plan = static_planner->plan(si, start, goals, planning_scene, ptc);
+
+	return next_segment();
+}
+
+
+std::optional<DynamicMultiGoalPlanner::PathSegment>
+ChangeIgnoringReplannerAdapter::replan_after_successful_visit(const ompl::base::SpaceInformationPtr &si,
+															  const ompl::base::State *current_state,
+															  const ompl::base::GoalPtr &visited_goal,
+															  const AppleTreePlanningScene &planning_scene) {
+	return next_segment();
+}
+
+std::optional<DynamicMultiGoalPlanner::PathSegment>
+ChangeIgnoringReplannerAdapter::replan_after_discovery(const ompl::base::SpaceInformationPtr &si,
+													   const ompl::base::State *current_state,
+													   const ompl::base::GoalPtr &new_goal,
+													   const PathInterrupt &at_interrupt,
+													   const AppleTreePlanningScene &planning_scene) {
+	return next_segment();
+}
+
+std::optional<DynamicMultiGoalPlanner::PathSegment>
+ChangeIgnoringReplannerAdapter::replan_after_removal(const ompl::base::SpaceInformationPtr &si,
+													 const ompl::base::State *current_state,
+													 const ompl::base::GoalPtr &removed_goal,
+													 const PathInterrupt &at_interrupt,
+													 const AppleTreePlanningScene &planning_scene) {
+	return next_segment();
+}
+
+std::optional<DynamicMultiGoalPlanner::PathSegment> ChangeIgnoringReplannerAdapter::next_segment() {
+	if (static_plan.has_value() && static_plan_index < static_plan->segments.size()) {
+		return static_plan->segments[static_plan_index++];
+	} else {
+		return std::nullopt;
+	}
 }

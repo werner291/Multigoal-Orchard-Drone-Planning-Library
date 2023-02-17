@@ -26,20 +26,23 @@ class DynamicGoalVisitationEvaluation {
 	std::shared_ptr<DynamicMultiGoalPlanner> planner; ///< A pointer to the planner being evaluated.
 
 	moveit::core::RobotState robot_state; ///< The initial state of the robot.
-	std::optional<utilities::RecomputationEvent> re; ///< An optional recomputation event.
 
-	std::vector<utilities::DiscoveryStatus> discovery_status;
-public:
-	const std::vector<utilities::DiscoveryStatus> &getDiscoveryStatus() const;
-
-private:
-	///< A vector of discovery statuses.
+	std::vector<utilities::DiscoveryStatus> discovery_status;    ///< A vector of discovery statuses.
 
 	ompl::base::SpaceInformationPtr si; ///< A pointer to the space information object.
 	std::shared_ptr<DroneStateSpace> ss; ///< A pointer to the drone state space.
 
 	std::vector<ompl::base::GoalPtr> goals; ///< A vector of goals.
 	const AppleTreePlanningScene &scene; ///< A reference to the planning scene.
+
+	std::optional<utilities::GoalEvent> upcoming_goal_event;
+public:
+	const std::optional<utilities::GoalEvent> &getUpcomingGoalEvent() const;
+
+private:
+	///< An optional GoalEvent object representing the next goal event.
+
+	bool first_call = true; ///< A boolean indicating whether computeNextTrajectory() has been called yet.
 
 public:
 
@@ -72,10 +75,10 @@ public:
 	 *
 	 * @return An optional RecomputationEvent object representing the recomputation event.
 	 */
-	[[nodiscard]] const std::optional<utilities::RecomputationEvent> &getRe() const {
-		return re;
-	}
 
+	[[nodiscard]] const std::vector<utilities::DiscoveryStatus> &getDiscoveryStatus() const;
+
+	[[nodiscard]] std::optional<DynamicMultiGoalPlanner::PathSegment> replanFromEvent(ompl::base::State *start);
 };
 
 

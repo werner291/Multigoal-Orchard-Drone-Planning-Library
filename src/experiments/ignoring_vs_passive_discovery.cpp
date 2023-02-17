@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
 
 		eval.computeNextTrajectory();
 
-		while (eval.getRe()) {
+		while (eval.getUpcomingGoalEvent().has_value()) {
 			eval.computeNextTrajectory();
 		}
 

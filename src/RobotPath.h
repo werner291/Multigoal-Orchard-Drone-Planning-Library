@@ -5,6 +5,7 @@
 #include <moveit/robot_state/robot_state.h>
 #include <moveit/robot_trajectory/robot_trajectory.h>
 #include <ompl/geometric/PathGeometric.h>
+#include "PathInterrupt.h"
 
 /**
  * A path through space defined by a vector of robot states, without an associated time component.
@@ -19,6 +20,8 @@ struct RobotPath {
 	void split_long_segments(double max_segment_length);
 
 	void collapse_short_segments(double min_segment_length);
+
+	void truncateUpTo(PathInterrupt interrupt);
 };
 
 /**

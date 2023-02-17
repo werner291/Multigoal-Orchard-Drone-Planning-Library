@@ -234,7 +234,7 @@ add_library(${PROJECT_NAME}_shared
         src/vtk/VtkRobotModel.h
         src/vtk/visualize_path.cpp
         src/vtk/visualize_path.h
-        src/vtk/visualize_dynamic.cpp src/vtk/visualize_dynamic.h src/utilities/run_experiments.cpp src/utilities/run_experiments.h src/utilities/JsonChunkedLogger.cpp src/utilities/JsonChunkedLogger.h)
+        src/vtk/visualize_dynamic.cpp src/vtk/visualize_dynamic.h src/utilities/run_experiments.cpp src/utilities/run_experiments.h src/utilities/JsonChunkedLogger.cpp src/utilities/JsonChunkedLogger.h src/planners/CachingDynamicPlanner.cpp src/planners/CachingDynamicPlanner.h src/PathInterrupt.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
