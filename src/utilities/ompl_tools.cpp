@@ -25,3 +25,8 @@ void utilities::truncatePathToInterrupt(ompl::geometric::PathGeometric &path, co
 	path.getSpaceInformation()->getStateSpace()->copyState(path.getState(0), new_start_interpolated.get());
 
 }
+
+bool
+utilities::pathStartMatches(const ompl::base::State *start, const ompl::geometric::PathGeometric &path, double margin) {
+	return path.getSpaceInformation()->distance(start, path.getState(0)) < margin;
+}

@@ -24,7 +24,6 @@ ChangeIgnoringReplannerAdapter::plan(const ompl::base::SpaceInformationPtr &si,
 std::optional<DynamicMultiGoalPlanner::PathSegment>
 ChangeIgnoringReplannerAdapter::replan_after_successful_visit(const ompl::base::SpaceInformationPtr &si,
 															  const ompl::base::State *current_state,
-															  const ompl::base::GoalPtr &visited_goal,
 															  const AppleTreePlanningScene &planning_scene) {
 	return next_segment();
 }

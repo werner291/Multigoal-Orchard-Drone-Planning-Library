@@ -50,7 +50,6 @@ public:
 	[[nodiscard]] virtual std::optional<PathSegment>
 	replan_after_successful_visit(const ompl::base::SpaceInformationPtr &si,
 								  const ompl::base::State *current_state,
-								  const ompl::base::GoalPtr &visited_goal,
 								  const AppleTreePlanningScene &planning_scene) = 0;
 
 	/**

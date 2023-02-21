@@ -159,11 +159,11 @@ int main(int argc, char **argv) {
 		// we'll need to copy this for every thread
 		auto si = loadSpaceInformation(ss, scene);
 
-		DynamicGoalVisitationEvaluation eval(static_baseline_planner(si),
-											 start_state,
-											 scene,
-											 apple_discoverability,
-											 si);
+		auto planner = static_baseline_planner(si);
+
+		auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(planner, si, ss);
+
+		DynamicGoalVisitationEvaluation eval(adapter, start_state, scene, apple_discoverability);
 
 		visualizeEvaluation(meshes, scene, robot, start_state, apple_discoverability, eval);
 	}

@@ -12,8 +12,8 @@
 #include <range/v3/view/zip.hpp>
 #include "DynamicMultiGoalPlanner.h"
 #include "utilities/goal_events.h"
-#include "ompl_custom.h"
 #include "utilities/experiment_utils.h"
+#include "planners/DynamicMultiGoalPlannerOmplToMoveitAdapter.h"
 
 /**
  * @brief A class representing an evaluation framework for a given planner.
@@ -23,26 +23,42 @@
  */
 class DynamicGoalVisitationEvaluation {
 
-	std::shared_ptr<DynamicMultiGoalPlanner> planner; ///< A pointer to the planner being evaluated.
+	using Planner = DynamicMultiGoalPlannerOmplToMoveitAdapter;
 
-	moveit::core::RobotState robot_state; ///< The initial state of the robot.
+	/// A pointer to the planner being evaluated.
+	std::shared_ptr<Planner> planner;
 
-	std::vector<utilities::DiscoveryStatus> discovery_status;    ///< A vector of discovery statuses.
+	/// The initial state of the robot.
+	moveit::core::RobotState last_robot_state;
 
-	ompl::base::SpaceInformationPtr si; ///< A pointer to the space information object.
-	std::shared_ptr<DroneStateSpace> ss; ///< A pointer to the drone state space.
-
-	std::vector<ompl::base::GoalPtr> goals; ///< A vector of goals.
-	const AppleTreePlanningScene &scene; ///< A reference to the planning scene.
-
-	std::optional<utilities::GoalEvent> upcoming_goal_event;
+	/// A vector of path segments representing the solution path so far.
+	std::vector<std::pair<RobotPath, utilities::GoalEvent>> solution_path_segments;
 public:
-	const std::optional<utilities::GoalEvent> &getUpcomingGoalEvent() const;
+	const moveit::core::RobotState &getLastRobotState() const;
+
+	const std::vector<std::pair<RobotPath, utilities::GoalEvent>> &getSolutionPathSegments() const;
 
 private:
-	///< An optional GoalEvent object representing the next goal event.
 
-	bool first_call = true; ///< A boolean indicating whether computeNextTrajectory() has been called yet.
+	/// A vector of discovery statuses.
+	std::vector<utilities::DiscoveryStatus> discovery_status;
+
+	/// A reference to the planning scene.
+	const AppleTreePlanningScene &scene;
+
+	/// An optional GoalEvent object representing the next goal event.
+	std::optional<utilities::GoalEvent> upcoming_goal_event;
+
+	/// A boolean indicating whether computeNextTrajectory() has been called yet.
+	bool first_call = true;
+
+	/**
+	 * Internal function to compute to request the planner to replan from the last waypoint
+	 * in the current path, assuming we have a valid upcoming_goal_event.
+	 *
+	 * @return 				An optional PathSegment object representing the new path segment.
+	 */
+	[[nodiscard]] std::optional<MoveitPathSegment> replanFromEvent();
 
 public:
 
@@ -52,13 +68,11 @@ public:
 	 * @param initial_state The initial state of the robot.
 	 * @param scene A reference to the AppleTreePlanningScene.
 	 * @param discoverability A vector of AppleDiscoverabilityType objects.
-	 * @param si A pointer to the SpaceInformation object.
 	 */
-	DynamicGoalVisitationEvaluation(std::shared_ptr<DynamicMultiGoalPlanner> planner,
+	DynamicGoalVisitationEvaluation(std::shared_ptr<Planner> planner,
 									const moveit::core::RobotState &initial_state,
 									const AppleTreePlanningScene &scene,
-									const std::vector<AppleDiscoverabilityType> &discoverability,
-									const ompl::base::SpaceInformationPtr &si);
+									const std::vector<AppleDiscoverabilityType> &discoverability);
 
 	/**
 	 * @brief Computes the next robot trajectory.
@@ -75,10 +89,14 @@ public:
 	 *
 	 * @return An optional RecomputationEvent object representing the recomputation event.
 	 */
+	[[nodiscard]] const std::optional<utilities::GoalEvent> &getUpcomingGoalEvent() const;
 
+	/**
+	 * @brief Returns the discovery status of each apple.
+	 * @return A vector of DiscoveryStatus objects; every index corresponds to an apple, in the same order as the apples in the planning scene.`
+	 */
 	[[nodiscard]] const std::vector<utilities::DiscoveryStatus> &getDiscoveryStatus() const;
 
-	[[nodiscard]] std::optional<DynamicMultiGoalPlanner::PathSegment> replanFromEvent(ompl::base::State *start);
 };
 
 
