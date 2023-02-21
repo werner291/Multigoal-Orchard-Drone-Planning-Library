@@ -85,8 +85,9 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 
 			// FIXME Something's broken here? Or perhaps it isn't
 
-			std::cout << "Truncating path after WP " << event->time.waypoints_passed << " at time "
-					  << event->time.to_next_waypoint_interpolation << std::endl;
+			std::cout << "Truncating path after WP " << event->time.segment_index << " at time "
+					  << event->time.to_next_waypoint_interpolation << " because of discovery of apple "
+					  << event->goal_id << std::endl;
 
 			// If the robot will discover an apple, set the upcoming goal event to the discovery event
 			upcoming_goal_event = *event;
@@ -109,6 +110,8 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 
 		// Set the robot state to the end of the trajectory
 		robot_state = path.waypoints.back();
+
+		std::cout << "Path length: " << path.waypoints.size() << std::endl;
 
 		// Return the trajectory
 		return robotPathToConstantSpeedRobotTrajectory(path, 1.0);

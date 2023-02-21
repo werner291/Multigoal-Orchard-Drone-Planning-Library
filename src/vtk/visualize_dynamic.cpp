@@ -60,7 +60,8 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 						const moveit::core::RobotState &start_state,
 						const std::vector<AppleDiscoverabilityType> &apple_discoverability,
 						DynamicGoalVisitationEvaluation &eval) {
-	robot_trajectory::RobotTrajectory traj = *eval.computeNextTrajectory();
+
+	auto traj = eval.computeNextTrajectory();
 
 	std::vector<vtkActor *> apple_actors;
 
@@ -80,23 +81,26 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 	// The "main loop" of the program, called every frame.
 	auto callback = [&]() {
 
-		time += 0.01;
+		time += 0.05;
 
-		if (eval.getUpcomingGoalEvent() && time > traj.getDuration()) {
+		if (eval.getUpcomingGoalEvent() && (traj.has_value() && time > traj->getDuration())) {
 			time = 0.0;
-			traj = *eval.computeNextTrajectory();
+
+			traj = eval.computeNextTrajectory();
 		}
 
-		// Update the robot's visualization to match the current state.
-		moveit::core::RobotState state(robot);
+		if (traj) {
+			// Update the robot's visualization to match the current state.
+			moveit::core::RobotState state(robot);
 
-		setStateToTrajectoryPoint(state, time, traj);
+			setStateToTrajectoryPoint(state, time, *traj);
 
-		robotModel.applyState(state);
+			robotModel.applyState(state);
 
-		for (const auto &[apple_actor, apple]: ranges::views::zip(apple_actors, scene.apples)) {
-			if ((state.getGlobalLinkTransform("end_effector").translation() - apple.center).norm() < 0.05) {
-				apple_actor->GetProperty()->SetDiffuseColor(0.0, 1.0, 0.0);
+			for (const auto &[apple_actor, apple]: ranges::views::zip(apple_actors, scene.apples)) {
+				if ((state.getGlobalLinkTransform("end_effector").translation() - apple.center).norm() < 0.05) {
+					apple_actor->GetProperty()->SetDiffuseColor(0.0, 1.0, 0.0);
+				}
 			}
 		}
 

@@ -3,6 +3,7 @@
 // All rights reserved.
 
 #include "ChangeIgnoringReplannerAdapter.h"
+#include "../utilities/ompl_tools.h"
 
 ChangeIgnoringReplannerAdapter::ChangeIgnoringReplannerAdapter(const std::shared_ptr<MultiGoalPlanner> &staticPlanner)
 		: static_planner(staticPlanner) {
@@ -34,7 +35,18 @@ ChangeIgnoringReplannerAdapter::replan_after_discovery(const ompl::base::SpaceIn
 													   const ompl::base::GoalPtr &new_goal,
 													   const PathInterrupt &at_interrupt,
 													   const AppleTreePlanningScene &planning_scene) {
-	return next_segment();
+
+	return from_interrupt(at_interrupt);
+
+}
+
+
+std::optional<DynamicMultiGoalPlanner::PathSegment>
+ChangeIgnoringReplannerAdapter::from_interrupt(const PathInterrupt &at_interrupt) {
+
+	utilities::truncatePathToInterrupt(static_plan->segments[0].path_, at_interrupt);
+
+	return static_plan->segments.front();
 }
 
 std::optional<DynamicMultiGoalPlanner::PathSegment>
@@ -43,7 +55,7 @@ ChangeIgnoringReplannerAdapter::replan_after_removal(const ompl::base::SpaceInfo
 													 const ompl::base::GoalPtr &removed_goal,
 													 const PathInterrupt &at_interrupt,
 													 const AppleTreePlanningScene &planning_scene) {
-	return next_segment();
+	return from_interrupt(at_interrupt);
 }
 
 std::optional<DynamicMultiGoalPlanner::PathSegment> ChangeIgnoringReplannerAdapter::next_segment() {

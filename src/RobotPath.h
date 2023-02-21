@@ -21,6 +21,14 @@ struct RobotPath {
 
 	void collapse_short_segments(double min_segment_length);
 
+	/**
+	 * Truncate the path up to the given interrupt.
+	 *
+	 * That is, if the path is [0 1 2 3 4 5 6 7 8 9] and the interrupt is at 5.3, the path will be truncated
+	 * to [0 1 2 3 4 5 5.3], interpolating the final waypoint as needed.
+	 *
+	 * @param interrupt 		The interrupt.
+	 */
 	void truncateUpTo(PathInterrupt interrupt);
 };
 

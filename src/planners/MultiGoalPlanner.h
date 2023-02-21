@@ -8,6 +8,7 @@
 #include <jsoncpp/json/value.h>
 #include "../SingleGoalPlannerMethods.h"
 #include "../planning_scene_diff_message.h"
+#include "../PathInterrupt.h"
 
 /**
  * A base class for multi-goal planners that can find paths to a set of goals from a given start state.

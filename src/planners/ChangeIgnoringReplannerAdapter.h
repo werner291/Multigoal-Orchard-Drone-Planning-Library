@@ -56,6 +56,8 @@ public:
 													const ompl::base::GoalPtr &removed_goal,
 													const PathInterrupt &at_interrupt,
 													const AppleTreePlanningScene &planning_scene) override;
+
+	std::optional<PathSegment> from_interrupt(const PathInterrupt &at_interrupt);
 };
 
 

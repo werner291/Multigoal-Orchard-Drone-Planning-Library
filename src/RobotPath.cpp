@@ -70,16 +70,26 @@ void RobotPath::collapse_short_segments(double min_segment_length) {
 
 void RobotPath::truncateUpTo(PathInterrupt interrupt) {
 
-	assert(interrupt.waypoints_passed + 1 < waypoints.size());
+	// Ensure that the segment index is valid; i.e. that the path is long enough to be interrupted.
+	assert(interrupt.segment_index + 1 < waypoints.size());
 
-	const auto &start = waypoints[interrupt.waypoints_passed];
-	const auto &end = waypoints[interrupt.waypoints_passed + 1];
+	// Get the start and end waypoints of the segment that is being interrupted.
+	const auto &start = waypoints[interrupt.segment_index];
+	auto &end = waypoints[interrupt.segment_index + 1];
 
+	// Create a RobotState to hold the interpolated waypoint, and interpolate it.
 	moveit::core::RobotState interpolated(start.getRobotModel());
 	start.interpolate(end, interrupt.to_next_waypoint_interpolation, interpolated);
 
-	waypoints.erase(waypoints.begin() + interrupt.waypoints_passed + 1, waypoints.end());
-	waypoints[interrupt.waypoints_passed] = interpolated;
+	// Assign the interpolated waypoint to the end waypoint.
+	end = interpolated;
+
+	// Erase all waypoints after the end waypoint, not including the end waypoint itself.
+	waypoints.erase(waypoints.begin() + interrupt.segment_index + 2, waypoints.end());
+
+	std::cout << "Truncated path to " << waypoints.size() << " waypoints." << std::endl;
+	std::cout << "for interrupt at segment " << interrupt.segment_index << std::endl;
+	assert(waypoints.size() == interrupt.segment_index + 2);
 
 }
 
@@ -137,6 +147,8 @@ ompl::geometric::PathGeometric robotPathToOmplPath(const RobotPath &robot_path, 
 
 robot_trajectory::RobotTrajectory
 robotPathToConstantSpeedRobotTrajectory(const RobotPath &robot_path, const double speed) {
+
+	assert(!robot_path.waypoints.empty());
 
 	// Create a RobotTrajectory.
 	robot_trajectory::RobotTrajectory trajectory(robot_path.waypoints.front().getRobotModel());
