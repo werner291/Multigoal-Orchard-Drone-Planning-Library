@@ -40,8 +40,32 @@ class CachingDynamicPlanner : public DynamicMultiGoalPlanner {
 
 	std::vector<ApproachToGoal> ordering;
 
+	/**
+	 * @brief Reorders the list of approach paths using a batch TSP algorithm.
+	 *
+	 * This method takes in an initial approach path and uses a batch TSP algorithm to reorder the list of approach paths
+	 * stored in the `ordering` member variable. The ordering is determined by predicting the path length between each
+	 * pair of approach paths, using the shell space to compute the path length. The resulting ordering is stored back
+	 * into the `ordering` member variable.
+	 *
+	 * @tparam ShellPoint The shell point type.
+	 * @param initial_approach The initial approach path.
+	 */
 	void batch_reorder(const OmplApproachPath<ShellPoint> &initial_approach);
 
+	/**
+	 * @brief Computes an optimized point-to-point path using a caching dynamic planner.
+	 *
+	 * This method takes in a space information pointer, a retreat path, and an approach path, and uses a non-terminating
+	 * condition to compute a shell path. The retreat and approach paths are then concatenated with the shell path to form
+	 * a complete point-to-point path. Finally, the complete path is optimized and returned.
+	 *
+	 * @tparam ShellPoint The shell point type.
+	 * @param si The space information pointer.
+	 * @param retreat_path The retreat path.
+	 * @param approach_path The approach path.
+	 * @return The optimized point-to-point path.
+	 */
 	ompl::geometric::PathGeometric optimizedPointToPoint(const ompl::base::SpaceInformationPtr &si,
 														 const OmplApproachPath<ShellPoint> &retreat_path,
 														 const OmplApproachPath<ShellPoint> &approach_path) const;

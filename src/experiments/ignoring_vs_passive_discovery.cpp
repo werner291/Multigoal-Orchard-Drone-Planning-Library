@@ -19,6 +19,7 @@
 #include "../DynamicGoalVisitationEvaluation.h"
 #include "../utilities/run_experiments.h"
 #include "../vtk/visualize_dynamic.h"
+#include "../planners/CachingDynamicPlanner.h"
 
 #include <vtkProperty.h>
 #include <range/v3/view/iota.hpp>
@@ -63,6 +64,46 @@ std::shared_ptr<DynamicMultiGoalPlanner> static_baseline_planner(const ompl::bas
 																			   true);
 
 	return std::make_shared<ChangeIgnoringReplannerAdapter>(static_planner);
+};
+
+class ORToolsTSPMethods : public IncrementalTSPMethods {
+
+public:
+	std::vector<size_t> initial_ordering(size_t n,
+										 std::function<double(size_t, size_t)> distance,
+										 std::function<double(size_t)> first_distance) override {
+
+		return tsp_open_end(first_distance, distance, n);
+
+	}
+
+	std::vector<size_t> update_ordering(const std::vector<size_t> &current_ordering,
+										size_t new_goal,
+										std::function<double(size_t, size_t)> distance,
+										std::function<double(size_t)> first_distance) override {
+		throw std::runtime_error("Not implemented");
+	}
+};
+
+std::shared_ptr<DynamicMultiGoalPlanner> dynamic_planner(const ompl::base::SpaceInformationPtr &si) {
+
+	auto approach_methods = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
+
+	auto shellBuilder = [](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
+
+		auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene_info, 0.1));
+
+		return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(workspaceShell, si);
+
+	};
+
+	auto tsp = std::make_shared<ORToolsTSPMethods>();
+
+	auto dynamic_planner = std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(approach_methods,
+																					tsp,
+																					shellBuilder);
+
+	return std::make_shared<ChangeIgnoringReplannerAdapter>(dynamic_planner);
 };
 
 std::vector<PlanningProblem>

@@ -5,29 +5,6 @@
 #include "CachingDynamicPlanner.h"
 #include "../probe_retreat_move.h"
 
-/**
- * Reorders a vector by the given indexes.
- *
- * Note: Elements are moved from the original vector to the new vector,
- * so duplicate indexes are not allowed and may cause undefined behavior.
- *
- * @tparam T 				The type of the vector elements
- * @param vec 				The vector to reorder (pass by move)
- * @param ordering_indexes 	The indexes to reorder by (must be unique)
- * @return 					The reordered vector
- */
-template<typename T>
-std::vector<T> reorder_by_index(std::vector<T> vec, const std::vector<size_t> &ordering_indexes) {
-	std::vector<T> result;
-
-	for (auto i: ordering_indexes) {
-		result.push_back(std::move(vec[i]));
-	}
-
-	return result;
-}
-
-
 template<typename ShellPoint>
 std::optional<DynamicMultiGoalPlanner::PathSegment>
 CachingDynamicPlanner<ShellPoint>::replan_after_removal(const ompl::base::SpaceInformationPtr &si,
@@ -146,33 +123,39 @@ CachingDynamicPlanner<ShellPoint>::optimizedPointToPoint(const ompl::base::Space
 														 const OmplApproachPath<ShellPoint> &retreat_path,
 														 const OmplApproachPath<ShellPoint> &approach_path) const {
 
+	// Create a non-terminating condition for the planner
 	auto ptc = ompl::base::plannerNonTerminatingCondition();
 
+	// Compute the shell path
 	auto shell_path = this->shell_space->plan(retreat_path, approach_path, ptc);
 
+	// Concatenate the retreat, shell, and approach paths to form a complete point-to-point path
 	ompl::geometric::PathGeometric path(si);
-
 	path.append(retreat_path);
-	path.reverse();
-
+	path.reverse(); // Reverse the retreat path so that it goes from the goal to the start
 	path.append(shell_path);
 	path.append(approach_path);
 
+	// Optimize the path and return the result
 	return optimize(path, {nullptr}, si);
-
 }
 
 template<typename ShellPoint>
 void CachingDynamicPlanner<ShellPoint>::batch_reorder(const OmplApproachPath<ShellPoint> &initial_approach) {
+	// Use the TSP method to reorder the approach paths
 	ordering = reorder_by_index(std::move(ordering),
 								tsp_method->initial_ordering(ordering.size(), [&](size_t i, size_t j) {
+									// Use the shell space to predict the path length between each pair of approach paths
 									return shell_space->predict_path_length(ordering[i].approach.shell_point,
 																			ordering[j].approach.shell_point);
 								}, [&](size_t i) {
+									// Use the shell space to predict the path length between the initial approach path
+									// and each approach path in the list
 									return shell_space->predict_path_length(initial_approach.shell_point,
 																			ordering[i].approach.shell_point);
 								}));
 }
+
 
 template<typename ShellPoint>
 CachingDynamicPlanner<ShellPoint>::CachingDynamicPlanner(const std::shared_ptr<ApproachPlanningMethods<ShellPoint>> &approachPlanner,
