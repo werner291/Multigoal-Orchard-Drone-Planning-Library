@@ -28,7 +28,7 @@ class CachingDynamicPlanner : public DynamicMultiGoalPlanner {
 
 	struct ApproachToGoal {
 		ompl::base::GoalPtr goal;
-		std::optional<OmplApproachPath<ShellPoint>> approach;
+		OmplApproachPath<ShellPoint> approach;
 	};
 
 	std::shared_ptr<ApproachPlanningMethods<ShellPoint>> approach_planner;
@@ -36,7 +36,7 @@ class CachingDynamicPlanner : public DynamicMultiGoalPlanner {
 	MkOmplShellFn<ShellPoint> shellBuilder;
 	std::shared_ptr<OmplShellSpace<ShellPoint>> shell_space;
 
-	OmplApproachPath<ShellPoint> to_shell;
+	//	OmplApproachPath<ShellPoint> to_shell;
 
 	std::vector<ApproachToGoal> ordering;
 
@@ -74,6 +74,8 @@ public:
 	explicit CachingDynamicPlanner(const std::shared_ptr<ApproachPlanningMethods<ShellPoint>> &approachPlanner,
 								   const std::shared_ptr<IncrementalTSPMethods> &tspMethod,
 								   MkOmplShellFn<ShellPoint> shellBuilder);
+
+	virtual ~CachingDynamicPlanner() = default;
 
 	std::optional<PathSegment> plan(const ompl::base::SpaceInformationPtr &si,
 									const ompl::base::State *start,

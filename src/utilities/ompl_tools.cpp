@@ -7,7 +7,7 @@
 
 
 void utilities::truncatePathToInterrupt(ompl::geometric::PathGeometric &path, const PathInterrupt &at_interrupt) {
-	;
+
 	assert(path.getStateCount() >= at_interrupt.segment_index + 1);
 
 	path.getStates().erase(path.getStates().begin(), path.getStates().begin() + (int) at_interrupt.segment_index);

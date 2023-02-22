@@ -40,7 +40,7 @@ MakeshiftPrmApproachPlanningMethods<ShellPoint>::approach_path(const ompl::base:
 
 	shell.stateFromPoint(shellPoint, shell_state.get());
 
-	auto path = single_goal_planner_methods->state_to_state(start, shell_state.get());
+	auto path = single_goal_planner_methods->state_to_state(shell_state.get(), start);
 
 	if (path) {
 		return OmplApproachPath<ShellPoint>{shellPoint, *path};

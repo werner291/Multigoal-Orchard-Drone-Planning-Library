@@ -87,7 +87,8 @@ public:
 
 std::shared_ptr<DynamicMultiGoalPlanner> dynamic_planner(const ompl::base::SpaceInformationPtr &si) {
 
-	auto approach_methods = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
+	std::shared_ptr<ApproachPlanningMethods<Eigen::Vector3d>> approach_methods = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
+			si);
 
 	auto shellBuilder = [](const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
 
@@ -103,18 +104,18 @@ std::shared_ptr<DynamicMultiGoalPlanner> dynamic_planner(const ompl::base::Space
 																					tsp,
 																					shellBuilder);
 
-	return std::make_shared<ChangeIgnoringReplannerAdapter>(dynamic_planner);
+	return dynamic_planner;
 };
 
 std::vector<PlanningProblem>
 genDynamicGoalsetPlanningProblems(const AppleTreePlanningScene &scene, const moveit::core::RobotModelPtr &robot) {
 	const int REPETITIONS = 10;
 
-	const std::vector<PlanningProblem> problems =
-			ranges::views::iota(0, REPETITIONS) | ranges::views::transform([&](int i) {
-				return PlanningProblem{randomStateOutsideTree(robot, i),
-									   generateAppleDiscoverability((int) scene.apples.size(), 1.0, i)};
-			}) | ranges::to_vector;
+	std::vector<PlanningProblem> problems = ranges::views::iota(0, REPETITIONS) | ranges::views::transform([&](int i) {
+		return PlanningProblem{randomStateOutsideTree(robot, i),
+							   generateAppleDiscoverability((int) scene.apples.size(), 1.0, i)};
+	}) | ranges::to_vector;
+
 	return problems;
 }
 
@@ -149,9 +150,13 @@ int main(int argc, char **argv) {
 	auto shell = std::make_shared<MoveItShellSpace<Eigen::Vector3d >>(robot, workspaceShell);
 
 	const auto start_state = randomStateOutsideTree(robot, 0);
-	auto apple_discoverability = generateAppleDiscoverability((int) scene.apples.size(), 1.0, 42);
+	auto apple_discoverability = generateAppleDiscoverability((int) scene.apples.size(), 0.5, 42);
 
-	DynamicPlannerAllocatorFn planner_allocator = static_baseline_planner;
+	std::cout << "Starting planning with " << apple_discoverability.size() << " apples in total, of which "
+			  << ranges::count(apple_discoverability, DISCOVERABLE) << " are discoverable." << std::endl;
+
+	//	DynamicPlannerAllocatorFn planner_allocator = static_baseline_planner;
+	DynamicPlannerAllocatorFn planner_allocator = dynamic_planner;
 
 	//	std::vector<PlanningProblem> problems = genDynamicGoalsetPlanningProblems(scene, robot);
 	//
@@ -200,7 +205,7 @@ int main(int argc, char **argv) {
 		// we'll need to copy this for every thread
 		auto si = loadSpaceInformation(ss, scene);
 
-		auto planner = static_baseline_planner(si);
+		auto planner = planner_allocator(si);
 
 		auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(planner, si, ss);
 

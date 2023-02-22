@@ -4,6 +4,7 @@
 
 #include "CachingDynamicPlanner.h"
 #include "../probe_retreat_move.h"
+#include "../utilities/vector_utils.h"
 
 template<typename ShellPoint>
 std::optional<DynamicMultiGoalPlanner::PathSegment>
@@ -26,7 +27,12 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 														  const PathInterrupt &interrupt,
 														  const AppleTreePlanningScene &planning_scene) {
 
-	auto approach = approach_planner->plan(new_goal, *shell_space);
+	std::cout << "Replanning after discovery" << std::endl;
+
+	auto approach = approach_planner->approach_path(new_goal, *shell_space);
+
+	auto to_shell = approach_planner->approach_path(current_state, *shell_space);
+	assert(to_shell.has_value());
 
 	if (approach) {
 
@@ -41,7 +47,7 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 
 		for (size_t i = 0; i < ordering.size(); i++) {
 
-			ShellPoint approach_before = i == 0 ? to_shell.shell_point : ordering[i - 1].approach.shell_point;
+			ShellPoint approach_before = i == 0 ? to_shell->shell_point : ordering[i - 1].approach.shell_point;
 			std::optional<ShellPoint> approach_after =
 					i == ordering.size() - 1 ? std::nullopt : std::optional(ordering[i + 1].approach.shell_point);
 
@@ -61,7 +67,7 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 		ordering.insert(ordering.begin() + insert_before, {new_goal, *approach});
 	}
 
-	return optimizedPointToPoint(si, to_shell, ordering.front());
+	return PathSegment{SIZE_MAX, optimizedPointToPoint(si, *to_shell, ordering.front().approach)};
 
 }
 
@@ -71,16 +77,19 @@ std::optional<DynamicMultiGoalPlanner::PathSegment> CachingDynamicPlanner<ShellP
 		const ompl::base::State *current_state,
 		const AppleTreePlanningScene &planning_scene) {
 
+	std::cout << "Replanning after successful visit" << std::endl;
+
 	auto ptc = ompl::base::plannerNonTerminatingCondition();
 
-	to_shell = std::move(ordering[0]);
+	auto to_shell = approach_planner->approach_path(current_state, *shell_space);
+	assert(to_shell.has_value());
 
 	ordering.erase(ordering.begin());
 
 	if (ordering.empty()) {
 		return std::nullopt;
 	} else {
-		return optimizedPointToPoint(si, ptc, to_shell, ordering[0]);
+		return PathSegment{SIZE_MAX, optimizedPointToPoint(si, *to_shell, ordering[0].approach)};
 	}
 }
 
@@ -94,12 +103,12 @@ CachingDynamicPlanner<ShellPoint>::plan(const ompl::base::SpaceInformationPtr &s
 
 	// This is essentially a re-implementation of ShellPathPlanner::plan(), but caching all the approach paths.
 
-	to_shell = approach_planner->approach_path(start, *shell_space);
+	auto to_shell = approach_planner->approach_path(start, *shell_space);
 
-	assert(to_shell.has_value());
+	assert(si->distance(start, to_shell->robot_path.getState(to_shell->robot_path.getStateCount() - 1)) < 0.01);
 
 	for (const auto &goal: initial_goals) {
-		auto approach = approach_planner->plan(goal, *shell_space);
+		auto approach = approach_planner->approach_path(goal, *shell_space);
 
 		if (approach) {
 			ordering.push_back({goal, *approach});
@@ -110,11 +119,12 @@ CachingDynamicPlanner<ShellPoint>::plan(const ompl::base::SpaceInformationPtr &s
 		return std::nullopt;
 	}
 
-	ordering = batch_reorder(to_shell);
+	batch_reorder(*to_shell);
 
 	auto ptc = ompl::base::plannerNonTerminatingCondition();
 
-	return optimizedPointToPoint(si, ptc, to_shell, ordering.front());
+	return PathSegment{SIZE_MAX, // TODO Get the IDs right.
+					   optimizedPointToPoint(si, *to_shell, ordering.front().approach)};
 }
 
 template<typename ShellPoint>
@@ -127,14 +137,14 @@ CachingDynamicPlanner<ShellPoint>::optimizedPointToPoint(const ompl::base::Space
 	auto ptc = ompl::base::plannerNonTerminatingCondition();
 
 	// Compute the shell path
-	auto shell_path = this->shell_space->plan(retreat_path, approach_path, ptc);
+	auto shell_path = this->shell_space->shellPath(retreat_path.shell_point, approach_path.shell_point);
 
 	// Concatenate the retreat, shell, and approach paths to form a complete point-to-point path
 	ompl::geometric::PathGeometric path(si);
-	path.append(retreat_path);
+	path.append(retreat_path.robot_path);
 	path.reverse(); // Reverse the retreat path so that it goes from the goal to the start
 	path.append(shell_path);
-	path.append(approach_path);
+	path.append(approach_path.robot_path);
 
 	// Optimize the path and return the result
 	return optimize(path, {nullptr}, si);
@@ -142,28 +152,28 @@ CachingDynamicPlanner<ShellPoint>::optimizedPointToPoint(const ompl::base::Space
 
 template<typename ShellPoint>
 void CachingDynamicPlanner<ShellPoint>::batch_reorder(const OmplApproachPath<ShellPoint> &initial_approach) {
+
+	auto indices = tsp_method->initial_ordering(ordering.size(), [&](size_t i, size_t j) {
+		// Use the shell space to predict the path length between each pair of approach paths
+		return shell_space->predict_path_length(ordering[i].approach.shell_point, ordering[j].approach.shell_point);
+	}, [&](size_t i) {
+		// Use the shell space to predict the path length between the initial approach path
+		// and each approach path in the list
+		return shell_space->predict_path_length(initial_approach.shell_point, ordering[i].approach.shell_point);
+	});
+
 	// Use the TSP method to reorder the approach paths
-	ordering = reorder_by_index(std::move(ordering),
-								tsp_method->initial_ordering(ordering.size(), [&](size_t i, size_t j) {
-									// Use the shell space to predict the path length between each pair of approach paths
-									return shell_space->predict_path_length(ordering[i].approach.shell_point,
-																			ordering[j].approach.shell_point);
-								}, [&](size_t i) {
-									// Use the shell space to predict the path length between the initial approach path
-									// and each approach path in the list
-									return shell_space->predict_path_length(initial_approach.shell_point,
-																			ordering[i].approach.shell_point);
-								}));
+	ordering = reorder_by_index(std::move(ordering), indices);
 }
 
 
 template<typename ShellPoint>
 CachingDynamicPlanner<ShellPoint>::CachingDynamicPlanner(const std::shared_ptr<ApproachPlanningMethods<ShellPoint>> &approachPlanner,
 														 const std::shared_ptr<IncrementalTSPMethods> &tspMethod,
-														 MkOmplShellFn<ShellPoint> shellBuilder) : approach_planner(
-		approachPlanner), tsp_method(tspMethod), shellBuilder(shellBuilder) {
+														 MkOmplShellFn<ShellPoint> shellBuilder) :
+		approach_planner(approachPlanner), tsp_method(tspMethod), shellBuilder(shellBuilder) {
 
 }
 
-template<>
+template
 class CachingDynamicPlanner<Eigen::Vector3d>;
