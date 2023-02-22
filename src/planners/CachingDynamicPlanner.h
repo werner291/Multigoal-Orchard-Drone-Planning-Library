@@ -10,18 +10,7 @@
 #include "shell_path_planner/ApproachPlanning.h"
 #include "shell_path_planner/Construction.h"
 
-class IncrementalTSPMethods {
-
-public:
-	virtual std::vector<size_t> initial_ordering(size_t n,
-												 std::function<double(size_t, size_t)> distance,
-												 std::function<double(size_t)> first_distance) = 0;
-
-	virtual std::vector<size_t> update_ordering(const std::vector<size_t> &current_ordering,
-												size_t new_goal,
-												std::function<double(size_t, size_t)> distance,
-												std::function<double(size_t)> first_distance) = 0;
-};
+#include "../IncrementalTSPMethods.h"
 
 template<typename ShellPoint>
 class CachingDynamicPlanner : public DynamicMultiGoalPlanner {

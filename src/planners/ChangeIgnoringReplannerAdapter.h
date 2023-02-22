@@ -28,9 +28,6 @@ class ChangeIgnoringReplannerAdapter : public DynamicMultiGoalPlanner {
 	const std::shared_ptr<MultiGoalPlanner> static_planner;
 
 	std::optional<MultiGoalPlanner::PlanResult> static_plan;
-	size_t static_plan_index = 0;
-
-	std::optional<PathSegment> next_segment();
 
 public:
 	explicit ChangeIgnoringReplannerAdapter(const std::shared_ptr<MultiGoalPlanner> &staticPlanner);

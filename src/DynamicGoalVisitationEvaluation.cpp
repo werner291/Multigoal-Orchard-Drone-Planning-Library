@@ -56,6 +56,7 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 
 		// Validate to ensure the segment starts at the current robot state
 		if (segment->path.waypoints[0].distance(last_robot_state) > 1e-6) {
+			std::cout << "Off by " << segment->path.waypoints[0].distance(last_robot_state) << " units" << std::endl;
 			throw std::runtime_error("Planner returned a path that does not start at the current robot state");
 		}
 
@@ -74,12 +75,24 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 
 		} else {
 
-			// If the robot will not discover any apples, set the upcoming goal event
-			// to the visitation event, coinciding with the planned end of the trajectory
-			upcoming_goal_event = utilities::GoalVisit{(int) segment->goal_id};
+			// Among the apples, find all that are in range of the robot's end-effector
+			Eigen::Vector3d ee_pos = segment->path
+					.waypoints
+					.back()
+					.getGlobalLinkTransform("end_effector")
+					.translation();
 
-			// Update the discovery status vector to reflect the visitation
-			discovery_status[segment->goal_id] = utilities::DiscoveryStatus::VISITED;
+			// TODO The ID tracking is a bit weird here, need to fix.
+			for (size_t apple_i = 0; apple_i < scene.apples.size(); apple_i++) {
+				if ((scene.apples[apple_i].center - ee_pos).norm() < 0.05) {
+					// If the apple is in range, update the discovery status vector to reflect the visitation
+					discovery_status[apple_i] = utilities::DiscoveryStatus::VISITED;
+
+					// If the robot will not discover any apples, set the upcoming goal event
+					// to the visitation event, coinciding with the planned end of the trajectory
+					upcoming_goal_event = utilities::GoalVisit{(int) segment->goal_id};
+				}
+			}
 
 		}
 

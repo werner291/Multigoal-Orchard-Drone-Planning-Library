@@ -27,12 +27,22 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 														  const PathInterrupt &interrupt,
 														  const AppleTreePlanningScene &planning_scene) {
 
-	std::cout << "Replanning after discovery" << std::endl;
+	// TODO deal with the case where the new goal doesn't end up being the upcoming goal
 
 	auto approach = approach_planner->approach_path(new_goal, *shell_space);
 
 	auto to_shell = approach_planner->approach_path(current_state, *shell_space);
-	assert(to_shell.has_value());
+
+	if (!to_shell) {
+
+		// TODO: we could probably do something better here, such as re-using the last approach path?
+		// Might not work since we're following an optimized path.
+		std::cout << "Could not find a way back to the shell." << std::endl;
+
+		return std::nullopt;
+	} else {
+		std::cout << "Did find a way back to the shell." << std::endl;
+	}
 
 	if (approach) {
 
@@ -77,9 +87,9 @@ std::optional<DynamicMultiGoalPlanner::PathSegment> CachingDynamicPlanner<ShellP
 		const ompl::base::State *current_state,
 		const AppleTreePlanningScene &planning_scene) {
 
-	std::cout << "Replanning after successful visit" << std::endl;
-
-	auto ptc = ompl::base::plannerNonTerminatingCondition();
+	if (ordering.empty()) {
+		return std::nullopt;
+	}
 
 	auto to_shell = approach_planner->approach_path(current_state, *shell_space);
 	assert(to_shell.has_value());
@@ -101,11 +111,8 @@ CachingDynamicPlanner<ShellPoint>::plan(const ompl::base::SpaceInformationPtr &s
 										const AppleTreePlanningScene &planning_scene) {
 	shell_space = shellBuilder(planning_scene, si);
 
-	// This is essentially a re-implementation of ShellPathPlanner::plan(), but caching all the approach paths.
-
 	auto to_shell = approach_planner->approach_path(start, *shell_space);
 
-	assert(si->distance(start, to_shell->robot_path.getState(to_shell->robot_path.getStateCount() - 1)) < 0.01);
 
 	for (const auto &goal: initial_goals) {
 		auto approach = approach_planner->approach_path(goal, *shell_space);

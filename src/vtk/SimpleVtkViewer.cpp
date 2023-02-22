@@ -8,7 +8,7 @@
 SimpleVtkViewer::SimpleVtkViewer() {
 	// Set up the render window.
 	visualizerWindow->SetSize(800, 600);
-	visualizerWindow->SetWindowName("PointCloud");
+	visualizerWindow->SetWindowName("Robot Path Planning");
 	visualizerWindow->AddRenderer(viewerRenderer);
 
 	// Set up the render window interactor.
@@ -17,6 +17,8 @@ SimpleVtkViewer::SimpleVtkViewer() {
 
 	addTimerCallback([&]() {
 		renderWindowInteractor->GetRenderWindow()->Render();
+		viewerRenderer->GetActiveCamera()->SetViewUp(0, 0, 1);
+		viewerRenderer->GetActiveCamera()->SetFocalPoint(0, 0, 1.5);
 	});
 }
 
@@ -34,4 +36,10 @@ void SimpleVtkViewer::addTimerCallback(std::function<void()> callback) {
 
 void SimpleVtkViewer::start() {
 	renderWindowInteractor->Start();
+}
+
+void SimpleVtkViewer::addActorCollection(vtkActorCollection *actors) {
+	for (int i = 0; i < actors->GetNumberOfItems(); i++) {
+		viewerRenderer->AddActor(vtkActor::SafeDownCast(actors->GetItemAsObject(i)));
+	}
 }

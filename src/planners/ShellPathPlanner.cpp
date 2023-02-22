@@ -98,6 +98,7 @@ ShellPathPlanner<ShellPoint>::buildInitialApproach(const ompl::base::SpaceInform
 												   const std::vector<OmplApproachPath<ShellPoint>> &approach_paths) const {
 	ompl::geometric::PathGeometric path(si);
 	path.append(initial_approach->robot_path);
+	path.reverse();
 	shell.shellPath(initial_approach->shell_point, approach_paths.front().shell_point);
 	path.append(approach_paths.front().robot_path);
 

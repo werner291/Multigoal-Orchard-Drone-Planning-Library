@@ -25,11 +25,7 @@ public:
 
 	void addActor(vtkActor *actor);
 
-	void addActorCollection(vtkActorCollection *actors) {
-		for (int i = 0; i < actors->GetNumberOfItems(); i++) {
-			viewerRenderer->AddActor(vtkActor::SafeDownCast(actors->GetItemAsObject(i)));
-		}
-	}
+	void addActorCollection(vtkActorCollection *actors);
 
 	void addTimerCallback(std::function<void()> callback);
 

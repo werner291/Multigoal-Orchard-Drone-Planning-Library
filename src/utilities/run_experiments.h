@@ -72,23 +72,35 @@ void runExperimentsParallelRecoverable(const std::vector<Parameters>& parameters
 
 			// Add the experiment to the thread pool.
 			boost::asio::post(pool, [experiment_i=experiment_i,&parameters_pointers,&records_mutex,&experiment, &logger]() {
-				// Run the experiment once it's our turn.
-				std::cout << "Running experiment " << experiment_i << std::endl;
 
-				auto start_time = std::chrono::high_resolution_clock::now();
-				Json::Value result = experiment(*parameters_pointers[experiment_i]);
-				auto duration = std::chrono::high_resolution_clock::now() - start_time;
-				int duration_millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+				try {
+					// Run the experiment once it's our turn.
+					std::cout << "Running experiment " << experiment_i << std::endl;
 
-				result["total_experiment_runtime"] = duration_millis;
+					auto start_time = std::chrono::high_resolution_clock::now();
+					Json::Value result = experiment(*parameters_pointers[experiment_i]);
+					auto duration = std::chrono::high_resolution_clock::now() - start_time;
+					int duration_millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
 
-				std::cout << "Finished experiment " << experiment_i << "/" << parameters_pointers.size() << " in " << duration_millis << "ms." << std::endl;
+					result["total_experiment_runtime"] = duration_millis;
 
-				// Save the results to the JSON object.
-				// This is protected by a mutex to prevent concurrent access, since the thread pool may run multiple experiments in parallel.
-				{
-					std::lock_guard<std::mutex> lock(records_mutex);
-					logger.storeExperimentResult(experiment_i, toJSON(*parameters_pointers[experiment_i]), result);
+					std::cout << "Finished experiment " << (experiment_i + 1) << "/" << parameters_pointers.size()
+							  << " in " << duration_millis << "ms." << std::endl;
+
+					// Save the results to the JSON object.
+					// This is protected by a mutex to prevent concurrent access, since the thread pool may run multiple experiments in parallel.
+					{
+						std::lock_guard<std::mutex> lock(records_mutex);
+						logger.storeExperimentResult(experiment_i, toJSON(*parameters_pointers[experiment_i]), result);
+					}
+				} catch (std::exception &e) {
+					std::cout << "Exception while running experiment " << experiment_i << ": " << e.what() << std::endl;
+					{
+						Json::Value result = "error: " + std::string(e.what());
+
+						std::lock_guard<std::mutex> lock(records_mutex);
+						logger.storeExperimentResult(experiment_i, toJSON(*parameters_pointers[experiment_i]), result);
+					}
 				}
 			});
 		}

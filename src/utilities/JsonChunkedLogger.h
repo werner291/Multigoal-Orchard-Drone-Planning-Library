@@ -42,6 +42,12 @@ public:
 	 */
 	JsonChunkedLogger(size_t chunk_size, const std::string &resultsFilePath)
 			: chunk_size(chunk_size), results_file_path(resultsFilePath) {
+
+		// Load the results file if it exists.
+		std::ifstream results_file(results_file_path);
+		if (results_file.good()) {
+			results_file >> records;
+		}
 	}
 
 	/**
@@ -76,7 +82,7 @@ public:
 	 */
 	void saveResults() const {
 		std::cout << "Saving results to file." << std::endl;
-		std::ofstream file("results.json");
+		std::ofstream file(results_file_path);
 		file << records;
 	}
 

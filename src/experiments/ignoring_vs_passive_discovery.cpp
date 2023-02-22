@@ -20,6 +20,7 @@
 #include "../utilities/run_experiments.h"
 #include "../vtk/visualize_dynamic.h"
 #include "../planners/CachingDynamicPlanner.h"
+#include "../ORToolsTSPMethods.h"
 
 #include <vtkProperty.h>
 #include <range/v3/view/iota.hpp>
@@ -66,25 +67,6 @@ std::shared_ptr<DynamicMultiGoalPlanner> static_baseline_planner(const ompl::bas
 	return std::make_shared<ChangeIgnoringReplannerAdapter>(static_planner);
 };
 
-class ORToolsTSPMethods : public IncrementalTSPMethods {
-
-public:
-	std::vector<size_t> initial_ordering(size_t n,
-										 std::function<double(size_t, size_t)> distance,
-										 std::function<double(size_t)> first_distance) override {
-
-		return tsp_open_end(first_distance, distance, n);
-
-	}
-
-	std::vector<size_t> update_ordering(const std::vector<size_t> &current_ordering,
-										size_t new_goal,
-										std::function<double(size_t, size_t)> distance,
-										std::function<double(size_t)> first_distance) override {
-		throw std::runtime_error("Not implemented");
-	}
-};
-
 std::shared_ptr<DynamicMultiGoalPlanner> dynamic_planner(const ompl::base::SpaceInformationPtr &si) {
 
 	std::shared_ptr<ApproachPlanningMethods<Eigen::Vector3d>> approach_methods = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
@@ -110,10 +92,11 @@ std::shared_ptr<DynamicMultiGoalPlanner> dynamic_planner(const ompl::base::Space
 std::vector<PlanningProblem>
 genDynamicGoalsetPlanningProblems(const AppleTreePlanningScene &scene, const moveit::core::RobotModelPtr &robot) {
 	const int REPETITIONS = 10;
+	const double PRIOR_KNOWLEDGE_PROBABILITY = 0.5;
 
 	std::vector<PlanningProblem> problems = ranges::views::iota(0, REPETITIONS) | ranges::views::transform([&](int i) {
 		return PlanningProblem{randomStateOutsideTree(robot, i),
-							   generateAppleDiscoverability((int) scene.apples.size(), 1.0, i)};
+							   generateAppleDiscoverability((int) scene.apples.size(), PRIOR_KNOWLEDGE_PROBABILITY, i)};
 	}) | ranges::to_vector;
 
 	return problems;
@@ -134,7 +117,7 @@ int main(int argc, char **argv) {
 
 	TreeMeshes meshes = loadTreeMeshes("appletree");
 
-	meshes.fruit_meshes.resize(10);
+	meshes.fruit_meshes.resize(50);
 
 	const auto scene_msg = treeMeshesToMoveitSceneMsg(meshes);
 
@@ -150,18 +133,19 @@ int main(int argc, char **argv) {
 	auto shell = std::make_shared<MoveItShellSpace<Eigen::Vector3d >>(robot, workspaceShell);
 
 	const auto start_state = randomStateOutsideTree(robot, 0);
-	auto apple_discoverability = generateAppleDiscoverability((int) scene.apples.size(), 0.5, 42);
+	auto apple_discoverability = generateAppleDiscoverability((int) scene.apples.size(), 0.3, 42);
 
 	std::cout << "Starting planning with " << apple_discoverability.size() << " apples in total, of which "
 			  << ranges::count(apple_discoverability, DISCOVERABLE) << " are discoverable." << std::endl;
 
-	//	DynamicPlannerAllocatorFn planner_allocator = static_baseline_planner;
-	DynamicPlannerAllocatorFn planner_allocator = dynamic_planner;
-
+	//	DynamicPlannerAllocatorFn planner_allocator_1 = static_baseline_planner;
+	//	DynamicPlannerAllocatorFn planner_allocator_2 = dynamic_planner;
+	//
 	//	std::vector<PlanningProblem> problems = genDynamicGoalsetPlanningProblems(scene, robot);
 	//
 	//	const std::vector<std::pair<std::string,DynamicPlannerAllocatorFn*>> planners = {
-	//			{ "change_ignoring", &planner_allocator }
+	//			{ "change_ignoring", &planner_allocator_1 },
+	//			{ "dynamic_planner", &planner_allocator_2 }
 	//	};
 	//
 	//	auto experiments = genPlannerProblemMatrix(problems, planners);
@@ -178,23 +162,40 @@ int main(int argc, char **argv) {
 	//
 	//		auto change_ignoring = (*experiment.allocator)(si);
 	//
-	//		DynamicGoalVisitationEvaluation eval(change_ignoring, start_state, scene, apple_discoverability, si);
+	//		auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(change_ignoring, si, ss);
+	//
+	//		DynamicGoalVisitationEvaluation eval(adapter, start_state, scene, apple_discoverability);
+	//
+	//		auto start_time = std::chrono::high_resolution_clock::now();
 	//
 	//		eval.computeNextTrajectory();
 	//
 	//		while (eval.getUpcomingGoalEvent().has_value()) {
-	//			eval.computeNextTrajectory();
+	//			if (!eval.computeNextTrajectory().has_value()) {
+	//				break;
+	//			}
 	//		}
 	//
-	//		int n_visited = (int) ranges::count_if(eval.getDiscoveryStatus(), [](const auto &status) { return status == utilities::VISITED; });
+	//		auto end_time = std::chrono::high_resolution_clock::now();
+	//
+	//		int n_visited = (int) ranges::count_if(eval.getDiscoveryStatus(),
+	//											   [](const auto &status) { return status == utilities::VISITED; });
+	//
+	//		double total_path_length = ranges::accumulate(eval.getSolutionPathSegments() |
+	//													  ranges::views::transform([](const auto &segment) {
+	//														  return segment.first
+	//																  .length();
+	//													  }), 0.0);
 	//
 	//		Json::Value result;
 	//
 	//		result["n_visited"] = n_visited;
+	//		result["time"] = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
 	//
 	//		return result;
 	//
-	//	}, "analysis/data/dynamic_log.json", 16, 4, 42);
+	//
+	//	}, "analysis/data/dynamic_log.json", 16, 1, 42);
 
 	{
 		// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
@@ -205,7 +206,7 @@ int main(int argc, char **argv) {
 		// we'll need to copy this for every thread
 		auto si = loadSpaceInformation(ss, scene);
 
-		auto planner = planner_allocator(si);
+		auto planner = dynamic_planner(si);
 
 		auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(planner, si, ss);
 

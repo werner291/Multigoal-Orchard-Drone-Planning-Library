@@ -30,6 +30,7 @@ struct RobotPath {
 	 * @param interrupt 		The interrupt.
 	 */
 	void truncateUpTo(PathInterrupt interrupt);
+
 };
 
 /**

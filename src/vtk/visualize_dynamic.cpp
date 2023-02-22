@@ -81,7 +81,7 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 	// The "main loop" of the program, called every frame.
 	auto callback = [&]() {
 
-		time += 0.05;
+		time += 0.01;
 
 		if (eval.getUpcomingGoalEvent() && (traj.has_value() && time > traj->getDuration())) {
 			time = 0.0;
