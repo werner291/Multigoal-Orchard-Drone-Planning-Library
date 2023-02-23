@@ -5,6 +5,8 @@ project(new_planners)
 #    add_compile_options(-Wall -Wextra -Wpedantic)
 #endif()
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 ## System dependencies are found with CMake's conventions
 find_package(Eigen3 REQUIRED)
 find_package(jsoncpp REQUIRED)

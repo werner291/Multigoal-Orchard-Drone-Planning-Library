@@ -261,7 +261,7 @@ compute_enclosing_sphere_around_leaves(const moveit_msgs::msg::PlanningScene &pl
 
 std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const AppleTreePlanningScene &scene_info) {
 	std::vector<geometry_msgs::msg::Point> mesh_points;
-	for (const auto &col: scene_info.scene_msg.world.collision_objects) {
+	for (const auto &col: scene_info.scene_msg->world.collision_objects) {
 		if (col.id == "leaves") {
 			for (const auto &mesh: col.meshes) {
 				for (auto v: mesh.vertices) {
@@ -287,7 +287,7 @@ std::vector<moveit::core::RobotState> randomStatesOutsideTree(const AppleTreePla
 
 ompl::base::SpaceInformationPtr
 loadSpaceInformation(const std::shared_ptr<DroneStateSpace> &stateSpace, const AppleTreePlanningScene &scene_info) {
-	auto scene = setupPlanningScene(scene_info.scene_msg, stateSpace->getRobotModel());
+	auto scene = setupPlanningScene(*scene_info.scene_msg, stateSpace->getRobotModel());
 	return initSpaceInformation(scene, scene->getRobotModel(), stateSpace);
 }
 
@@ -300,12 +300,17 @@ std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(int num_apple
 
 	auto rng = std::default_random_engine(seed);
 
-	std::vector<AppleDiscoverabilityType> apple_discoverability(num_apples);
+	std::vector<AppleDiscoverabilityType> apple_discoverability(num_apples, AppleDiscoverabilityType::GIVEN);
 
-	std::generate(apple_discoverability.begin(), apple_discoverability.end(), [&]() {
-		return std::bernoulli_distribution(p)(rng) ? AppleDiscoverabilityType::GIVEN
-												   : AppleDiscoverabilityType::DISCOVERABLE;
-	});
+	// Then, flag p/1.0 of them as discoverable.
+	size_t n_discoverable = std::ceil(p * num_apples);
+
+	for (size_t i = 0; i < n_discoverable; i++) {
+		apple_discoverability[i] = AppleDiscoverabilityType::DISCOVERABLE;
+	}
+
+	// Shuffle the vector.
+	std::shuffle(apple_discoverability.begin(), apple_discoverability.end(), rng);
 
 	return apple_discoverability;
 

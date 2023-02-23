@@ -319,6 +319,9 @@ createMeshBasedAppleTreePlanningSceneMessage(const std::string &model_name, bool
         planning_scene_message.world.collision_objects.push_back(ground);
     }
 
-    return {planning_scene_message, apples_from_connected_components(apples)};
+    return {
+		std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(planning_scene_message)),
+		apples_from_connected_components(apples)
+	};
 }
 

@@ -17,7 +17,7 @@ moveit_msgs::msg::PlanningScene createPlanningSceneDiff(const std::vector<Detach
                                                    const std::vector<Apple> &apples);
 
 struct AppleTreePlanningScene {
-	moveit_msgs::msg::PlanningScene scene_msg;
+	std::shared_ptr<moveit_msgs::msg::PlanningScene> scene_msg;
 	std::vector<Apple> apples;
 };
 

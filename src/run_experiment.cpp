@@ -238,7 +238,7 @@ Json::Value run_task(const moveit::core::RobotModelConstPtr &drone, const Run &r
 	auto plan_result = toJson(result);
 	plan_result["run_time"] = run_time;
 	plan_result["start_state"] = (int) run_i;
-	plan_result["scene_name"] = scene->scene_msg.name;
+	plan_result["scene_name"] = scene->scene_msg->name;
 	plan_result["napples"] = apples.size();
 	plan_result["planner_params"] = planner->parameters();
 	plan_result["planner_name"] = planner->name();

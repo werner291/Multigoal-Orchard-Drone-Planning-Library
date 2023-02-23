@@ -44,8 +44,11 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 		if (upcoming_goal_event) {
 			segment = replanFromEvent();
 		} else {
-			// If there is no upcoming goal event, plan from scratch
-			segment = planner->plan(last_robot_state, scene);
+			// If there is no upcoming goal event, plan from scratch.
+
+			AppleTreePlanningScene censored_scene = getCurrentCensoredScene();
+
+			segment = planner->plan(last_robot_state, censored_scene);
 		}
 
 		// If the planner failed to find a solution, or if the solution is empty, return std::nullopt,
@@ -109,6 +112,20 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 		return std::nullopt;
 
 	}
+}
+
+AppleTreePlanningScene DynamicGoalVisitationEvaluation::getCurrentCensoredScene() {
+	AppleTreePlanningScene censored_scene = scene;
+
+	censored_scene.apples = censored_scene.apples | ranges::views::enumerate
+			| ranges::views::filter([&](const auto &apple) {
+				return discovery_status[apple.first] == utilities::EXISTS_BUT_UNKNOWN_TO_ROBOT;
+			})
+			| ranges::views::transform([](const auto &apple) {
+				return apple.second;
+			})
+			| ranges::to_vector;
+	return censored_scene;
 }
 
 std::optional<MoveitPathSegment> DynamicGoalVisitationEvaluation::replanFromEvent() {

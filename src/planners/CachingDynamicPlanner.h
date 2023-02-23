@@ -25,7 +25,10 @@ class CachingDynamicPlanner : public DynamicMultiGoalPlanner {
 	MkOmplShellFn<ShellPoint> shellBuilder;
 	std::shared_ptr<OmplShellSpace<ShellPoint>> shell_space;
 
-	//	OmplApproachPath<ShellPoint> to_shell;
+	std::optional<OmplApproachPath<ShellPoint>> to_shell;
+
+	std::optional<OmplApproachPath<ShellPoint>> find_path_to_shell(const ompl::base::SpaceInformationPtr &si,
+																  const ompl::base::State *start);
 
 	std::vector<ApproachToGoal> ordering;
 
@@ -88,5 +91,19 @@ public:
 													const AppleTreePlanningScene &planning_scene) override;
 
 };
+
+template<typename ShellPoint>
+std::optional<OmplApproachPath<ShellPoint>>
+CachingDynamicPlanner<ShellPoint>::find_path_to_shell(const ompl::base::SpaceInformationPtr &si,
+													  const ompl::base::State *start) {
+
+	if (to_shell.has_value() && si->distance(start, to_shell->robot_path.getStates().back()) < 1.0e-6) {
+		return to_shell;
+	} else {
+		to_shell = approach_planner->approach_path(start, *shell_space);
+		return to_shell;
+	}
+
+}
 
 #endif //NEW_PLANNERS_CACHINGDYNAMICPLANNER_H

@@ -27,19 +27,20 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 														  const PathInterrupt &interrupt,
 														  const AppleTreePlanningScene &planning_scene) {
 
-	// TODO deal with the case where the new goal doesn't end up being the upcoming goal
-
 	auto approach = approach_planner->approach_path(new_goal, *shell_space);
 
-	auto to_shell = approach_planner->approach_path(current_state, *shell_space);
+	// Must recompute the to_shell path since we got interrupted.
+	to_shell = find_path_to_shell(si, current_state);
 
 	if (!to_shell) {
 
 		// TODO: we could probably do something better here, such as re-using the last approach path?
+		// Or, maybe try harder/over?
 		// Might not work since we're following an optimized path.
 		std::cout << "Could not find a way back to the shell." << std::endl;
 
 		return std::nullopt;
+
 	} else {
 		std::cout << "Did find a way back to the shell." << std::endl;
 	}
@@ -91,8 +92,14 @@ std::optional<DynamicMultiGoalPlanner::PathSegment> CachingDynamicPlanner<ShellP
 		return std::nullopt;
 	}
 
-	auto to_shell = approach_planner->approach_path(current_state, *shell_space);
-	assert(to_shell.has_value());
+	auto to_shell = find_path_to_shell(si, current_state);
+
+	if (!to_shell) {
+		// TODO: We have an approach path here to use.
+
+		std::cout << "Could not find a way back to the shell." << std::endl;
+		return std::nullopt;
+	}
 
 	ordering.erase(ordering.begin());
 
@@ -111,8 +118,12 @@ CachingDynamicPlanner<ShellPoint>::plan(const ompl::base::SpaceInformationPtr &s
 										const AppleTreePlanningScene &planning_scene) {
 	shell_space = shellBuilder(planning_scene, si);
 
-	auto to_shell = approach_planner->approach_path(start, *shell_space);
+	auto to_shell = find_path_to_shell(si, start);
 
+	if (!to_shell) {
+		std::cout << "Could not find a way from the initial state to the shell." << std::endl;
+		return std::nullopt;
+	}
 
 	for (const auto &goal: initial_goals) {
 		auto approach = approach_planner->approach_path(goal, *shell_space);

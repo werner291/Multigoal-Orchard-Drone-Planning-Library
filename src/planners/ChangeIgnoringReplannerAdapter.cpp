@@ -19,6 +19,16 @@ ChangeIgnoringReplannerAdapter::plan(const ompl::base::SpaceInformationPtr &si,
 
 	static_plan = static_planner->plan(si, start, goals, planning_scene, ptc);
 
+	if (!static_plan.has_value()) {
+		std::cout << "No initial plan found." << std::endl;
+		return std::nullopt;
+	}
+
+	if (static_plan->segments.empty()) {
+		std::cout << "Initial plan is empty." << std::endl;
+		return std::nullopt;
+	}
+
 	return static_plan->segments.front();
 }
 

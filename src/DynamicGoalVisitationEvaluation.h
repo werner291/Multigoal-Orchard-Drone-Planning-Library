@@ -97,6 +97,7 @@ public:
 	 */
 	[[nodiscard]] const std::vector<utilities::DiscoveryStatus> &getDiscoveryStatus() const;
 
+	AppleTreePlanningScene getCurrentCensoredScene();
 };
 
 
