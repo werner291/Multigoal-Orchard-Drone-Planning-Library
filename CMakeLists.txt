@@ -249,7 +249,13 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/ompl_tools.h
         src/planners/DynamicMultiGoalPlannerOmplToMoveitAdapter.cpp
         src/planners/DynamicMultiGoalPlannerOmplToMoveitAdapter.h
-        src/utilities/vector_utils.h src/IncrementalTSPMethods.cpp src/IncrementalTSPMethods.h src/ORToolsTSPMethods.cpp src/ORToolsTSPMethods.h)
+        src/utilities/vector_utils.h
+        src/IncrementalTSPMethods.cpp
+        src/IncrementalTSPMethods.h
+        src/ORToolsTSPMethods.cpp
+        src/ORToolsTSPMethods.h
+        src/DynamicGoalsetPlanningProblem.cpp
+        src/DynamicGoalsetPlanningProblem.h src/utilities/alpha_shape.cpp src/utilities/alpha_shape.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

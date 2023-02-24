@@ -55,18 +55,27 @@ shape_msgs::msg::Mesh alphaShape(const std::vector<Eigen::Vector3d> &points, dou
 
 	for (const Facet &facet: facets) {
 		shape_msgs::msg::MeshTriangle triangle;
-		for (int i = 0; i < 3; i++) {
-			Vertex_handle vh = facet.first->vertex(facet.second + i);
-			if (vertex_map.find(vh) == vertex_map.end()) {
+
+		// Find the vertices of the facet
+		for (int i = 1; i <= 3; i++) {
+			Vertex_handle vertex = facet.first->vertex((facet.second + i) % 4);
+			auto it = vertex_map.find(vertex);
+			if (it == vertex_map.end()) {
+				// Add the vertex to the mesh
 				geometry_msgs::msg::Point point;
-				point.x = vh->point().x();
-				point.y = vh->point().y();
-				point.z = vh->point().z();
+				point.x = vertex->point().x();
+				point.y = vertex->point().y();
+				point.z = vertex->point().z();
 				mesh.vertices.push_back(point);
-				vertex_map[vh] = mesh.vertices.size() - 1;
+
+				// Add the vertex to the map
+				vertex_map[vertex] = mesh.vertices.size() - 1;
 			}
-			triangle.vertex_indices[i] = vertex_map[vh];
+
+			// Add the vertex to the triangle
+			triangle.vertex_indices[i - 1] = vertex_map[vertex];
 		}
+
 		mesh.triangles.push_back(triangle);
 	}
 

@@ -44,7 +44,7 @@ private:
 	std::vector<utilities::DiscoveryStatus> discovery_status;
 
 	/// A reference to the planning scene.
-	const AppleTreePlanningScene &scene;
+	AppleTreePlanningScene scene;
 
 	/// An optional GoalEvent object representing the next goal event.
 	std::optional<utilities::GoalEvent> upcoming_goal_event;

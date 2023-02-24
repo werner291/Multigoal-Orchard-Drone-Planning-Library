@@ -13,7 +13,7 @@
 /**
  * A combination of a start state (with a number), a pick of apples, and a shared pointer to the scene to plan in.
  */
-struct PlanningProblem {
+struct DynamicGoalsetPlanningProblem {
 	size_t start_state_id;
 	ompl::base::ScopedState<> start_state;
 	std::vector<Apple> apples;
@@ -25,7 +25,7 @@ struct PlanningProblem {
  */
 struct Run {
 	NewMultiGoalPlannerAllocatorFn allocator;
-	PlanningProblem problem;
+	DynamicGoalsetPlanningProblem problem;
 };
 
 std::vector<std::string> model_names_from_directory();
@@ -112,16 +112,16 @@ vector<Apple> random_subset(Rng &rng,
 
 /// Generate a set of planning problems based on the given numbers of apples, the set of scenes, and the number of runs.
 template<typename Rng>
-std::vector<PlanningProblem> genPlanningProblems(const int num_runs,
-												 const vector<size_t> &napples,
-												 const shared_ptr<DroneStateSpace> &stateSpace,
-												 const vector<shared_ptr<AppleTreePlanningScene>> &scenes,
-												 Rng &rng) {
+std::vector<DynamicGoalsetPlanningProblem> genPlanningProblems(const int num_runs,
+															   const vector<size_t> &napples,
+															   const shared_ptr<DroneStateSpace> &stateSpace,
+															   const vector<shared_ptr<AppleTreePlanningScene>> &scenes,
+															   Rng &rng) {
 
-	std::vector<PlanningProblem> problems;
+	std::vector<DynamicGoalsetPlanningProblem> problems;
 
-	for (const auto& scene: scenes) {
-		for (const auto& n: napples) {
+	for (const auto &scene: scenes) {
+		for (const auto &n: napples) {
 
 			assert(n <= scene->apples.size());
 
@@ -129,7 +129,7 @@ std::vector<PlanningProblem> genPlanningProblems(const int num_runs,
 				auto start_state = genStartState(stateSpace, rng());
 				auto apples = random_subset(rng, n, scene, scene->apples);
 
-				problems.push_back( PlanningProblem {static_cast<size_t>(i), start_state, apples, scene } );
+				problems.push_back(DynamicGoalsetPlanningProblem{static_cast<size_t>(i), start_state, apples, scene});
 			}
 		}
 	}
@@ -141,7 +141,7 @@ std::vector<PlanningProblem> genPlanningProblems(const int num_runs,
 /// generate a list of Runs and shuffle them with the given Rng.
 template<typename Rng>
 vector<Run> genRuns(const vector<NewMultiGoalPlannerAllocatorFn> &allocators,
-					const vector<PlanningProblem> &planning_problems,
+					const vector<DynamicGoalsetPlanningProblem> &planning_problems,
 					Rng &rng) {
 
 	// Generate runs simply by taking the cartesian product of the allocators and the problems.

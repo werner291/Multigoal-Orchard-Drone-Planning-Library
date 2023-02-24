@@ -22,26 +22,43 @@ std::vector<size_t> ORToolsTSPMethods::update_ordering(const std::vector<size_t>
 													   std::function<double(size_t, size_t)> distance,
 													   std::function<double(size_t)> first_distance) {
 
-	if (current_ordering.empty()) {
-		// If the current ordering is empty, the new ordering is just the new goal
-		return {new_goal};
-	}
+	switch (update_strategy) {
+		case LEAST_COSTLY_INSERT: {
 
-	// Create a new vector that is a copy of the current ordering
-	std::vector<size_t> ordering = current_ordering;
+			if (current_ordering.empty()) {
+				// If the current ordering is empty, the new ordering is just the new goal
+				return {new_goal};
+			}
 
-	// Insert the new goal at the optimal position in the new ordering
-	ordering.insert(ordering.begin() + (long) least_costly_insertion(new_goal, distance, first_distance, ordering),
+			// Create a new vector that is a copy of the current ordering
+			std::vector<size_t> ordering = current_ordering;
+
+			// Insert the new goal at the optimal position in the new ordering
+			ordering.insert(
+					ordering.begin() + (long) least_costly_insertion(new_goal, distance, first_distance, ordering),
 					new_goal);
 
-	// Return the updated ordering
-	return ordering;
+			// Return the updated ordering
+			return ordering;
+
+		}
+		case FULL_REORDER:
+			return initial_ordering(current_ordering.size() + 1, distance, first_distance);
+		default:
+			throw std::runtime_error("Invalid update strategy");
+	}
+
+
 }
 
-size_t ORToolsTSPMethods::least_costly_insertion(size_t new_goal,
-												 const std::function<double(size_t, size_t)> &distance,
-												 const std::function<double(size_t)> &first_distance,
-												 const std::vector<size_t> &ordering) {
+ORToolsTSPMethods::ORToolsTSPMethods(ORToolsTSPMethods::UpdateStrategy updateStrategy)
+		: update_strategy(updateStrategy) {
+}
+
+size_t least_costly_insertion(size_t new_goal,
+							  const std::function<double(size_t, size_t)> &distance,
+							  const std::function<double(size_t)> &first_distance,
+							  const std::vector<size_t> &ordering) {
 
 	// Initialize variables to track the best insertion point and cost
 	size_t insert_at = -1; // Position that the new goal will have in the new ordering

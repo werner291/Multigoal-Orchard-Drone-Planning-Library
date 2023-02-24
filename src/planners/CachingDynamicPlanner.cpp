@@ -29,10 +29,10 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 
 	auto approach = approach_planner->approach_path(new_goal, *shell_space);
 
-	// Must recompute the to_shell path since we got interrupted.
-	to_shell = find_path_to_shell(si, current_state);
+	// Must recompute the to_shell_cache path since we got interrupted.
+	to_shell_cache = find_path_to_shell(si, current_state);
 
-	if (!to_shell) {
+	if (!to_shell_cache) {
 
 		// TODO: we could probably do something better here, such as re-using the last approach path?
 		// Or, maybe try harder/over?
@@ -58,7 +58,7 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 
 		for (size_t i = 0; i < ordering.size(); i++) {
 
-			ShellPoint approach_before = i == 0 ? to_shell->shell_point : ordering[i - 1].approach.shell_point;
+			ShellPoint approach_before = i == 0 ? to_shell_cache->shell_point : ordering[i - 1].approach.shell_point;
 			std::optional<ShellPoint> approach_after =
 					i == ordering.size() - 1 ? std::nullopt : std::optional(ordering[i + 1].approach.shell_point);
 
@@ -78,7 +78,11 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 		ordering.insert(ordering.begin() + insert_before, {new_goal, *approach});
 	}
 
-	return PathSegment{SIZE_MAX, optimizedPointToPoint(si, *to_shell, ordering.front().approach)};
+	// Most likely the next path segment will be requested after visiting the first goal
+	// in the ordering, so that's the approach path to which we'll cache.
+	//	to_shell_cache = ordering[0].approach;
+
+	return PathSegment{SIZE_MAX, optimizedPointToPoint(si, *to_shell_cache, ordering.front().approach)};
 
 }
 
@@ -106,6 +110,11 @@ std::optional<DynamicMultiGoalPlanner::PathSegment> CachingDynamicPlanner<ShellP
 	if (ordering.empty()) {
 		return std::nullopt;
 	} else {
+
+		// Most likely the next path segment will be requested after visiting the first goal
+		// in the ordering, so that's the approach path to which we'll cache.
+		to_shell_cache = ordering[0].approach;
+
 		return PathSegment{SIZE_MAX, optimizedPointToPoint(si, *to_shell, ordering[0].approach)};
 	}
 }
@@ -141,8 +150,16 @@ CachingDynamicPlanner<ShellPoint>::plan(const ompl::base::SpaceInformationPtr &s
 
 	auto ptc = ompl::base::plannerNonTerminatingCondition();
 
+	// Most likely the next path segment will be requested after visiting the first goal
+	// in the ordering, so that's the approach path to which we'll cache.
+	to_shell_cache = ordering[0].approach;
+
+	auto ptp = optimizedPointToPoint(si, *to_shell, ordering.front().approach);
+
+	assert(si->distance(ptp.getState(0), start) < 1e-6);
+
 	return PathSegment{SIZE_MAX, // TODO Get the IDs right.
-					   optimizedPointToPoint(si, *to_shell, ordering.front().approach)};
+					   ptp};
 }
 
 template<typename ShellPoint>
@@ -183,7 +200,6 @@ void CachingDynamicPlanner<ShellPoint>::batch_reorder(const OmplApproachPath<She
 	// Use the TSP method to reorder the approach paths
 	ordering = reorder_by_index(std::move(ordering), indices);
 }
-
 
 template<typename ShellPoint>
 CachingDynamicPlanner<ShellPoint>::CachingDynamicPlanner(const std::shared_ptr<ApproachPlanningMethods<ShellPoint>> &approachPlanner,

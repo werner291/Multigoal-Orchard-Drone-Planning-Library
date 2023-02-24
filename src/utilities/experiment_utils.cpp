@@ -296,17 +296,27 @@ std::shared_ptr<DroneStateSpace> omplStateSpaceForDrone(const moveit::core::Robo
 	return std::make_shared<DroneStateSpace>(spec, TRANSLATION_BOUND);
 }
 
-std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(int num_apples, double p, int seed) {
+std::vector<AppleDiscoverabilityType>
+generateAppleDiscoverability(int all_apples, double p, int seed, int apples_in_test) {
+
+	assert(all_apples <= all_apples &&
+		   "The number of discoverable apples must be less than or equal to the total number of apples.");
+
+	assert(0 <= p && p <= 1.0 && "The probability of an apple being discoverable must be between 0 and 1.0.");
 
 	auto rng = std::default_random_engine(seed);
 
-	std::vector<AppleDiscoverabilityType> apple_discoverability(num_apples, AppleDiscoverabilityType::GIVEN);
+	std::vector<AppleDiscoverabilityType> apple_discoverability(all_apples, AppleDiscoverabilityType::EXCLUDED);
+
+	for (size_t i = 0; i < apples_in_test; i++) {
+		apple_discoverability[i] = AppleDiscoverabilityType::DISCOVERABLE;
+	}
 
 	// Then, flag p/1.0 of them as discoverable.
-	size_t n_discoverable = std::ceil(p * num_apples);
+	size_t n_discoverable = std::ceil(p * apples_in_test);
 
 	for (size_t i = 0; i < n_discoverable; i++) {
-		apple_discoverability[i] = AppleDiscoverabilityType::DISCOVERABLE;
+		apple_discoverability[i] = AppleDiscoverabilityType::GIVEN;
 	}
 
 	// Shuffle the vector.

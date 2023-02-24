@@ -189,15 +189,16 @@ ompl::base::SpaceInformationPtr
 loadSpaceInformation(const std::shared_ptr<DroneStateSpace> &stateSpace, const AppleTreePlanningScene &scene_info);
 
 enum AppleDiscoverabilityType {
-	GIVEN, DISCOVERABLE
+	GIVEN, DISCOVERABLE, EXCLUDED
 };
 
 /**
  * @brief Generates a set of booleans indicating the discoverability of each apple
  *
- * @param num_apples The number of apples in the scene
+ * @param all_apples The number of apples in the scene
  * @return std::vector<bool> A vector of booleans indicating the discoverability of each apple
  */
-std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(int num_apples, double p, int seed);
+std::vector<AppleDiscoverabilityType>
+generateAppleDiscoverability(int all_apples, double p, int seed, int apples_in_test);
 
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

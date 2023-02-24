@@ -15,6 +15,7 @@
 #include "../utilities/vtk.h"
 
 #include "../exploration/ColorEncoding.h"
+#include "../utilities/alpha_shape.h"
 
 
 void createActors(const TreeMeshes &meshes,
@@ -25,12 +26,22 @@ void createActors(const TreeMeshes &meshes,
 
 	auto tree_actor = createActorFromMesh(meshes.trunk_mesh);
 	setColorsByEncoding(tree_actor, TRUNK_RGB, false);
+	actors->AddItem(tree_actor);
 
 	auto leaves_actor = createActorFromMesh(meshes.leaves_mesh);
 	setColorsByEncoding(leaves_actor, LEAVES_RGB, false);
-
-	actors->AddItem(tree_actor);
 	actors->AddItem(leaves_actor);
+
+	{
+
+		auto alphashape = alphaShape(meshes.leaves_mesh.vertices | ranges::views::transform([](const auto &v) {
+			return Eigen::Vector3d{v.x, v.y, v.z};
+		}) | ranges::to_vector, 0.01);
+
+		auto alphashape_actor = createActorFromMesh(alphashape);
+
+		actors->AddItem(alphashape_actor);
+	}
 
 	for (const auto &[fruit_index, fruit_mesh]: meshes.fruit_meshes | ranges::views::enumerate) {
 		auto fruit_actor = createActorFromMesh(fruit_mesh);
