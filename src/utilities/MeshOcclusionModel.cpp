@@ -23,6 +23,9 @@ MeshOcclusionModel::MeshOcclusionModel(const shape_msgs::msg::Mesh &mesh) {
 bool
 MeshOcclusionModel::checkOcclusion(const Eigen::Vector3d &point, const Eigen::Vector3d &viewpoint) const {
 
+	// TODO: maybe add a bit of margin near the actual target point to avoid false positives
+	// from apples that are just slightly inside of the alpha shape?
+
 	Segment segment(Point(viewpoint.x(), viewpoint.y(), viewpoint.z()),
 					Point(point.x(), point.y(), point.z()));
 

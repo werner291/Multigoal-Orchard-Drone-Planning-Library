@@ -19,7 +19,6 @@ class MeshOcclusionModel {
 	using K = CGAL::Simple_cartesian<double>;
 	using FT = K::FT;
 	using Ray = K::Ray_3;
-	using Line = K::Line_3;
 	using Segment = K::Segment_3;
 	using Point = K::Point_3;
 	using Triangle = K::Triangle_3;
@@ -30,6 +29,8 @@ class MeshOcclusionModel {
 
 	Tree tree;
 	std::vector<Triangle> triangles;
+
+public:
 
 	/**
 	 * Constructor. Creates a mesh occlusion model from a mesh.

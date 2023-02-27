@@ -22,6 +22,8 @@
 
 #include "../DynamicGoalsetPlanningProblem.h"
 #include "../vtk/visualize_dynamic.h"
+#include "../utilities/MeshOcclusionModel.h"
+#include "../utilities/alpha_shape.h"
 
 #include <vtkProperty.h>
 #include <range/v3/view/iota.hpp>
@@ -32,34 +34,21 @@ Apple appleFromMesh(const shape_msgs::msg::Mesh &mesh) {
 
 using DynamicPlannerAllocatorFn = std::function<std::shared_ptr<DynamicMultiGoalPlanner>(const ompl::base::SpaceInformationPtr &)>;
 
-struct Experiment {
-	DynamicPlannerAllocatorFn *allocator;
-	std::string planner_name;
-	DynamicGoalsetPlanningProblem problem;
-};
-
-Json::Value toJSON(const Experiment &experiment) {
-	Json::Value result;
-	result["planner"] = experiment.planner_name;
-	result["n_given"] = ranges::count(experiment.problem.apple_discoverability, AppleDiscoverabilityType::GIVEN);
-	result["n_discoverable"] = ranges::count(experiment.problem.apple_discoverability, AppleDiscoverabilityType::DISCOVERABLE);
-	return result;
-}
-
 std::shared_ptr<OmplShellSpace<Eigen::Vector3d>> paddedOmplSphereShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
 	auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene_info, 0.1));
 	return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(workspaceShell, si);
 };
 
-std::vector<Experiment> genPlannerProblemMatrix(const std::vector<DynamicGoalsetPlanningProblem> &problems,
-												std::vector<std::pair<std::string, DynamicPlannerAllocatorFn>> &planners) {
-	auto experiments =
-			ranges::views::cartesian_product(planners, problems) | ranges::views::transform([&](const auto &pair) {
-				auto &[planner, problem] = pair;
-				auto &[planner_name, allocator] = planner;
-				return Experiment{&allocator, planner_name, problem};
-			}) | ranges::to_vector;
-	return experiments;
+struct Experiment {
+	std::pair<std::string, DynamicPlannerAllocatorFn> *planner;
+	std::pair<Json::Value, DynamicGoalsetPlanningProblem> *problem;
+};
+
+Json::Value toJSON(const Experiment &experiment) {
+	Json::Value result;
+	result["planner"] = experiment.planner->first;
+	result["problem"] = experiment.problem->first;
+	return result;
 }
 
 int main(int argc, char **argv) {
@@ -86,7 +75,7 @@ int main(int argc, char **argv) {
 																		paddedOmplSphereShell);
 	};
 
-	auto distance_occlusion = [](const moveit::core::RobotState &state, const Apple &apple) {
+	utilities::CanSeeAppleFn distance_occlusion = [](const moveit::core::RobotState &state, const Apple &apple) {
 
 		Eigen::Vector3d ee_pos = state.getGlobalLinkTransform("end_effector").translation();
 
@@ -96,14 +85,65 @@ int main(int argc, char **argv) {
 
 	};
 
-//	MeshOcclusionModel alphashape();
+	auto alphashape = alphaShape(meshes.leaves_mesh.vertices | ranges::views::transform([](const auto &v) {
+		return Eigen::Vector3d{v.x, v.y, v.z};
+	}) | ranges::to_vector, LEAVES_ALPHA_SQRTRADIUS);
 
-	//#define STATISTICS
+	MeshOcclusionModel occlusion_model(alphashape);
+
+	utilities::CanSeeAppleFn leaf_alpha_occlusion = [&](const moveit::core::RobotState &state, const Apple &apple) {
+
+		Eigen::Vector3d ee_pos = state.getGlobalLinkTransform("end_effector").translation();
+
+		return occlusion_model.checkOcclusion(apple.center, ee_pos);
+
+	};
+
+	#define STATISTICS
 
 #ifdef STATISTICS
 	ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
-	auto problems = DynamicGoalsetPlanningProblem::genDynamicGoalsetPlanningProblems(scene, robot, 10);
+	auto repIds = ranges::views::iota(0, 5);
+
+	// Numbers of apples to throw at the planner.
+	const auto nApples = {10, 20};
+
+	// Generate a range of probabilities, ranging from 0.0 to 1.0.
+	const int nProbabilities = 4;
+	auto probs = ranges::views::iota(0, nProbabilities) | views::transform([](int i) { return i / (double) (nProbabilities - 1); });
+
+	std::vector<std::pair<std::string, utilities::CanSeeAppleFn>> can_see_apple_fns = {
+		std::make_pair("distance", distance_occlusion),
+		std::make_pair("alpha_shape", leaf_alpha_occlusion)
+	};
+
+	auto problems =
+			views::cartesian_product(repIds, probs, nApples, can_see_apple_fns) |
+			views::transform([&](const auto &pair) -> std::pair<Json::Value,DynamicGoalsetPlanningProblem> {
+
+				const auto &[repId, prob, n_total, can_see_apple] = pair;
+
+				const auto discoverability = generateAppleDiscoverability((int) scene.apples.size(), prob, repId, n_total);
+
+				Json::Value problem_params;
+				problem_params["n_given"] = ranges::count(discoverability, AppleDiscoverabilityType::GIVEN);
+				problem_params["n_discoverable"] = ranges::count(discoverability, AppleDiscoverabilityType::DISCOVERABLE);
+				problem_params["n_total"] = n_total;
+				problem_params["visibility_model"] = can_see_apple.first;
+
+				DynamicGoalsetPlanningProblem problem {
+					.start_state= randomStateOutsideTree(robot, repId),
+					.apple_discoverability=	discoverability,
+					.can_see_apple=	can_see_apple.second
+				};
+
+				return {
+					problem_params,
+					problem
+				};
+
+			}) | to_vector;
 
 	DynamicPlannerAllocatorFn static_planner = [](const ompl::base::SpaceInformationPtr &si) -> std::shared_ptr<DynamicMultiGoalPlanner> {
 		return std::make_shared<ChangeIgnoringReplannerAdapter>(
@@ -124,13 +164,17 @@ int main(int argc, char **argv) {
 	std::vector<std::pair<std::string, DynamicPlannerAllocatorFn>> planners =
 			{
 			{"change_ignoring", static_planner},
-			{"dynamic_planner_lci", dynamic_planner_lci},
+//			{"dynamic_planner_lci", dynamic_planner_lci},
 			{"dynamic_planner_fre", dynamic_planner_fre}
 			};
 
-	auto experiments = genPlannerProblemMatrix(problems, planners);
-
-
+	auto experiments = views::cartesian_product(planners, problems) | views::transform([](const auto &pair) {
+		const auto &[planner, problem] = pair;
+		return Experiment {
+			.planner= &planner,
+			.problem= &problem
+		};
+	}) | to_vector;
 
 	runExperimentsParallelRecoverable<Experiment>(experiments, [&](const Experiment &experiment) {
 
@@ -142,11 +186,17 @@ int main(int argc, char **argv) {
 		// we'll need to copy this for every thread
 		auto si = loadSpaceInformation(ss, scene);
 
-		auto change_ignoring = (*experiment.allocator)(si);
+		auto ompl_planner = experiment.planner->second(si);
 
-		auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(change_ignoring, si, ss);
+		auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(ompl_planner, si, ss);
 
-		DynamicGoalVisitationEvaluation eval(adapter, experiment.problem.start_state, scene, experiment.problem.apple_discoverability);
+		DynamicGoalVisitationEvaluation eval(
+				adapter,
+				experiment.problem->second.start_state,
+				scene,
+				experiment.problem->second.apple_discoverability,
+				experiment.problem->second.can_see_apple
+				);
 
 		auto start_time = std::chrono::high_resolution_clock::now();
 

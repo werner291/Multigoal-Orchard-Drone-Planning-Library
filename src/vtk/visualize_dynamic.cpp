@@ -16,6 +16,7 @@
 
 #include "../exploration/ColorEncoding.h"
 #include "../utilities/alpha_shape.h"
+#include "../utilities/MeshOcclusionModel.h"
 
 
 void createActors(const TreeMeshes &meshes,
@@ -31,18 +32,6 @@ void createActors(const TreeMeshes &meshes,
 	auto leaves_actor = createActorFromMesh(meshes.leaves_mesh);
 	setColorsByEncoding(leaves_actor, LEAVES_RGB, false);
 	actors->AddItem(leaves_actor);
-
-	{
-		auto alphashape = alphaShape(meshes.leaves_mesh.vertices | ranges::views::transform([](const auto &v) {
-			return Eigen::Vector3d{v.x, v.y, v.z};
-		}) | ranges::to_vector, sqrt(0.0001));
-
-		auto alphashape_actor = createActorFromMesh(alphashape);
-
-		alphashape_actor->GetProperty()->SetOpacity(0.5);
-
-		actors->AddItem(alphashape_actor);
-	}
 
 	for (const auto &[fruit_index, fruit_mesh]: meshes.fruit_meshes | ranges::views::enumerate) {
 		auto fruit_actor = createActorFromMesh(fruit_mesh);
@@ -64,7 +53,6 @@ void createActors(const TreeMeshes &meshes,
 
 	viewer.addActorCollection(actors);
 }
-
 
 int visualizeEvaluation(const TreeMeshes &meshes,
 						const AppleTreePlanningScene &scene,
@@ -88,6 +76,24 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 	// Add the tree meshes to the viewer.
 	createActors(meshes, apple_discoverability, apple_actors, viewer);
 
+	auto alphashape = alphaShape(meshes.leaves_mesh.vertices | ranges::views::transform([](const auto &v) {
+		return Eigen::Vector3d{v.x, v.y, v.z};
+	}) | ranges::to_vector, sqrt(0.0001));
+
+	MeshOcclusionModel occlusion_model(alphashape);
+
+	{
+		auto alphashape_actor = createActorFromMesh(alphashape);
+
+		alphashape_actor->GetProperty()->SetOpacity(0.5);
+
+		viewer.addActor(alphashape_actor);
+	}
+
+	VtkLineSegmentsVisualization occlusion_visualization(1.0,0.0,1.0);
+
+	viewer.addActor(occlusion_visualization.getActor());
+
 	double time = 0.0;
 
 	// The "main loop" of the program, called every frame.
@@ -109,11 +115,25 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 
 			robotModel.applyState(state);
 
-			for (const auto &[apple_actor, apple]: ranges::views::zip(apple_actors, scene.apples)) {
-				if ((state.getGlobalLinkTransform("end_effector").translation() - apple.center).norm() < 0.05) {
-					apple_actor->GetProperty()->SetDiffuseColor(0.0, 1.0, 0.0);
+			for (const auto &[apple_actor, status]: ranges::views::zip(apple_actors, eval.getDiscoveryStatus())) {
+				switch (status) {
+					case utilities::DiscoveryStatus::VISITED:
+						apple_actor->GetProperty()->SetDiffuseColor(1.0, 0.0, 0.0);
+						break;
+					case utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT:
+						apple_actor->GetProperty()->SetDiffuseColor(1.0, 0.0, 1.0);
+						break;
+					case utilities::DiscoveryStatus::KNOWN_TO_ROBOT:
+						apple_actor->GetProperty()->SetDiffuseColor(1.0, 0.0, 0.5);
+						break;
 				}
 			}
+
+			occlusion_visualization.updateLine(scene.apples | ranges::views::transform([&](const auto &apple) -> std::pair<Eigen::Vector3d, Eigen::Vector3d> {
+				return {state.getGlobalLinkTransform("end_effector").translation(), apple.center};
+			}) | ranges::views::filter([&](const auto &line) {
+				return !occlusion_model.checkOcclusion(line.first, line.second);
+			}) | ranges::to_vector);
 		}
 
 	};

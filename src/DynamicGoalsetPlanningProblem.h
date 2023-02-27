@@ -16,11 +16,6 @@ struct DynamicGoalsetPlanningProblem {
 	std::vector<AppleDiscoverabilityType> apple_discoverability;
 	utilities::CanSeeAppleFn can_see_apple;
 
-	static std::vector<DynamicGoalsetPlanningProblem>
-	genDynamicGoalsetPlanningProblems(const AppleTreePlanningScene &scene,
-									  const moveit::core::RobotModelPtr &robot,
-									  int reps);
-
 };
 
 

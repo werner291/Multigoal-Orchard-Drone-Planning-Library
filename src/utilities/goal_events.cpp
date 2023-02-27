@@ -35,6 +35,7 @@ namespace utilities {
 
 				before.interpolate(after, t, state);
 
+				state.update(true);
 
 				for (const auto &[goal_id, apple]: ranges::views::enumerate(apples)) {
 
