@@ -255,7 +255,7 @@ add_library(${PROJECT_NAME}_shared
         src/ORToolsTSPMethods.cpp
         src/ORToolsTSPMethods.h
         src/DynamicGoalsetPlanningProblem.cpp
-        src/DynamicGoalsetPlanningProblem.h src/utilities/alpha_shape.cpp src/utilities/alpha_shape.h)
+        src/DynamicGoalsetPlanningProblem.h src/utilities/alpha_shape.cpp src/utilities/alpha_shape.h src/utilities/MeshOcclusionModel.cpp src/utilities/MeshOcclusionModel.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

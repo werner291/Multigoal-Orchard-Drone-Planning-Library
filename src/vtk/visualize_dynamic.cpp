@@ -33,12 +33,13 @@ void createActors(const TreeMeshes &meshes,
 	actors->AddItem(leaves_actor);
 
 	{
-
 		auto alphashape = alphaShape(meshes.leaves_mesh.vertices | ranges::views::transform([](const auto &v) {
 			return Eigen::Vector3d{v.x, v.y, v.z};
-		}) | ranges::to_vector, 0.01);
+		}) | ranges::to_vector, sqrt(0.0001));
 
 		auto alphashape_actor = createActorFromMesh(alphashape);
+
+		alphashape_actor->GetProperty()->SetOpacity(0.5);
 
 		actors->AddItem(alphashape_actor);
 	}

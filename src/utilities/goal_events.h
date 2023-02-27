@@ -30,9 +30,11 @@ namespace utilities {
 		VISITED, KNOWN_TO_ROBOT, EXISTS_BUT_UNKNOWN_TO_ROBOT
 	};
 
+	using CanSeeAppleFn = std::function<bool(const moveit::core::RobotState& state, const Apple& apple)>;
+
 	std::optional<GoalSighting> find_earliest_discovery_event(RobotPath &traj,
 															  const std::vector<Apple> &apples,
-															  double discovery_max_distance,
+															  CanSeeAppleFn can_see_apple,
 															  const std::vector<DiscoveryStatus> &discovery_status);
 
 }

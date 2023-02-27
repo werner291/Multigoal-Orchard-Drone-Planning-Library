@@ -10,38 +10,35 @@
 #include <CGAL/Fixed_alpha_shape_3.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Triangulation_3.h>
-#include <CGAL/Triangulation_vertex_base_3.h>
-#include <CGAL/Regular_triangulation_3.h>
-#include <CGAL/Triangulation_cell_base_with_info_3.h>
-#include <CGAL/algorithm.h>
-#include <CGAL/Polyhedron_3.h>
 #include <iostream>
 #include <vector>
 #include <CGAL/Fixed_alpha_shape_vertex_base_3.h>
 #include <CGAL/Fixed_alpha_shape_cell_base_3.h>
 #include <range/v3/all.hpp>
+#include <CGAL/Alpha_shape_vertex_base_3.h>
+#include <CGAL/Delaunay_triangulation_3.h>
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef CGAL::Regular_triangulation_vertex_base_3<K> Vbb;
-typedef CGAL::Fixed_alpha_shape_vertex_base_3<K, Vbb> Vb;
-typedef CGAL::Regular_triangulation_cell_base_3<K> Rcb;
-typedef CGAL::Fixed_alpha_shape_cell_base_3<K, Rcb> Cb;
-typedef CGAL::Triangulation_data_structure_3<Vb, Cb> Tds;
-typedef CGAL::Regular_triangulation_3<K, Tds> Triangulation_3;
-typedef CGAL::Fixed_alpha_shape_3<Triangulation_3> Fixed_alpha_shape_3;
-typedef Fixed_alpha_shape_3::Cell_handle Cell_handle;
-typedef Fixed_alpha_shape_3::Vertex_handle Vertex_handle;
-typedef Fixed_alpha_shape_3::Facet Facet;
-typedef Fixed_alpha_shape_3::Edge Edge;
-typedef Triangulation_3::Weighted_point Weighted_point;
-typedef Triangulation_3::Bare_point Bare_point;
+using K = CGAL::Exact_predicates_inexact_constructions_kernel;
+using Point = K::Point_3;
+
+using Vbb = CGAL::Alpha_shape_vertex_base_3<K>;
+using Vb = CGAL::Fixed_alpha_shape_vertex_base_3<K, Vbb>;
+using Rcb = CGAL::Alpha_shape_cell_base_3<K>;
+using Cb = CGAL::Fixed_alpha_shape_cell_base_3<K, Rcb>;
+using Tds = CGAL::Triangulation_data_structure_3<Vb, Cb>;
+using Triangulation_3 = CGAL::Delaunay_triangulation_3<K, Tds>;
+using Fixed_alpha_shape_3 = CGAL::Fixed_alpha_shape_3<Triangulation_3>;
+
+using Vertex_handle = Fixed_alpha_shape_3::Vertex_handle;
+using Facet = Fixed_alpha_shape_3::Facet;
 
 shape_msgs::msg::Mesh alphaShape(const std::vector<Eigen::Vector3d> &points, double alpha) {
 
 	// Construct the alpha shape
-	std::vector<Weighted_point> lwp = points | ranges::views::transform([](const Eigen::Vector3d &p) {
-		return Weighted_point(Bare_point(p.x(), p.y(), p.z()), 1);
+	std::vector<Point> lwp = points | ranges::views::transform([](const Eigen::Vector3d &p) {
+		return Point(p.x(), p.y(), p.z());
 	}) | ranges::to_vector;
+
 	Fixed_alpha_shape_3 as(lwp.begin(), lwp.end(), alpha);
 
 	// Extract the alpha shape
@@ -58,8 +55,11 @@ shape_msgs::msg::Mesh alphaShape(const std::vector<Eigen::Vector3d> &points, dou
 
 		// Find the vertices of the facet
 		for (int i = 1; i <= 3; i++) {
+
 			Vertex_handle vertex = facet.first->vertex((facet.second + i) % 4);
+
 			auto it = vertex_map.find(vertex);
+
 			if (it == vertex_map.end()) {
 				// Add the vertex to the mesh
 				geometry_msgs::msg::Point point;

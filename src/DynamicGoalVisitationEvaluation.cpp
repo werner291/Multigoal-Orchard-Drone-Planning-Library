@@ -4,6 +4,7 @@
 
 #include <range/v3/view/enumerate.hpp>
 #include <range/v3/view/filter.hpp>
+#include <utility>
 #include "DynamicGoalVisitationEvaluation.h"
 #include "utilities/moveit.h"
 
@@ -21,8 +22,9 @@ utilities::DiscoveryStatus initial_discovery_status(const AppleDiscoverabilityTy
 DynamicGoalVisitationEvaluation::DynamicGoalVisitationEvaluation(std::shared_ptr<Planner> planner,
 																 const moveit::core::RobotState &initial_state,
 																 const AppleTreePlanningScene &scene,
-																 const std::vector<AppleDiscoverabilityType> &discoverability)
-		: planner(std::move(planner)), last_robot_state(initial_state), scene(scene) {
+																 const std::vector<AppleDiscoverabilityType> &discoverability,
+																 utilities::CanSeeAppleFn canSeeApple)
+		: planner(std::move(planner)), last_robot_state(initial_state), scene(scene), can_see_apple(std::move(canSeeApple)) {
 
 	this->scene.apples = ranges::views::zip(scene.apples, discoverability) |
 						 ranges::views::filter([](const auto &apple) {
@@ -73,7 +75,7 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 		}
 
 		// Check if the robot will discover any apples during the trajectory
-		auto event = utilities::find_earliest_discovery_event(segment->path, scene.apples, 1.0, discovery_status);
+		auto event = utilities::find_earliest_discovery_event(segment->path, scene.apples, can_see_apple, discovery_status);
 
 		if (event) {
 

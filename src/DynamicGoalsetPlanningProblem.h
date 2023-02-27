@@ -8,10 +8,13 @@
 #include <vector>
 #include <moveit/robot_state/robot_state.h>
 #include "utilities/experiment_utils.h"
+#include "utilities/goal_events.h"
 
 struct DynamicGoalsetPlanningProblem {
+
 	moveit::core::RobotState start_state;
 	std::vector<AppleDiscoverabilityType> apple_discoverability;
+	utilities::CanSeeAppleFn can_see_apple;
 
 	static std::vector<DynamicGoalsetPlanningProblem>
 	genDynamicGoalsetPlanningProblems(const AppleTreePlanningScene &scene,

@@ -86,6 +86,18 @@ int main(int argc, char **argv) {
 																		paddedOmplSphereShell);
 	};
 
+	auto distance_occlusion = [](const moveit::core::RobotState &state, const Apple &apple) {
+
+		Eigen::Vector3d ee_pos = state.getGlobalLinkTransform("end_effector").translation();
+
+		const double discovery_max_distance = 1.0;
+
+		return (ee_pos - apple.center).squaredNorm() < discovery_max_distance * discovery_max_distance;
+
+	};
+
+//	MeshOcclusionModel alphashape();
+
 	//#define STATISTICS
 
 #ifdef STATISTICS
@@ -185,7 +197,7 @@ int main(int argc, char **argv) {
 
 	auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(planner, si, ss);
 
-	DynamicGoalVisitationEvaluation eval(adapter, start_state, scene, apple_discoverability);
+	DynamicGoalVisitationEvaluation eval(adapter, start_state, scene, apple_discoverability, distance_occlusion);
 
 	visualizeEvaluation(meshes, scene, robot, start_state, apple_discoverability, eval);
 

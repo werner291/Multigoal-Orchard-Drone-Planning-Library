@@ -60,6 +60,8 @@ private:
 	 */
 	[[nodiscard]] std::optional<MoveitPathSegment> replanFromEvent();
 
+	utilities::CanSeeAppleFn can_see_apple;
+
 public:
 
 	/**
@@ -72,7 +74,8 @@ public:
 	DynamicGoalVisitationEvaluation(std::shared_ptr<Planner> planner,
 									const moveit::core::RobotState &initial_state,
 									const AppleTreePlanningScene &scene,
-									const std::vector<AppleDiscoverabilityType> &discoverability);
+									const std::vector<AppleDiscoverabilityType> &discoverability,
+									utilities::CanSeeAppleFn canSeeApple);
 
 	/**
 	 * @brief Computes the next robot trajectory.

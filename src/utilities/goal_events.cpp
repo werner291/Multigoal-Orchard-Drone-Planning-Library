@@ -17,7 +17,7 @@ namespace utilities {
 
 	std::optional<GoalSighting> find_earliest_discovery_event(RobotPath &traj,
 															  const std::vector<Apple> &apples,
-															  double discovery_max_distance,
+															  CanSeeAppleFn can_see_apple,
 															  const std::vector<DiscoveryStatus> &discovery_status) {
 
 		for (size_t segment_i = 0; segment_i < traj.waypoints.size() - 1; segment_i += 1) {
@@ -35,11 +35,10 @@ namespace utilities {
 
 				before.interpolate(after, t, state);
 
-				Eigen::Vector3d ee_pos = state.getGlobalLinkTransform("end_effector").translation();
 
 				for (const auto &[goal_id, apple]: ranges::views::enumerate(apples)) {
-					if (within_distance(ee_pos, apple.center, discovery_max_distance) &&
-						discovery_status[goal_id] == EXISTS_BUT_UNKNOWN_TO_ROBOT) {
+
+					if (discovery_status[goal_id] == EXISTS_BUT_UNKNOWN_TO_ROBOT && can_see_apple(state, apple)) {
 						return GoalSighting{(int) goal_id, {segment_i, t}};
 					}
 				}
