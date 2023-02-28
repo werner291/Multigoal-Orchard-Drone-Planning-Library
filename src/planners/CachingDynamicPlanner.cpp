@@ -2,6 +2,8 @@
 //
 // All rights reserved.
 
+#include <range/v3/view/transform.hpp>
+#include <range/v3/range/conversion.hpp>
 #include "CachingDynamicPlanner.h"
 #include "../probe_retreat_move.h"
 #include "../utilities/vector_utils.h"
@@ -27,11 +29,13 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 														  const PathInterrupt &interrupt,
 														  const AppleTreePlanningScene &planning_scene) {
 
+	// Plan a path to the new goal.
 	auto approach = approach_planner->approach_path(new_goal, *shell_space);
 
-	// Must recompute the to_shell_cache path since we got interrupted.
+	// Find a path to the shell. We probably need to recompute the to_shell_cache path since we got interrupted.
 	to_shell_cache = find_path_to_shell(si, current_state);
 
+	// If we couldn't find a path to the shell, then the robot must be stuck somewhere. Halt.
 	if (!to_shell_cache) {
 
 		// TODO: we could probably do something better here, such as re-using the last approach path?
@@ -45,44 +49,112 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 		std::cout << "Did find a way back to the shell." << std::endl;
 	}
 
+	// If we successfully found a path to the new goal, we can add it to the ordering.
 	if (approach) {
 
-		// Find the least costly insertion point, which is either:
-		// 1. At the start of the order
-		// 2. Between two existing goals
-		// 3. At the end of the order
+		// Determine the new ordering indices using the TSP method.
+		auto new_ordering = tsp_method->update_ordering(ordering.size(),
+														[&](const IncrementalTSPMethods::NewOrderingEntry &a,
+															const IncrementalTSPMethods::NewOrderingEntry &b) {
 
-		// For now, assume it's at the start of the order
-		size_t insert_before = -1;
-		double best_insertion_cost = std::numeric_limits<double>::infinity();
+															// Look up the ShellPoint of either the existing goal in the ordering, or the new goal.
+															ShellPoint a_sp = std::holds_alternative<IncrementalTSPMethods::NewGoal>(
+																	a) ? approach->shell_point
+																	   : ordering[std::get<IncrementalTSPMethods::FromOriginal>(
+																			a).index].approach.shell_point;
 
-		for (size_t i = 0; i < ordering.size(); i++) {
+															// Same for b.
+															ShellPoint b_sp = std::holds_alternative<IncrementalTSPMethods::NewGoal>(
+																	b) ? approach->shell_point
+																	   : ordering[std::get<IncrementalTSPMethods::FromOriginal>(
+																			b).index].approach.shell_point;
 
-			ShellPoint approach_before = i == 0 ? to_shell_cache->shell_point : ordering[i - 1].approach.shell_point;
-			std::optional<ShellPoint> approach_after =
-					i == ordering.size() - 1 ? std::nullopt : std::optional(ordering[i + 1].approach.shell_point);
+															return shell_space->predict_path_length(a_sp, b_sp);
 
-			double insertion_cost = shell_space->predict_path_length(approach_before, approach->shell_point) +
-									(approach_after ? shell_space->predict_path_length(approach->shell_point,
-																					   *approach_after) : 0.0) -
-									(approach_after ? shell_space->predict_path_length(approach_before, *approach_after)
-													: 0.0);
+														},
+														[&](const IncrementalTSPMethods::NewOrderingEntry &a) {
 
-			if (insertion_cost < best_insertion_cost) {
-				best_insertion_cost = insertion_cost;
-				insert_before = i;
-			}
+															// Same again, but only for one of the goals; the other is simply the ShellPoint closest to the robot.
+															ShellPoint a_sp = std::holds_alternative<IncrementalTSPMethods::NewGoal>(
+																	a) ? approach->shell_point
+																	   : ordering[std::get<IncrementalTSPMethods::FromOriginal>(
+																			a).index].approach.shell_point;
 
+															return shell_space->predict_path_length(to_shell_cache->shell_point,
+																									a_sp);
+
+														});
+
+		{// Validate the new ordering: must only have indices to the existing ordering and the new goal.
+			assert(std::all_of(new_ordering.begin(),
+							   new_ordering.end(),
+							   [&](const IncrementalTSPMethods::NewOrderingEntry &e) {
+								   return std::holds_alternative<IncrementalTSPMethods::NewGoal>(e) ||
+										  std::get<IncrementalTSPMethods::FromOriginal>(e).index < ordering.size();
+							   }));
+
+			// NewGoal may appear exactly once
+			assert(std::count_if(new_ordering.begin(),
+								 new_ordering.end(),
+								 [](const IncrementalTSPMethods::NewOrderingEntry &e) {
+									 return std::holds_alternative<IncrementalTSPMethods::NewGoal>(e);
+								 }) == 1);
+
+			// All indices must be unique
+			std::vector<bool> indices(ordering.size(), false);
+			assert(std::all_of(new_ordering.begin(),
+							   new_ordering.end(),
+							   [&](const IncrementalTSPMethods::NewOrderingEntry &e) {
+								   if (std::holds_alternative<IncrementalTSPMethods::NewGoal>(e)) {
+									   return true;
+								   } else {
+									   auto index = std::get<IncrementalTSPMethods::FromOriginal>(e).index;
+									   if (indices[index]) {
+										   return false;
+									   } else {
+										   indices[index] = true;
+										   return true;
+									   }
+								   }
+							   }));
 		}
 
-		ordering.insert(ordering.begin() + insert_before, {new_goal, *approach});
+		// Build a new ordering by moving out of the old ordering, according to the given order.
+		ordering = new_ordering |
+				   ranges::views::transform([&](const IncrementalTSPMethods::NewOrderingEntry &e) -> ApproachToGoal {
+
+					   if (std::holds_alternative<IncrementalTSPMethods::NewGoal>(e)) {
+						   // If the entry is the new goal, then we'll use the approach path we just computed.
+						   return ApproachToGoal{new_goal, *approach // TODO consider using std::move
+						   };
+					   } else {
+						   // Otherwise, we'll just move the existing entry.
+						   return ordering[std::get<IncrementalTSPMethods::FromOriginal>(e).index]; // TODO consider using std::move
+					   }
+
+				   }) | ranges::to_vector;
 	}
 
 	// Most likely the next path segment will be requested after visiting the first goal
 	// in the ordering, so that's the approach path to which we'll cache.
-	//	to_shell_cache = ordering[0].approach;
+	// TODO	to_shell_cache = ordering[0].approach;
 
 	return PathSegment{SIZE_MAX, optimizedPointToPoint(si, *to_shell_cache, ordering.front().approach)};
+
+}
+
+template<typename ShellPoint>
+std::optional<OmplApproachPath<ShellPoint>>
+CachingDynamicPlanner<ShellPoint>::find_path_to_shell(const ompl::base::SpaceInformationPtr &si,
+													  const ompl::base::State *start) {
+
+	if (to_shell_cache.has_value() && si->distance(start, to_shell_cache->robot_path.getStates().back()) < 1.0e-6) {
+		std::cout << "Using cached approach path." << std::endl;
+		return to_shell_cache;
+	} else {
+		to_shell_cache = approach_planner->approach_path(start, *shell_space);
+		return to_shell_cache;
+	}
 
 }
 
@@ -146,7 +218,17 @@ CachingDynamicPlanner<ShellPoint>::plan(const ompl::base::SpaceInformationPtr &s
 		return std::nullopt;
 	}
 
-	batch_reorder(*to_shell);
+	auto indices = tsp_method->initial_ordering(ordering.size(), [&](size_t i, size_t j) {
+		// Use the shell space to predict the path length between each pair of approach paths
+		return shell_space->predict_path_length(ordering[i].approach.shell_point, ordering[j].approach.shell_point);
+	}, [&](size_t i) {
+		// Use the shell space to predict the path length between the initial approach path
+		// and each approach path in the list
+		return shell_space->predict_path_length((*to_shell).shell_point, ordering[i].approach.shell_point);
+	});
+
+	// Use the TSP method to reorder the approach paths
+	ordering = reorder_by_index(std::move(ordering), indices);
 
 	auto ptc = ompl::base::plannerNonTerminatingCondition();
 
@@ -183,22 +265,6 @@ CachingDynamicPlanner<ShellPoint>::optimizedPointToPoint(const ompl::base::Space
 
 	// Optimize the path and return the result
 	return optimize(path, {nullptr}, si);
-}
-
-template<typename ShellPoint>
-void CachingDynamicPlanner<ShellPoint>::batch_reorder(const OmplApproachPath<ShellPoint> &initial_approach) {
-
-	auto indices = tsp_method->initial_ordering(ordering.size(), [&](size_t i, size_t j) {
-		// Use the shell space to predict the path length between each pair of approach paths
-		return shell_space->predict_path_length(ordering[i].approach.shell_point, ordering[j].approach.shell_point);
-	}, [&](size_t i) {
-		// Use the shell space to predict the path length between the initial approach path
-		// and each approach path in the list
-		return shell_space->predict_path_length(initial_approach.shell_point, ordering[i].approach.shell_point);
-	});
-
-	// Use the TSP method to reorder the approach paths
-	ordering = reorder_by_index(std::move(ordering), indices);
 }
 
 template<typename ShellPoint>

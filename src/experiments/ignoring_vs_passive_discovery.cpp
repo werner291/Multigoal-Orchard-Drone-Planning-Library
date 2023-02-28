@@ -51,29 +51,44 @@ Json::Value toJSON(const Experiment &experiment) {
 	return result;
 }
 
+std::shared_ptr<DynamicMultiGoalPlanner> dynamic_planner_fre(const ompl::base::SpaceInformationPtr &si) {
+	return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
+																			si),
+																	std::make_shared<ORToolsTSPMethods>(
+																			ORToolsTSPMethods::UpdateStrategy::FULL_REORDER),
+																	paddedOmplSphereShell);
+};
+
+std::shared_ptr<DynamicMultiGoalPlanner> static_planner(const ompl::base::SpaceInformationPtr &si) {
+	return std::make_shared<ChangeIgnoringReplannerAdapter>(std::make_shared<ShellPathPlanner<Eigen::Vector3d >>(
+			paddedOmplSphereShell,
+			std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d >>(si),
+			true));
+};
+
+std::shared_ptr<DynamicMultiGoalPlanner> dynamic_planner_lci(const ompl::base::SpaceInformationPtr &si) {
+	return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
+																			si),
+																	std::make_shared<ORToolsTSPMethods>(
+																			ORToolsTSPMethods::UpdateStrategy::LEAST_COSTLY_INSERT),
+																	paddedOmplSphereShell);
+};
+
 int main(int argc, char **argv) {
 
+	// Load the apple tree meshes.
 	TreeMeshes meshes = loadTreeMeshes("appletree");
 
-	const auto scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(treeMeshesToMoveitSceneMsg(meshes)));
+	// Convert the meshes to a planning scene message.
+	const auto scene = AppleTreePlanningScene{.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(
+			treeMeshesToMoveitSceneMsg(meshes))), .apples = meshes.fruit_meshes |
+															ranges::views::transform(appleFromMesh) |
+															ranges::to_vector};
 
-	const auto scene = AppleTreePlanningScene {
-			scene_msg, meshes.fruit_meshes | ranges::views::transform(appleFromMesh) | ranges::to_vector};
-
+	// Load the robot model.
 	const auto robot = loadRobotModel();
 
 	using namespace ranges;
-
-	auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene, 0.1));
-	auto shell = std::make_shared<MoveItShellSpace<Eigen::Vector3d >>(robot, workspaceShell);
-
-	DynamicPlannerAllocatorFn dynamic_planner_fre = [](const ompl::base::SpaceInformationPtr &si) -> std::shared_ptr<DynamicMultiGoalPlanner> {
-		return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
-																				si),
-																		std::make_shared<ORToolsTSPMethods>(
-																				ORToolsTSPMethods::UpdateStrategy::FULL_REORDER),
-																		paddedOmplSphereShell);
-	};
 
 	utilities::CanSeeAppleFn distance_occlusion = [](const moveit::core::RobotState &state, const Apple &apple) {
 
@@ -104,40 +119,53 @@ int main(int argc, char **argv) {
 #ifdef STATISTICS
 	ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
-	auto repIds = ranges::views::iota(0, 5);
+	auto repIds = ranges::views::iota(0, 20);
 
 	// Numbers of apples to throw at the planner.
-	const auto nApples = {10, 20};
+	const auto nApples = {10, 50, 100};
 
 	// Generate a range of probabilities, ranging from 0.0 to 1.0.
-	const int nProbabilities = 4;
-	auto probs = ranges::views::iota(0, nProbabilities) | views::transform([](int i) { return i / (double) (nProbabilities - 1); });
+	const int nProbabilities = 5;
+	auto probs = ranges::views::iota(0, nProbabilities) |
+				 views::transform([](int i) { return i / (double) (nProbabilities - 1); });
 
+	// The different occlusion functions.
 	std::vector<std::pair<std::string, utilities::CanSeeAppleFn>> can_see_apple_fns = {
 		std::make_pair("distance", distance_occlusion),
 		std::make_pair("alpha_shape", leaf_alpha_occlusion)
 	};
 
+	// Generate a set of problems based on the carthesian product of the above ranges.
 	auto problems =
 			views::cartesian_product(repIds, probs, nApples, can_see_apple_fns) |
 			views::transform([&](const auto &pair) -> std::pair<Json::Value,DynamicGoalsetPlanningProblem> {
 
+				// Generate a problem for every unique combination of repetition ID,
+				// discoverability degree, total number of apples and occlusion model.
 				const auto &[repId, prob, n_total, can_see_apple] = pair;
 
-				const auto discoverability = generateAppleDiscoverability((int) scene.apples.size(), prob, repId, n_total);
+				// Translate the discoverability degree into a vector of discoverability types/
+				const auto discoverability = generateAppleDiscoverability((int) scene.apples.size(),
+																		  prob,
+																		  repId,
+																		  n_total);
 
+				// Create a JSON object containing the parameters of the problem for later reference.
 				Json::Value problem_params;
 				problem_params["n_given"] = ranges::count(discoverability, AppleDiscoverabilityType::GIVEN);
-				problem_params["n_discoverable"] = ranges::count(discoverability, AppleDiscoverabilityType::DISCOVERABLE);
+				problem_params["n_discoverable"] = ranges::count(discoverability,
+																 AppleDiscoverabilityType::DISCOVERABLE);
 				problem_params["n_total"] = n_total;
 				problem_params["visibility_model"] = can_see_apple.first;
 
+				// Create the problem, to be solved by the planners.
 				DynamicGoalsetPlanningProblem problem {
 					.start_state= randomStateOutsideTree(robot, repId),
 					.apple_discoverability=	discoverability,
 					.can_see_apple=	can_see_apple.second
 				};
 
+				// Return the problem parameters and the problem itself.
 				return {
 					problem_params,
 					problem
@@ -145,37 +173,24 @@ int main(int argc, char **argv) {
 
 			}) | to_vector;
 
-	DynamicPlannerAllocatorFn static_planner = [](const ompl::base::SpaceInformationPtr &si) -> std::shared_ptr<DynamicMultiGoalPlanner> {
-		return std::make_shared<ChangeIgnoringReplannerAdapter>(
-				std::make_shared<ShellPathPlanner<Eigen::Vector3d >>(
-						paddedOmplSphereShell,
-						std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d >>(si),
-						true));
-	};
+	// The different planners to test.
+	std::vector<std::pair<std::string, DynamicPlannerAllocatorFn>> planners = {
+			// A planner that ignores the dynamic goalset, only planning to the initially-given apples.
+			// It will obviously not ve very optimal, but will serve as a baseline.
+			{"change_ignoring",     static_planner},
+			// A planner that uses the dynamic goalset, but uses a greedy approach to insert new goals in the visitation order.
+			{"dynamic_planner_lci", dynamic_planner_lci},
+			// A planner that uses the dynamic goalset, and completely reorders the visitation order from scratch every time a goal is added.
+			{"dynamic_planner_fre", dynamic_planner_fre}};
 
-	DynamicPlannerAllocatorFn dynamic_planner_lci = [](const ompl::base::SpaceInformationPtr &si) -> std::shared_ptr<DynamicMultiGoalPlanner> {
-		return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(
-				std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si),
-				std::make_shared<ORToolsTSPMethods>(ORToolsTSPMethods::UpdateStrategy::LEAST_COSTLY_INSERT),
-				paddedOmplSphereShell
-		);
-	};
-
-	std::vector<std::pair<std::string, DynamicPlannerAllocatorFn>> planners =
-			{
-			{"change_ignoring", static_planner},
-//			{"dynamic_planner_lci", dynamic_planner_lci},
-			{"dynamic_planner_fre", dynamic_planner_fre}
-			};
-
+	// Take the carthesian product of the different planners and problems,
+	// making it so that every planner is tested on every problem.
 	auto experiments = views::cartesian_product(planners, problems) | views::transform([](const auto &pair) {
 		const auto &[planner, problem] = pair;
-		return Experiment {
-			.planner= &planner,
-			.problem= &problem
-		};
+		return Experiment{.planner= &planner, .problem= &problem};
 	}) | to_vector;
 
+	// Run the experiments in parallel.
 	runExperimentsParallelRecoverable<Experiment>(experiments, [&](const Experiment &experiment) {
 
 		// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
@@ -186,10 +201,13 @@ int main(int argc, char **argv) {
 		// we'll need to copy this for every thread
 		auto si = loadSpaceInformation(ss, scene);
 
+		// Allocate the planner.
 		auto ompl_planner = experiment.planner->second(si);
 
+		// Wrap it into the adapter that lets us use it with MoveIt types.
 		auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(ompl_planner, si, ss);
 
+		// Create the evaluation object.
 		DynamicGoalVisitationEvaluation eval(
 				adapter,
 				experiment.problem->second.start_state,
@@ -198,16 +216,20 @@ int main(int argc, char **argv) {
 				experiment.problem->second.can_see_apple
 				);
 
+		// Record the start time.
 		auto start_time = std::chrono::high_resolution_clock::now();
 
+		// Run the planner for the initial set of goals.
 		eval.computeNextTrajectory();
 
+		// Run the planner until it has no more goals to visit and returns nullopt.
 		while (eval.getUpcomingGoalEvent().has_value()) {
 			if (!eval.computeNextTrajectory().has_value()) {
 				break;
 			}
 		}
 
+		// Record the end time.
 		auto end_time = std::chrono::high_resolution_clock::now();
 
 		int n_visited = (int) ranges::count_if(eval.getDiscoveryStatus(),
@@ -226,7 +248,7 @@ int main(int argc, char **argv) {
 
 		return result;
 
-	}, "analysis/data/dynamic_log.json", 16, 8, 42);
+	}, "analysis/data/dynamic_log.json", 32, 16, 42);
 #else
 
 	const auto start_state = randomStateOutsideTree(robot, 0);
