@@ -13,7 +13,7 @@
 
 std::vector<size_t> ORToolsTSPMethods::initial_ordering(size_t n,
 														std::function<double(size_t, size_t)> distance,
-														std::function<double(size_t)> first_distance) {
+														std::function<double(size_t)> first_distance) const {
 
 	return tsp_open_end(first_distance, distance, n);
 
@@ -90,7 +90,7 @@ size_t optimal_insertion_point(size_t old_n,
 std::vector<IncrementalTSPMethods::NewOrderingEntry> ORToolsTSPMethods::update_ordering(size_t old_n,
 																						std::function<double(const NewOrderingEntry &,
 																											 const NewOrderingEntry &)> distance,
-																						std::function<double(const NewOrderingEntry &)> first_distance) {
+																						std::function<double(const NewOrderingEntry &)> first_distance) const {
 
 	// Change the order based on the given update strategy.
 	switch (update_strategy) {

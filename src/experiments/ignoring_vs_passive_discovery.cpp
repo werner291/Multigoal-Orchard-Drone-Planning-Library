@@ -28,10 +28,6 @@
 #include <vtkProperty.h>
 #include <range/v3/view/iota.hpp>
 
-Apple appleFromMesh(const shape_msgs::msg::Mesh &mesh) {
-	return Apple{mesh_aabb(mesh).center(), {0.0, 0.0, 0.0}};
-}
-
 using DynamicPlannerAllocatorFn = std::function<std::shared_ptr<DynamicMultiGoalPlanner>(const ompl::base::SpaceInformationPtr &)>;
 
 std::shared_ptr<OmplShellSpace<Eigen::Vector3d>> paddedOmplSphereShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {

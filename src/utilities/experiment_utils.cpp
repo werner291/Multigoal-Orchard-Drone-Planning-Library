@@ -29,6 +29,7 @@
 #include "json_utils.h"
 #include "general_utilities.h"
 #include "../DroneStateConstraintSampler.h"
+#include "mesh_utils.h"
 
 
 std::vector<LeafCollisions> collectLeafCollisionStats(const LeavesCollisionChecker &leavesCollisionChecker,
@@ -324,4 +325,8 @@ generateAppleDiscoverability(int all_apples, double p, int seed, int apples_in_t
 
 	return apple_discoverability;
 
+}
+
+Apple appleFromMesh(const shape_msgs::msg::Mesh &mesh) {
+	return Apple{mesh_aabb(mesh).center(), {0.0, 0.0, 0.0}};
 }

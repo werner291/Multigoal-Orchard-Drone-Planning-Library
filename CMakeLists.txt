@@ -255,7 +255,13 @@ add_library(${PROJECT_NAME}_shared
         src/ORToolsTSPMethods.cpp
         src/ORToolsTSPMethods.h
         src/DynamicGoalsetPlanningProblem.cpp
-        src/DynamicGoalsetPlanningProblem.h src/utilities/alpha_shape.cpp src/utilities/alpha_shape.h src/utilities/MeshOcclusionModel.cpp src/utilities/MeshOcclusionModel.h src/AppleDiscoveryModel.cpp src/AppleDiscoveryModel.h)
+        src/DynamicGoalsetPlanningProblem.h
+        src/utilities/alpha_shape.cpp
+        src/utilities/alpha_shape.h
+        src/utilities/MeshOcclusionModel.cpp
+        src/utilities/MeshOcclusionModel.h
+        src/AppleDiscoveryModel.cpp
+        src/AppleDiscoveryModel.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -274,8 +280,11 @@ experiment("shellpath_shell_bias")
 experiment("shell_comparison")
 experiment("tsp_over_prm_vs_sphereshell")
 experiment("shell_comparison_sphere_armangle")
+experiment("greatcircle_correlation")
+experiment("sphere_vs_chull_static")
 experiment("exploration")
 experiment("ignoring_vs_passive_discovery")
+experiment("lci_vs_full_reorder_timing")
 
 include(GoogleTest)
 

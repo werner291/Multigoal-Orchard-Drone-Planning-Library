@@ -28,12 +28,12 @@ public:
 
 	std::vector<size_t> initial_ordering(size_t n,
 										 std::function<double(size_t, size_t)> distance,
-										 std::function<double(size_t)> first_distance) override;
+										 std::function<double(size_t)> first_distance) const override;
 
 	std::vector<NewOrderingEntry> update_ordering(size_t old_n,
 												  std::function<double(const NewOrderingEntry &,
 																	   const NewOrderingEntry &)> distance,
-												  std::function<double(const NewOrderingEntry &)> first_distance) override;
+												  std::function<double(const NewOrderingEntry &)> first_distance) const override;
 
 
 };

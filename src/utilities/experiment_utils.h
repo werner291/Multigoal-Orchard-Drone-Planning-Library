@@ -201,4 +201,6 @@ enum AppleDiscoverabilityType {
 std::vector<AppleDiscoverabilityType>
 generateAppleDiscoverability(int all_apples, double p, int seed, int apples_in_test);
 
+Apple appleFromMesh(const shape_msgs::msg::Mesh &mesh);
+
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

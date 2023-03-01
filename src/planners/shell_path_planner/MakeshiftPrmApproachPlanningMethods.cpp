@@ -6,6 +6,7 @@
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include "MakeshiftPrmApproachPlanningMethods.h"
 #include "../../DronePathLengthObjective.h"
+#include "../../shell_space/CuttingPlaneConvexHullShell.h"
 
 template<typename ShellPoint>
 MakeshiftPrmApproachPlanningMethods<ShellPoint>::MakeshiftPrmApproachPlanningMethods(ompl::base::SpaceInformationPtr si)
@@ -74,3 +75,7 @@ MakeshiftPrmApproachPlanningMethods<ShellPoint>::approach_path(const ompl::base:
 // Explicit instantiation for Eigen::Vector3d.
 template
 class MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>;
+
+// Explicit instantiation for ConvexHullPoint
+template
+class MakeshiftPrmApproachPlanningMethods<ConvexHullPoint>;

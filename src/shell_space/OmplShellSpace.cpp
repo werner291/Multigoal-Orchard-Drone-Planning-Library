@@ -1,4 +1,5 @@
 #include "OmplShellSpace.h"
+#include "CuttingPlaneConvexHullShell.h"
 
 template<typename ShellPoint>
 ShellPoint OmplShellSpace<ShellPoint>::pointNearGoal(const ompl::base::Goal *goal) const {
@@ -71,3 +72,6 @@ OmplShellSpace<ShellPoint>::OmplShellSpace(ompl::base::SpaceInformationPtr si,
 
 template
 class OmplShellSpace<Eigen::Vector3d>;
+
+template
+class OmplShellSpace<ConvexHullPoint>;

@@ -1,5 +1,6 @@
 #include <range/v3/view/filter.hpp>
 #include "ShellPathPlanner.h"
+#include "../shell_space/CuttingPlaneConvexHullShell.h"
 
 template<typename ShellPoint>
 ShellPathPlanner<ShellPoint>::ShellPathPlanner(MkOmplShellFn<ShellPoint> shellBuilder,
@@ -154,3 +155,6 @@ ompl::geometric::PathGeometric ShellPathPlanner<ShellPoint>::buildGoalToGoal(con
 // Explicitly instantiate the planner for the shell point type Eigen::Vector3d (used with the sphere).
 template
 class ShellPathPlanner<Eigen::Vector3d>;
+
+template
+class ShellPathPlanner<ConvexHullPoint>;

@@ -1,83 +1,95 @@
-
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include <fstream>
-#include <ompl/geometric/planners/prm/PRMstar.h>
+#include <range/v3/view/transform.hpp>
+#include <range/v3/range/conversion.hpp>
 #include "../utilities/experiment_utils.h"
-#include "../src/thread_pool.hpp"
-#include "../DronePathLengthObjective.h"
 #include "../GreatCircleMetric.h"
 #include "../probe_retreat_move.h"
+#include "../shell_space/SphereShell.h"
+#include "../planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"
 
 int main(int argc, char **argv) {
 
-    auto drone = loadRobotModel();
-    auto scene = createMeshBasedAppleTreePlanningSceneMessage("appletree");
+	// Load the apple tree meshes.
+	TreeMeshes meshes = loadTreeMeshes("appletree");
+	auto drone = loadRobotModel();
 
-    auto planning_pairs = samplePlanningPairs(setupPlanningScene(scene.scene_msg, drone), drone, scene.apples, 1000);
+	// Convert the meshes to a planning scene message.
+	const auto scene = AppleTreePlanningScene{.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(
+			treeMeshesToMoveitSceneMsg(meshes))), .apples = meshes.fruit_meshes |
+															ranges::views::transform(appleFromMesh) |
+															ranges::to_vector};
 
-    const GreatCircleMetric gsm(scene.sphere_center);
+	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
+	// So, we just re-create the state space every time just to be safe.
+	auto ss = omplStateSpaceForDrone(drone);
 
-    thread_pool pool(std::thread::hardware_concurrency());
+	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
+	// we'll need to copy this for every thread
+	auto si = loadSpaceInformation(ss, scene);
 
-    struct PlanResult {
-        double state_to_state_distance_prm;
-        double state_to_state_distance_optimized;
-        double euclidean_distance;
-        double greatcircle_distance;
-    };
+	auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene, 0.1));
+	auto shell = OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(workspaceShell, si);
 
-    std::vector<std::future<PlanResult>> results;
-    for (const auto &pair : planning_pairs) {
-        results.push_back(pool.submit([&]() -> PlanResult {
-            ompl_interface::ModelBasedStateSpaceSpecification spec(drone, "whole_body");
-            auto state_space = std::make_shared<DroneStateSpace>(spec, TRANSLATION_BOUND);
-            state_space->setup();
-            auto si = initSpaceInformation(setupPlanningScene(scene.scene_msg, drone), drone, state_space);
+	auto approach_planner = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
 
-            auto objective = std::make_shared<DronePathLengthObjective>(si);
+	Json::Value results;
 
-            double euclidean_distance = (scene.apples[pair.from_target].center - scene.apples[pair.to_target].center).norm();
-            double gcm_distance = gsm.measure(scene.apples[pair.from_target].center, scene.apples[pair.to_target].center);
+	for (size_t i = 0; i < 500; ++i) {
 
-            double state_to_state_distance_prm = INFINITY;
-            double state_to_state_distance_optimized = INFINITY;
+		// Pick two random apples.
 
-            {
-                auto planner = std::make_shared<ompl::geometric::PRMstar>(si);
+		std::random_device rd;
+		std::mt19937 rng(rd());
 
-                auto plan_result = planFromStateToState(*planner, objective, pair.from_state.get(), pair.to_state.get(), 10.0);
+		size_t apple_i = std::uniform_int_distribution<size_t>(0, scene.apples.size() - 1)(rng);
+		size_t apple_j = std::uniform_int_distribution<size_t>(0, scene.apples.size() - 2)(rng);
+		if (apple_j >= apple_i) {
+			apple_j++;
+		}
 
-                if (plan_result) {
-                    state_to_state_distance_prm = plan_result->length();
-                    state_to_state_distance_optimized = optimize(*plan_result, objective, si).length();
-                }
-            }
+		ompl::base::GoalPtr goal_i = std::make_shared<DroneEndEffectorNearTarget>(si,
+																				  0.05,
+																				  scene.apples[apple_i].center);
+		ompl::base::GoalPtr goal_j = std::make_shared<DroneEndEffectorNearTarget>(si,
+																				  0.05,
+																				  scene.apples[apple_j].center);
 
-            return {
-                    state_to_state_distance_prm,
-                    state_to_state_distance_optimized,
-                    euclidean_distance,
-                    gcm_distance
-            };
-        }));
-    }
+		// Plan approaches to the apples.
+		auto approach_i = approach_planner->approach_path(goal_i, *shell);
+		auto approach_j = approach_planner->approach_path(goal_j, *shell);
 
-    Json::Value json;
-    for (auto &item : results) {
-        Json::Value pair_json;
-        const PlanResult &result = item.get();
-        pair_json["state_to_state_distance_prm"] = result.state_to_state_distance_prm;
-        pair_json["state_to_state_distance_optimized"] = result.state_to_state_distance_optimized;
-        pair_json["euclidean_distance"] = result.euclidean_distance;
-        pair_json["greatcircle_distance"] = result.greatcircle_distance;
-        json.append(pair_json);
+		// Skip if these fail.
+		if (!approach_i || !approach_j) {
+			continue;
+		}
 
-        std::cout << "Done " << json.size() << " out of " << planning_pairs.size() << std::endl;
-    }
+		Json::Value result;
 
-    std::ofstream ofs;
-    ofs.open("analysis/greatcircle_euclidean_actual.json");
-    ofs << json;
-    ofs.close();
+		result["shell_path_length"] = shell->predict_path_length(approach_i->shell_point, approach_j->shell_point);
+		result["euclidean_path_length"] = (scene.apples[apple_i].center - scene.apples[apple_j].center).norm();
+
+		// Plan a path between the two apples.
+		ompl::geometric::PathGeometric path(si);
+		path.append(approach_i->robot_path);
+		path.reverse();
+		path.append(shell->shellPath(approach_i->shell_point, approach_j->shell_point));
+		path.append(approach_j->robot_path);
+
+		result["actual_length_unoptimized"] = path.length();
+
+		// Optimize the path.
+		result["actual_length"] = optimize(path, std::make_shared<DronePathLengthObjective>(si), si).length();
+
+		std::cout << "Completed run " << i << std::endl;
+
+		results.append(result);
+
+	}
+
+	std::ofstream ofs;
+	ofs.open("analysis/greatcircle_actual.json");
+	ofs << results;
+	ofs.close();
 
 }
