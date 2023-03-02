@@ -85,15 +85,15 @@ public:
 	 *
 	 * @param si The space information.
 	 * @param shell The shell space.
-	 * @param approach_paths The set of approach paths.
-	 * @param i The index of the current goal.
+	 * @param approach_path_1 The approach path to the goal that the robot will be retreating from.
+	 * @param approach_path_2 The approach path to the goal that the robot will be approaching.
 	 *
 	 * @return A PathGeometric object containing the goal-to-goal path.
 	 */
 	[[nodiscard]] ompl::geometric::PathGeometric buildGoalToGoal(const ompl::base::SpaceInformationPtr &si,
 																 const OmplShellSpace<ShellPoint> &shell,
-																 const std::vector<OmplApproachPath<ShellPoint>> &approach_paths,
-																 size_t i) const;
+																 const OmplApproachPath<ShellPoint> &approach_path_1,
+																 const OmplApproachPath<ShellPoint> &approach_path_2) const;
 
 	/**
 	 * @brief Builds an initial approach path from the start state to the first goal.
@@ -108,18 +108,7 @@ public:
 	[[nodiscard]] ompl::geometric::PathGeometric buildInitialApproach(const ompl::base::SpaceInformationPtr &si,
 																	  const OmplShellSpace<ShellPoint> &shell,
 																	  const std::optional<OmplApproachPath<ShellPoint>> &initial_approach,
-																	  const std::vector<OmplApproachPath<ShellPoint>> &approach_paths) const;
-
-	/**
-	 * @brief Computes the set of approach paths for a given set of goals and a shell space.
-	 *
-	 * @param goals The set of goals.
-	 * @param shell The shell space.
-	 *
-	 * @return A vector containing the set of approach paths.
-	 */
-	std::vector<OmplApproachPath<ShellPoint>>
-	mkApproachPaths(const std::vector<ompl::base::GoalPtr> &goals, const OmplShellSpace<ShellPoint> &shell) const;
+																	  const OmplApproachPath<ShellPoint>& approach_to_first_goal) const;
 
 	/**
 	 * @brief Returns the parameters of the planner as a JSON object.

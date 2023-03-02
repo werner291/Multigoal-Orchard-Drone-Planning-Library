@@ -84,6 +84,8 @@ std::vector<size_t> tsp_open_end(
 
     const operations_research::Assignment* solution = routing.SolveWithParameters(searchParameters);
 
+	assert(solution != nullptr);
+
     // Translate the internal ordering into an ordering on the apples.
     std::vector<size_t> ordering;
 

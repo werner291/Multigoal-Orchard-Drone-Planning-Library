@@ -527,8 +527,14 @@ double CuttingPlaneConvexHullShell::path_length(const std::shared_ptr<ShellPath<
 
 	for (size_t i = 0; i + 1 < p->points.size(); ++i) {
 		length += (p->points[i].position - p->points[i + 1].position).norm();
-		length += std::acos(facet_normal(p->points[i].face_id).dot(facet_normal(p->points[i + 1].face_id)));
+
+		double angle_tan = facet_normal(p->points[i].face_id).dot(facet_normal(p->points[i + 1].face_id));
+		// We clamp the angle_tan to [-1, 1] to avoid NaNs, since rounding
+		// errors can cause it to be slightly outside that range.
+		length += std::acos(std::clamp(angle_tan, -1.0, 1.0));
 	}
+
+
 
 	return length;
 }

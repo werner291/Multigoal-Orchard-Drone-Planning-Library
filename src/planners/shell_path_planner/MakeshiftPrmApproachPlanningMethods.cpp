@@ -41,6 +41,11 @@ MakeshiftPrmApproachPlanningMethods<ShellPoint>::approach_path(const ompl::base:
 
 	shell.stateFromPoint(shellPoint, shell_state.get());
 
+	if (!si->isValid(shell_state.get())) {
+		std::cout << "Shell point is not valid" << std::endl;
+		return std::nullopt;
+	}
+
 	auto path = single_goal_planner_methods->state_to_state(shell_state.get(), start);
 
 	if (path) {
@@ -62,6 +67,11 @@ MakeshiftPrmApproachPlanningMethods<ShellPoint>::approach_path(const ompl::base:
 	ShellPoint shellPoint = shell.pointNearGoal(goal.get());
 
 	shell.stateFromPoint(shellPoint, shell_state.get());
+
+	if (!si->isValid(shell_state.get())) {
+		std::cout << "Shell point is not valid" << std::endl;
+		return std::nullopt;
+	}
 
 	auto path = single_goal_planner_methods->state_to_goal(shell_state.get(), goal);
 

@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
 #ifdef STATISTICS
 	ompl::msg::setLogLevel(ompl::msg::LOG_ERROR);
 
-	auto repIds = ranges::views::iota(0, 5);
+	auto repIds = ranges::views::iota(0, 10);
 
 	// Numbers of apples to throw at the planner.
 	const auto nApples = {10, 50, 100};
@@ -121,8 +121,10 @@ int main(int argc, char **argv) {
 	};
 
 	// The different planners to test.
-	std::vector<std::pair<std::string, StaticPlannerAllocatorFn>> planners = {{"sphere", make_sphere_planner},
-																			  {"chull",  make_chull_planner}};
+	std::vector<std::pair<std::string, StaticPlannerAllocatorFn>> planners = {
+			{"sphere", make_sphere_planner},
+			{"chull",  make_chull_planner}
+	};
 
 	// Take the carthesian product of the different planners and problems,
 	// making it so that every planner is tested on every problem.
@@ -165,26 +167,22 @@ int main(int argc, char **argv) {
 		auto end_time = std::chrono::high_resolution_clock::now();
 
 		// Check whether the path segments actually connect to each other.
-		for (int i = 0; i < eval.segments.size() - 1; ++i) {
+		for (int i = 0; i + 1 < eval.segments.size(); ++i) {
 			const auto &segment = eval.segments[i];
 			const auto &next_segment = eval.segments[i + 1];
+			assert(segment.path_.getStateCount() > 0);
 			assert(si->distance(segment.path_.getState(segment.path_.getStateCount() - 1),
 								next_segment.path_.getState(0)) < 1e-3);
 		}
 
-		std::vector<bool> visited(scene.apples.size(), false);
-		for (const auto &segment: eval.segments) {
-			visited[segment.to_goal_id_] = true;
-		}
-
 		Json::Value result;
-		result["n_visited"] = ranges::count(visited, true);
+		result["n_visited"] = eval.segments.size();
 		result["time"] = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
 		result["total_path_length"] = eval.length();
 
 		return result;
 
-	}, "analysis/data/dynamic_log.json", 32, 16, 42);
+	}, "analysis/data/static_sphere_vs_chull.json", 8, 4, 42);
 #else
 
 	const auto start_state = randomStateOutsideTree(robot, 0);
@@ -210,4 +208,6 @@ int main(int argc, char **argv) {
 	visualizeEvaluation(meshes, scene, robot, start_state, apple_discoverability, eval);
 
 #endif
+
+	return 0;
 }
