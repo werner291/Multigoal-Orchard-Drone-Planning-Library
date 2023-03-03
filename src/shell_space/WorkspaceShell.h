@@ -83,6 +83,7 @@ public:
 	 */
 	virtual std::shared_ptr<ShellPath<ShellPoint>> path_from_to(const ShellPoint& from, const ShellPoint& to) const = 0;
 
+
 	/**
 	 * Return a random shell point on the shell near a given one.
 	 */

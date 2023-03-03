@@ -138,206 +138,43 @@ void CuttingPlaneConvexHullShell::match_faces() {
 	}
 }
 
+/**
+ * Generate a path of ConversHullPoints from the given start to the given goal across the surface of the convex hull.
+ *
+ * At every edge traversal, a point will be generated for the facet being exited, and a point for the facet being entered,
+ * so note that the returned path will contain duplicate points in Euclidean terms.
+ *
+ * @param a	The start point.
+ * @param b	The goal point.
+ * @return	A vector of ConvexHullPoints.
+ */
 std::shared_ptr<ShellPath<ConvexHullPoint>>
 CuttingPlaneConvexHullShell::path_from_to(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
 
-	std::vector<ConvexHullPoint> walk;
+	// Find all the facets that are intersected by the cutting plane.
+	Eigen::Vector3d support_point = computeSupportPoint(a, b);
 
-	if (a.face_id == b.face_id) {
-		// This is trivial: the walk is just the two points.
-		walk = {a, b};
+	// If a,b,c are collinear, then just return the straight line between a and b.
+	if (std::abs((a.position - support_point).norm() + (b.position - support_point).norm() -
+				 (a.position - b.position).norm()) < 1e-6) {
+
+		std::vector<ConvexHullPoint> walk = {a, b};
+		return std::make_shared<PiecewiseLinearPath<ConvexHullPoint>>(walk);
+
 	} else {
 
-		// A quick-and-dirty greedy approximation of the geodesic distance between the two points on the convex hull.
-		// We start from point A, then "walk" along the surface of the convex hull, and then end up at point B.
+		// We'll perform a simple, A*-like search to find the path.
+		Plane3d cutting_plane((a.position - support_point).cross(b.position - support_point).normalized(),
+							  support_point);
 
-		// We first compute a cutting plane. The "walk" will be part of the intersection of the cutting plane with the
-		// convex hull, between points A and B.
-		Eigen::Vector3d support_point = computeSupportPoint(a, b);
-		const auto cutting_plane = plane_from_points(a.position, b.position, support_point);
+		return std::make_shared<PiecewiseLinearPath<ConvexHullPoint>>(along_cutting_plane(a, b, cutting_plane));
 
-		// The current walk, which we will gradually build up as the algorithm iterates.
-		walk.push_back(a);
-
-		// Keep going until we reach the end point.
-		while (walk.back().face_id != b.face_id && (walk.back().position - b.position).squaredNorm() > 1e-10) {
-
-			// Compute the next step.
-			ConvexHullPoint next_point = walk_step(b, support_point, cutting_plane, walk);
-
-			// To ensure smooth interpolation, we split the next step between one that moves to the exit point
-			// of the current facet, then transition sto the new facet (likely with a different normal).
-			walk.push_back(ConvexHullPoint{walk.back().face_id, next_point.position});
-			walk.push_back(next_point);
-
-		}
-
-		// Push the end point onto the walk.
-		walk.push_back(b);
 	}
 
-	return std::make_shared<PiecewiseLinearPath<ConvexHullPoint>>(walk);
-}
-
-std::optional<ConvexHullPoint> CuttingPlaneConvexHullShell::step_through_edge_in_cutting_plane(const ConvexHullPoint &b,
-																							   const Eigen::Vector3d &support_point,
-																							   const Plane3d &cutting_plane,
-																							   const std::vector<ConvexHullPoint> &walk) const {
-
-	// If of the face the walk is currently on.
-	size_t current_face = walk.back().face_id;
-
-	for (auto edge: {EDGE_AB, EDGE_BC, EDGE_CA}) {
-
-		// Look up the Carthesian coordinates of the two vertices of the edge.
-		const auto [vp, vq] = facet_edge_vertices(current_face, edge);
-
-		// Check if the edge fully lies in the plane (by both vertices lying on the plane).
-		if (cutting_plane.absDistance(vp) < EPSILON && cutting_plane.absDistance(vq) < EPSILON) {
-
-			// Project the goal point onto the line that extends the edge.
-			Eigen::ParametrizedLine<double, 3> edge_line(vp, vq - vp);
-
-			// Restrict so we don't overshoot the edges of the triangle.
-			double t = std::clamp(projectionParameter(edge_line, b.position), 0.0, 1.0);
-
-			// Step to that point, and across the edge.
-			// (FIXME: this might get into an infinite loop if we have colinear edges in the convex hull)
-			return {ConvexHullPoint{facets[current_face].neighbour(edge), edge_line.pointAt(t)}};
-		}
-	}
-
-	return std::nullopt;
-
-}
-
-ConvexHullPoint CuttingPlaneConvexHullShell::walk_step(const ConvexHullPoint &b,
-													   const Eigen::Vector3d &support_point,
-													   const Plane3d &cutting_plane,
-													   const std::vector<ConvexHullPoint> &walk) const {
-
-	if (auto edge_step = step_through_edge_in_cutting_plane(b, support_point, cutting_plane, walk)) {
-		return *edge_step;
-	} else if (walk.size() == 1) {
-		// This is the first step on the walk. We don't have to worry about stepping back as much
-		// as we should worry about departing in the right direction.
-		return firstStep(support_point, cutting_plane, walk.back());
-	} else {
-		return nextStep(walk.back(), cutting_plane, walk[walk.size() - 3].face_id);
-	}
-}
-
-std::optional<ConvexHullPoint>
-CuttingPlaneConvexHullShell::strictEdgeTraversal(size_t face_id, TriangleEdgeId edge, const Plane3d &cutting_plane) const {
-
-	// ... look up the Carthesian coordinates of the two vertices of the edge,
-	const auto [vp, vq] = facet_edge_vertices(face_id, edge);
-
-	// ... compute the intersection of the extension of the edge with the cutting plane
-	Eigen::ParametrizedLine<double, 3> edge_line(vp, vq - vp);
-	double t = edge_line.intersectionParameter(cutting_plane);
-	Eigen::Vector3d pt = edge_line.pointAt(t);
-
-	if (0.0 + EPSILON < t && t + EPSILON < 1.0) {
-		return {{facet(face_id).neighbour(edge), pt}};
-	} else {
-		return {};
-	}
-}
-
-std::optional<ConvexHullPoint> CuttingPlaneConvexHullShell::firstStepThroughEdges(const Eigen::Vector3d &towards_point,
-																				  const Plane3d &cutting_plane,
-																				  const ConvexHullPoint &start_point) const {
-
-	// Id of the face the walk is currently on.
-	size_t current_face = start_point.face_id;
-
-	ConvexHullPoint next_point;
-	double d_min = INFINITY;
-
-	// For every edge...
-	for (auto edge: {EDGE_AB, EDGE_BC, EDGE_CA}) {
-		if (auto pt = strictEdgeTraversal(current_face, edge, cutting_plane)) {
-			// ... compute the distance to the edge.
-			double d = (pt->position - towards_point).norm();
-			if (d < d_min) {
-				d_min = d;
-				next_point = *pt;
-			}
-		}
-	}
-
-	// If we found a point, return it.
-	if (d_min < INFINITY) {
-		return next_point;
-	} else {
-		// There is no clean intersection.
-		return std::nullopt;
-	}
-
-}
-
-
-ConvexHullPoint CuttingPlaneConvexHullShell::firstStep(const Eigen::Vector3d &towards_point,
-													   const Plane3d &cutting_plane,
-													   const ConvexHullPoint &start_point) const {
-
-	size_t current_face = start_point.face_id;
-
-	if (auto through_edges = firstStepThroughEdges(towards_point, cutting_plane, start_point)) {
-		return *through_edges;
-	} else {
-		const auto &[va, vb, vc] = facet_vertices(current_face);
-
-		// We must be at a corner. Pick the edge whose middle point is on_which_mesh.
-		for (TriangleVertexId v: {TriangleVertexId::VERTEX_A, TriangleVertexId::VERTEX_B, TriangleVertexId::VERTEX_C}) {
-
-			auto f = facet(current_face);
-
-			if (cutting_plane.absDistance(vertex(f.vertex(v))) < EPSILON) {
-				return stepAroundVertexTowards(towards_point, current_face, v);
-			}
-		}
-
-		throw std::runtime_error("No corner on the cutting plane. Is there an intersection at all?");
-	}
-
-
-}
-
-ConvexHullPoint CuttingPlaneConvexHullShell::stepAroundVertexTowards(const Eigen::Vector3d &towards_point,
-																	 size_t current_face,
-																	 TriangleVertexId &v) const {
-	// Look up the facet.
-	const auto &f = facet(current_face);
-
-	// Find the edges adjacent to the vertex
-	auto adjacent = edges_adjacent_to_vertex(v);
-
-	// Look up their vertices
-	auto [p1, q1] = facet_edge_vertices(current_face, adjacent[0]);
-	auto [p2, q2] = facet_edge_vertices(current_face, adjacent[1]);
-
-	// Compute the distance of their middle point to the direction indicator point
-	double d1 = (towards_point - ((p1 + q1) / 2.0)).squaredNorm();
-	double d2 = (towards_point - ((p2 + q2) / 2.0)).squaredNorm();
-
-	// Return a step to the on_which_mesh one, using the vertex itself as the (carthesian) point being stepped to.
-	if (d1 < d2) {
-		return {f.neighbour(adjacent[0]), vertex(f.vertex(v))};
-	} else {
-		return {f.neighbour(adjacent[1]), vertex(f.vertex(v))};
-	}
 }
 
 Eigen::Vector3d CuttingPlaneConvexHullShell::computeSupportPoint(const ConvexHullPoint &a, const ConvexHullPoint &b) const {
-	// Grab the middle point and project it onto the convex hull
-	ConvexHullPoint middle_proj = nearest_point_on_shell(0.5 * (a.position + b.position));
-	// Compute the normal at that point
-	Eigen::Vector3d middle_normal = facet_normal(middle_proj.face_id);
-	// Send it off along the normal a bit to ensure we avoid colinear points.
-	Eigen::Vector3d middle_proj_euc = middle_proj.position + middle_normal;
-	return middle_proj_euc;
+	return nearest_point_on_shell(0.5 * (a.position + b.position)).position;
 }
 
 size_t CuttingPlaneConvexHullShell::num_facets() const {
@@ -383,40 +220,6 @@ Eigen::Vector3d CuttingPlaneConvexHullShell::facet_normal(size_t i) const {
 	const auto &[a, b, c] = facet_vertices(i);
 
 	return (b - a).cross(c - a).normalized();
-}
-
-ConvexHullPoint CuttingPlaneConvexHullShell::nextStep(const ConvexHullPoint &current_point,
-													  const Plane3d &cutting_plane,
-													  size_t last_face_id) const {
-
-	// Look up the facet data.
-	const Facet &f = facet(current_point.face_id);
-
-	// Check if there is a clean intersection with an edge that doesn't lead to the facet we just came from.
-	for (auto edge: {EDGE_AB, EDGE_BC, EDGE_CA}) {
-		if (f.neighbour(edge) != last_face_id) {
-			if (auto intersection = strictEdgeTraversal(current_point.face_id, edge, cutting_plane)) {
-				// We found one! This is the easy case, we just return it.
-				return *intersection;
-			}
-		}
-	}
-
-	// There was no clean interior intersection with one of the edges... We must be intersecting at a vertex!
-	for (auto vertex: {VERTEX_A, VERTEX_B, VERTEX_C}) {
-		if (cutting_plane.absDistance(vertices[f.vertex(vertex)]) < 1e-6) {
-			// We found the vertex we're intersecting with (which coincides with it lying on the plane).
-
-			for (auto edge: edges_adjacent_to_vertex(vertex)) {
-				// We step through the edge adjacent to the vertex that leads to a different facet than the one we came from.
-				if (f.neighbour(edge) != last_face_id) {
-					return {f.neighbour(edge), vertices[f.vertex(vertex)]};
-				}
-			}
-		}
-	}
-
-	throw std::runtime_error("Could not find an exit point. There may not be an intersection?");
 }
 
 std::array<Eigen::Vector3d, 2> CuttingPlaneConvexHullShell::facet_edge_vertices(size_t face_i, TriangleEdgeId edge_id) const {
@@ -534,9 +337,134 @@ double CuttingPlaneConvexHullShell::path_length(const std::shared_ptr<ShellPath<
 		length += std::acos(std::clamp(angle_tan, -1.0, 1.0));
 	}
 
-
-
 	return length;
+}
+
+struct FaceVisit {
+	std::shared_ptr<FaceVisit> previous;
+	ConvexHullPoint entry_point;
+	double distance;
+};
+
+bool operator<(const std::shared_ptr<FaceVisit> &a, const std::shared_ptr<FaceVisit> &b) {
+	return a->distance > b->distance;
+}
+
+std::vector<ConvexHullPoint> CuttingPlaneConvexHullShell::along_cutting_plane(const ConvexHullPoint &a,
+																			  const ConvexHullPoint &b,
+																			  const Plane3d &cutting_plane) const {
+
+	// We will use Dijkstra's algorithm to find the shortest path between the two points.
+
+	// Create a priority queue and add the starting point.
+	std::priority_queue<std::shared_ptr<FaceVisit>> queue;
+	queue.push(std::make_shared<FaceVisit>(FaceVisit{.previous = nullptr, .entry_point = a, .distance = 0.0}));
+
+	// Keep track of which faces we have visited, so we don't visit them again.
+	std::vector<bool> visited(facets.size(), false);
+
+	// Keep track of the exit face, so we can reconstruct the path.
+	// Will be set once we reach the exit face, nullptr until then.
+	std::shared_ptr<FaceVisit> exit_face;
+
+	while (!queue.empty()) { // Keep going until we have no more faces to visit.
+
+		// Get the next face to visit.
+		auto visit = queue.top();
+		queue.pop();
+
+		// If we have already visited this face, skip it. Note that we can't do this on queue insertion,
+		// because at that point we'd have to inspect the entire queue to see if the candidate is already
+		// in there. It's easier to put the filter here.
+		if (visited[visit->entry_point.face_id]) {
+			continue;
+		}
+
+		// Mark this face as visited.
+		visited[visit->entry_point.face_id] = true;
+
+		// If we have reached the exit face, we're done.
+		if (visit->entry_point.face_id == b.face_id) {
+			exit_face = visit;
+			break;
+		}
+
+		// Look at every edge of this facet.
+		for (TriangleEdgeId edge_id: {TriangleEdgeId::EDGE_AB, TriangleEdgeId::EDGE_BC, TriangleEdgeId::EDGE_CA}) {
+
+			// Get the vertices of this edge.
+			const auto &[p, q] = facets[visit->entry_point.face_id].edge_vertices(edge_id);
+			auto pt_p = vertices[p];
+			auto pt_q = vertices[q];
+
+			// Create a segment from the edge.
+			math_utils::Segment3d edge(pt_p, pt_q);
+
+			// Generate a new ConvexHullPoint for the entry point of the next facet.
+			ConvexHullPoint exit_point;
+			exit_point.face_id = facets[visit->entry_point.face_id].neighbour(edge_id);
+
+			// Find the intersection of the edge with the cutting plane.
+			auto intersection = find_intersection(edge, cutting_plane, 1.0e-6);
+
+			if (std::holds_alternative<std::monostate>(intersection)) {
+				// No intersection, skip this edge.
+				continue;
+			} else if (std::holds_alternative<math_utils::Segment3d>(intersection)) {
+				// The edge lies in the cutting plane. Use the current point.
+				exit_point.position = visit->entry_point.position;
+			} else if (std::holds_alternative<Eigen::Vector3d>(intersection)) {
+				// The edge intersects the cutting plane. Use the intersection point.
+				exit_point.position = std::get<Eigen::Vector3d>(intersection);
+			} else {
+				throw std::runtime_error("Unexpected intersection type");
+			}
+
+			// Compute the distance from the entry point to the exit point.
+			double distance = (exit_point.position - visit->entry_point.position).norm();
+
+			FaceVisit new_visit{.previous = visit, .entry_point = exit_point, .distance = visit->distance + distance};
+
+			// Add the exit point to the queue.
+			queue.push(std::make_shared<FaceVisit>(new_visit));
+
+		}
+
+	}
+
+	// If we didn't find an exit face, there is no path between the two points.
+	// This should never happen, since the surface of a convex hull is connected.
+	if (!exit_face) {
+		throw std::runtime_error("Could not find path between points");
+	}
+
+	// Now we have the exit face, we can walk back to the entry face.
+	// We will store the path in a vector.
+	std::vector<ConvexHullPoint> walk{b // Start with the exit point.
+	};
+
+	while (exit_face->previous) {
+		// We're not on the first facet yet.
+
+		// Add the entry point of the current facet.
+		walk.push_back(exit_face->entry_point);
+
+		// And the exit point of the previous facet, which is the same point in Euclidean space,
+		// but has a different face_id.
+		walk.push_back({.face_id = exit_face->previous->entry_point.face_id, .position = exit_face->entry_point
+				.position});
+
+		// Move to the previous facet.
+		exit_face = exit_face->previous;
+	}
+
+	// Add the entry point of the first facet.
+	walk.push_back(a);
+
+	// Reverse the path, so it goes from a to b.
+	std::reverse(walk.begin(), walk.end());
+
+	return walk;
 }
 
 std::shared_ptr<WorkspaceShell<ConvexHullPoint>>

@@ -99,7 +99,7 @@ shape_msgs::msg::Mesh combine_meshes(const std::vector<shape_msgs::msg::Mesh> &m
 }
 
 Eigen::AlignedBox3d mesh_aabb(const shape_msgs::msg::Mesh &mesh) {
-	Eigen::AlignedBox3d box = INVERTED_INFINITE_BOX;
+	Eigen::AlignedBox3d box = math_utils::INVERTED_INFINITE_BOX;
 
 	for (const auto &point: mesh.vertices) {
 		box.extend(toEigen(point));

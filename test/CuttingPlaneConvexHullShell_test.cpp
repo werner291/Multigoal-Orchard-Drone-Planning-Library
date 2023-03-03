@@ -43,6 +43,7 @@ protected:
 	std::unique_ptr<CuttingPlaneConvexHullShell> shell;
 
 	std::unique_ptr<CuttingPlaneConvexHullShell> cube_shell;
+
 };
 
 
@@ -179,6 +180,40 @@ TEST_F(ConvexHullShell_test, path_on_surface_test) {
 			}
 
 		}
+	}
+
+}
+
+TEST(ConvexHullShell, leaves_surface_apples_test) {
+
+	// Load the apple tree meshes.
+	TreeMeshes meshes = loadTreeMeshes("appletree");
+
+	const auto scene = AppleTreePlanningScene{.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(
+			treeMeshesToMoveitSceneMsg(meshes))), .apples = meshes.fruit_meshes |
+															ranges::views::transform(appleFromMesh) |
+															ranges::to_vector};
+
+	auto hull = convexHullAroundLeaves(scene, 0.1, 1.0);
+
+	for (const auto &apple1: scene.apples) {
+		for (const auto &apple2: scene.apples) {
+
+			// This shouldn't crash.
+			auto path = hull->path_from_to(hull->nearest_point_on_shell(apple1.center),
+										   hull->nearest_point_on_shell(apple2.center));
+		}
+	}
+
+	// Try it again with 10000 random point pairs.
+
+	ompl::RNG rng(42);
+
+	for (size_t i = 0; i < 10000; ++i) {
+		Eigen::Vector3d p1(rng.uniformReal(-10.0, 10.0), rng.uniformReal(-10.0, 10.0), rng.uniformReal(-10.0, 10.0));
+		Eigen::Vector3d p2(rng.uniformReal(-10.0, 10.0), rng.uniformReal(-10.0, 10.0), rng.uniformReal(-10.0, 10.0));
+
+		auto path = hull->path_from_to(hull->nearest_point_on_shell(p1), hull->nearest_point_on_shell(p2));
 	}
 
 }
