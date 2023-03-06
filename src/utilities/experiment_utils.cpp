@@ -90,6 +90,7 @@ moveit::core::RobotModelPtr loadRobotModel(double base_joint_weight) {
 	for (auto &item: robot->getActiveJointModels())
 		item->setDistanceFactor(1.0);
 
+	// If it crashes here, it's because the file isn't found.
 	robot->getJointModel("world_joint")->setDistanceFactor(base_joint_weight);
 
 	return robot;

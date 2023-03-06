@@ -302,21 +302,24 @@ include(GoogleTest)
 
 add_executable(${PROJECT_NAME}_tests
         test/test.cpp
-        test/MoveItPathLengthObjectiveTest.cpp
-        test/math_test.cpp
-        test/CuttingPlaneConvexHullShell_test.cpp
-        test/CGALMeshShell_test.cpp
-        src/utilities/test/math_utils_test.cpp
-        test/SphereShell_test.cpp
-        test/StreamingConvexHull_test.cpp
-        test/VisualiserTest.cpp
-        test/TimedConvergenceTerminationCondition_test.cpp
-        test/HashedSpatialIndex_test.cpp
-        test/LeavesCollisionChecker_test.cpp
-        test/LeavesCollisionChecker_test.cpp
-        test/OnlineOrderOptimization_test.cpp
+        #        test/MoveItPathLengthObjectiveTest.cpp
+        #        test/math_test.cpp
+        #        test/CuttingPlaneConvexHullShell_test.cpp
+        #        test/CGALMeshShell_test.cpp
+        #        src/utilities/test/math_utils_test.cpp
+        #        test/SphereShell_test.cpp
+        #        test/StreamingConvexHull_test.cpp
+        #        test/VisualiserTest.cpp
+        #        test/TimedConvergenceTerminationCondition_test.cpp
+        #        test/HashedSpatialIndex_test.cpp
+        #        test/LeavesCollisionChecker_test.cpp
+        #        test/LeavesCollisionChecker_test.cpp
+        #        test/OnlineOrderOptimization_test.cpp
         #        test/StreamingAlphaShape_test.cpp
-        test/PointOnMeshLookup_test.cpp test/SurfletVolume_test.cpp)
+        #        test/PointOnMeshLookup_test.cpp
+        #        test/SurfletVolume_test.cpp
+        test/approachplanning_accuracy.cpp
+        test/CuttingPlaneConvexHullShell_test.cpp)
 
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})

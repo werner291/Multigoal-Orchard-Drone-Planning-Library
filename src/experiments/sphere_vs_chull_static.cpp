@@ -81,10 +81,10 @@ int main(int argc, char **argv) {
 #ifdef STATISTICS
 	ompl::msg::setLogLevel(ompl::msg::LOG_ERROR);
 
-	auto repIds = ranges::views::iota(0, 10);
+	auto repIds = ranges::views::iota(0, 50);
 
 	// Numbers of apples to throw at the planner.
-	const auto nApples = {10, 50, 100};
+	const auto nApples = {/*10, 50,*/ 100};
 
 	std::vector<std::pair<Json::Value, Problem>> problems =
 			ranges::views::cartesian_product(repIds, nApples) | ranges::views::transform([&](const auto &pair) {
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
 	// The different planners to test.
 	std::vector<std::pair<std::string, StaticPlannerAllocatorFn>> planners = {
 			{"sphere", make_sphere_planner},
-			{"chull",  make_chull_planner}
+			{"chull", make_chull_planner}
 	};
 
 	// Take the carthesian product of the different planners and problems,
@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
 
 		return result;
 
-	}, "analysis/data/static_sphere_vs_chull.json", 8, 4, 42);
+	}, "analysis/data/static_sphere_vs_chull.json", 8, 1, 42);
 #else
 
 	const auto start_state = randomStateOutsideTree(robot, 0);

@@ -46,7 +46,7 @@ MultiGoalPlanner::PlanResult ShellPathPlanner<ShellPoint>::plan(const ompl::base
 		return result;
 	}
 
-	std::cout << "Planned approach paths: " << approach_paths.size() << std::endl;
+	std::cout << "Planned approach paths: " << approach_paths.size() << " / " << goals.size() << std::endl;
 
 	// Determine the order in which to visit the goals.
 	{
@@ -58,7 +58,7 @@ MultiGoalPlanner::PlanResult ShellPathPlanner<ShellPoint>::plan(const ompl::base
 		}, approach_paths.size());
 
 		// Reorder the approach paths according to the optimal ordering.
-		std::vector<std::pair<size_t,OmplApproachPath<ShellPoint>>> ordered_approaches;
+		std::vector<std::pair<size_t, OmplApproachPath<ShellPoint>>> ordered_approaches;
 		for (auto j: ordering) {
 			ordered_approaches.push_back(approach_paths[j]);
 		}
@@ -66,6 +66,8 @@ MultiGoalPlanner::PlanResult ShellPathPlanner<ShellPoint>::plan(const ompl::base
 		//  I suspect it was corrupted by the compiler somehow, but I suppose we'll never know.
 		approach_paths = ordered_approaches;
 	}
+
+	std::cout << "After reordering: " << approach_paths.size() << " / " << goals.size() << std::endl;
 
 	// Build the initial approach path from the start state to the first goal.
 	ompl::geometric::PathGeometric path = buildInitialApproach(si,
