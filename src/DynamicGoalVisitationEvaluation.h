@@ -13,7 +13,9 @@
 #include "DynamicMultiGoalPlanner.h"
 #include "utilities/goal_events.h"
 #include "utilities/experiment_utils.h"
+#include "utilities/discoverability_specifications.h"
 #include "planners/DynamicMultiGoalPlannerOmplToMoveitAdapter.h"
+
 
 /**
  * @brief A class representing an evaluation framework for a given planner.
@@ -35,7 +37,7 @@ public:
 	struct SolutionPathSegment {
 		/// The path segment.
 		RobotPath path;
-		/// The goal event that triggered the path segment.
+		/// The goal event that triggered the end of the path segment, if any.
 		utilities::GoalEvent goal_event;
 		/// The time used to compute the path segment.
 		std::chrono::nanoseconds time;

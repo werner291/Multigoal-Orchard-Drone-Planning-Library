@@ -27,7 +27,16 @@ namespace utilities {
 	using GoalEvent = std::variant<GoalVisit, GoalSighting>;
 
 	enum DiscoveryStatus {
-		VISITED, KNOWN_TO_ROBOT, EXISTS_BUT_UNKNOWN_TO_ROBOT
+		// The apple exists, is known to the robot, and has successfully been reached.
+		VISITED,
+		// The apple exists, is known to the robot, but has yet to be reached
+		KNOWN_TO_ROBOT,
+		// The apple exists, but the robot doesn't know that.
+		EXISTS_BUT_UNKNOWN_TO_ROBOT,
+		// The apple does not exist, but the robot thinks it does, and may discover that it doesn't exist.
+		ROBOT_THINKS_EXISTS_BUT_DOESNT,
+		// The apple does not exist, and the robot knows that.
+		REMOVED
 	};
 
 	using CanSeeAppleFn = std::function<bool(const moveit::core::RobotState& state, const Apple& apple)>;

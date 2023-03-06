@@ -188,19 +188,6 @@ std::shared_ptr<DroneStateSpace> omplStateSpaceForDrone(const moveit::core::Robo
 ompl::base::SpaceInformationPtr
 loadSpaceInformation(const std::shared_ptr<DroneStateSpace> &stateSpace, const AppleTreePlanningScene &scene_info);
 
-enum AppleDiscoverabilityType {
-	GIVEN, DISCOVERABLE, EXCLUDED
-};
-
-/**
- * @brief Generates a set of booleans indicating the discoverability of each apple
- *
- * @param all_apples The number of apples in the scene
- * @return std::vector<bool> A vector of booleans indicating the discoverability of each apple
- */
-std::vector<AppleDiscoverabilityType>
-generateAppleDiscoverability(int all_apples, double p, int seed, int apples_in_test);
-
 Apple appleFromMesh(const shape_msgs::msg::Mesh &mesh);
 
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

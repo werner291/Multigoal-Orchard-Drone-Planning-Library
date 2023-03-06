@@ -240,7 +240,7 @@ add_library(${PROJECT_NAME}_shared
         src/planners/ChangeAccumulatingPlannerAdapter.cpp
         src/planners/ChangeAccumulatingPlannerAdapter.h
         src/planners/InitialOrbitPlanner.cpp
-        src/planners/InitialOrbitPlanner.h)
+        src/planners/InitialOrbitPlanner.h src/utilities/discoverability_specifications.cpp)
 
 add_library(${PROJECT_NAME}_sensing
        src/exploration/CandidatePathGenerator.cpp
@@ -270,7 +270,7 @@ add_library(${PROJECT_NAME}_sensing
         src/exploration/logging.h
         src/exploration/scan_points.cpp
         src/exploration/scan_points.h
-        src/utilities/enclosing_sphere.cpp src/utilities/enclosing_sphere.h)
+        src/utilities/enclosing_sphere.cpp src/utilities/enclosing_sphere.h src/utilities/discoverability_specifications.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

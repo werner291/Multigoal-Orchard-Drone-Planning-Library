@@ -7,12 +7,14 @@
 
 #include <vector>
 #include <moveit/robot_state/robot_state.h>
-#include "utilities/experiment_utils.h"
+
 #include "utilities/goal_events.h"
+#include "utilities/discoverability_specifications.h"
 
 struct DynamicGoalsetPlanningProblem {
 
 	moveit::core::RobotState start_state;
+	AppleTreePlanningScene scene;
 	std::vector<AppleDiscoverabilityType> apple_discoverability;
 	utilities::CanSeeAppleFn can_see_apple;
 

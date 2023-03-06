@@ -22,7 +22,11 @@ struct DetachedTreeNode {
  */
 struct Apple {
     Eigen::Vector3d center;
-    Eigen::Vector3d branch_normal;
+    Eigen::Vector3d branch_normal; // TODO remove this field.
+
+	bool operator==(const Apple &other) const {
+		return center == other.center;
+	}
 };
 
 struct TreeSceneData {

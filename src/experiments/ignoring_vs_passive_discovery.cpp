@@ -21,7 +21,6 @@
 #include "../utilities/run_experiments.h"
 
 #include "../DynamicGoalsetPlanningProblem.h"
-#include "../vtk/visualize_dynamic.h"
 #include "../utilities/MeshOcclusionModel.h"
 #include "../utilities/alpha_shape.h"
 #include "../planners/ChangeAccumulatingPlannerAdapter.h"
@@ -133,10 +132,10 @@ Json::Value runDynamicPlannerExperiment(const AppleTreePlanningScene &scene,
 			}), std::chrono::nanoseconds(0));
 
 	Json::Value result;
-
 	result["n_visited"] = n_visited;
 	result["time"] = std::chrono::duration_cast<std::chrono::milliseconds>(total_time).count();
 	result["total_path_length"] = total_path_length;
+
 	return result;
 }
 
@@ -146,10 +145,10 @@ int main(int argc, char **argv) {
 	TreeMeshes meshes = loadTreeMeshes("appletree");
 
 	// Convert the meshes to a planning scene message.
-	const auto scene = AppleTreePlanningScene{.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(
-			treeMeshesToMoveitSceneMsg(meshes))), .apples = meshes.fruit_meshes |
-															ranges::views::transform(appleFromMesh) |
-															ranges::to_vector};
+	const auto scene = AppleTreePlanningScene {
+		.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(treeMeshesToMoveitSceneMsg(meshes))),
+		.apples = meshes.fruit_meshes | ranges::views::transform(appleFromMesh) | ranges::to_vector
+	};
 
 	// Load the robot model.
 	const auto robot = loadRobotModel();
@@ -189,11 +188,7 @@ int main(int argc, char **argv) {
 
 	// Numbers of apples to throw at the planner.
 	const auto nApples = {10, 50, 100};
-
-	// Generate a range of probabilities, ranging from 0.0 to 1.0.
-	const int nProbabilities = 5;
-	auto probs = ranges::views::iota(0, nProbabilities) |
-				 views::transform([](int i) { return i / (double) (nProbabilities - 1); });
+	std::vector<Proportions> probs = gen_discoverability_proportions();
 
 	// The different occlusion functions.
 	std::vector<std::pair<std::string, utilities::CanSeeAppleFn>> can_see_apple_fns = {
@@ -209,6 +204,12 @@ int main(int argc, char **argv) {
 				// Generate a problem for every unique combination of repetition ID,
 				// discoverability degree, total number of apples and occlusion model.
 				const auto &[repId, prob, n_total, can_see_apple] = pair;
+
+				AppleTreePlanningScene censored_scene = scene;
+				// Shuffle the apples.
+				std::shuffle(censored_scene.apples.begin(), censored_scene.apples.end(), std::mt19937(repId));
+				// Delete any over n.
+				censored_scene.apples.resize(n_total);
 
 				// Translate the discoverability degree into a vector of discoverability types/
 				const auto discoverability = generateAppleDiscoverability((int) scene.apples.size(),
@@ -291,3 +292,5 @@ int main(int argc, char **argv) {
 
 #endif
 }
+
+

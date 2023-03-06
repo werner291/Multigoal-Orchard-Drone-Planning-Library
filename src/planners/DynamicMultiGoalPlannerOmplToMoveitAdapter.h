@@ -22,6 +22,14 @@ static const double APPLE_VISIT_MARGIN = 0.05;
  */
 class DynamicMultiGoalPlannerOmplToMoveitAdapter {
 
+	struct AppleHasher {
+		std::size_t operator()(const Apple &apple) const {
+			return std::hash<double>{}(apple.center.x()) ^ std::hash<double>{}(apple.center.y()) ^ std::hash<double>{}(apple.center.z());
+		}
+	};
+
+	std::unordered_map<Apple, ompl::base::GoalPtr, AppleHasher> apple_to_ompl_goal {};
+
 	const std::shared_ptr<DynamicMultiGoalPlanner> planner;
 	ompl::base::SpaceInformationPtr si; ///< A pointer to the space information object.
 	std::shared_ptr<DroneStateSpace> ss;
@@ -64,9 +72,23 @@ public:
 	 * @return A PlanResult object containing the modified path and some statistics on the replanning process.
 	 */
 	[[nodiscard]] std::optional<RobotPath> replan_after_discovery(const moveit::core::RobotState &start_state,
-																		  const Apple &apple,
-																		  const PathInterrupt &interrupt,
-																		  const AppleTreePlanningScene &planning_scene);
+																  const Apple &apple,
+																  const PathInterrupt &interrupt,
+																  const AppleTreePlanningScene &planning_scene);
+
+	/**
+	 * @brief Yield the next segment of the path after discovering that a previously-given goal does not exist.
+	 *
+	 * @param si A pointer to the OMPL space information.
+	 * @param current_state A pointer to the current state in the previously planned path.
+	 * @param removed_goal A pointer to the removed goal.
+	 * @param goal_changes A GoalChanges object containing the new goals, visited goals, and removed goals.
+	 * @return A PlanResult object containing the modified path and some statistics on the replanning process.
+	 */
+	[[nodiscard]] std::optional<RobotPath> replan_after_removal(const moveit::core::RobotState &start_state,
+																  const Apple &apple,
+																  const PathInterrupt &interrupt,
+																  const AppleTreePlanningScene &planning_scene);
 
 };
 

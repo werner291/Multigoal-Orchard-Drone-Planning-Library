@@ -14,6 +14,9 @@ utilities::DiscoveryStatus initial_discovery_status(const AppleDiscoverabilityTy
 			return utilities::DiscoveryStatus::KNOWN_TO_ROBOT;
 		case AppleDiscoverabilityType::DISCOVERABLE:
 			return utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT;
+		case FALSE:
+			return utilities::DiscoveryStatus::ROBOT_THINKS_EXISTS_BUT_DOESNT;
+			break;
 	}
 
 	throw std::runtime_error("Invalid discoverability type");
@@ -26,16 +29,8 @@ DynamicGoalVisitationEvaluation::DynamicGoalVisitationEvaluation(std::shared_ptr
 																 utilities::CanSeeAppleFn canSeeApple)
 		: planner(std::move(planner)), last_robot_state(initial_state), scene(scene), can_see_apple(std::move(canSeeApple)) {
 
-	this->scene.apples = ranges::views::zip(scene.apples, discoverability) |
-						 ranges::views::filter([](const auto &apple) {
-							 return apple.second != AppleDiscoverabilityType::EXCLUDED;
-						 }) | ranges::views::transform([](const auto &apple) { return apple.first; }) |
-						 ranges::to_vector;
+	assert(scene.apples.size() == discoverability.size());
 
-	// Update discovery status vector for apples that are given
-	discovery_status = discoverability | ranges::views::filter([](const auto &apple) {
-		return apple != AppleDiscoverabilityType::EXCLUDED;
-	}) | ranges::views::transform(initial_discovery_status) | ranges::to_vector;
 }
 
 std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation::computeNextTrajectory() {
@@ -87,7 +82,8 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 			upcoming_goal_event = *event;
 
 			// Update the discovery status vector to reflect the discovery
-			discovery_status[event->goal_id] = utilities::DiscoveryStatus::KNOWN_TO_ROBOT;
+			discovery_status[event->goal_id] =
+					discovery_status[event->goal_id] == utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT ? utilities::DiscoveryStatus::KNOWN_TO_ROBOT : utilities::DiscoveryStatus::REMOVED;
 
 			segment->truncateUpTo(event->time);
 
@@ -136,7 +132,9 @@ AppleTreePlanningScene DynamicGoalVisitationEvaluation::getCurrentCensoredScene(
 
 	censored_scene.apples = censored_scene.apples | ranges::views::enumerate
 			| ranges::views::filter([&](const auto &apple) {
-		return discovery_status[apple.first] == utilities::DiscoveryStatus::KNOWN_TO_ROBOT;
+		return
+			discovery_status[apple.first] == utilities::DiscoveryStatus::KNOWN_TO_ROBOT ||
+			discovery_status[apple.first] == utilities::DiscoveryStatus::ROBOT_THINKS_EXISTS_BUT_DOESNT;
 			})
 			| ranges::views::transform([](const auto &apple) {
 				return apple.second;
@@ -160,10 +158,21 @@ std::optional<RobotPath> DynamicGoalVisitationEvaluation::replanFromEvent() {
 		case 1: {
 			// If the upcoming goal event is a discovery event
 			const auto &discovery_event = std::get<utilities::GoalSighting>(*upcoming_goal_event);
-			segment = planner->replan_after_discovery(last_robot_state,
-													  scene.apples[discovery_event.goal_id],
-													  discovery_event.time,
-													  scene);
+
+			assert(discovery_status[discovery_event.goal_id] == utilities::DiscoveryStatus::KNOWN_TO_ROBOT ||
+				   discovery_status[discovery_event.goal_id] == utilities::DiscoveryStatus::REMOVED);
+
+			if (discovery_status[discovery_event.goal_id] == utilities::DiscoveryStatus::KNOWN_TO_ROBOT) {
+				segment = planner->replan_after_discovery(last_robot_state,
+														  scene.apples[discovery_event.goal_id],
+														  discovery_event.time,
+														  scene);
+			} else {
+				segment = planner->replan_after_removal(last_robot_state,
+														  scene.apples[discovery_event.goal_id],
+														  discovery_event.time,
+														  scene);
+			}
 			break;
 		}
 		default:
