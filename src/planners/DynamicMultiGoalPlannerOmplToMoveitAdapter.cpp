@@ -16,7 +16,7 @@ DynamicMultiGoalPlannerOmplToMoveitAdapter::DynamicMultiGoalPlannerOmplToMoveitA
 		: planner(planner), si(std::move(si)), ss(ss) {
 }
 
-std::optional<MoveitPathSegment>
+std::optional<RobotPath>
 DynamicMultiGoalPlannerOmplToMoveitAdapter::plan(const moveit::core::RobotState &start_state,
 												 const AppleTreePlanningScene &planning_scene) {
 
@@ -27,18 +27,18 @@ DynamicMultiGoalPlannerOmplToMoveitAdapter::plan(const moveit::core::RobotState 
 
 	auto goals = constructNewAppleGoals(si, planning_scene.apples);
 
-	auto result = planner->plan(si, start.get(), goals, planning_scene);
+	auto result = planner->plan_initial(si, start.get(), goals, planning_scene);
 
 	if (!result) {
 		return std::nullopt;
 	}
 
 	// Convert the path to a MoveIt path.
-	return {{.path = omplPathToRobotPath(result->path_), .goal_id = result->to_goal_id_}};
+	return {omplPathToRobotPath(*result)};
 
 }
 
-std::optional<MoveitPathSegment>
+std::optional<RobotPath>
 DynamicMultiGoalPlannerOmplToMoveitAdapter::replan_after_successful_visit(const moveit::core::RobotState &start_state,
 																		  const AppleTreePlanningScene &planning_scene) {
 
@@ -47,18 +47,18 @@ DynamicMultiGoalPlannerOmplToMoveitAdapter::replan_after_successful_visit(const 
 	// Convert the start state to an OMPL state.
 	ss->copyToOMPLState(start.get(), start_state);
 
-	auto result = planner->replan_after_successful_visit(si, start.get(), planning_scene);
+	auto result = planner->replan_after_path_end(si, start.get(), planning_scene);
 
 	if (!result) {
 		return std::nullopt;
 	}
 
 	// Convert the path to a MoveIt path.
-	return {{.path = omplPathToRobotPath(result->path_), .goal_id = result->to_goal_id_}};
+	return {omplPathToRobotPath(*result)};
 
 }
 
-std::optional<MoveitPathSegment>
+std::optional<RobotPath>
 DynamicMultiGoalPlannerOmplToMoveitAdapter::replan_after_discovery(const moveit::core::RobotState &start_state,
 																   const Apple &apple,
 																   const PathInterrupt &interrupt,
@@ -78,6 +78,6 @@ DynamicMultiGoalPlannerOmplToMoveitAdapter::replan_after_discovery(const moveit:
 	}
 
 	// Convert the path to a MoveIt path.
-	return {{.path = omplPathToRobotPath(result->path_), .goal_id = result->to_goal_id_}};
+	return {omplPathToRobotPath(*result)};
 
 }

@@ -16,12 +16,12 @@
  * This abstract class defines the interface for dynamic multi-goal planners, which can plan a path to a set of goals
  * and then modify that path when new goals are added or removed.
  *
- * The path is returned one segment at a time, each time to a new goal.
+ * The path is returned one segment at a time.
  */
 class DynamicMultiGoalPlanner {
 
 public:
-	using PathSegment = MultiGoalPlanner::PathSegment;
+	using PathSegment = ompl::geometric::PathGeometric;
 
 	/**
 	 * @brief Plans a path to one of an initial set of goals, internally taking note of the set of goals such that
@@ -33,10 +33,10 @@ public:
 	 * @param planning_scene 	The planning scene in which the planning should be done.
 	 * @return An optional PathSegment containing a segment of the planned path to the next goal, or nullopt if the planner has decided to halt.
 	 */
-	[[nodiscard]] virtual std::optional<PathSegment> plan(const ompl::base::SpaceInformationPtr &si,
-														  const ompl::base::State *start,
-														  const std::vector<ompl::base::GoalPtr> &goals,
-														  const AppleTreePlanningScene &planning_scene) = 0;
+	[[nodiscard]] virtual std::optional<PathSegment> plan_initial(const ompl::base::SpaceInformationPtr &si,
+																  const ompl::base::State *start,
+																  const std::vector<ompl::base::GoalPtr> &goals,
+																  const AppleTreePlanningScene &planning_scene) = 0;
 
 	/**
 	 * @brief Yield the next segment of the path after a successful visit to a goal.
@@ -48,9 +48,9 @@ public:
 	 * @return A PlanResult object containing the modified path and some statistics on the replanning process.
 	 */
 	[[nodiscard]] virtual std::optional<PathSegment>
-	replan_after_successful_visit(const ompl::base::SpaceInformationPtr &si,
-								  const ompl::base::State *current_state,
-								  const AppleTreePlanningScene &planning_scene) = 0;
+	replan_after_path_end(const ompl::base::SpaceInformationPtr &si,
+						  const ompl::base::State *current_state,
+						  const AppleTreePlanningScene &planning_scene) = 0;
 
 	/**
 	 * @brief Yield the next segment of the path after discovering a new goal.

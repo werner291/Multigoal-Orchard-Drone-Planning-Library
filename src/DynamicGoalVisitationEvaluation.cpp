@@ -49,7 +49,9 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 		first_call = false;
 
 		// If there is an upcoming goal event, replan
-		std::optional<MoveitPathSegment> segment;
+		std::optional<RobotPath> segment;
+
+		auto start_time = std::chrono::high_resolution_clock::now();
 
 		// If there is an upcoming goal event, feed the information to the planner and request a replan
 		if (upcoming_goal_event) {
@@ -62,6 +64,8 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 			segment = planner->plan(last_robot_state, censored_scene);
 		}
 
+		auto end_time = std::chrono::high_resolution_clock::now();
+
 		// If the planner failed to find a solution, or if the solution is empty, return std::nullopt,
 		// indicating that the end of the evaluation has been reached.
 		if (!segment) {
@@ -69,13 +73,13 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 		}
 
 		// Validate to ensure the segment starts at the current robot state
-		if (segment->path.waypoints[0].distance(last_robot_state) > 1e-6) {
-			std::cout << "Off by " << segment->path.waypoints[0].distance(last_robot_state) << " units" << std::endl;
+		if (segment->waypoints[0].distance(last_robot_state) > 1e-6) {
+			std::cout << "Off by " << segment->waypoints[0].distance(last_robot_state) << " units" << std::endl;
 			throw std::runtime_error("Planner returned a path that does not start at the current robot state");
 		}
 
 		// Check if the robot will discover any apples during the trajectory
-		auto event = utilities::find_earliest_discovery_event(segment->path, scene.apples, can_see_apple, discovery_status);
+		auto event = utilities::find_earliest_discovery_event(*segment, scene.apples, can_see_apple, discovery_status);
 
 		if (event) {
 
@@ -85,13 +89,13 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 			// Update the discovery status vector to reflect the discovery
 			discovery_status[event->goal_id] = utilities::DiscoveryStatus::KNOWN_TO_ROBOT;
 
-			segment->path.truncateUpTo(event->time);
+			segment->truncateUpTo(event->time);
 
 		} else {
 
 			// Among the apples, find all that are in range of the robot's end-effector
-			Eigen::Vector3d ee_pos = segment->path
-					.waypoints
+			Eigen::Vector3d ee_pos = segment
+					->waypoints
 					.back()
 					.getGlobalLinkTransform("end_effector")
 					.translation();
@@ -102,21 +106,23 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 					// If the apple is in range, update the discovery status vector to reflect the visitation
 					discovery_status[apple_i] = utilities::DiscoveryStatus::VISITED;
 
-					// If the robot will not discover any apples, set the upcoming goal event
+					// If the robot does not discover any apples, set the upcoming goal event
 					// to the visitation event, coinciding with the planned end of the trajectory
-					upcoming_goal_event = utilities::GoalVisit{(int) segment->goal_id};
+					upcoming_goal_event = utilities::GoalVisit{0};
 				}
 			}
 
 		}
 
 		// Set the robot state to the end of the trajectory
-		last_robot_state = segment->path.waypoints.back();
+		last_robot_state = segment->waypoints.back();
 
-		this->solution_path_segments.emplace_back(segment->path, *upcoming_goal_event);
+		SolutionPathSegment segment_to_add {*segment, *upcoming_goal_event, end_time - start_time};
+
+		this->solution_path_segments.push_back(segment_to_add);
 
 		// Return the trajectory
-		return robotPathToConstantSpeedRobotTrajectory(segment->path, 1.0);
+		return robotPathToConstantSpeedRobotTrajectory(*segment, 1.0);
 
 	} else {
 
@@ -140,10 +146,10 @@ AppleTreePlanningScene DynamicGoalVisitationEvaluation::getCurrentCensoredScene(
 	return censored_scene;
 }
 
-std::optional<MoveitPathSegment> DynamicGoalVisitationEvaluation::replanFromEvent() {
+std::optional<RobotPath> DynamicGoalVisitationEvaluation::replanFromEvent() {
 	assert(upcoming_goal_event.has_value());
 
-	std::optional<MoveitPathSegment> segment;
+	std::optional<RobotPath> segment;
 	switch (upcoming_goal_event->index()) {
 		case 0: {
 			// If the upcoming goal event is a visitation event
@@ -178,7 +184,7 @@ const moveit::core::RobotState &DynamicGoalVisitationEvaluation::getLastRobotSta
 	return last_robot_state;
 }
 
-const std::vector<std::pair<RobotPath, utilities::GoalEvent>> &
+const std::vector<DynamicGoalVisitationEvaluation::SolutionPathSegment> &
 DynamicGoalVisitationEvaluation::getSolutionPathSegments() const {
 	return solution_path_segments;
 }

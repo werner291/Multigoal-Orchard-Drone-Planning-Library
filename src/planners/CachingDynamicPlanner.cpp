@@ -139,7 +139,7 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 	// in the ordering, so that's the approach path to which we'll cache.
 	// TODO	to_shell_cache = ordering[0].approach;
 
-	return PathSegment{SIZE_MAX, optimizedPointToPoint(si, *to_shell_cache, ordering.front().approach)};
+	return optimizedPointToPoint(si, *to_shell_cache, ordering.front().approach);
 
 }
 
@@ -159,7 +159,7 @@ CachingDynamicPlanner<ShellPoint>::find_path_to_shell(const ompl::base::SpaceInf
 }
 
 template<typename ShellPoint>
-std::optional<DynamicMultiGoalPlanner::PathSegment> CachingDynamicPlanner<ShellPoint>::replan_after_successful_visit(
+std::optional<DynamicMultiGoalPlanner::PathSegment> CachingDynamicPlanner<ShellPoint>::replan_after_path_end(
 		const ompl::base::SpaceInformationPtr &si,
 		const ompl::base::State *current_state,
 		const AppleTreePlanningScene &planning_scene) {
@@ -187,16 +187,16 @@ std::optional<DynamicMultiGoalPlanner::PathSegment> CachingDynamicPlanner<ShellP
 		// in the ordering, so that's the approach path to which we'll cache.
 		to_shell_cache = ordering[0].approach;
 
-		return PathSegment{SIZE_MAX, optimizedPointToPoint(si, *to_shell, ordering[0].approach)};
+		return optimizedPointToPoint(si, *to_shell, ordering[0].approach);
 	}
 }
 
 template<typename ShellPoint>
 std::optional<DynamicMultiGoalPlanner::PathSegment>
-CachingDynamicPlanner<ShellPoint>::plan(const ompl::base::SpaceInformationPtr &si,
-										const ompl::base::State *start,
-										const std::vector<ompl::base::GoalPtr> &initial_goals,
-										const AppleTreePlanningScene &planning_scene) {
+CachingDynamicPlanner<ShellPoint>::plan_initial(const ompl::base::SpaceInformationPtr &si,
+												const ompl::base::State *start,
+												const std::vector<ompl::base::GoalPtr> &initial_goals,
+												const AppleTreePlanningScene &planning_scene) {
 	shell_space = shellBuilder(planning_scene, si);
 
 	auto to_shell = find_path_to_shell(si, start);
@@ -240,8 +240,7 @@ CachingDynamicPlanner<ShellPoint>::plan(const ompl::base::SpaceInformationPtr &s
 
 	assert(si->distance(ptp.getState(0), start) < 1e-6);
 
-	return PathSegment{SIZE_MAX, // TODO Get the IDs right.
-					   ptp};
+	return ptp;
 }
 
 template<typename ShellPoint>

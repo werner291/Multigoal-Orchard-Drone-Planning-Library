@@ -24,6 +24,7 @@
 #include "../vtk/visualize_dynamic.h"
 #include "../utilities/MeshOcclusionModel.h"
 #include "../utilities/alpha_shape.h"
+#include "../planners/ChangeAccumulatingPlannerAdapter.h"
 
 #include <vtkProperty.h>
 #include <range/v3/view/iota.hpp>
@@ -62,6 +63,13 @@ std::shared_ptr<DynamicMultiGoalPlanner> static_planner(const ompl::base::SpaceI
 			true));
 };
 
+std::shared_ptr<DynamicMultiGoalPlanner> batch_replanner(const ompl::base::SpaceInformationPtr &si) {
+	return std::make_shared<ChangeAccumulatingPlannerAdapter>(std::make_shared<ShellPathPlanner<Eigen::Vector3d >>(
+			paddedOmplSphereShell,
+			std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d >>(si),
+			true));
+};
+
 std::shared_ptr<DynamicMultiGoalPlanner> dynamic_planner_lci(const ompl::base::SpaceInformationPtr &si) {
 	return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
 																			si),
@@ -69,6 +77,68 @@ std::shared_ptr<DynamicMultiGoalPlanner> dynamic_planner_lci(const ompl::base::S
 																			ORToolsTSPMethods::UpdateStrategy::LEAST_COSTLY_INSERT),
 																	paddedOmplSphereShell);
 };
+
+Json::Value runDynamicPlannerExperiment(const AppleTreePlanningScene &scene,
+										const moveit::core::RobotModelPtr &robot,
+										const Experiment &experiment) {// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
+	// So, we just re-create the state space every time just to be safe.
+	auto ss = omplStateSpaceForDrone(robot);
+
+	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
+	// we'll need to copy this for every thread
+	auto si = loadSpaceInformation(ss, scene);
+
+	// Allocate the planner.
+	auto ompl_planner = experiment.planner->second(si);
+
+	// Wrap it into the adapter that lets us use it with MoveIt types.
+	auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(ompl_planner, si, ss);
+
+	// Create the evaluation object.
+	DynamicGoalVisitationEvaluation eval(
+			adapter,
+			experiment.problem->second.start_state,
+			scene,
+			experiment.problem->second.apple_discoverability,
+			experiment.problem->second.can_see_apple
+			);
+
+	// Record the start time.
+	auto start_time = std::chrono::high_resolution_clock::now();
+
+	// Run the planner for the initial set of goals.
+	eval.computeNextTrajectory();
+
+	// Run the planner until it has no more goals to visit and returns nullopt.
+	while (eval.getUpcomingGoalEvent().has_value()) {
+		if (!eval.computeNextTrajectory().has_value()) {
+			break;
+		}
+	}
+
+	// Record the end time.
+	auto end_time = std::chrono::high_resolution_clock::now();
+
+	int n_visited = (int) ranges::count_if(eval.getDiscoveryStatus(),
+										   [](const auto &status) { return status == utilities::VISITED; });
+
+	double total_path_length = ranges::accumulate(
+			eval.getSolutionPathSegments() | ranges::views::transform([](const auto &segment) {
+				return segment.path.length();
+			}), 0.0);
+
+	std::chrono::nanoseconds total_time = ranges::accumulate(
+			eval.getSolutionPathSegments() | ranges::views::transform([](const auto &segment) {
+				return segment.time;
+			}), std::chrono::nanoseconds(0));
+
+	Json::Value result;
+
+	result["n_visited"] = n_visited;
+	result["time"] = std::chrono::duration_cast<std::chrono::milliseconds>(total_time).count();
+	result["total_path_length"] = total_path_length;
+	return result;
+}
 
 int main(int argc, char **argv) {
 
@@ -174,10 +244,14 @@ int main(int argc, char **argv) {
 			// A planner that ignores the dynamic goalset, only planning to the initially-given apples.
 			// It will obviously not ve very optimal, but will serve as a baseline.
 			{"change_ignoring",     static_planner},
+			// A planner that adds new goals to a "batch" to be replanned to after the current
+			// path has been completed.
+			{"batch_replanner",     batch_replanner},
 			// A planner that uses the dynamic goalset, but uses a greedy approach to insert new goals in the visitation order.
 			{"dynamic_planner_lci", dynamic_planner_lci},
 			// A planner that uses the dynamic goalset, and completely reorders the visitation order from scratch every time a goal is added.
-			{"dynamic_planner_fre", dynamic_planner_fre}};
+			{"dynamic_planner_fre", dynamic_planner_fre}
+	};
 
 	// Take the carthesian product of the different planners and problems,
 	// making it so that every planner is tested on every problem.
@@ -188,63 +262,9 @@ int main(int argc, char **argv) {
 
 	// Run the experiments in parallel.
 	runExperimentsParallelRecoverable<Experiment>(experiments, [&](const Experiment &experiment) {
-
-		// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
-		// So, we just re-create the state space every time just to be safe.
-		auto ss = omplStateSpaceForDrone(robot);
-
-		// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
-		// we'll need to copy this for every thread
-		auto si = loadSpaceInformation(ss, scene);
-
-		// Allocate the planner.
-		auto ompl_planner = experiment.planner->second(si);
-
-		// Wrap it into the adapter that lets us use it with MoveIt types.
-		auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(ompl_planner, si, ss);
-
-		// Create the evaluation object.
-		DynamicGoalVisitationEvaluation eval(
-				adapter,
-				experiment.problem->second.start_state,
-				scene,
-				experiment.problem->second.apple_discoverability,
-				experiment.problem->second.can_see_apple
-				);
-
-		// Record the start time.
-		auto start_time = std::chrono::high_resolution_clock::now();
-
-		// Run the planner for the initial set of goals.
-		eval.computeNextTrajectory();
-
-		// Run the planner until it has no more goals to visit and returns nullopt.
-		while (eval.getUpcomingGoalEvent().has_value()) {
-			if (!eval.computeNextTrajectory().has_value()) {
-				break;
-			}
-		}
-
-		// Record the end time.
-		auto end_time = std::chrono::high_resolution_clock::now();
-
-		int n_visited = (int) ranges::count_if(eval.getDiscoveryStatus(),
-											   [](const auto &status) { return status == utilities::VISITED; });
-
-		double total_path_length = ranges::accumulate(
-				eval.getSolutionPathSegments() | ranges::views::transform([](const auto &segment) {
-					return segment.first.length();
-				}), 0.0);
-
-		Json::Value result;
-
-		result["n_visited"] = n_visited;
-		result["time"] = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-		result["total_path_length"] = total_path_length;
-
-		return result;
-
+		return runDynamicPlannerExperiment(scene, robot, experiment);
 	}, "analysis/data/dynamic_log.json", 32, 16, 42);
+
 #else
 
 	const auto start_state = randomStateOutsideTree(robot, 0);

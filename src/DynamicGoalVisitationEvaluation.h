@@ -31,12 +31,23 @@ class DynamicGoalVisitationEvaluation {
 	/// The initial state of the robot.
 	moveit::core::RobotState last_robot_state;
 
-	/// A vector of path segments representing the solution path so far.
-	std::vector<std::pair<RobotPath, utilities::GoalEvent>> solution_path_segments;
 public:
-	const moveit::core::RobotState &getLastRobotState() const;
+	struct SolutionPathSegment {
+		/// The path segment.
+		RobotPath path;
+		/// The goal event that triggered the path segment.
+		utilities::GoalEvent goal_event;
+		/// The time used to compute the path segment.
+		std::chrono::nanoseconds time;
+	};
 
-	const std::vector<std::pair<RobotPath, utilities::GoalEvent>> &getSolutionPathSegments() const;
+private:
+	/// A vector of path segments representing the solution path so far.
+	std::vector<SolutionPathSegment> solution_path_segments;
+public:
+	[[nodiscard]] const moveit::core::RobotState &getLastRobotState() const;
+
+	[[nodiscard]] const std::vector<SolutionPathSegment> &getSolutionPathSegments() const;
 
 private:
 
@@ -58,7 +69,7 @@ private:
 	 *
 	 * @return 				An optional PathSegment object representing the new path segment.
 	 */
-	[[nodiscard]] std::optional<MoveitPathSegment> replanFromEvent();
+	[[nodiscard]] std::optional<RobotPath> replanFromEvent();
 
 	utilities::CanSeeAppleFn can_see_apple;
 

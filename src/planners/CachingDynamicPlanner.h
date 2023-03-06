@@ -106,10 +106,10 @@ public:
 	 * @param planning_scene 	The planning scene.
 	 * @return 					A path segment to one of the goals, or nullopt if the planner has decided to halt.
 	 */
-	std::optional<PathSegment> plan(const ompl::base::SpaceInformationPtr &si,
-									const ompl::base::State *start,
-									const std::vector<ompl::base::GoalPtr> &goals,
-									const AppleTreePlanningScene &planning_scene) override;
+	std::optional<PathSegment> plan_initial(const ompl::base::SpaceInformationPtr &si,
+											const ompl::base::State *start,
+											const std::vector<ompl::base::GoalPtr> &goals,
+											const AppleTreePlanningScene &planning_scene) override;
 
 	/**
 	 * @brief Replans after a successful visit to a goal. Typically, this will just be the next section in the precomputed plan.
@@ -119,9 +119,9 @@ public:
 	 * @param planning_scene 		The planning scene.
 	 * @return 						A path segment to one of the goals, or nullopt if the planner has decided to halt.
 	 */
-	std::optional<PathSegment> replan_after_successful_visit(const ompl::base::SpaceInformationPtr &si,
-															 const ompl::base::State *current_state,
-															 const AppleTreePlanningScene &planning_scene) override;
+	std::optional<PathSegment> replan_after_path_end(const ompl::base::SpaceInformationPtr &si,
+													 const ompl::base::State *current_state,
+													 const AppleTreePlanningScene &planning_scene) override;
 
 	/**
 	 * @brief Replans after discovering a new goal.

@@ -10,10 +10,10 @@ ChangeIgnoringReplannerAdapter::ChangeIgnoringReplannerAdapter(const std::shared
 }
 
 std::optional<DynamicMultiGoalPlanner::PathSegment>
-ChangeIgnoringReplannerAdapter::plan(const ompl::base::SpaceInformationPtr &si,
-									 const ompl::base::State *start,
-									 const std::vector<ompl::base::GoalPtr> &goals,
-									 const AppleTreePlanningScene &planning_scene) {
+ChangeIgnoringReplannerAdapter::plan_initial(const ompl::base::SpaceInformationPtr &si,
+											 const ompl::base::State *start,
+											 const std::vector<ompl::base::GoalPtr> &goals,
+											 const AppleTreePlanningScene &planning_scene) {
 
 	auto ptc = ompl::base::plannerNonTerminatingCondition();
 
@@ -29,14 +29,14 @@ ChangeIgnoringReplannerAdapter::plan(const ompl::base::SpaceInformationPtr &si,
 		return std::nullopt;
 	}
 
-	return static_plan->segments.front();
+	return static_plan->segments.front().path_;
 }
 
 
 std::optional<DynamicMultiGoalPlanner::PathSegment>
-ChangeIgnoringReplannerAdapter::replan_after_successful_visit(const ompl::base::SpaceInformationPtr &si,
-															  const ompl::base::State *current_state,
-															  const AppleTreePlanningScene &planning_scene) {
+ChangeIgnoringReplannerAdapter::replan_after_path_end(const ompl::base::SpaceInformationPtr &si,
+													  const ompl::base::State *current_state,
+													  const AppleTreePlanningScene &planning_scene) {
 
 	static_plan->segments.erase(static_plan->segments.begin());
 
@@ -44,7 +44,7 @@ ChangeIgnoringReplannerAdapter::replan_after_successful_visit(const ompl::base::
 		return std::nullopt;
 	}
 
-	return static_plan->segments.front();
+	return static_plan->segments.front().path_;
 
 }
 
@@ -55,13 +55,7 @@ ChangeIgnoringReplannerAdapter::replan_after_discovery(const ompl::base::SpaceIn
 													   const PathInterrupt &at_interrupt,
 													   const AppleTreePlanningScene &planning_scene) {
 
-	auto res = from_interrupt(at_interrupt);
-
-	std::cout << "Distance: " << si->distance(current_state, res->path_.getStates().front()) << std::endl;
-
-	//	assert(si->distance(current_state, res->path_.getStates().front()) < 1e-6);
-
-	return res;
+	return from_interrupt(at_interrupt);
 
 }
 
@@ -75,7 +69,7 @@ ChangeIgnoringReplannerAdapter::from_interrupt(const PathInterrupt &at_interrupt
 
 	utilities::truncatePathToInterrupt(static_plan->segments[0].path_, at_interrupt);
 
-	return static_plan->segments.front();
+	return static_plan->segments.front().path_;
 }
 
 std::optional<DynamicMultiGoalPlanner::PathSegment>

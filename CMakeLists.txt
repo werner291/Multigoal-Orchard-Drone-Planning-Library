@@ -127,33 +127,6 @@ add_library(${PROJECT_NAME}_shared
         src/TriangleAABB.h
         src/experiments/ScannedSurfaceTracker.cpp
         src/experiments/ScannedSurfaceTracker.h
-        src/exploration/CandidatePathGenerator.cpp
-        src/exploration/CandidatePathGenerator.h
-        src/exploration/ColorEncoding.cpp
-        src/exploration/ColorEncoding.h
-        src/exploration/DynamicMeshHullAlgorithm.cpp
-        src/exploration/DynamicMeshHullAlgorithm.h
-        src/exploration/InformationGainModel.cpp
-        src/exploration/InformationGainModel.h
-        src/exploration/KnownFreeSpaceModel.cpp
-        src/exploration/KnownFreeSpaceModel.h
-        src/exploration/LocalOptimizer.cpp
-        src/exploration/LocalOptimizer.h
-        src/exploration/OnlinePointCloudMotionControlAlgorithm.cpp
-        src/exploration/OnlinePointCloudMotionControlAlgorithm.h
-        src/exploration/SegmentedPointCloud.cpp
-        src/exploration/SegmentedPointCloud.h
-        src/exploration/SegmentedRobotPath.cpp
-        src/exploration/SegmentedRobotPath.h
-        src/exploration/SurfletExplorationFrontier.cpp
-        src/exploration/SurfletExplorationFrontier.h
-        src/exploration/SurfletVolume.cpp
-        src/exploration/VtkToPointCloud.cpp
-        src/exploration/VtkToPointCloud.h
-        src/exploration/logging.cpp
-        src/exploration/logging.h
-        src/exploration/scan_points.cpp
-        src/exploration/scan_points.h
         src/ompl_custom.cpp
         src/ompl_custom.h
         src/planners/ChangeIgnoringReplannerAdapter.cpp
@@ -224,6 +197,8 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/traveling_salesman.h
         src/utilities/vtk.cpp
         src/utilities/vtk.h
+        src/utilities/enclosing_sphere.h
+        src/utilities/enclosing_sphere.cpp
         src/vtk/SimpleVtkViewer.cpp
         src/vtk/SimpleVtkViewer.h
         src/vtk/SimulatedSensor.cpp
@@ -261,7 +236,41 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/MeshOcclusionModel.cpp
         src/utilities/MeshOcclusionModel.h
         src/AppleDiscoveryModel.cpp
-        src/AppleDiscoveryModel.h)
+        src/AppleDiscoveryModel.h
+        src/planners/ChangeAccumulatingPlannerAdapter.cpp
+        src/planners/ChangeAccumulatingPlannerAdapter.h
+        src/planners/InitialOrbitPlanner.cpp
+        src/planners/InitialOrbitPlanner.h)
+
+add_library(${PROJECT_NAME}_sensing
+       src/exploration/CandidatePathGenerator.cpp
+         src/exploration/CandidatePathGenerator.h
+        src/exploration/ColorEncoding.cpp
+        src/exploration/ColorEncoding.h
+        src/exploration/DynamicMeshHullAlgorithm.cpp
+        src/exploration/DynamicMeshHullAlgorithm.h
+        src/exploration/InformationGainModel.cpp
+        src/exploration/InformationGainModel.h
+        src/exploration/KnownFreeSpaceModel.cpp
+        src/exploration/KnownFreeSpaceModel.h
+        src/exploration/LocalOptimizer.cpp
+        src/exploration/LocalOptimizer.h
+        src/exploration/OnlinePointCloudMotionControlAlgorithm.cpp
+        src/exploration/OnlinePointCloudMotionControlAlgorithm.h
+        src/exploration/SegmentedPointCloud.cpp
+        src/exploration/SegmentedPointCloud.h
+        src/exploration/SegmentedRobotPath.cpp
+        src/exploration/SegmentedRobotPath.h
+        src/exploration/SurfletExplorationFrontier.cpp
+        src/exploration/SurfletExplorationFrontier.h
+        src/exploration/SurfletVolume.cpp
+        src/exploration/VtkToPointCloud.cpp
+        src/exploration/VtkToPointCloud.h
+        src/exploration/logging.cpp
+        src/exploration/logging.h
+        src/exploration/scan_points.cpp
+        src/exploration/scan_points.h
+        src/utilities/enclosing_sphere.cpp src/utilities/enclosing_sphere.h)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -282,7 +291,10 @@ experiment("tsp_over_prm_vs_sphereshell")
 experiment("shell_comparison_sphere_armangle")
 experiment("greatcircle_correlation")
 experiment("sphere_vs_chull_static")
+
 experiment("exploration")
+target_link_libraries(${PROJECT_NAME}_experiment_exploration ${PROJECT_NAME}_sensing)
+
 experiment("ignoring_vs_passive_discovery")
 experiment("lci_vs_full_reorder_timing")
 

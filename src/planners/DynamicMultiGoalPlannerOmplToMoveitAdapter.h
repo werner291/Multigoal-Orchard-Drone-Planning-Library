@@ -15,10 +15,6 @@
 #include "../utilities/experiment_utils.h"
 
 static const double APPLE_VISIT_MARGIN = 0.05;
-struct MoveitPathSegment {
-	RobotPath path;
-	size_t goal_id;
-};
 
 /**
  * An adapter class that wraps a DynamicMultiGoalPlanner and converts back
@@ -42,7 +38,7 @@ public:
 		 * @param planning_scene 	The planning scene in which the planning should be done.
 		 * @return An optional PathSegment containing a segment of the planned path to the next goal, or nullopt if the planner has decided to halt.
 		 */
-	[[nodiscard]] std::optional<MoveitPathSegment>
+	[[nodiscard]] std::optional<RobotPath>
 	plan(const moveit::core::RobotState &start_state, const AppleTreePlanningScene &planning_scene);
 
 
@@ -54,7 +50,7 @@ public:
 	 * @param goal_changes A GoalChanges object containing the new goals, visited goals, and removed goals.
 	 * @return A PlanResult object containing the modified path and some statistics on the replanning process.
 	 */
-	[[nodiscard]] std::optional<MoveitPathSegment>
+	[[nodiscard]] std::optional<RobotPath>
 	replan_after_successful_visit(const moveit::core::RobotState &start_state,
 								  const AppleTreePlanningScene &planning_scene);
 
@@ -67,7 +63,7 @@ public:
 	 * @param goal_changes A GoalChanges object containing the new goals, visited goals, and removed goals.
 	 * @return A PlanResult object containing the modified path and some statistics on the replanning process.
 	 */
-	[[nodiscard]] std::optional<MoveitPathSegment> replan_after_discovery(const moveit::core::RobotState &start_state,
+	[[nodiscard]] std::optional<RobotPath> replan_after_discovery(const moveit::core::RobotState &start_state,
 																		  const Apple &apple,
 																		  const PathInterrupt &interrupt,
 																		  const AppleTreePlanningScene &planning_scene);
