@@ -14,12 +14,12 @@
 
 class SimpleVtkViewer {
 
+public:
 	// Create the VTK rendering objects.
 	vtkNew<vtkRenderer> viewerRenderer;
 	vtkNew<vtkRenderWindow> visualizerWindow;
 	vtkNew<vtkRenderWindowInteractor> renderWindowInteractor;
 
-public:
 
 	SimpleVtkViewer();
 

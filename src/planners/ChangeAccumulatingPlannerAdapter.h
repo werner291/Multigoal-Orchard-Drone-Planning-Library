@@ -30,21 +30,21 @@ class ChangeAccumulatingPlannerAdapter : public DynamicMultiGoalPlanner {
 public:
 	ChangeAccumulatingPlannerAdapter(const std::shared_ptr<MultiGoalPlanner> &staticPlanner);
 
-	std::optional<DynamicMultiGoalPlanner::PathSegment> plan_initial(
-			const ompl::base::SpaceInformationPtr &si,
-			const ompl::base::State *start,
-			const std::vector<ompl::base::GoalPtr> &goals,
-			const AppleTreePlanningScene &planning_scene) override;
+	std::optional<PathSegment> plan_initial(const ompl::base::SpaceInformationPtr &si,
+											const ompl::base::State *start,
+											const std::vector<ompl::base::GoalPtr> &goals,
+											const AppleTreePlanningScene &planning_scene,
+											double padding) override;
+
+	std::optional<DynamicMultiGoalPlanner::PathSegment> replan_after_path_end(const ompl::base::SpaceInformationPtr &si,
+																			  const ompl::base::State *current_state,
+																			  const AppleTreePlanningScene &planning_scene) override;
 
 	std::optional<DynamicMultiGoalPlanner::PathSegment>
-	replan_after_path_end(const ompl::base::SpaceInformationPtr &si,
-						  const ompl::base::State *current_state,
-						  const AppleTreePlanningScene &planning_scene) override;
-
-	std::optional<DynamicMultiGoalPlanner::PathSegment> replan_after_discovery(const ompl::base::SpaceInformationPtr &si,
-																		const ompl::base::State *current_state,
-																		const ompl::base::GoalPtr &new_goal,
-																		const PathInterrupt &at_interrupt,
+	replan_after_discovery(const ompl::base::SpaceInformationPtr &si,
+						   const ompl::base::State *current_state,
+						   const ompl::base::GoalPtr &new_goal,
+						   const PathInterrupt &at_interrupt,
 																		const AppleTreePlanningScene &planning_scene) override;
 
 	std::optional<DynamicMultiGoalPlanner::PathSegment> replan_after_removal(const ompl::base::SpaceInformationPtr &si,

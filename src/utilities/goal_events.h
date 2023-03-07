@@ -15,8 +15,7 @@
 
 namespace utilities {
 
-	struct GoalVisit {
-		int goal_id;
+	struct PathEnd {
 	};
 
 	struct GoalSighting {
@@ -24,7 +23,7 @@ namespace utilities {
 		PathInterrupt time;
 	};
 
-	using GoalEvent = std::variant<GoalVisit, GoalSighting>;
+	using GoalEvent = std::variant<PathEnd, GoalSighting>;
 
 	enum DiscoveryStatus {
 		// The apple exists, is known to the robot, and has successfully been reached.
@@ -39,7 +38,7 @@ namespace utilities {
 		REMOVED
 	};
 
-	using CanSeeAppleFn = std::function<bool(const moveit::core::RobotState& state, const Apple& apple)>;
+	using CanSeeAppleFn = std::function<bool(const moveit::core::RobotState &state, const Apple &apple)> const;
 
 	std::optional<GoalSighting> find_earliest_discovery_event(RobotPath &traj,
 															  const std::vector<Apple> &apples,

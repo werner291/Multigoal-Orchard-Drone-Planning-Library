@@ -195,24 +195,8 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/trajectory_primitives.h
         src/utilities/traveling_salesman.cpp
         src/utilities/traveling_salesman.h
-        src/utilities/vtk.cpp
-        src/utilities/vtk.h
         src/utilities/enclosing_sphere.h
         src/utilities/enclosing_sphere.cpp
-        src/vtk/SimpleVtkViewer.cpp
-        src/vtk/SimpleVtkViewer.h
-        src/vtk/SimulatedSensor.cpp
-        src/vtk/SimulatedSensor.h
-        src/vtk/Viewer.cpp
-        src/vtk/Viewer.h
-        src/vtk/VisualizationSpecifics.cpp
-        src/vtk/VisualizationSpecifics.h
-        src/vtk/VtkRobotModel.cpp
-        src/vtk/VtkRobotModel.h
-        src/vtk/visualize_path.cpp
-        src/vtk/visualize_path.h
-        src/vtk/visualize_dynamic.cpp
-        src/vtk/visualize_dynamic.h
         src/utilities/run_experiments.cpp
         src/utilities/run_experiments.h
         src/utilities/JsonChunkedLogger.cpp
@@ -240,11 +224,15 @@ add_library(${PROJECT_NAME}_shared
         src/planners/ChangeAccumulatingPlannerAdapter.cpp
         src/planners/ChangeAccumulatingPlannerAdapter.h
         src/planners/InitialOrbitPlanner.cpp
-        src/planners/InitialOrbitPlanner.h src/utilities/discoverability_specifications.cpp)
+        src/planners/InitialOrbitPlanner.h
+        src/utilities/discoverability_specifications.cpp
+        src/utilities/enclosing_sphere.h
+        src/utilities/enclosing_sphere.cpp
+        src/planner_allocators.cpp src/planner_allocators.h src/PathInterrupt.cpp src/PathInterrupt.cpp)
 
 add_library(${PROJECT_NAME}_sensing
-       src/exploration/CandidatePathGenerator.cpp
-         src/exploration/CandidatePathGenerator.h
+        src/exploration/CandidatePathGenerator.cpp
+        src/exploration/CandidatePathGenerator.h
         src/exploration/ColorEncoding.cpp
         src/exploration/ColorEncoding.h
         src/exploration/DynamicMeshHullAlgorithm.cpp
@@ -270,13 +258,36 @@ add_library(${PROJECT_NAME}_sensing
         src/exploration/logging.h
         src/exploration/scan_points.cpp
         src/exploration/scan_points.h
-        src/utilities/enclosing_sphere.cpp src/utilities/enclosing_sphere.h src/utilities/discoverability_specifications.h)
+        src/utilities/enclosing_sphere.cpp
+        src/utilities/enclosing_sphere.h
+        src/utilities/discoverability_specifications.h)
 
-target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
+add_library(${PROJECT_NAME}_visualization
+        src/vtk/SimpleVtkViewer.cpp
+        src/vtk/SimpleVtkViewer.h
+        src/vtk/SimulatedSensor.cpp
+        src/vtk/SimulatedSensor.h
+        src/vtk/Viewer.cpp
+        src/vtk/Viewer.h
+        src/vtk/VisualizationSpecifics.cpp
+        src/vtk/VisualizationSpecifics.h
+        src/vtk/VtkRobotModel.cpp
+        src/vtk/VtkRobotModel.h
+        src/vtk/visualize_path.cpp
+        src/vtk/visualize_path.h
+        src/vtk/visualize_dynamic.cpp
+        src/vtk/visualize_dynamic.h
+        src/utilities/vtk.cpp
+        src/utilities/vtk.h
+        )
+
+target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT= "${CMAKE_SOURCE_DIR}")
 
 set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "rclcpp" "ompl")
 
 ament_target_dependencies(${PROJECT_NAME}_shared ${AMENT_DEPS})
+
+ament_target_dependencies(${PROJECT_NAME}_visualization ${AMENT_DEPS})
 
 function(experiment name)
     add_executable(${PROJECT_NAME}_experiment_${name} src/experiments/${name}.cpp)
@@ -296,6 +307,10 @@ experiment("exploration")
 target_link_libraries(${PROJECT_NAME}_experiment_exploration ${PROJECT_NAME}_sensing)
 
 experiment("ignoring_vs_passive_discovery")
+
+experiment("dynamic_visualized")
+target_link_libraries(${PROJECT_NAME}_experiment_dynamic_visualized ${PROJECT_NAME}_visualization)
+
 experiment("lci_vs_full_reorder_timing")
 
 include(GoogleTest)

@@ -13,7 +13,8 @@ std::optional<DynamicMultiGoalPlanner::PathSegment>
 ChangeIgnoringReplannerAdapter::plan_initial(const ompl::base::SpaceInformationPtr &si,
 											 const ompl::base::State *start,
 											 const std::vector<ompl::base::GoalPtr> &goals,
-											 const AppleTreePlanningScene &planning_scene) {
+											 const AppleTreePlanningScene &planning_scene,
+											 double padding) {
 
 	auto ptc = ompl::base::plannerNonTerminatingCondition();
 

@@ -109,7 +109,8 @@ public:
 	std::optional<PathSegment> plan_initial(const ompl::base::SpaceInformationPtr &si,
 											const ompl::base::State *start,
 											const std::vector<ompl::base::GoalPtr> &goals,
-											const AppleTreePlanningScene &planning_scene) override;
+											const AppleTreePlanningScene &planning_scene,
+											double padding) override;
 
 	/**
 	 * @brief Replans after a successful visit to a goal. Typically, this will just be the next section in the precomputed plan.

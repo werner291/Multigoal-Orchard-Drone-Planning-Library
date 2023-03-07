@@ -31,7 +31,7 @@ DynamicMultiGoalPlannerOmplToMoveitAdapter::plan(const moveit::core::RobotState 
 		goals.push_back(apple_to_ompl_goal[apple]);
 	}
 
-	auto result = planner->plan_initial(si, start.get(), goals, planning_scene);
+	auto result = planner->plan_initial(si, start.get(), goals, planning_scene, 0.5);
 
 	if (!result) {
 		return std::nullopt;

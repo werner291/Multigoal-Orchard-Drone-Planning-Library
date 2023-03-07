@@ -29,11 +29,23 @@ DynamicGoalVisitationEvaluation::DynamicGoalVisitationEvaluation(std::shared_ptr
 																 utilities::CanSeeAppleFn canSeeApple)
 		: planner(std::move(planner)), last_robot_state(initial_state), scene(scene), can_see_apple(std::move(canSeeApple)) {
 
+	discovery_status = discoverability | ranges::views::transform(initial_discovery_status) | ranges::to_vector;
+
+	//	// Go over all the apples, and make the ones the robot can see in the initial state known.
+	//
+	//	for (auto&& [i, apple] : ranges::views::enumerate(scene.apples)) {
+	//		if (can_see_apple(last_robot_state, apple)) {
+	//			discovery_status[i] = utilities::DiscoveryStatus::KNOWN_TO_ROBOT;
+	//		}
+	//	}
+
 	assert(scene.apples.size() == discoverability.size());
 
 }
 
 std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation::computeNextTrajectory() {
+
+	std::cout << "Computing next trajectory" << std::endl;
 
 	// Check if either there is an upcoming goal event or this is the first call to this function
 	// If not, there is no new information and the planner should not be called; if it wanted to
@@ -50,9 +62,13 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 
 		// If there is an upcoming goal event, feed the information to the planner and request a replan
 		if (upcoming_goal_event) {
+			std::cout << "Replanning from event" << std::endl;
 			segment = replanFromEvent();
 		} else {
+
 			// If there is no upcoming goal event, plan from scratch.
+
+			std::cout << "Planning from scratch" << std::endl;
 
 			AppleTreePlanningScene censored_scene = getCurrentCensoredScene();
 
@@ -82,31 +98,17 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 			upcoming_goal_event = *event;
 
 			// Update the discovery status vector to reflect the discovery
-			discovery_status[event->goal_id] =
-					discovery_status[event->goal_id] == utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT ? utilities::DiscoveryStatus::KNOWN_TO_ROBOT : utilities::DiscoveryStatus::REMOVED;
+			if (discovery_status[event->goal_id] == utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT) {
+				discovery_status[event->goal_id] = utilities::DiscoveryStatus::KNOWN_TO_ROBOT;
+			} else {
+				discovery_status[event->goal_id] = utilities::DiscoveryStatus::REMOVED;
+			}
 
 			segment->truncateUpTo(event->time);
 
 		} else {
 
-			// Among the apples, find all that are in range of the robot's end-effector
-			Eigen::Vector3d ee_pos = segment
-					->waypoints
-					.back()
-					.getGlobalLinkTransform("end_effector")
-					.translation();
-
-			// TODO The ID tracking is a bit weird here, need to fix.
-			for (size_t apple_i = 0; apple_i < scene.apples.size(); apple_i++) {
-				if ((scene.apples[apple_i].center - ee_pos).norm() < 0.05) {
-					// If the apple is in range, update the discovery status vector to reflect the visitation
-					discovery_status[apple_i] = utilities::DiscoveryStatus::VISITED;
-
-					// If the robot does not discover any apples, set the upcoming goal event
-					// to the visitation event, coinciding with the planned end of the trajectory
-					upcoming_goal_event = utilities::GoalVisit{0};
-				}
-			}
+			upcoming_goal_event = utilities::PathEnd{};
 
 		}
 
@@ -130,13 +132,13 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 AppleTreePlanningScene DynamicGoalVisitationEvaluation::getCurrentCensoredScene() {
 	AppleTreePlanningScene censored_scene = scene;
 
-	censored_scene.apples = censored_scene.apples | ranges::views::enumerate
-			| ranges::views::filter([&](const auto &apple) {
-		return
-			discovery_status[apple.first] == utilities::DiscoveryStatus::KNOWN_TO_ROBOT ||
-			discovery_status[apple.first] == utilities::DiscoveryStatus::ROBOT_THINKS_EXISTS_BUT_DOESNT;
-			})
-			| ranges::views::transform([](const auto &apple) {
+	assert(scene.apples.size() == discovery_status.size());
+
+	censored_scene.apples =
+			censored_scene.apples | ranges::views::enumerate | ranges::views::filter([&](const auto &apple) {
+				return discovery_status[apple.first] == utilities::DiscoveryStatus::KNOWN_TO_ROBOT ||
+					   discovery_status[apple.first] == utilities::DiscoveryStatus::ROBOT_THINKS_EXISTS_BUT_DOESNT;
+			}) | ranges::views::transform([](const auto &apple) {
 				return apple.second;
 			})
 			| ranges::to_vector;
@@ -151,8 +153,9 @@ std::optional<RobotPath> DynamicGoalVisitationEvaluation::replanFromEvent() {
 	switch (upcoming_goal_event->index()) {
 		case 0: {
 			// If the upcoming goal event is a visitation event
-			const auto &visitation_event = std::get<utilities::GoalVisit>(*upcoming_goal_event);
+			const auto &visitation_event = std::get<utilities::PathEnd>(*upcoming_goal_event);
 			segment = planner->replan_after_successful_visit(last_robot_state, scene);
+			std::cout << "Replanning after successful visit" << std::endl;
 			break;
 		}
 		case 1: {
@@ -169,10 +172,12 @@ std::optional<RobotPath> DynamicGoalVisitationEvaluation::replanFromEvent() {
 														  scene);
 			} else {
 				segment = planner->replan_after_removal(last_robot_state,
-														  scene.apples[discovery_event.goal_id],
-														  discovery_event.time,
-														  scene);
+														scene.apples[discovery_event.goal_id],
+														discovery_event.time,
+														scene);
 			}
+
+			std::cout << "Replanning after discovery" << std::endl;
 			break;
 		}
 		default:
@@ -196,4 +201,8 @@ const moveit::core::RobotState &DynamicGoalVisitationEvaluation::getLastRobotSta
 const std::vector<DynamicGoalVisitationEvaluation::SolutionPathSegment> &
 DynamicGoalVisitationEvaluation::getSolutionPathSegments() const {
 	return solution_path_segments;
+}
+
+const utilities::CanSeeAppleFn &DynamicGoalVisitationEvaluation::getCanSeeApple() const {
+	return can_see_apple;
 }

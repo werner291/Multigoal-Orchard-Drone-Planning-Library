@@ -36,7 +36,8 @@ public:
 	[[nodiscard]] virtual std::optional<PathSegment> plan_initial(const ompl::base::SpaceInformationPtr &si,
 																  const ompl::base::State *start,
 																  const std::vector<ompl::base::GoalPtr> &goals,
-																  const AppleTreePlanningScene &planning_scene) = 0;
+																  const AppleTreePlanningScene &planning_scene,
+																  double padding) = 0;
 
 	/**
 	 * @brief Yield the next segment of the path after a successful visit to a goal.

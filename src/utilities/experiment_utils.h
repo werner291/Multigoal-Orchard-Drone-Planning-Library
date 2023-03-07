@@ -135,28 +135,6 @@ struct MultiApplePlanResult {
 moveit::core::RobotState randomStateOutsideTree(const moveit::core::RobotModelConstPtr &drone, const int seed);
 
 /**
- * @brief Generates a set of `n` random states for a drone model that lie outside of the tree.
- *
- * @param scene The planning scene that contains information about the tree and the world.
- * @param model A shared pointer to the constant robot model for the drone.
- * @param n The number of random states to generate.
- * @return A vector of `n` generated random states for the drone.
- */
-std::vector<moveit::core::RobotState>
-randomStatesOutsideTree(const AppleTreePlanningScene &scene, const moveit::core::RobotModelConstPtr &model, int n);
-
-/**
- * @brief Computes an enclosing sphere around the leaves of an apple tree.
- *
- * @param planning_scene_message The planning scene message that contains information about the apple tree.
- * @param padding A value to add to the size of the enclosing sphere.
- * @return The bounding sphere that encloses the leaves of the apple tree.
- */
-bodies::BoundingSphere
-compute_enclosing_sphere_around_leaves(const moveit_msgs::msg::PlanningScene &planning_scene_message,
-									   const double padding);
-
-/**
  * @brief Extracts the vertices of the leaves of an apple tree.
  *
  * @param scene_info The planning scene information that contains information about the apple tree.

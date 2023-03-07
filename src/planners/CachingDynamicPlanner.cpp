@@ -196,7 +196,8 @@ std::optional<DynamicMultiGoalPlanner::PathSegment>
 CachingDynamicPlanner<ShellPoint>::plan_initial(const ompl::base::SpaceInformationPtr &si,
 												const ompl::base::State *start,
 												const std::vector<ompl::base::GoalPtr> &initial_goals,
-												const AppleTreePlanningScene &planning_scene) {
+												const AppleTreePlanningScene &planning_scene,
+												double padding) {
 	shell_space = shellBuilder(planning_scene, si);
 
 	auto to_shell = find_path_to_shell(si, start);

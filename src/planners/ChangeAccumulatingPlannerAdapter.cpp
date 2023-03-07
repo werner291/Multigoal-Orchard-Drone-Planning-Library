@@ -11,9 +11,10 @@ ChangeAccumulatingPlannerAdapter::ChangeAccumulatingPlannerAdapter(const std::sh
 
 std::optional<DynamicMultiGoalPlanner::PathSegment>
 ChangeAccumulatingPlannerAdapter::plan_initial(const ompl::base::SpaceInformationPtr &si,
-									   const ompl::base::State *start,
-									   const std::vector<ompl::base::GoalPtr> &goals,
-									   const AppleTreePlanningScene &planning_scene) {
+											   const ompl::base::State *start,
+											   const std::vector<ompl::base::GoalPtr> &goals,
+											   const AppleTreePlanningScene &planning_scene,
+											   double padding) {
 
 	auto ptc = ompl::base::plannerNonTerminatingCondition();
 
@@ -40,7 +41,7 @@ ChangeAccumulatingPlannerAdapter::replan_after_path_end(const ompl::base::SpaceI
 	static_plan->segments.erase(static_plan->segments.begin());
 
 	if (!batch.empty()) {
-		return plan_initial(si, current_state, batch, planning_scene);
+		return plan_initial(si, current_state, batch, planning_scene, 0.5);
 	} else {
 		return static_plan->segments.front().path_;
 	}

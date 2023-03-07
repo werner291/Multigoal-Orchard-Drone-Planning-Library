@@ -6,6 +6,9 @@
 #include <vtkProperty.h>
 #include <vtkActorCollection.h>
 #include <range/v3/view/enumerate.hpp>
+#include <vtkTextActor.h>
+#include <vtkTextProperty.h>
+#include <range/v3/algorithm/count.hpp>
 
 #include "visualize_dynamic.h"
 #include "VtkRobotModel.h"
@@ -76,35 +79,35 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 	// Add the tree meshes to the viewer.
 	createActors(meshes, apple_discoverability, apple_actors, viewer);
 
-	auto alphashape = alphaShape(meshes.leaves_mesh.vertices | ranges::views::transform([](const auto &v) {
-		return Eigen::Vector3d{v.x, v.y, v.z};
-	}) | ranges::to_vector, sqrt(0.0001));
-
-	MeshOcclusionModel occlusion_model(alphashape);
-
-	{
-		auto alphashape_actor = createActorFromMesh(alphashape);
-
-		alphashape_actor->GetProperty()->SetOpacity(0.5);
-
-		viewer.addActor(alphashape_actor);
-	}
-
-	VtkLineSegmentsVisualization occlusion_visualization(1.0,0.0,1.0);
+	VtkLineSegmentsVisualization occlusion_visualization(1.0, 0.0, 1.0);
 
 	viewer.addActor(occlusion_visualization.getActor());
+
+	vtkNew<vtkTextActor> textActor;
+	{ // Setup the text and add it to the renderer
+		textActor->SetInput("Hello world");
+		textActor->SetPosition2(10, 40);
+		textActor->GetTextProperty()->SetFontSize(10);
+		//		textActor->GetTextProperty()->SetColor(colors->GetColor3d("Gold").GetData());
+		viewer.viewerRenderer->AddActor2D(textActor);
+	}
 
 	double time = 0.0;
 
 	// The "main loop" of the program, called every frame.
 	auto callback = [&]() {
 
-		time += 0.01;
+		time += 0.05;
 
-		if (eval.getUpcomingGoalEvent() && (traj.has_value() && time > traj->getDuration())) {
-			time = 0.0;
+		if (traj.has_value() && time > traj->getDuration()) {
+			if (eval.getUpcomingGoalEvent()) {
+				time = 0.0;
 
-			traj = eval.computeNextTrajectory();
+				traj = eval.computeNextTrajectory();
+			} else {
+				std::cout << "Robot has halted." << std::endl;
+				traj = std::nullopt;
+			}
 		}
 
 		if (traj) {
@@ -126,14 +129,47 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 					case utilities::DiscoveryStatus::KNOWN_TO_ROBOT:
 						apple_actor->GetProperty()->SetDiffuseColor(1.0, 0.0, 0.5);
 						break;
+					default:
+						apple_actor->GetProperty()->SetDiffuseColor(0.0, 0.0, 1.0);
+						break;
 				}
 			}
 
-			occlusion_visualization.updateLine(scene.apples | ranges::views::transform([&](const auto &apple) -> std::pair<Eigen::Vector3d, Eigen::Vector3d> {
-				return {state.getGlobalLinkTransform("end_effector").translation(), apple.center};
-			}) | ranges::views::filter([&](const auto &line) {
-				return !occlusion_model.checkOcclusion(line.first, line.second);
-			}) | ranges::to_vector);
+			std::stringstream ss;
+
+			size_t n_total = eval.getDiscoveryStatus().size();
+			size_t n_visited = ranges::count(eval.getDiscoveryStatus(), utilities::DiscoveryStatus::VISITED);
+			size_t n_discoverable = ranges::count(eval.getDiscoveryStatus(),
+												  utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT);
+			size_t n_false = ranges::count(eval.getDiscoveryStatus(),
+										   utilities::DiscoveryStatus::ROBOT_THINKS_EXISTS_BUT_DOESNT);
+
+			ss << "Vis: " << n_visited << "/" << n_total << " (" << n_discoverable << " disc, " << n_false << " false)";
+
+			if (!traj.has_value()) {
+				ss << " (done)";
+			}
+
+			ss
+					<< std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch())
+							.count();
+
+			textActor->SetInput(ss.str().c_str());
+			textActor->Modified();
+
+			{
+				std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> occlusion_lines;
+
+				for (const auto &apple: scene.apples) {
+					if (eval.getCanSeeApple()(state, apple)) {
+						occlusion_lines.emplace_back(state.getGlobalLinkTransform("end_effector").translation(),
+													 apple.center);
+					}
+				}
+
+				occlusion_visualization.updateLine(occlusion_lines);
+			}
+
 		}
 
 	};

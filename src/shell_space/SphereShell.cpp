@@ -1,5 +1,5 @@
 #include "SphereShell.h"
-#include "../utilities/experiment_utils.h"
+#include "../utilities/enclosing_sphere.h"
 
 #include <range/v3/all.hpp>
 
@@ -80,7 +80,7 @@ std::shared_ptr<WorkspaceSphereShell>
 paddedSphericalShellAroundLeaves(const AppleTreePlanningScene &scene_info, double padding) {
 
 	// Compute the minimum enclosing sphere of the leaves.
-	auto enclosing = compute_enclosing_sphere_around_leaves(*scene_info.scene_msg, 0.0);
+	auto enclosing = utilities::compute_enclosing_sphere_around_leaves(*scene_info.scene_msg, 0.0);
 
 	// Add padding to the radius.
 	enclosing.radius += padding;

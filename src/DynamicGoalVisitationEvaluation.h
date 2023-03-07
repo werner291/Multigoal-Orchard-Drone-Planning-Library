@@ -74,6 +74,8 @@ private:
 	[[nodiscard]] std::optional<RobotPath> replanFromEvent();
 
 	utilities::CanSeeAppleFn can_see_apple;
+public:
+	const utilities::CanSeeAppleFn &getCanSeeApple() const;
 
 public:
 

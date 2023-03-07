@@ -225,18 +225,6 @@ std::vector<ompl::base::GoalPtr> constructNewAppleGoals(
 }
 
 
-std::vector<moveit::core::RobotState> randomStatesOutsideTree(const AppleTreePlanningScene &scene,
-															  const moveit::core::RobotModelConstPtr &model,
-															  const int n) {
-
-	using namespace ranges;
-
-	return views::iota(0, n) | views::transform([&](int i) {
-		return randomStateOutsideTree(model, i);
-	}) | to_vector;
-
-}
-
 ompl::base::SpaceInformationPtr
 loadSpaceInformation(const std::shared_ptr<DroneStateSpace> &stateSpace, const AppleTreePlanningScene &scene_info) {
 	auto scene = setupPlanningScene(*scene_info.scene_msg, stateSpace->getRobotModel());

@@ -8,13 +8,13 @@ std::vector<Proportions> gen_discoverability_proportions() {// Generate a set of
 
 	std::vector<Proportions> probs;
 
-	const std::size_t N_PROPORTIONS = 5;
+	const std::size_t N_PROPORTIONS = 3;
 
 	for (size_t i = 0; i < N_PROPORTIONS; i++) {
 
 		double fraction_true_given = (double) i / (N_PROPORTIONS - 1);
 
-		long sub_proportions = N_PROPORTIONS - i;
+		long sub_proportions = N_PROPORTIONS;
 
 		for (size_t j = 1; j < sub_proportions; j++) {
 

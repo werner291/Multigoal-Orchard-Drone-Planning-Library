@@ -39,8 +39,11 @@ namespace utilities {
 
 				for (const auto &[goal_id, apple]: ranges::views::enumerate(apples)) {
 
-					if ((discovery_status[goal_id] == DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT ||
-						discovery_status[goal_id] == DiscoveryStatus::ROBOT_THINKS_EXISTS_BUT_DOESNT) && can_see_apple(state, apple)) {
+					bool has_unknown_information =
+							discovery_status[goal_id] == DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT ||
+							discovery_status[goal_id] == DiscoveryStatus::ROBOT_THINKS_EXISTS_BUT_DOESNT;
+
+					if (has_unknown_information && can_see_apple(state, apple)) {
 						return GoalSighting{(int) goal_id, {segment_i, t}};
 					}
 				}

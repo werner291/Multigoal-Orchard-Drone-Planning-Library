@@ -33,9 +33,10 @@ public:
 	explicit ChangeIgnoringReplannerAdapter(const std::shared_ptr<MultiGoalPlanner> &staticPlanner);
 
 	std::optional<DynamicMultiGoalPlanner::PathSegment> plan_initial(const ompl::base::SpaceInformationPtr &si,
-															  const ompl::base::State *start,
-															  const std::vector<ompl::base::GoalPtr> &goals,
-															  const AppleTreePlanningScene &planning_scene) override;
+																	 const ompl::base::State *start,
+																	 const std::vector<ompl::base::GoalPtr> &goals,
+																	 const AppleTreePlanningScene &planning_scene,
+																	 double padding) override;
 
 	std::optional<DynamicMultiGoalPlanner::PathSegment>
 	replan_after_path_end(const ompl::base::SpaceInformationPtr &si,
