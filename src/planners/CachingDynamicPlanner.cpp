@@ -7,6 +7,7 @@
 #include "CachingDynamicPlanner.h"
 #include "../probe_retreat_move.h"
 #include "../utilities/vector_utils.h"
+#include "../utilities/ompl_tools.h"
 
 template<typename ShellPoint>
 std::optional<DynamicMultiGoalPlanner::PathSegment>
@@ -32,92 +33,39 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 	// Plan a path to the new goal.
 	auto approach = approach_planner->approach_path(new_goal, *shell_space);
 
-	// Find a path to the shell. We probably need to recompute the to_shell_cache path since we got interrupted.
-	to_shell_cache = find_path_to_shell(si, current_state);
-
-	// If we couldn't find a path to the shell, then the robot must be stuck somewhere. Halt.
-	if (!to_shell_cache) {
-
-		// TODO: we could probably do something better here, such as re-using the last approach path?
-		// Or, maybe try harder/over?
-		// Might not work since we're following an optimized path.
-		std::cout << "Could not find a way back to the shell." << std::endl;
-
-		return std::nullopt;
-
-	} else {
-		std::cout << "Did find a way back to the shell." << std::endl;
-	}
-
 	// If we successfully found a path to the new goal, we can add it to the ordering.
 	if (approach) {
 
+		auto distance_1 = [&](const IncrementalTSPMethods::NewOrderingEntry &a) {
+
+			// Same again, but only for one of the goals; the other is simply the ShellPoint closest to the robot.
+			ShellPoint a_sp = std::holds_alternative<IncrementalTSPMethods::NewGoal>(a) ? approach->shell_point
+																						: ordering[std::get<IncrementalTSPMethods::FromOriginal>(
+							a).index].approach.shell_point;
+
+			return shell_space->predict_path_length(to_shell_cache->shell_point, a_sp);
+
+		};
+
+		auto distance_2 = [&](const IncrementalTSPMethods::NewOrderingEntry &a,
+							  const IncrementalTSPMethods::NewOrderingEntry &b) {
+
+			// Look up the ShellPoint of either the existing goal in the ordering, or the new goal.
+			ShellPoint a_sp = std::holds_alternative<IncrementalTSPMethods::NewGoal>(a) ? approach->shell_point
+																						: ordering[std::get<IncrementalTSPMethods::FromOriginal>(
+							a).index].approach.shell_point;
+
+			// Same for b.
+			ShellPoint b_sp = std::holds_alternative<IncrementalTSPMethods::NewGoal>(b) ? approach->shell_point
+																						: ordering[std::get<IncrementalTSPMethods::FromOriginal>(
+							b).index].approach.shell_point;
+
+			return shell_space->predict_path_length(a_sp, b_sp);
+
+		};
+
 		// Determine the new ordering indices using the TSP method.
-		auto new_ordering = tsp_method->update_ordering(ordering.size(),
-														[&](const IncrementalTSPMethods::NewOrderingEntry &a,
-															const IncrementalTSPMethods::NewOrderingEntry &b) {
-
-															// Look up the ShellPoint of either the existing goal in the ordering, or the new goal.
-															ShellPoint a_sp = std::holds_alternative<IncrementalTSPMethods::NewGoal>(
-																	a) ? approach->shell_point
-																	   : ordering[std::get<IncrementalTSPMethods::FromOriginal>(
-																			a).index].approach.shell_point;
-
-															// Same for b.
-															ShellPoint b_sp = std::holds_alternative<IncrementalTSPMethods::NewGoal>(
-																	b) ? approach->shell_point
-																	   : ordering[std::get<IncrementalTSPMethods::FromOriginal>(
-																			b).index].approach.shell_point;
-
-															return shell_space->predict_path_length(a_sp, b_sp);
-
-														},
-														[&](const IncrementalTSPMethods::NewOrderingEntry &a) {
-
-															// Same again, but only for one of the goals; the other is simply the ShellPoint closest to the robot.
-															ShellPoint a_sp = std::holds_alternative<IncrementalTSPMethods::NewGoal>(
-																	a) ? approach->shell_point
-																	   : ordering[std::get<IncrementalTSPMethods::FromOriginal>(
-																			a).index].approach.shell_point;
-
-															return shell_space->predict_path_length(to_shell_cache->shell_point,
-																									a_sp);
-
-														});
-
-		{// Validate the new ordering: must only have indices to the existing ordering and the new goal.
-			assert(std::all_of(new_ordering.begin(),
-							   new_ordering.end(),
-							   [&](const IncrementalTSPMethods::NewOrderingEntry &e) {
-								   return std::holds_alternative<IncrementalTSPMethods::NewGoal>(e) ||
-										  std::get<IncrementalTSPMethods::FromOriginal>(e).index < ordering.size();
-							   }));
-
-			// NewGoal may appear exactly once
-			assert(std::count_if(new_ordering.begin(),
-								 new_ordering.end(),
-								 [](const IncrementalTSPMethods::NewOrderingEntry &e) {
-									 return std::holds_alternative<IncrementalTSPMethods::NewGoal>(e);
-								 }) == 1);
-
-			// All indices must be unique
-			std::vector<bool> indices(ordering.size(), false);
-			assert(std::all_of(new_ordering.begin(),
-							   new_ordering.end(),
-							   [&](const IncrementalTSPMethods::NewOrderingEntry &e) {
-								   if (std::holds_alternative<IncrementalTSPMethods::NewGoal>(e)) {
-									   return true;
-								   } else {
-									   auto index = std::get<IncrementalTSPMethods::FromOriginal>(e).index;
-									   if (indices[index]) {
-										   return false;
-									   } else {
-										   indices[index] = true;
-										   return true;
-									   }
-								   }
-							   }));
-		}
+		auto new_ordering = tsp_method->update_ordering(ordering.size(), distance_2, distance_1);
 
 		// Build a new ordering by moving out of the old ordering, according to the given order.
 		ordering = new_ordering |
@@ -135,11 +83,41 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 				   }) | ranges::to_vector;
 	}
 
-	// Most likely the next path segment will be requested after visiting the first goal
-	// in the ordering, so that's the approach path to which we'll cache.
-	// TODO	to_shell_cache = ordering[0].approach;
+	if (last_emitted_path->goal == ordering.front().goal) {
 
-	return optimizedPointToPoint(si, *to_shell_cache, ordering.front().approach);
+		utilities::truncatePathToInterrupt(last_emitted_path->path, interrupt);
+
+		return last_emitted_path->path;
+
+	} else {
+
+		// Find a path to the shell. We probably need to recompute the to_shell_cache path since we got interrupted.
+		to_shell_cache = find_path_to_shell(si, current_state);
+
+		// If we couldn't find a path to the shell, then the robot must be stuck somewhere. Halt.
+		if (!to_shell_cache) {
+
+			// TODO: we could probably do something better here, such as re-using the last approach path?
+			// Or, maybe try harder/over?
+			// Might not work since we're following an optimized path.
+			std::cout << "Could not find a way back to the shell." << std::endl;
+
+			return std::nullopt;
+
+		} else {
+			std::cout << "Did find a way back to the shell." << std::endl;
+		}
+
+		// Most likely the next path segment will be requested after visiting the first goal
+		// in the ordering, so that's the approach path to which we'll cache.
+		// TODO	to_shell_cache = ordering[0].approach;
+
+		auto path = optimizedPointToPoint(si, *to_shell_cache, ordering.front().approach);
+
+		last_emitted_path = {{path, ordering.front().goal}};
+
+		return path;
+	}
 
 }
 
@@ -159,10 +137,10 @@ CachingDynamicPlanner<ShellPoint>::find_path_to_shell(const ompl::base::SpaceInf
 }
 
 template<typename ShellPoint>
-std::optional<DynamicMultiGoalPlanner::PathSegment> CachingDynamicPlanner<ShellPoint>::replan_after_path_end(
-		const ompl::base::SpaceInformationPtr &si,
-		const ompl::base::State *current_state,
-		const AppleTreePlanningScene &planning_scene) {
+std::optional<DynamicMultiGoalPlanner::PathSegment>
+CachingDynamicPlanner<ShellPoint>::replan_after_path_end(const ompl::base::SpaceInformationPtr &si,
+														 const ompl::base::State *current_state,
+														 const AppleTreePlanningScene &planning_scene) {
 
 	if (ordering.empty()) {
 		return std::nullopt;
@@ -180,6 +158,9 @@ std::optional<DynamicMultiGoalPlanner::PathSegment> CachingDynamicPlanner<ShellP
 	ordering.erase(ordering.begin());
 
 	if (ordering.empty()) {
+
+		last_emitted_path.reset();
+
 		return std::nullopt;
 	} else {
 
@@ -187,7 +168,11 @@ std::optional<DynamicMultiGoalPlanner::PathSegment> CachingDynamicPlanner<ShellP
 		// in the ordering, so that's the approach path to which we'll cache.
 		to_shell_cache = ordering[0].approach;
 
-		return optimizedPointToPoint(si, *to_shell, ordering[0].approach);
+		auto path = optimizedPointToPoint(si, *to_shell, ordering[0].approach);
+
+		last_emitted_path = {{path, ordering.front().goal}};
+
+		return path;
 	}
 }
 
@@ -240,6 +225,8 @@ CachingDynamicPlanner<ShellPoint>::plan_initial(const ompl::base::SpaceInformati
 	auto ptp = optimizedPointToPoint(si, *to_shell, ordering.front().approach);
 
 	assert(si->distance(ptp.getState(0), start) < 1e-6);
+
+	last_emitted_path = {{ptp, ordering.front().goal}};
 
 	return ptp;
 }

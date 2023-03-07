@@ -90,6 +90,13 @@ class CachingDynamicPlanner : public DynamicMultiGoalPlanner {
 														 const OmplApproachPath<ShellPoint> &retreat_path,
 														 const OmplApproachPath<ShellPoint> &approach_path) const;
 
+	struct LastEmitted {
+		ompl::geometric::PathGeometric path;
+		ompl::base::GoalPtr goal;
+	};
+
+	std::optional<LastEmitted> last_emitted_path;
+
 public:
 	explicit CachingDynamicPlanner(const std::shared_ptr<ApproachPlanningMethods<ShellPoint>> &approachPlanner,
 								   const std::shared_ptr<IncrementalTSPMethods> &tspMethod,

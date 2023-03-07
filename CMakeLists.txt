@@ -70,8 +70,6 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
 #SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
 add_library(${PROJECT_NAME}_shared
-        src/ApproximateConvexDecompositions.cpp
-        src/ApproximateConvexDecompositions.h
         src/BruteForceDedupStreamingAlphashape.cpp
         src/BruteForceDedupStreamingAlphashape.h
         src/BulletContinuousMotionValidator.cpp
@@ -228,7 +226,9 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/discoverability_specifications.cpp
         src/utilities/enclosing_sphere.h
         src/utilities/enclosing_sphere.cpp
-        src/planner_allocators.cpp src/planner_allocators.h src/PathInterrupt.cpp src/PathInterrupt.cpp)
+        src/planner_allocators.cpp
+        src/planner_allocators.h
+        src/PathInterrupt.cpp)
 
 add_library(${PROJECT_NAME}_sensing
         src/exploration/CandidatePathGenerator.cpp
