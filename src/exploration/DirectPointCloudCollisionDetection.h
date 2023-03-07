@@ -1,3 +1,7 @@
+// Copyright (c) 2022 University College Roosevelt
+//
+// All rights reserved.
+
 //
 // Created by werner on 21-11-22.
 //
@@ -13,7 +17,7 @@
 #include <CGAL/Orthogonal_incremental_neighbor_search.h>
 #include <geometric_shapes/shapes.h>
 
-#include "RobotPath.h"
+#include "../RobotPath.h"
 
 static const double COLLISION_DETECTION_MAX_STEP = 0.2;
 
@@ -74,8 +78,7 @@ public:
 
 	double distanceToCollision(const moveit::core::RobotState &state, double maxDistance) const;
 
-	double
-	distanceToCollision(const shapes::ShapeConstPtr &shape, const Eigen::Isometry3d &pose, double maxDistance) const;
+	double distanceToCollision(const shapes::ShapeConstPtr &shape, const Eigen::Isometry3d &pose, double maxDistance) const;
 
 	double distanceToCollision(const shapes::Box &shape, const Eigen::Isometry3d &pose, double maxDistance) const;
 

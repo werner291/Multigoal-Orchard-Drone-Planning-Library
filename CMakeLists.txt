@@ -78,8 +78,8 @@ add_library(${PROJECT_NAME}_shared
         src/CurrentPathState.h
         src/DirectApproachVariantSampler.cpp
         src/DirectApproachVariantSampler.h
-        src/DirectPointCloudCollisionDetection.cpp
-        src/DirectPointCloudCollisionDetection.h
+        src/exploration/DirectPointCloudCollisionDetection.cpp
+        src/exploration/DirectPointCloudCollisionDetection.h
         src/DistanceHeuristics.cpp
         src/DistanceHeuristics.h
         src/DronePathLengthObjective.cpp

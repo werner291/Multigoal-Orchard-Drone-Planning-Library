@@ -15,7 +15,7 @@
 #include "../RobotPath.h"
 #include "../AnytimeOptimalInsertion.h"
 #include "../shell_space/CGALMeshShell.h"
-#include "../DirectPointCloudCollisionDetection.h"
+#include "DirectPointCloudCollisionDetection.h"
 #include "../utilities/moveit.h"
 
 #include "SegmentedRobotPath.h"

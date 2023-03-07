@@ -12,7 +12,7 @@
 #include <moveit/robot_model/robot_model.h>
 #include <Eigen/Core>
 #include <utility>
-#include "../DirectPointCloudCollisionDetection.h"
+#include "DirectPointCloudCollisionDetection.h"
 #include "DynamicMeshHullAlgorithm.h"
 #include "../shell_space/CGALMeshShell.h"
 #include "VersionedRevalidableKeyValueCache.h"

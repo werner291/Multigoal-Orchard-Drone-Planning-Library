@@ -7,7 +7,7 @@
 
 
 #include "../utilities/moveit.h"
-#include "../DirectPointCloudCollisionDetection.h"
+#include "DirectPointCloudCollisionDetection.h"
 #include "SegmentedRobotPath.h"
 
 void localOptimizeSegmentedPath(const RobotPastTrace& robot_past,
