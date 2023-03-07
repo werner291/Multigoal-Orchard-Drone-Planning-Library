@@ -70,8 +70,6 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
 #SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
 add_library(${PROJECT_NAME}_shared
-        src/BruteForceDedupStreamingAlphashape.cpp
-        src/BruteForceDedupStreamingAlphashape.h
         src/BulletContinuousMotionValidator.cpp
         src/BulletContinuousMotionValidator.h
         src/CurrentPathState.cpp
@@ -217,8 +215,6 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/alpha_shape.h
         src/utilities/MeshOcclusionModel.cpp
         src/utilities/MeshOcclusionModel.h
-        src/AppleDiscoveryModel.cpp
-        src/AppleDiscoveryModel.h
         src/planners/ChangeAccumulatingPlannerAdapter.cpp
         src/planners/ChangeAccumulatingPlannerAdapter.h
         src/planners/InitialOrbitPlanner.cpp

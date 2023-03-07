@@ -30,10 +30,15 @@ public:
 										 std::function<double(size_t, size_t)> distance,
 										 std::function<double(size_t)> first_distance) const override;
 
-	std::vector<NewOrderingEntry> update_ordering(size_t old_n,
-												  std::function<double(const NewOrderingEntry &,
-																	   const NewOrderingEntry &)> distance,
-												  std::function<double(const NewOrderingEntry &)> first_distance) const override;
+	std::vector<NewOrderingEntry> update_ordering_with_insertion(size_t old_n,
+																 std::function<double(const NewOrderingEntry &,
+																					  const NewOrderingEntry &)> distance,
+																 std::function<double(const NewOrderingEntry &)> first_distance) const override;
+
+	std::vector<size_t> update_ordering_with_removal(size_t old_n,
+													 size_t removed,
+													 std::function<double(const size_t &, const size_t &)> distance,
+													 std::function<double(const size_t &)> first_distance) const override;
 
 
 };

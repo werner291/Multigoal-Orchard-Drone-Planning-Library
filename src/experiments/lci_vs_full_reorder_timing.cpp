@@ -118,34 +118,37 @@ void update_order(const ORToolsTSPMethods &method,
 				  std::vector<Eigen::Vector3d> &points,
 				  Eigen::Vector3d &new_point) {
 
-	auto update = method.update_ordering(points.size(),
-										 [&](const IncrementalTSPMethods::NewOrderingEntry &a,
-											 const IncrementalTSPMethods::NewOrderingEntry &b) {
+	auto update = method.update_ordering_with_insertion(points.size(),
+														[&](const IncrementalTSPMethods::NewOrderingEntry &a,
+															const IncrementalTSPMethods::NewOrderingEntry &b) {
 
-											 // Look up the points according to whether they are from the original vector or the new point.
-											 auto pta = std::holds_alternative<IncrementalTSPMethods::FromOriginal>(a)
-														? points[std::get<IncrementalTSPMethods::FromOriginal>(a).index]
-														: new_point;
-											 auto ptb = std::holds_alternative<IncrementalTSPMethods::FromOriginal>(b)
-														? points[std::get<IncrementalTSPMethods::FromOriginal>(b).index]
-														: new_point;
+															// Look up the points according to whether they are from the original vector or the new point.
+															auto pta = std::holds_alternative<IncrementalTSPMethods::FromOriginal>(
+																	a)
+																	   ? points[std::get<IncrementalTSPMethods::FromOriginal>(
+																			a).index] : new_point;
+															auto ptb = std::holds_alternative<IncrementalTSPMethods::FromOriginal>(
+																	b)
+																	   ? points[std::get<IncrementalTSPMethods::FromOriginal>(
+																			b).index] : new_point;
 
-											 // Compute the angle between the two points and return as the cost.
-											 return angle_between_unit(pta, ptb);
+															// Compute the angle between the two points and return as the cost.
+															return angle_between_unit(pta, ptb);
 
-										 },
-										 [&](const IncrementalTSPMethods::NewOrderingEntry &a) {
+														},
+														[&](const IncrementalTSPMethods::NewOrderingEntry &a) {
 
-											 // Same here, but for only one point.
-											 // The other point is implicitly the new point.
-											 auto pta = std::holds_alternative<IncrementalTSPMethods::FromOriginal>(a)
-														? points[std::get<IncrementalTSPMethods::FromOriginal>(a).index]
-														: new_point;
+															// Same here, but for only one point.
+															// The other point is implicitly the new point.
+															auto pta = std::holds_alternative<IncrementalTSPMethods::FromOriginal>(
+																	a)
+																	   ? points[std::get<IncrementalTSPMethods::FromOriginal>(
+																			a).index] : new_point;
 
-											 // Compute the angle between the two points and return as the cost.
-											 return angle_between_unit(start, pta);
+															// Compute the angle between the two points and return as the cost.
+															return angle_between_unit(start, pta);
 
-										 });
+														});
 
 	// Apply the update to the vector of points.
 	apply_reorder_with_insert(points, new_point, update);

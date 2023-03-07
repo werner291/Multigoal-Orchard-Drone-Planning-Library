@@ -87,10 +87,12 @@ size_t optimal_insertion_point(size_t old_n,
 	return insert_at;
 }
 
-std::vector<IncrementalTSPMethods::NewOrderingEntry> ORToolsTSPMethods::update_ordering(size_t old_n,
-																						std::function<double(const NewOrderingEntry &,
-																											 const NewOrderingEntry &)> distance,
-																						std::function<double(const NewOrderingEntry &)> first_distance) const {
+std::vector<IncrementalTSPMethods::NewOrderingEntry> ORToolsTSPMethods::update_ordering_with_insertion(size_t old_n,
+																									   std::function<double(
+																											   const NewOrderingEntry &,
+																											   const NewOrderingEntry &)> distance,
+																									   std::function<double(
+																											   const NewOrderingEntry &)> first_distance) const {
 
 	// Change the order based on the given update strategy.
 	switch (update_strategy) {
@@ -132,4 +134,44 @@ std::vector<IncrementalTSPMethods::NewOrderingEntry> ORToolsTSPMethods::update_o
 
 ORToolsTSPMethods::ORToolsTSPMethods(ORToolsTSPMethods::UpdateStrategy updateStrategy)
 		: update_strategy(updateStrategy) {
+}
+
+std::vector<size_t> ORToolsTSPMethods::update_ordering_with_removal(size_t old_n,
+																	size_t removed,
+																	std::function<double(const size_t &,
+																						 const size_t &)> distance,
+																	std::function<double(const size_t &)> first_distance) const {
+
+	switch (update_strategy) {
+		case LEAST_COSTLY_INSERT: {
+			// Just remove the element from the ordering
+			std::vector<size_t> new_ordering(old_n - 1);
+			for (size_t i = 0; i < removed; i++) {
+				new_ordering[i] = i;
+			}
+			for (size_t i = removed; i < old_n - 1; i++) {
+				new_ordering[i] = i + 1;
+			}
+			return new_ordering;
+		}
+		case FULL_REORDER: {
+			// Invoke the initial ordering function to get a new ordering.
+			auto new_ordering = initial_ordering(old_n - 1, [&](size_t i, size_t j) -> double {
+				// If either of the indices is the removed element, we need to skip it,
+				// so we add 1 to the index if it is greater than the removed element
+				return distance(i < removed ? i : i + 1, j < removed ? j : j + 1);
+			}, [&](size_t i) -> double {
+				return first_distance(i < removed ? i : i + 1);
+			});
+
+			// Return a vector of indices, adjusting the indices to account for the removed element
+			return new_ordering | ranges::views::transform([&](size_t i) -> size_t {
+				return i < removed ? i : i + 1;
+			}) | ranges::to_vector;
+		}
+
+	}
+
+	throw std::runtime_error("Should not get here");
+
 }

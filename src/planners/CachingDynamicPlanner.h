@@ -90,12 +90,43 @@ class CachingDynamicPlanner : public DynamicMultiGoalPlanner {
 														 const OmplApproachPath<ShellPoint> &retreat_path,
 														 const OmplApproachPath<ShellPoint> &approach_path) const;
 
+	/**
+	 * A small struct that pairs the last path emitted by the planner with the goal it was emitted for.
+	 */
 	struct LastEmitted {
-		ompl::geometric::PathGeometric path;
-		ompl::base::GoalPtr goal;
+		ompl::geometric::PathGeometric path; //< The last path emitted by the planner.
+		ompl::base::GoalPtr goal;        //< The goal the last path was emitted for.
 	};
 
+	/// The last path emitted by the planner, and the goal it was emitted for, if any. Otherwise nullopt.
 	std::optional<LastEmitted> last_emitted_path;
+
+	/**
+     * @brief Determine a new ordering with insertion of a given approach path.
+     *
+     * This method calculates a new ordering of the approach paths based on the TSP method after inserting a new approach path.
+     * It uses the distances between the current approach path and the other approach paths to calculate the cost of inserting
+     * a new approach path at a particular location in the ordering. The TSP method then determines the new ordering of the approach
+     * paths with the lowest cost of insertion.
+     *
+     * @tparam ShellPoint The type of shell point used in the planner.
+     * @param approach The approach path to be inserted.
+     * @return A vector of NewOrderingEntry structs representing the new ordering of the approach paths.
+     */
+	std::vector<IncrementalTSPMethods::NewOrderingEntry>
+	determine_new_ordering_with_insertion(const OmplApproachPath<ShellPoint> &approach) const;
+
+	/**
+	 * @brief Given an interrupt and a current state, return a path segment starting from that interrupt according to the current approach ordering.
+	 *
+	 * @param si 					The space information pointer.
+	 * @param current_state 		The current state.
+	 * @param interrupt 			The interrupt.
+	 * @return 						A path segment starting from the interrupt, or nullopt if no path could be found.
+	 */
+	std::optional<DynamicMultiGoalPlanner::PathSegment> continueFromInterrupt(const ompl::base::SpaceInformationPtr &si,
+																			  const ompl::base::State *current_state,
+																			  const PathInterrupt &interrupt);
 
 public:
 	explicit CachingDynamicPlanner(const std::shared_ptr<ApproachPlanningMethods<ShellPoint>> &approachPlanner,
@@ -162,6 +193,7 @@ public:
 													const ompl::base::GoalPtr &removed_goal,
 													const PathInterrupt &interrupt,
 													const AppleTreePlanningScene &planning_scene) override;
+
 
 };
 

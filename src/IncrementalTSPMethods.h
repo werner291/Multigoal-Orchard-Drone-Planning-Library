@@ -54,17 +54,31 @@ public:
 	using NewOrderingEntry = std::variant<FromOriginal, NewGoal>;
 
 	/**
-	 * Return a new ordering of the goals.
+	 * Return a new ordering of the goals, assuming the addition of a new goal.
 	 *
 	 * @param old_n 			The number of goals in the original ordering.
 	 * @param distance 			A distance function that takes two NewOrderingEntry objects and returns the distance between them.
 	 * @param first_distance 	A distance function that takes a NewOrderingEntry object and returns the distance from the start to it.
 	 * @return 					A vector of NewOrderingEntry objects representing the new ordering.
 	 */
-	virtual std::vector<NewOrderingEntry> update_ordering(size_t old_n,
-														  std::function<double(const NewOrderingEntry &,
-																			   const NewOrderingEntry &)> distance,
-														  std::function<double(const NewOrderingEntry &)> first_distance) const = 0;
+	virtual std::vector<NewOrderingEntry> update_ordering_with_insertion(size_t old_n,
+																		 std::function<double(const NewOrderingEntry &,
+																							  const NewOrderingEntry &)> distance,
+																		 std::function<double(const NewOrderingEntry &)> first_distance) const = 0;
+
+	/**
+	 * Return a new ordering of the goals, assuming the removal of a goal.
+	 *
+	 * @param old_n 			The number of goals in the original ordering.
+	 * @param removed 			The index of the removed goal.
+	 * @param distance 			A distance function that takes two NewOrderingEntry objects and returns the distance between them.
+	 * @param first_distance 	A distance function that takes a NewOrderingEntry object and returns the distance from the start to it.
+	 */
+	virtual std::vector<size_t> update_ordering_with_removal(size_t old_n,
+															 size_t removed,
+															 std::function<double(const size_t &,
+																				  const size_t &)> distance,
+															 std::function<double(const size_t &)> first_distance) const = 0;
 };
 
 
