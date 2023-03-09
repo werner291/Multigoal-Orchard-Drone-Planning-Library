@@ -20,3 +20,14 @@ shape_msgs::msg::Mesh loadMesh(const std::string &name) {
 
 	return std::move(meshMsgFromResource(prefix));
 }
+
+shape_msgs::msg::Mesh loadRobotMesh(const std::string &name) {
+	std::stringstream prefix_stream;
+	prefix_stream << "file://";
+	prefix_stream << MYSOURCE_ROOT;
+	prefix_stream << "/";
+	prefix_stream << name;
+	std::string prefix = prefix_stream.str();
+
+	return std::move(meshMsgFromResource(prefix));
+}

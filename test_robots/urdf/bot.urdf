@@ -4,12 +4,12 @@
     <link name="base_link">
 
         <visual>
-            <geometry>
-                <box size="0.4 0.4 0.2"/>
-            </geometry>
 <!--            <geometry>-->
-<!--                <mesh filename="test_robots/meshes/drone.dae"/>-->
+<!--                <box size="0.4 0.4 0.2"/>-->
 <!--            </geometry>-->
+            <geometry>
+                <mesh filename="test_robots/meshes/drone.dae"/>
+            </geometry>
             <origin xyz="0.0 0.0 0.0"/>
         </visual>
 

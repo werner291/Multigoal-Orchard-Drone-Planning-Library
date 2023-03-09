@@ -15,15 +15,28 @@ VtkRobotmodel::VtkRobotmodel(const moveit::core::RobotModelConstPtr &robot_model
 
 	for (const moveit::core::LinkModel* lm : robot_model->getLinkModelsWithCollisionGeometry()) {
 
-		vtkNew<vtkActor> linkActor;
+		std::cout << "Visualizing link with mesh " << lm->getVisualMeshFilename() << std::endl;
 
-		vtkNew<vtkPolyDataMapper> linkPolyData = polyDataForLink(lm);
+		if (!lm->getVisualMeshFilename().empty()) {
 
-		linkActor->SetMapper(linkPolyData);
+			auto mesh = loadRobotMesh(lm->getVisualMeshFilename());
 
-		linkActor->GetProperty()->SetColor(0.5, 0.5, 0.5);
+			link_actors->AddItem(createActorFromMesh(mesh));
 
-		link_actors->AddItem(linkActor);
+
+
+		} else {
+
+			vtkNew<vtkActor> linkActor;
+
+			vtkNew<vtkPolyDataMapper> linkPolyData = polyDataForLink(lm);
+
+			linkActor->SetMapper(linkPolyData);
+
+			linkActor->GetProperty()->SetColor(0.5, 0.5, 0.5);
+
+			link_actors->AddItem(linkActor);
+		}
 
 	}
 

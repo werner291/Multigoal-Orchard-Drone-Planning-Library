@@ -11,4 +11,6 @@ shape_msgs::msg::Mesh meshMsgFromResource(const std::string &resource);
 
 shape_msgs::msg::Mesh loadMesh(const std::string& name);
 
+shape_msgs::msg::Mesh loadRobotMesh(const std::string& name);
+
 #endif //NEW_PLANNERS_LOAD_MESH_H
