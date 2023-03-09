@@ -15,6 +15,8 @@ SimpleVtkViewer::SimpleVtkViewer() {
 	renderWindowInteractor->SetRenderWindow(visualizerWindow);
 	renderWindowInteractor->CreateRepeatingTimer(33);
 
+	viewerRenderer->SetBackground(0.5, 0.8, 0.9);
+
 	addTimerCallback([&]() {
 		renderWindowInteractor->GetRenderWindow()->Render();
 	});

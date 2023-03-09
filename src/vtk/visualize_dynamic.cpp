@@ -54,6 +54,44 @@ void createActors(const TreeMeshes &meshes,
 		apple_actors.push_back(fruit_actor);
 	}
 
+	{
+
+		shape_msgs::msg::Mesh ground_plane;
+		ground_plane.vertices.resize(4);
+		ground_plane.vertices[0].x = -10.0;
+		ground_plane.vertices[0].y = -10.0;
+		ground_plane.vertices[0].z = 0.0;
+
+		ground_plane.vertices[1].x = 10.0;
+		ground_plane.vertices[1].y = -10.0;
+		ground_plane.vertices[1].z = 0.0;
+
+		ground_plane.vertices[2].x = 10.0;
+		ground_plane.vertices[2].y = 10.0;
+		ground_plane.vertices[2].z = 0.0;
+
+		ground_plane.vertices[3].x = -10.0;
+		ground_plane.vertices[3].y = 1.0;
+		ground_plane.vertices[3].z = 0.0;
+
+		ground_plane.triangles.resize(2);
+		ground_plane.triangles[0].vertex_indices[0] = 0;
+		ground_plane.triangles[0].vertex_indices[1] = 1;
+		ground_plane.triangles[0].vertex_indices[2] = 2;
+
+		ground_plane.triangles[1].vertex_indices[0] = 0;
+		ground_plane.triangles[1].vertex_indices[1] = 2;
+		ground_plane.triangles[1].vertex_indices[2] = 3;
+
+		// Ground plane.
+		auto ground_actor = createActorFromMesh(ground_plane);
+
+		ground_actor->GetProperty()->SetDiffuseColor(0.5, 0.8, 0.5);
+
+		actors->AddItem(ground_actor);
+
+	}
+
 	viewer.addActorCollection(actors);
 }
 
@@ -141,8 +179,6 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 				cam_pos.z() = 4.0;
 
 				std::cout << "Cam pos: " << cam_pos.transpose() << std::endl;
-
-
 
 				camera->SetViewUp(0, 0, 1);
 				camera->SetFocalPoint(robot_position.x(), robot_position.y(), robot_position.z());

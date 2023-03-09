@@ -336,7 +336,7 @@ VtkLineSegmentsVisualization::VtkLineSegmentsVisualization(float r, float g, flo
 	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
 	visitOrderVisualizationActor->SetMapper(visitOrderVisualizationMapper);
 	visitOrderVisualizationActor->GetProperty()->SetColor(r, g, b);
-	visitOrderVisualizationActor->GetProperty()->SetLineWidth(5);
+	visitOrderVisualizationActor->GetProperty()->SetLineWidth(2);
 }
 
 vtkActor *VtkLineSegmentsVisualization::getActor() {
