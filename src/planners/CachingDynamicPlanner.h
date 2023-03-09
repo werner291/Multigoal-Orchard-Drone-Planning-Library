@@ -113,7 +113,7 @@ class CachingDynamicPlanner : public DynamicMultiGoalPlanner {
      * @param approach The approach path to be inserted.
      * @return A vector of NewOrderingEntry structs representing the new ordering of the approach paths.
      */
-	std::vector<IncrementalTSPMethods::NewOrderingEntry>
+	[[nodiscard]] std::vector<IncrementalTSPMethods::NewOrderingEntry>
 	determine_new_ordering_with_insertion(const OmplApproachPath<ShellPoint> &approach) const;
 
 	/**
@@ -124,7 +124,7 @@ class CachingDynamicPlanner : public DynamicMultiGoalPlanner {
 	 * @param interrupt 			The interrupt.
 	 * @return 						A path segment starting from the interrupt, or nullopt if no path could be found.
 	 */
-	std::optional<DynamicMultiGoalPlanner::PathSegment> continueFromInterrupt(const ompl::base::SpaceInformationPtr &si,
+	[[nodiscard]] std::optional<DynamicMultiGoalPlanner::PathSegment> continueFromInterrupt(const ompl::base::SpaceInformationPtr &si,
 																			  const ompl::base::State *current_state,
 																			  const PathInterrupt &interrupt);
 
@@ -144,7 +144,7 @@ public:
 	 * @param planning_scene 	The planning scene.
 	 * @return 					A path segment to one of the goals, or nullopt if the planner has decided to halt.
 	 */
-	std::optional<PathSegment> plan_initial(const ompl::base::SpaceInformationPtr &si,
+	[[nodiscard]] std::optional<PathSegment> plan_initial(const ompl::base::SpaceInformationPtr &si,
 											const ompl::base::State *start,
 											const std::vector<ompl::base::GoalPtr> &goals,
 											const AppleTreePlanningScene &planning_scene,
@@ -158,7 +158,7 @@ public:
 	 * @param planning_scene 		The planning scene.
 	 * @return 						A path segment to one of the goals, or nullopt if the planner has decided to halt.
 	 */
-	std::optional<PathSegment> replan_after_path_end(const ompl::base::SpaceInformationPtr &si,
+	[[nodiscard]] std::optional<PathSegment> replan_after_path_end(const ompl::base::SpaceInformationPtr &si,
 													 const ompl::base::State *current_state,
 													 const AppleTreePlanningScene &planning_scene) override;
 
@@ -172,7 +172,7 @@ public:
 	 * @param planning_scene 			The planning scene.
 	 * @return 							A path segment to the new goal, or nullopt if the planner has decided to halt.
 	 */
-	std::optional<PathSegment> replan_after_discovery(const ompl::base::SpaceInformationPtr &si,
+	[[nodiscard]] std::optional<PathSegment> replan_after_discovery(const ompl::base::SpaceInformationPtr &si,
 													  const ompl::base::State *current_state,
 													  const ompl::base::GoalPtr &new_goal,
 													  const PathInterrupt &interrupt,
@@ -188,7 +188,7 @@ public:
 	 * @param planning_scene 		The planning scene.
 	 * @return 						A path segment to one of the goals, or nullopt if the planner has decided to halt.
 	 */
-	std::optional<PathSegment> replan_after_removal(const ompl::base::SpaceInformationPtr &si,
+	[[nodiscard]] std::optional<PathSegment> replan_after_removal(const ompl::base::SpaceInformationPtr &si,
 													const ompl::base::State *current_state,
 													const ompl::base::GoalPtr &removed_goal,
 													const PathInterrupt &interrupt,

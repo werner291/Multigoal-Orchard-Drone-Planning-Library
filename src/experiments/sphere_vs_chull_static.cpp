@@ -29,12 +29,6 @@
 
 using DynamicPlannerAllocatorFn = std::function<std::shared_ptr<DynamicMultiGoalPlanner>(const ompl::base::SpaceInformationPtr &)>;
 
-std::shared_ptr<OmplShellSpace<Eigen::Vector3d>>
-paddedOmplSphereShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
-	auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene_info, 0.1));
-	return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(workspaceShell, si);
-};
-
 std::shared_ptr<OmplShellSpace<ConvexHullPoint>>
 paddedOmplChullShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
 	auto workspaceShell = horizontalAdapter<ConvexHullPoint>(convexHullAroundLeaves(scene_info, 0.1, 1.0));

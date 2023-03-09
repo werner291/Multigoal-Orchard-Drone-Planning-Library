@@ -85,7 +85,7 @@ void RobotPath::truncateUpTo(PathInterrupt interrupt) {
 	end = interpolated;
 
 	// Erase all waypoints after the end waypoint, not including the end waypoint itself.
-	waypoints.erase(waypoints.begin() + interrupt.segment_index + 2, waypoints.end());
+	waypoints.erase(waypoints.begin() + (long) interrupt.segment_index + 2, waypoints.end());
 
 	std::cout << "Truncated path to " << waypoints.size() << " waypoints." << std::endl;
 	std::cout << "for interrupt at segment " << interrupt.segment_index << std::endl;

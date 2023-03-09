@@ -75,7 +75,7 @@ private:
 
 	utilities::CanSeeAppleFn can_see_apple;
 public:
-	const utilities::CanSeeAppleFn &getCanSeeApple() const;
+	[[nodiscard]] const utilities::CanSeeAppleFn &getCanSeeApple() const;
 
 public:
 

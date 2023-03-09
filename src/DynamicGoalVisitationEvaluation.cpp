@@ -101,6 +101,7 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 			if (discovery_status[event->goal_id] == utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT) {
 				discovery_status[event->goal_id] = utilities::DiscoveryStatus::KNOWN_TO_ROBOT;
 			} else {
+				assert(discovery_status[event->goal_id] == utilities::DiscoveryStatus::ROBOT_THINKS_EXISTS_BUT_DOESNT);
 				discovery_status[event->goal_id] = utilities::DiscoveryStatus::REMOVED;
 			}
 

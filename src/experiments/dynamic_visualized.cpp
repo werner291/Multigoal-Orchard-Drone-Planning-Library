@@ -66,7 +66,7 @@ Json::Value runDynamicPlannerExperiment(const AppleTreePlanningScene &scene,
 										 experiment.problem->second.start_state,
 										 scene,
 										 experiment.problem->second.apple_discoverability,
-										 experiment.problem->second.can_see_apple);
+										 *experiment.problem->second.can_see_apple);
 
 	// Record the start time.
 	auto start_time = std::chrono::high_resolution_clock::now();
@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
 
 	};
 
-	Proportions probs{.fraction_true_given = 0.0, .fraction_false_given = 0.0, .fraction_discoverable = 1.0,};
+	Proportions probs{.fraction_true_given = 0.0, .fraction_false_given = 0.5, .fraction_discoverable = 0.5,};
 
 	const auto start_state = randomStateOutsideTree(robot, 0);
 	auto apple_discoverability = generateAppleDiscoverability((int) scene.apples.size(), probs, 42, 1);

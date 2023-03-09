@@ -27,11 +27,6 @@
 
 using DynamicPlannerAllocatorFn = std::function<std::shared_ptr<DynamicMultiGoalPlanner>(const ompl::base::SpaceInformationPtr &)>;
 
-std::shared_ptr<OmplShellSpace<Eigen::Vector3d>> paddedOmplSphereShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
-	auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene_info, 0.1));
-	return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(workspaceShell, si);
-};
-
 struct Experiment {
 	std::pair<std::string, DynamicPlannerAllocatorFn> *planner;
 	std::pair<Json::Value, DynamicGoalsetPlanningProblem> *problem;
@@ -66,7 +61,7 @@ Json::Value runDynamicPlannerExperiment(const AppleTreePlanningScene &scene,
 			experiment.problem->second.start_state,
 			scene,
 			experiment.problem->second.apple_discoverability,
-			experiment.problem->second.can_see_apple
+			*experiment.problem->second.can_see_apple
 			);
 
 	// Record the start time.
@@ -193,15 +188,20 @@ int main(int argc, char **argv) {
 				// Create the problem, to be solved by the planners.
 				DynamicGoalsetPlanningProblem problem {
 					.start_state= randomStateOutsideTree(robot, repId),
+					.scene=		censored_scene,
 					.apple_discoverability=	discoverability,
-					.can_see_apple=	can_see_apple.second
+					.can_see_apple=	&can_see_apple.second
 				};
 
-				// Return the problem parameters and the problem itself.
-				return {
+				std::pair<Json::Value,DynamicGoalsetPlanningProblem> result {
 					problem_params,
 					problem
 				};
+
+				std::pair<Json::Value,DynamicGoalsetPlanningProblem> result2 = result;
+
+				// Return the problem parameters and the problem itself.
+				return result2;
 
 			}) | to_vector;
 
@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
 	// Run the experiments in parallel.
 	runExperimentsParallelRecoverable<Experiment>(experiments, [&](const Experiment &experiment) {
 		return runDynamicPlannerExperiment(scene, robot, experiment);
-	}, "analysis/data/dynamic_log.json", 32, 16, 42);
+	}, "analysis/data/dynamic_log.json", 32, std::thread::hardware_concurrency()/2, 42);
 
 #else
 

@@ -120,7 +120,11 @@ InitialOrbitPlanner::replan_after_removal(const ompl::base::SpaceInformationPtr 
 
 	if (initial_orbit_path.has_value()) {
 		utilities::truncatePathToInterrupt(*initial_orbit_path, interrupt);
-		batch.erase(std::remove(batch.begin(), batch.end(), removed_goal), batch.end());
+
+		auto batch_itr = std::find(batch.begin(), batch.end(), removed_goal);
+		assert(batch_itr != batch.end());
+		batch.erase(batch_itr);
+
 		return initial_orbit_path;
 	} else {
 		return after_planner->replan_after_removal(si, current_state, removed_goal, interrupt, planning_scene);

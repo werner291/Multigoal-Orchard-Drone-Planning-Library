@@ -277,7 +277,7 @@ add_library(${PROJECT_NAME}_visualization
         src/utilities/vtk.h
         )
 
-target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT= "${CMAKE_SOURCE_DIR}")
+target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
 set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "rclcpp" "ompl")
 

@@ -17,6 +17,8 @@ CachingDynamicPlanner<ShellPoint>::replan_after_removal(const ompl::base::SpaceI
 														const PathInterrupt &interrupt,
 														const AppleTreePlanningScene &planning_scene) {
 
+	std::cout << "CachingDynamicPlanner::replan_after_removal" << std::endl;
+
 	size_t removed_index;
 	for (removed_index = 0; removed_index < ordering.size(); removed_index++) {
 		if (ordering[removed_index].goal == removed_goal) {
@@ -24,7 +26,10 @@ CachingDynamicPlanner<ShellPoint>::replan_after_removal(const ompl::base::SpaceI
 		}
 	}
 
-	assert(removed_index < ordering.size());
+	if (removed_index == ordering.size()) {
+		// The removed goal was not in the ordering. It might have been deemed unreachable previously, this is not an error.
+		return continueFromInterrupt(si, current_state, interrupt);
+	}
 
 	auto new_ordering = tsp_method->update_ordering_with_removal(ordering.size(),
 																 removed_index,
@@ -57,11 +62,15 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 														  const PathInterrupt &interrupt,
 														  const AppleTreePlanningScene &planning_scene) {
 
+	std::cout << "CachingDynamicPlanner::replan_after_discovery" << std::endl;
+
 	// Plan a path to the new goal.
 	auto approach = approach_planner->approach_path(new_goal, *shell_space);
 
 	// If we successfully found a path to the new goal, we can add it to the ordering.
 	if (approach) {
+
+		std::cout << "Found a path to the new goal." << std::endl;
 
 		auto new_ordering = determine_new_ordering_with_insertion(*approach);
 
@@ -79,6 +88,8 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 					   }
 
 				   }) | ranges::to_vector;
+	} else {
+		std::cout << "New goal unreachable." << std::endl;
 	}
 
 	return continueFromInterrupt(si, current_state, interrupt);
@@ -93,11 +104,22 @@ CachingDynamicPlanner<ShellPoint>::continueFromInterrupt(const ompl::base::Space
 
 	if (this->last_emitted_path->goal == this->ordering.front().goal) {
 
+		std::cout << "Continuing from last emitted path." << std::endl;
+
 		utilities::truncatePathToInterrupt(this->last_emitted_path->path, interrupt);
+
+		assert(
+				si->distance(
+						this->last_emitted_path->path.getState(0),
+						current_state
+						) < 1e-6
+				);
 
 		return this->last_emitted_path->path;
 
 	} else {
+
+		std::cout << "Ordering changed, replanning." << std::endl;
 
 		// Find a path to the shell. We probably need to recompute the to_shell_cache path since we got interrupted.
 		this->to_shell_cache = this->find_path_to_shell(si, current_state);
@@ -162,6 +184,7 @@ CachingDynamicPlanner<ShellPoint>::find_path_to_shell(const ompl::base::SpaceInf
 		std::cout << "Using cached approach path." << std::endl;
 		return to_shell_cache;
 	} else {
+		std::cout << "Computing new approach path." << std::endl;
 		to_shell_cache = approach_planner->approach_path(start, *shell_space);
 		return to_shell_cache;
 	}
