@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
 
 	};
 
-	Proportions probs{.fraction_true_given = 0.0, .fraction_false_given = 0.5, .fraction_discoverable = 0.5,};
+	Proportions probs{.fraction_true_given = 0.0, .fraction_false_given = 0.0, .fraction_discoverable = 1.0,};
 
 	const auto start_state = randomStateOutsideTree(robot, 0);
 	auto apple_discoverability = generateAppleDiscoverability((int) scene.apples.size(), probs, 42, 1);

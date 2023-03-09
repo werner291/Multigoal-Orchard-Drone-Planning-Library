@@ -8,6 +8,8 @@
 #include <range/v3/view/enumerate.hpp>
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
+#include <vtkWindowToImageFilter.h>
+#include <vtkOggTheoraWriter.h>
 #include <range/v3/algorithm/count.hpp>
 #include <utility>
 
@@ -138,6 +140,24 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 	vtkNew<vtkCamera> camera;
 	viewer.viewerRenderer->SetActiveCamera(camera);
 
+
+	//Setup filter
+	vtkNew<vtkWindowToImageFilter> imageFilter;
+	imageFilter->SetInput(viewer.visualizerWindow);
+	imageFilter->SetInputBufferTypeToRGB();
+	imageFilter->ReadFrontBufferOff();
+
+	//Setup movie writer
+	vtkNew<vtkOggTheoraWriter> moviewriter;
+	moviewriter->SetInputConnection(imageFilter->GetOutputPort());
+	moviewriter->SetFileName("movie.ogv");
+	moviewriter->Start();
+
+
+	auto start_time = std::chrono::high_resolution_clock::now();
+
+	size_t frame_no = 0;
+
 	// The "main loop" of the program, called every frame.
 	auto callback = [&]() {
 
@@ -243,6 +263,22 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 			textActor->Modified();
 		}
 
+			imageFilter->Update();
+
+			//Export a single frame
+			imageFilter->Modified();
+			moviewriter->Write();
+
+			auto now = std::chrono::high_resolution_clock::now();
+			auto elapsed = std::chrono::duration_cast<std::chrono::minutes>(now - start_time).count();
+
+			if (elapsed > 2) {
+
+				viewer.renderWindowInteractor->TerminateApp();
+
+
+			}
+
 	};
 
 	viewer.addTimerCallback(callback);
@@ -250,6 +286,16 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 	eval_thread.start();
 
 	viewer.start();
+
+	{
+		eval_thread.finish();
+
+		//Finish movie
+		moviewriter->End();
+		exit(0);
+	}
+
+
 
 	return EXIT_SUCCESS;
 }
