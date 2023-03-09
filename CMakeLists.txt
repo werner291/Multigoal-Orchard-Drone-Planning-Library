@@ -76,8 +76,6 @@ add_library(${PROJECT_NAME}_shared
         src/CurrentPathState.h
         src/DirectApproachVariantSampler.cpp
         src/DirectApproachVariantSampler.h
-        src/exploration/DirectPointCloudCollisionDetection.cpp
-        src/exploration/DirectPointCloudCollisionDetection.h
         src/DistanceHeuristics.cpp
         src/DistanceHeuristics.h
         src/DronePathLengthObjective.cpp
@@ -87,6 +85,8 @@ add_library(${PROJECT_NAME}_shared
         src/DroneStateSampler.h
         src/DynamicGoalVisitationEvaluation.cpp
         src/DynamicGoalVisitationEvaluation.h
+        src/DynamicGoalsetPlanningProblem.cpp
+        src/DynamicGoalsetPlanningProblem.h
         src/DynamicMultiGoalPlanner.cpp
         src/DynamicMultiGoalPlanner.h
         src/EndEffectorOnShellGoal.cpp
@@ -97,14 +97,22 @@ add_library(${PROJECT_NAME}_shared
         src/GreatCircleMetric.h
         src/HashedSpatialIndex.cpp
         src/HashedSpatialIndex.h
+        src/IncrementalTSPMethods.cpp
+        src/IncrementalTSPMethods.h
         src/InformedBetweenTwoDroneStatesSampler.h
         src/InformedManipulatorDroneSampler.cpp
         src/InformedRobotStateSampler.cpp
         src/InformedRobotStateSampler.h
         src/LeavesCollisionChecker.cpp
         src/LeavesCollisionChecker.h
+        src/ORToolsTSPMethods.cpp
+        src/ORToolsTSPMethods.h
+        src/PathInterrupt.cpp
+        src/PathInterrupt.h
         src/RobotPath.cpp
         src/RobotPath.h
+        src/RunPlannerThreaded.cpp
+        src/RunPlannerThreaded.h
         src/SamplerWrapper.cpp
         src/SamplerWrapper.h
         src/ScannablePointsIndex.cpp
@@ -125,8 +133,18 @@ add_library(${PROJECT_NAME}_shared
         src/experiments/ScannedSurfaceTracker.h
         src/ompl_custom.cpp
         src/ompl_custom.h
+        src/planner_allocators.cpp
+        src/planner_allocators.h
+        src/planners/CachingDynamicPlanner.cpp
+        src/planners/CachingDynamicPlanner.h
+        src/planners/ChangeAccumulatingPlannerAdapter.cpp
+        src/planners/ChangeAccumulatingPlannerAdapter.h
         src/planners/ChangeIgnoringReplannerAdapter.cpp
         src/planners/ChangeIgnoringReplannerAdapter.h
+        src/planners/DynamicMultiGoalPlannerOmplToMoveitAdapter.cpp
+        src/planners/DynamicMultiGoalPlannerOmplToMoveitAdapter.h
+        src/planners/InitialOrbitPlanner.cpp
+        src/planners/InitialOrbitPlanner.h
         src/planners/MultiGoalPlanner.cpp
         src/planners/MultiGoalPlanner.h
         src/planners/MultigoalPrmStar.cpp
@@ -158,8 +176,19 @@ add_library(${PROJECT_NAME}_shared
         src/shell_space/SphereShell.h
         src/shell_space/WorkspaceShell.cpp
         src/shell_space/WorkspaceShell.h
+        src/utilities/JsonChunkedLogger.cpp
+        src/utilities/JsonChunkedLogger.h
+        src/utilities/MeshOcclusionModel.cpp
+        src/utilities/MeshOcclusionModel.h
+        src/utilities/alpha_shape.cpp
+        src/utilities/alpha_shape.h
         src/utilities/convex_hull.cpp
         src/utilities/convex_hull.h
+        src/utilities/discoverability_specifications.cpp
+        src/utilities/enclosing_sphere.cpp
+        src/utilities/enclosing_sphere.cpp
+        src/utilities/enclosing_sphere.h
+        src/utilities/enclosing_sphere.h
         src/utilities/experiment_utils.cpp
         src/utilities/experiment_utils.h
         src/utilities/general_utilities.cpp
@@ -185,46 +214,18 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/moveit_conversions.h
         src/utilities/msgs_utilities.cpp
         src/utilities/msgs_utilities.h
+        src/utilities/ompl_tools.cpp
+        src/utilities/ompl_tools.h
+        src/utilities/run_experiments.cpp
+        src/utilities/run_experiments.h
         src/utilities/shape_generation.cpp
         src/utilities/shape_generation.h
         src/utilities/trajectory_primitives.cpp
         src/utilities/trajectory_primitives.h
         src/utilities/traveling_salesman.cpp
         src/utilities/traveling_salesman.h
-        src/utilities/enclosing_sphere.h
-        src/utilities/enclosing_sphere.cpp
-        src/utilities/run_experiments.cpp
-        src/utilities/run_experiments.h
-        src/utilities/JsonChunkedLogger.cpp
-        src/utilities/JsonChunkedLogger.h
-        src/planners/CachingDynamicPlanner.cpp
-        src/planners/CachingDynamicPlanner.h
-        src/PathInterrupt.h
-        src/utilities/ompl_tools.cpp
-        src/utilities/ompl_tools.h
-        src/planners/DynamicMultiGoalPlannerOmplToMoveitAdapter.cpp
-        src/planners/DynamicMultiGoalPlannerOmplToMoveitAdapter.h
         src/utilities/vector_utils.h
-        src/IncrementalTSPMethods.cpp
-        src/IncrementalTSPMethods.h
-        src/ORToolsTSPMethods.cpp
-        src/ORToolsTSPMethods.h
-        src/DynamicGoalsetPlanningProblem.cpp
-        src/DynamicGoalsetPlanningProblem.h
-        src/utilities/alpha_shape.cpp
-        src/utilities/alpha_shape.h
-        src/utilities/MeshOcclusionModel.cpp
-        src/utilities/MeshOcclusionModel.h
-        src/planners/ChangeAccumulatingPlannerAdapter.cpp
-        src/planners/ChangeAccumulatingPlannerAdapter.h
-        src/planners/InitialOrbitPlanner.cpp
-        src/planners/InitialOrbitPlanner.h
-        src/utilities/discoverability_specifications.cpp
-        src/utilities/enclosing_sphere.h
-        src/utilities/enclosing_sphere.cpp
-        src/planner_allocators.cpp
-        src/planner_allocators.h
-        src/PathInterrupt.cpp)
+        src/RunPlannerThreaded.cpp)
 
 add_library(${PROJECT_NAME}_sensing
         src/exploration/CandidatePathGenerator.cpp
@@ -256,6 +257,8 @@ add_library(${PROJECT_NAME}_sensing
         src/exploration/scan_points.h
         src/utilities/enclosing_sphere.cpp
         src/utilities/enclosing_sphere.h
+        src/exploration/DirectPointCloudCollisionDetection.cpp
+        src/exploration/DirectPointCloudCollisionDetection.h
         src/utilities/discoverability_specifications.h)
 
 add_library(${PROJECT_NAME}_visualization
@@ -276,6 +279,8 @@ add_library(${PROJECT_NAME}_visualization
         src/utilities/vtk.cpp
         src/utilities/vtk.h
         )
+
+target_link_libraries(${PROJECT_NAME}_visualization ${PROJECT_NAME}_shared)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 

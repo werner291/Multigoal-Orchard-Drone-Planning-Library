@@ -17,8 +17,6 @@ SimpleVtkViewer::SimpleVtkViewer() {
 
 	addTimerCallback([&]() {
 		renderWindowInteractor->GetRenderWindow()->Render();
-		viewerRenderer->GetActiveCamera()->SetViewUp(0, 0, 1);
-		viewerRenderer->GetActiveCamera()->SetFocalPoint(0, 0, 1.5);
 	});
 }
 

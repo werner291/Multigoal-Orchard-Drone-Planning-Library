@@ -9,6 +9,7 @@
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
 #include <range/v3/algorithm/count.hpp>
+#include <utility>
 
 #include "visualize_dynamic.h"
 #include "VtkRobotModel.h"
@@ -18,9 +19,8 @@
 #include "../utilities/vtk.h"
 
 #include "../exploration/ColorEncoding.h"
-#include "../utilities/alpha_shape.h"
 #include "../utilities/MeshOcclusionModel.h"
-
+#include "../RunPlannerThreaded.h"
 
 void createActors(const TreeMeshes &meshes,
 				  const std::vector<AppleDiscoverabilityType> &apple_discoverability,
@@ -57,6 +57,7 @@ void createActors(const TreeMeshes &meshes,
 	viewer.addActorCollection(actors);
 }
 
+
 int visualizeEvaluation(const TreeMeshes &meshes,
 						const AppleTreePlanningScene &scene,
 						const moveit::core::RobotModelPtr &robot,
@@ -64,7 +65,9 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 						const std::vector<AppleDiscoverabilityType> &apple_discoverability,
 						DynamicGoalVisitationEvaluation &eval) {
 
-	auto traj = eval.computeNextTrajectory();
+	std::vector<robot_trajectory::RobotTrajectory> trajectories;
+	size_t traj_index = 0;
+	double traj_time = 0.0;
 
 	std::vector<vtkActor *> apple_actors;
 
@@ -92,31 +95,60 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 		viewer.viewerRenderer->AddActor2D(textActor);
 	}
 
-	double time = 0.0;
+	RunPlannerThreaded eval_thread(eval, true);
+
+	vtkNew<vtkCamera> camera;
+	viewer.viewerRenderer->SetActiveCamera(camera);
 
 	// The "main loop" of the program, called every frame.
 	auto callback = [&]() {
 
-		time += 0.05;
-
-		if (traj.has_value() && time > traj->getDuration()) {
-			if (eval.getUpcomingGoalEvent()) {
-				time = 0.0;
-
-				traj = eval.computeNextTrajectory();
-			} else {
-				std::cout << "Robot has halted." << std::endl;
-				traj = std::nullopt;
-			}
+		if (auto new_traj = eval_thread.poll_trajectory()) {
+			trajectories.push_back(*new_traj);
 		}
 
-		if (traj) {
+		while (traj_index < trajectories.size() && traj_time > trajectories[traj_index].getDuration()) {
+			traj_time = 0.0;
+			traj_index++;
+		}
+
+		Eigen::Vector3d robot_position = start_state.getGlobalLinkTransform("base_link").translation();
+
+		if (traj_index < trajectories.size()) {
+
+			auto &current_trajectory = trajectories[traj_index];
+
+			traj_time += 0.05;
+
 			// Update the robot's visualization to match the current state.
 			moveit::core::RobotState state(robot);
 
-			setStateToTrajectoryPoint(state, time, *traj);
+			setStateToTrajectoryPoint(state, traj_time, current_trajectory);
 
 			robotModel.applyState(state);
+
+			{
+
+				robot_position = robot_position * 0.2 + 0.8 * state.getGlobalLinkTransform("base_link").translation();
+
+				Eigen::Vector3d tree_center(0.0, 0.0, 2.0);
+
+				Eigen::Vector3d relative = robot_position - tree_center;
+
+				relative = Eigen::AngleAxisd(M_PI / 6.0, Eigen::Vector3d::UnitZ()) * relative;
+
+				Eigen::Vector3d cam_pos = tree_center + relative.normalized() * 8.0;
+				cam_pos.z() = 4.0;
+
+				std::cout << "Cam pos: " << cam_pos.transpose() << std::endl;
+
+
+
+				camera->SetViewUp(0, 0, 1);
+				camera->SetFocalPoint(robot_position.x(), robot_position.y(), robot_position.z());
+				camera->SetPosition(cam_pos.x(), cam_pos.y(), cam_pos.z());
+
+			}
 
 			for (const auto &[apple_actor, status]: ranges::views::zip(apple_actors, eval.getDiscoveryStatus())) {
 				switch (status) {
@@ -135,28 +167,6 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 				}
 			}
 
-			std::stringstream ss;
-
-			size_t n_total = eval.getDiscoveryStatus().size();
-			size_t n_visited = ranges::count(eval.getDiscoveryStatus(), utilities::DiscoveryStatus::VISITED);
-			size_t n_discoverable = ranges::count(eval.getDiscoveryStatus(),
-												  utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT);
-			size_t n_false = ranges::count(eval.getDiscoveryStatus(),
-										   utilities::DiscoveryStatus::ROBOT_THINKS_EXISTS_BUT_DOESNT);
-
-			ss << "Vis: " << n_visited << "/" << n_total << " (" << n_discoverable << " disc, " << n_false << " false)";
-
-			if (!traj.has_value()) {
-				ss << " (done)";
-			}
-
-			ss
-					<< std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch())
-							.count();
-
-			textActor->SetInput(ss.str().c_str());
-			textActor->Modified();
-
 			{
 				std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> occlusion_lines;
 
@@ -172,9 +182,36 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 
 		}
 
+		{
+			std::stringstream ss;
+
+			size_t n_total = eval.getDiscoveryStatus().size();
+			size_t n_visited = ranges::count(eval.getDiscoveryStatus(), utilities::DiscoveryStatus::VISITED);
+			size_t n_discoverable = ranges::count(eval.getDiscoveryStatus(),
+												  utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT);
+			size_t n_false = ranges::count(eval.getDiscoveryStatus(),
+										   utilities::DiscoveryStatus::ROBOT_THINKS_EXISTS_BUT_DOESNT);
+
+			ss << "Vis: " << n_visited << "/" << n_total << " (" << n_discoverable << " disc, " << n_false << " false)"
+			   << std::endl;
+
+			ss.precision(1);
+			ss << "T = (" << traj_time << "s/" << trajectories[traj_index].getDuration() << "s, " << traj_index << "/"
+			   << trajectories.size() << ")";
+
+			if (eval_thread.n_segments_requested() > 0) {
+				ss << " (computing more)";
+			}
+
+			textActor->SetInput(ss.str().c_str());
+			textActor->Modified();
+		}
+
 	};
 
 	viewer.addTimerCallback(callback);
+
+	eval_thread.start();
 
 	viewer.start();
 
