@@ -79,7 +79,7 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 	VtkRobotmodel robotModel(robot, start_state);
 
 	SimpleVtkViewer viewer;
-	viewer.startRecording("video.ogv");
+//	viewer.startRecording("video.ogv");
 
 	// Add the robot model to the viewer.
 	viewer.addActorCollection(robotModel.getLinkActors());
