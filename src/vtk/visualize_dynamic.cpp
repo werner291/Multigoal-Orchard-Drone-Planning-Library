@@ -24,6 +24,7 @@
 #include "orchard_actors.h"
 #include "StatusTextViz.h"
 #include "../RobotCameraTracker.h"
+#include "../utilities/trajectoryTiming.h"
 #include <vtkProperty2D.h>
 
 std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
@@ -64,6 +65,28 @@ std::string mkStatusString(const std::vector<RunPlannerThreaded::PlannerUpdate> 
 	return status;
 }
 
+void addAppleColorLegend(SimpleVtkViewer &viewer) {
+
+	vtkNew<vtkPNGReader> reader;
+	reader->SetFileName("assets/apple_colors.png");
+	reader->Update();
+
+	// Display as a flat 2D image in the top-left corner of the window.
+
+	vtkNew<vtkImageMapper> mapper;
+	mapper->SetInputConnection(reader->GetOutputPort());
+	mapper->SetColorWindow(255);
+	mapper->SetColorLevel(127.5);
+
+	vtkNew<vtkActor2D> actor;
+	actor->SetMapper(mapper);
+	actor->SetPosition(0, 20);
+
+	viewer.viewerRenderer->AddActor2D(actor);
+
+}
+
+
 int visualizeEvaluation(const TreeMeshes &meshes,
 						const AppleTreePlanningScene &scene,
 						const moveit::core::RobotModelPtr &robot,
@@ -79,7 +102,10 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 	VtkRobotmodel robotModel(robot, start_state);
 
 	SimpleVtkViewer viewer;
-//	viewer.startRecording("video.ogv");
+
+#ifdef RECORD_VIDEO
+	//	viewer.startRecording("video.ogv");
+#endif
 
 	// Add the robot model to the viewer.
 	viewer.addActorCollection(robotModel.getLinkActors());
@@ -97,27 +123,7 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 
 	RunPlannerThreaded eval_thread(eval, true);
 
-	{
-
-		vtkNew<vtkPNGReader> reader;
-		reader->SetFileName("assets/apple_colors.png");
-		reader->Update();
-
-		// Display as a flat 2D image in the top-left corner of the window.
-
-		vtkNew<vtkImageMapper> mapper;
-		mapper->SetInputConnection(reader->GetOutputPort());
-		mapper->SetColorWindow(255);
-		mapper->SetColorLevel(127.5);
-
-		vtkNew<vtkActor2D> actor;
-		actor->SetMapper(mapper);
-		actor->SetPosition(0, 20);
-
-
-		viewer.viewerRenderer->AddActor2D(actor);
-
-	}
+	addAppleColorLegend(viewer);
 
 	vtkNew<vtkCamera> camera;
 	viewer.viewerRenderer->SetActiveCamera(camera);
@@ -126,31 +132,11 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 
 	auto start_time = std::chrono::high_resolution_clock::now();
 
-	size_t frame_no = 0;
-
 	// The "main loop" of the program, called every frame.
 	auto callback = [&]() {
 
 		if (auto new_traj = eval_thread.poll_trajectory_update()) {
-
-			// Adjust timing on the trajectory.
-			for (size_t waypoint_i = 1; waypoint_i < new_traj->traj.getWayPointCount(); waypoint_i++) {
-				const auto &current = new_traj->traj.getWayPoint(waypoint_i);
-				const auto &previous = new_traj->traj.getWayPoint(waypoint_i - 1);
-
-				double max_distance = 0.0;
-
-				for (const moveit::core::JointModel *joint: robot->getActiveJointModels()) {
-					double d = current.distance(previous, joint);
-					if (d > max_distance) {
-						max_distance = d;
-					}
-				}
-
-				new_traj->traj.setWayPointDurationFromPrevious(waypoint_i, max_distance);
-
-			}
-
+			adjustTiming(new_traj->traj);
 			trajectories.push_back(*new_traj);
 		}
 
@@ -188,12 +174,14 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 											  eval_thread,
 											  getDiscoveryStatusStats(visit_status)));
 
+#ifdef RECORD_VIDEO
 		auto now = std::chrono::high_resolution_clock::now();
 		auto elapsed = std::chrono::duration_cast<std::chrono::minutes>(now - start_time).count();
 
 		if (elapsed > 2) {
 			viewer.stop();
 		}
+#endif
 
 	};
 

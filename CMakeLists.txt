@@ -225,7 +225,7 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/traveling_salesman.cpp
         src/utilities/traveling_salesman.h
         src/utilities/vector_utils.h
-        src/RunPlannerThreaded.cpp)
+        src/RunPlannerThreaded.cpp src/utilities/trajectoryTiming.cpp src/utilities/trajectoryTiming.h)
 
 add_library(${PROJECT_NAME}_sensing
         src/exploration/CandidatePathGenerator.cpp
