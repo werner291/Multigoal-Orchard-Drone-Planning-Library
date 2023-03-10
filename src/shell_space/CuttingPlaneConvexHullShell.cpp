@@ -3,6 +3,7 @@
 #include "../utilities/math_utils.h"
 #include "../utilities/geogebra.h"
 #include "../utilities/experiment_utils.h"
+#include "../utilities/enclosing_sphere.h"
 
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/iota.hpp>
@@ -470,7 +471,7 @@ std::vector<ConvexHullPoint> CuttingPlaneConvexHullShell::along_cutting_plane(co
 std::shared_ptr<WorkspaceShell<ConvexHullPoint>>
 convexHullAroundLeaves(const AppleTreePlanningScene &scene_info, double padding, double rotation_weight) {
 
-	auto leaf_vertices = extract_leaf_vertices(scene_info);
+	auto leaf_vertices = utilities::extract_leaf_vertices(scene_info);
 
 	return std::make_shared<CuttingPlaneConvexHullShell>(convexHull(leaf_vertices), rotation_weight, padding);
 

@@ -135,14 +135,6 @@ struct MultiApplePlanResult {
 moveit::core::RobotState randomStateOutsideTree(const moveit::core::RobotModelConstPtr &drone, const int seed);
 
 /**
- * @brief Extracts the vertices of the leaves of an apple tree.
- *
- * @param scene_info The planning scene information that contains information about the apple tree.
- * @return A vector of points that represent the vertices of the leaves of the apple tree.
- */
-std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const AppleTreePlanningScene &scene_info);
-
-/**
  * @brief Load a Moveit-based state space with the drone.
  *
  * @warning This function nor the returned value are not thread-safe, even if const. The cause is unknown.

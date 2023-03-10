@@ -3,6 +3,7 @@
 #include "../utilities/experiment_utils.h"
 #include "../utilities/convex_hull.h"
 #include "../utilities/geogebra.h"
+#include "../utilities/enclosing_sphere.h"
 
 Eigen::Vector3d faceNormal(const Triangle_mesh& tmesh, const Surface_mesh_shortest_path::face_descriptor &face) {
 	// Look up the vertices (same way as in toCarthesian).
@@ -221,5 +222,7 @@ std::shared_ptr<WorkspaceShell<CGALMeshShellPoint>> convexHullAroundLeavesCGAL(c
 																		  double rotation_weight,
 																		  double padding) {
 
-	return std::make_shared<CGALMeshShell>(convexHull(extract_leaf_vertices(scene_info)), rotation_weight, padding);
+	return std::make_shared<CGALMeshShell>(convexHull(utilities::extract_leaf_vertices(scene_info)),
+										   rotation_weight,
+										   padding);
 }
