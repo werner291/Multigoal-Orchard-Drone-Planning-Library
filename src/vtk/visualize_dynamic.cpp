@@ -4,14 +4,11 @@
 
 #include <vtkActor.h>
 #include <vtkProperty.h>
-#include <vtkActorCollection.h>
-#include <range/v3/view/enumerate.hpp>
-#include <vtkTextActor.h>
 #include <vtkTextProperty.h>
-#include <vtkWindowToImageFilter.h>
-#include <vtkOggTheoraWriter.h>
-#include <range/v3/algorithm/count.hpp>
 #include <utility>
+#include <vtkImageMapper.h>
+#include <vtkImageViewer2.h>
+#include <vtkPNGReader.h>
 
 #include "visualize_dynamic.h"
 #include "VtkRobotModel.h"
@@ -23,80 +20,49 @@
 #include "../exploration/ColorEncoding.h"
 #include "../utilities/MeshOcclusionModel.h"
 #include "../RunPlannerThreaded.h"
+#include "../apple_status_color_coding.h"
+#include "orchard_actors.h"
+#include "StatusTextViz.h"
+#include "../RobotCameraTracker.h"
+#include <vtkProperty2D.h>
 
-void createActors(const TreeMeshes &meshes,
-				  const std::vector<AppleDiscoverabilityType> &apple_discoverability,
-				  std::vector<vtkActor *> &apple_actors,
-				  SimpleVtkViewer &viewer) {
-	vtkNew<vtkActorCollection> actors;
+std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+getOcclusionLineCoordinates(const moveit::core::RobotState &state,
+							const std::vector<Apple> &apples,
+							const utilities::CanSeeAppleFn &can_see_apple) {
 
-	auto tree_actor = createActorFromMesh(meshes.trunk_mesh);
-	setColorsByEncoding(tree_actor, TRUNK_RGB, false);
-	actors->AddItem(tree_actor);
+	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> occlusion_lines;
 
-	auto leaves_actor = createActorFromMesh(meshes.leaves_mesh);
-	setColorsByEncoding(leaves_actor, LEAVES_RGB, false);
-	actors->AddItem(leaves_actor);
-
-	for (const auto &[fruit_index, fruit_mesh]: meshes.fruit_meshes | ranges::views::enumerate) {
-		auto fruit_actor = createActorFromMesh(fruit_mesh);
-
-		std::array<double, 3> rgb{0.0, 0.0, 0.0};
-
-		if (apple_discoverability[fruit_index]) {
-			rgb = {1.0, 0.0, 0.0};
-		} else {
-			rgb = {0.0, 0.0, 1.0};
+	for (const auto &apple: apples) {
+		if (can_see_apple(state, apple)) {
+			occlusion_lines.emplace_back(state.getGlobalLinkTransform("end_effector").translation(), apple.center);
 		}
-
-		fruit_actor->GetProperty()->SetDiffuseColor(rgb.data());
-
-		actors->AddItem(fruit_actor);
-
-		apple_actors.push_back(fruit_actor);
 	}
 
-	{
-
-		shape_msgs::msg::Mesh ground_plane;
-		ground_plane.vertices.resize(4);
-		ground_plane.vertices[0].x = -10.0;
-		ground_plane.vertices[0].y = -10.0;
-		ground_plane.vertices[0].z = 0.0;
-
-		ground_plane.vertices[1].x = 10.0;
-		ground_plane.vertices[1].y = -10.0;
-		ground_plane.vertices[1].z = 0.0;
-
-		ground_plane.vertices[2].x = 10.0;
-		ground_plane.vertices[2].y = 10.0;
-		ground_plane.vertices[2].z = 0.0;
-
-		ground_plane.vertices[3].x = -10.0;
-		ground_plane.vertices[3].y = 1.0;
-		ground_plane.vertices[3].z = 0.0;
-
-		ground_plane.triangles.resize(2);
-		ground_plane.triangles[0].vertex_indices[0] = 0;
-		ground_plane.triangles[0].vertex_indices[1] = 1;
-		ground_plane.triangles[0].vertex_indices[2] = 2;
-
-		ground_plane.triangles[1].vertex_indices[0] = 0;
-		ground_plane.triangles[1].vertex_indices[1] = 2;
-		ground_plane.triangles[1].vertex_indices[2] = 3;
-
-		// Ground plane.
-		auto ground_actor = createActorFromMesh(ground_plane);
-
-		ground_actor->GetProperty()->SetDiffuseColor(0.5, 0.8, 0.5);
-
-		actors->AddItem(ground_actor);
-
-	}
-
-	viewer.addActorCollection(actors);
+	return occlusion_lines;
 }
 
+std::string mkStatusString(const std::vector<RunPlannerThreaded::PlannerUpdate> &trajectories,
+						   size_t traj_index,
+						   double traj_time,
+						   const RunPlannerThreaded &eval_thread,
+						   const utilities::DiscoveryStatusStats &stats) {
+	std::stringstream ss;
+	ss.precision(1);
+
+	ss << "Visited " << stats.visited << " (" << stats.discoverable << " undiscovered, " << stats.false_positives
+	   << " false apples, " << stats.known_unvisited << " known unvisited)" << std::endl;
+
+	ss << "Time: " << traj_time << "s/" << trajectories[traj_index].traj.getDuration() << "s, Segment " << traj_index
+	   << "/" << trajectories.size();
+
+	if (eval_thread.n_segments_requested() > 0) {
+		ss << " (computing more)";
+	}
+
+	std::string status = ss.str();
+	return status;
+}
 
 int visualizeEvaluation(const TreeMeshes &meshes,
 						const AppleTreePlanningScene &scene,
@@ -105,54 +71,58 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 						const std::vector<AppleDiscoverabilityType> &apple_discoverability,
 						DynamicGoalVisitationEvaluation &eval) {
 
-	std::vector<robot_trajectory::RobotTrajectory> trajectories;
+	std::vector<RunPlannerThreaded::PlannerUpdate> trajectories;
 	size_t traj_index = 0;
 	double traj_time = 0.0;
-
-	std::vector<vtkActor *> apple_actors;
 
 	// Create a VtkRobotmodel object to visualize the robot itself.
 	VtkRobotmodel robotModel(robot, start_state);
 
 	SimpleVtkViewer viewer;
+	viewer.startRecording("video.ogv");
 
 	// Add the robot model to the viewer.
 	viewer.addActorCollection(robotModel.getLinkActors());
 
-	// Add the tree meshes to the viewer.
-	createActors(meshes, apple_discoverability, apple_actors, viewer);
+	// Create the orchard actors, automatically adding them to the viewer and returning 
+	// a vector of pointers to the actors representing the apples.
+	auto apple_actors = createActors(meshes, viewer);
 
 	VtkLineSegmentsVisualization occlusion_visualization(1.0, 0.0, 1.0);
-
 	viewer.addActor(occlusion_visualization.getActor());
 
-	vtkNew<vtkTextActor> textActor;
-	{ // Setup the text and add it to the renderer
-		textActor->SetInput("Hello world");
-		textActor->SetPosition2(10, 40);
-		textActor->GetTextProperty()->SetFontSize(10);
-		//		textActor->GetTextProperty()->SetColor(colors->GetColor3d("Gold").GetData());
-		viewer.viewerRenderer->AddActor2D(textActor);
-	}
+	StatusTextViz status_text(viewer.viewerRenderer);
+
+	std::vector<utilities::DiscoveryStatus> initial_status(eval.getDiscoveryStatus());
 
 	RunPlannerThreaded eval_thread(eval, true);
+
+	{
+
+		vtkNew<vtkPNGReader> reader;
+		reader->SetFileName("assets/apple_colors.png");
+		reader->Update();
+
+		// Display as a flat 2D image in the top-left corner of the window.
+
+		vtkNew<vtkImageMapper> mapper;
+		mapper->SetInputConnection(reader->GetOutputPort());
+		mapper->SetColorWindow(255);
+		mapper->SetColorLevel(127.5);
+
+		vtkNew<vtkActor2D> actor;
+		actor->SetMapper(mapper);
+		actor->SetPosition(0, 20);
+
+
+		viewer.viewerRenderer->AddActor2D(actor);
+
+	}
 
 	vtkNew<vtkCamera> camera;
 	viewer.viewerRenderer->SetActiveCamera(camera);
 
-
-	//Setup filter
-	vtkNew<vtkWindowToImageFilter> imageFilter;
-	imageFilter->SetInput(viewer.visualizerWindow);
-	imageFilter->SetInputBufferTypeToRGB();
-	imageFilter->ReadFrontBufferOff();
-
-	//Setup movie writer
-	vtkNew<vtkOggTheoraWriter> moviewriter;
-	moviewriter->SetInputConnection(imageFilter->GetOutputPort());
-	moviewriter->SetFileName("movie.ogv");
-	moviewriter->Start();
-
+	RobotCameraTracker camera_tracker(camera, start_state);
 
 	auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -161,16 +131,37 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 	// The "main loop" of the program, called every frame.
 	auto callback = [&]() {
 
-		if (auto new_traj = eval_thread.poll_trajectory()) {
+		if (auto new_traj = eval_thread.poll_trajectory_update()) {
+
+			// Adjust timing on the trajectory.
+			for (size_t waypoint_i = 1; waypoint_i < new_traj->traj.getWayPointCount(); waypoint_i++) {
+				const auto &current = new_traj->traj.getWayPoint(waypoint_i);
+				const auto &previous = new_traj->traj.getWayPoint(waypoint_i - 1);
+
+				double max_distance = 0.0;
+
+				for (const moveit::core::JointModel *joint: robot->getActiveJointModels()) {
+					double d = current.distance(previous, joint);
+					if (d > max_distance) {
+						max_distance = d;
+					}
+				}
+
+				new_traj->traj.setWayPointDurationFromPrevious(waypoint_i, max_distance);
+
+			}
+
 			trajectories.push_back(*new_traj);
 		}
 
-		while (traj_index < trajectories.size() && traj_time > trajectories[traj_index].getDuration()) {
+		while (traj_index < trajectories.size() && traj_time > trajectories[traj_index].traj.getDuration()) {
 			traj_time = 0.0;
 			traj_index++;
 		}
 
-		Eigen::Vector3d robot_position = start_state.getGlobalLinkTransform("base_link").translation();
+		// We pick the "previous" status, because the current trajectory is not yet finished,
+		// and we want to show the status before the end of the current trajectory.
+		auto visit_status = traj_index == 0 ? initial_status : trajectories[traj_index - 1].status;
 
 		if (traj_index < trajectories.size()) {
 
@@ -180,104 +171,29 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 
 			// Update the robot's visualization to match the current state.
 			moveit::core::RobotState state(robot);
-
-			setStateToTrajectoryPoint(state, traj_time, current_trajectory);
+			setStateToTrajectoryPoint(state, traj_time, current_trajectory.traj);
 
 			robotModel.applyState(state);
+			camera_tracker.update(state);
+			updateAppleColors(visit_status, apple_actors);
 
-			{
-
-				robot_position = robot_position * 0.2 + 0.8 * state.getGlobalLinkTransform("base_link").translation();
-
-				Eigen::Vector3d tree_center(0.0, 0.0, 2.0);
-
-				Eigen::Vector3d relative = robot_position - tree_center;
-
-				relative = Eigen::AngleAxisd(M_PI / 6.0, Eigen::Vector3d::UnitZ()) * relative;
-
-				Eigen::Vector3d cam_pos = tree_center + relative.normalized() * 8.0;
-				cam_pos.z() = 4.0;
-
-				std::cout << "Cam pos: " << cam_pos.transpose() << std::endl;
-
-				camera->SetViewUp(0, 0, 1);
-				camera->SetFocalPoint(robot_position.x(), robot_position.y(), robot_position.z());
-				camera->SetPosition(cam_pos.x(), cam_pos.y(), cam_pos.z());
-
-			}
-
-			for (const auto &[apple_actor, status]: ranges::views::zip(apple_actors, eval.getDiscoveryStatus())) {
-				switch (status) {
-					case utilities::DiscoveryStatus::VISITED:
-						apple_actor->GetProperty()->SetDiffuseColor(1.0, 0.0, 0.0);
-						break;
-					case utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT:
-						apple_actor->GetProperty()->SetDiffuseColor(1.0, 0.0, 1.0);
-						break;
-					case utilities::DiscoveryStatus::KNOWN_TO_ROBOT:
-						apple_actor->GetProperty()->SetDiffuseColor(1.0, 0.0, 0.5);
-						break;
-					default:
-						apple_actor->GetProperty()->SetDiffuseColor(0.0, 0.0, 1.0);
-						break;
-				}
-			}
-
-			{
-				std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> occlusion_lines;
-
-				for (const auto &apple: scene.apples) {
-					if (eval.getCanSeeApple()(state, apple)) {
-						occlusion_lines.emplace_back(state.getGlobalLinkTransform("end_effector").translation(),
-													 apple.center);
-					}
-				}
-
-				occlusion_visualization.updateLine(occlusion_lines);
-			}
+			occlusion_visualization.updateLine(getOcclusionLineCoordinates(state, scene.apples, eval.getCanSeeApple()));
 
 		}
 
-		{
-			std::stringstream ss;
 
-			size_t n_total = eval.getDiscoveryStatus().size();
-			size_t n_visited = ranges::count(eval.getDiscoveryStatus(), utilities::DiscoveryStatus::VISITED);
-			size_t n_discoverable = ranges::count(eval.getDiscoveryStatus(),
-												  utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT);
-			size_t n_false = ranges::count(eval.getDiscoveryStatus(),
-										   utilities::DiscoveryStatus::ROBOT_THINKS_EXISTS_BUT_DOESNT);
+		status_text.updateText(mkStatusString(trajectories,
+											  traj_index,
+											  traj_time,
+											  eval_thread,
+											  getDiscoveryStatusStats(visit_status)));
 
-			ss << "Vis: " << n_visited << "/" << n_total << " (" << n_discoverable << " disc, " << n_false << " false)"
-			   << std::endl;
+		auto now = std::chrono::high_resolution_clock::now();
+		auto elapsed = std::chrono::duration_cast<std::chrono::minutes>(now - start_time).count();
 
-			ss.precision(1);
-			ss << "T = (" << traj_time << "s/" << trajectories[traj_index].getDuration() << "s, " << traj_index << "/"
-			   << trajectories.size() << ")";
-
-			if (eval_thread.n_segments_requested() > 0) {
-				ss << " (computing more)";
-			}
-
-			textActor->SetInput(ss.str().c_str());
-			textActor->Modified();
+		if (elapsed > 2) {
+			viewer.stop();
 		}
-
-			imageFilter->Update();
-
-			//Export a single frame
-			imageFilter->Modified();
-			moviewriter->Write();
-
-			auto now = std::chrono::high_resolution_clock::now();
-			auto elapsed = std::chrono::duration_cast<std::chrono::minutes>(now - start_time).count();
-
-			if (elapsed > 2) {
-
-				viewer.renderWindowInteractor->TerminateApp();
-
-
-			}
 
 	};
 
@@ -287,15 +203,7 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 
 	viewer.start();
 
-	{
-		eval_thread.finish();
-
-		//Finish movie
-		moviewriter->End();
-		exit(0);
-	}
-
-
+	eval_thread.finish();
 
 	return EXIT_SUCCESS;
 }

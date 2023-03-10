@@ -107,3 +107,22 @@ Eigen::AlignedBox3d mesh_aabb(const shape_msgs::msg::Mesh &mesh) {
 
 	return box;
 }
+
+shape_msgs::msg::Mesh createGroundPlane(double width, double height) {
+	shape_msgs::msg::Mesh ground_plane;
+
+	// Define the vertices of the ground plane.
+	double half_width = 0.5 * width;
+	double half_height = 0.5 * height;
+	ground_plane.vertices = {msgFromEigen(Eigen::Vector3d(-half_width, -half_height, 0.0)),
+							 msgFromEigen(Eigen::Vector3d(half_width, -half_height, 0.0)),
+							 msgFromEigen(Eigen::Vector3d(half_width, half_height, 0.0)),
+							 msgFromEigen(Eigen::Vector3d(-half_width, half_height, 0.0))};
+
+	// Define the triangles forming the ground plane.
+	ground_plane.triangles.resize(2);
+	ground_plane.triangles[0].vertex_indices = {0, 1, 2};
+	ground_plane.triangles[1].vertex_indices = {0, 2, 3};
+
+	return ground_plane;
+}

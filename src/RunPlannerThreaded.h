@@ -26,8 +26,15 @@ class RunPlannerThreaded {
 	size_t thread_segments_requested = 0; ///< The number of segments that have been requested but not yet computed.
 	std::condition_variable message_queue_cv; ///< Condition variable for waiting until segments are requested.
 
+public:
+	struct PlannerUpdate {
+		robot_trajectory::RobotTrajectory traj;
+		std::vector<utilities::DiscoveryStatus> status;
+	};
+
+private:
 	std::mutex traj_mutex; ///< Mutex for protecting access to the trajectory queue.
-	std::queue<robot_trajectory::RobotTrajectory> trajectory_queue; ///< The queue of computed trajectories.
+	std::queue<PlannerUpdate> trajectory_queue; ///< The queue of computed trajectories.
 	std::condition_variable trajectory_queue_cv; ///< Condition variable for waiting until a trajectory is available.
 
 	bool is_done = false; ///< Whether the thread should exit.
@@ -77,14 +84,13 @@ public:
 	 *
 	 * @return The next available trajectory, or std::nullopt if the queue is empty.
 	 */
-	std::optional<robot_trajectory::RobotTrajectory> poll_trajectory();
+	std::optional<PlannerUpdate> poll_trajectory_update();
 
 	~RunPlannerThreaded();
 
 	void finish();
 
 	size_t n_segments_requested() const;
-
 
 };
 

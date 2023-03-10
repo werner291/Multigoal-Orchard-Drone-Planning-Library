@@ -22,7 +22,7 @@ void RunPlannerThreaded::request_next() {
 	message_queue_cv.notify_one();
 }
 
-std::optional<robot_trajectory::RobotTrajectory> RunPlannerThreaded::poll_trajectory() {
+std::optional<RunPlannerThreaded::PlannerUpdate> RunPlannerThreaded::poll_trajectory_update() {
 	std::unique_lock<std::mutex> lock(traj_mutex);
 
 	if (trajectory_queue.empty()) {
@@ -35,6 +35,7 @@ std::optional<robot_trajectory::RobotTrajectory> RunPlannerThreaded::poll_trajec
 }
 
 void RunPlannerThreaded::run() {
+
 	while (!is_done) {
 		// Wait for at least one to be requested.
 		if (thread_segments_requested == 0) {
@@ -50,8 +51,13 @@ void RunPlannerThreaded::run() {
 		auto traj = eval.computeNextTrajectory();
 
 		if (traj) {
+
 			std::unique_lock<std::mutex> lock(traj_mutex);
-			trajectory_queue.push(*traj);
+
+			trajectory_queue.emplace(PlannerUpdate{*traj, eval.getDiscoveryStatus()});
+
+			trajectory_queue_cv.notify_one();
+
 		} else {
 			is_done = true;
 		}
@@ -65,9 +71,9 @@ void RunPlannerThreaded::run() {
 }
 
 RunPlannerThreaded::~RunPlannerThreaded() {
-	is_done = true;
-	message_queue_cv.notify_all();
-	thread_.join();
+	if (thread_.joinable()) {
+		finish();
+	}
 }
 
 void RunPlannerThreaded::finish() {

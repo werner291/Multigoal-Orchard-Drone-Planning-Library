@@ -19,6 +19,10 @@ SimpleVtkViewer::SimpleVtkViewer() {
 
 	addTimerCallback([&]() {
 		renderWindowInteractor->GetRenderWindow()->Render();
+
+		if (videoRecorder.has_value()) {
+			videoRecorder->exportFrame();
+		}
 	});
 }
 
@@ -42,4 +46,21 @@ void SimpleVtkViewer::addActorCollection(vtkActorCollection *actors) {
 	for (int i = 0; i < actors->GetNumberOfItems(); i++) {
 		viewerRenderer->AddActor(vtkActor::SafeDownCast(actors->GetItemAsObject(i)));
 	}
+}
+
+void SimpleVtkViewer::startRecording(const std::string &filename) {
+	videoRecorder.emplace(visualizerWindow, filename);
+}
+
+void SimpleVtkViewer::stop() {
+
+	renderWindowInteractor->TerminateApp();
+
+	if (videoRecorder.has_value()) {
+		videoRecorder->finish();
+	}
+}
+
+void SimpleVtkViewer::discardVideo() {
+	videoRecorder.reset();
 }

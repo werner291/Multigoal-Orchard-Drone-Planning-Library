@@ -259,7 +259,9 @@ add_library(${PROJECT_NAME}_sensing
         src/utilities/enclosing_sphere.h
         src/exploration/DirectPointCloudCollisionDetection.cpp
         src/exploration/DirectPointCloudCollisionDetection.h
-        src/utilities/discoverability_specifications.h)
+        src/utilities/discoverability_specifications.h
+
+        )
 
 add_library(${PROJECT_NAME}_visualization
         src/vtk/SimpleVtkViewer.cpp
@@ -278,7 +280,16 @@ add_library(${PROJECT_NAME}_visualization
         src/vtk/visualize_dynamic.h
         src/utilities/vtk.cpp
         src/utilities/vtk.h
-        )
+        src/vtk/VideoRecorder.cpp
+        src/vtk/VideoRecorder.h
+        src/apple_status_color_coding.cpp
+        src/apple_status_color_coding.h
+        src/vtk/orchard_actors.cpp
+        src/vtk/orchard_actors.h
+        src/vtk/StatusTextViz.cpp
+        src/vtk/StatusTextViz.h
+        src/RobotCameraTracker.cpp
+        src/RobotCameraTracker.h)
 
 target_link_libraries(${PROJECT_NAME}_visualization ${PROJECT_NAME}_shared)
 

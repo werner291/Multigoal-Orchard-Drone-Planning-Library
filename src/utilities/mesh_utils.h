@@ -51,4 +51,16 @@ shape_msgs::msg::Mesh combine_meshes(const std::vector<shape_msgs::msg::Mesh> &m
  */
 Eigen::AlignedBox3d mesh_aabb(const shape_msgs::msg::Mesh &mesh);
 
+/**
+ * @brief Creates a flat ground plane mesh centered at the origin with the specified width and height.
+ *
+ * The ground plane mesh is created with four vertices and two triangles forming a rectangle.
+ *
+ * @param width The width of the ground plane.
+ * @param height The height of the ground plane.
+ * @return A shape_msgs::msg::Mesh representing the ground plane.
+ */
+shape_msgs::msg::Mesh createGroundPlane(double width, double height);
+
+
 #endif //NEW_PLANNERS_MESH_UTILS_H

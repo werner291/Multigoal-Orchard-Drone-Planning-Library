@@ -5,6 +5,7 @@
 #include <range/v3/view/enumerate.hpp>
 #include <range/v3/view/filter.hpp>
 #include <range/v3/view/transform.hpp>
+#include <range/v3/algorithm/count.hpp>
 #include "goal_events.h"
 #include "moveit.h"
 #include "../RobotPath.h"
@@ -54,4 +55,25 @@ namespace utilities {
 
 		return std::nullopt;
 	}
+
+	DiscoveryStatusStats getDiscoveryStatusStats(const std::vector<utilities::DiscoveryStatus> &statuses) {
+		size_t n_total = statuses.size();
+		size_t n_visited = ranges::count(statuses, utilities::DiscoveryStatus::VISITED);
+		size_t n_discoverable = ranges::count(statuses, utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT);
+		size_t n_false = ranges::count(statuses, utilities::DiscoveryStatus::ROBOT_THINKS_EXISTS_BUT_DOESNT);
+		size_t known_unvisited = ranges::count(statuses, utilities::DiscoveryStatus::KNOWN_TO_ROBOT);
+
+		return {n_total, n_visited, n_discoverable, n_false, known_unvisited};
+	}
+
+	Json::Value toJson(const DiscoveryStatusStats &stats) {
+		Json::Value root;
+		root["total"] = static_cast<int>(stats.total);
+		root["visited"] = static_cast<int>(stats.visited);
+		root["discoverable"] = static_cast<int>(stats.discoverable);
+		root["false"] = static_cast<int>(stats.false_positives);
+		return root;
+	}
+
+
 }

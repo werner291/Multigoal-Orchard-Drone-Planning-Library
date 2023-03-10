@@ -8,6 +8,8 @@
 #include <variant>
 #include <vector>
 #include <moveit/robot_trajectory/robot_trajectory.h>
+#include <json/json.h>
+
 #include "../procedural_tree_generation.h"
 #include "../DynamicMultiGoalPlanner.h"
 #include "../RobotPath.h"
@@ -44,6 +46,18 @@ namespace utilities {
 															  const std::vector<Apple> &apples,
 															  CanSeeAppleFn can_see_apple,
 															  const std::vector<DiscoveryStatus> &discovery_status);
+
+	struct DiscoveryStatusStats {
+		size_t total;
+		size_t visited;
+		size_t discoverable;
+		size_t false_positives;
+		size_t known_unvisited;
+	};
+
+	DiscoveryStatusStats getDiscoveryStatusStats(const std::vector<utilities::DiscoveryStatus> &statuses);
+
+	Json::Value toJson(const DiscoveryStatusStats &stats);
 
 }
 

@@ -31,14 +31,6 @@ DynamicGoalVisitationEvaluation::DynamicGoalVisitationEvaluation(std::shared_ptr
 
 	discovery_status = discoverability | ranges::views::transform(initial_discovery_status) | ranges::to_vector;
 
-	//	// Go over all the apples, and make the ones the robot can see in the initial state known.
-	//
-	//	for (auto&& [i, apple] : ranges::views::enumerate(scene.apples)) {
-	//		if (can_see_apple(last_robot_state, apple)) {
-	//			discovery_status[i] = utilities::DiscoveryStatus::KNOWN_TO_ROBOT;
-	//		}
-	//	}
-
 	assert(scene.apples.size() == discoverability.size());
 
 }
@@ -108,6 +100,19 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 			segment->truncateUpTo(event->time);
 
 		} else {
+
+			// Check if the end-effector is at any of the goals.
+
+			Eigen::Vector3d end_effector_pos = segment->waypoints
+					.back()
+					.getGlobalLinkTransform("end_effector")
+					.translation();
+
+			for (size_t apple_i = 0; apple_i < scene.apples.size(); apple_i++) {
+				if ((end_effector_pos - scene.apples[apple_i].center).norm() < 0.05) {
+					discovery_status[apple_i] = utilities::DiscoveryStatus::VISITED;
+				}
+			}
 
 			upcoming_goal_event = utilities::PathEnd{};
 
