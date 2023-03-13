@@ -102,6 +102,11 @@ CachingDynamicPlanner<ShellPoint>::continueFromInterrupt(const ompl::base::Space
 														 const ompl::base::State *current_state,
 														 const PathInterrupt &interrupt) {
 
+	if (this->ordering.empty()) {
+		std::cout << "No goals in ordering." << std::endl;
+		return std::nullopt;
+	}
+
 	if (this->last_emitted_path->goal == this->ordering.front().goal) {
 
 		std::cout << "Continuing from last emitted path." << std::endl;

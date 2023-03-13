@@ -6,13 +6,15 @@
 
 std::vector<Proportions> gen_discoverability_proportions() {// Generate a set of probabilities; must sum to 1.
 
+	// FIXME this is bunk, need to fix it if I end up using it again.
+
 	std::vector<Proportions> probs;
 
 	const std::size_t N_PROPORTIONS = 3;
 
 	for (size_t i = 0; i < N_PROPORTIONS; i++) {
 
-		double fraction_true_given = (double) i / (N_PROPORTIONS - 1);
+		double fraction_true_given = 1.0 - (double) i / (N_PROPORTIONS - 1);
 
 		long sub_proportions = N_PROPORTIONS;
 
@@ -31,15 +33,15 @@ std::vector<Proportions> gen_discoverability_proportions() {// Generate a set of
 }
 
 
-std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(int all_apples, Proportions p, int seed, int apples_in_test) {
+std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(Proportions p, int seed, int n_apples) {
 
 	auto rng = std::default_random_engine(seed);
 
-	std::vector<AppleDiscoverabilityType> apple_discoverability(all_apples);
+	std::vector<AppleDiscoverabilityType> apple_discoverability(n_apples);
 
-	size_t n_given = ceil(p.fraction_true_given * apples_in_test);
-	size_t n_dynamic = all_apples - n_given;
-	size_t n_discoverable = ceil(p.fraction_discoverable * n_dynamic);
+	size_t n_given = ceil(p.fraction_true_given * n_apples);
+	size_t n_dynamic = n_apples - n_given;
+	size_t n_discoverable = ceil(p.fraction_discoverable * (double) n_dynamic);
 	size_t n_false = n_dynamic - n_discoverable;
 
 	size_t i = 0;
@@ -56,7 +58,7 @@ std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(int all_apple
 		apple_discoverability[i++] = AppleDiscoverabilityType::FALSE;
 	}
 
-	assert(i == all_apples);
+	assert(i == n_apples);
 
 	// Shuffle the vector.
 	std::shuffle(apple_discoverability.begin(), apple_discoverability.end(), rng);

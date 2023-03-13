@@ -75,7 +75,7 @@ InitialOrbitPlanner::replan_after_path_end(const ompl::base::SpaceInformationPtr
 
 		auto path = after_planner->plan_initial(si, current_state, batch, planning_scene, 0.5);
 
-		assert(si->distance(path->getState(0), current_state) < 0.1);
+		assert(!path || si->distance(path->getState(0), current_state) < 0.1);
 
 		return path;
 

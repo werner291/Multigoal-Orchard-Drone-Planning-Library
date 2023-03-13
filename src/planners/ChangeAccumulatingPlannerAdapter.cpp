@@ -40,8 +40,17 @@ ChangeAccumulatingPlannerAdapter::replan_after_path_end(const ompl::base::SpaceI
 
 	static_plan->segments.erase(static_plan->segments.begin());
 
-	if (!batch.empty()) {
-		return plan_initial(si, current_state, batch, planning_scene, 0.5);
+	if (static_plan->segments.empty()) {
+		if (batch.empty()) {
+			return std::nullopt;
+		} else {
+
+			auto static_plan = plan_initial(si, current_state, batch, planning_scene, 0.5);
+
+			batch.clear();
+
+			return static_plan;
+		}
 	} else {
 		return static_plan->segments.front().path_;
 	}

@@ -261,7 +261,7 @@ add_library(${PROJECT_NAME}_sensing
         src/exploration/DirectPointCloudCollisionDetection.h
         src/utilities/discoverability_specifications.h
 
-        )
+        src/experiments/initial_orbit_comparison.cpp)
 
 add_library(${PROJECT_NAME}_visualization
         src/vtk/SimpleVtkViewer.cpp
@@ -314,6 +314,7 @@ experiment("tsp_over_prm_vs_sphereshell")
 experiment("shell_comparison_sphere_armangle")
 experiment("greatcircle_correlation")
 experiment("sphere_vs_chull_static")
+experiment("initial_orbit_comparison")
 
 experiment("exploration")
 target_link_libraries(${PROJECT_NAME}_experiment_exploration ${PROJECT_NAME}_sensing)

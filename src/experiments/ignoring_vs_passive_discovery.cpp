@@ -39,15 +39,16 @@ Json::Value toJSON(const Experiment &experiment) {
 	return result;
 }
 
-Json::Value runDynamicPlannerExperiment(const AppleTreePlanningScene &scene,
-										const moveit::core::RobotModelPtr &robot,
-										const Experiment &experiment) {// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
+Json::Value runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot,
+										const Experiment &experiment) {
+
+	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
 	// So, we just re-create the state space every time just to be safe.
 	auto ss = omplStateSpaceForDrone(robot);
 
 	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
 	// we'll need to copy this for every thread
-	auto si = loadSpaceInformation(ss, scene);
+	auto si = loadSpaceInformation(ss, experiment.problem->second.scene);
 
 	// Allocate the planner.
 	auto ompl_planner = experiment.planner->second(si);
@@ -59,7 +60,7 @@ Json::Value runDynamicPlannerExperiment(const AppleTreePlanningScene &scene,
 	DynamicGoalVisitationEvaluation eval(
 			adapter,
 			experiment.problem->second.start_state,
-			scene,
+			experiment.problem->second.scene,
 			experiment.problem->second.apple_discoverability,
 			*experiment.problem->second.can_see_apple
 			);
@@ -141,20 +142,45 @@ int main(int argc, char **argv) {
 
 	};
 
-	#define STATISTICS
-
-#ifdef STATISTICS
 	ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
-	auto repIds = ranges::views::iota(0, 20);
+	auto repIds = ranges::views::iota(0, 10);
 
 	// Numbers of apples to throw at the planner.
-	const auto nApples = {10, 50, 100};
-	std::vector<Proportions> probs = gen_discoverability_proportions();
+	const auto nApples = {
+//			10,
+//			50,
+			100
+	};
+
+	std::vector<Proportions> probs = {
+			Proportions {
+					.fraction_true_given = 1.0,
+					.fraction_false_given = 0.0,
+					.fraction_discoverable = 0.0
+			},
+			Proportions {
+					.fraction_true_given = 0.5,
+					.fraction_false_given = 0.0,
+					.fraction_discoverable = 0.5
+			},
+			Proportions {
+				.fraction_true_given = 0.0,
+				.fraction_false_given = 0.0,
+				.fraction_discoverable = 1.0
+			},
+			Proportions {
+					.fraction_true_given = 0.5,
+					.fraction_false_given = 0.5,
+					.fraction_discoverable = 0.0
+			},
+	};
 
 	// The different occlusion functions.
-	auto can_see_apple_fns = {std::make_pair("distance", distance_occlusion),
-							  std::make_pair("alpha_shape", leaf_alpha_occlusion),};
+	auto can_see_apple_fns = {
+//			std::make_pair("distance", distance_occlusion),
+			std::make_pair("alpha_shape", leaf_alpha_occlusion)
+	};
 
 	// Generate a set of problems based on the carthesian product of the above ranges.
 	auto problems =
@@ -172,16 +198,15 @@ int main(int argc, char **argv) {
 				censored_scene.apples.resize(n_total);
 
 				// Translate the discoverability degree into a vector of discoverability types/
-				const auto discoverability = generateAppleDiscoverability((int) scene.apples.size(),
-																		  prob,
+				const auto discoverability = generateAppleDiscoverability(prob,
 																		  repId,
 																		  n_total);
 
 				// Create a JSON object containing the parameters of the problem for later reference.
 				Json::Value problem_params;
 				problem_params["n_given"] = ranges::count(discoverability, AppleDiscoverabilityType::GIVEN);
-				problem_params["n_discoverable"] = ranges::count(discoverability,
-																 AppleDiscoverabilityType::DISCOVERABLE);
+				problem_params["n_discoverable"] = ranges::count(discoverability, AppleDiscoverabilityType::DISCOVERABLE);
+				problem_params["n_false"] = ranges::count(discoverability, AppleDiscoverabilityType::FALSE);
 				problem_params["n_total"] = n_total;
 				problem_params["visibility_model"] = can_see_apple.first;
 
@@ -231,34 +256,9 @@ int main(int argc, char **argv) {
 
 	// Run the experiments in parallel.
 	runExperimentsParallelRecoverable<Experiment>(experiments, [&](const Experiment &experiment) {
-		return runDynamicPlannerExperiment(scene, robot, experiment);
-	}, "analysis/data/dynamic_log.json", 32, std::thread::hardware_concurrency()/2, 42);
+		return runDynamicPlannerExperiment(robot, experiment);
+	}, "analysis/data/dynamic_log.json", 32, std::thread::hardware_concurrency(), 42);
 
-#else
-
-	const auto start_state = randomStateOutsideTree(robot, 0);
-	auto apple_discoverability = generateAppleDiscoverability((int) scene.apples.size(), 1.0, 42, 1);
-
-	std::cout << "Starting planning with " << apple_discoverability.size() << " apples in total, of which "
-			  << ranges::count(apple_discoverability, DISCOVERABLE) << " are discoverable." << std::endl;
-
-	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
-	// So, we just re-create the state space every time just to be safe.
-	auto ss = omplStateSpaceForDrone(robot);
-
-	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
-	// we'll need to copy this for every thread
-	auto si = loadSpaceInformation(ss, scene);
-
-	auto planner = dynamic_planner_fre(si);
-
-	auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(planner, si, ss);
-
-	DynamicGoalVisitationEvaluation eval(adapter, start_state, scene, apple_discoverability, distance_occlusion);
-
-	visualizeEvaluation(meshes, scene, robot, start_state, apple_discoverability, eval);
-
-#endif
 }
 
 
