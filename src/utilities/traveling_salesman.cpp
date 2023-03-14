@@ -66,16 +66,29 @@ std::vector<size_t> tsp_open_end(
 		const std::function<double(size_t, size_t)> &between,
 		size_t n,
 		const ompl::base::PlannerTerminationCondition &ptc) {
-    
-    const auto &[distance_matrix, start_state_index, end_state_index] =
-            mkOpenEndedDistanceMatrix(from_start, between, n, ptc);
 
-    // This allows us to translate OR-tools internal indices into the indices of the table above.
-    operations_research::RoutingIndexManager manager((int) n+2, 1,
-                                                     { operations_research::RoutingIndexManager::NodeIndex {(int) start_state_index } },
-                                                     { operations_research::RoutingIndexManager::NodeIndex {(int) end_state_index } });
+	if (n == 0) {
+		return {};
+	}
 
-    // Build a routing model, and register the distance matrix.
+	if (n == 1) {
+		return {0};
+	}
+
+	const auto &[distance_matrix, start_state_index, end_state_index] = mkOpenEndedDistanceMatrix(from_start,
+																								  between,
+																								  n,
+																								  ptc);
+
+	// This allows us to translate OR-tools internal indices into the indices of the table above.
+	operations_research::RoutingIndexManager manager((int) n + 2,
+													 1,
+													 {operations_research::RoutingIndexManager::NodeIndex{
+															 (int) start_state_index}},
+													 {operations_research::RoutingIndexManager::NodeIndex{
+															 (int) end_state_index}});
+
+	// Build a routing model, and register the distance matrix.
     operations_research::RoutingModel routing(manager);
     routing.SetArcCostEvaluatorOfAllVehicles(routing.RegisterTransitMatrix(distance_matrix));
 

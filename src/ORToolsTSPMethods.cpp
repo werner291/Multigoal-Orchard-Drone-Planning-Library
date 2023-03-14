@@ -149,7 +149,7 @@ std::vector<size_t> ORToolsTSPMethods::update_ordering_with_removal(size_t old_n
 			for (size_t i = 0; i < removed; i++) {
 				new_ordering[i] = i;
 			}
-			for (size_t i = removed; i < old_n - 1; i++) {
+			for (size_t i = removed; i + 1 < old_n; i++) {
 				new_ordering[i] = i + 1;
 			}
 			return new_ordering;
