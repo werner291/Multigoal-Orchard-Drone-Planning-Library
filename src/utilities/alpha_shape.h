@@ -13,7 +13,7 @@
 #include <Eigen/Core>
 #include <shape_msgs/msg/mesh.hpp>
 
-const double LEAVES_ALPHA_SQRTRADIUS = sqrt(0.0001);
+const double LEAVES_ALPHA_SQRTRADIUS = sqrt(0.00001);
 
 /**
  * @brief Compute the alpha shape of a set of points.

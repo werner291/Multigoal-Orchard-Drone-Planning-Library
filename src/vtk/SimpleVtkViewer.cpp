@@ -4,6 +4,7 @@
 
 #include "SimpleVtkViewer.h"
 #include "../utilities/vtk.h"
+#include <vtkProperty.h>
 
 SimpleVtkViewer::SimpleVtkViewer() {
 	// Set up the render window.
@@ -63,4 +64,18 @@ void SimpleVtkViewer::stop() {
 
 void SimpleVtkViewer::discardVideo() {
 	videoRecorder.reset();
+}
+
+void SimpleVtkViewer::addMesh(const shape_msgs::msg::Mesh &mesh, const Eigen::Vector3d &color, double opacity) {
+
+	auto actor = createActorFromMesh(mesh);
+
+	actor->GetProperty()->SetColor(color[0], color[1], color[2]);
+
+	if (opacity < 1.0) {
+		actor->GetProperty()->SetOpacity(opacity);
+	}
+
+	addActor(actor);
+
 }

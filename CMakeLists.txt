@@ -315,6 +315,8 @@ experiment("shell_comparison_sphere_armangle")
 experiment("greatcircle_correlation")
 experiment("sphere_vs_chull_static")
 experiment("initial_orbit_comparison")
+target_link_libraries(${PROJECT_NAME}_experiment_initial_orbit_comparison ${PROJECT_NAME}_visualization)
+
 
 experiment("exploration")
 target_link_libraries(${PROJECT_NAME}_experiment_exploration ${PROJECT_NAME}_sensing)

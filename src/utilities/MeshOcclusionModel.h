@@ -30,6 +30,8 @@ class MeshOcclusionModel {
 	Tree tree;
 	std::vector<Triangle> triangles;
 
+	double margin = 0.05;
+
 public:
 
 	/**
@@ -37,7 +39,7 @@ public:
 	 *
 	 * @param mesh The mesh to create the occlusion model from
 	 */
-	explicit MeshOcclusionModel(const shape_msgs::msg::Mesh &mesh);
+	MeshOcclusionModel(const shape_msgs::msg::Mesh &mesh, double margin);
 
 	/**
 	 * Checks whether a point is occluded by the mesh, from a given viewpoint.
@@ -48,8 +50,14 @@ public:
 	 *
 	 * @return True if the point is occluded, false otherwise
 	 */
-	[[nodiscard]] bool checkOcclusion(const Eigen::Vector3d &point,
-									  const Eigen::Vector3d &viewpoint) const;
+	[[nodiscard]] bool checkOcclusion(const Eigen::Vector3d &point, const Eigen::Vector3d &viewpoint) const;
+
+	/**
+	 * Computes the exterior visibility score of an apple based on occlusion tests
+	 * @param apple - the position of the apple in 3D space
+	 * @return a score between 0 and 1 representing the fraction of random lines from the apple that are not occluded
+	 */
+	double exteriorVisibilityScore(const Eigen::Vector3d &apple, const int n_samples);
 
 };
 

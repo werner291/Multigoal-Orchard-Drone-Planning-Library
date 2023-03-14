@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
 		return Eigen::Vector3d{v.x, v.y, v.z};
 	}) | ranges::to_vector, LEAVES_ALPHA_SQRTRADIUS);
 
-	MeshOcclusionModel occlusion_model(alphashape);
+	MeshOcclusionModel occlusion_model(alphashape, 0);
 
 	utilities::CanSeeAppleFn leaf_alpha_occlusion = [&](const moveit::core::RobotState &state, const Apple &apple) {
 

@@ -12,6 +12,8 @@
 #include <vtkNew.h>
 #include <functional>
 #include <optional>
+#include <shape_msgs/msg/mesh.hpp>
+#include <Eigen/Core>
 #include "VideoRecorder.h"
 
 class SimpleVtkViewer {
@@ -53,6 +55,14 @@ public:
 	 * @param actors 		The actors to add.
 	 */
 	void addActorCollection(vtkActorCollection *actors);
+
+	/**
+	 * Add a mesh to the scene, adsuming no transformations.
+	 *
+	 * @param mesh 			The mesh to add.
+	 * @param color 		The color of the mesh.
+	 */
+	void addMesh(const shape_msgs::msg::Mesh &mesh, const Eigen::Vector3d &color, double opacity = 1.0);
 
 	/**
 	 * Add a callback that is called every time the simulation is rendered.

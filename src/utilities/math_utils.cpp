@@ -616,6 +616,22 @@ math_utils::find_intersection(const Eigen::AlignedBox3d &box, const Plane3d &pla
 
 }
 
+Eigen::Vector3d math_utils::sample_point_on_sphere(Eigen::Vector3d center, double radius) {
+	// Sample from normal distribution.
+	std::normal_distribution<double> distribution(0.0, 1.0);
+	std::random_device rd;
+	std::default_random_engine rng(rd());
+	auto x = distribution(rng);
+	auto y = distribution(rng);
+	auto z = distribution(rng);
+
+	// Normalize.
+	Eigen::Vector3d v(x, y, z);
+	v.normalize();
+
+	return center + v * radius;
+}
+
 bool math_utils::ViewPyramidFaces::contains(const Eigen::Vector3d &point) const {
 	return (point - left.apex).dot(*left.normal()) >= 0 && (point - right.apex).dot(*right.normal()) >= 0 &&
 		   (point - top.apex).dot(*top.normal()) >= 0 && (point - bottom.apex).dot(*bottom.normal()) >= 0;

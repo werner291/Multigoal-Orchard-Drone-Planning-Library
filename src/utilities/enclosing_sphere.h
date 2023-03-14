@@ -22,6 +22,9 @@ namespace utilities {
 	compute_enclosing_sphere_around_leaves(const moveit_msgs::msg::PlanningScene &planning_scene_message,
 										   const double padding);
 
+	bodies::BoundingSphere compute_enclosing_sphere_around_points(const std::vector<Eigen::Vector3d> &points_eigen,
+																  const double padding = 0.0);
+
 	std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const AppleTreePlanningScene &scene_info);
 }
 

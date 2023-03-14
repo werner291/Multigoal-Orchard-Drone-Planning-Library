@@ -415,6 +415,15 @@ namespace math_utils {
 							std::numeric_limits<double>::infinity()},
 			Eigen::Vector3d{-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(),
 							-std::numeric_limits<double>::infinity()}};
+
+	/**
+	 * Sample a point uniformly at random on a sphere.
+	 *
+	 * @param center		The center of the sphere.
+	 * @param radius 		The radius of the sphere.
+	 * @return 				A point on the sphere.
+	 */
+	Eigen::Vector3d sample_point_on_sphere(Eigen::Vector3d center, double radius);
 }
 
 #if JSON_FUNCTIONS
