@@ -4,10 +4,6 @@
 
 #include "../planning_scene_diff_message.h"
 #include "../utilities/experiment_utils.h"
-#include "../shell_space/MoveItShellSpace.h"
-#include "../shell_space/SphereShell.h"
-#include "../planners/shell_path_planner/ApproachPlanning.h"
-#include "../planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"
 #include "../vtk/Viewer.h"
 
 #include "../planners/ChangeIgnoringReplannerAdapter.h"
@@ -144,7 +140,7 @@ int main(int argc, char **argv) {
 
 	ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
-	auto repIds = ranges::views::iota(0, 10);
+	auto repIds = ranges::views::iota(0, 50);
 
 	// Numbers of apples to throw at the planner.
 	const auto nApples = {
