@@ -32,9 +32,17 @@ Json::Value loadJsonFromFile(const std::string &path);
 
 void saveJsonToFile(const Json::Value &json, const std::string &path);
 
-std::vector<std::vector<PtpSpec>> ptpSpecsFromJson(const moveit::core::RobotModelPtr &drone,
-                                                   const Json::Value &stats);
+std::vector<std::vector<PtpSpec>> ptpSpecsFromJson(const moveit::core::RobotModelPtr &drone, const Json::Value &stats);
 
 Json::Value ptpSpecsToJson(const std::vector<std::vector<PtpSpec>> &specs);
+
+template<typename T>
+Json::Value toJSON(const std::vector<T> &v) {
+	Json::Value json(Json::arrayValue);
+	for (const auto &e: v) {
+		json.append(toJSON(e));
+	}
+	return json;
+}
 
 #endif //NEW_PLANNERS_JSON_UTILS_H

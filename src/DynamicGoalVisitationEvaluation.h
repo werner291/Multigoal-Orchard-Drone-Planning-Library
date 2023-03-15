@@ -98,6 +98,8 @@ public:
 	 */
 	std::optional<robot_trajectory::RobotTrajectory> computeNextTrajectory();
 
+	void runTillCompletion();
+
 	/**
 	 * @brief Returns the next upcoming recomputation event after the last path emitted from computeNextTrajectory().
 	 *

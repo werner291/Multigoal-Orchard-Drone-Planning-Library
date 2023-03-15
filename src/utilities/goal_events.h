@@ -17,12 +17,20 @@
 
 namespace utilities {
 
+	using GoalId = int;
+
 	struct PathEnd {
+		std::vector<GoalId> goals_reached;
+	};
+
+	enum GoalSightingType {
+		FOUND_NEW_GOAL, FOUND_FAKE_GOAL
 	};
 
 	struct GoalSighting {
 		int goal_id;
 		PathInterrupt time;
+		GoalSightingType type;
 	};
 
 	using GoalEvent = std::variant<PathEnd, GoalSighting>;
@@ -57,7 +65,17 @@ namespace utilities {
 
 	DiscoveryStatusStats getDiscoveryStatusStats(const std::vector<utilities::DiscoveryStatus> &statuses);
 
-	Json::Value toJson(const DiscoveryStatusStats &stats);
+	Json::Value toJSON(const DiscoveryStatusStats &stats);
+
+	Json::Value toJSON(const DiscoveryStatus &status);
+
+	Json::Value toJSON(const GoalSightingType &type);
+
+	Json::Value toJSON(const GoalSighting &sighting);
+
+	Json::Value toJSON(const PathEnd &end);
+
+	Json::Value toJSON(const GoalEvent &event);
 
 }
 

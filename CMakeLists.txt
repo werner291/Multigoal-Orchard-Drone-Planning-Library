@@ -225,7 +225,7 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/traveling_salesman.cpp
         src/utilities/traveling_salesman.h
         src/utilities/vector_utils.h
-        src/RunPlannerThreaded.cpp src/utilities/trajectoryTiming.cpp src/utilities/trajectoryTiming.h)
+        src/RunPlannerThreaded.cpp src/utilities/trajectoryTiming.cpp src/utilities/trajectoryTiming.h src/OrbitPath.h src/OrbitPath.cpp src/Instrumented.h src/SimpleIncrementalTSPMethods.cpp src/SimpleIncrementalTSPMethods.h)
 
 add_library(${PROJECT_NAME}_sensing
         src/exploration/CandidatePathGenerator.cpp
@@ -322,6 +322,8 @@ experiment("exploration")
 target_link_libraries(${PROJECT_NAME}_experiment_exploration ${PROJECT_NAME}_sensing)
 
 experiment("ignoring_vs_passive_discovery")
+
+experiment("non_approach_experiment")
 
 experiment("dynamic_visualized")
 target_link_libraries(${PROJECT_NAME}_experiment_dynamic_visualized ${PROJECT_NAME}_visualization)

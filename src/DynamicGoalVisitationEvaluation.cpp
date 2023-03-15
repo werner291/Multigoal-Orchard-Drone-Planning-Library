@@ -116,19 +116,22 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 					.getGlobalLinkTransform("end_effector")
 					.translation();
 
+			std::vector<utilities::GoalId> goals;
+
 			for (size_t apple_i = 0; apple_i < scene.apples.size(); apple_i++) {
 
-				bool is_actual_target =
-						discovery_status[apple_i] == utilities::DiscoveryStatus::KNOWN_TO_ROBOT ||
-						discovery_status[apple_i] == utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT ||
-						discovery_status[apple_i] == utilities::DiscoveryStatus::VISITED;
+				bool is_actual_target = discovery_status[apple_i] == utilities::DiscoveryStatus::KNOWN_TO_ROBOT ||
+										discovery_status[apple_i] ==
+										utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT ||
+										discovery_status[apple_i] == utilities::DiscoveryStatus::VISITED;
 
 				if (is_actual_target && (end_effector_pos - scene.apples[apple_i].center).norm() < 0.05) {
 					discovery_status[apple_i] = utilities::DiscoveryStatus::VISITED;
+					goals.emplace_back(apple_i);
 				}
 			}
 
-			upcoming_goal_event = utilities::PathEnd{};
+			upcoming_goal_event = utilities::PathEnd{goals};
 
 		}
 
@@ -225,4 +228,12 @@ DynamicGoalVisitationEvaluation::getSolutionPathSegments() const {
 
 const utilities::CanSeeAppleFn &DynamicGoalVisitationEvaluation::getCanSeeApple() const {
 	return can_see_apple;
+}
+
+void DynamicGoalVisitationEvaluation::runTillCompletion() {
+
+	while (computeNextTrajectory().has_value()) {
+		// Do nothing, the condition is the loop body
+	}
+
 }

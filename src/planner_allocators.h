@@ -28,4 +28,11 @@ DMGPlannerPtr batch_replanner(const ompl::base::SpaceInformationPtr &si);
 
 DMGPlannerPtr dynamic_planner_lci(const ompl::base::SpaceInformationPtr &si);
 
+DMGPlannerPtr dynamic_planner_LIFO(const ompl::base::SpaceInformationPtr &si);
+
+DMGPlannerPtr dynamic_planner_FIFO(const ompl::base::SpaceInformationPtr &si);
+
+DMGPlannerPtr dynamic_planner_FISO(const ompl::base::SpaceInformationPtr &si);
+
+
 #endif //NEW_PLANNERS_PLANNER_ALLOCATORS_H

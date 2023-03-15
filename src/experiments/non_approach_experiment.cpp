@@ -35,8 +35,62 @@ Json::Value toJSON(const Experiment &experiment) {
 	return result;
 }
 
-Json::Value runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot,
-										const Experiment &experiment) {
+class StraightlineApproachMethods : public ApproachPlanningMethods<Eigen::Vector3d> {
+
+	//	ompl::
+
+public:
+	std::optional<OmplApproachPath<Eigen::Vector3d>>
+	approach_path(const ompl::base::State *start, const OmplShellSpace<Eigen::Vector3d> &shell) const override {
+
+		Eigen::Vector3d shell_pt = shell.pointNearState(start);
+
+		ompl::geometric::PathGeometric path(shell.getSpaceInformation());
+		path.append(start);
+
+		ompl::geometric::PathGeometric approach_path(shell.getSpaceInformation());
+		shell.stateFromPoint()
+
+		OmplApproachPath<> result{.shell_point = shell.pointNearState(start),}
+
+
+	}
+
+	std::optional<OmplApproachPath<Eigen::Vector3d>>
+	approach_path(const ompl::base::GoalPtr &goal, const OmplShellSpace<Eigen::Vector3d> &shell) const override {
+		return std::optional<OmplApproachPath<Eigen::Vector3d>>();
+	}
+};
+
+DMGPlannerPtr dynamic_planner_fre(const ompl::base::SpaceInformationPtr &si) {
+	return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<
+			MakeshiftPrmApproachPlanningMethods < Eigen::Vector3d>>
+	(si), std::make_shared<ORToolsTSPMethods>(ORToolsTSPMethods::UpdateStrategy::FULL_REORDER), paddedOmplSphereShell);
+};
+
+DMGPlannerPtr static_planner(const ompl::base::SpaceInformationPtr &si) {
+	return std::make_shared<ChangeIgnoringReplannerAdapter>(std::make_shared<ShellPathPlanner < Eigen::Vector3d >>
+	(paddedOmplSphereShell, std::make_unique<MakeshiftPrmApproachPlanningMethods < Eigen::Vector3d >>
+	(si), true));
+};
+
+DMGPlannerPtr dynamic_planner_initial_orbit(const ompl::base::SpaceInformationPtr &si) {
+	return std::make_shared<InitialOrbitPlanner>(dynamic_planner_fre(si));
+};
+
+DMGPlannerPtr batch_replanner(const ompl::base::SpaceInformationPtr &si) {
+	return std::make_shared<ChangeAccumulatingPlannerAdapter>(std::make_shared<ShellPathPlanner < Eigen::Vector3d >>
+	(paddedOmplSphereShell, std::make_unique<MakeshiftPrmApproachPlanningMethods < Eigen::Vector3d >>
+	(si), true));
+};
+
+DMGPlannerPtr dynamic_planner_lci(const ompl::base::SpaceInformationPtr &si) {
+	return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<
+			MakeshiftPrmApproachPlanningMethods < Eigen::Vector3d>>
+	(si), std::make_shared<ORToolsTSPMethods>(ORToolsTSPMethods::UpdateStrategy::LEAST_COSTLY_INSERT), paddedOmplSphereShell);
+}
+
+Json::Value runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot, const Experiment &experiment) {
 
 	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
 	// So, we just re-create the state space every time just to be safe.
@@ -131,25 +185,15 @@ int main(int argc, char **argv) {
 	TreeMeshes meshes = loadTreeMeshes("appletree");
 
 	// Convert the meshes to a planning scene message.
-	const auto scene = AppleTreePlanningScene {
-		.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(treeMeshesToMoveitSceneMsg(meshes))),
-		.apples = meshes.fruit_meshes | ranges::views::transform(appleFromMesh) | ranges::to_vector
-	};
+	const auto scene = AppleTreePlanningScene{.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(
+			treeMeshesToMoveitSceneMsg(meshes))), .apples = meshes.fruit_meshes |
+															ranges::views::transform(appleFromMesh) |
+															ranges::to_vector};
 
 	// Load the robot model.
 	const auto robot = loadRobotModel();
 
 	using namespace ranges;
-
-	utilities::CanSeeAppleFn distance_occlusion = [](const moveit::core::RobotState &state, const Apple &apple) {
-
-		Eigen::Vector3d ee_pos = state.getGlobalLinkTransform("end_effector").translation();
-
-		const double discovery_max_distance = 1.0;
-
-		return (ee_pos - apple.center).squaredNorm() < discovery_max_distance * discovery_max_distance;
-
-	};
 
 	auto alphashape = alphaShape(meshes.leaves_mesh.vertices | ranges::views::transform([](const auto &v) {
 		return Eigen::Vector3d{v.x, v.y, v.z};
@@ -171,73 +215,51 @@ int main(int argc, char **argv) {
 
 	// Numbers of apples to throw at the planner.
 	const auto nApples = {
-//			10,
-//			50,
-			100
-	};
+			//			10,
+			//			50,
+			100};
 
 	std::vector<Proportions> probs = {
-			//			Proportions {
-			//					.fraction_true_given = 1.0,
-			//					.fraction_false_given = 0.0,
-			//					.fraction_discoverable = 0.0
-			//			},
-			//			Proportions {
-			//					.fraction_true_given = 0.5,
-			//					.fraction_false_given = 0.0,
-			//					.fraction_discoverable = 0.5
-			//			},
-			Proportions{.fraction_true_given = 0.0, .fraction_false_given = 0.0, .fraction_discoverable = 1.0},
-			//			Proportions {
-			//					.fraction_true_given = 0.5,
-			//					.fraction_false_given = 0.5,
-			//					.fraction_discoverable = 0.0
-			//			},
-	};
+			Proportions{.fraction_true_given = 0.0, .fraction_false_given = 0.0, .fraction_discoverable = 1.0},};
 
 	// The different occlusion functions.
-	auto can_see_apple_fns = {
-//			std::make_pair("distance", distance_occlusion),
-			std::make_pair("alpha_shape", leaf_alpha_occlusion)
-	};
+	auto can_see_apple_fns = {std::make_pair("alpha_shape", leaf_alpha_occlusion)};
 
 	// Generate a set of problems based on the carthesian product of the above ranges.
-	auto problems =
-			views::cartesian_product(repIds, probs, nApples, can_see_apple_fns) |
-			views::transform([&](const auto &pair) -> std::pair<Json::Value,DynamicGoalsetPlanningProblem> {
+	auto problems = views::cartesian_product(repIds, probs, nApples, can_see_apple_fns) |
+					views::transform([&](const auto &pair) -> std::pair<Json::Value, DynamicGoalsetPlanningProblem> {
 
-				// Generate a problem for every unique combination of repetition ID,
-				// discoverability degree, total number of apples and occlusion model.
-				const auto &[repId, prob, n_total, can_see_apple] = pair;
+						// Generate a problem for every unique combination of repetition ID,
+						// discoverability degree, total number of apples and occlusion model.
+						const auto &[repId, prob, n_total, can_see_apple] = pair;
 
-				AppleTreePlanningScene censored_scene = scene;
-				// Shuffle the apples.
-				std::shuffle(censored_scene.apples.begin(), censored_scene.apples.end(), std::mt19937(repId));
-				// Delete any over n.
-				censored_scene.apples.resize(n_total);
+						AppleTreePlanningScene censored_scene = scene;
+						// Shuffle the apples.
+						std::shuffle(censored_scene.apples.begin(), censored_scene.apples.end(), std::mt19937(repId));
+						// Delete any over n.
+						censored_scene.apples.resize(n_total);
 
-				// Translate the discoverability degree into a vector of discoverability types/
-				const auto discoverability = generateAppleDiscoverability(prob,
-																		  repId,
-																		  n_total);
+						// Translate the discoverability degree into a vector of discoverability types/
+						const auto discoverability = generateAppleDiscoverability(prob, repId, n_total);
 
-				// Create a JSON object containing the parameters of the problem for later reference.
-				Json::Value problem_params;
-				problem_params["n_given"] = ranges::count(discoverability, AppleDiscoverabilityType::GIVEN);
-				problem_params["n_discoverable"] = ranges::count(discoverability, AppleDiscoverabilityType::DISCOVERABLE);
-				problem_params["n_false"] = ranges::count(discoverability, AppleDiscoverabilityType::FALSE);
-				problem_params["n_total"] = n_total;
-				problem_params["visibility_model"] = can_see_apple.first;
+						// Create a JSON object containing the parameters of the problem for later reference.
+						Json::Value problem_params;
+						problem_params["n_given"] = ranges::count(discoverability, AppleDiscoverabilityType::GIVEN);
+						problem_params["n_discoverable"] = ranges::count(discoverability,
+																		 AppleDiscoverabilityType::DISCOVERABLE);
+						problem_params["n_false"] = ranges::count(discoverability, AppleDiscoverabilityType::FALSE);
+						problem_params["n_total"] = n_total;
+						problem_params["visibility_model"] = can_see_apple.first;
 
-				// Create the problem, to be solved by the planners.
-				DynamicGoalsetPlanningProblem problem{.start_state= randomStateOutsideTree(robot,
-																						   repId), .scene=        censored_scene, .apple_discoverability=    discoverability, .can_see_apple=    &can_see_apple
-						.second};
+						// Create the problem, to be solved by the planners.
+						DynamicGoalsetPlanningProblem problem{.start_state= randomStateOutsideTree(robot,
+																								   repId), .scene=        censored_scene, .apple_discoverability=    discoverability, .can_see_apple=    &can_see_apple
+								.second};
 
-				// Return the problem parameters and the problem itself.
-				return {problem_params, problem};
+						// Return the problem parameters and the problem itself.
+						return {problem_params, problem};
 
-			}) | to_vector;
+					}) | to_vector;
 
 	// The different planners to test.
 	std::vector<std::pair<std::string, DynamicPlannerAllocatorFn>> planners = {
@@ -251,12 +273,6 @@ int main(int argc, char **argv) {
 			{"dynamic_planner_lci",           dynamic_planner_lci},
 			// A planner that uses the dynamic goalset, and completely reorders the visitation order from scratch every time a goal is added.
 			{"dynamic_planner_fre",           dynamic_planner_fre},
-			// A planner that inserts new goals simply at the end of the tour
-			{"dynamic_planner_LIFO",          dynamic_planner_LIFO},
-			// A planner that inserts new goals simply at the beginning of the tour
-			{"dynamic_planner_FIFO",          dynamic_planner_FIFO},
-			// A planner that puts goals at the second place in the order.
-			{"dynamic_planner_FISO",          dynamic_planner_FISO},
 			// // Same as dynamic_planner_fre, but with an initial orbit around the tree to discover some of the dynamic goals
 			{"dynamic_planner_initial_orbit", dynamic_planner_initial_orbit}
 

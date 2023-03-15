@@ -11,6 +11,7 @@
 #include "planners/ShellPathPlanner.h"
 #include "planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"
 #include "shell_space/SphereShell.h"
+#include "SimpleIncrementalTSPMethods.h"
 
 std::shared_ptr<OmplShellSpace<Eigen::Vector3d>>
 paddedOmplSphereShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
@@ -40,8 +41,7 @@ DMGPlannerPtr dynamic_planner_initial_orbit(const ompl::base::SpaceInformationPt
 DMGPlannerPtr batch_replanner(const ompl::base::SpaceInformationPtr &si) {
 	return std::make_shared<ChangeAccumulatingPlannerAdapter>(std::make_shared<ShellPathPlanner<Eigen::Vector3d >>(
 			paddedOmplSphereShell,
-			std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d >>(si),
-			true));
+			std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d >>(si), true));
 };
 
 DMGPlannerPtr dynamic_planner_lci(const ompl::base::SpaceInformationPtr &si) {
@@ -51,3 +51,28 @@ DMGPlannerPtr dynamic_planner_lci(const ompl::base::SpaceInformationPtr &si) {
 																			ORToolsTSPMethods::UpdateStrategy::LEAST_COSTLY_INSERT),
 																	paddedOmplSphereShell);
 }
+
+DMGPlannerPtr dynamic_planner_LIFO(const ompl::base::SpaceInformationPtr &si) {
+	return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
+																			si),
+																	std::make_shared<SimpleIncrementalTSPMethods>(
+																			SimpleIncrementalTSPMethods::Strategy::LastInFirstOut),
+																	paddedOmplSphereShell);
+}
+
+DMGPlannerPtr dynamic_planner_FIFO(const ompl::base::SpaceInformationPtr &si) {
+	return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
+																			si),
+																	std::make_shared<SimpleIncrementalTSPMethods>(
+																			SimpleIncrementalTSPMethods::Strategy::FirstInFirstOut),
+																	paddedOmplSphereShell);
+}
+
+DMGPlannerPtr dynamic_planner_FISO(const ompl::base::SpaceInformationPtr &si) {
+	return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
+																			si),
+																	std::make_shared<SimpleIncrementalTSPMethods>(
+																			SimpleIncrementalTSPMethods::Strategy::FirstInSecondOut),
+																	paddedOmplSphereShell);
+}
+

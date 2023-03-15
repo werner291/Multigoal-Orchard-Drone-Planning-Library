@@ -45,7 +45,12 @@ namespace utilities {
 							discovery_status[goal_id] == DiscoveryStatus::ROBOT_THINKS_EXISTS_BUT_DOESNT;
 
 					if (has_unknown_information && can_see_apple(state, apple)) {
-						return GoalSighting{(int) goal_id, {segment_i, t}};
+
+						GoalSightingType type =
+								discovery_status[goal_id] == DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT
+								? GoalSightingType::FOUND_NEW_GOAL : GoalSightingType::FOUND_FAKE_GOAL;
+
+						return GoalSighting{.goal_id=(int) goal_id, .time={segment_i, t}, .type = type};
 					}
 				}
 
@@ -66,13 +71,87 @@ namespace utilities {
 		return {n_total, n_visited, n_discoverable, n_false, known_unvisited};
 	}
 
-	Json::Value toJson(const DiscoveryStatusStats &stats) {
-		Json::Value root;
-		root["total"] = static_cast<int>(stats.total);
-		root["visited"] = static_cast<int>(stats.visited);
-		root["discoverable"] = static_cast<int>(stats.discoverable);
-		root["false"] = static_cast<int>(stats.false_positives);
-		return root;
+	Json::Value toJSON(const DiscoveryStatusStats &stats) {
+		Json::Value json;
+		json["total"] = (int) stats.total;
+		json["visited"] = (int) stats.visited;
+		json["discoverable"] = (int) stats.discoverable;
+		json["false_positives"] = (int) stats.false_positives;
+		json["known_unvisited"] = (int) stats.known_unvisited;
+		return json;
+	}
+
+	Json::Value toJSON(const DiscoveryStatus &status) {
+		switch (status) {
+			case VISITED:
+				return "VISITED";
+			case KNOWN_TO_ROBOT:
+				return "KNOWN_TO_ROBOT";
+			case EXISTS_BUT_UNKNOWN_TO_ROBOT:
+				return "EXISTS_BUT_UNKNOWN_TO_ROBOT";
+			case ROBOT_THINKS_EXISTS_BUT_DOESNT:
+				return "ROBOT_THINKS_EXISTS_BUT_DOESNT";
+			case REMOVED:
+				return "REMOVED";
+		}
+
+		throw std::runtime_error("Unknown DiscoveryStatus");
+	}
+
+	Json::Value toJSON(const GoalSightingType &type) {
+
+		switch (type) {
+			case FOUND_NEW_GOAL:
+				return "FOUND_NEW_GOAL";
+			case FOUND_FAKE_GOAL:
+				return "FOUND_FAKE_GOAL";
+		}
+
+		throw std::runtime_error("Unknown GoalSightingType");
+	}
+
+	Json::Value toJSON(const GoalSighting &sighting) {
+
+		Json::Value json;
+		json["goal_id"] = sighting.goal_id;
+		// We leave out the interrupt because it will make no sense to the user; it's used internally to tell
+		// planners where to cut any paths they may have stored internally.
+		json["discovery_type"] = toJSON(sighting.type);
+
+		return json;
+
+	}
+
+	Json::Value toJSON(const PathEnd &end) {
+
+		Json::Value json;
+
+		for (const utilities::GoalId &goal_id: end.goals_reached) {
+			json["goals_visited"].append(goal_id);
+		}
+
+		return json;
+
+	}
+
+	Json::Value toJSON(const GoalEvent &event) {
+
+		if (std::holds_alternative<PathEnd>(event)) {
+
+			Json::Value value = toJSON(std::get<PathEnd>(event));
+			value["type"] = "PathEnd";
+			return value;
+
+		} else if (std::holds_alternative<GoalSighting>(event)) {
+
+			Json::Value value = toJSON(std::get<GoalSighting>(event));
+			value["type"] = "GoalSighting";
+			return value;
+
+		}
+
+		throw std::runtime_error("Unknown GoalEvent type");
+
 	}
 
 
