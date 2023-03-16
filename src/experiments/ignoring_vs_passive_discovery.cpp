@@ -99,20 +99,20 @@ Json::Value runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot
 			segment_json["time"] = std::chrono::duration_cast<std::chrono::milliseconds>(segment.time).count();
 			segment_json["path_length"] = segment.path.length();
 
-			for (const auto &waypoint: segment.path.waypoints) {
-
-				moveit::core::RobotState waypoint_copy(waypoint);
-				waypoint_copy.update(true);
-
-				Json::Value waypoint_json;
-				waypoint_json["base_pos"] = toJSON(Eigen::Vector3d(waypoint_copy.getGlobalLinkTransform("base_link")
-																		   .translation()));
-				waypoint_json["ee_pos"] = toJSON(Eigen::Vector3d(waypoint_copy.getGlobalLinkTransform("end_effector")
-																		 .translation()));
-
-				segment_json["waypoints"].append(waypoint_json);
-
-			}
+//			for (const auto &waypoint: segment.path.waypoints) {
+//
+//				moveit::core::RobotState waypoint_copy(waypoint);
+//				waypoint_copy.update(true);
+//
+//				Json::Value waypoint_json;
+//				waypoint_json["base_pos"] = toJSON(Eigen::Vector3d(waypoint_copy.getGlobalLinkTransform("base_link")
+//																		   .translation()));
+//				waypoint_json["ee_pos"] = toJSON(Eigen::Vector3d(waypoint_copy.getGlobalLinkTransform("end_effector")
+//																		 .translation()));
+//
+//				segment_json["waypoints"].append(waypoint_json);
+//
+//			}
 
 			segment_json["end_event"] = toJSON(segment.goal_event);
 
@@ -167,12 +167,12 @@ int main(int argc, char **argv) {
 
 	ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
-	auto repIds = ranges::views::iota(0, 50);
+	auto repIds = ranges::views::iota(0, 20);
 
 	// Numbers of apples to throw at the planner.
 	const auto nApples = {
 //			10,
-//			50,
+			50,
 			100
 	};
 
@@ -275,5 +275,3 @@ int main(int argc, char **argv) {
 	}, "analysis/data/dynamic_log_advanced.json", 32, std::thread::hardware_concurrency(), 42);
 
 }
-
-

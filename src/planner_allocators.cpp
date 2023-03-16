@@ -22,8 +22,7 @@ paddedOmplSphereShell(const AppleTreePlanningScene &scene_info, const ompl::base
 DMGPlannerPtr dynamic_planner_fre(const ompl::base::SpaceInformationPtr &si) {
 	return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
 																			si),
-																	std::make_shared<ORToolsTSPMethods>(
-																			ORToolsTSPMethods::UpdateStrategy::FULL_REORDER),
+																	std::make_shared<ORToolsTSPMethods>(),
 																	paddedOmplSphereShell);
 };
 
@@ -47,8 +46,8 @@ DMGPlannerPtr batch_replanner(const ompl::base::SpaceInformationPtr &si) {
 DMGPlannerPtr dynamic_planner_lci(const ompl::base::SpaceInformationPtr &si) {
 	return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
 																			si),
-																	std::make_shared<ORToolsTSPMethods>(
-																			ORToolsTSPMethods::UpdateStrategy::LEAST_COSTLY_INSERT),
+																	std::make_shared<SimpleIncrementalTSPMethods>(
+																			SimpleIncrementalTSPMethods::Strategy::LeastCostlyInsertion),
 																	paddedOmplSphereShell);
 }
 

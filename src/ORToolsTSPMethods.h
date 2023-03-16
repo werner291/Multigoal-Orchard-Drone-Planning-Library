@@ -14,17 +14,7 @@
 class ORToolsTSPMethods : public IncrementalTSPMethods {
 
 public:
-	enum UpdateStrategy {
-
-		LEAST_COSTLY_INSERT, FULL_REORDER
-
-	};
-
-private:
-	UpdateStrategy update_strategy;
-
-public:
-	explicit ORToolsTSPMethods(UpdateStrategy updateStrategy);
+	explicit ORToolsTSPMethods();
 
 	std::vector<size_t> initial_ordering(size_t n,
 										 std::function<double(size_t, size_t)> distance,

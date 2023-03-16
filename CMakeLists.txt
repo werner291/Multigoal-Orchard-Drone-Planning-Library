@@ -225,7 +225,7 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/traveling_salesman.cpp
         src/utilities/traveling_salesman.h
         src/utilities/vector_utils.h
-        src/RunPlannerThreaded.cpp src/utilities/trajectoryTiming.cpp src/utilities/trajectoryTiming.h src/OrbitPath.h src/OrbitPath.cpp src/Instrumented.h src/SimpleIncrementalTSPMethods.cpp src/SimpleIncrementalTSPMethods.h)
+        src/RunPlannerThreaded.cpp src/utilities/trajectoryTiming.cpp src/utilities/trajectoryTiming.h src/OrbitPath.h src/OrbitPath.cpp src/Instrumented.h src/SimpleIncrementalTSPMethods.cpp src/SimpleIncrementalTSPMethods.h src/utilities/size_t_iota.h)
 
 add_library(${PROJECT_NAME}_sensing
         src/exploration/CandidatePathGenerator.cpp
@@ -261,7 +261,7 @@ add_library(${PROJECT_NAME}_sensing
         src/exploration/DirectPointCloudCollisionDetection.h
         src/utilities/discoverability_specifications.h
 
-        src/experiments/initial_orbit_comparison.cpp)
+        src/experiments/initial_orbit_comparison.cpp src/utilities/size_t_iota.h)
 
 add_library(${PROJECT_NAME}_visualization
         src/vtk/SimpleVtkViewer.cpp
