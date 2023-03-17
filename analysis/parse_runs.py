@@ -1,5 +1,7 @@
 import json
 import pandas as pd
+import matplotlib.pyplot as plt
+
 
 def flatten_run_dict(run_dict):
     """
@@ -37,6 +39,7 @@ def flatten_run_dict(run_dict):
 
     return flat_dict
 
+
 def flatten_segment_dict(segment_dict):
     """
     Takes a dictionary representing a segment in a planner run and returns a flattened version.
@@ -66,6 +69,7 @@ def flatten_segment_dict(segment_dict):
         'goals_discovered': goals_discovered,
         'goals_visited': goals_visited
     }
+
 
 def json_to_dataframe(json_data):
     """
@@ -100,6 +104,11 @@ def json_to_dataframe(json_data):
     segments_df_list = [pd.DataFrame(run_segments) for run_segments in segments_data]
 
     return runs_df, segments_df_list
+
+
+def load_json(filename):
+    with open(filename) as f:
+        return json.load(f)
 
 
 def load_and_process_json(filename):
@@ -137,7 +146,60 @@ def load_and_process_json(filename):
     Raises:
     - ValueError: if the file at the given filepath is not a valid JSON array
     """
-    with open(filename) as f:
-        data = json.load(f)
+    data = load_json(filename)
     runs_df, segments_df = json_to_dataframe(data)
     return runs_df, segments_df
+
+
+def make_boxplots(runs, metrics=None):
+    """
+    Generates boxplots for given metrics and scenario parameters on a set of runs.
+
+    This function generates a 2D grid of boxplots, with rows representing different
+    metrics and columns representing different combinations of scenario parameters.
+    Each boxplot shows the distribution of a given metric across different planner
+    types.
+
+    Parameters:
+    ----------
+    runs: pandas.DataFrame
+        A DataFrame containing the run data, with columns for metrics, planner, and
+        scenario parameters.
+    metrics: list of str, optional (default=['length_per_visited', 'n_visited'])
+        A list of metric column names to plot.
+
+    Returns:
+    -------
+    None
+    """
+
+    scenario_params = ['n_total', 'n_discoverable', 'visibility_model']
+
+    if metrics is None:
+        metrics = ['length_per_visited', 'n_visited']
+
+    n_scenarios = len(runs.groupby(scenario_params))
+
+    # Create a grid of subplots with the dimensions based on the number of metrics and scenario_params
+    fig, axes = plt.subplots(n_scenarios, len(metrics), figsize=(5 * len(scenario_params), 8 * n_scenarios))
+
+    # Loop through runs grouped by scenario_params, and plot each metric in a separate row
+    for (((n, nd, v), df), ax_row) in zip(runs.groupby(scenario_params), axes):
+        # Loop through the metrics and plot boxplots for each metric and group
+        for (column, ax) in zip(metrics, ax_row):
+            # Create a boxplot for the current metric and group
+            df.boxplot(column, rot=90, by='planner', ax=ax)
+
+            # Set the title, x-axis label, and y-axis label for the current subplot
+            ax.set_title('{}, n={}, d={}, v={}'.format(column, n, nd, v))
+            ax.set_xlabel('Planner')
+            ax.set_ylabel(column)
+
+            # Set the y-axis lower limit to 0
+            ax.set_ylim(bottom=0)
+
+    # Adjust the layout of the subplots for better spacing
+    plt.tight_layout()
+
+    # Display the generated boxplots
+    plt.show()

@@ -30,6 +30,9 @@ ChangeAccumulatingPlannerAdapter::plan_initial(const ompl::base::SpaceInformatio
 		return std::nullopt;
 	}
 
+	std::cout << "ChangeAccumulatingPlannerAdapter: Initial plan found for " << static_plan->segments.size()
+			  << " segments." << std::endl;
+
 	return static_plan->segments.front().path_;
 }
 
@@ -45,6 +48,8 @@ ChangeAccumulatingPlannerAdapter::replan_after_path_end(const ompl::base::SpaceI
 			return std::nullopt;
 		} else {
 
+			std::cout << "ChangeAccumulatingPlannerAdapter: Ran out of plan, replanning for " << batch.size()
+					  << " goals." << std::endl;
 			auto static_plan = plan_initial(si, current_state, batch, planning_scene, 0.5);
 
 			batch.clear();

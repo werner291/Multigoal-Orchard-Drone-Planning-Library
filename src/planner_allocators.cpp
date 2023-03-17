@@ -75,3 +75,10 @@ DMGPlannerPtr dynamic_planner_FISO(const ompl::base::SpaceInformationPtr &si) {
 																	paddedOmplSphereShell);
 }
 
+DMGPlannerPtr dynamic_planner_random(const ompl::base::SpaceInformationPtr &si) {
+	return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
+																			si),
+																	std::make_shared<SimpleIncrementalTSPMethods>(
+																			SimpleIncrementalTSPMethods::Strategy::Random),
+																	paddedOmplSphereShell);
+}

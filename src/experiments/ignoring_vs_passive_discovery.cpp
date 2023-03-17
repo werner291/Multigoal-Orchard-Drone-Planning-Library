@@ -88,6 +88,7 @@ Json::Value runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot
 	result["n_visited"] = n_visited;
 	result["time"] = std::chrono::duration_cast<std::chrono::milliseconds>(total_time).count();
 	result["total_path_length"] = total_path_length;
+	result["solution_segments"] = Json::Value(Json::arrayValue);
 
 	const auto solution = eval.getSolutionPathSegments();
 
@@ -165,16 +166,16 @@ int main(int argc, char **argv) {
 
 	};
 
+	utilities::CanSeeAppleFn omniscient_occlusion = [](const moveit::core::RobotState &state, const Apple &apple) {
+		return true;
+	};
+
 	ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
-	auto repIds = ranges::views::iota(0, 20);
+	auto repIds = ranges::views::iota(0, 50);
 
 	// Numbers of apples to throw at the planner.
-	const auto nApples = {
-//			10,
-			50,
-			100
-	};
+	const auto nApples = {10, 50, 100};
 
 	std::vector<Proportions> probs = {
 			//			Proportions {
@@ -196,10 +197,9 @@ int main(int argc, char **argv) {
 	};
 
 	// The different occlusion functions.
-	auto can_see_apple_fns = {
-//			std::make_pair("distance", distance_occlusion),
-			std::make_pair("alpha_shape", leaf_alpha_occlusion)
-	};
+	auto can_see_apple_fns = {std::make_pair("omniscient", omniscient_occlusion),
+							  std::make_pair("distance", distance_occlusion),
+							  std::make_pair("alpha_shape", leaf_alpha_occlusion)};
 
 	// Generate a set of problems based on the carthesian product of the above ranges.
 	auto problems =
@@ -257,10 +257,10 @@ int main(int argc, char **argv) {
 			{"dynamic_planner_FIFO",          dynamic_planner_FIFO},
 			// A planner that puts goals at the second place in the order.
 			{"dynamic_planner_FISO",          dynamic_planner_FISO},
+			// A planner that randomizes the order of the goals.
+			{"dynamic_planner_random",        dynamic_planner_random},
 			// // Same as dynamic_planner_fre, but with an initial orbit around the tree to discover some of the dynamic goals
-			{"dynamic_planner_initial_orbit", dynamic_planner_initial_orbit}
-
-	};
+			{"dynamic_planner_initial_orbit", dynamic_planner_initial_orbit}};
 
 	// Take the carthesian product of the different planners and problems,
 	// making it so that every planner is tested on every problem.
@@ -272,6 +272,6 @@ int main(int argc, char **argv) {
 	// Run the experiments in parallel.
 	runExperimentsParallelRecoverable<Experiment>(experiments, [&](const Experiment &experiment) {
 		return runDynamicPlannerExperiment(robot, experiment);
-	}, "analysis/data/dynamic_log_advanced.json", 32, std::thread::hardware_concurrency(), 42);
+	}, "analysis/data/dynamic_log_advanced_4.json", 32, std::thread::hardware_concurrency(), 42);
 
 }

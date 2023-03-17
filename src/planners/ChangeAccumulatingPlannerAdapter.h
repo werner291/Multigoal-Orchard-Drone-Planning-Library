@@ -21,10 +21,13 @@
  */
 class ChangeAccumulatingPlannerAdapter : public DynamicMultiGoalPlanner {
 
+	// The underlying static planner, which will be used to plan the path for the batch of goals
 	const std::shared_ptr<MultiGoalPlanner> static_planner;
 
+	// The current plan, which is a list of path segments
 	std::optional<MultiGoalPlanner::PlanResult> static_plan;
 
+	// The list of goals that have been added since the last batch was planned
 	std::vector<ompl::base::GoalPtr> batch;
 
 public:

@@ -63,4 +63,9 @@ public:
 													 size_t removed,
 													 std::function<double(const size_t &, const size_t &)> distance,
 													 std::function<double(const size_t &)> first_distance) const override;
+
+	size_t insertionPointByStrategy(size_t old_n,
+									const std::function<double(const NewOrderingEntry &,
+															   const NewOrderingEntry &)> &distance,
+									const std::function<double(const NewOrderingEntry &)> &first_distance) const;
 };

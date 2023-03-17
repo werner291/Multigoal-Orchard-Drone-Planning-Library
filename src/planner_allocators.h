@@ -34,5 +34,6 @@ DMGPlannerPtr dynamic_planner_FIFO(const ompl::base::SpaceInformationPtr &si);
 
 DMGPlannerPtr dynamic_planner_FISO(const ompl::base::SpaceInformationPtr &si);
 
+DMGPlannerPtr dynamic_planner_random(const ompl::base::SpaceInformationPtr &si);
 
 #endif //NEW_PLANNERS_PLANNER_ALLOCATORS_H
