@@ -10,34 +10,30 @@
 #include "../planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"
 #include "../planners/ShellPathPlanner.h"
 #include "../vtk/Viewer.h"
-#include "../CurrentPathState.h"
 
 #include "../planners/ChangeIgnoringReplannerAdapter.h"
 #include "../exploration/ColorEncoding.h"
 #include "../utilities/goal_events.h"
-#include "../DynamicGoalVisitationEvaluation.h"
 #include "../planners/CachingDynamicPlanner.h"
-#include "../ORToolsTSPMethods.h"
 #include "../utilities/run_experiments.h"
 
 #include "../DynamicGoalsetPlanningProblem.h"
-#include "../vtk/visualize_dynamic.h"
 #include "../utilities/MeshOcclusionModel.h"
 #include "../utilities/alpha_shape.h"
+#include "../planner_allocators.h"
+#include "../shell_space/CylinderShell.h"
 
 #include <vtkProperty.h>
 
-using DynamicPlannerAllocatorFn = std::function<std::shared_ptr<DynamicMultiGoalPlanner>(const ompl::base::SpaceInformationPtr &)>;
-
 std::shared_ptr<OmplShellSpace<ConvexHullPoint>>
 paddedOmplChullShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
-	auto workspaceShell = horizontalAdapter<ConvexHullPoint>(convexHullAroundLeaves(scene_info, 0.1, 1.0));
+	auto workspaceShell = horizontalAdapter<ConvexHullPoint>(cuttingPlaneConvexHullAroundLeaves(scene_info, 0.1, 1.0));
 	return OmplShellSpace<ConvexHullPoint>::fromWorkspaceShell(workspaceShell, si);
 };
 
 struct Problem {
 	moveit::core::RobotState start;
-	std::vector<Apple> apples;
+	AppleTreePlanningScene scene;
 };
 
 using StaticPlannerAllocatorFn = std::function<std::shared_ptr<MultiGoalPlanner>(const ompl::base::SpaceInformationPtr &)>;
@@ -54,50 +50,99 @@ Json::Value toJSON(const Experiment &experiment) {
 	return result;
 }
 
-int main(int argc, char **argv) {
+std::vector<AppleTreePlanningScene> scenes_for_trees(const std::vector<std::string> &tree_names) {
+	return tree_names | ranges::views::transform([](const auto &tree_name) {
+		auto meshes = loadTreeMeshes(tree_name);
+		return AppleTreePlanningScene{.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(
+				treeMeshesToMoveitSceneMsg(meshes))), .apples = meshes.fruit_meshes |
+																ranges::views::transform(appleFromMesh) |
+																ranges::to_vector};
+	}) | ranges::to_vector;
+}
 
-	// Load the apple tree meshes.
-	TreeMeshes meshes = loadTreeMeshes("appletree");
+/**
+ * @brief Generates a vector of problems containing pairs of JSON values and Problem objects.
+ * @param robot A shared pointer to a RobotModelConst object.
+ * @param numRepetitions The number of repetitions to be performed.
+ * @param modelNames A vector of model names for which the problems will be generated.
+ * @param applesCounts A vector of integers representing the number of apples for each problem.
+ * @return A vector of pairs containing a JSON value and a Problem object.
+ */
+std::vector<std::pair<Json::Value, Problem>> generateProblems(moveit::core::RobotModelConstPtr robot,
+															  int numRepetitions,
+															  const std::vector<std::string> &modelNames,
+															  const std::vector<int> &applesCounts) {
 
-	// Convert the meshes to a planning scene message.
-	const auto scene = AppleTreePlanningScene{.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(
-			treeMeshesToMoveitSceneMsg(meshes))), .apples = meshes.fruit_meshes |
-															ranges::views::transform(appleFromMesh) |
-															ranges::to_vector};
-
-	// Load the robot model.
-	const auto robot = loadRobotModel();
+	// Get the required scenes for each model name.
+	const auto scenes = scenes_for_trees(modelNames);
 
 	using namespace ranges;
 
-#define STATISTICS
+	// Generate a range of repetition indices.
+	auto repIds = ranges::views::iota(0, numRepetitions);
 
-#ifdef STATISTICS
-	ompl::msg::setLogLevel(ompl::msg::LOG_ERROR);
-
-	auto repIds = ranges::views::iota(0, 50);
-
-	// Numbers of apples to throw at the planner.
-	const auto nApples = {/*10, 50,*/ 100};
-
+	// Generate a vector of problems by calculating the cartesian product of repIds, applesCounts, and scenes.
 	std::vector<std::pair<Json::Value, Problem>> problems =
-			ranges::views::cartesian_product(repIds, nApples) | ranges::views::transform([&](const auto &pair) {
-				const auto &[repId, nApples] = pair;
+			ranges::views::cartesian_product(repIds, applesCounts, scenes) |
+			ranges::views::transform([&](const auto &pair) {
+
+				const auto &[repId, nApples, scene] = pair;
 
 				// Get a random sample of apples.
-				auto apples = scene.apples;
-				std::shuffle(apples.begin(), apples.end(), std::mt19937(repId));
-				apples.resize(nApples);
+				AppleTreePlanningScene reduced_scene{.scene_msg = scene.scene_msg, .apples = scene.apples};
+
+				assert(reduced_scene.apples.size() >= nApples);
+
+				// Shuffle the apples to create a random sample.
+				std::shuffle(reduced_scene.apples.begin(), reduced_scene.apples.end(), std::mt19937(repId));
+
+				// Resize the apples vector to keep only the required number of apples.
+				reduced_scene.apples.resize(nApples);
 
 				// Get a random start state.
 				auto start = randomStateOutsideTree(robot, repId + 991 * nApples);
 
+				// Create a JSON value to represent the problem.
 				Json::Value problem;
 				problem["repId"] = repId;
 				problem["nApples"] = nApples;
+				problem["scene"] = scene.scene_msg->name;
 
-				return std::make_pair(problem, Problem{.start = std::move(start), .apples = std::move(apples)});
+				// Return the pair containing the JSON value and the Problem object.
+				return std::make_pair(problem, Problem{.start = std::move(start), .scene = std::move(reduced_scene)});
 			}) | ranges::to_vector;
+
+	return problems;
+}
+
+
+int main(int argc, char **argv) {
+
+	ompl::msg::setLogLevel(ompl::msg::LOG_ERROR);
+
+	// Load the robot model.
+	const auto robot = loadRobotModel();
+
+	const auto problems = generateProblems(robot, 2, {"appletree", "lemontree2", "orangetree4"}, {10, 50, 100});
+
+
+	using namespace ranges;
+
+	auto sphere_shell = [](const AppleTreePlanningScene &scene) {
+		return paddedSphericalShellAroundLeaves(scene, 0.1);
+	};
+
+	auto cutting_plane_chull = [](const AppleTreePlanningScene &scene) {
+		return cuttingPlaneConvexHullAroundLeaves(scene, 0.1, 1.0);
+	};
+
+	auto cgal_chull = [](const AppleTreePlanningScene &scene) {
+		return convexHullAroundLeavesCGAL(scene, 1.0, 0.1);
+	};
+
+	auto cylinder_shell = [](const AppleTreePlanningScene &scene) {
+		return paddedCylindricalShellAroundLeaves(scene, 0.1);
+	};
 
 
 	StaticPlannerAllocatorFn make_sphere_planner = [](const ompl::base::SpaceInformationPtr &si) {
@@ -115,10 +160,8 @@ int main(int argc, char **argv) {
 	};
 
 	// The different planners to test.
-	std::vector<std::pair<std::string, StaticPlannerAllocatorFn>> planners = {
-			{"sphere", make_sphere_planner},
-			{"chull", make_chull_planner}
-	};
+	std::vector<std::pair<std::string, StaticPlannerAllocatorFn>> planners = {{"sphere", make_sphere_planner},
+																			  {"chull",  make_chull_planner}};
 
 	// Take the carthesian product of the different planners and problems,
 	// making it so that every planner is tested on every problem.
@@ -147,10 +190,9 @@ int main(int argc, char **argv) {
 		ompl::base::ScopedState<> start_state(ss);
 		ss->copyToOMPLState(start_state.get(), experiment.problem->second.start);
 
-		auto goals = experiment.problem->second.apples |
-					 ranges::views::transform([&](const auto &apple) -> ompl::base::GoalPtr {
-						 return std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center);
-					 }) | ranges::to_vector;
+		auto goals = experiment.problem->second.apples | ranges::views::transform([&](const auto &apple) -> ompl::base::GoalPtr {
+			return std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center);
+		}) | ranges::to_vector;
 
 		// use OMPL non-terminating condition
 		auto ptc = ompl::base::plannerNonTerminatingCondition();
@@ -177,31 +219,6 @@ int main(int argc, char **argv) {
 		return result;
 
 	}, "analysis/data/static_sphere_vs_chull.json", 8, 1, 42);
-#else
-
-	const auto start_state = randomStateOutsideTree(robot, 0);
-	auto apple_discoverability = generateAppleDiscoverability((int) scene.apples.size(), 1.0, 42, 1);
-
-	std::cout << "Starting planning with " << apple_discoverability.size() << " apples in total, of which "
-			  << ranges::count(apple_discoverability, DISCOVERABLE) << " are discoverable." << std::endl;
-
-	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
-	// So, we just re-create the state space every time just to be safe.
-	auto ss = omplStateSpaceForDrone(robot);
-
-	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
-	// we'll need to copy this for every thread
-	auto si = loadSpaceInformation(ss, scene);
-
-	auto planner = dynamic_planner_fre(si);
-
-	auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(planner, si, ss);
-
-	DynamicGoalVisitationEvaluation eval(adapter, start_state, scene, apple_discoverability, distance_occlusion);
-
-	visualizeEvaluation(meshes, scene, robot, start_state, apple_discoverability, eval);
-
-#endif
 
 	return 0;
 }

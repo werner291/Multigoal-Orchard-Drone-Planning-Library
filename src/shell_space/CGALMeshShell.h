@@ -141,10 +141,7 @@ public:
 	double path_length(const std::shared_ptr<ShellPath<CGALMeshShellPoint>> &path) const override;
 };
 
-std::shared_ptr<WorkspaceShell<CGALMeshShellPoint>> convexHullAroundLeavesCGAL(
-		const AppleTreePlanningScene &scene_info,
-		const ompl::base::SpaceInformationPtr &si,
-		double rotation_weight,
-		double padding);
+std::shared_ptr<WorkspaceShell<CGALMeshShellPoint>>
+convexHullAroundLeavesCGAL(const AppleTreePlanningScene &scene_info, double rotation_weight, double padding);
 
 #endif //NEW_PLANNERS_CGALMESHSHELL_H

@@ -1,8 +1,9 @@
-
 #ifndef NEW_PLANNERS_CYLINDERSHELL_H
 #define NEW_PLANNERS_CYLINDERSHELL_H
 
 #include "WorkspaceShell.h"
+#include "../planning_scene_diff_message.h"
+#include "../utilities/enclosing_sphere.h"
 
 /**
  * A point on the cylinder.
@@ -65,9 +66,11 @@ public:
 class CylinderShell : public WorkspaceShell<CylinderShellPoint> {
 
 	double radius;
+	Eigen::Vector2d center;
+public:
+	CylinderShell(double radius, const Eigen::Vector2d &center);
 
 public:
-	explicit CylinderShell(double radius);
 
 	[[nodiscard]] Eigen::Vector3d arm_vector(const CylinderShellPoint &p) const override;
 
@@ -83,5 +86,7 @@ public:
 	double path_length(const std::shared_ptr<ShellPath<CylinderShellPoint>> &path) const override;
 };
 
+std::shared_ptr<CylinderShell>
+paddedCylindricalShellAroundLeaves(const AppleTreePlanningScene &scene_info, double padding);
 
 #endif //NEW_PLANNERS_CYLINDERSHELL_H

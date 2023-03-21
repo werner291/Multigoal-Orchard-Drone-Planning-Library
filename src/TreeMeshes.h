@@ -8,6 +8,7 @@
 #include <moveit/robot_state/robot_state.h>
 
 struct TreeMeshes {
+	std::string tree_name;
 	shape_msgs::msg::Mesh leaves_mesh;
 	shape_msgs::msg::Mesh trunk_mesh;
 	std::vector<shape_msgs::msg::Mesh> fruit_meshes;

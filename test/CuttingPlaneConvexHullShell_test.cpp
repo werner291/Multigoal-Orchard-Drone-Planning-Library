@@ -194,7 +194,7 @@ TEST(ConvexHullShell, leaves_surface_apples_test) {
 															ranges::views::transform(appleFromMesh) |
 															ranges::to_vector};
 
-	auto hull = convexHullAroundLeaves(scene, 0.1, 1.0);
+	auto hull = cuttingPlaneConvexHullAroundLeaves(scene, 0.1, 1.0);
 
 	for (const auto &apple1: scene.apples) {
 		for (const auto &apple2: scene.apples) {

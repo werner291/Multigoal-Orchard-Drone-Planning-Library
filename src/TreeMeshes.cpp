@@ -21,6 +21,8 @@
 TreeMeshes loadTreeMeshes(const std::string &treeName) {
 	TreeMeshes meshes;
 
+	meshes.tree_name = treeName;
+
 	meshes.leaves_mesh = loadMesh(treeName + "_leaves.dae");
 	meshes.trunk_mesh = loadMesh(treeName + "_trunk.dae");
 

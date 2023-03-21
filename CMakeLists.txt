@@ -225,7 +225,17 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/traveling_salesman.cpp
         src/utilities/traveling_salesman.h
         src/utilities/vector_utils.h
-        src/RunPlannerThreaded.cpp src/utilities/trajectoryTiming.cpp src/utilities/trajectoryTiming.h src/OrbitPath.h src/OrbitPath.cpp src/Instrumented.h src/SimpleIncrementalTSPMethods.cpp src/SimpleIncrementalTSPMethods.h src/utilities/size_t_iota.h)
+        src/RunPlannerThreaded.cpp
+        src/utilities/trajectoryTiming.cpp
+        src/utilities/trajectoryTiming.h
+        src/OrbitPath.h
+        src/OrbitPath.cpp
+        src/Instrumented.h
+        src/SimpleIncrementalTSPMethods.cpp
+        src/SimpleIncrementalTSPMethods.h
+        src/utilities/size_t_iota.h
+        src/shell_space/StarAlphaChullShell.cpp
+        src/shell_space/StarAlphaChullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h)
 
 add_library(${PROJECT_NAME}_sensing
         src/exploration/CandidatePathGenerator.cpp
@@ -261,7 +271,7 @@ add_library(${PROJECT_NAME}_sensing
         src/exploration/DirectPointCloudCollisionDetection.h
         src/utilities/discoverability_specifications.h
 
-        src/experiments/initial_orbit_comparison.cpp src/utilities/size_t_iota.h)
+        src/experiments/initial_orbit_comparison.cpp src/utilities/size_t_iota.h src/shell_space/CapsuleShape.cpp src/shell_space/CapsuleShape.h)
 
 add_library(${PROJECT_NAME}_visualization
         src/vtk/SimpleVtkViewer.cpp
@@ -313,7 +323,7 @@ experiment("shell_comparison")
 experiment("tsp_over_prm_vs_sphereshell")
 experiment("shell_comparison_sphere_armangle")
 experiment("greatcircle_correlation")
-experiment("sphere_vs_chull_static")
+experiment("shell_type_comparison")
 experiment("initial_orbit_comparison")
 target_link_libraries(${PROJECT_NAME}_experiment_initial_orbit_comparison ${PROJECT_NAME}_visualization)
 
@@ -327,6 +337,9 @@ experiment("non_approach_experiment")
 
 experiment("dynamic_visualized")
 target_link_libraries(${PROJECT_NAME}_experiment_dynamic_visualized ${PROJECT_NAME}_visualization)
+
+experiment("static_visualized")
+target_link_libraries(${PROJECT_NAME}_experiment_static_visualized ${PROJECT_NAME}_visualization)
 
 experiment("lci_vs_full_reorder_timing")
 

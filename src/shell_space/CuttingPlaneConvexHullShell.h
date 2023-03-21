@@ -224,7 +224,7 @@ protected:
 };
 
 std::shared_ptr<WorkspaceShell<ConvexHullPoint>>
-	convexHullAroundLeaves(const AppleTreePlanningScene &scene_info, double padding, double rotation_weight);
+cuttingPlaneConvexHullAroundLeaves(const AppleTreePlanningScene &scene_info, double padding, double rotation_weight);
 
 
 #endif //NEW_PLANNERS_CUTTINGPLANECONVEXHULLSHELL_H

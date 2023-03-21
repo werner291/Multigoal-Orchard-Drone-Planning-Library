@@ -25,15 +25,16 @@ CylinderShell::path_from_to(const CylinderShellPoint &from, const CylinderShellP
 }
 
 double CylinderShell::path_length(const std::shared_ptr<ShellPath<CylinderShellPoint>> &path) const {
-	return std::dynamic_pointer_cast<HelixPath>(path)->delta_angle * std::dynamic_pointer_cast<HelixPath>(path)->radius
-	       + std::dynamic_pointer_cast<HelixPath>(path)->delta_height;
+	return std::dynamic_pointer_cast<HelixPath>(path)->delta_angle *
+		   std::dynamic_pointer_cast<HelixPath>(path)->radius +
+		   std::dynamic_pointer_cast<HelixPath>(path)->delta_height;
+}
+
+CylinderShell::CylinderShell(double radius, const Eigen::Vector2d &center) : radius(radius), center(center) {
 }
 
 CylinderShellPoint HelixPath::at(double t) const {
-	return {
-		start.angle + t * delta_angle,
-		start.height + t * delta_height
-	};
+	return {start.angle + t * delta_angle, start.height + t * delta_height};
 }
 
 double HelixPath::length() {

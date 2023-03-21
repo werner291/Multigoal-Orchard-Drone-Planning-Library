@@ -217,10 +217,8 @@ Eigen::Vector3d CGALMeshShell::arm_vector(const CGALMeshShellPoint &p) const {
 	return -normalAt(p);
 }
 
-std::shared_ptr<WorkspaceShell<CGALMeshShellPoint>> convexHullAroundLeavesCGAL(const AppleTreePlanningScene &scene_info,
-																		  const ompl::base::SpaceInformationPtr &si,
-																		  double rotation_weight,
-																		  double padding) {
+std::shared_ptr<WorkspaceShell<CGALMeshShellPoint>>
+convexHullAroundLeavesCGAL(const AppleTreePlanningScene &scene_info, double rotation_weight, double padding) {
 
 	return std::make_shared<CGALMeshShell>(convexHull(utilities::extract_leaf_vertices(scene_info)),
 										   rotation_weight,

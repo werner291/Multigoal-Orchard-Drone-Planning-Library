@@ -194,17 +194,18 @@ createPlanningSceneDiff(const std::vector<DetachedTreeNode> &treeFlattened,
 
 moveit_msgs::msg::PlanningScene treeMeshesToMoveitSceneMsg(const TreeMeshes &tree_meshes, bool include_ground_plane) {
 
-    moveit_msgs::msg::PlanningScene planning_scene_message;
+	moveit_msgs::msg::PlanningScene planning_scene_message;
 
-    planning_scene_message.is_diff = true;
+	planning_scene_message.name = tree_meshes.tree_name;
 
-    {
-        const shape_msgs::msg::Mesh mesh = tree_meshes.trunk_mesh;
+	planning_scene_message.is_diff = true;
+
+	{
+		const shape_msgs::msg::Mesh mesh = tree_meshes.trunk_mesh;
 
 		const std::vector<shape_msgs::msg::Mesh> decomposition = convex_decomposition(mesh, 2.0);
 		for (auto convex: decomposition | boost::adaptors::indexed(0)) {
-			addColoredMeshCollisionShape(planning_scene_message,
-										 {0.5, 0.2, 0.1},
+			addColoredMeshCollisionShape(planning_scene_message, {0.5, 0.2, 0.1},
 										 "trunk" + std::to_string(convex.index()),
 										 convex.value());
 		}

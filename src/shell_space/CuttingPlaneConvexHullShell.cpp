@@ -469,7 +469,7 @@ std::vector<ConvexHullPoint> CuttingPlaneConvexHullShell::along_cutting_plane(co
 }
 
 std::shared_ptr<WorkspaceShell<ConvexHullPoint>>
-convexHullAroundLeaves(const AppleTreePlanningScene &scene_info, double padding, double rotation_weight) {
+cuttingPlaneConvexHullAroundLeaves(const AppleTreePlanningScene &scene_info, double padding, double rotation_weight) {
 
 	auto leaf_vertices = utilities::extract_leaf_vertices(scene_info);
 
