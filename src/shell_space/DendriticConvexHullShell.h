@@ -19,16 +19,32 @@ namespace dendritic_convex_hull {
 	using Delaunay = CGAL::Delaunay_triangulation_3<K>;
 	using Point = Delaunay::Point;
 
-	struct Parent {
-		Delaunay::Cell_handle cell;
+	struct CellWithParent {
+		Delaunay::Cell_handle parent_cell;
 		K::Vector_3 relative;
+		double distance_from_chull;
 	};
 
-	using ParentageMap = std::unordered_map<Delaunay::Cell_handle, Parent>;
+	using ParentageMap = std::unordered_map<Delaunay::Cell_handle, CellWithParent>;
 
 	ParentageMap generate_parentage(const Delaunay& dt);
 
-	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> extract_edges(const ParentageMap& parent_map);
+	struct DendriteNode {
+		Eigen::Vector3d position;
+		std::vector<std::shared_ptr<DendriteNode>> children;
+		std::weak_ptr<DendriteNode> parent;
+	};
+
+	std::shared_ptr<DendriteNode> extract_dendrite(const Delaunay::Cell_handle& cell,
+												   std::unordered_map<Delaunay::Cell_handle,
+												   std::vector<Delaunay::Cell_handle>>& child_map,
+												   const std::weak_ptr<DendriteNode> &parent);
+
+	std::vector<std::shared_ptr<DendriteNode>> extract_dendrites(const ParentageMap& parent_map, const Delaunay& dt);
+
+	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> extract_dendrite_edges(const DendriteNode& root_node);
+
+
 }
 
 #endif //NEW_PLANNERS_DENDRITICCONVEXHULLSHELL_H
