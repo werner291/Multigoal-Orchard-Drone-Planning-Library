@@ -9,10 +9,10 @@
 
 #include "../vtk/SimpleVtkViewer.h"
 #include "../utilities/delaunay.h"
+#include "../shell_space/DendriticConvexHullShell.h"
 
 #include <vtkProperty.h>
 #include <CGAL/Delaunay_triangulation_3.h>
-
 
 int main(int argc, char **argv) {
 
@@ -23,29 +23,33 @@ int main(int argc, char **argv) {
 	SimpleVtkViewer viewer;
 	viewer.addMesh(meshes.trunk_mesh, {0.5, 0.3, 0.1}, 1.0);
 
-	using K = CGAL::Epick;
-	using Delaunay = CGAL::Delaunay_triangulation_3<K>;
-	using Point = Delaunay::Point;
+	namespace dch = dendritic_convex_hull;
 
-	Delaunay dt = utilities::generateDelaunayTriangulation(meshes.trunk_mesh);
+	dch::Delaunay dt = utilities::generateDelaunayTriangulation(meshes.trunk_mesh);
 
-	std::vector<Delaunay::Cell_handle> big_cells;
+	auto edges = dch::extract_edges(dch::generate_parentage(dt));
 
-	for (auto itr = dt.finite_cells_begin(); itr != dt.finite_cells_end(); ++itr) {
-		Point circumcenter = itr->circumcenter();
-		double sphere_radius_sqr = squared_distance(circumcenter, itr->vertex(0)->point());
-		if (sphere_radius_sqr > 0.1 * 0.1) {
-			big_cells.push_back(itr);
-		}
-	}
+	VtkLineSegmentsVisualization edges_viz(1.0,0.0,1.0);
+	edges_viz.updateLine(edges);
 
-	Apple a1 = apples[0];
-	Apple a2 = apples[42];
+	viewer.addActor(edges_viz.getActor());
 
-	auto c1 = utilities::closest_cell(Point(a1.center.x(), a2.center.y(), a2.center.z()), big_cells);
-	auto c2 = utilities::closest_cell(Point(a2.center.x(), a2.center.y(), a2.center.z()), big_cells);
 
-	// Now, perform an A*-
+//	std::vector<Delaunay::Cell_handle> big_cells;
+//
+//	for (auto itr = dt.finite_cells_begin(); itr != dt.finite_cells_end(); ++itr) {
+//		Point circumcenter = itr->circumcenter();
+//		double sphere_radius_sqr = squared_distance(circumcenter, itr->vertex(0)->point());
+//		if (sphere_radius_sqr > 0.1 * 0.1) {
+//			big_cells.push_back(itr);
+//		}
+//	}
+//
+//	Apple a1 = apples[0];
+//	Apple a2 = apples[42];
+//
+//	auto c1 = utilities::closest_cell(Point(a1.center.x(), a2.center.y(), a2.center.z()), big_cells);
+//	auto c2 = utilities::closest_cell(Point(a2.center.x(), a2.center.y(), a2.center.z()), big_cells);
 
 
 	// find whichever cell is closest to the apple.

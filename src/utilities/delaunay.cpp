@@ -74,25 +74,25 @@ utilities::closest_cell(const Delaunay3::Point to, std::vector<Delaunay3::Cell_h
 	return closest_cell;
 }
 
-std::vector<utilities::Delaunay3::Cell_handle> utilities::bidirectional_monotonic_astar(Delaunay3::Cell_handle start,
-																						Delaunay3::Cell_handle goal,
-																						std::vector<Delaunay3::Cell_handle> &big_cells) {
-
-	struct FrontierCell {
-		std::shared_ptr<FrontierCell> parent;
-		double heuristic_distance;
-		Delaunay3::Cell_handle cell;
-	};
-
-	std::priority_queue<std::shared_ptr<FrontierCell>> frontier{
-
-			std::make_shared<FrontierCell>(nullptr, 0.0)
-
-
-	};
-
-
-}
+//std::vector<utilities::Delaunay3::Cell_handle> utilities::bidirectional_monotonic_astar(Delaunay3::Cell_handle start,
+//																						Delaunay3::Cell_handle goal,
+//																						std::vector<Delaunay3::Cell_handle> &big_cells) {
+//
+//	struct FrontierCell {
+//		std::shared_ptr<FrontierCell> parent;
+//		double heuristic_distance;
+//		Delaunay3::Cell_handle cell;
+//	};
+//
+//	std::priority_queue<std::shared_ptr<FrontierCell>> frontier{
+//
+//			std::make_shared<FrontierCell>(nullptr, 0.0)
+//
+//
+//	};
+//
+//
+//}
 
 /*
  *

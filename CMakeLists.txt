@@ -234,8 +234,8 @@ add_library(${PROJECT_NAME}_shared
         src/SimpleIncrementalTSPMethods.cpp
         src/SimpleIncrementalTSPMethods.h
         src/utilities/size_t_iota.h
-        src/shell_space/StarAlphaChullShell.cpp
-        src/shell_space/StarAlphaChullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h)
+        src/shell_space/DendriticConvexHullShell.cpp
+        src/shell_space/DendriticConvexHullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h)
 
 add_library(${PROJECT_NAME}_sensing
         src/exploration/CandidatePathGenerator.cpp
