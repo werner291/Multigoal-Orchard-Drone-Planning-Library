@@ -7,6 +7,8 @@
 #include "../probe_retreat_move.h"
 #include "../shell_space/SphereShell.h"
 #include "../planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"
+#include "../shell_space/CuttingPlaneConvexHullShell.h"
+#include "../PathLengthPredictor.h"
 
 int main(int argc, char **argv) {
 
@@ -30,6 +32,22 @@ int main(int argc, char **argv) {
 
 	auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene, 0.1));
 	auto shell = OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(workspaceShell, si);
+
+	Json::Value v;
+	v["name"] = "DendriticConvexHullDistancePredictor";
+
+	Json::Value v2;
+	v2["name"] = "DendriticConvexHullDistancePredictor";
+
+
+
+	std::vector<std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>>> predictors {
+		pairWithJson(EuclideanDistancePredictor()),
+		pairWithJson(GreatCircleDistancePredictor::mec_around_leaves(scene)),
+		pairWithJson(CuttingPlaneConvexHullDistancePredictor::around_leaves(scene)),
+		{v, std::make_shared<CGALConvexHullDistancePredictor>(meshes.leaves_mesh)},
+		{v2, std::make_shared<DendriticConvexHullDistancePredictor>(meshes.leaves_mesh)}
+	};
 
 	auto approach_planner = std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(si);
 
@@ -55,6 +73,14 @@ int main(int argc, char **argv) {
 																				  0.05,
 																				  scene.apples[apple_j].center);
 
+		Json::Value result;
+
+		for (const auto &[json, predictor] : predictors) {
+			result["predictor"] = json["name"];
+			result["predicted_length"] = predictor->predict_path_length(scene.apples[apple_i], scene.apples[apple_j]);
+		}
+
+
 		// Plan approaches to the apples.
 		auto approach_i = approach_planner->approach_path(goal_i, *shell);
 		auto approach_j = approach_planner->approach_path(goal_j, *shell);
@@ -64,10 +90,7 @@ int main(int argc, char **argv) {
 			continue;
 		}
 
-		Json::Value result;
 
-		result["shell_path_length"] = shell->predict_path_length(approach_i->shell_point, approach_j->shell_point);
-		result["euclidean_path_length"] = (scene.apples[apple_i].center - scene.apples[apple_j].center).norm();
 
 		// Plan a path between the two apples.
 		ompl::geometric::PathGeometric path(si);
@@ -88,7 +111,7 @@ int main(int argc, char **argv) {
 	}
 
 	std::ofstream ofs;
-	ofs.open("analysis/greatcircle_actual.json");
+	ofs.open("analysis/data/path_length_prediction.json");
 	ofs << results;
 	ofs.close();
 

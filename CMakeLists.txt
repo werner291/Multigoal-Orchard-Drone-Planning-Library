@@ -66,7 +66,7 @@ set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
+#SET(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
 #SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
 add_library(${PROJECT_NAME}_shared
@@ -235,7 +235,7 @@ add_library(${PROJECT_NAME}_shared
         src/SimpleIncrementalTSPMethods.h
         src/utilities/size_t_iota.h
         src/shell_space/DendriticConvexHullShell.cpp
-        src/shell_space/DendriticConvexHullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h)
+        src/shell_space/DendriticConvexHullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h src/PathLengthPredictor.cpp src/PathLengthPredictor.h src/PathLengthPredictor.h)
 
 add_library(${PROJECT_NAME}_sensing
         src/exploration/CandidatePathGenerator.cpp
@@ -322,7 +322,7 @@ experiment("shellpath_shell_bias")
 experiment("shell_comparison")
 experiment("tsp_over_prm_vs_sphereshell")
 experiment("shell_comparison_sphere_armangle")
-experiment("greatcircle_correlation")
+experiment("path_length_prediction")
 experiment("shell_type_comparison")
 experiment("initial_orbit_comparison")
 target_link_libraries(${PROJECT_NAME}_experiment_initial_orbit_comparison ${PROJECT_NAME}_visualization)

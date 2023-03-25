@@ -66,31 +66,6 @@ class CuttingPlaneConvexHullShell : public WorkspaceShell<ConvexHullPoint> {
 	/// The facets that make up the convex hull.
 	std::vector<Facet> facets;
 
-	/// The entry type for the nearest-neighbour structure.
-	struct NNGNATEntry {
-		bool operator==(const NNGNATEntry &rhs) const;
-
-		bool operator!=(const NNGNATEntry &rhs) const;
-
-		size_t face_index;
-		Eigen::Vector3d at;
-
-	};
-
-	/// A GNAT that gives a indexes all facets by their center of gravity.
-	ompl::NearestNeighborsGNAT<NNGNATEntry> facet_index;
-
-	/**
-	 * Find the facet whose center of gravity is on_which_mesh to the given point,
-	 * used as an initial guess for locating the facet on_which_mesh to the point.
-	 *
-	 * This operation takes O(log n) time in the number of facets.
-	 *
-	 * @param a 	The point to find the facet on_which_mesh to.
-	 * @return 		The index of the facet whose COG is on_which_mesh to the point.
-	 */
-	size_t guess_closest_face(const Eigen::Vector3d &a) const;
-
 	std::vector<ConvexHullPoint>
 	along_cutting_plane(const ConvexHullPoint &start, const ConvexHullPoint &end, const Plane3d &cutting_plane) const;
 
@@ -195,11 +170,6 @@ protected:
 	 * Internal: populate the neighbour_ab, neighbour_bc, neighbour_ca fields of each facet.
 	 */
 	void match_faces();
-
-	/**
-	 * Internal: Build the facet lookup structure.
-	 */
-	void init_gnat();
 
 	/**
 	 *

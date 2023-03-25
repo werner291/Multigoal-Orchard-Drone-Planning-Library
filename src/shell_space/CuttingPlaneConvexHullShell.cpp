@@ -11,10 +11,6 @@
 
 const double EPSILON = 10e-10;
 
-size_t CuttingPlaneConvexHullShell::guess_closest_face(const Eigen::Vector3d &a) const {
-	return facet_index.nearest(NNGNATEntry{SIZE_MAX, a}).face_index;
-}
-
 CuttingPlaneConvexHullShell::CuttingPlaneConvexHullShell(const shape_msgs::msg::Mesh &mesh,
 														 double rotationWeight,
 														 double padding)
@@ -47,23 +43,6 @@ CuttingPlaneConvexHullShell::CuttingPlaneConvexHullShell(const shape_msgs::msg::
 
 	// Match up the faces and populate the neighbour_ab, neighbour_bc, and neighbour_ca fields.
 	match_faces();
-
-	// Compute the spatial facet index.
-	init_gnat();
-
-}
-
-void CuttingPlaneConvexHullShell::init_gnat() {
-
-	facet_index.setDistanceFunction([](const NNGNATEntry &a, const NNGNATEntry &b) {
-		// Distance between facets will be the Euclidean distance between the centroids.
-		return (a.at - b.at).norm();
-	});
-
-	for (const auto &[i, f]: this->facets | ranges::views::enumerate) {
-		// Add the facet to the index, keyed to the centroid.
-		facet_index.add(NNGNATEntry{i, (this->vertices[f.a] + this->vertices[f.b] + this->vertices[f.c]) / 3.0});
-	}
 
 }
 
@@ -239,14 +218,6 @@ std::array<Eigen::Vector3d, 2> CuttingPlaneConvexHullShell::facet_edge_vertices(
 //
 //	return params;
 //}
-
-bool CuttingPlaneConvexHullShell::NNGNATEntry::operator==(const CuttingPlaneConvexHullShell::NNGNATEntry &rhs) const {
-	return face_index == rhs.face_index && at == rhs.at;
-}
-
-bool CuttingPlaneConvexHullShell::NNGNATEntry::operator!=(const CuttingPlaneConvexHullShell::NNGNATEntry &rhs) const {
-	return !(rhs == *this);
-}
 
 std::array<size_t, 3> CuttingPlaneConvexHullShell::Facet::neighbours() const {
 	return {neighbour_ab, neighbour_bc, neighbour_ca};

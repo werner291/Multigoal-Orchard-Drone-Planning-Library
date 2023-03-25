@@ -140,8 +140,9 @@ std::shared_ptr<ShellPath<CGALMeshShellPoint>> CGALMeshShell::path_from_to(const
 
 }
 
-CGALMeshShell::CGALMeshShell(const shape_msgs::msg::Mesh &mesh, double rotationWeight, double padding)
-		: rotation_weight(rotationWeight), padding(padding) {
+Triangle_mesh from_rosmsg(const shape_msgs::msg::Mesh &mesh) {
+
+	Triangle_mesh tmesh;
 
 	// We first convert every vertex to a CGAL point, building a vector to translate between the original and CGAL point indices.
 	std::vector<Triangle_mesh::vertex_index> vertices;
@@ -157,6 +158,25 @@ CGALMeshShell::CGALMeshShell(const shape_msgs::msg::Mesh &mesh, double rotationW
 													  vertices[f.vertex_indices[2]]);
 		assert(fi != Triangle_mesh::null_face());
 	}
+
+	return tmesh;
+}
+
+CGALMeshShell::CGALMeshShell(const shape_msgs::msg::Mesh &mesh, double rotationWeight, double padding)
+		: rotation_weight(rotationWeight), padding(padding),tmesh(from_rosmsg(mesh)) {
+
+	// We initialize the AABB tree such that we don't have to re-compute it every projection query.
+	Surface_mesh_shortest_path shortest_paths(tmesh);
+	shortest_paths.build_aabb_tree(tree);
+
+	nearest_point_on_shell(
+			Eigen::Vector3d(42.0, 42.0, 57.0)
+			);
+
+}
+
+CGALMeshShell::CGALMeshShell(Triangle_mesh mesh, double rotationWeight, double padding)
+		: rotation_weight(rotationWeight), padding(padding),tmesh(mesh) {
 
 	// We initialize the AABB tree such that we don't have to re-compute it every projection query.
 	Surface_mesh_shortest_path shortest_paths(tmesh);
