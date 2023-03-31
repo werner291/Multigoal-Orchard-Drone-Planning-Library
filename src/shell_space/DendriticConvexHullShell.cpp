@@ -29,8 +29,6 @@ dendritic_convex_hull::ParentageMap dendritic_convex_hull::generate_parentage(co
 		for (int i = 0; i < 4; ++i) {
 			if (dt.is_infinite(itr->neighbor(i))) {
 
-				std::cout << "Found a cell on the convex hull!" << std::endl;
-
 				// Get the barycenter of the current one.
 				Point barycenter = CGAL::centroid(
 						itr->vertex(0)->point(),

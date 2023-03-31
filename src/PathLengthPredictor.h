@@ -60,12 +60,13 @@ public:
 	 */
 	[[nodiscard]] const bodies::BoundingSphere &getEnclosingSphere() const;
 
+	bool include_approaches;
 public:
 	/**
 	 * @brief Construct the GreatCircleDistancePredictor with a given enclosing sphere.
 	 * @param enclosing_sphere The enclosing sphere.
 	 */
-	explicit GreatCircleDistancePredictor(bodies::BoundingSphere enclosing_sphere);
+	explicit GreatCircleDistancePredictor(bodies::BoundingSphere enclosing_sphere, bool includeApproaches);
 
 	/// @inheritdoc
 	double predict_path_length(const Apple &point1, const Apple &point2) override;
@@ -75,7 +76,8 @@ public:
 	 * @param scene_info The AppleTreePlanningScene object.
 	 * @return A GreatCircleDistancePredictor object.
 	 */
-	[[maybe_unused]] static GreatCircleDistancePredictor mec_around_leaves(const AppleTreePlanningScene &scene_info);
+	[[maybe_unused]] static GreatCircleDistancePredictor
+	mec_around_leaves(const AppleTreePlanningScene &scene_info, bool b);
 };
 
 /**
@@ -89,8 +91,10 @@ public:
 	 * @brief Construct the CuttingPlaneConvexHullDistancePredictor with a given enclosing shell.
 	 * @param enclosingShell The enclosing shell.
 	 */
-	explicit CuttingPlaneConvexHullDistancePredictor(const CuttingPlaneConvexHullShell &enclosingShell);
+	explicit CuttingPlaneConvexHullDistancePredictor(const CuttingPlaneConvexHullShell &enclosingShell,
+													 bool includeApproaches);
 
+	bool include_approaches;
 public:
 	/// @inheritdoc
 	double predict_path_length(const Apple &point1, const Apple &point2) override;
@@ -100,7 +104,7 @@ public:
 	 * @param scene_info The AppleTreePlanningScene object.
 	 * @return A CuttingPlaneConvexHullDistancePredictor object.
 	 */
-	static CuttingPlaneConvexHullDistancePredictor around_leaves(const AppleTreePlanningScene &scene_info);
+	static CuttingPlaneConvexHullDistancePredictor around_leaves(const AppleTreePlanningScene &scene_info, bool include_approaches);
 };
 
 /**
@@ -109,24 +113,15 @@ public:
  */
 class CGALConvexHullDistancePredictor : public PathLengthPredictor {
 	CGALMeshShell enclosing_shell;
-public:
-//	/**
-//	 * @brief Construct the CGALConvexHullDistancePredictor with a given enclosing shell.
-//	 * @param enclosingShell The CGAL::Surface_mesh object representing the enclosing shell.
-//	 */
-//	explicit CGALConvexHullDistancePredictor(const CGAL::Surface_mesh<CGAL::Epick::Point_3> &enclosingShell);
-//
-//	/**
-//	 * @brief Construct the CGALConvexHullDistancePredictor with a given enclosing shell.
-//	 * @param enclosingShell The CGALMeshShell object representing the enclosing shell.
-//	 */
-//	explicit CGALConvexHullDistancePredictor(CGALMeshShell enclosingShell) : enclosing_shell(enclosingShell) {}
 
-	explicit CGALConvexHullDistancePredictor(const shape_msgs::msg::Mesh &mesh);
+public:
+
+    explicit CGALConvexHullDistancePredictor(const AppleTreePlanningScene &scene_info, bool includeApproaches);
 
 	/// @inheritdoc
 	double predict_path_length(const Apple &point1, const Apple &point2) override;
 
+	bool include_approaches;
 };
 
 /**
@@ -152,17 +147,35 @@ public:
 	 */
 	explicit DendriticConvexHullDistancePredictor(const shape_msgs::msg::Mesh &mesh);
 
+	explicit DendriticConvexHullDistancePredictor(const AppleTreePlanningScene &scene_info);
+
 	/// @inheritdoc
 	double predict_path_length(const Apple &point1, const Apple &point2) override;
 
 };
 
+class HelicalDistancePredictor : public PathLengthPredictor {
+
+	Eigen::Vector2d center;
+public:
+	HelicalDistancePredictor(const Eigen::Vector2d &center, double radius, bool includeApproaches);
+
+private:
+	double radius;
+
+public:
+	double predict_path_length(const Apple &point1, const Apple &point2) override;
+
+	bool include_approaches;
+
+	static HelicalDistancePredictor around_leaves(const AppleTreePlanningScene &scene, bool b);
+};
 
 std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>> pairWithJson(EuclideanDistancePredictor predictor);
 std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>> pairWithJson(GreatCircleDistancePredictor predictor);
+std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>> pairWithJson(HelicalDistancePredictor predictor);
 std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>> pairWithJson(CuttingPlaneConvexHullDistancePredictor predictor);
-
-//std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>> pairWithJson(DendriticConvexHullDistancePredictor predictor);
-
+std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>> pairWithJson(std::shared_ptr<DendriticConvexHullDistancePredictor> predictor);
+std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>> pairWithJson(std::shared_ptr<CGALConvexHullDistancePredictor> predictor);
 
 #endif //NEW_PLANNERS_PATHLENGTHPREDICTOR_H

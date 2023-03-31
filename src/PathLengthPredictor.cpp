@@ -10,8 +10,9 @@ double EuclideanDistancePredictor::predict_path_length(const Apple &point1, cons
 	return (point1.center - point2.center).norm();
 }
 
-GreatCircleDistancePredictor::GreatCircleDistancePredictor(bodies::BoundingSphere enclosing_sphere) : enclosing_sphere(
-		std::move(enclosing_sphere)) {
+GreatCircleDistancePredictor::GreatCircleDistancePredictor(bodies::BoundingSphere enclosing_sphere,
+														   bool includeApproaches) : enclosing_sphere(
+		std::move(enclosing_sphere)), include_approaches(includeApproaches) {
 }
 
 double GreatCircleDistancePredictor::predict_path_length(const Apple &point1, const Apple &point2) {
@@ -20,14 +21,24 @@ double GreatCircleDistancePredictor::predict_path_length(const Apple &point1, co
 	Eigen::Vector3d ray2 = point2.center - enclosing_sphere.center;
 
 	double cos = ray1.dot(ray2) / (ray1.norm() * ray2.norm());
+	double d = enclosing_sphere.radius * std::acos(std::clamp(cos, -1.0, 1.0));
 
-	return enclosing_sphere.radius * std::acos(std::clamp(cos, -1.0, 1.0));
+	if (include_approaches) {
+
+		// Add distance of both points to the sphere surface.
+		d += (point1.center - enclosing_sphere.center).norm() - enclosing_sphere.radius;
+		d += (point2.center - enclosing_sphere.center).norm() - enclosing_sphere.radius;
+
+	}
+
+	return d;
 
 }
 
 [[maybe_unused]] GreatCircleDistancePredictor
-GreatCircleDistancePredictor::mec_around_leaves(const AppleTreePlanningScene &scene_info) {
-	return GreatCircleDistancePredictor(utilities::compute_enclosing_sphere_around_leaves(*scene_info.scene_msg, 0.0));
+GreatCircleDistancePredictor::mec_around_leaves(const AppleTreePlanningScene &scene_info, bool b) {
+	return GreatCircleDistancePredictor(utilities::compute_enclosing_sphere_around_leaves(*scene_info.scene_msg, 0.0),
+										b);
 }
 
 const bodies::BoundingSphere &GreatCircleDistancePredictor::getEnclosingSphere() const {
@@ -51,60 +62,105 @@ std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>> pairWithJson(GreatC
 	json["enclosing_sphere"]["center"]["y"] = predictor.getEnclosingSphere().center.y();
 	json["enclosing_sphere"]["center"]["z"] = predictor.getEnclosingSphere().center.z();
 	json["enclosing_sphere"]["radius"] = predictor.getEnclosingSphere().radius;
+	json["include_approaches"] = predictor.include_approaches;
 
 	return std::make_pair(json, std::make_shared<GreatCircleDistancePredictor>(predictor));
 }
 
-//std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>>
-//pairWithJson(DendriticConvexHullDistancePredictor predictor) {
-//
-//	Json::Value json;
-//	json["name"] = "DendriticConvexHullDistancePredictor";
-//
-//	return std::make_pair(json, std::make_shared<DendriticConvexHullDistancePredictor>(predictor));
-//
-//}
+std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>>
+pairWithJson(std::shared_ptr<DendriticConvexHullDistancePredictor> predictor) {
+
+	Json::Value json;
+	json["name"] = "DendriticConvexHullDistancePredictor";
+
+	return std::make_pair(json, predictor);
+
+}
 
 std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>>
 pairWithJson(CuttingPlaneConvexHullDistancePredictor predictor) {
 	Json::Value json;
-	json["type"] = "CuttingPlaneConvexHullDistancePredictor";
-	return std::make_pair(json, std::make_shared<CuttingPlaneConvexHullDistancePredictor>(std::move(predictor)));
+	json["name"] = "CuttingPlaneConvexHullDistancePredictor";
+	json["include_approaches"] = predictor.include_approaches;
+
+	return std::make_pair(json, std::make_shared<CuttingPlaneConvexHullDistancePredictor>(predictor));
+}
+
+std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>> pairWithJson(HelicalDistancePredictor predictor) {
+
+	Json::Value json;
+	json["name"] = "HelicalDistancePredictor";
+	json["include_approaches"] = predictor.include_approaches;
+
+	return std::make_pair(json, std::make_shared<HelicalDistancePredictor>(predictor));
+
+}
+
+std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>>
+pairWithJson(std::shared_ptr<CGALConvexHullDistancePredictor> predictor) {
+
+	Json::Value json;
+	json["name"] = "CGALConvexHullDistancePredictor";
+	json["include_approaches"] = predictor->include_approaches;
+
+	return std::make_pair(json, predictor);
+
 }
 
 double CuttingPlaneConvexHullDistancePredictor::predict_path_length(const Apple &point1, const Apple &point2) {
-	return enclosing_shell.path_length(enclosing_shell.path_from_to(enclosing_shell.nearest_point_on_shell(point1.center),
-																	enclosing_shell.nearest_point_on_shell(point2.center)));
+	const ConvexHullPoint &from = enclosing_shell.nearest_point_on_shell(point1.center);
+	const ConvexHullPoint &to = enclosing_shell.nearest_point_on_shell(point2.center);
+
+	double d = enclosing_shell.path_length(enclosing_shell.path_from_to(from, to));
+
+	if (include_approaches) {
+		Eigen::Vector3d from_euc = enclosing_shell.surface_point(from);
+		Eigen::Vector3d to_euc = enclosing_shell.surface_point(to);
+
+		d += (from_euc - point1.center).norm();
+		d += (to_euc - point2.center).norm();
+	}
+
+	return d;
 }
 
-CuttingPlaneConvexHullDistancePredictor::CuttingPlaneConvexHullDistancePredictor(const CuttingPlaneConvexHullShell &enclosingShell)
-		: enclosing_shell(enclosingShell) {
+CuttingPlaneConvexHullDistancePredictor::CuttingPlaneConvexHullDistancePredictor(const CuttingPlaneConvexHullShell &enclosingShell,
+																				 bool includeApproaches)
+		: enclosing_shell(enclosingShell), include_approaches(includeApproaches) {
 }
 
 CuttingPlaneConvexHullDistancePredictor
-CuttingPlaneConvexHullDistancePredictor::around_leaves(const AppleTreePlanningScene &scene_info) {
+CuttingPlaneConvexHullDistancePredictor::around_leaves(const AppleTreePlanningScene &scene_info, bool include_approaches) {
 
 	return CuttingPlaneConvexHullDistancePredictor(CuttingPlaneConvexHullShell(convexHull(utilities::extract_leaf_vertices(
-			scene_info)), 0.0, 0.0));
+			scene_info)), 0.0, 0.0), include_approaches);
 
 }
-//
-//CGALConvexHullDistancePredictor::CGALConvexHullDistancePredictor(const CGAL::Surface_mesh<CGAL::Epick::Point_3> &enclosingShell)
-//		: enclosing_shell(enclosingShell, 0.0, 0.0) {
-//
-//
-//}
 
 double CGALConvexHullDistancePredictor::predict_path_length(const Apple &point1, const Apple &point2) {
 
-	return enclosing_shell.path_length(enclosing_shell.path_from_to(enclosing_shell.nearest_point_on_shell(point1.center),
-																	enclosing_shell.nearest_point_on_shell(point2.center)));
+	const CGALMeshShellPoint &from = enclosing_shell.nearest_point_on_shell(point1.center);
+	const CGALMeshShellPoint &to = enclosing_shell.nearest_point_on_shell(point2.center);
+
+	double d = enclosing_shell.path_length(enclosing_shell.path_from_to(from, to));
+
+	if (include_approaches) {
+		Eigen::Vector3d from_euc = enclosing_shell.surface_point(from);
+		Eigen::Vector3d to_euc = enclosing_shell.surface_point(to);
+
+		d += (from_euc - point1.center).norm();
+		d += (to_euc - point2.center).norm();
+	}
+
+	return d;
 }
 
-CGALConvexHullDistancePredictor::CGALConvexHullDistancePredictor(const shape_msgs::msg::Mesh &mesh) : enclosing_shell(convexHull(mesh.vertices), 0.0, 0.0) {
+CGALConvexHullDistancePredictor::CGALConvexHullDistancePredictor(const AppleTreePlanningScene &scene_info,
+																 bool includeApproaches) :
+		enclosing_shell(convexHull(utilities::extract_leaf_vertices(scene_info)), 0.0, 0.0),
+		include_approaches(includeApproaches) {
 
 }
-
 
 
 CGAL::Surface_mesh<CGAL::Epick::Point_3> extractConvexHullSurfaceMesh(const dendritic_convex_hull::Delaunay &dt) {
@@ -229,3 +285,56 @@ double DendriticConvexHullDistancePredictor::predict_path_length(const Apple &a1
 
 }
 
+const shape_msgs::msg::Mesh& extractLeavesMesh(const AppleTreePlanningScene &scene_info) {
+	for (const auto &col: scene_info.scene_msg->world.collision_objects) {
+		if (col.id == "leaves") {
+			return col.meshes[0];
+		}
+	}
+	throw std::runtime_error("Could not find leaves mesh");
+}
+
+DendriticConvexHullDistancePredictor::DendriticConvexHullDistancePredictor(const AppleTreePlanningScene &scene_info) : dt(
+		utilities::generateDelaunayTriangulation(extractLeavesMesh(scene_info))) {
+
+	dendrites = dendritic_convex_hull::extract_dendrites(dendritic_convex_hull::generate_parentage(dt), dt);
+
+	tmesh = extractConvexHullSurfaceMesh(dt);
+
+	Surface_mesh_shortest_path shortest_paths(tmesh);
+	shortest_paths.build_aabb_tree(tree);
+
+}
+
+double HelicalDistancePredictor::predict_path_length(const Apple &point1, const Apple &point2) {
+
+	Eigen::Vector2d p1(point1.center.x(), point1.center.y());
+	p1 -= center;
+	Eigen::Vector2d p2(point2.center.x(), point2.center.y());
+	p2 -= center;
+
+	double angle = std::acos(std::clamp(p1.dot(p2) / (p1.norm() * p2.norm()), -1.0, 1.0));
+	double z_delta = std::abs(point1.center.z() - point2.center.z());
+
+	double d = std::sqrt(std::pow(angle, 2) + std::pow(z_delta, 2));
+
+	if (include_approaches) {
+
+		d += std::abs(p1.norm() - radius);
+		d += std::abs(p2.norm() - radius);
+
+	}
+
+	return d;
+
+}
+
+HelicalDistancePredictor HelicalDistancePredictor::around_leaves(const AppleTreePlanningScene &scene, bool b) {
+	auto seb = utilities::compute_enclosing_sphere_around_leaves(*scene.scene_msg, 0.0);
+
+	return HelicalDistancePredictor({seb.center.x(), seb.center.y()}, seb.radius, b);
+}
+
+HelicalDistancePredictor::HelicalDistancePredictor(const Eigen::Vector2d &center, double radius, bool includeApproaches)
+		: center(center), radius(radius), include_approaches(includeApproaches) {
+}

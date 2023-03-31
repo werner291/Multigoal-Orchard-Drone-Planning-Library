@@ -50,16 +50,6 @@ Json::Value toJSON(const Experiment &experiment) {
 	return result;
 }
 
-std::vector<AppleTreePlanningScene> scenes_for_trees(const std::vector<std::string> &tree_names) {
-	return tree_names | ranges::views::transform([](const auto &tree_name) {
-		auto meshes = loadTreeMeshes(tree_name);
-		return AppleTreePlanningScene{.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(
-				treeMeshesToMoveitSceneMsg(meshes))), .apples = meshes.fruit_meshes |
-																ranges::views::transform(appleFromMesh) |
-																ranges::to_vector};
-	}) | ranges::to_vector;
-}
-
 /**
  * @brief Generates a vector of problems containing pairs of JSON values and Problem objects.
  * @param robot A shared pointer to a RobotModelConst object.
@@ -124,7 +114,6 @@ int main(int argc, char **argv) {
 	const auto robot = loadRobotModel();
 
 	const auto problems = generateProblems(robot, 2, {"appletree", "lemontree2", "orangetree4"}, {10, 50, 100});
-
 
 	using namespace ranges;
 
