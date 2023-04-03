@@ -1,6 +1,5 @@
 #include <ompl/geometric/planners/informedtrees/AITstar.h>
 #include <fstream>
-#include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
 #include "../utilities/experiment_utils.h"
 #include "../GreatCircleMetric.h"
@@ -9,8 +8,6 @@
 #include "../planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"
 #include "../shell_space/CuttingPlaneConvexHullShell.h"
 #include "../PathLengthPredictor.h"
-
-
 
 template<typename ShellPoint>
 Json::Value compute_goaltogoal_stats(ompl::base::GoalPtr goal_i,
@@ -33,12 +30,14 @@ Json::Value compute_goaltogoal_stats(ompl::base::GoalPtr goal_i,
 	ompl::geometric::PathGeometric path(si);
 	path.append(approach_i->robot_path);
 	path.reverse();
-	path.append(shell.shellPath(approach_i->shell_point, approach_j->shell_point));
+	auto shellPath = shell.shellPath(approach_i->shell_point, approach_j->shell_point);
+	path.append(shellPath);
 	path.append(approach_j->robot_path);
 
 	Json::Value result;
 
 	result["actual_length_unoptimized"] = path.length();
+	result["shell_path_length"] = shellPath.length();
 
 	// Optimize the path.
 	result["actual_length"] = optimize(path, std::make_shared<DronePathLengthObjective>(si), si).length();
@@ -54,7 +53,7 @@ int main(int argc, char **argv) {
 
 	// Load the apple tree meshes.
 
-	const auto scenes = scenes_for_trees({"appletree", "lemontree2", "orangetree4"});
+	const auto scenes = scenes_for_trees({"appletree", "lemontree2", "orangetree4", "orangetree2"});
 
 	Json::Value results_by_scene;
 
@@ -123,12 +122,12 @@ int main(int argc, char **argv) {
 			result["on_chull"] = compute_goaltogoal_stats(goal_i, goal_j, *chull_shell, si);
 			result["on_cgal_chull"] = compute_goaltogoal_stats(goal_i, goal_j, *cgal_shell, si);
 
-
 			std::cout << "Completed run " << i << std::endl;
 
 			results_by_scene[scene.scene_msg->name].append(result);
 
 		}
+
 	}
 
 	std::ofstream ofs;
