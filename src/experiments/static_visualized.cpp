@@ -27,7 +27,48 @@ int main(int argc, char **argv) {
 	using Delaunay = CGAL::Delaunay_triangulation_3<K>;
 	using Point = Delaunay::Point;
 
+	/*
+	 * 1. Start by letting $T$ represent a [[Delaunay Tetrahedralization|delaunay tetrahedralization]] of the point set $O$.
+	 *
+	 * 2. Derive the [[Convex Hull|convex hull]] $C$ from $T$, which is simply the external surface of $T$.
+	 *
+	 * 3. For each cell $c$ in $T$ that has a circumradius greater than a specified $r > 0$, find the shortest path
+	 *    between circumcenters (along edges of the [[Voronoi diagram]]) leading to $C$, traversing edges where
+	 *    the associated facet in $T$ has a circumradius of at least $r$, until finding an edge that intersects $C$.
+	 *    If the operation is successful, store the path as a _dendrite_.
+	 *
+	 * 4. Paths with overlapping edges can be combined to form trees of Voronoi edges. These trees are rooted at a point
+	 *    on the convex hull.
+	 */
+
 	Delaunay dt = utilities::generateDelaunayTriangulation(meshes.trunk_mesh);
+
+	struct Dendrite {
+		Delaunay::Facet facet;
+		std::array<K::FT, 3> barycentric;
+
+	};
+
+	struct CellVisit {
+
+		Delaunay::Cell_handle cell;
+		std::shared_ptr<CellVisit> parent;
+
+	};
+
+	// Extract the convex hull.
+	std::vector<CellVisit> root_cells;
+	std::queue<CellVisit> queue;
+
+	for (auto cell_itr = dt.finite_cells_begin(); cell_itr != dt.finite_cells_end(); ++cell_itr) {
+
+		int neighbor;
+		if (cell_itr->has_neighbor(dt.infinite_cell(), neighbor)) {
+			root_cells.push_back(CellVisit{.cell = cell_itr, .parent = nullptr});
+		}
+
+	}
+
 
 	std::vector<Delaunay::Cell_handle> big_cells;
 
