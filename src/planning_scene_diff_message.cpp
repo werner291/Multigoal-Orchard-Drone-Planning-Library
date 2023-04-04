@@ -1,6 +1,8 @@
 #include <bullet/HACD/hacdHACD.h>
 #include <rclcpp/serialization.hpp>
 #include <rclcpp/serialized_message.hpp>
+#include <range/v3/view/transform.hpp>
+#include <range/v3/range/conversion.hpp>
 
 #include "utilities/msgs_utilities.h"
 #include "utilities/experiment_utils.h"
@@ -325,5 +327,15 @@ createMeshBasedAppleTreePlanningSceneMessage(const std::string &model_name, bool
 		std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(planning_scene_message)),
 		apples_from_connected_components(apples)
 	};
+}
+
+std::vector<AppleTreePlanningScene> scenes_for_trees(const std::vector<std::string> &tree_names) {
+	return tree_names | ranges::views::transform([](const auto &tree_name) {
+		auto meshes = loadTreeMeshes(tree_name);
+		return AppleTreePlanningScene{.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(
+				treeMeshesToMoveitSceneMsg(meshes))), .apples = meshes.fruit_meshes |
+																ranges::views::transform(appleFromMesh) |
+																ranges::to_vector};
+	}) | ranges::to_vector;
 }
 

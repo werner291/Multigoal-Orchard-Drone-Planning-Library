@@ -14,16 +14,14 @@
 
 namespace utilities {
 
-	using Delaunay3 = CGAL::Delaunay_triangulation_3<CGAL::Epick>;
+	using K = CGAL::Epick;
+	using Triangle = CGAL::Triangle_3<K>;
+	using Delaunay3 = CGAL::Delaunay_triangulation_3<K>;
 
 	// Delaunay Triangulation
-	CGAL::Delaunay_triangulation_3<CGAL::Epick> generateDelaunayTriangulation(const shape_msgs::msg::Mesh &mesh);
+	CGAL::Delaunay_triangulation_3<K> generateDelaunayTriangulation(const shape_msgs::msg::Mesh &mesh);
 
-	Delaunay3::Cell_handle closest_cell(const Delaunay3::Point to, std::vector<Delaunay3::Cell_handle> &big_cells);
-
-	std::vector<Delaunay3::Cell_handle> bidirectional_monotonic_astar(Delaunay3::Cell_handle start,
-																	  Delaunay3::Cell_handle goal,
-																	  std::vector<Delaunay3::Cell_handle> &big_cells);
+	Triangle facet_triangle(const Delaunay3::Cell_handle &cell, int facet_index);
 
 }
 

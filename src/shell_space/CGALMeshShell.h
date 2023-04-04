@@ -58,7 +58,7 @@ protected:
 	Triangle_mesh tmesh;
 
 	/// An AABB-tree for quick lookup of the on_which_mesh point on the mesh (including facet information)
-	CGAL::AABB_tree<AABBTraits> tree;
+	CGAL::AABB_tree<AABBTraits> tree {};
 
 	/// When computing the path_on_shell, the states will be offset from the shell by this distance.
 	double padding = 0.1;
@@ -76,6 +76,8 @@ public:
 	 * @param padding 			Offset of the states (at the end-effector) from the shell.
 	 */
 	explicit CGALMeshShell(const shape_msgs::msg::Mesh &mesh, double rotationWeight, double padding);
+
+	explicit CGALMeshShell(Triangle_mesh mesh, double rotationWeight, double padding);
 
 	/**
 	 * For a given CGALMeshShellPoint (which really is a face index paired with barycentric coordinates),

@@ -9,10 +9,80 @@
 
 #include "../vtk/SimpleVtkViewer.h"
 #include "../utilities/delaunay.h"
+#include "../shell_space/DendriticConvexHullShell.h"
 
 #include <vtkProperty.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 
+namespace dch = dendritic_convex_hull;
+
+
+std::shared_ptr<dch::DendriteNode> find_closest_node(const std::vector<std::shared_ptr<dch::DendriteNode>> &dendrites, const Apple &a1) {// Among the dendrites, find one with a node that is closest to the apple.
+	std::shared_ptr<dch::DendriteNode> closest_node = nullptr;
+	double closest_distance = std::numeric_limits<double>::max();
+
+	std::vector<std::shared_ptr<dch::DendriteNode>> to_search_queue = dendrites;
+
+	while (!to_search_queue.empty()) {
+
+		auto node = to_search_queue.back();
+		to_search_queue.pop_back();
+
+		double distance = (node->position - a1.center).norm();
+		if (distance < closest_distance) {
+			closest_distance = distance;
+			closest_node = node;
+		}
+
+		for (auto& child : node->children) {
+			to_search_queue.push_back(child);
+		}
+
+	}
+
+	return closest_node;
+}
+
+std::vector<Eigen::Vector3d> trace_dendrite(std::shared_ptr<dch::DendriteNode> closest_node1) {
+	std::vector<Eigen::Vector3d> path;
+
+	do {
+		path.push_back(closest_node1->position);
+		closest_node1 = closest_node1->parent.lock();
+	} while (closest_node1 != nullptr);
+
+	return path;
+}
+
+CGAL::Surface_mesh<CGAL::Epick::Point_3> extractConvexHullSurfaceMesh(const dendritic_convex_hull::Delaunay &dt) {
+	CGAL::Surface_mesh<dch::Delaunay::Point> tmesh;
+
+	std::unordered_map<dch::Delaunay::Point, CGAL::SM_Vertex_index> vertex_map;
+
+	// Extract the surface triangles.
+	for (auto itr = dt.finite_cells_begin(); itr != dt.finite_cells_end(); ++itr) {
+		for (int i = 0; i < 4; ++i) {
+			if (dt.is_infinite(itr->neighbor(i))) {
+
+				auto triangle = utilities::facet_triangle(itr, i);
+
+				for (int j = 0; j < 3; ++j) {
+					const auto& vertex = triangle.vertex(j);
+					if (vertex_map.find(vertex) == vertex_map.end()) {
+						vertex_map[vertex] = tmesh.add_vertex(vertex);
+					}
+				}
+
+				tmesh.add_face(vertex_map[triangle.vertex(0)],
+							   vertex_map[triangle.vertex(1)],
+							   vertex_map[triangle.vertex(2)]);
+
+
+			}
+		}
+	}
+	return tmesh;
+}
 
 int main(int argc, char **argv) {
 
@@ -23,70 +93,51 @@ int main(int argc, char **argv) {
 	SimpleVtkViewer viewer;
 	viewer.addMesh(meshes.trunk_mesh, {0.5, 0.3, 0.1}, 1.0);
 
-	using K = CGAL::Epick;
-	using Delaunay = CGAL::Delaunay_triangulation_3<K>;
-	using Point = Delaunay::Point;
+	dch::Delaunay dt = utilities::generateDelaunayTriangulation(meshes.trunk_mesh);
 
-	/*
-	 * 1. Start by letting $T$ represent a [[Delaunay Tetrahedralization|delaunay tetrahedralization]] of the point set $O$.
-	 *
-	 * 2. Derive the [[Convex Hull|convex hull]] $C$ from $T$, which is simply the external surface of $T$.
-	 *
-	 * 3. For each cell $c$ in $T$ that has a circumradius greater than a specified $r > 0$, find the shortest path
-	 *    between circumcenters (along edges of the [[Voronoi diagram]]) leading to $C$, traversing edges where
-	 *    the associated facet in $T$ has a circumradius of at least $r$, until finding an edge that intersects $C$.
-	 *    If the operation is successful, store the path as a _dendrite_.
-	 *
-	 * 4. Paths with overlapping edges can be combined to form trees of Voronoi edges. These trees are rooted at a point
-	 *    on the convex hull.
-	 */
+	auto dendrites = dch::extract_dendrites(dch::generate_parentage(dt), dt);
 
-	Delaunay dt = utilities::generateDelaunayTriangulation(meshes.trunk_mesh);
+	Apple a1 = apples[30];
+	auto d1 = trace_dendrite(find_closest_node(dendrites, a1));
 
-	struct Dendrite {
-		Delaunay::Facet facet;
-		std::array<K::FT, 3> barycentric;
+	Apple a2 = apples[101];
+	auto d2 = trace_dendrite(find_closest_node(dendrites, a2));
+	std::reverse(d2.begin(), d2.end());
 
-	};
+	// Now, the path along the shell.
+	auto chull = extractConvexHullSurfaceMesh(dt);
 
-	struct CellVisit {
+	CGALMeshShell shell(chull, 0.0, 0.0);
 
-		Delaunay::Cell_handle cell;
-		std::shared_ptr<CellVisit> parent;
+	auto path = shell.path_from_to(
+			shell.nearest_point_on_shell(d1.back()),
+			shell.nearest_point_on_shell(d2.back())
+			);
 
-	};
+	std::vector<dch::Point> shell_path;
 
-	// Extract the convex hull.
-	std::vector<CellVisit> root_cells;
-	std::queue<CellVisit> queue;
+	auto shell_path_points = std::dynamic_pointer_cast<PiecewiseLinearPath<CGALMeshShellPoint>>(path)->points |
+			ranges::views::transform([&](const auto& p) { return shell.surface_point(p); }) | ranges::to_vector;
 
-	for (auto cell_itr = dt.finite_cells_begin(); cell_itr != dt.finite_cells_end(); ++cell_itr) {
+	std::vector<Eigen::Vector3d> total_path;
 
-		int neighbor;
-		if (cell_itr->has_neighbor(dt.infinite_cell(), neighbor)) {
-			root_cells.push_back(CellVisit{.cell = cell_itr, .parent = nullptr});
-		}
+	total_path.push_back(a1.center);
+	total_path.insert(total_path.end(), d1.begin(), d1.end());
+	total_path.insert(total_path.end(), shell_path_points.begin(), shell_path_points.end());
+	total_path.insert(total_path.end(), d2.begin(), d2.end());
+	total_path.push_back(a2.center);
 
-	}
+	VtkPolyLineVisualization path_viz(1.0, 0.0, 0.0);
+
+	path_viz.updateLine(total_path);
+
+	viewer.addActor(path_viz.getActor());
 
 
-	std::vector<Delaunay::Cell_handle> big_cells;
 
-	for (auto itr = dt.finite_cells_begin(); itr != dt.finite_cells_end(); ++itr) {
-		Point circumcenter = itr->circumcenter();
-		double sphere_radius_sqr = squared_distance(circumcenter, itr->vertex(0)->point());
-		if (sphere_radius_sqr > 0.1 * 0.1) {
-			big_cells.push_back(itr);
-		}
-	}
-
-	Apple a1 = apples[0];
-	Apple a2 = apples[42];
-
-	auto c1 = utilities::closest_cell(Point(a1.center.x(), a2.center.y(), a2.center.z()), big_cells);
-	auto c2 = utilities::closest_cell(Point(a2.center.x(), a2.center.y(), a2.center.z()), big_cells);
-
-	// Now, perform an A*-
+//
+//	auto c1 = utilities::closest_cell(Point(a1.center.x(), a2.center.y(), a2.center.z()), big_cells);
+//	auto c2 = utilities::closest_cell(Point(a2.center.x(), a2.center.y(), a2.center.z()), big_cells);
 
 
 	// find whichever cell is closest to the apple.

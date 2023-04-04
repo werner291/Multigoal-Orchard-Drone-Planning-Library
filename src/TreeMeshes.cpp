@@ -30,6 +30,19 @@ TreeMeshes loadTreeMeshes(const std::string &treeName) {
 
 	meshes.fruit_meshes = break_down_to_connected_components(fruit_meshes);
 
+	size_t n_before = meshes.fruit_meshes.size();
+
+	// Some meshes are actually tiny sliver triangles that represent the "Stem" of the fruit. WE should ignore these.
+	meshes.fruit_meshes.erase(std::remove_if(meshes.fruit_meshes.begin(), meshes.fruit_meshes.end(), [](const auto &mesh) {
+		return mesh.vertices.size() <= 5;
+	}), meshes.fruit_meshes.end());
+
+	size_t n_after = meshes.fruit_meshes.size();
+
+	if (n_before != n_after) {
+		std::cout << "Removed " << n_before - n_after << " out of " << n_before << " fruit meshes that were too small from model " << treeName << std::endl;
+	}
+
 	return meshes;
 }
 

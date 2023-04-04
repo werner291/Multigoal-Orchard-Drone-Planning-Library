@@ -79,6 +79,10 @@ moveit::core::RobotModelPtr loadRobotModel(double base_joint_weight) {
 	auto urdf = std::make_shared<urdf::Model>();
 	urdf->initFile("test_robots/urdf/bot.urdf");
 
+	if (urdf->getName() == "") {
+		throw std::runtime_error("Failed to load robot model; is the path correct?");
+	}
+
 	auto srdf = std::make_shared<srdf::Model>();
 	srdf->initFile(*urdf, "test_robots/config/aerial_manipulator_drone.srdf");
 

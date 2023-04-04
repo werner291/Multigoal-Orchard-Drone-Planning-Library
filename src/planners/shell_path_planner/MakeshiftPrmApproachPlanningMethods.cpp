@@ -7,6 +7,7 @@
 #include "MakeshiftPrmApproachPlanningMethods.h"
 #include "../../DronePathLengthObjective.h"
 #include "../../shell_space/CuttingPlaneConvexHullShell.h"
+#include "../../shell_space/CGALMeshShell.h"
 
 template<typename ShellPoint>
 MakeshiftPrmApproachPlanningMethods<ShellPoint>::MakeshiftPrmApproachPlanningMethods(ompl::base::SpaceInformationPtr si)
@@ -89,3 +90,7 @@ class MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>;
 // Explicit instantiation for ConvexHullPoint
 template
 class MakeshiftPrmApproachPlanningMethods<ConvexHullPoint>;
+
+// Explicit instantiation for CGALMeshShellPoint
+template
+class MakeshiftPrmApproachPlanningMethods<CGALMeshShellPoint>;
