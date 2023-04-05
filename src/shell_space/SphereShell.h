@@ -21,7 +21,7 @@ class GreatCirclePath : public CurvePath<Eigen::Vector3d> {
 	/// Center of the sphere.
 	const Eigen::Vector3d center;
 	/// Vector perpendicular to the arc of rotation
-	const Eigen::Vector3d axis;
+	Eigen::Vector3d axis;
 	/// Total rotation angle
 	const double angle;
 	/// Start point relative to the center.

@@ -23,8 +23,6 @@ struct AppleTreePlanningScene {
 
 std::vector<AppleTreePlanningScene> scenes_for_trees(const std::vector<std::string> &tree_names);
 
-const std::initializer_list<size_t> DIFFICULT_APPLES{80, 79, 88, 76, 78, 3, 62, 21, 11, 16};
-
 const double TRANSLATION_BOUND = 10.0;
 
 moveit_msgs::msg::PlanningScene

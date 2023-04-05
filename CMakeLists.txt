@@ -341,7 +341,11 @@ target_link_libraries(${PROJECT_NAME}_experiment_dynamic_visualized ${PROJECT_NA
 experiment("static_visualized")
 target_link_libraries(${PROJECT_NAME}_experiment_static_visualized ${PROJECT_NAME}_visualization)
 
+experiment("tsp_noise_effect")
+
 experiment("lci_vs_full_reorder_timing")
+
+experiment("static_new")
 
 include(GoogleTest)
 

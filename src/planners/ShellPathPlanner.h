@@ -17,6 +17,12 @@
 #include "shell_path_planner/ApproachPlanning.h"
 #include "shell_path_planner/OrderingMethod.h"
 
+enum DistancePredictionStrategy {
+
+	SHELL_PATH_LENGTH, UNOPTIMIZED_GTG_PATH_LENGTH, OPTIMIZED_GTG_PATH_LENGTH,
+
+};
+
 /**
  * @class ShellPathPlanner
  * @brief A planner that computes a path to navigate between a set of goals, using a shell path approach.
@@ -46,6 +52,7 @@ public:
 	MkOmplShellFn<ShellPoint> shell_builder;
 	const std::unique_ptr<ApproachPlanningMethods<ShellPoint>> methods;
 	const bool optimize_segments;
+	DistancePredictionStrategy distance_prediction_strategy;
 
 	/**
 	 * @brief Constructs a new ShellPathPlanner object.
@@ -56,7 +63,8 @@ public:
 	 */
 	ShellPathPlanner(MkOmplShellFn<ShellPoint> shellBuilder,
 					 std::unique_ptr<ApproachPlanningMethods<ShellPoint>> methods,
-					 bool optimizeSegments);
+					 bool optimizeSegments,
+					 DistancePredictionStrategy distance_prediction_strategy = DistancePredictionStrategy::SHELL_PATH_LENGTH);
 
 	/**
 	 * @brief Generates a path given a start state, a set of goals, and a planning scene.
@@ -136,6 +144,10 @@ public:
 		return "ShellPathPlanner";
 	}
 
+	std::vector<size_t> determineVisitationOrder(const ompl::base::SpaceInformationPtr &si,
+												 const std::shared_ptr<OmplShellSpace<ShellPoint>> &shell,
+												 const std::optional<OmplApproachPath<ShellPoint>> &initial_approach,
+												 const std::vector<std::pair<size_t, OmplApproachPath<ShellPoint>>> &approach_paths) const;
 };
 
 

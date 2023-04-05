@@ -62,13 +62,21 @@ GreatCirclePath::GreatCirclePath(const Eigen::Vector3d &from,
 								 const Eigen::Vector3d &center,
 								 double radius) :
 		center(center),
-		angle(std::acos((from-center).normalized().dot((to - center).normalized()))),
+		angle(std::acos(std::clamp((from - center).normalized().dot((to - center).normalized()), -1.0, 1.0))),
 		start_vec(from - center),
 		axis((from - center).cross(to - center).normalized()) {
 
 	// Check that the points are on the sphere.
 	assert(std::abs((from - center).norm() - radius) < 1e-6);
 	assert(std::abs((to - center).norm() - radius) < 1e-6);
+	assert(std::isfinite(angle));
+	assert(std::isfinite(axis.squaredNorm()));
+
+	if (axis.isZero(1e-6)) {
+		// The points are antipodal or coinciding, so the axis is undefined. Usee the Z-axis instead.
+		axis = Eigen::Vector3d::UnitZ();
+	}
+
 
 }
 
