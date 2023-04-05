@@ -271,7 +271,7 @@ add_library(${PROJECT_NAME}_sensing
         src/exploration/DirectPointCloudCollisionDetection.h
         src/utilities/discoverability_specifications.h
 
-        src/experiments/initial_orbit_comparison.cpp src/utilities/size_t_iota.h src/shell_space/CapsuleShape.cpp src/shell_space/CapsuleShape.h)
+        src/experiments/initial_orbit_comparison.cpp src/utilities/size_t_iota.h src/shell_space/CapsuleShape.cpp src/shell_space/CapsuleShape.h src/experiments/ApproachPlanning.cpp)
 
 add_library(${PROJECT_NAME}_visualization
         src/vtk/SimpleVtkViewer.cpp

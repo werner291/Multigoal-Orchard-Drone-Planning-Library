@@ -35,15 +35,20 @@ namespace dendritic_convex_hull {
 		std::weak_ptr<DendriteNode> parent;
 	};
 
-	std::shared_ptr<DendriteNode> extract_dendrite(const Delaunay::Cell_handle& cell,
-												   std::unordered_map<Delaunay::Cell_handle,
-												   std::vector<Delaunay::Cell_handle>>& child_map,
+	std::shared_ptr<DendriteNode> extract_dendrite(const Delaunay::Cell_handle &cell,
+												   std::unordered_map<Delaunay::Cell_handle, std::vector<Delaunay::Cell_handle>> &child_map,
 												   const std::weak_ptr<DendriteNode> &parent);
 
-	std::vector<std::shared_ptr<DendriteNode>> extract_dendrites(const ParentageMap& parent_map, const Delaunay& dt);
+	std::vector<std::shared_ptr<DendriteNode>> extract_dendrites(const ParentageMap &parent_map, const Delaunay &dt);
 
-	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> extract_dendrite_edges(const DendriteNode& root_node);
+	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> extract_dendrite_edges(const DendriteNode &root_node);
 
+	std::shared_ptr<DendriteNode>
+	find_closest_node(const std::vector<std::shared_ptr<DendriteNode>> &dendrites, const Eigen::Vector3d &a1);
+
+	std::vector<Eigen::Vector3d> trace_dendrite(std::shared_ptr<DendriteNode> closest_node1);
+
+	CGAL::Surface_mesh<CGAL::Epick::Point_3> extractConvexHullSurfaceMesh(const dendritic_convex_hull::Delaunay &dt);
 
 }
 
