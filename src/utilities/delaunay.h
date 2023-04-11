@@ -11,6 +11,7 @@
 
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <shape_msgs/msg/mesh.hpp>
 
 namespace utilities {
 

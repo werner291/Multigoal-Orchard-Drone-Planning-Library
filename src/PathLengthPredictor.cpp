@@ -233,16 +233,16 @@ find_closest_node(const std::vector<std::shared_ptr<dendritic_convex_hull::Dendr
 	return closest_node;
 }
 
-std::vector<Eigen::Vector3d> trace_dendrite(std::shared_ptr<dendritic_convex_hull::DendriteNode> closest_node1) {
-	std::vector<Eigen::Vector3d> path;
-
-	do {
-		path.push_back(closest_node1->position);
-		closest_node1 = closest_node1->parent.lock();
-	} while (closest_node1 != nullptr);
-
-	return path;
-}
+//std::vector<Eigen::Vector3d> trace_dendrite(std::shared_ptr<dendritic_convex_hull::DendriteNode> closest_node1) {
+//	std::vector<Eigen::Vector3d> path;
+//
+//	do {
+//		path.push_back(closest_node1->position);
+//		closest_node1 = closest_node1->parent.lock();
+//	} while (closest_node1 != nullptr);
+//
+//	return path;
+//}
 
 
 double DendriticConvexHullDistancePredictor::predict_path_length(const Apple &a1, const Apple &a2) {

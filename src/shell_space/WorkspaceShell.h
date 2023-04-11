@@ -100,7 +100,6 @@ public:
 	virtual double path_length(const std::shared_ptr<ShellPath<ShellPoint>>& path) const = 0;
 };
 
-
 /**
  * A path across a workspace shell, where the path is defined by a list of ShellPoints.
  * @tparam ShellPoint		Type of points on the shell.

@@ -11,6 +11,8 @@
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/Surface_mesh.h>
+
 #include <queue>
 
 namespace dendritic_convex_hull {
@@ -48,7 +50,7 @@ namespace dendritic_convex_hull {
 
 	std::vector<Eigen::Vector3d> trace_dendrite(std::shared_ptr<DendriteNode> closest_node1);
 
-	CGAL::Surface_mesh<CGAL::Epick::Point_3> extractConvexHullSurfaceMesh(const dendritic_convex_hull::Delaunay &dt);
+	CGAL::Surface_mesh<CGAL::Epick::Point_3> extractConvexHullSurfaceMesh(const Delaunay &dt);
 
 }
 

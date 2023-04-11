@@ -1,5 +1,6 @@
 
 #include "DendriticConvexHullShell.h"
+#include "../utilities/delaunay.h"
 
 #include <range/v3/all.hpp>
 
@@ -178,20 +179,19 @@ namespace dendritic_convex_hull {
 
 	}
 
-	std::shared_ptr<dch::DendriteNode>
-	find_closest_node(const std::vector<std::shared_ptr<dch::DendriteNode>> &dendrites,
-					  const Eigen::Vector3d &a1) {// Among the dendrites, find one with a node that is closest to the apple.
-		std::shared_ptr<dch::DendriteNode> closest_node = nullptr;
+	std::shared_ptr<DendriteNode> find_closest_node(const std::vector<std::shared_ptr<DendriteNode>> &dendrites,
+													const Eigen::Vector3d &a1) {// Among the dendrites, find one with a node that is closest to the apple.
+		std::shared_ptr<DendriteNode> closest_node = nullptr;
 		double closest_distance = std::numeric_limits<double>::max();
 
-		std::vector<std::shared_ptr<dch::DendriteNode>> to_search_queue = dendrites;
+		std::vector<std::shared_ptr<DendriteNode>> to_search_queue = dendrites;
 
 		while (!to_search_queue.empty()) {
 
 			auto node = to_search_queue.back();
 			to_search_queue.pop_back();
 
-			double distance = (node->position - a1.center).norm();
+			double distance = (node->position - a1).norm();
 			if (distance < closest_distance) {
 				closest_distance = distance;
 				closest_node = node;
@@ -206,7 +206,7 @@ namespace dendritic_convex_hull {
 		return closest_node;
 	}
 
-	std::vector<Eigen::Vector3d> trace_dendrite(std::shared_ptr<dch::DendriteNode> closest_node1) {
+	std::vector<Eigen::Vector3d> trace_dendrite(std::shared_ptr<DendriteNode> closest_node1) {
 		std::vector<Eigen::Vector3d> path;
 
 		do {
@@ -218,9 +218,9 @@ namespace dendritic_convex_hull {
 	}
 
 	CGAL::Surface_mesh<CGAL::Epick::Point_3> extractConvexHullSurfaceMesh(const Delaunay &dt) {
-		CGAL::Surface_mesh<dch::Delaunay::Point> tmesh;
+		CGAL::Surface_mesh<Delaunay::Point> tmesh;
 
-		std::unordered_map<dch::Delaunay::Point, CGAL::SM_Vertex_index> vertex_map;
+		std::unordered_map<Delaunay::Point, CGAL::SM_Vertex_index> vertex_map;
 
 		// Extract the surface triangles.
 		for (auto itr = dt.finite_cells_begin(); itr != dt.finite_cells_end(); ++itr) {
