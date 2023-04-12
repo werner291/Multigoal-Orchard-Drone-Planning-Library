@@ -1,29 +1,32 @@
-#include <range/v3/all.hpp>
+#include <utility>
 #include <boost/asio.hpp>
+#include <range/v3/all.hpp>
 
-#include "../planning_scene_diff_message.h"
-#include "../vtk/Viewer.h"
-
-#include "../vtk/SimpleVtkViewer.h"
+#include <CGAL/Delaunay_triangulation_3.h>
 
 #include <vtkProperty.h>
-#include <CGAL/Delaunay_triangulation_3.h>
-#include <QVBoxLayout>
-#include <QCheckBox>
-#include <QApplication>
 #include <vtkGenericOpenGLRenderWindow.h>
-#include <QSplitter>
-#include <utility>
-
-#include <QVTKOpenGLNativeWidget.h>
-#include <vtkSphereSource.h>
 #include <vtkCallbackCommand.h>
-#include <QLabel>
+#include <vtkRendererCollection.h>
+
+#include <QApplication>
+#include <QCheckBox>
 #include <QComboBox>
+#include <QSplitter>
+#include <QVBoxLayout>
+#include <QVTKOpenGLNativeWidget.h>
+#include <range/v3/view/drop.hpp>
+#include <QFutureWatcher>
+#include <QFuture>
+#include <QtConcurrent/QtConcurrent>
 
-vtkNew<vtkActor> mkSphereShellActor(const std::shared_ptr<WorkspaceSphereShell> &sphereshell);
-
-void enforceCameraUp(vtkNew<vtkRenderer> &renderer, const QVTKOpenGLNativeWidget *vtkWidget);
+#include "../planning_scene_diff_message.h"
+#include "../visualization/Viewer.h"
+#include "../visualization/SimpleVtkViewer.h"
+#include "../visualization/shell_visualization.h"
+#include "../visualization/camera_controls.h"
+#include "../visualization/ObservableInt.h"
+#include "../utilities/enclosing_sphere.h"
 
 std::unique_ptr<QCheckBox> mkVisibilityCheckbox(std::vector<vtkSmartPointer<vtkActor>> actors,
 												const std::string &label,
@@ -110,68 +113,72 @@ std::vector<Eigen::Vector3d> idealizedPathViaShell(const WorkspaceShell<ShellPoi
 
 }
 
-vtkSmartPointer<vtkActor> createAndAddActor(const shape_msgs::msg::Mesh &mesh,
-											const std::array<double, 3> &color_rgb,
-											const std::string &name,
-											vtkSmartPointer<vtkRenderer> renderer,
-											QBoxLayout *sidebarLayout,
-											vtkSmartPointer<vtkRenderWindow> renderWindow) {
-
-	auto actor = createActorFromMesh(mesh);
-	actor->GetProperty()->SetColor(color_rgb[0], color_rgb[1], color_rgb[2]);
-	renderer->AddActor(actor);
-	sidebarLayout->addWidget(mkVisibilityCheckbox(actor, name, renderWindow).release());
-
-	return actor;
-}
-
-vtkSmartPointer<vtkActor> createAndAddActor(const shape_msgs::msg::Mesh &mesh,
-											double r,
-											double g,
-											double b,
-											const std::string &name,
-											vtkSmartPointer<vtkRenderer> renderer,
-											QBoxLayout *sidebarLayout,
-											vtkSmartPointer<vtkRenderWindow> renderWindow) {
-
-	auto actor = createActorFromMesh(mesh);
-	actor->GetProperty()->SetColor(r, g, b);
-	renderer->AddActor(actor);
-	sidebarLayout->addWidget(mkVisibilityCheckbox(actor, name, renderWindow).release());
-
-	return actor;
-}
-
-std::vector<vtkSmartPointer<vtkActor>>
-createAndAddActorsWithSharedCheckbox(const std::vector<shape_msgs::msg::Mesh> &meshes,
-									 double r,
-									 double g,
-									 double b,
-									 const std::string &name,
-									 vtkSmartPointer<vtkRenderer> renderer,
-									 QBoxLayout *sidebarLayout,
-									 vtkSmartPointer<vtkRenderWindow> renderWindow) {
-
-	std::vector<vtkSmartPointer<vtkActor>> actors;
-
-	for (const auto &mesh: meshes) {
-		auto actor = createActorFromMesh(mesh);
-		actor->GetProperty()->SetColor(r, g, b);
-		renderer->AddActor(actor);
-		actors.emplace_back(actor);
-	}
-
-	sidebarLayout->addWidget(mkVisibilityCheckbox(actors, name, renderWindow).release());
-	return actors;
-}
-
 // A Rust trait-object-like wrapper around the various WorkspaceShell types
 struct ShellWrapper {
 	std::function<std::vector<Eigen::Vector3d>(const Eigen::Vector3d &, const Eigen::Vector3d &)> idealized_path;
 	const std::string &name;
 };
 
+QSharedPointer<QComboBox> createShellTypeComboBox(const std::vector<ShellWrapper> &shells, QWidget *parent = nullptr) {
+
+	auto comboBox = QSharedPointer<QComboBox>(new QComboBox(parent));
+
+	for (const auto &shell: shells) {
+		comboBox->addItem(QString::fromStdString(shell.name));
+	}
+
+	return comboBox;
+}
+
+QSharedPointer<QComboBox> createAppleIdComboBox(const size_t num_apples, QWidget *parent = nullptr) {
+
+	auto comboBox = QSharedPointer<QComboBox>(new QComboBox(parent));
+
+	for (size_t i = 0; i < num_apples; i++) {
+		comboBox->addItem(QString::number(i));
+	}
+
+	return comboBox;
+}
+
+std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+computeOneToAllIdealizedPathEdges(const std::vector<Apple> &apples, int apple_i, const ShellWrapper &wrapper) {
+	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> edges;
+
+	for (size_t apple_j = 0; apple_j < apple_i; apple_j++) {
+
+		// Get the range of points for the shell between the two apples
+		std::vector<Eigen::Vector3d> shell_points;
+
+		shell_points = wrapper.idealized_path(apples[apple_i].center, apples[apple_j].center);
+
+		// Convert the range of points to a vector of pairs of points
+		auto edges_for_path =
+				ranges::views::zip(shell_points, shell_points | ranges::views::drop(1)) | ranges::to_vector;
+
+		// Add the edges to the vector of edges
+		edges.insert(edges.end(), edges_for_path.begin(), edges_for_path.end());
+	}
+	return edges;
+}
+
+struct ConvexHullShells {
+	shape_msgs::msg::Mesh convex_hull;
+	std::shared_ptr<CuttingPlaneConvexHullShell> cutting_plane_shell;
+	std::shared_ptr<CGALMeshShell> cgal_mesh_shell;
+};
+
+ConvexHullShells compute_convex_hull_shells(const AppleTreePlanningScene &scene) {
+	auto convex_hull = convexHull(utilities::extract_leaf_vertices(scene));
+	auto chull_shell = std::make_shared<CuttingPlaneConvexHullShell>(convex_hull, 0.0, 0.0);
+	auto cgal_shell = std::make_shared<CGALMeshShell>(convex_hull, 0.0, 0.0);
+
+	return ConvexHullShells{.convex_hull = std::move(convex_hull), .cutting_plane_shell = chull_shell, .cgal_mesh_shell = cgal_shell};
+}
+
 int main(int argc, char **argv) {
+
+	const QStringList sceneNames = {"appletree", "lemontree2", "orangetree4"};
 
 	QApplication app(argc, argv);
 
@@ -181,6 +188,11 @@ int main(int argc, char **argv) {
 
 	// Sidebar
 	auto sidebarLayout = new QVBoxLayout();
+
+	auto sceneComboBox = new QComboBox();
+	sceneComboBox->addItems(sceneNames);
+	sidebarLayout->addWidget(sceneComboBox);
+	sceneComboBox->setCurrentIndex(0);
 
 	// VTK render window
 	vtkNew<vtkGenericOpenGLRenderWindow> renderWindow;
@@ -195,145 +207,155 @@ int main(int argc, char **argv) {
 	auto vtkWidget = new QVTKOpenGLNativeWidget();
 	vtkWidget->setRenderWindow(renderWindow);
 	vtkWidget->setMinimumSize(800, 600);
+	enforceCameraUp(renderer, vtkWidget->interactor());
 
-	// Load the apple tree meshes.
-	TreeMeshes meshes = loadTreeMeshes("appletree");
-	auto apples = meshes.fruit_meshes | ranges::views::transform(appleFromMesh) | ranges::to_vector;
+	QFutureWatcher<TreeMeshes> meshes_watcher;
 
-	auto trunk_actor = createAndAddActor(meshes.trunk_mesh,
-										 0.5,
-										 0.3,
-										 0.1,
-										 "trunk",
-										 renderer,
-										 sidebarLayout,
-										 renderWindow);
-	auto leaves_actor = createAndAddActor(meshes.leaves_mesh,
-										  0.1,
-										  0.5,
-										  0.1,
-										  "leaves",
-										  renderer,
-										  sidebarLayout,
-										  renderWindow);
-	auto ground_plane_actor = createAndAddActor(createGroundPlane(10.0, 10.0),
-												0.5,
-												0.5,
-												0.1,
-												"ground",
-												renderer,
-												sidebarLayout,
-												renderWindow);
-	auto apple_actors = createAndAddActorsWithSharedCheckbox(meshes.fruit_meshes,
-															 0.8,
-															 0.2,
-															 0.2,
-															 "apples",
-															 renderer,
-															 sidebarLayout,
-															 renderWindow);
+	QObject::connect(sceneComboBox,
+					 qOverload<int>(&QComboBox::currentIndexChanged),
+					 [sceneNames, renderWindow = renderWindow.Get(), sidebarLayout, &meshes_watcher](int index) {
+						 assert(index >= 0 && index < sceneNames.size());
 
-	auto scene = AppleTreePlanningScene{.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(
-			treeMeshesToMoveitSceneMsg(meshes))), .apples = apples};
+						 // Load the apple tree meshes.
+						 QFuture<TreeMeshes> meshes_future = QtConcurrent::run([index, &sceneNames]() -> TreeMeshes {
+							 return loadTreeMeshes(sceneNames[index].toStdString());
+						 });
 
-	auto robot = loadRobotModel();
+						 meshes_watcher.setFuture(meshes_future);
 
-	auto ss = omplStateSpaceForDrone(robot);
-	auto si = loadSpaceInformation(ss, scene);
+						 // Continue with the rest of the code when the meshes are loaded.
+						 QObject::connect(&meshes_watcher,
+										  &QFutureWatcher<TreeMeshes>::finished,
+										  [renderWindow, meshes_future, &sidebarLayout]() {
 
-	auto sphereshell = paddedSphericalShellAroundLeaves(scene, 0.0);
+											  // Get the meshes from the future.
+											  const auto &meshes = meshes_future.result();
 
-	{
-		vtkNew<vtkActor> sphereActor = mkSphereShellActor(sphereshell);
-		renderer->AddActor(sphereActor);
-		sidebarLayout->addWidget(mkVisibilityCheckbox(sphereActor, "spherical shell", renderWindow).release());
-	}
+											  std::cout << "Meshes loaded" << std::endl;
 
-	auto convex_hull = convexHull(meshes.leaves_mesh.vertices);
-	auto chull_shell = std::make_shared<CuttingPlaneConvexHullShell>(convex_hull, 0.0, 0.0);
-	auto cgal_shell = std::make_shared<CGALMeshShell>(convex_hull, 0.0, 0.0);
+											  auto renderer = renderWindow->GetRenderers()->GetFirstRenderer();
 
-	{
-		// Convex hull
-		auto chull_actor = createActorFromMesh(convex_hull);
-		chull_actor->GetProperty()->SetColor(0.8, 0.8, 0.8);
-		chull_actor->GetProperty()->SetOpacity(0.5);
+											  auto trunk_actor = addColoredMeshActor(meshes.trunk_mesh,
+																					 {0.5, 0.3, 0.1, 1.0},
+																					 renderer);
+											  auto leaves_actor = addColoredMeshActor(meshes.leaves_mesh,
+																					  {0.1, 0.5, 0.1, 1.0},
+																					  renderer);
+											  auto ground_actor = addColoredMeshActor(createGroundPlane(10.0, 10.0),
+																					  {0.5, 0.5, 0.1, 1.0},
+																					  renderer);
 
-		renderer->AddActor(chull_actor);
-		sidebarLayout->addWidget(mkVisibilityCheckbox(chull_actor, "convex hull", renderWindow).release());
-	}
+											  std::vector<vtkSmartPointer<vtkActor>> fruit_actors;
+											  for (const auto &mesh: meshes.fruit_meshes) {
+												  fruit_actors.push_back(addColoredMeshActor(mesh,
+																							 {1.0, 0.0, 0.0, 1.0},
+																							 renderer));
+											  }
 
-	std::vector<ShellWrapper> shells = {
-			ShellWrapper{[&](const Eigen::Vector3d &from, const Eigen::Vector3d &to) -> std::vector<Eigen::Vector3d> {
-				return idealizedPathViaShell(*sphereshell, from, to, 32);
-			}, "Spherical shell"},
-			ShellWrapper{[&](const Eigen::Vector3d &from, const Eigen::Vector3d &to) -> std::vector<Eigen::Vector3d> {
-				return idealizedPathViaShell(*chull_shell, from, to, 32);
-			}, "Cutting plane convex hull"},
-			ShellWrapper{[&](const Eigen::Vector3d &from, const Eigen::Vector3d &to) -> std::vector<Eigen::Vector3d> {
-				return idealizedPathViaShell(*cgal_shell, from, to, 32);
-			}, "CGAL convex hull"}};
+											  sidebarLayout->addWidget(mkVisibilityCheckbox(trunk_actor,
+																							"trunk",
+																							renderWindow).release());
+											  sidebarLayout->addWidget(mkVisibilityCheckbox(leaves_actor,
+																							"leaves",
+																							renderWindow).release());
+											  sidebarLayout->addWidget(mkVisibilityCheckbox(ground_actor,
+																							"ground",
+																							renderWindow).release());
+											  sidebarLayout->addWidget(mkVisibilityCheckbox(fruit_actors,
+																							"apples",
+																							renderWindow).release());
 
-	auto shell_type_box = new QComboBox();
-	for (const auto &shell: shells) {
-		shell_type_box->addItem(QString::fromStdString(shell.name));
-	}
+											  renderWindow->Render();
 
-	// Add a slider to select an apple ID
-	auto appleIDComboBox = new QComboBox();
-	for (int i = 0; i < apples.size(); i++) {
-		appleIDComboBox->addItem(QString("Apple ID: %1").arg(i));
-	}
+										  });
 
-	// Add a label to display the selected apple ID
-	auto appleIDLabel = new QLabel();
-	appleIDLabel->setText("Apple ID: 0");
+					 });
 
-	VtkLineSegmentsVisualization path_viz(1.0, 0.0, 1.0);
 
-	renderer->AddActor(path_viz.getActor());
+	//	QFuture<AppleTreePlanningScene> scene_future = chainQFuture(meshes_future, [](const TreeMeshes &meshes) {
+	//
+	//		auto apples = meshes.fruit_meshes | ranges::views::transform(appleFromMesh) | ranges::to_vector;
+	//
+	//		return AppleTreePlanningScene{
+	//				.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(treeMeshesToMoveitSceneMsg(meshes))),
+	//				.apples = apples
+	//		};
+	//
+	//	});
+	//
+	//	QFuture<std::shared_ptr<WorkspaceSphereShell>> sphere_shell_future = chainQFuture(scene_future, [](const AppleTreePlanningScene &scene) {
+	//		return paddedSphericalShellAroundLeaves(scene, 0.0);
+	//	});
+	//
+	//	QFuture<ConvexHullShells> convex_hull_shells_future = chainQFuture(scene_future, compute_convex_hull_shells);
 
-	auto updatePathsMulti = [&]() {
-
-		int apple_i = appleIDComboBox->currentIndex();
-
-		std::cout << "Updating with apple " << apple_i << std::endl;
-
-		std::cout << "updatePathsMulti: " << apple_i << std::endl;
-
-		// Update the QLabel
-		appleIDLabel->setText(QString("Apple ID").arg(apple_i));
-
-		std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> edges;
-
-		for (size_t apple_j = 0; apple_j < apple_i; apple_j++) {
-
-			// Get the range of points for the shell between the two apples
-			std::vector<Eigen::Vector3d> shell_points;
-
-			shell_points = shells[shell_type_box->currentIndex()].idealized_path(apples[apple_i].center,
-																				 apples[apple_j].center);
-
-			// Convert the range of points to a vector of pairs of points
-			auto edges_for_path =
-					ranges::views::zip(shell_points, shell_points | ranges::views::drop(1)) | ranges::to_vector;
-
-			// Add the edges to the vector of edges
-			edges.insert(edges.end(), edges_for_path.begin(), edges_for_path.end());
-		}
-
-		// Update the path_viz with the new edges
-		path_viz.updateLine(edges);
-	};
-
-	QObject::connect(appleIDComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), updatePathsMulti);
-	QObject::connect(shell_type_box, QOverload<int>::of(&QComboBox::currentIndexChanged), updatePathsMulti);
-
-	sidebarLayout->addWidget(shell_type_box);
-
-	sidebarLayout->addWidget(appleIDLabel);
-	sidebarLayout->addWidget(appleIDComboBox);
-	enforceCameraUp(renderer, vtkWidget);
+	//
+	//	QFutureWatcher<AppleTreePlanningScene> scene_watcher;
+	//	scene_watcher.setFuture(scene_future);
+	//
+	//	QObject::connect(&scene_watcher, &QFutureWatcher<AppleTreePlanningScene>::finished, [&]() {
+	//
+	//		const auto &scene = scene_future.result();
+	//
+	////		auto robot = loadRobotModel();
+	//
+	////		auto ss = omplStateSpaceForDrone(robot);
+	////		auto si = loadSpaceInformation(ss, scene);
+	//
+	//		auto sphereshell = paddedSphericalShellAroundLeaves(scene, 0.0);
+	//
+	////
+	//		{
+	//			vtkNew<vtkActor> sphereActor = mkSphereShellActor(*sphereshell);
+	//			renderer->AddActor(sphereActor);
+	//			sidebarLayout->addWidget(mkVisibilityCheckbox(sphereActor, "spherical shell", renderWindow).release());
+	//		}
+	//
+	//		{
+	//			auto chull_actor = addColoredMeshActor(convex_hull, {0.8, 0.8, 0.8, 0.5}, renderer, false);
+	//			sidebarLayout->addWidget(mkVisibilityCheckbox(chull_actor, "convex hull", renderWindow).release());
+	//		}
+	//
+	//		std::vector<ShellWrapper> shells = {ShellWrapper{
+	//				[&](const Eigen::Vector3d &from, const Eigen::Vector3d &to) -> std::vector<Eigen::Vector3d> {
+	//					return idealizedPathViaShell(*sphereshell, from, to, 32);
+	//				}, "Spherical shell"}, ShellWrapper{
+	//				[&](const Eigen::Vector3d &from, const Eigen::Vector3d &to) -> std::vector<Eigen::Vector3d> {
+	//					return idealizedPathViaShell(*chull_shell, from, to, 32);
+	//				}, "Cutting plane convex hull"}, ShellWrapper{
+	//				[&](const Eigen::Vector3d &from, const Eigen::Vector3d &to) -> std::vector<Eigen::Vector3d> {
+	//					return idealizedPathViaShell(*cgal_shell, from, to, 32);
+	//				}, "CGAL convex hull"}};
+	//
+	//		auto shell_type_box = createShellTypeComboBox(shells);
+	//		sidebarLayout->addWidget(shell_type_box.get());
+	//
+	//		auto apple_id_box = createAppleIdComboBox(scene.apples.size());
+	//		sidebarLayout->addWidget(apple_id_box.get());
+	//
+	//		VtkLineSegmentsVisualization path_viz(1.0, 0.0, 1.0);
+	//
+	//		renderer->AddActor(path_viz.getActor());
+	//
+	//		auto updatePathsMulti = [&]() {
+	//			int apple_i = apple_id_box->currentIndex();
+	//			int shell_i = shell_type_box->currentIndex();
+	//
+	//			const auto wrapper = shells[shell_i];
+	//
+	//			std::cout << "Updating with apple " << apple_i << " updatePathsMulti: " << apple_i << std::endl;
+	//
+	//			// Update the path_viz with the new edges
+	//			path_viz.updateLine(computeOneToAllIdealizedPathEdges(scene.apples, apple_i, wrapper));
+	//		};
+	//
+	//		// Call the function when either changes.
+	//		QObject::connect(apple_id_box.get(), QOverload<int>::of(&QComboBox::currentIndexChanged), updatePathsMulti);
+	//		QObject::connect(shell_type_box.get(),
+	//						 QOverload<int>::of(&QComboBox::currentIndexChanged),
+	//						 updatePathsMulti);
+	//
+	//	});
 
 	sidebarLayout->addStretch(1);
 
@@ -355,52 +377,3 @@ int main(int argc, char **argv) {
 	return app.exec();
 
 }
-
-void enforceCameraUp(vtkNew<vtkRenderer> &renderer,
-					 const QVTKOpenGLNativeWidget *vtkWidget) {// After setting the render window for the QVTKOpenGLNativeWidget
-	vtkRenderWindowInteractor *interactor = vtkWidget->interactor();
-
-	// Create a vtkCallbackCommand for the observer
-	vtkNew<vtkCallbackCommand> resetViewUpCallback;
-
-	// Set the callback function using a lambda
-	resetViewUpCallback->SetCallback([](vtkObject *caller, unsigned long eventId, void *clientData, void *callData) {
-		auto *interactor = dynamic_cast<vtkRenderWindowInteractor *>(caller);
-		auto *renderer = static_cast<vtkRenderer *>(clientData);
-		vtkCamera *camera = renderer->GetActiveCamera();
-		camera->SetViewUp(0.0, 0.0, 1.0);
-	});
-
-	renderer->GetActiveCamera()->SetPosition(10.0, 0.0, 3.0);
-	renderer->GetActiveCamera()->SetFocalPoint(0.0, 0.0, 2.0);
-	renderer->GetActiveCamera()->SetViewUp(0.0, 0.0, 1.0);
-
-	// Set the clientData (the renderer in this case)
-	resetViewUpCallback->SetClientData(renderer.GetPointer());
-
-	// Add an observer for the EndInteractionEvent
-	unsigned long observerId = interactor->AddObserver(vtkCommand::InteractionEvent, resetViewUpCallback);
-}
-
-vtkNew<vtkActor> mkSphereShellActor(const std::shared_ptr<WorkspaceSphereShell> &sphereshell) {// Spherical actor
-	vtkNew<vtkSphereSource> sphereSource;
-	sphereSource->SetCenter(sphereshell->getCenter().x(), sphereshell->getCenter().y(), sphereshell->getCenter().z());
-	sphereSource->SetRadius(sphereshell->getRadius());
-	sphereSource->SetThetaResolution(32);
-	sphereSource->SetPhiResolution(16);
-
-	vtkNew<vtkPolyDataMapper> sphereMapper;
-	sphereMapper->SetInputConnection(sphereSource->GetOutputPort());
-
-	vtkNew<vtkActor> sphereActor;
-	sphereActor->SetMapper(sphereMapper);
-
-	sphereActor->GetProperty()->SetColor(0.8, 0.8, 0.8);
-	sphereActor->GetProperty()->SetOpacity(0.5);
-
-	return sphereActor;
-}
-
-
-
-

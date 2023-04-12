@@ -274,13 +274,28 @@ vtkNew<vtkActor> buildDepthImagePointCloudActor(vtkAlgorithmOutput *pointCloudIn
 	return pointCloudActor;
 }
 
+vtkSmartPointer<vtkActor> addColoredMeshActor(const shape_msgs::msg::Mesh &mesh,
+											  const std::array<double, 4> &color_rgba,
+											  vtkRenderer *renderer,
+											  bool visible) {
+
+	auto actor = createActorFromMesh(mesh);
+	actor->GetProperty()->SetColor(color_rgba[0], color_rgba[1], color_rgba[2]);
+	if (color_rgba[3] < 1.0) {
+		actor->GetProperty()->SetOpacity(color_rgba[3]);
+	}
+	renderer->AddActor(actor);
+
+	return actor;
+
+}
+
 vtkFunctionalCallback *vtkFunctionalCallback::New() {
 	return new vtkFunctionalCallback;
 }
 
 void vtkFunctionalCallback::Execute(vtkObject *caller, unsigned long eventId, void *) {
-	if (eventId == event_id)
-	{
+	if (eventId == event_id) {
 		callback();
 	}
 }

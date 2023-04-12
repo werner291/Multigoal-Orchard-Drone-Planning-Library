@@ -68,13 +68,17 @@ vtkNew<vtkPoints> meshVerticesToVtkPoints(const shape_msgs::msg::Mesh &mesh);
  */
 vtkNew<vtkActor> createActorFromMesh(const shape_msgs::msg::Mesh &mesh);
 
+vtkSmartPointer<vtkActor> addColoredMeshActor(const shape_msgs::msg::Mesh &mesh,
+											  const std::array<double, 4> &color_rgba,
+											  vtkRenderer *renderer,
+											  bool visible = true);
+
 /**
  * A vtkTimerCommand that calls the given callback when the timer fires, to allow the use of lambdas as callbacks in vtk.
  *
  * Do not forget to call setCallback() to set the callback to call when the timer fires.
  */
-class vtkFunctionalCallback : public vtkCommand
-{
+class vtkFunctionalCallback : public vtkCommand {
 	/// The callback to call when the timer fires.
 	std::function<void()> callback;
 	unsigned long event_id{};

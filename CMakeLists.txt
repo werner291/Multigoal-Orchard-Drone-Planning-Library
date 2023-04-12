@@ -6,6 +6,7 @@ project(new_planners)
 #endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(VTK_QT_VERSION "6" CACHE STRING "Qt Version")
 
 ## System dependencies are found with CMake's conventions
 find_package(Eigen3 REQUIRED)
@@ -271,35 +272,41 @@ add_library(${PROJECT_NAME}_sensing
         src/exploration/DirectPointCloudCollisionDetection.h
         src/utilities/discoverability_specifications.h
 
-        src/experiments/initial_orbit_comparison.cpp src/utilities/size_t_iota.h src/shell_space/CapsuleShape.cpp src/shell_space/CapsuleShape.h src/experiments/ApproachPlanning.cpp)
+        src/experiments/initial_orbit_comparison.cpp src/utilities/size_t_iota.h src/shell_space/CapsuleShape.cpp src/shell_space/CapsuleShape.h src/experiments/ApproachPlanning.cpp src/visualization/camera_controls.cpp src/visualization/camera_controls.h)
 
 add_library(${PROJECT_NAME}_visualization
-        src/vtk/SimpleVtkViewer.cpp
-        src/vtk/SimpleVtkViewer.h
-        src/vtk/SimulatedSensor.cpp
-        src/vtk/SimulatedSensor.h
-        src/vtk/Viewer.cpp
-        src/vtk/Viewer.h
-        src/vtk/VisualizationSpecifics.cpp
-        src/vtk/VisualizationSpecifics.h
-        src/vtk/VtkRobotModel.cpp
-        src/vtk/VtkRobotModel.h
-        src/vtk/visualize_path.cpp
-        src/vtk/visualize_path.h
-        src/vtk/visualize_dynamic.cpp
-        src/vtk/visualize_dynamic.h
-        src/utilities/vtk.cpp
-        src/utilities/vtk.h
-        src/vtk/VideoRecorder.cpp
-        src/vtk/VideoRecorder.h
+        src/RobotCameraTracker.cpp
+        src/RobotCameraTracker.h
         src/apple_status_color_coding.cpp
         src/apple_status_color_coding.h
-        src/vtk/orchard_actors.cpp
-        src/vtk/orchard_actors.h
-        src/vtk/StatusTextViz.cpp
-        src/vtk/StatusTextViz.h
-        src/RobotCameraTracker.cpp
-        src/RobotCameraTracker.h)
+        src/utilities/vtk.cpp
+        src/utilities/vtk.h
+        src/visualization/SimpleVtkViewer.cpp
+        src/visualization/SimpleVtkViewer.h
+        src/visualization/SimulatedSensor.cpp
+        src/visualization/SimulatedSensor.h
+        src/visualization/StatusTextViz.cpp
+        src/visualization/StatusTextViz.h
+        src/visualization/VideoRecorder.cpp
+        src/visualization/VideoRecorder.h
+        src/visualization/Viewer.cpp
+        src/visualization/Viewer.h
+        src/visualization/VisualizationSpecifics.cpp
+        src/visualization/VisualizationSpecifics.h
+        src/visualization/VtkRobotModel.cpp
+        src/visualization/VtkRobotModel.h
+        src/visualization/camera_controls.cpp
+        src/visualization/camera_controls.h
+        src/visualization/orchard_actors.cpp
+        src/visualization/orchard_actors.h
+        src/visualization/shell_visualization.cpp
+        src/visualization/shell_visualization.h
+        src/visualization/visualize_dynamic.cpp
+        src/visualization/visualize_dynamic.h
+        src/visualization/visualize_path.cpp
+        src/visualization/visualize_path.h
+        src/visualization/AppleIDSelector.cpp src/visualization/AppleIDSelector.h
+        src/visualization/ShellWrapper.h src/visualization/ObservableInt.cpp src/visualization/ObservableInt.h src/visualization/chain_qt_futures.cpp src/visualization/chain_qt_futures.h)
 
 target_link_libraries(${PROJECT_NAME}_visualization ${PROJECT_NAME}_shared)
 
