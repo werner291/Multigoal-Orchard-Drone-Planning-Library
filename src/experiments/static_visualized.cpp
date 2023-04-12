@@ -211,9 +211,11 @@ int main(int argc, char **argv) {
 
 	QFutureWatcher<TreeMeshes> meshes_watcher;
 
+	std::vector<vtkActor *> toClear;
+
 	QObject::connect(sceneComboBox,
 					 qOverload<int>(&QComboBox::currentIndexChanged),
-					 [sceneNames, renderWindow = renderWindow.Get(), sidebarLayout, &meshes_watcher](int index) {
+					 [sceneNames, renderWindow = renderWindow.Get(), sidebarLayout, &meshes_watcher, &toClear](int index) {
 						 assert(index >= 0 && index < sceneNames.size());
 
 						 // Load the apple tree meshes.
@@ -226,24 +228,38 @@ int main(int argc, char **argv) {
 						 // Continue with the rest of the code when the meshes are loaded.
 						 QObject::connect(&meshes_watcher,
 										  &QFutureWatcher<TreeMeshes>::finished,
-										  [renderWindow, meshes_future, &sidebarLayout]() {
+										  [renderWindow, meshes_future, sidebarLayout, &toClear]() {
+
+											  auto renderer = renderWindow->GetRenderers()->GetFirstRenderer();
+
+
+											  for (auto actor: toClear) {
+												  renderer->RemoveActor(actor);
+											  }
 
 											  // Get the meshes from the future.
 											  const auto &meshes = meshes_future.result();
 
 											  std::cout << "Meshes loaded" << std::endl;
 
-											  auto renderer = renderWindow->GetRenderers()->GetFirstRenderer();
 
 											  auto trunk_actor = addColoredMeshActor(meshes.trunk_mesh,
 																					 {0.5, 0.3, 0.1, 1.0},
 																					 renderer);
+
+											  toClear.push_back(trunk_actor);
+
 											  auto leaves_actor = addColoredMeshActor(meshes.leaves_mesh,
 																					  {0.1, 0.5, 0.1, 1.0},
 																					  renderer);
+
+											  toClear.push_back(leaves_actor);
+
 											  auto ground_actor = addColoredMeshActor(createGroundPlane(10.0, 10.0),
 																					  {0.5, 0.5, 0.1, 1.0},
 																					  renderer);
+
+											  toClear.push_back(ground_actor);
 
 											  std::vector<vtkSmartPointer<vtkActor>> fruit_actors;
 											  for (const auto &mesh: meshes.fruit_meshes) {
@@ -251,6 +267,8 @@ int main(int argc, char **argv) {
 																							 {1.0, 0.0, 0.0, 1.0},
 																							 renderer));
 											  }
+
+											  toClear.insert(toClear.end(), fruit_actors.begin(), fruit_actors.end());
 
 											  sidebarLayout->addWidget(mkVisibilityCheckbox(trunk_actor,
 																							"trunk",

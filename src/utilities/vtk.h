@@ -73,6 +73,9 @@ vtkSmartPointer<vtkActor> addColoredMeshActor(const shape_msgs::msg::Mesh &mesh,
 											  vtkRenderer *renderer,
 											  bool visible = true);
 
+vtkSmartPointer<vtkActor>
+createColoredMeshActor(const shape_msgs::msg::Mesh &mesh, const std::array<double, 4> &color_rgba, bool visible = true);
+
 /**
  * A vtkTimerCommand that calls the given callback when the timer fires, to allow the use of lambdas as callbacks in vtk.
  *

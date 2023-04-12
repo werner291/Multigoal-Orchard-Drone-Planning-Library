@@ -279,13 +279,20 @@ vtkSmartPointer<vtkActor> addColoredMeshActor(const shape_msgs::msg::Mesh &mesh,
 											  vtkRenderer *renderer,
 											  bool visible) {
 
+	auto actor = createColoredMeshActor(mesh, color_rgba, visible);
+	renderer->AddActor(actor);
+	return actor;
+
+}
+
+vtkSmartPointer<vtkActor>
+createColoredMeshActor(const shape_msgs::msg::Mesh &mesh, const std::array<double, 4> &color_rgba, bool visible) {
+
 	auto actor = createActorFromMesh(mesh);
 	actor->GetProperty()->SetColor(color_rgba[0], color_rgba[1], color_rgba[2]);
 	if (color_rgba[3] < 1.0) {
 		actor->GetProperty()->SetOpacity(color_rgba[3]);
 	}
-	renderer->AddActor(actor);
-
 	return actor;
 
 }
