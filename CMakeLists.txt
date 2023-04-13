@@ -20,6 +20,12 @@ find_package(Qhull REQUIRED)
 find_package(CGAL REQUIRED)
 find_package(VTK REQUIRED)
 
+find_package(Qt5 COMPONENTS Core Widgets Concurrent REQUIRED)
+set(CMAKE_AUTOMOC ON)
+
+find_package(rxcpp CONFIG REQUIRED)
+find_path(RXQT_INCLUDE_DIRS "CXX14Support.h")
+
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(moveit_core REQUIRED)
@@ -38,6 +44,8 @@ include_directories(
         ${OMPL_INCLUDE_DIRS}
         ${QHULL_INCLUDE_DIRS}
         ${VTK_INCLUDE_DIRS}
+        ${RXCPP_INCLUDE_DIRS}
+        ${RXQT_INCLUDE_DIRS}
         #{CGAL_INCLUDE_DIRS}
         ortools/include
         miniball/cpp/main
@@ -50,6 +58,8 @@ link_libraries(
         ${BULLET_LIBRARIES}
         ${OMPL_LIBRARIES}
         ${VTK_LIBRARIES}
+        ${RXCPP_LIBRARIES}
+        ${RXQT_LIBRARIES}
         qhullcpp
         HACD # Note: the HACD library is included Bullet's "extra" libraries
         jsoncpp_lib
@@ -306,9 +316,18 @@ add_library(${PROJECT_NAME}_visualization
         src/visualization/visualize_path.cpp
         src/visualization/visualize_path.h
         src/visualization/AppleIDSelector.cpp src/visualization/AppleIDSelector.h
-        src/visualization/ShellWrapper.h src/visualization/ObservableInt.cpp src/visualization/ObservableInt.h src/visualization/chain_qt_futures.cpp src/visualization/chain_qt_futures.h)
+        src/visualization/ShellWrapper.h
+        src/visualization/ObservableInt.cpp
+        src/visualization/ObservableInt.h
+        src/visualization/chain_qt_futures.cpp
+        src/visualization/chain_qt_futures.h
+        src/visualization/TreeMeshesLoader.cpp
+        src/visualization/TreeMeshesLoader.h
+        src/visualization/ActorsVisibilityWidget.cpp
+        src/visualization/ActorsVisibilityWidget.h
+        src/visualization/ActorsVisibilityWidget.h)
 
-target_link_libraries(${PROJECT_NAME}_visualization ${PROJECT_NAME}_shared)
+target_link_libraries(${PROJECT_NAME}_visualization ${PROJECT_NAME}_shared Qt5::Core Qt5::Widgets Qt5::Concurrent)
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -346,7 +365,7 @@ experiment("dynamic_visualized")
 target_link_libraries(${PROJECT_NAME}_experiment_dynamic_visualized ${PROJECT_NAME}_visualization)
 
 experiment("static_visualized")
-target_link_libraries(${PROJECT_NAME}_experiment_static_visualized ${PROJECT_NAME}_visualization)
+target_link_libraries(${PROJECT_NAME}_experiment_static_visualized ${PROJECT_NAME}_visualization Qt5::Core Qt5::Widgets Qt5::Concurrent)
 
 experiment("tsp_noise_effect")
 

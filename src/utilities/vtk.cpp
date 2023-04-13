@@ -8,6 +8,9 @@
 #include <vtkProperty.h>
 #include <vtkPointData.h>
 
+#include <range/v3/view/transform.hpp>
+#include <range/v3/to_container.hpp>
+
 #include <vtkRenderWindowInteractor.h>
 #include <vtkPlaneSource.h>
 #include "vtk.h"
@@ -285,8 +288,7 @@ vtkSmartPointer<vtkActor> addColoredMeshActor(const shape_msgs::msg::Mesh &mesh,
 
 }
 
-vtkSmartPointer<vtkActor>
-createColoredMeshActor(const shape_msgs::msg::Mesh &mesh, const std::array<double, 4> &color_rgba, bool visible) {
+vtkSmartPointer<vtkActor> createColoredMeshActor(const shape_msgs::msg::Mesh &mesh, const std::array<double, 4> &color_rgba, bool visible) {
 
 	auto actor = createActorFromMesh(mesh);
 	actor->GetProperty()->SetColor(color_rgba[0], color_rgba[1], color_rgba[2]);
@@ -294,6 +296,16 @@ createColoredMeshActor(const shape_msgs::msg::Mesh &mesh, const std::array<doubl
 		actor->GetProperty()->SetOpacity(color_rgba[3]);
 	}
 	return actor;
+
+}
+
+std::vector<vtkSmartPointer<vtkActor>> createColoredMeshActors(const std::vector<shape_msgs::msg::Mesh> &meshes,
+															   const std::array<double, 4> &color_rgba,
+															   bool visible) {
+
+	return meshes | ranges::views::transform([&](const auto& mesh) {
+		return createColoredMeshActor(mesh, color_rgba, visible);
+	}) | ranges::to_vector;
 
 }
 
