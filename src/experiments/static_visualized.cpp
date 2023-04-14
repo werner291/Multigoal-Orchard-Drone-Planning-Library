@@ -21,7 +21,6 @@ namespace Rx {
 	using namespace rxcpp::util;
 }
 
-
 #include <utility>
 #include <boost/asio.hpp>
 #include <range/v3/all.hpp>
@@ -102,7 +101,7 @@ std::vector<Eigen::Vector3d> idealizedPathViaShell(const WorkspaceShell<ShellPoi
 // A Rust trait-object-like wrapper around the various WorkspaceShell types
 struct ShellWrapper {
 	std::function<std::vector<Eigen::Vector3d>(const Eigen::Vector3d &, const Eigen::Vector3d &)> idealized_path;
-	const std::string &name;
+	std::string name;
 };
 
 QSharedPointer<QComboBox> createShellTypeComboBox(const std::vector<ShellWrapper> &shells, QWidget *parent = nullptr) {
@@ -372,7 +371,7 @@ int main(int argc, char **argv) {
 
 	auto sphere_actor = current_sphere_shell | Rx::map([](const auto &shell) -> vtkSmartPointer <vtkActor> {
 		return mkSphereShellActor(*shell);
-	});
+	}) | Rx::publish() | Rx::ref_count();
 
 	sphere_actor.subscribe([](const auto &actor) {
 		std::cout << "Created sphere shell actor" << std::endl;
@@ -381,27 +380,33 @@ int main(int argc, char **argv) {
 	auto chull_actor = convex_hull | Rx::map([](const auto &shell) -> vtkSmartPointer <vtkActor> {
 		std::cout << "Created convex hull shell actor with " << shell.triangles.size() << " triangles" << std::endl;
 		return createColoredMeshActor(shell, {0.9, 0.9, 0.9, 0.5}, true);
-	});
+	}) | Rx::publish() | Rx::ref_count();
 
 	chull_actor.subscribe([](const auto &actor) {
 		std::cout << "Created convex hull shell actor" << std::endl;
 	});
 
 	auto current_shell_actor =
-			current_shell_index.map([sphere_actor = sphere_actor.replay(1), chull_actor = chull_actor.replay(1)](const auto &index) -> rxcpp::observable <vtkSmartPointer<vtkActor>> {
+			current_shell_index
+			| Rx::combine_latest(sphere_actor, chull_actor)
+			| Rx::map([](const auto &tuple) -> vtkSmartPointer<vtkActor> {
 
-				std::cout << "Switching shell actor to index " << index << std::endl;
+		int index = std::get<0>(tuple);
+		vtkSmartPointer<vtkActor> sphere = std::get<1>(tuple);
+		vtkSmartPointer<vtkActor> chull = std::get<2>(tuple);
 
-				switch (index) {
-					case 0:
-						return sphere_actor;
-					case 1:
-					case 2:
-						return chull_actor;
-					default:
-						throw std::runtime_error("Invalid shell index");
-				}
-			}) | Rx::switch_on_next();
+		std::cout << "Switching shell actor to index " << index << std::endl;
+
+		switch (index) {
+			case 0:
+				return sphere;
+			case 1:
+			case 2:
+				return chull;
+			default:
+				throw std::runtime_error("Invalid shell index");
+		}
+	});
 
 	current_shell_actor.subscribe([](const auto &actor) {
 		std::cout << "Created shell actor" << std::endl;
@@ -425,72 +430,79 @@ int main(int argc, char **argv) {
 
 		renderWindow->Render();
 	});
-	//
-	//	auto apple_id_box = createAppleIdComboBox(100);//scene.apples.size());
-	//	sidebarLayout->addWidget(apple_id_box.get());
-	//
-	//	VtkLineSegmentsVisualization path_viz(1.0, 0.0, 1.0);
-	//	renderer->AddActor(path_viz.getActor());
-	//
-	//	auto current_source_apple = rxqt::from_signal(apple_id_box.data(), static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged));
-	//
-	//	// Output the current source apple
-	//	current_source_apple.subscribe([=](const auto &apple_id) {
-	//		std::cout << "Current source apple: " << apple_id << std::endl;
-	//	});
-	//
-	//	auto sphere_shell_wrapper = current_sphere_shell | Rx::map([](const auto &shell) -> ShellWrapper {
-	//		return ShellWrapper{[&](const Eigen::Vector3d &from,
-	//								const Eigen::Vector3d &to) -> std::vector<Eigen::Vector3d> {
-	//			return idealizedPathViaShell(*shell, from, to, 32);
-	//		}, "Spherical shell"};
-	//	}) | Rx::replay(1);
-	//
-	//	sphere_shell_wrapper.subscribe([=](const auto &shell_wrapper) {
-	//		std::cout << "Created sphere shell wrapper" << std::endl;
-	//	});
-	//
-	//	auto cutting_plane_shell_wrapper = cutting_plane_chull_shell | Rx::map([](const auto &shell) -> ShellWrapper {
-	//		return ShellWrapper{[&](const Eigen::Vector3d &from,
-	//								const Eigen::Vector3d &to) -> std::vector<Eigen::Vector3d> {
-	//			return idealizedPathViaShell(*shell, from, to, 32);
-	//		}, "Cutting plane convex hull shell"};
-	//	}) | Rx::replay(1);
-	//
-	//	cutting_plane_shell_wrapper.subscribe([=](const auto &shell_wrapper) {
-	//		std::cout << "Created cutting plane convex hull shell wrapper" << std::endl;
-	//	});
-	//
-	//	auto cgal_mesh_shell_wrapper = cgal_mesh_shell | Rx::map([](const auto &shell) -> ShellWrapper {
-	//		return ShellWrapper{[&](const Eigen::Vector3d &from,
-	//								const Eigen::Vector3d &to) -> std::vector<Eigen::Vector3d> {
-	//			return idealizedPathViaShell(*shell, from, to, 32);
-	//		}, "CGAL mesh shell"};
-	//	}) | Rx::replay(1);
-	//
-	//	cgal_mesh_shell_wrapper.subscribe([=](const auto &shell_wrapper) {
-	//		std::cout << "Created CGAL mesh shell wrapper" << std::endl;
-	//	});
-	//
-	//	auto current_shell_wrapper = current_shell_index
-	//			| Rx::map([&](const auto &index) -> rxcpp::observable<ShellWrapper> {
-	//				std::cout << "Switching to shell wrapper " << index << std::endl;
-	//				switch (index) {
-	//					case 0:
-	//						return sphere_shell_wrapper;
-	//					case 1:
-	//						return cutting_plane_shell_wrapper;
-	//					case 2:
-	//						return cgal_mesh_shell_wrapper;
-	//					default:
-	//						throw std::runtime_error("Invalid shell index");
-	//				}
-	//			}) | Rx::switch_on_next();
-	//
-	//	current_shell_wrapper.subscribe([=](const auto &shell_wrapper) {
-	//		std::cout << "Switched to shell wrapper " << shell_wrapper.name << std::endl;
-	//	});
-	//
+
+	auto apple_id_box = createAppleIdComboBox(100);//scene.apples.size());
+	sidebarLayout->addWidget(apple_id_box.get());
+
+	VtkLineSegmentsVisualization path_viz(1.0, 0.0, 1.0);
+	renderer->AddActor(path_viz.getActor());
+
+	auto current_source_apple = rxqt::from_signal(apple_id_box.data(), static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged));
+
+	// Output the current source apple
+	current_source_apple.subscribe([=](const auto &apple_id) {
+		std::cout << "Current source apple: " << apple_id << std::endl;
+	});
+
+	QObject::connect(apple_id_box.get(), static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [](int index) {
+		std::cout << "Qt signal: Selected apple index " << index << std::endl;
+	});
+
+	auto sphere_shell_wrapper = current_sphere_shell | Rx::map([](const auto &shell) -> ShellWrapper {
+		return ShellWrapper{[shell](const Eigen::Vector3d &from,const Eigen::Vector3d &to) -> std::vector<Eigen::Vector3d> {
+			return idealizedPathViaShell(*shell, from, to, 32);
+		}, "Spherical shell"};
+	});
+
+	sphere_shell_wrapper.subscribe([=](const auto &shell_wrapper) {
+		std::cout << "Created sphere shell wrapper" << std::endl;
+	});
+
+	auto cutting_plane_shell_wrapper = cutting_plane_chull_shell | Rx::map([](const auto &shell) -> ShellWrapper {
+		return ShellWrapper{[shell](const Eigen::Vector3d &from,
+								const Eigen::Vector3d &to) -> std::vector<Eigen::Vector3d> {
+			return idealizedPathViaShell(*shell, from, to, 32);
+		}, "Cutting plane convex hull shell"};
+	});
+
+	cutting_plane_shell_wrapper.subscribe([=](const auto &shell_wrapper) {
+		std::cout << "Created cutting plane convex hull shell wrapper" << std::endl;
+	});
+
+	auto cgal_mesh_shell_wrapper = cgal_mesh_shell | Rx::map([](const auto &shell) -> ShellWrapper {
+		return ShellWrapper{[shell](const Eigen::Vector3d &from,
+								const Eigen::Vector3d &to) -> std::vector<Eigen::Vector3d> {
+			return idealizedPathViaShell(*shell, from, to, 32);
+		}, "CGAL mesh shell"};
+	});
+
+	cgal_mesh_shell_wrapper.subscribe([=](const auto &shell_wrapper) {
+		std::cout << "Created CGAL mesh shell wrapper" << std::endl;
+	});
+
+	auto current_shell_wrapper = current_shell_index
+			| Rx::combine_latest(sphere_shell_wrapper, cutting_plane_shell_wrapper, cgal_mesh_shell_wrapper)
+			| Rx::map([](const auto &tuple) -> ShellWrapper {
+		auto [index, sphere_shell_wrapper, cutting_plane_shell_wrapper, cgal_mesh_shell_wrapper] = tuple;
+
+		std::cout << "Switching to shell wrapper " << index << std::endl;
+
+		switch (index) {
+			case 0:
+				return sphere_shell_wrapper;
+			case 1:
+				return cutting_plane_shell_wrapper;
+			case 2:
+				return cgal_mesh_shell_wrapper;
+			default:
+				throw std::runtime_error("Invalid shell index");
+		}
+	});
+
+	current_shell_wrapper.subscribe([=](const auto &shell_wrapper) {
+		std::cout << "Switched to shell wrapper" << shell_wrapper.name << std::endl;
+	});
+
 	////
 	////	auto current_shell_wrapper = current_shell_index | Rx::combine_latest(sphere_shell_wrapper, cutting_plane_shell_wrapper, cgal_mesh_shell_wrapper) | Rx::map([](const auto &tuple) -> ShellWrapper {
 	////		auto [index, sphere_shell_wrapper, cutting_plane_shell_wrapper, cgal_mesh_shell_wrapper] = tuple;
