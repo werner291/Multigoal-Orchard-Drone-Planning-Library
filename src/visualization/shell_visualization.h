@@ -14,6 +14,6 @@
 
 #include "../shell_space/SphereShell.h"
 
-vtkNew<vtkActor> mkSphereShellActor(const WorkspaceSphereShell &sphereshell);
+vtkSmartPointer<vtkActor> mkSphereShellActor(const WorkspaceSphereShell &sphereshell);
 
 #endif //NEW_PLANNERS_SHELL_VISUALIZATION_H

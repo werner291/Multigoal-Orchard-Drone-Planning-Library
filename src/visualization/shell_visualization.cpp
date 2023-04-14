@@ -8,7 +8,7 @@
 
 #include "shell_visualization.h"
 
-vtkNew<vtkActor> mkSphereShellActor(const WorkspaceSphereShell &sphereshell) {
+vtkSmartPointer<vtkActor> mkSphereShellActor(const WorkspaceSphereShell &sphereshell) {
 	vtkNew<vtkSphereSource> sphereSource;
 	sphereSource->SetCenter(sphereshell.getCenter().x(), sphereshell.getCenter().y(), sphereshell.getCenter().z());
 	sphereSource->SetRadius(sphereshell.getRadius());
