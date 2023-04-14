@@ -246,7 +246,7 @@ add_library(${PROJECT_NAME}_shared
         src/SimpleIncrementalTSPMethods.h
         src/utilities/size_t_iota.h
         src/shell_space/DendriticConvexHullShell.cpp
-        src/shell_space/DendriticConvexHullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h src/PathLengthPredictor.cpp src/PathLengthPredictor.h src/PathLengthPredictor.h)
+        src/shell_space/DendriticConvexHullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h src/PathLengthPredictor.cpp src/PathLengthPredictor.h src/PathLengthPredictor.h src/shell_space/path_util.h src/shell_space/path_util.cpp)
 
 add_library(${PROJECT_NAME}_sensing
         src/exploration/CandidatePathGenerator.cpp
@@ -282,7 +282,7 @@ add_library(${PROJECT_NAME}_sensing
         src/exploration/DirectPointCloudCollisionDetection.h
         src/utilities/discoverability_specifications.h
 
-        src/experiments/initial_orbit_comparison.cpp src/utilities/size_t_iota.h src/shell_space/CapsuleShape.cpp src/shell_space/CapsuleShape.h src/experiments/ApproachPlanning.cpp src/visualization/camera_controls.cpp src/visualization/camera_controls.h)
+        src/experiments/initial_orbit_comparison.cpp src/utilities/size_t_iota.h src/shell_space/CapsuleShape.cpp src/shell_space/CapsuleShape.h src/experiments/ApproachPlanning.cpp src/visualization/camera_controls.cpp src/visualization/camera_controls.h src/shell_space/path_util.cpp)
 
 add_library(${PROJECT_NAME}_visualization
         src/RobotCameraTracker.cpp
@@ -325,7 +325,7 @@ add_library(${PROJECT_NAME}_visualization
         src/visualization/TreeMeshesLoader.h
         src/visualization/ActorsVisibilityWidget.cpp
         src/visualization/ActorsVisibilityWidget.h
-        src/visualization/ActorsVisibilityWidget.h)
+        src/visualization/ActorsVisibilityWidget.h src/visualization/rx_util.h)
 
 target_link_libraries(${PROJECT_NAME}_visualization ${PROJECT_NAME}_shared Qt5::Core Qt5::Widgets Qt5::Concurrent)
 
