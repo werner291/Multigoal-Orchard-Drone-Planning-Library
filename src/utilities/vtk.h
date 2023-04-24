@@ -13,7 +13,7 @@
 #include <moveit/robot_model/link_model.h>
 
 #include <shape_msgs/msg/mesh.hpp>
-#include "../ScannablePointsIndex.h"
+
 #include "../TreeMeshes.h"
 
 static const int SENSOR_RESOLUTION = 200;
@@ -117,16 +117,16 @@ public:
  */
 vtkNew<vtkRenderWindowInteractor> buildVisualizerWindowInteractor(vtkNew<vtkRenderWindow> &visualizerWindow);
 
-/**
- * Build vtkPolyData from the given vector of ScanTargetPoint, in order to visualize them.
- *
- * The resulting poly data will have one point and one vertex for every ScanTargetPoint,
- * colored dark blue, with matching indices.
- *
- * @param scan_targets 		The ScanTargetPoints to build the poly data for.
- * @return 					The built vtkPolyData.
- */
-vtkNew<vtkPolyData> mkVtkPolyDataFromScannablePoints(const std::vector<ScanTargetPoint> &scan_targets);
+// /**
+//  * Build vtkPolyData from the given vector of ScanTargetPoint, in order to visualize them.
+//  *
+//  * The resulting poly data will have one point and one vertex for every ScanTargetPoint,
+//  * colored dark blue, with matching indices.
+//  *
+//  * @param scan_targets 		The ScanTargetPoints to build the poly data for.
+//  * @return 					The built vtkPolyData.
+//  */
+// vtkNew<vtkPolyData> mkVtkPolyDataFromScannablePoints(const std::vector<ScanTargetPoint> &scan_targets);
 
 /**
  * Build a vtkRenderer to simulate a sensor, with a black background and a white ambient light,

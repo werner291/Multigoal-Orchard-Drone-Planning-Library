@@ -2,16 +2,10 @@
 #ifndef NEW_PLANNERS_STREAMINGCONVEXHULL_H
 #define NEW_PLANNERS_STREAMINGCONVEXHULL_H
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/index/parameters.hpp>
-
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 #include <shape_msgs/msg/mesh.hpp>
 #include "StreamingMeshHullAlgorithm.h"
-
-namespace bg = boost::geometry;
-namespace bgi = boost::geometry::index;
 
 /**
  * Algorithm based on the thesis "Streaming Algorithms for Approximate Convex Hulls" by Ananya Kumar.
@@ -35,8 +29,5 @@ public:
 
 	[[nodiscard]] shape_msgs::msg::Mesh toMesh() const override;
 };
-
-
-
 
 #endif //NEW_PLANNERS_STREAMINGCONVEXHULL_H

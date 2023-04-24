@@ -11,8 +11,13 @@
 
 #include <vtkActor.h>
 #include <vtkNew.h>
+#include <vtkSmartPointer.h>
 
-#include "../shell_space/SphereShell.h"
+#include <functional>
+#include <Eigen/Core>
+
+struct Apple;
+class WorkspaceSphereShell;
 
 /**
  * Creates a vtkActor for a workspace sphere shell. The resulting actor is colored in light gray with

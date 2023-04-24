@@ -8,6 +8,8 @@
 
 #include <vtkCallbackCommand.h>
 #include <vtkCamera.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkRenderer.h>
 
 #include "camera_controls.h"
 

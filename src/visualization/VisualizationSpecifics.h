@@ -16,26 +16,26 @@
 #include "SimulatedSensor.h"
 #include "../exploration/DynamicMeshHullAlgorithm.h"
 
-/**
- * A wrapper around the Vtk stuff necessary to visualize the set of scannable/scanned points.
- */
-struct FruitSurfaceScanTargetsActor {
-	vtkNew<vtkPolyData> fruitSurfacePolyData;
-	vtkNew<vtkActor> fruitSurfacePointsActor;
+// /**
+//  * A wrapper around the Vtk stuff necessary to visualize the set of scannable/scanned points.
+//  */
+// struct FruitSurfaceScanTargetsActor {
+// 	vtkNew<vtkPolyData> fruitSurfacePolyData;
+// 	vtkNew<vtkActor> fruitSurfacePointsActor;
 
-	/**
-	 * Constructor.
-	 * @param pt 	The points to visualizer; order is important as it will be used later to update the color.
-	 */
-	explicit FruitSurfaceScanTargetsActor(const std::vector<ScanTargetPoint>& pt);
+// 	/**
+// 	 * Constructor.
+// 	 * @param pt 	The points to visualizer; order is important as it will be used later to update the color.
+// 	 */
+// 	explicit FruitSurfaceScanTargetsActor(const std::vector<ScanTargetPoint>& pt);
 
-	/**
-	 * Given a vector of points that were just scanned, update the color of the points to reflect that.
-	 *
-	 * @param indices 		The indices of the points that were just scanned; indices must match the vector passed to the constructor.
-	 */
-	void markAsScanned(const std::vector<size_t> &indices);
-};
+// 	/**
+// 	 * Given a vector of points that were just scanned, update the color of the points to reflect that.
+// 	 *
+// 	 * @param indices 		The indices of the points that were just scanned; indices must match the vector passed to the constructor.
+// 	 */
+// 	void markAsScanned(const std::vector<size_t> &indices);
+// };
 
 
 /**

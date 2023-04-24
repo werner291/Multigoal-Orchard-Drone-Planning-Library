@@ -3,6 +3,7 @@
 #include "WorkspaceSpec.h"
 #include "procedural_tree_generation.h"
 #include "utilities/mesh_utils.h"
+#include "utilities/load_mesh.h"
 
 /**
  * Loads the tree meshes for the tree with the given name.

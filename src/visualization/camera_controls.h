@@ -9,9 +9,8 @@
 #ifndef NEW_PLANNERS_CAMERA_CONTROLS_H
 #define NEW_PLANNERS_CAMERA_CONTROLS_H
 
-#include <vtkRenderer.h>
-#include <vtkNew.h>
-#include <vtkRenderWindowInteractor.h>
+class vtkRenderer;
+class vtkRenderWindowInteractor;
 
 /**
  * @brief Enforce camera up vector to (0,0,1) after interaction with a VTK widget.

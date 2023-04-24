@@ -11,6 +11,9 @@
 
 #include "shell_visualization.h"
 
+#include "../shell_space/SphereShell.h"
+#include "../procedural_tree_generation.h"
+
 vtkSmartPointer<vtkActor> mkSphereShellActor(const WorkspaceSphereShell &sphereshell) {
 	vtkNew<vtkSphereSource> sphereSource;
 	sphereSource->SetCenter(sphereshell.getCenter().x(), sphereshell.getCenter().y(), sphereshell.getCenter().z());

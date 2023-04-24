@@ -17,6 +17,8 @@ find_package(Bullet REQUIRED)
 find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
 find_package(Qhull REQUIRED)
+
+set(CGAL_DATA_DIR "UNUSED_STOP_WARNING")
 find_package(CGAL REQUIRED)
 find_package(VTK REQUIRED)
 
@@ -293,8 +295,8 @@ add_library(${PROJECT_NAME}_visualization
         src/utilities/vtk.h
         src/visualization/SimpleVtkViewer.cpp
         src/visualization/SimpleVtkViewer.h
-        src/visualization/SimulatedSensor.cpp
-        src/visualization/SimulatedSensor.h
+        # src/visualization/SimulatedSensor.cpp
+        # src/visualization/SimulatedSensor.h
         src/visualization/StatusTextViz.cpp
         src/visualization/StatusTextViz.h
         src/visualization/VideoRecorder.cpp
@@ -325,7 +327,17 @@ add_library(${PROJECT_NAME}_visualization
         src/visualization/TreeMeshesLoader.h
         src/visualization/ActorsVisibilityWidget.cpp
         src/visualization/ActorsVisibilityWidget.h
-        src/visualization/ActorsVisibilityWidget.h src/visualization/rx_util.h)
+        src/visualization/numeric_combobox.cpp
+        src/visualization/numeric_combobox.h
+        src/visualization/path_visualization.cpp
+        src/visualization/path_visualization.h
+        src/visualization/LabeledActors.cpp
+        src/visualization/LabeledActors.h
+        src/visualization/rx_util.h
+        src/visualization/rx_util.cpp
+        src/visualization/rx_vtk.h
+        src/visualization/rx_vtk.cpp
+        )
 
 target_link_libraries(${PROJECT_NAME}_visualization ${PROJECT_NAME}_shared Qt5::Core Qt5::Widgets Qt5::Concurrent)
 

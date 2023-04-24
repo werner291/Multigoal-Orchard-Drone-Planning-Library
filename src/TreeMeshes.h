@@ -4,7 +4,6 @@
 
 #include <shape_msgs/msg/mesh.hpp>
 #include <Eigen/Core>
-#include "utilities/load_mesh.h"
 #include <moveit/robot_state/robot_state.h>
 
 struct TreeMeshes {

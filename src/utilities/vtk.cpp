@@ -7,6 +7,10 @@
 #include <vtkRenderWindow.h>
 #include <vtkProperty.h>
 #include <vtkPointData.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkLight.h>
+#include <vtkCamera.h>
 
 #include <range/v3/view/transform.hpp>
 #include <range/v3/to_container.hpp>
@@ -150,26 +154,26 @@ vtkNew<vtkActor> createActorFromMesh(const shape_msgs::msg::Mesh &mesh) {
 }
 
 
-vtkNew<vtkPolyData> mkVtkPolyDataFromScannablePoints(const std::vector<ScanTargetPoint> &scan_targets) {
-	vtkNew<vtkUnsignedCharArray> colors;
-	colors->SetNumberOfComponents(3);
+// vtkNew<vtkPolyData> mkVtkPolyDataFromScannablePoints(const std::vector<ScanTargetPoint> &scan_targets) {
+// 	vtkNew<vtkUnsignedCharArray> colors;
+// 	colors->SetNumberOfComponents(3);
 
-	vtkNew<vtkPoints> fruitSurfacePointsVtk;
-	vtkNew<vtkCellArray> fruitSurfaceCells;
+// 	vtkNew<vtkPoints> fruitSurfacePointsVtk;
+// 	vtkNew<vtkCellArray> fruitSurfaceCells;
 
-	for (const auto &point: scan_targets) {
-		auto pt_id = fruitSurfacePointsVtk->InsertNextPoint(point.point.data());
-		fruitSurfaceCells->InsertNextCell({pt_id});
+// 	for (const auto &point: scan_targets) {
+// 		auto pt_id = fruitSurfacePointsVtk->InsertNextPoint(point.point.data());
+// 		fruitSurfaceCells->InsertNextCell({pt_id});
 
-		colors->InsertNextTuple3(0, 0, 255);
-	}
+// 		colors->InsertNextTuple3(0, 0, 255);
+// 	}
 
-	vtkNew<vtkPolyData> fruitSurfacePolyData;
-	fruitSurfacePolyData->SetPoints(fruitSurfacePointsVtk);
-	fruitSurfacePolyData->SetVerts(fruitSurfaceCells);
-	fruitSurfacePolyData->GetPointData()->SetScalars(colors);
-	return fruitSurfacePolyData;
-}
+// 	vtkNew<vtkPolyData> fruitSurfacePolyData;
+// 	fruitSurfacePolyData->SetPoints(fruitSurfacePointsVtk);
+// 	fruitSurfacePolyData->SetVerts(fruitSurfaceCells);
+// 	fruitSurfacePolyData->GetPointData()->SetScalars(colors);
+// 	return fruitSurfacePolyData;
+// }
 
 vtkNew<vtkRenderer> buildSensorRenderer() {
 
@@ -303,9 +307,13 @@ std::vector<vtkSmartPointer<vtkActor>> createColoredMeshActors(const std::vector
 															   const std::array<double, 4> &color_rgba,
 															   bool visible) {
 
-	return meshes | ranges::views::transform([&](const auto& mesh) {
-		return createColoredMeshActor(mesh, color_rgba, visible);
-	}) | ranges::to_vector;
+	std::vector<vtkSmartPointer<vtkActor>> actors;
+
+	for (const auto& mesh : meshes) {
+		actors.push_back(createColoredMeshActor(mesh, color_rgba, visible));
+	}
+
+	return actors;
 
 }
 

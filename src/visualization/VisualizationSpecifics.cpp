@@ -5,20 +5,6 @@
 #include <vtkProperty.h>
 #include <vtkPointData.h>
 
-FruitSurfaceScanTargetsActor::FruitSurfaceScanTargetsActor(const std::vector<ScanTargetPoint> &pt) : fruitSurfacePolyData(mkVtkPolyDataFromScannablePoints(pt)) {
-	vtkNew<vtkPolyDataMapper> fruitSurfacePointsMapper;
-	fruitSurfacePointsMapper->SetInputData(fruitSurfacePolyData);
-	fruitSurfacePointsActor->SetMapper(fruitSurfacePointsMapper);
-	fruitSurfacePointsActor->GetProperty()->SetPointSize(5);
-}
-
-void FruitSurfaceScanTargetsActor::markAsScanned(const std::vector<size_t> &indices) { // NOLINT(readability-make-member-function-const)
-	for (auto &point: indices) {
-		fruitSurfacePolyData->GetPointData()->GetScalars()->SetTuple3((vtkIdType) point, 255, 0, 255);
-		fruitSurfacePolyData->Modified();
-	}
-}
-
 ConvexHullActor::ConvexHullActor() {
 	actor->SetMapper(mapper);
 	actor->GetProperty()->SetColor(0.0, 1.0, 0.0);

@@ -6,6 +6,7 @@
 #include <vtkLight.h>
 #include <vtkProperty.h>
 #include <vtkInteractorStyle3D.h>
+#include <vtkCamera.h>
 
 Viewer::Viewer(const SimplifiedOrchard &orchard, VtkRobotmodel &robotModel, const std::vector<vtkActor *> &actors)
 		: targetToHullLineSegments(1, 0, 0),
