@@ -55,10 +55,15 @@ namespace Rx
 #include "../visualization/shell_visualization.h"
 #include "../visualization/LabeledActors.h"
 #include "../visualization/rx_vtk.h"
+#include "../visualization/compute_prm.h"
 
 #include "../TreeMeshes.h"
 
 int main(int argc, char **argv) {
+
+
+	SimpleVtkViewer viewer;
+
 
 	const QStringList sceneNames = {"appletree", "lemontree2", "orangetree4"};
 
@@ -231,6 +236,26 @@ int main(int argc, char **argv) {
 		// Update the path_viz with the new edges
 		path_viz.updateLine(computeOneToAllIdealizedPathEdges(scene.apples, source_apple_index, shell.idealized_path)); 
 	});
+
+	// Add a button to the sidebar to build a PRM of the scene.
+	auto build_prm_button = new QPushButton("Build PRM");
+	sidebarLayout->addWidget(build_prm_button);
+
+	// Get a signal when the button is clicked
+	auto build_prm_clicked = rxqt::from_signal(build_prm_button, &QPushButton::clicked);
+
+	// Subscribe and emit a println when the button is clicked
+	build_prm_clicked.subscribe([&](const auto &t)
+								{ std::cout << "Build PRM clicked" << t << std::endl; });
+
+	// Asyncmap the button click to a future that will compute the PRM
+	build_prm_clicked 
+		| Rx::combine_latest(current_scene)
+		| map_async_latest<std::pair<bool, AppleTreePlanningScene>, std::function<Roadmap(std::pair<bool, AppleTreePlanningScene>)>>([](auto tuple) {
+			const auto &scene = std::get<1>(tuple);
+			return computePRM(scene);
+		}) 
+		| Rx::subscribe<Roadmap>([](const Roadmap &prm) {std::cout << "Computed PRM with " << prm.size() << " nodes" << std::endl;});
 
 	sidebarLayout->addStretch(1);
 

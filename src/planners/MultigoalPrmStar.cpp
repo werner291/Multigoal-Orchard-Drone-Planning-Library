@@ -1,4 +1,4 @@
-#include <ompl/geometric/planners/prm/PRMstar.h>
+
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
 #include "MultigoalPrmStar.h"
@@ -15,65 +15,52 @@ using namespace ranges;
 
 typedef std::vector<std::vector<ob::PathPtr>> PathMatrix;
 
-class PRMCustom : public og::PRMstar {
+PRMCustom::PRMCustom(const ompl::base::SpaceInformationPtr &si) : PRMstar(si) {};
 
-public:
-    explicit PRMCustom(const ompl::base::SpaceInformationPtr &si) : PRMstar(si) {}
-
-    std::vector<Vertex> tryConnectGoal(ob::GoalSampleableRegion &goal_region, size_t max_samples) {
-
-        std::vector<Vertex> result;
+std::vector<PRMCustom::Vertex> PRMCustom::tryConnectGoal(ob::GoalSampleableRegion &goal_region, size_t max_samples) {
+    
+    std::vector<Vertex> result;
         
-        for (size_t i = 0; i < max_samples; ++i) {
-            ob::State *st = si_->allocState();
+    for (size_t i = 0; i < max_samples; ++i) {
 
-            goal_region.sampleGoal(st);
+        ob::State *st = si_->allocState();
 
-            if (si_->isValid(st)) {
-                result.push_back(addMilestone(st)); // PRM takes ownership of the pointer
-            } else {
-                si_->freeState(st);
-                break;
-            }
-            
-        }
-        
-        return result;
-        
-    }
+        goal_region.sampleGoal(st);
 
-    Vertex insert_state(const ob::State *st) {
-        ob::State *st_copy = si_->allocState();
-        si_->copyState(st_copy, st);
-        return addMilestone(st_copy); // PRM takes ownership of the pointer
-    }
-
-    /**
-     * Try to connect two vertices/states with a path. As an added optimization,
-     * first check if the two vertices are even in the same component.
-     *
-     * @param u Start vertex
-     * @param v End vertex
-     * @return A path if one exists, or nullptr otherwise
-     */
-    ob::PathPtr path_distance(Vertex start, Vertex goal) {
-        assert(same_component(start, goal));
-
-        if (start == goal) {
-            return std::make_shared<og::PathGeometric>(si_, stateProperty_[start]);
+        if (si_->isValid(st)) {
+            result.push_back(addMilestone(st)); // PRM takes ownership of the pointer
         } else {
-            return constructSolution({start}, {goal});
+            si_->freeState(st);
+            break;
         }
     }
 
-    bool same_component(Vertex v, Vertex u) {
-        graphMutex_.lock();
-        bool same_component = sameComponent(v, u);
-        graphMutex_.unlock();
-        return same_component;
-    }
+    return result;
 
-};
+}
+
+PRMCustom::Vertex PRMCustom::insert_state(const ob::State *st) {
+    ob::State *st_copy = si_->allocState();
+    si_->copyState(st_copy, st);
+    return addMilestone(st_copy); // PRM takes ownership of the pointer
+}
+
+ob::PathPtr PRMCustom::path_distance(Vertex start, Vertex goal) {
+    assert(same_component(start, goal));
+
+    if (start == goal) {
+        return std::make_shared<og::PathGeometric>(si_, stateProperty_[start]);
+    } else {
+        return constructSolution({start}, {goal});
+    }
+}
+
+bool PRMCustom::same_component(Vertex v, Vertex u) {
+    graphMutex_.lock();
+    bool same_component = sameComponent(v, u);
+    graphMutex_.unlock();
+    return same_component;
+}
 
 struct AppleIdVertexPair {
     size_t apple_id;

@@ -6,6 +6,8 @@
 #include "../utilities/vtk.h"
 #include <vtkProperty.h>
 
+#include "camera_controls.h"
+
 SimpleVtkViewer::SimpleVtkViewer() {
 	// Set up the render window.
 	visualizerWindow->SetSize(800, 600);
@@ -25,6 +27,9 @@ SimpleVtkViewer::SimpleVtkViewer() {
 			videoRecorder->exportFrame();
 		}
 	});
+
+	enforceCameraUp(viewerRenderer, renderWindowInteractor);
+
 }
 
 void SimpleVtkViewer::addActor(vtkActor *actor) {

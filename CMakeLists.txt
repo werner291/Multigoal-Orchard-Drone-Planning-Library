@@ -337,6 +337,8 @@ add_library(${PROJECT_NAME}_visualization
         src/visualization/rx_util.cpp
         src/visualization/rx_vtk.h
         src/visualization/rx_vtk.cpp
+        src/visualization/compute_prm.cpp
+        src/visualization/compute_prm.h
         )
 
 target_link_libraries(${PROJECT_NAME}_visualization ${PROJECT_NAME}_shared Qt5::Core Qt5::Widgets Qt5::Concurrent)
@@ -375,6 +377,9 @@ experiment("non_approach_experiment")
 
 experiment("dynamic_visualized")
 target_link_libraries(${PROJECT_NAME}_experiment_dynamic_visualized ${PROJECT_NAME}_visualization)
+
+experiment("visualize_prm")
+target_link_libraries(${PROJECT_NAME}_experiment_visualize_prm ${PROJECT_NAME}_visualization)
 
 experiment("static_visualized")
 target_link_libraries(${PROJECT_NAME}_experiment_static_visualized ${PROJECT_NAME}_visualization Qt5::Core Qt5::Widgets Qt5::Concurrent)
