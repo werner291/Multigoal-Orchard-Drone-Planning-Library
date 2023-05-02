@@ -32,6 +32,5 @@ void enforceCameraUp(vtkRenderer *renderer, vtkRenderWindowInteractor *interacto
 	// Set the clientData (the renderer in this case)
 	resetViewUpCallback->SetClientData(renderer);
 
-	// Add an observer for the EndInteractionEvent
-	unsigned long observerId = interactor->AddObserver(vtkCommand::InteractionEvent, resetViewUpCallback);
+	interactor->AddObserver(vtkCommand::InteractionEvent, resetViewUpCallback);
 }

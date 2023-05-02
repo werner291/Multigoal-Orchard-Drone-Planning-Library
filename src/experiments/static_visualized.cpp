@@ -1,278 +1,152 @@
+
 #include <utility>
-
-#include <QApplication>
-#include <QLabel>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QVBoxLayout>
-#include <QWidget>
-#include <QComboBox>
-#include <QSplitter>
-#include <QVTKOpenGLNativeWidget.h>
-#include <QFuture>
-#include <QtConcurrent/QtConcurrent>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnonnull"
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#include <rxqt.hpp>
-#pragma GCC diagnostic pop
-
-namespace Rx
-{
-	using namespace rxcpp;
-	using namespace rxcpp::sources;
-	using namespace rxcpp::operators;
-	using namespace rxcpp::util;
-}
 
 #include <boost/asio.hpp>
 
 #include <range/v3/all.hpp>
 #include <range/v3/view/drop.hpp>
 
-#include <CGAL/Delaunay_triangulation_3.h>
-
 #include <vtkProperty.h>
-#include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkCallbackCommand.h>
 #include <vtkRendererCollection.h>
 
 #include "../utilities/vtk.h"
 #include "../utilities/mesh_utils.h"
-#include "../visualization/ActorsVisibilityWidget.h"
 #include "../planning_scene_diff_message.h"
 #include "../utilities/experiment_utils.h"
 #include "../shell_space/SphereShell.h"
 #include "../shell_space/CGALMeshShell.h"
-#include "../shell_space/CuttingPlaneConvexHullShell.h"
 #include "../utilities/enclosing_sphere.h"
 
-#include "../visualization/numeric_combobox.h"
 #include "../visualization/path_visualization.h"
-#include "../visualization/rx_util.h"
 #include "../visualization/camera_controls.h"
-#include "../visualization/shell_visualization.h"
 #include "../visualization/LabeledActors.h"
-#include "../visualization/rx_vtk.h"
 #include "../visualization/compute_prm.h"
+#include "../visualization/SimpleVtkViewer.h"
+
+#include "../planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"
 
 #include "../TreeMeshes.h"
 
 int main(int argc, char **argv) {
 
-
 	SimpleVtkViewer viewer;
 
+	auto current_tree_models = loadTreeMeshes("appletree");
 
-	const QStringList sceneNames = {"appletree", "lemontree2", "orangetree4"};
+    viewer.addActor(createColoredMeshActor(current_tree_models.trunk_mesh, {0.5, 0.3, 0.1, 1.0}, true));
+    viewer.addActor(createColoredMeshActor(current_tree_models.leaves_mesh, {0.1, 0.5, 0.1, 1.0}, true));
 
-	QApplication app(argc, argv);
-	rxqt::run_loop rxqt_run_loop;
+    for (const auto &mesh : current_tree_models.fruit_meshes) {
+        viewer.addActor(createColoredMeshActor(mesh, {0.9, 0.0, 0.0, 1.0}, true));
+    }
 
-	auto window = std::make_unique<QWidget>();
+    std::vector<Apple> apples;
 
-	auto layout = new QHBoxLayout();
+    for (const auto &mesh : current_tree_models.fruit_meshes)
+    {
+        apples.push_back(appleFromMesh(mesh));
+    }
 
-	// Sidebar
-	auto sidebarLayout = new QVBoxLayout();
+    AppleTreePlanningScene scene {
+        .scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(std::move(treeMeshesToMoveitSceneMsg(current_tree_models, false))),
+        .apples = apples
+    };
+	// auto sphere_shell = paddedSphericalShellAroundLeaves(scene, 0.0);
+    // auto sphere_actor = mkSphereShellActor(*sphere_shell);
+    // viewer.addActor(sphere_actor);
 
-	auto sceneComboBox = new QComboBox();
-	sceneComboBox->addItems(sceneNames);
-	sidebarLayout->addWidget(sceneComboBox);
-	sceneComboBox->setCurrentIndex(0);
-
-	auto current_scene_name =
-		rxqt::from_signal(sceneComboBox, &QComboBox::currentTextChanged) | Rx::start_with(sceneNames[0]);
-
-	current_scene_name.subscribe([=](const QString &sceneName)
-								 { std::cout << "Signal current_scene_name: " << sceneName.toStdString() << std::endl; });
-
-	auto current_tree_models = current_scene_name |
-							   map_async_latest<QString, std::function<TreeMeshes(const QString &)>>([](const QString &sceneName) {
-								   return loadTreeMeshes(sceneName.toStdString());
-							   });
-
-	current_tree_models.subscribe([=](const TreeMeshes &treeMeshes)
-								  { std::cout << "Signal current_tree_models: " << treeMeshes.tree_name << std::endl; });
-
-	// VTK render window
-	vtkNew<vtkGenericOpenGLRenderWindow> renderWindow;
-	vtkNew<vtkRenderer> renderer;
-
-	// nice sky color
-	renderer->SetBackground(0.5, 0.5, 1.0);
-
-	renderWindow->AddRenderer(renderer);
-
-	// QWidget wrapper for the VTK render window
-	auto vtkWidget = new QVTKOpenGLNativeWidget();
-	vtkWidget->setRenderWindow(renderWindow);
-	vtkWidget->setMinimumSize(800, 600);
-	enforceCameraUp(renderer, vtkWidget->interactor());
-
-	auto current_labeled_actors = current_tree_models.map(treeMeshesToLabeledActors).publish().ref_count();
-
-	updateRendererContents(current_labeled_actors, renderWindow, vtkWidget);
-
-	auto actorsVisibilityWidget = new ActorsVisibilityWidget(renderWindow.Get());
-	sidebarLayout->addWidget(actorsVisibilityWidget);
-
-	current_labeled_actors.subscribe([actorsVisibilityWidget](const auto &actors_with_labels)
-									 { actorsVisibilityWidget->setActorsWithLabels(actors_with_labels); });
-
-	auto map_lambda = [](const TreeMeshes &treeMeshes) -> AppleTreePlanningScene
-	{
-		std::vector<Apple> apples;
-
-		for (const auto &mesh : treeMeshes.fruit_meshes)
-		{
-			apples.push_back(appleFromMesh(mesh));
-		}
-
-		return AppleTreePlanningScene{.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>(
-										  std::move(treeMeshesToMoveitSceneMsg(treeMeshes))),
-									  .apples = apples};
-	};
-
-	auto current_scene = current_tree_models | map_async_latest<TreeMeshes, std::function<AppleTreePlanningScene(const TreeMeshes &)>>(map_lambda);
-
-	current_scene.subscribe([=](const auto &scene)
-							{ std::cout << "Loaded scene " << scene.scene_msg->name << std::endl; });
-
-	// sphere shell
-	auto current_sphere_shell = current_scene |
-								map_async_latest<AppleTreePlanningScene, std::function<std::shared_ptr<WorkspaceSphereShell>(
-																			 const AppleTreePlanningScene &)>>([](const AppleTreePlanningScene &scene)
-																											   {
-									auto sphere_shell = paddedSphericalShellAroundLeaves(scene, 0.0);
-									return sphere_shell; });
-
-	// convex hull
-	auto convex_hull = current_scene |
-					   map_async_latest<AppleTreePlanningScene, std::function<shape_msgs::msg::Mesh(const AppleTreePlanningScene &)>>(
-						   [](const AppleTreePlanningScene &scene)
-						   {
-							   return convexHull(utilities::extract_leaf_vertices(scene));
-						   });
-
-	// cutting plane convex hull shell
-	auto cutting_plane_chull_shell = convex_hull | Rx::map([](const auto &convex_hull)
-														   { return std::make_shared<CuttingPlaneConvexHullShell>(convex_hull, 0.0, 0.0); });
-
-	// cgal mesh shell
-	auto cgal_mesh_shell = convex_hull | Rx::map([](const auto &convex_hull)
-												 { return std::make_shared<CGALMeshShell>(convex_hull, 0.0, 0.0); });
-
-	auto comboBox = QSharedPointer<QComboBox>(new QComboBox(nullptr));
-	comboBox->addItem("Sphere shell");
-	comboBox->addItem("Cutting plane convex hull shell");
-	comboBox->addItem("CGAL mesh shell");
-	sidebarLayout->addWidget(comboBox.data());
-
-	auto current_shell_index =
-		rxqt::from_signal(comboBox.data(), static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged)) |
-		Rx::start_with(comboBox->currentIndex());
-
-	current_shell_index.subscribe([](const auto &index)
-								  { std::cout << "Selected shell index " << index << std::endl; });
-
-	auto sphere_actor = current_sphere_shell | Rx::map([](const auto &shell) -> vtkSmartPointer<vtkActor>
-													   { return mkSphereShellActor(*shell); }) |
-						Rx::publish() | Rx::ref_count();
-
-	auto chull_actor = convex_hull | Rx::map([](const auto &shell) -> vtkSmartPointer<vtkActor>
-											 {
-		std::cout << "Created convex hull shell actor with " << shell.triangles.size() << " triangles" << std::endl;
-		return createColoredMeshActor(shell, {0.9, 0.9, 0.9, 0.5}, true); }) |
-					   Rx::publish() | Rx::ref_count();
-
-	auto current_shell_actor = current_shell_index | Rx::combine_latest(sphere_actor, chull_actor) |
-							   Rx::map([](const auto &tuple) -> vtkSmartPointer<vtkActor>
-									   {
-
-								   int index = std::get<0>(tuple);
-								   vtkSmartPointer<vtkActor> sphere = std::get<1>(tuple);
-								   vtkSmartPointer<vtkActor> chull = std::get<2>(tuple);
-
-								   std::cout << "Switching shell actor to index " << index << std::endl;
-
-								   switch (index) {
-									   case 0:
-										   return sphere;
-									   case 1:
-									   case 2:
-										   return chull;
-									   default:
-										   throw std::runtime_error("Invalid shell index");
-								   } });
-
-	addReactiveActor(current_shell_actor, renderWindow);
-
-	auto apple_id_box = createAppleIdComboBox(100); // scene.apples.size());
-	sidebarLayout->addWidget(apple_id_box.get());
+	auto convex_hull = convexHull(utilities::extract_leaf_vertices(scene));
+	auto cutting_plane_chull_shell = std::make_shared<CuttingPlaneConvexHullShell>(convex_hull, 0.0, 0.0);
+	// auto cgal_mesh_shell = std::make_shared<CGALMeshShell>(convex_hull, 0.0, 0.0);
+	auto chull_actor = createColoredMeshActor(convex_hull, {0.8, 0.8, 0.8, 0.2}, true);
+    viewer.addActor(chull_actor);
 
 	VtkLineSegmentsVisualization path_viz(1.0, 0.0, 1.0);
-	renderer->AddActor(path_viz.getActor());
+	viewer.addActor(path_viz.getActor());
 
-	auto current_source_apple = rxqt::from_signal(apple_id_box.data(),
-												  static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged));
+	size_t from_apple = 0;
+    size_t to_apple = 42;
 
-	auto current_shell_wrapper = createShellWrapperObservable(
-		current_sphere_shell,
-		cutting_plane_chull_shell,
-		cgal_mesh_shell,
-		current_shell_index
-	);
+    std::vector<Eigen::Vector3d> path = idealizedPathViaShell(*cutting_plane_chull_shell, apples[from_apple].center, apples[to_apple].center, 32);
 
-	current_scene | Rx::combine_latest(current_source_apple, current_shell_wrapper) |
-		Rx::subscribe<std::tuple<AppleTreePlanningScene, int, ShellWrapper>>([&](const std::tuple<AppleTreePlanningScene, int, ShellWrapper> &tuple)
-																			 {
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> path_segments;
 
-		const auto &[scene, source_apple_index, shell] = tuple;
+    for (size_t i = 0; i < path.size() - 1; ++i) {
+        path_segments.emplace_back(path[i], path[i + 1]);
+    }
 
-		std::cout << "Updating with apple " << source_apple_index << " updatePaths: " << shell.name << std::endl;
+    path_viz.updateLine(path_segments);
 
-		// Update the path_viz with the new edges
-		path_viz.updateLine(computeOneToAllIdealizedPathEdges(scene.apples, source_apple_index, shell.idealized_path)); 
-	});
+    auto robot = loadRobotModel();
+    auto start_state = randomStateOutsideTree(robot, 42);
 
-	// Add a button to the sidebar to build a PRM of the scene.
-	auto build_prm_button = new QPushButton("Build PRM");
-	sidebarLayout->addWidget(build_prm_button);
+	auto ss = omplStateSpaceForDrone(robot);
+	auto si = loadSpaceInformation(ss, scene);
 
-	// Get a signal when the button is clicked
-	auto build_prm_clicked = rxqt::from_signal(build_prm_button, &QPushButton::clicked);
+    {
 
-	// Subscribe and emit a println when the button is clicked
-	build_prm_clicked.subscribe([&](const auto &t)
-								{ std::cout << "Build PRM clicked" << t << std::endl; });
+        MkOmplShellFn<ConvexHullPoint> planner_allocator = [&](const AppleTreePlanningScene& scene, const ompl::base::SpaceInformationPtr& si) -> std::shared_ptr<OmplShellSpace<ConvexHullPoint>> {
+            auto workspaceShell = horizontalAdapter<ConvexHullPoint>(cutting_plane_chull_shell);
+	        return OmplShellSpace<ConvexHullPoint>::fromWorkspaceShell(workspaceShell, si);
+        };
 
-	// Asyncmap the button click to a future that will compute the PRM
-	build_prm_clicked 
-		| Rx::combine_latest(current_scene)
-		| map_async_latest<std::pair<bool, AppleTreePlanningScene>, std::function<Roadmap(std::pair<bool, AppleTreePlanningScene>)>>([](auto tuple) {
-			const auto &scene = std::get<1>(tuple);
-			return computePRM(scene);
-		}) 
-		| Rx::subscribe<Roadmap>([](const Roadmap &prm) {std::cout << "Computed PRM with " << prm.size() << " nodes" << std::endl;});
+        ShellPathPlanner<ConvexHullPoint> planner(
+            planner_allocator, 
+            std::make_unique<MakeshiftPrmApproachPlanningMethods<ConvexHullPoint>>(si), 
+            true, 
+            DistancePredictionStrategy::SHELL_PATH_LENGTH);
 
-	sidebarLayout->addStretch(1);
+        ompl::base::ScopedState<> start(ss);
+        ss->copyToOMPLState(start.get(), start_state);
 
-	// Splitter to separate the sidebar and the VTK render window
-	auto splitter = new QSplitter();
-	splitter->setOrientation(Qt::Horizontal);
+        std::vector<ompl::base::GoalPtr> goals;
 
-	auto sidebarWidget = new QWidget();
-	sidebarWidget->setLayout(sidebarLayout);
-	splitter->addWidget(sidebarWidget);
-	splitter->addWidget(vtkWidget);
+        for (const auto &apple : apples) {
+            goals.push_back(std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center));
+        }
 
-	layout->addWidget(splitter);
+        auto ptc = ompl::base::plannerNonTerminatingCondition();
+        auto path = planner.plan(si, start.get(), goals, scene, ptc);
 
-	window->setLayout(layout);
+        std::vector<Eigen::Vector3d> ee_trace;
+		std::vector<Eigen::Vector3d> base_trace;
 
-	window->showMaximized();
+        for (const auto &segment: path.segments) {
+            for (size_t state_i = 0; state_i < segment.path_.getStateCount(); ++state_i) {
 
-	return app.exec();
+                auto state = segment.path_.getState(state_i);
+                
+                moveit::core::RobotState robot_state(robot);
+
+                ss->copyToRobotState(robot_state, state);
+
+                ee_trace.push_back(robot_state.getGlobalLinkTransform("end_effector").translation());
+				base_trace.push_back(robot_state.getGlobalLinkTransform("base_link").translation());
+
+            }
+        }
+
+        VtkPolyLineVisualization ee_trace_viz(1.0, 0.0, 0.0);
+        ee_trace_viz.updateLine(ee_trace);
+		viewer.addActor(ee_trace_viz.getActor());
+
+		VtkPolyLineVisualization base_trace_viz(0.0, 1.0, 0.0);
+		base_trace_viz.updateLine(base_trace);
+		viewer.addActor(base_trace_viz.getActor());
+
+		VtkLineSegmentsVisualization path_viz(1.0, 1.0, 0.0);
+
+		std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> path_segments;
+		for (size_t i = 0; i < ee_trace.size(); ++i) {
+			path_segments.emplace_back(ee_trace[i], base_trace[i]);
+		}
+		path_viz.updateLine(path_segments);
+		viewer.addActor(path_viz.getActor());
+
+    }
+
+    viewer.start();
+
 }
+
