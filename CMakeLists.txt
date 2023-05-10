@@ -25,9 +25,6 @@ find_package(VTK REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets Concurrent REQUIRED)
 set(CMAKE_AUTOMOC ON)
 
-find_package(rxcpp CONFIG REQUIRED)
-find_path(RXQT_INCLUDE_DIRS "CXX14Support.h")
-
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(moveit_core REQUIRED)
@@ -46,8 +43,6 @@ include_directories(
         ${OMPL_INCLUDE_DIRS}
         ${QHULL_INCLUDE_DIRS}
         ${VTK_INCLUDE_DIRS}
-        ${RXCPP_INCLUDE_DIRS}
-        ${RXQT_INCLUDE_DIRS}
         #{CGAL_INCLUDE_DIRS}
         ortools/include
         miniball/cpp/main
@@ -60,8 +55,6 @@ link_libraries(
         ${BULLET_LIBRARIES}
         ${OMPL_LIBRARIES}
         ${VTK_LIBRARIES}
-        ${RXCPP_LIBRARIES}
-        ${RXQT_LIBRARIES}
         qhullcpp
         HACD # Note: the HACD library is included Bullet's "extra" libraries
         jsoncpp_lib
@@ -248,7 +241,7 @@ add_library(${PROJECT_NAME}_shared
         src/SimpleIncrementalTSPMethods.h
         src/utilities/size_t_iota.h
         src/shell_space/DendriticConvexHullShell.cpp
-        src/shell_space/DendriticConvexHullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h src/PathLengthPredictor.cpp src/PathLengthPredictor.h src/PathLengthPredictor.h src/shell_space/path_util.h src/shell_space/path_util.cpp)
+        src/shell_space/DendriticConvexHullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h src/PathLengthPredictor.cpp src/PathLengthPredictor.h src/PathLengthPredictor.h src/shell_space/path_util.h src/shell_space/path_util.cpp src/goal_optimization.cpp src/goal_optimization.cpp src/utilities/midpoint_pull.cpp src/utilities/midpoint_pull.h)
 
 add_library(${PROJECT_NAME}_sensing
         src/exploration/CandidatePathGenerator.cpp
@@ -333,10 +326,6 @@ add_library(${PROJECT_NAME}_visualization
         src/visualization/path_visualization.h
         src/visualization/LabeledActors.cpp
         src/visualization/LabeledActors.h
-        src/visualization/rx_util.h
-        src/visualization/rx_util.cpp
-        src/visualization/rx_vtk.h
-        src/visualization/rx_vtk.cpp
         src/visualization/compute_prm.cpp
         src/visualization/compute_prm.h
         )
