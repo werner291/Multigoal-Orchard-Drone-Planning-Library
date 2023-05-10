@@ -103,8 +103,10 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 
 	SimpleVtkViewer viewer;
 
+#define RECORD_VIDEO
+
 #ifdef RECORD_VIDEO
-	//	viewer.startRecording("video.ogv");
+	viewer.startRecording("static_viz.ogv");
 #endif
 
 	// Add the robot model to the viewer.
@@ -114,16 +116,16 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 	// a vector of pointers to the actors representing the apples.
 	auto apple_actors = createActors(meshes, viewer);
 
-	VtkLineSegmentsVisualization occlusion_visualization(1.0, 0.0, 1.0);
-	viewer.addActor(occlusion_visualization.getActor());
+	//	VtkLineSegmentsVisualization occlusion_visualization(1.0, 0.0, 1.0);
+	//	viewer.addActor(occlusion_visualization.getActor());
 
-	StatusTextViz status_text(viewer.viewerRenderer);
+	//	StatusTextViz status_text(viewer.viewerRenderer);
 
 	std::vector<utilities::DiscoveryStatus> initial_status(eval.getDiscoveryStatus());
 
 	RunPlannerThreaded eval_thread(eval, true);
 
-	addAppleColorLegend(viewer);
+	//	addAppleColorLegend(viewer);
 
 	vtkNew<vtkCamera> camera;
 	viewer.viewerRenderer->SetActiveCamera(camera);
@@ -163,16 +165,16 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 			camera_tracker.update(state);
 			updateAppleColors(visit_status, apple_actors);
 
-			occlusion_visualization.updateLine(getOcclusionLineCoordinates(state, scene.apples, eval.getCanSeeApple()));
+			//			occlusion_visualization.updateLine(getOcclusionLineCoordinates(state, scene.apples, eval.getCanSeeApple()));
 
 		}
 
 
-		status_text.updateText(mkStatusString(trajectories,
-											  traj_index,
-											  traj_time,
-											  eval_thread,
-											  getDiscoveryStatusStats(visit_status)));
+		//		status_text.updateText(mkStatusString(trajectories,
+		//											  traj_index,
+		//											  traj_time,
+		//											  eval_thread,
+		//											  getDiscoveryStatusStats(visit_status)));
 
 #ifdef RECORD_VIDEO
 		auto now = std::chrono::high_resolution_clock::now();

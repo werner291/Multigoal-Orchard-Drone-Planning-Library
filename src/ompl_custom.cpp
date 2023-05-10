@@ -37,14 +37,6 @@ double StateValidityChecker::clearance(const ompl::base::State *state) const {
     return scene_->distanceToCollision(robot_state);
 }
 
-InverseClearanceIntegralObjectiveOMPL::InverseClearanceIntegralObjectiveOMPL(const ompl::base::SpaceInformationPtr &si,
-                                                                             bool enableMotionCostInterpolation)
-        : StateCostIntegralObjective(si, enableMotionCostInterpolation) {}
-
-ompl::base::Cost InverseClearanceIntegralObjectiveOMPL::stateCost(const ompl::base::State *s) const {
-    return ompl::base::Cost(1.0 / si_->getStateValidityChecker()->clearance(s));
-}
-
 DroneEndEffectorNearTarget::DroneEndEffectorNearTarget(const ompl::base::SpaceInformationPtr &si, double radius,
                                                        const Eigen::Vector3d &target)
         : GoalSampleableRegion(si), radius(radius), target(target) {

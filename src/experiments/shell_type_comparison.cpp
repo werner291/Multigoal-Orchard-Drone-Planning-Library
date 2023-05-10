@@ -2,26 +2,25 @@
 #include <boost/asio.hpp>
 #include <utility>
 
-#include "../planning_scene_diff_message.h"
-#include "../utilities/experiment_utils.h"
-#include "../shell_space/MoveItShellSpace.h"
-#include "../shell_space/SphereShell.h"
+#include "../DynamicGoalsetPlanningProblem.h"
+#include "../exploration/ColorEncoding.h"
+#include "../planner_allocators.h"
+#include "../planners/CachingDynamicPlanner.h"
+#include "../planners/ChangeIgnoringReplannerAdapter.h"
+#include "../planners/ShellPathPlanner.h"
 #include "../planners/shell_path_planner/ApproachPlanning.h"
 #include "../planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"
-#include "../planners/ShellPathPlanner.h"
-#include "../vtk/Viewer.h"
-
-#include "../planners/ChangeIgnoringReplannerAdapter.h"
-#include "../exploration/ColorEncoding.h"
-#include "../utilities/goal_events.h"
-#include "../planners/CachingDynamicPlanner.h"
-#include "../utilities/run_experiments.h"
-
-#include "../DynamicGoalsetPlanningProblem.h"
+#include "../planning_scene_diff_message.h"
+#include "../shell_space/CylinderShell.h"
+#include "../shell_space/MoveItShellSpace.h"
+#include "../shell_space/SphereShell.h"
 #include "../utilities/MeshOcclusionModel.h"
 #include "../utilities/alpha_shape.h"
-#include "../planner_allocators.h"
-#include "../shell_space/CylinderShell.h"
+#include "../utilities/experiment_utils.h"
+#include "../utilities/goal_events.h"
+#include "../utilities/run_experiments.h"
+#include "../shell_space/CuttingPlaneConvexHullShell.h"
+#include "../shell_space/CGALMeshShell.h"
 
 #include <vtkProperty.h>
 
@@ -39,8 +38,8 @@ struct Problem {
 using StaticPlannerAllocatorFn = std::function<std::shared_ptr<MultiGoalPlanner>(const ompl::base::SpaceInformationPtr &)>;
 
 struct Experiment {
-	std::pair<std::string, StaticPlannerAllocatorFn> *planner;
-	std::pair<Json::Value, Problem> *problem;
+	const std::pair<std::string, StaticPlannerAllocatorFn> *planner;
+	const std::pair<Json::Value, Problem> *problem;
 };
 
 Json::Value toJSON(const Experiment &experiment) {
@@ -171,7 +170,7 @@ int main(int argc, char **argv) {
 
 		// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
 		// we'll need to copy this for every thread
-		auto si = loadSpaceInformation(ss, scene);
+		auto si = loadSpaceInformation(ss, experiment.problem->second.scene);
 
 		// Allocate the planner.
 		auto ompl_planner = experiment.planner->second(si);
@@ -179,16 +178,17 @@ int main(int argc, char **argv) {
 		ompl::base::ScopedState<> start_state(ss);
 		ss->copyToOMPLState(start_state.get(), experiment.problem->second.start);
 
-		auto goals = experiment.problem->second.apples | ranges::views::transform([&](const auto &apple) -> ompl::base::GoalPtr {
-			return std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center);
-		}) | ranges::to_vector;
+		auto goals = experiment.problem->second.scene.apples |
+					 ranges::views::transform([&](const auto &apple) -> ompl::base::GoalPtr {
+						 return std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center);
+					 }) | ranges::to_vector;
 
 		// use OMPL non-terminating condition
 		auto ptc = ompl::base::plannerNonTerminatingCondition();
 
 		// Record the start time.
 		auto start_time = std::chrono::high_resolution_clock::now();
-		auto eval = ompl_planner->plan(si, start_state.get(), goals, scene, ptc);
+		auto eval = ompl_planner->plan(si, start_state.get(), goals, experiment.problem->second.scene, ptc);
 		auto end_time = std::chrono::high_resolution_clock::now();
 
 		// Check whether the path segments actually connect to each other.

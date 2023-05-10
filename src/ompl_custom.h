@@ -14,7 +14,6 @@
 
 #include "DroneStateSampler.h"
 
-
 class StateValidityChecker : public ompl::base::StateValidityChecker {
 
     const planning_scene::PlanningSceneConstPtr scene_;
@@ -51,15 +50,6 @@ public:
     }
 
     [[nodiscard]] double getMeasure() const override;
-
-};
-
-class InverseClearanceIntegralObjectiveOMPL : public ompl::base::StateCostIntegralObjective {
-public:
-    InverseClearanceIntegralObjectiveOMPL(const ompl::base::SpaceInformationPtr &si,
-                                          bool enableMotionCostInterpolation);
-
-    ompl::base::Cost stateCost(const ompl::base::State *s) const override;
 
 };
 
