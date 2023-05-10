@@ -277,7 +277,7 @@ add_library(${PROJECT_NAME}_sensing
         src/exploration/DirectPointCloudCollisionDetection.h
         src/utilities/discoverability_specifications.h
 
-        src/experiments/initial_orbit_comparison.cpp src/utilities/size_t_iota.h src/shell_space/CapsuleShape.cpp src/shell_space/CapsuleShape.h src/experiments/ApproachPlanning.cpp src/visualization/camera_controls.cpp src/visualization/camera_controls.h src/shell_space/path_util.cpp)
+        src/experiments/initial_orbit_comparison.cpp src/utilities/size_t_iota.h src/shell_space/CapsuleShape.cpp src/shell_space/CapsuleShape.h src/experiments/ApproachPlanning.cpp src/visualization/camera_controls.cpp src/visualization/camera_controls.h src/shell_space/path_util.cpp src/shell_space/HorizontalOrientedBoundingBox.cpp src/shell_space/HorizontalOrientedBoundingBox.h)
 
 add_library(${PROJECT_NAME}_visualization
         src/RobotCameraTracker.cpp

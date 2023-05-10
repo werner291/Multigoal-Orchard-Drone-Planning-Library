@@ -9,7 +9,6 @@
 #include "../planners/shell_path_planner/ApproachPlanning.h"
 #include "../planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"
 #include "../planners/ShellPathPlanner.h"
-#include "../vtk/Viewer.h"
 #include "../CurrentPathState.h"
 
 #include "../planners/ChangeIgnoringReplannerAdapter.h"
@@ -25,8 +24,8 @@
 #include "../utilities/alpha_shape.h"
 #include "../planners/ChangeAccumulatingPlannerAdapter.h"
 #include "../planners/InitialOrbitPlanner.h"
-#include "../vtk/visualize_dynamic.h"
 #include "../planner_allocators.h"
+#include "../visualization/visualize_dynamic.h"
 
 #include <vtkProperty.h>
 #include <range/v3/view/iota.hpp>
@@ -145,10 +144,10 @@ int main(int argc, char **argv) {
 
 	};
 
-	Proportions probs{.fraction_true_given = 0.0, .fraction_false_given = 0.0, .fraction_discoverable = 1.0,};
+	Proportions probs{.fraction_true_given = 1.0, .fraction_false_given = 0.0, .fraction_discoverable = 0.0,};
 
 	const auto start_state = randomStateOutsideTree(robot, 0);
-	auto apple_discoverability = generateAppleDiscoverability((int) scene.apples.size(), probs, 42, 1);
+	auto apple_discoverability = generateAppleDiscoverability(probs, 42, scene.apples.size());
 
 	std::cout << "Starting planning with " << apple_discoverability.size() << " apples in total, of which "
 			  << ranges::count(apple_discoverability, DISCOVERABLE) << " are discoverable." << std::endl;
@@ -161,7 +160,7 @@ int main(int argc, char **argv) {
 	// we'll need to copy this for every thread
 	auto si = loadSpaceInformation(ss, scene);
 
-	auto planner = dynamic_planner_initial_orbit(si);
+	auto planner = static_planner(si); //dynamic_planner_initial_orbit(si);
 
 	auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(planner, si, ss);
 

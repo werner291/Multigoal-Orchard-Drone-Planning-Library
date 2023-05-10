@@ -6,18 +6,9 @@
 #include "../exploration/ColorEncoding.h"
 #include "../planner_allocators.h"
 #include "../planners/CachingDynamicPlanner.h"
-#include "../planners/ChangeIgnoringReplannerAdapter.h"
 #include "../planners/ShellPathPlanner.h"
-#include "../planners/shell_path_planner/ApproachPlanning.h"
 #include "../planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"
-#include "../planning_scene_diff_message.h"
 #include "../shell_space/CylinderShell.h"
-#include "../shell_space/MoveItShellSpace.h"
-#include "../shell_space/SphereShell.h"
-#include "../utilities/MeshOcclusionModel.h"
-#include "../utilities/alpha_shape.h"
-#include "../utilities/experiment_utils.h"
-#include "../utilities/goal_events.h"
 #include "../utilities/run_experiments.h"
 #include "../shell_space/CuttingPlaneConvexHullShell.h"
 #include "../shell_space/CGALMeshShell.h"
@@ -25,7 +16,7 @@
 #include <vtkProperty.h>
 
 std::shared_ptr<OmplShellSpace<ConvexHullPoint>>
-paddedOmplChullShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
+paddedOmplCuttingPlaneChullShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
 	auto workspaceShell = horizontalAdapter<ConvexHullPoint>(cuttingPlaneConvexHullAroundLeaves(scene_info, 0.1, 1.0));
 	return OmplShellSpace<ConvexHullPoint>::fromWorkspaceShell(workspaceShell, si);
 };
@@ -132,19 +123,24 @@ int main(int argc, char **argv) {
 		return paddedCylindricalShellAroundLeaves(scene, 0.1);
 	};
 
-
 	StaticPlannerAllocatorFn make_sphere_planner = [](const ompl::base::SpaceInformationPtr &si) {
 		return std::make_shared<ShellPathPlanner<Eigen::Vector3d >>(paddedOmplSphereShell,
 																	std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
-																			si),
-																	true);
+																			si), true);
 	};
 
 	StaticPlannerAllocatorFn make_chull_planner = [](const ompl::base::SpaceInformationPtr &si) {
-		return std::make_shared<ShellPathPlanner<ConvexHullPoint>>(paddedOmplChullShell,
+		return std::make_shared<ShellPathPlanner<ConvexHullPoint>>(paddedOmplCuttingPlaneChullShell,
 																   std::make_unique<MakeshiftPrmApproachPlanningMethods<ConvexHullPoint>>(
 																		   si),
 																   true);
+	};
+
+	StaticPlannerAllocatorFn make_cylinder_shell = [](const ompl::base::SpaceInformationPtr &si) {
+		return std::make_shared<ShellPathPlanner<CylinderShellPoint>>(paddedCylindricalShellAroundLeaves,
+																	  std::make_unique<MakeshiftPrmApproachPlanningMethods<CylinderShellPoint>>(
+																			  si),
+																	  true);
 	};
 
 	// The different planners to test.
