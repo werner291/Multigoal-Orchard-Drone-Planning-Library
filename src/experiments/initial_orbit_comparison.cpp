@@ -21,12 +21,12 @@ void visualizeAlphaShape(TreeMeshes &meshes, const shape_msgs::msg::Mesh &alphas
 	//		viewer.addMesh(meshes.leaves_mesh, {0.0,1.0,0.0});
 
 	for (const auto &mesh: meshes.fruit_meshes) {
-		viewer.addMesh(mesh, {1.0, 0.0, 0.0});
+		viewer.addMesh(mesh, {1.0, 0.0, 0.0}, 0, Eigen::Vector3d::Zero());
 	}
 
-	viewer.addMesh(alphashape, {0.0, 0.5, 0.0});
+	viewer.addMesh(alphashape, {0.0, 0.5, 0.0}, 0, Eigen::Vector3d::Zero());
 
-	viewer.addMesh(meshes.trunk_mesh, {0.3, 0.2, 0.1});
+	viewer.addMesh(meshes.trunk_mesh, {0.3, 0.2, 0.1}, 0, Eigen::Vector3d::Zero());
 
 	viewer.start();
 

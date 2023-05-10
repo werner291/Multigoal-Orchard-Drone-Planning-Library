@@ -107,22 +107,6 @@ int main(int argc, char **argv) {
 
 	using namespace ranges;
 
-	auto sphere_shell = [](const AppleTreePlanningScene &scene) {
-		return paddedSphericalShellAroundLeaves(scene, 0.1);
-	};
-
-	auto cutting_plane_chull = [](const AppleTreePlanningScene &scene) {
-		return cuttingPlaneConvexHullAroundLeaves(scene, 0.1, 1.0);
-	};
-
-	auto cgal_chull = [](const AppleTreePlanningScene &scene) {
-		return convexHullAroundLeavesCGAL(scene, 1.0, 0.1);
-	};
-
-	auto cylinder_shell = [](const AppleTreePlanningScene &scene) {
-		return paddedCylindricalShellAroundLeaves(scene, 0.1);
-	};
-
 	StaticPlannerAllocatorFn make_sphere_planner = [](const ompl::base::SpaceInformationPtr &si) {
 		return std::make_shared<ShellPathPlanner<Eigen::Vector3d >>(paddedOmplSphereShell,
 																	std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
@@ -136,11 +120,26 @@ int main(int argc, char **argv) {
 																   true);
 	};
 
+	StaticPlannerAllocatorFn make_cgal_planner = [](const ompl::base::SpaceInformationPtr& si) {
+		return std::make_shared<ShellPathPlanner<CGALMeshShellPoint>>(
+				[](const AppleTreePlanningScene& scene, const ompl::base::SpaceInformationPtr& si) {
+					return OmplShellSpace<CGALMeshShellPoint>::fromWorkspaceShell(horizontalAdapter<CGALMeshShellPoint>(convexHullAroundLeavesCGAL(scene, 1.0, 0.0)), si);
+				},
+				std::make_unique<MakeshiftPrmApproachPlanningMethods<CGALMeshShellPoint>>(si),
+				true
+		);
+	};
+
 	StaticPlannerAllocatorFn make_cylinder_shell = [](const ompl::base::SpaceInformationPtr &si) {
-		return std::make_shared<ShellPathPlanner<CylinderShellPoint>>(paddedCylindricalShellAroundLeaves,
-																	  std::make_unique<MakeshiftPrmApproachPlanningMethods<CylinderShellPoint>>(
-																			  si),
-																	  true);
+		return std::make_shared<ShellPathPlanner<CylinderShellPoint>>(
+				[](const AppleTreePlanningScene& scene, const ompl::base::SpaceInformationPtr& si) {
+					return OmplShellSpace<CylinderShellPoint>::fromWorkspaceShell(
+							horizontalAdapter<CylinderShellPoint>(
+									paddedCylindricalShellAroundLeaves(scene, 0.0)), si);
+				},
+				std::make_unique<MakeshiftPrmApproachPlanningMethods<CylinderShellPoint>>(si),
+				true
+				);
 	};
 
 	// The different planners to test.

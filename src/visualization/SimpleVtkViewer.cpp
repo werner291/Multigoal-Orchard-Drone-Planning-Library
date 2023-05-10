@@ -5,6 +5,7 @@
 #include "SimpleVtkViewer.h"
 #include "../utilities/vtk.h"
 #include <vtkProperty.h>
+#include <vtkPNGWriter.h>
 
 #include "camera_controls.h"
 
@@ -71,8 +72,13 @@ void SimpleVtkViewer::discardVideo() {
 	videoRecorder.reset();
 }
 
-void SimpleVtkViewer::addMesh(const shape_msgs::msg::Mesh &mesh, const Eigen::Vector3d &color, double opacity) {
+void SimpleVtkViewer::addMesh(const shape_msgs::msg::Mesh &mesh,
+							  const Eigen::Vector3d &color,
+							  double opacity,
+							  const Eigen::Vector3d &position) {
 
+	Eigen::Vector3d origin = position;
+	
 	auto actor = createActorFromMesh(mesh);
 
 	actor->GetProperty()->SetColor(color[0], color[1], color[2]);
@@ -80,7 +86,32 @@ void SimpleVtkViewer::addMesh(const shape_msgs::msg::Mesh &mesh, const Eigen::Ve
 	if (opacity < 1.0) {
 		actor->GetProperty()->SetOpacity(opacity);
 	}
+	
+	actor->SetPosition(origin[0], origin[1], origin[2]);
 
 	addActor(actor);
+
+}
+
+#include <boost/algorithm/string/predicate.hpp>
+
+void SimpleVtkViewer::captureScreenshot(const std::string &filename, bool render) {
+
+	assert(boost::algorithm::ends_with(filename, ".png"));
+
+	if (render) {
+		renderWindowInteractor->GetRenderWindow()->Render();
+	}
+
+	vtkNew<vtkWindowToImageFilter> windowToImageFilter;
+	windowToImageFilter->SetInput(visualizerWindow);
+	windowToImageFilter->SetInputBufferTypeToRGBA(); // Also record the alpha (transparency) channel
+	windowToImageFilter->ReadFrontBufferOff();
+	windowToImageFilter->Update();
+
+	vtkNew<vtkPNGWriter> writer;
+	writer->SetFileName(filename.c_str());
+	writer->SetInputConnection(windowToImageFilter->GetOutputPort());
+	writer->Write();
 
 }

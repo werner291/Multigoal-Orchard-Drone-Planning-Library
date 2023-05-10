@@ -19,14 +19,12 @@
 #include "../utilities/enclosing_sphere.h"
 
 #include "../visualization/path_visualization.h"
-#include "../visualization/camera_controls.h"
 #include "../visualization/LabeledActors.h"
 #include "../visualization/compute_prm.h"
 #include "../visualization/SimpleVtkViewer.h"
 
 #include "../planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"
 
-#include "../TreeMeshes.h"
 
 int main(int argc, char **argv) {
 

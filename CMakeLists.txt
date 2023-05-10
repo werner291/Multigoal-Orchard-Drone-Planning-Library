@@ -240,6 +240,8 @@ add_library(${PROJECT_NAME}_shared
         src/SimpleIncrementalTSPMethods.cpp
         src/SimpleIncrementalTSPMethods.h
         src/utilities/size_t_iota.h
+        src/shell_space/HorizontalOrientedBoundingBox.cpp
+        src/shell_space/HorizontalOrientedBoundingBox.h
         src/shell_space/DendriticConvexHullShell.cpp
         src/shell_space/DendriticConvexHullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h src/PathLengthPredictor.cpp src/PathLengthPredictor.h src/PathLengthPredictor.h src/shell_space/path_util.h src/shell_space/path_util.cpp src/goal_optimization.cpp src/goal_optimization.cpp src/utilities/midpoint_pull.cpp src/utilities/midpoint_pull.h)
 
@@ -277,7 +279,16 @@ add_library(${PROJECT_NAME}_sensing
         src/exploration/DirectPointCloudCollisionDetection.h
         src/utilities/discoverability_specifications.h
 
-        src/experiments/initial_orbit_comparison.cpp src/utilities/size_t_iota.h src/shell_space/CapsuleShape.cpp src/shell_space/CapsuleShape.h src/experiments/ApproachPlanning.cpp src/visualization/camera_controls.cpp src/visualization/camera_controls.h src/shell_space/path_util.cpp src/shell_space/HorizontalOrientedBoundingBox.cpp src/shell_space/HorizontalOrientedBoundingBox.h)
+        src/experiments/initial_orbit_comparison.cpp
+        src/utilities/size_t_iota.h
+        src/shell_space/CapsuleShape.cpp
+        src/shell_space/CapsuleShape.h
+        src/experiments/ApproachPlanning.cpp
+        src/visualization/camera_controls.cpp
+        src/visualization/camera_controls.h
+        src/shell_space/path_util.cpp
+
+        )
 
 add_library(${PROJECT_NAME}_visualization
         src/RobotCameraTracker.cpp
@@ -310,7 +321,8 @@ add_library(${PROJECT_NAME}_visualization
         src/visualization/visualize_dynamic.h
         src/visualization/visualize_path.cpp
         src/visualization/visualize_path.h
-        src/visualization/AppleIDSelector.cpp src/visualization/AppleIDSelector.h
+        src/visualization/AppleIDSelector.cpp
+        src/visualization/AppleIDSelector.h
         src/visualization/ShellWrapper.h
         src/visualization/ObservableInt.cpp
         src/visualization/ObservableInt.h
@@ -356,6 +368,8 @@ experiment("shell_type_comparison")
 experiment("initial_orbit_comparison")
 target_link_libraries(${PROJECT_NAME}_experiment_initial_orbit_comparison ${PROJECT_NAME}_visualization)
 
+experiment("RAL_chull_experiment")
+target_link_libraries(${PROJECT_NAME}_experiment_RAL_chull_experiment ${PROJECT_NAME}_visualization)
 
 experiment("exploration")
 target_link_libraries(${PROJECT_NAME}_experiment_exploration ${PROJECT_NAME}_sensing)
@@ -401,7 +415,7 @@ add_executable(${PROJECT_NAME}_tests
         #        test/SurfletVolume_test.cpp
         test/approachplanning_accuracy.cpp
         test/CuttingPlaneConvexHullShell_test.cpp
-        )
+        test/HorizontalOrientedBoundingBox_test.cpp)
 
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared ${PROJECT_NAME}_visualization gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})

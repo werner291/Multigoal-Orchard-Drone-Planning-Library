@@ -40,6 +40,14 @@ public:
 	void startRecording(const std::string &filename);
 
 	/**
+	 * Capture a screenshot.
+	 *
+	 * @param filename The filename to save the screenshot to. (Must end in .png)
+	 * @param bool Whether to render the window before capturing the screenshot.
+	 */
+	 void captureScreenshot(const std::string &filename, bool render = true);
+
+	/**
 	 * Stop recording a video and discard the results.
 	 */
 	void discardVideo();
@@ -62,7 +70,10 @@ public:
 	 * @param mesh 			The mesh to add.
 	 * @param color 		The color of the mesh.
 	 */
-	void addMesh(const shape_msgs::msg::Mesh &mesh, const Eigen::Vector3d &color, double opacity = 1.0);
+	void addMesh(const shape_msgs::msg::Mesh &mesh,
+				 const Eigen::Vector3d &color,
+				 double opacity,
+				 const Eigen::Vector3d &position);
 
 	/**
 	 * Add a callback that is called every time the simulation is rendered.
