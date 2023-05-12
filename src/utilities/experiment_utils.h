@@ -51,9 +51,6 @@ std::pair<size_t, size_t> generateIndexPairNoReplacement(RNG &gen, unsigned long
     return std::make_pair(i, j);
 }
 
-planning_scene::PlanningScenePtr
-constructPlanningScene(const TreeSceneData &tsd, const moveit::core::RobotModelConstPtr &drone);
-
 enum PlannerType {
     PRMSTAR, AITSTAR
 };

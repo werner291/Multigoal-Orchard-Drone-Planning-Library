@@ -101,21 +101,6 @@ moveit::core::RobotModelPtr loadRobotModel(double base_joint_weight) {
 }
 
 planning_scene::PlanningScenePtr
-constructPlanningScene(const TreeSceneData &tsd, const moveit::core::RobotModelConstPtr &drone) {
-
-    planning_scene::PlanningScenePtr scene = std::make_shared<planning_scene::PlanningScene>(drone);
-
-    scene->setPlanningSceneDiffMsg(createPlanningSceneDiff(tsd.branches, tsd.leaf_vertices, 0.05, tsd.apples));
-
-    // Diff message apparently can't handle partial ACM updates?
-    scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("leaves", true);
-    scene->getAllowedCollisionMatrixNonConst().setDefaultEntry("apples", true);
-    scene->allocateCollisionDetector(collision_detection::CollisionDetectorAllocatorBullet::create());
-
-    return scene;
-}
-
-planning_scene::PlanningScenePtr
 setupPlanningScene(const moveit_msgs::msg::PlanningScene &planning_scene_message,
                    const moveit::core::RobotModelConstPtr &drone) {
     auto scene = std::make_shared<planning_scene::PlanningScene>(drone);

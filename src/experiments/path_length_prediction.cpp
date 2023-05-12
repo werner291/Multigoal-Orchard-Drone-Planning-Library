@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 
 	// Load the apple tree meshes.
 
-	const auto scenes = scenes_for_trees({"appletree", "lemontree2", "orangetree4", "orangetree2"});
+	const auto scenes = scenes_for_trees({"appletree", "lemontree2", "orangetree4", "orangetree2"}, 500);
 
 	Json::Value results_by_scene;
 

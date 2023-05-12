@@ -45,16 +45,14 @@ Json::Value toJSON(const Experiment &experiment) {
  * @param robot A shared pointer to a RobotModelConst object.
  * @param numRepetitions The number of repetitions to be performed.
  * @param modelNames A vector of model names for which the problems will be generated.
- * @param applesCounts A vector of integers representing the number of apples for each problem.
  * @return A vector of pairs containing a JSON value and a Problem object.
  */
 std::vector<std::pair<Json::Value, Problem>> generateProblems(moveit::core::RobotModelConstPtr robot,
 															  int numRepetitions,
-															  const std::vector<std::string> &modelNames,
-															  const std::vector<int> &applesCounts) {
+															  const std::vector<std::string> &modelNames) {
 
 	// Get the required scenes for each model name.
-	const auto scenes = scenes_for_trees(modelNames);
+	const auto scenes = scenes_for_trees(modelNames, 500);
 
 	using namespace ranges;
 
@@ -63,29 +61,23 @@ std::vector<std::pair<Json::Value, Problem>> generateProblems(moveit::core::Robo
 
 	// Generate a vector of problems by calculating the cartesian product of repIds, applesCounts, and scenes.
 	std::vector<std::pair<Json::Value, Problem>> problems =
-			ranges::views::cartesian_product(repIds, applesCounts, scenes) |
-			ranges::views::transform([&](const auto &pair) {
+			ranges::views::cartesian_product(repIds, scenes) | ranges::views::transform([&](const auto &pair) {
 
-				const auto &[repId, nApples, scene] = pair;
+				const auto &[repId, scene] = pair;
 
 				// Get a random sample of apples.
 				AppleTreePlanningScene reduced_scene{.scene_msg = scene.scene_msg, .apples = scene.apples};
 
-				assert(reduced_scene.apples.size() >= nApples);
-
 				// Shuffle the apples to create a random sample.
 				std::shuffle(reduced_scene.apples.begin(), reduced_scene.apples.end(), std::mt19937(repId));
 
-				// Resize the apples vector to keep only the required number of apples.
-				reduced_scene.apples.resize(nApples);
 
 				// Get a random start state.
-				auto start = randomStateOutsideTree(robot, repId + 991 * nApples);
+				auto start = randomStateOutsideTree(robot, repId);
 
 				// Create a JSON value to represent the problem.
 				Json::Value problem;
 				problem["repId"] = repId;
-				problem["nApples"] = nApples;
 				problem["scene"] = scene.scene_msg->name;
 
 				// Return the pair containing the JSON value and the Problem object.
@@ -103,14 +95,16 @@ int main(int argc, char **argv) {
 	// Load the robot model.
 	const auto robot = loadRobotModel();
 
-	const auto problems = generateProblems(robot, 2, {"appletree", "lemontree2", "orangetree4"}, {10, 50, 100});
+	const auto tree_names = getTreeNames();
+
+	const auto problems = generateProblems(robot, 2, tree_names);
 
 	using namespace ranges;
 
 	StaticPlannerAllocatorFn make_sphere_planner = [](const ompl::base::SpaceInformationPtr &si) {
-		return std::make_shared<ShellPathPlanner<Eigen::Vector3d >>(paddedOmplSphereShell,
-																	std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
-																			si), true);
+		return std::make_shared < ShellPathPlanner < Eigen::Vector3d
+				>> (paddedOmplSphereShell, std::make_unique < MakeshiftPrmApproachPlanningMethods <
+										   Eigen::Vector3d >> (si), true);
 	};
 
 	StaticPlannerAllocatorFn make_chull_planner = [](const ompl::base::SpaceInformationPtr &si) {
@@ -143,8 +137,10 @@ int main(int argc, char **argv) {
 	};
 
 	// The different planners to test.
-	std::vector<std::pair<std::string, StaticPlannerAllocatorFn>> planners = {{"sphere", make_sphere_planner},
-																			  {"chull",  make_chull_planner}};
+	std::vector <std::pair<std::string, StaticPlannerAllocatorFn>> planners = {{"sphere",   make_sphere_planner},
+																			   {"chull",    make_chull_planner},
+																			   {"cgal",     make_cgal_planner},
+																			   {"cylinder", make_cylinder_shell}};
 
 	// Take the carthesian product of the different planners and problems,
 	// making it so that every planner is tested on every problem.
@@ -202,7 +198,7 @@ int main(int argc, char **argv) {
 
 		return result;
 
-	}, "analysis/data/static_sphere_vs_chull.json", 8, 1, 42);
+	}, "analysis/data/shell_type_RAL.json", 8, 1, 42);
 
 	return 0;
 }

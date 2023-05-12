@@ -19,12 +19,14 @@ struct TreeMeshes {
  * @param treeName 		The name of the tree to load the meshes for.
  * @return 				The loaded meshes.
  */
-TreeMeshes loadTreeMeshes(const std::string& treeName);
+TreeMeshes loadTreeMeshes(const std::string &treeName);
 
 struct SimplifiedOrchard {
 	std::vector<std::pair<Eigen::Vector2d, TreeMeshes>> trees;
 };
 
 moveit::core::RobotState mkInitialState(const moveit::core::RobotModelPtr &drone);
+
+std::vector<std::string> getTreeNames();
 
 #endif //NEW_PLANNERS_TREEMESHES_H

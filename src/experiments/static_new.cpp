@@ -56,7 +56,7 @@ std::vector<std::pair<Json::Value, Problem>> generateProblems(moveit::core::Robo
 															  const std::vector<int> &applesCounts) {
 
 	// Get the required scenes for each model name.
-	const auto scenes = scenes_for_trees(modelNames);
+	const auto scenes = scenes_for_trees(modelNames, 500);
 
 	using namespace ranges;
 
