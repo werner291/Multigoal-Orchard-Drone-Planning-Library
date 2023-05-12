@@ -15,25 +15,6 @@
 
 static const double SPACING = 1.0;
 
-std::vector<std::string> getTreeModelNames(const std::string path = "./3d-models/") {
-
-	std::vector<std::string> modelNames;
-
-	for (const auto &entry : std::filesystem::directory_iterator(path)) {
-
-		// Check if the file is a *_trunk.dae file
-
-		if (entry.path().extension() == ".dae" && entry.path().stem().string().find("_trunk") != std::string::npos) {
-
-			// Extract the name of the file excluding the _trunk.dae part and add it to the vector
-			modelNames.push_back(entry.path().stem().string().substr(0, entry.path().stem().string().find("_trunk")));
-		}
-	}
-
-	return modelNames;
-
-}
-
 int main() {
 
 	const auto modelNames = getTreeModelNames();

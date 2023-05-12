@@ -21,6 +21,8 @@ struct TreeMeshes {
  */
 TreeMeshes loadTreeMeshes(const std::string &treeName);
 
+std::vector<std::string> getTreeModelNames(const std::string path = "./3d-models/");
+
 struct SimplifiedOrchard {
 	std::vector<std::pair<Eigen::Vector2d, TreeMeshes>> trees;
 };

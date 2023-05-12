@@ -7,12 +7,21 @@
 #include "procedural_tree_generation.h"
 #include "TreeMeshes.h"
 
+void spawnApplesInPlanningScene(double appleRadius,
+                                const std::vector<Apple> &apples,
+                                moveit_msgs::msg::PlanningScene &planning_scene_diff);
+
+moveit_msgs::msg::PlanningScene createPlanningSceneDiff(const std::vector<DetachedTreeNode> &treeFlattened,
+                                                   const std::vector<Eigen::Vector3d> &leafVertices,
+                                                   const double appleRadius,
+                                                   const std::vector<Apple> &apples);
+
 struct AppleTreePlanningScene {
 	std::shared_ptr<moveit_msgs::msg::PlanningScene> scene_msg;
 	std::vector<Apple> apples;
 };
 
-std::vector<AppleTreePlanningScene> scenes_for_trees(const std::vector<std::string> &tree_names, int max_fruit = 500);
+std::vector<AppleTreePlanningScene> scenes_for_trees(const std::vector<std::string> &tree_names, const size_t max_fruit = 500);
 
 const double TRANSLATION_BOUND = 10.0;
 

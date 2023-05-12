@@ -1,9 +1,10 @@
 #include <filesystem>
 #include "TreeMeshes.h"
 #include "WorkspaceSpec.h"
-#include "procedural_tree_generation.h"
 #include "utilities/mesh_utils.h"
 #include "utilities/load_mesh.h"
+
+#include <filesystem>
 
 /**
  * Loads the tree meshes for the tree with the given name.
@@ -52,6 +53,25 @@ moveit::core::RobotState mkInitialState(const moveit::core::RobotModelPtr &drone
 	current_state.setVariablePositions({5.0, 0.0, 1.5, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0});
 	current_state.update();
 	return current_state;
+}
+
+std::vector<std::string> getTreeModelNames(const std::string path) {
+
+	std::vector<std::string> modelNames;
+
+	for (const auto &entry : std::filesystem::directory_iterator(path)) {
+
+		// Check if the file is a *_trunk.dae file
+
+		if (entry.path().extension() == ".dae" && entry.path().stem().string().find("_trunk") != std::string::npos) {
+
+			// Extract the name of the file excluding the _trunk.dae part and add it to the vector
+			modelNames.push_back(entry.path().stem().string().substr(0, entry.path().stem().string().find("_trunk")));
+		}
+	}
+
+	return modelNames;
+
 }
 
 bool endsWith(std::string_view str, std::string_view suffix) {
