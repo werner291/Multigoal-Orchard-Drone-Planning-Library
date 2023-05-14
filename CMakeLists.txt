@@ -243,7 +243,7 @@ add_library(${PROJECT_NAME}_shared
         src/shell_space/HorizontalOrientedBoundingBox.cpp
         src/shell_space/HorizontalOrientedBoundingBox.h
         src/shell_space/DendriticConvexHullShell.cpp
-        src/shell_space/DendriticConvexHullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h src/PathLengthPredictor.cpp src/PathLengthPredictor.h src/PathLengthPredictor.h src/shell_space/path_util.h src/shell_space/path_util.cpp src/goal_optimization.cpp src/goal_optimization.cpp src/utilities/midpoint_pull.cpp src/utilities/midpoint_pull.h)
+        src/shell_space/DendriticConvexHullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h src/PathLengthPredictor.cpp src/PathLengthPredictor.h src/PathLengthPredictor.h src/shell_space/path_util.h src/shell_space/path_util.cpp src/goal_optimization.cpp src/goal_optimization.cpp src/utilities/midpoint_pull.cpp src/utilities/midpoint_pull.h src/orchards.cpp src/orchards.h src/static_problem_generation.cpp src/static_problem_generation.h)
 
 add_library(${PROJECT_NAME}_sensing
         src/exploration/CandidatePathGenerator.cpp
@@ -368,9 +368,6 @@ experiment("shell_type_comparison")
 experiment("initial_orbit_comparison")
 target_link_libraries(${PROJECT_NAME}_experiment_initial_orbit_comparison ${PROJECT_NAME}_visualization)
 
-experiment("RAL_chull_experiment")
-target_link_libraries(${PROJECT_NAME}_experiment_RAL_chull_experiment ${PROJECT_NAME}_visualization)
-
 experiment("exploration")
 target_link_libraries(${PROJECT_NAME}_experiment_exploration ${PROJECT_NAME}_sensing)
 
@@ -386,6 +383,9 @@ target_link_libraries(${PROJECT_NAME}_experiment_visualize_prm ${PROJECT_NAME}_v
 
 experiment("static_visualized")
 target_link_libraries(${PROJECT_NAME}_experiment_static_visualized ${PROJECT_NAME}_visualization Qt5::Core Qt5::Widgets Qt5::Concurrent)
+
+experiment("vizualized_trees_row")
+target_link_libraries(${PROJECT_NAME}_experiment_vizualized_trees_row ${PROJECT_NAME}_visualization)
 
 experiment("tsp_noise_effect")
 
@@ -415,7 +415,7 @@ add_executable(${PROJECT_NAME}_tests
         #        test/SurfletVolume_test.cpp
         test/approachplanning_accuracy.cpp
         test/CuttingPlaneConvexHullShell_test.cpp
-        test/HorizontalOrientedBoundingBox_test.cpp)
+        test/HorizontalOrientedBoundingBox_test.cpp test/CylinderShell_test.cpp)
 
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared ${PROJECT_NAME}_visualization gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})

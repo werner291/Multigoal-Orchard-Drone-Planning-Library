@@ -5,6 +5,8 @@
 #include "PathLengthPredictor.h"
 #include "utilities/delaunay.h"
 #include "shell_space/DendriticConvexHullShell.h"
+#include <range/v3/view/transform.hpp>
+#include <range/v3/to_container.hpp>
 
 double EuclideanDistancePredictor::predict_path_length(const Apple &point1, const Apple &point2) {
 	return (point1.center - point2.center).norm();

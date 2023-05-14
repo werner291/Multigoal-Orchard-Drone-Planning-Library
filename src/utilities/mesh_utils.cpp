@@ -126,3 +126,38 @@ shape_msgs::msg::Mesh createGroundPlane(double width, double height) {
 
 	return ground_plane;
 }
+
+void append_mesh(shape_msgs::msg::Mesh &left_mesh, const shape_msgs::msg::Mesh &right_mesh) {
+
+	// For the right-hand mesh...
+	size_t index_offset = left_mesh.vertices.size();
+
+	// ...and for every vertex in the right-hand mesh...
+	for (const auto &vertex : right_mesh.vertices) {
+		// ...add the vertex to the left-hand mesh.
+		left_mesh.vertices.push_back(vertex);
+	}
+
+	// For every triangle in the right-hand mesh...
+	for (const auto &triangle : right_mesh.triangles) {
+		// ...add the triangle to the left-hand mesh.
+		left_mesh.triangles.push_back(triangle);
+
+		// ...and adjust the vertex indices to account for the offset.
+		left_mesh.triangles.back().vertex_indices[0] += index_offset;
+		left_mesh.triangles.back().vertex_indices[1] += index_offset;
+		left_mesh.triangles.back().vertex_indices[2] += index_offset;
+	}
+}
+
+shape_msgs::msg::Mesh translate_mesh(shape_msgs::msg::Mesh mesh, const Eigen::Vector3d &translation) {
+
+	for (auto &vertex : mesh.vertices) {
+		vertex.x += translation.x();
+		vertex.y += translation.y();
+		vertex.z += translation.z();
+	}
+
+	return mesh;
+
+}

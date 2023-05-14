@@ -116,5 +116,67 @@ void runExperimentsParallelRecoverable(const std::vector<Parameters>& parameters
 
 }
 
+template<typename Planner, typename Problem>
+using PlannerProblemPair = std::pair<const std::pair<Json::Value, Planner>*, const std::pair<Json::Value, Problem>*>;
+
+template<typename Planner, typename Problem>
+Json::Value toJSON(const PlannerProblemPair<Planner, Problem>& pair) {
+	Json::Value result;
+	result["planner"] = pair.first->first;
+	result["problem"] = pair.second->first;
+	return result;
+}
+
+/**
+ * @brief Run a series of experiments in parallel and save the results in a JSON file.
+ *
+ * This function will progressively write the results to a file, so in case of a crash,
+ * the results will be available, and the experiment can be resumed.
+ * Experiments are shuffled in a deterministic manner, erasing possible issues with
+ * the order of experiments and slightly differing system load when they are run, to
+ * make the results more reproducible and fairer.
+ *
+ * @tparam Planner The planner type.
+ * @tparam Problem The problem type.
+ * @param parameters A vector of planner pairs, where each pair consists of a JSON value and a planner instance.
+ * @param problems A vector of problem pairs, where each pair consists of a JSON value and a problem instance.
+ * @param run_experiment A function that takes a planner and a problem and returns a JSON value as the result of the experiment.
+ * @param results_file The name/path of the file to save the results to.
+ * @param chunk_size The number of experiments to complete in between file writes.
+ * @param parallelism The number of parallel threads to use.
+ * @param shuffle_seed A seed for the random number generator used to shuffle the experiment parameters.
+ */
+template<typename Planner, typename Problem>
+void runPlannersOnProblemsParallelRecoverable(const std::vector<std::pair<Json::Value, Planner>>& parameters,
+											  const std::vector<std::pair<Json::Value, Problem>>& problems,
+											  const std::function<Json::Value(const Planner &, const Problem&)> &run_experiment,
+											  const std::string& results_file,
+											  size_t chunk_size = 8,
+											  size_t parallelism = 8,
+											  int shuffle_seed = 0) {
+
+	std::cout << "Running " << parameters.size() << " x " << problems.size() << " experiments." << std::endl;
+
+	std::vector<PlannerProblemPair<Planner, Problem>> parameters_pointers;
+
+	for (const auto& p : parameters) {
+		for (const auto& prob : problems) {
+			parameters_pointers.push_back(std::make_pair(&p, &prob));
+		}
+	}
+
+	auto run_for_pair = [&run_experiment](const PlannerProblemPair<Planner, Problem>& pair) {
+		return run_experiment(pair.first->second, pair.second->second);
+	};
+
+	return runExperimentsParallelRecoverable<PlannerProblemPair<Planner, Problem>>(
+			parameters_pointers,
+			run_for_pair,
+			results_file,
+			chunk_size,
+			parallelism,
+			shuffle_seed);
+}
+
 
 #endif //NEW_PLANNERS_RUN_EXPERIMENTS_H

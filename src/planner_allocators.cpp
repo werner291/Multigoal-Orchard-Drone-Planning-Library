@@ -19,6 +19,11 @@ paddedOmplSphereShell(const AppleTreePlanningScene &scene_info, const ompl::base
 	return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(workspaceShell, si);
 };
 
+std::shared_ptr<OmplShellSpace<Eigen::Vector3d>> omplSphereShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
+	auto workspaceShell = horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene_info, 0.0));
+	return OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(workspaceShell, si);
+}
+
 DMGPlannerPtr dynamic_planner_fre(const ompl::base::SpaceInformationPtr &si) {
 	return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>>(
 																			si),
@@ -82,3 +87,4 @@ DMGPlannerPtr dynamic_planner_random(const ompl::base::SpaceInformationPtr &si) 
 																			SimpleIncrementalTSPMethods::Strategy::Random),
 																	paddedOmplSphereShell);
 }
+

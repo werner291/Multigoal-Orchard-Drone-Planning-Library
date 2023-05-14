@@ -1,8 +1,11 @@
+
 #include <range/v3/view/filter.hpp>
 #include "ShellPathPlanner.h"
 #include "../shell_space/CuttingPlaneConvexHullShell.h"
 #include "../shell_space/CylinderShell.h"
 #include "../shell_space/CGALMeshShell.h"
+#include "../probe_retreat_move.h"
+#include "../utilities/traveling_salesman.h"
 
 template<typename ShellPoint>
 ShellPathPlanner<ShellPoint>::ShellPathPlanner(MkOmplShellFn<ShellPoint> shellBuilder,

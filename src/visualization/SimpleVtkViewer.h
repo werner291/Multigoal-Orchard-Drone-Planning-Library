@@ -73,7 +73,7 @@ public:
 	void addMesh(const shape_msgs::msg::Mesh &mesh,
 				 const Eigen::Vector3d &color,
 				 double opacity,
-				 const Eigen::Vector3d &position);
+				 const Eigen::Vector3d &position = Eigen::Vector3d::Zero());
 
 	/**
 	 * Add a callback that is called every time the simulation is rendered.

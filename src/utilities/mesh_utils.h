@@ -62,5 +62,26 @@ Eigen::AlignedBox3d mesh_aabb(const shape_msgs::msg::Mesh &mesh);
  */
 shape_msgs::msg::Mesh createGroundPlane(double width, double height);
 
+/**
+ * @brief Merges the right-hand mesh into the left-hand mesh in-place.
+ *
+ * This function takes two input meshes (left_mesh and right_mesh) and combines the vertices and triangles
+ * of the right-hand mesh into the left-hand mesh. The vertex indices in the triangles are adjusted to account
+ * for the new vertex ordering in the merged mesh.
+ *
+ * @param left_mesh Reference to the first input mesh (left-hand side) which will be modified in-place.
+ * @param right_mesh The second input mesh (right-hand side) to be merged into the left-hand mesh.
+ */
+void append_mesh(shape_msgs::msg::Mesh &left_mesh, const shape_msgs::msg::Mesh &right_mesh);
+
+/**
+ * Applies a translation to the vertices of the given mesh.
+ *
+ * @param mesh 		The mesh to translate.
+ * @param translation 	The translation to apply to the vertices of the mesh.
+ *
+ * @return 			The translated mesh.
+ */
+shape_msgs::msg::Mesh translate_mesh(shape_msgs::msg::Mesh mesh, const Eigen::Vector3d &translation);
 
 #endif //NEW_PLANNERS_MESH_UTILS_H

@@ -2,20 +2,17 @@
 #ifndef NEW_PLANNERS_SHELLPATHPLANNER_H
 #define NEW_PLANNERS_SHELLPATHPLANNER_H
 
-#include <range/v3/view/enumerate.hpp>
-#include <range/v3/view/transform.hpp>
 #include "MultiGoalPlanner.h"
 #include "../shell_space/OmplShellSpace.h"
 #include "../DistanceHeuristics.h"
 #include "../planning_scene_diff_message.h"
-#include "../DronePathLengthObjective.h"
-#include "../utilities/general_utilities.h"
-#include "../utilities/traveling_salesman.h"
-#include "../probe_retreat_move.h"
-#include "../ExperimentVisualTools.h"
-#include "shell_path_planner/Construction.h"
 #include "shell_path_planner/ApproachPlanning.h"
-#include "shell_path_planner/OrderingMethod.h"
+
+/**
+ * A method/strategy for constructing a OmplShellSpace from scene information.
+ */
+template <typename ShellPoint>
+using MkOmplShellFn = std::function<std::shared_ptr<OmplShellSpace<ShellPoint>>(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr&)>;
 
 enum DistancePredictionStrategy {
 
