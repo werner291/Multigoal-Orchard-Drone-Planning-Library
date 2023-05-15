@@ -7,7 +7,7 @@
 #include <ompl/base/Goal.h>
 #include <jsoncpp/json/value.h>
 #include "../SingleGoalPlannerMethods.h"
-#include "../planning_scene_diff_message.h"
+#include "../AppleTreePlanningScene.h"
 #include "../PathInterrupt.h"
 
 /**

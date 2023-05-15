@@ -5,7 +5,7 @@
 #include <functional>
 #include <range/v3/view/iota.hpp>
 #include "planners/MultiGoalPlanner.h"
-#include "planning_scene_diff_message.h"
+#include "AppleTreePlanningScene.h"
 #include "ompl_custom.h"
 #include "planners/ShellPathPlanner.h"
 

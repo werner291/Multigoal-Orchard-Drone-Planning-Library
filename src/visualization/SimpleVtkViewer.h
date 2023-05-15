@@ -16,6 +16,9 @@
 #include <Eigen/Core>
 #include "VideoRecorder.h"
 
+#include "../RobotPath.h"
+#include "../TreeMeshes.h"
+
 class SimpleVtkViewer {
 
 public:
@@ -93,6 +96,46 @@ public:
 	 */
 	void stop();
 
+	void addStaticPolyline(const std::vector<Eigen::Vector3d>& points, const Eigen::Vector3d& color);
+
+	void addStaticLines(const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>& lines, const Eigen::Vector3d& color);
+
 };
+
+/**
+ * @brief Visualizes the traces of the base and end effector of a robot along a path, as well as the "ladder" connecting these traces.
+ *
+ * The "ladder" visualization is a method of showing the spatial relationship between the base and end effector of a robot along a path.
+ * It is called a "ladder" because it consists of lines connecting the positions of the base and the end effector at each state along the path,
+ * which can look like the rungs of a ladder when the robot is moving in a straight line.
+ *
+ * @param viewer The VTK viewer to use for the visualization.
+ * @param rpath_moveit The path along which to visualize the traces and ladder.
+ */
+void visualizeBaseEndEffectorLadderTrace(SimpleVtkViewer &viewer, const RobotPath &rpath_moveit);
+
+/**
+ * @brief Adds a simplified orchard to the VTK viewer.
+ *
+ * This function adds the trees from a simplified orchard to a SimpleVtkViewer.
+ * Each tree's trunk and leaves are represented with different colors, and each fruit of the tree is also added.
+ * The trees are positioned in the viewer according to their positions in the orchard.
+ *
+ * @param viewer The VTK viewer to add the orchard to.
+ * @param orchard The simplified orchard to be added to the viewer.
+ */
+void addTreeMeshesToViewer(SimpleVtkViewer &viewer, const TreeMeshes &current_tree_models);
+
+/**
+ * @brief Adds a simplified orchard to the VTK viewer.
+ *
+ * This function adds the trees from a simplified orchard to a SimpleVtkViewer.
+ * Each tree's trunk and leaves are represented with different colors, and each fruit of the tree is also added.
+ * The trees are positioned in the viewer according to their positions in the orchard.
+ *
+ * @param viewer The VTK viewer to add the orchard to.
+ * @param orchard The simplified orchard to be added to the viewer.
+ */
+void addSimplifiedOrchardToViewer(SimpleVtkViewer&viewer, const SimplifiedOrchard& orchard);
 
 #endif //NEW_PLANNERS_SIMPLEVTKVIEWER_H

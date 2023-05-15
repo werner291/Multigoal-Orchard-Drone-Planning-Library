@@ -6,7 +6,7 @@
 #define NEW_PLANNERS_VISUALIZE_DYNAMIC_H
 
 #include "../TreeMeshes.h"
-#include "../planning_scene_diff_message.h"
+#include "../AppleTreePlanningScene.h"
 #include "../utilities/experiment_utils.h"
 #include "../DynamicGoalVisitationEvaluation.h"
 

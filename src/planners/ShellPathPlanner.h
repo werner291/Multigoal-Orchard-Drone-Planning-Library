@@ -5,7 +5,7 @@
 #include "MultiGoalPlanner.h"
 #include "../shell_space/OmplShellSpace.h"
 #include "../DistanceHeuristics.h"
-#include "../planning_scene_diff_message.h"
+#include "../AppleTreePlanningScene.h"
 #include "shell_path_planner/ApproachPlanning.h"
 
 /**

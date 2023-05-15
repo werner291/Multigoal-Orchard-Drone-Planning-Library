@@ -10,7 +10,7 @@
 #ifndef NEW_PLANNERS_CONSTRUCTION_H
 #define NEW_PLANNERS_CONSTRUCTION_H
 
-#include "../../planning_scene_diff_message.h"
+#include "../../AppleTreePlanningScene.h"
 #include "../../shell_space/OmplShellSpace.h"
 #include "../../utilities/experiment_utils.h"
 #include "../../shell_space/SphereShell.h"

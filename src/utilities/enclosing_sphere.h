@@ -6,7 +6,7 @@
 #define NEW_PLANNERS_ENCLOSING_SPHERE_H
 
 #include <geometric_shapes/bodies.h>
-#include "../planning_scene_diff_message.h"
+#include "../AppleTreePlanningScene.h"
 
 namespace utilities {
 

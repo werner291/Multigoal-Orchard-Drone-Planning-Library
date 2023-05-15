@@ -4,7 +4,7 @@
 #include <fstream>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 
-#include "../planning_scene_diff_message.h"
+#include "../AppleTreePlanningScene.h"
 #include "../utilities/traveling_salesman.h"
 #include "../utilities/experiment_utils.h"
 #include "../DronePathLengthObjective.h"

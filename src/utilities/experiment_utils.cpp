@@ -23,7 +23,7 @@
 
 #include "Seb.h"
 
-#include "../planning_scene_diff_message.h"
+#include "../AppleTreePlanningScene.h"
 #include "msgs_utilities.h"
 #include "experiment_utils.h"
 #include "json_utils.h"

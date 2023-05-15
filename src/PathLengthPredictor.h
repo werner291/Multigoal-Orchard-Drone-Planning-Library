@@ -10,7 +10,7 @@
 #include <utility>
 #include <json/value.h>
 #include "procedural_tree_generation.h"
-#include "planning_scene_diff_message.h"
+#include "AppleTreePlanningScene.h"
 #include "utilities/enclosing_sphere.h"
 #include "shell_space/CuttingPlaneConvexHullShell.h"
 #include "shell_space/CGALMeshShell.h"

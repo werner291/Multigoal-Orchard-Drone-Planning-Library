@@ -11,7 +11,7 @@
 #include "../ompl_custom.h"
 #include "../DynamicMultiGoalPlanner.h"
 #include "../RobotPath.h"
-#include "../planning_scene_diff_message.h"
+#include "../AppleTreePlanningScene.h"
 #include "../utilities/experiment_utils.h"
 
 static const double APPLE_VISIT_MARGIN = 0.05;

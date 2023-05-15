@@ -10,7 +10,7 @@
 #include <ompl/geometric/planners/rrt/RRT.h>
 
 #include "../SamplerWrapper.h"
-#include "../planning_scene_diff_message.h"
+#include "../AppleTreePlanningScene.h"
 #include "../procedural_tree_generation.h"
 #include "../RobotPath.h"
 #include "../DronePathLengthObjective.h"
@@ -155,6 +155,12 @@ std::shared_ptr<DroneStateSpace> omplStateSpaceForDrone(const moveit::core::Robo
 ompl::base::SpaceInformationPtr
 loadSpaceInformation(const std::shared_ptr<DroneStateSpace> &stateSpace, const AppleTreePlanningScene &scene_info);
 
+/**
+ * Generate an Apple from a mesh based on the center of the AABB of the mesh.
+ *
+ * @param mesh 		The mesh to generate the apple from.
+ * @return 			The generated apple; center is the center of the AABB of the mesh.
+ */
 Apple appleFromMesh(const shape_msgs::msg::Mesh &mesh);
 
 #endif //NEW_PLANNERS_EXPERIMENT_UTILS_H

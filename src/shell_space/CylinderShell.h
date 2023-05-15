@@ -2,7 +2,7 @@
 #define NEW_PLANNERS_CYLINDERSHELL_H
 
 #include "WorkspaceShell.h"
-#include "../planning_scene_diff_message.h"
+#include "../AppleTreePlanningScene.h"
 #include "../utilities/enclosing_sphere.h"
 
 /**

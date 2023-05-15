@@ -7,7 +7,7 @@
 #include <ompl/base/ScopedState.h>
 #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 #include <ompl/base/Goal.h>
-#include "../planning_scene_diff_message.h"
+#include "../AppleTreePlanningScene.h"
 #include "../utilities/moveit_conversions.h"
 #include "../ompl_custom.h"
 #include "WorkspaceShell.h"

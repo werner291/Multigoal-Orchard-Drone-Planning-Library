@@ -8,6 +8,7 @@
 #include <vtkPNGWriter.h>
 
 #include "camera_controls.h"
+#include "../utilities/link_trace.h"
 
 SimpleVtkViewer::SimpleVtkViewer() {
 	// Set up the render window.
@@ -113,5 +114,67 @@ void SimpleVtkViewer::captureScreenshot(const std::string &filename, bool render
 	writer->SetFileName(filename.c_str());
 	writer->SetInputConnection(windowToImageFilter->GetOutputPort());
 	writer->Write();
+
+}
+
+void SimpleVtkViewer::addStaticPolyline(const std::vector<Eigen::Vector3d> &points, const Eigen::Vector3d &color) {
+	VtkPolyLineVisualization ee_trace_viz(1.0, 0.0, 0.0);
+	ee_trace_viz.updateLine(points);
+	addActor(ee_trace_viz.getActor());
+}
+
+void SimpleVtkViewer::addStaticLines(const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> &lines,
+									 const Eigen::Vector3d &color) {
+	VtkLineSegmentsVisualization path_viz(color.x(), color.y(), color.z());
+	path_viz.updateLine(lines);
+	addActor(path_viz.getActor());
+}
+
+
+std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
+zipTraces(const std::vector<Eigen::Vector3d> &ee_trace, const std::vector<Eigen::Vector3d> &base_trace) {
+	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> path_segments;
+	for (size_t i = 0; i < ee_trace.size(); ++i) {
+		path_segments.emplace_back(ee_trace[i], base_trace[i]);
+	}
+	return path_segments;
+}
+
+void visualizeBaseEndEffectorLadderTrace(SimpleVtkViewer &viewer, const RobotPath &rpath_moveit) {
+	auto ee_trace = computeLinkTrace(rpath_moveit, "end_effector");
+	auto base_trace = computeLinkTrace(rpath_moveit, "base_link");
+	viewer.addStaticPolyline(ee_trace, {1.0, 0.0, 0.0});
+	viewer.addStaticPolyline(base_trace, {0.0, 1.0, 0.0});
+
+	viewer.addStaticLines(zipTraces(ee_trace, base_trace), {1.0, 1.0, 0.0});
+}
+
+void addTreeMeshesToViewer(SimpleVtkViewer &viewer, const TreeMeshes &current_tree_models) {
+	viewer.addActor(createColoredMeshActor(current_tree_models.trunk_mesh, {0.5, 0.3, 0.1, 1.0}, true));
+	viewer.addActor(createColoredMeshActor(current_tree_models.leaves_mesh, {0.1, 0.5, 0.1, 1.0}, true));
+	for (const auto &mesh : current_tree_models.fruit_meshes) {
+		viewer.addActor(createColoredMeshActor(mesh, {0.9, 0.0, 0.0, 1.0}, true));
+	}
+}
+
+void addSimplifiedOrchardToViewer(SimpleVtkViewer&viewer, const SimplifiedOrchard& orchard) {
+
+	for (const auto& [pos, tree]: orchard.trees) {
+
+		auto tree_actor = createColoredMeshActor(tree.trunk_mesh, {0.5, 0.3, 0.1, 1.0}, true);
+		tree_actor->SetPosition(pos.x(), pos.y(), 0.0);
+		viewer.addActor(tree_actor);
+
+		auto leaves_actor = createColoredMeshActor(tree.leaves_mesh, {0.1, 0.5, 0.1, 1.0}, true);
+		leaves_actor->SetPosition(pos.x(), pos.y(), 0.0);
+		viewer.addActor(leaves_actor);
+
+		for (const auto& fruit: tree.fruit_meshes) {
+			auto fruit_actor = createColoredMeshActor(fruit, {0.9, 0.0, 0.0, 1.0}, true);
+			fruit_actor->SetPosition(pos.x(), pos.y(), 0.0);
+			viewer.addActor(fruit_actor);
+		}
+
+	}
 
 }

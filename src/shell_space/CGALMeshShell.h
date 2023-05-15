@@ -16,7 +16,7 @@
 
 #include "SphereShell.h"
 #include "CuttingPlaneConvexHullShell.h"
-#include "../planning_scene_diff_message.h"
+#include "../AppleTreePlanningScene.h"
 
 using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
 using Triangle_mesh = CGAL::Surface_mesh<Kernel::Point_3>;

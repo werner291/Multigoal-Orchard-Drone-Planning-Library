@@ -2,7 +2,7 @@
 #include <boost/asio.hpp>
 #include <utility>
 
-#include "../planning_scene_diff_message.h"
+#include "../AppleTreePlanningScene.h"
 #include "../utilities/experiment_utils.h"
 #include "../vtk/Viewer.h"
 

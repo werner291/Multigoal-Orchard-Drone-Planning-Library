@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 #include "../src/TreeMeshes.h"
 #include "../src/utilities/experiment_utils.h"
-#include "../src/planning_scene_diff_message.h"
+#include "../src/AppleTreePlanningScene.h"
 #include "../src/shell_space/SphereShell.h"
 #include "../src/shell_space/OmplShellSpace.h"
 #include "../src/planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"

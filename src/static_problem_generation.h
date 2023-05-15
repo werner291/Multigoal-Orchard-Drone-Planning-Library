@@ -16,7 +16,7 @@
 #include <moveit/robot_state/robot_state.h>
 #include <json/value.h>
 
-#include "planning_scene_diff_message.h"
+#include "AppleTreePlanningScene.h"
 
 /**
  * A full definition of a planning problem, containing a start state and a planning scene,
