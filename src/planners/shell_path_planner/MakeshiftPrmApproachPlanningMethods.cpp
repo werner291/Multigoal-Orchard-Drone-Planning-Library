@@ -45,6 +45,9 @@ MakeshiftPrmApproachPlanningMethods<ShellPoint>::approach_path(const ompl::base:
 
 	if (!si->isValid(shell_state.get())) {
 		std::cout << "Shell point is not valid" << std::endl;
+
+		std::dynamic_pointer_cast<DroneStateSpace>(si->getStateSpace())->printState(shell_state.get(), std::cout);
+
 		return std::nullopt;
 	}
 
@@ -72,6 +75,9 @@ MakeshiftPrmApproachPlanningMethods<ShellPoint>::approach_path(const ompl::base:
 
 	if (!si->isValid(shell_state.get())) {
 		std::cout << "Shell point is not valid" << std::endl;
+
+		std::dynamic_pointer_cast<DroneStateSpace>(si->getStateSpace())->printState(shell_state.get(), std::cout);
+
 		return std::nullopt;
 	}
 

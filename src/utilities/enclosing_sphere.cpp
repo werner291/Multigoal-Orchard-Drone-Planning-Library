@@ -51,8 +51,24 @@ namespace utilities {
 		std::vector<geometry_msgs::msg::Point> mesh_points;
 		for (const auto &col: scene_info.scene_msg->world.collision_objects) {
 			if (col.id == "leaves") {
+
+				// Extract the pose as an Isometry3d.
+				Eigen::Isometry3d pose;
+				pose.setIdentity();
+				pose.translate(Eigen::Vector3d(col.pose.position.x, col.pose.position.y, col.pose.position.z));
+				pose.rotate(Eigen::Quaterniond(col.pose.orientation.w, col.pose.orientation.x,
+											  col.pose.orientation.y, col.pose.orientation.z));
+
 				for (const auto &mesh: col.meshes) {
 					for (auto v: mesh.vertices) {
+
+						Eigen::Vector3d v_eigen(v.x, v.y, v.z);
+						v_eigen = pose * v_eigen;
+
+						v.x = v_eigen.x();
+						v.y = v_eigen.y();
+						v.z = v_eigen.z();
+
 						mesh_points.push_back(v);
 					}
 				}

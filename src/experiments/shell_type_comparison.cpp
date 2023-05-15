@@ -8,54 +8,101 @@
 #include "../planners/CachingDynamicPlanner.h"
 #include "../utilities/run_experiments.h"
 
-#include <vtkProperty.h>
-
 #include "../static_problem_generation.h"
+#include "../run_static.h"
 
-Json::Value runExperiment(const StaticPlannerAllocatorFn &planner, const Problem &problem) {
+std::vector<std::pair<Json::Value, Problem>>
+generateStaticOrchardPlanningProblems(const moveit::core::RobotModelPtr &robot,
+									  int num_reps,
+									  const std::vector<std::string> &model_names,
+									  int n_per_scene) {
 
-	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
-	// So, we just re-create the state space every time just to be safe.
-	auto ss = omplStateSpaceForDrone(problem.start.getRobotModel());
+	const auto scenes = scenes_for_trees(model_names);
 
-	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
-	// we'll need to copy this for every thread
-	auto si = loadSpaceInformation(ss, problem.scene);
+	// Generate a range of repetition indices.
+	auto repIds = ranges::views::iota(0, num_reps);
 
-	// Allocate the planner.
-	auto ompl_planner = planner(si);
+	// Preallocate a vector of problems.
+	std::vector<std::pair<Json::Value, Problem>> problems;
 
-	ompl::base::ScopedState<> start_state(ss);
-	ss->copyToOMPLState(start_state.get(), problem.start);
+	// For each repetition...
+	for (int repId : repIds) {
 
-	auto goals = problem.scene.apples |
-				 ranges::views::transform([&](const auto &apple) -> ompl::base::GoalPtr {
-					 return std::make_shared<DroneEndEffectorNearTarget>(si, 0.05, apple.center);
-				 }) | ranges::to_vector;
+		// Pick 5 scenes at random.
 
-	// use OMPL non-terminating condition
-	auto ptc = ompl::base::plannerNonTerminatingCondition();
+		std::vector<AppleTreePlanningScene> reduced_scenes;
 
-	// Record the start time.
-	auto start_time = std::chrono::high_resolution_clock::now();
-	auto eval = ompl_planner->plan(si, start_state.get(), goals, problem.scene, ptc);
-	auto end_time = std::chrono::high_resolution_clock::now();
+		std::sample(scenes.begin(), scenes.end(), std::back_inserter(reduced_scenes), n_per_scene, std::mt19937(repId));
 
-	// Check whether the path segments actually connect to each other.
-	for (int i = 0; i + 1 < eval.segments.size(); ++i) {
-	const auto &segment = eval.segments[i];
-	const auto &next_segment = eval.segments[i + 1];
-	assert(segment.path_.getStateCount() > 0);
-	assert(si->distance(segment.path_.getState(segment.path_.getStateCount() - 1),
-						next_segment.path_.getState(0)) < 1e-3);
+		// Create a combined planning scene:
+
+		AppleTreePlanningScene combined_scene;
+		combined_scene.scene_msg = std::make_shared<moveit_msgs::msg::PlanningScene>();
+
+		double offset = 0.0;
+
+		for (const auto &scene : reduced_scenes) {
+			combined_scene.scene_msg->name += scene.scene_msg->name + "_";
+
+			for (auto collision_object : scene.scene_msg->world.collision_objects) {
+				collision_object.pose.position.x += offset;
+				combined_scene.scene_msg->world.collision_objects.push_back(collision_object);
+			}
+
+			for (auto apple : scene.apples) {
+				apple.center.x() += offset;
+				combined_scene.apples.push_back(apple);
+			}
+
+			offset += 2.0;
+		}
+
+		// Get a random start state.
+		// Careful: the trees are elongated here, so we need something custom.
+
+		moveit::core::RobotState start_state(robot);
+		start_state.setToRandomPositions(); // This is a starting point, but we need to ensure the robot is upright and outside the orchard row.
+
+		// For simplicity, we'll put the robot at the head of the row; why would it start in the middle?
+
+		// Get a rng
+		std::mt19937 rng(repId);
+		// And a 0-1 distribution
+		std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+		double theta = dist(rng) * M_PI;
+		double height = 0.5 + dist(rng) * 1.0;
+
+		Eigen::Vector3d base_translation(-3.0, 0.0, 2.0);
+		Eigen::Quaterniond base_rotation(Eigen::AngleAxisd(theta, Eigen::Vector3d::UnitZ()));
+
+		Eigen::Isometry3d base_pose;
+		base_pose.setIdentity();
+		base_pose.translate(base_translation);
+		base_pose.rotate(base_rotation);
+
+		start_state.setJointPositions("world_joint", base_pose);
+		start_state.update();
+
+		std::cout << "Base translation: " << start_state.getGlobalLinkTransform("base_link").translation() << std::endl;
+		std::cout << "Up vector: (" << start_state.getGlobalLinkTransform("base_link").rotation() * Eigen::Vector3d::UnitZ() << ")" << std::endl;
+
+		// I'm kinda tempted to start writing the state into the planning scene as well since there's apparently a slot for it.
+
+		Problem problem {
+			.start = start_state,
+			.scene = combined_scene,
+		};
+
+		Json::Value problem_json;
+		problem_json["scene"] = combined_scene.scene_msg->name;
+		problem_json["n_apples"] = combined_scene.apples.size();
+
+		problems.emplace_back(problem_json, problem);
+
 	}
 
-	Json::Value result;
-	result["n_visited"] = eval.segments.size();
-	result["time"] = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-	result["total_path_length"] = eval.length();
-
-	return result;
+	return problems;
 
 }
 
@@ -71,7 +118,9 @@ int main(int argc, char **argv) {
 	// Truncate to 5 trees for testing.
 	model_names.resize(10);
 
-	const auto problems = generateStaticPlanningProblems(robot, 10, model_names);
+	const auto orchard_problems = generateStaticOrchardPlanningProblems(robot, 5, model_names, 5);
+
+//	const auto problems = generateStaticPlanningProblems(robot, 10, model_names);
 
 	using namespace ranges;
 
@@ -83,16 +132,14 @@ int main(int argc, char **argv) {
 			{Json::Value("cylinder"), makeShellBasedPlanner<CylinderShellPoint>(cylinderShell)}
 	};
 
-
 	// Run the experiments in parallel.
-	runPlannersOnProblemsParallelRecoverable<StaticPlannerAllocatorFn,Problem>(
-			planners,
-			problems,
-			runExperiment,
-			"analysis/data/shell_comparison_RAL.json",
-			8,
-			4,
-			42);
+	runPlannersOnProblemsParallelRecoverable<StaticPlannerAllocatorFn, Problem>(planners,
+																				orchard_problems,
+																				runPlannerOnStaticProblem,
+																				"analysis/data/shell_comparison_orchard_RAL.json",
+																				8,
+																				4,
+																				42);
 
 	return 0;
 }

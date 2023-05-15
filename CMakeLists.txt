@@ -243,7 +243,7 @@ add_library(${PROJECT_NAME}_shared
         src/shell_space/HorizontalOrientedBoundingBox.cpp
         src/shell_space/HorizontalOrientedBoundingBox.h
         src/shell_space/DendriticConvexHullShell.cpp
-        src/shell_space/DendriticConvexHullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h src/PathLengthPredictor.cpp src/PathLengthPredictor.h src/PathLengthPredictor.h src/shell_space/path_util.h src/shell_space/path_util.cpp src/goal_optimization.cpp src/goal_optimization.cpp src/utilities/midpoint_pull.cpp src/utilities/midpoint_pull.h src/orchards.cpp src/orchards.h src/static_problem_generation.cpp src/static_problem_generation.h)
+        src/shell_space/DendriticConvexHullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h src/PathLengthPredictor.cpp src/PathLengthPredictor.h src/PathLengthPredictor.h src/shell_space/path_util.h src/shell_space/path_util.cpp src/goal_optimization.cpp src/goal_optimization.cpp src/utilities/midpoint_pull.cpp src/utilities/midpoint_pull.h src/orchards.cpp src/orchards.h src/static_problem_generation.cpp src/static_problem_generation.h src/run_static.cpp src/run_static.h)
 
 add_library(${PROJECT_NAME}_sensing
         src/exploration/CandidatePathGenerator.cpp

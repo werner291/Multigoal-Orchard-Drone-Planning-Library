@@ -37,6 +37,7 @@ MultiGoalPlanner::PlanResult ShellPathPlanner<ShellPoint>::plan(const ompl::base
 
 	// If the initial approach path computation failed, return an empty result.
 	if (!initial_approach) {
+		std::cout << "Initial approach path computation failed; no path to shell." << std::endl;
 		return result;
 	}
 
