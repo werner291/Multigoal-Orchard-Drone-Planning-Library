@@ -13,24 +13,30 @@
 
 shape_msgs::msg::Mesh convexHull(const std::vector<geometry_msgs::msg::Point> &mesh_points) {
 
-	orgQhull::RboxPoints points;
+	int pointDimension = 3;
+	int pointCount = mesh_points.size();
 
-	for (const auto& p : mesh_points) {
-		double coords[3] = {p.x, p.y, p.z};
+	// Allocate an array to hold all the point coordinates
+	std::vector<realT> pointCoordinates(pointCount * pointDimension);
 
-		orgQhull::QhullPoint qhp(3, coords);
-
-		points.append(qhp);
+	// Fill the array with the point coordinates
+	for (size_t i = 0; i < mesh_points.size(); ++i) {
+		pointCoordinates[i * pointDimension] = mesh_points[i].x;
+		pointCoordinates[i * pointDimension + 1] = mesh_points[i].y;
+		pointCoordinates[i * pointDimension + 2] = mesh_points[i].z;
 	}
 
+	// Create a Qhull object
 	orgQhull::Qhull qhull;
-	qhull.runQhull(points, "Qt");
+
+	// Run Qhull
+	qhull.runQhull("", pointDimension, pointCount, pointCoordinates.data(), "Qt");
 
 	shape_msgs::msg::Mesh mesh;
 
 	std::vector<size_t> point_id_translation(mesh_points.size(), SIZE_MAX);
 
-	for (const auto& vertex : qhull.vertexList()) {
+	for (const auto &vertex: qhull.vertexList()) {
 		geometry_msgs::msg::Point p;
 		p.x = vertex.point()[0];
 		p.y = vertex.point()[1];

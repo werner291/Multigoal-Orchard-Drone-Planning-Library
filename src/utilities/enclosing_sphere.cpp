@@ -106,4 +106,24 @@ namespace utilities {
 		return sphere;
 
 	}
+
+	std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const SimplifiedOrchard &orchard) {
+
+		std::vector<geometry_msgs::msg::Point> leaf_vertices;
+
+		for (const auto &[position, tree]: orchard.trees) {
+			Eigen::Vector3d translation(position.x(), position.y(), 0.0);
+
+			for (auto vertex: tree.leaves_mesh.vertices) {
+				vertex.x += translation.x();
+				vertex.y += translation.y();
+				vertex.z += translation.z();
+
+				leaf_vertices.push_back(vertex);
+			}
+		}
+
+		return leaf_vertices;
+
+	}
 }

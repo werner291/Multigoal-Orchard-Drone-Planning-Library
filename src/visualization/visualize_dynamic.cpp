@@ -130,7 +130,7 @@ int visualizeEvaluation(const TreeMeshes &meshes,
 	vtkNew<vtkCamera> camera;
 	viewer.viewerRenderer->SetActiveCamera(camera);
 
-	RobotCameraTracker camera_tracker(camera, start_state);
+	RobotCameraTracker camera_tracker(camera, start_state, Eigen::AlignedBox3d());
 
 	auto start_time = std::chrono::high_resolution_clock::now();
 

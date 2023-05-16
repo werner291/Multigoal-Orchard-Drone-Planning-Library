@@ -6,6 +6,7 @@
 #include "utilities/experiment_utils.h"
 
 #include <filesystem>
+#include <range/v3/action/shuffle.hpp>
 
 /**
  * Loads the tree meshes for the tree with the given name.
@@ -111,6 +112,48 @@ std::vector<std::string> getTreeNames() {
 
 	return tree_names;
 
+}
+
+std::vector<TreeMeshes> loadRandomTreeModels(const int n, const int max_fruit) {
+
+	// Initialize a random number generator.
+	std::mt19937 gen(std::random_device{}());
+
+	// Get the names of available tree models and shuffle them.
+	auto tree_names = getTreeModelNames() | ranges::action::shuffle(gen);
+
+	// Create a vector to hold the loaded tree models.
+	std::vector<TreeMeshes> tree_models;
+
+	// Loop over the shuffled tree model names.
+	for (const auto &name: tree_names) {
+		// Load the tree model.
+		auto models = loadTreeMeshes(name);
+
+		// If the tree model has a suitable number of fruit meshes, add it to the vector.
+		if (models.fruit_meshes.size() <= max_fruit) {
+			tree_models.push_back(models);
+
+			// If we've loaded enough tree models, stop.
+			if (tree_models.size() == n) {
+				break;
+			}
+		}
+	}
+
+	// Return the vector of loaded tree models.
+	return tree_models;
+}
+
+SimplifiedOrchard makeSingleRowOrchard(std::vector<TreeMeshes> &tree_models) {
+	double x_displacement = tree_models.size() * 2.0 * -0.5;
+	SimplifiedOrchard orchard;
+
+	for (const auto &model: tree_models) {
+		orchard.trees.push_back({{x_displacement, 0.0}, model});
+		x_displacement += 2.0;
+	}
+	return orchard;
 }
 
 

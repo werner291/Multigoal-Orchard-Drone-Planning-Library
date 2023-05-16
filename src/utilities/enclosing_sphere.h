@@ -6,6 +6,7 @@
 #define NEW_PLANNERS_ENCLOSING_SPHERE_H
 
 #include <geometric_shapes/bodies.h>
+#include <geometry_msgs/geometry_msgs/msg/point.hpp>
 #include "../AppleTreePlanningScene.h"
 
 namespace utilities {
@@ -26,6 +27,8 @@ namespace utilities {
 																  const double padding = 0.0);
 
 	std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const AppleTreePlanningScene &scene_info);
+
+	std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const SimplifiedOrchard &orchard);
 }
 
 #endif //NEW_PLANNERS_ENCLOSING_SPHERE_H

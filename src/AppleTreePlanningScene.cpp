@@ -149,10 +149,16 @@ AppleTreePlanningScene createSceneFromSimplifiedOrchard(const SimplifiedOrchard 
 		AppleTreePlanningScene tree_scene = createSceneFromTreeModels(tree.second);
 
 		// Now, we copy the collision objects from the tree scene into the orchard scene.
-		for (auto &collision_object : tree_scene.scene_msg->world.collision_objects) {
+		for (auto &collision_object: tree_scene.scene_msg->world.collision_objects) {
 			collision_object.pose.position.x += tree.first.x();
 			collision_object.pose.position.y += tree.first.y();
 			scene.scene_msg->world.collision_objects.push_back(collision_object);
+		}
+
+		for (auto apple: tree_scene.apples) {
+			apple.center.x() += tree.first.x();
+			apple.center.y() += tree.first.y();
+			scene.apples.push_back(apple);
 		}
 
 	}

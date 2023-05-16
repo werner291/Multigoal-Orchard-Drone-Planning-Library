@@ -19,7 +19,7 @@ std::vector<Eigen::Vector3d> idealizedPathViaShell(const WorkspaceShell<ShellPoi
 
 	auto path_points = shellPathToPoints(path, shell, curve_steps);
 
-	//	// Add start and goal
+	// Add start and goal
 
 	path_points.insert(path_points.begin(), start);
 	path_points.push_back(goal);

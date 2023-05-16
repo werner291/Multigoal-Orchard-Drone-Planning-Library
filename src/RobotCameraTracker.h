@@ -20,9 +20,11 @@ public:
 	/**
 	 * @brief Constructor
 	 * @param camera Pointer to the VTK camera to control
-	 * @param initial_robot_state The initial robot state used to position the camera
+	 * @param state The initial robot state used to position the camera
 	 */
-	RobotCameraTracker(vtkCamera *camera, const moveit::core::RobotState &initial_robot_state);
+	RobotCameraTracker(vtkCamera *camera,
+					   const moveit::core::RobotState &initial_robot_state,
+					   Eigen::AlignedBox3d sceneBounds);
 
 	/**
 	 * @brief Updates the camera position to track the robot state
@@ -32,7 +34,8 @@ public:
 
 private:
 	vtkCamera *camera; ///< Pointer to the VTK camera to control
-	Eigen::Vector3d robot_position; ///< Current position of the robot in world coordinates
+	Eigen::Vector3d previous_camera_position; ///< Current position of the robot in world coordinates
+	Eigen::AlignedBox3d scene_bounds; ///< Bounding box of the most important scene objects
 };
 
 
