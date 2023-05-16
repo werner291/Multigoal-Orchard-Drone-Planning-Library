@@ -387,6 +387,9 @@ target_link_libraries(${PROJECT_NAME}_experiment_static_visualized ${PROJECT_NAM
 experiment("vizualized_trees_row")
 target_link_libraries(${PROJECT_NAME}_experiment_vizualized_trees_row ${PROJECT_NAME}_visualization)
 
+experiment("chull_underpass_visualized")
+target_link_libraries(${PROJECT_NAME}_experiment_chull_underpass_visualized ${PROJECT_NAME}_visualization)
+
 experiment("tsp_noise_effect")
 
 experiment("lci_vs_full_reorder_timing")

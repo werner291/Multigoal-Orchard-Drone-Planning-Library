@@ -66,13 +66,11 @@ struct PathVisitor {
 		// Compute the intersection position.
 		Eigen::Vector3d pos = toEigen(path_algo.point(edge, t));
 
-		states.push_back(
-				path_algo.face_location(edge, t)
-		);
-
-		states.push_back(
-				path_algo.face_location(mesh.opposite(edge), 1.0-t)
-		);
+		states.push_back(path_algo.face_location(edge, t));
+		// TODO restore
+		//		states.push_back(
+		//				path_algo.face_location(mesh.opposite(edge), 1.0-t)
+		//		);
 	}
 
 	/**
