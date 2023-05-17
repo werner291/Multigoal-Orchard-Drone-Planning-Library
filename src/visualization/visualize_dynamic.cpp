@@ -17,7 +17,6 @@
 #include "../utilities/moveit.h"
 #include "../utilities/vtk.h"
 
-#include "../exploration/ColorEncoding.h"
 #include "../utilities/MeshOcclusionModel.h"
 #include "../RunPlannerThreaded.h"
 #include "../apple_status_color_coding.h"

@@ -17,7 +17,6 @@
 #include <CGAL/AABB_triangle_primitive.h>
 #include <vtkPolyData.h>
 #include "utilities/mesh_utils.h"
-#include "exploration/SegmentedPointCloud.h"
 #include "WorkspaceSpec.h"
 
 /**
@@ -63,39 +62,5 @@ public:
 	std::pair<size_t, double> closest_triangle_to_point(Eigen::Vector3d &query_point) const;
 
 };
-
-/**
- * An acceleration structure for, given a vector of meshes, facilitating queries
- * of whether the given point is inside any of the meshes, and if so, which mesh.
- */
-class PointOnMeshLookup {
-
-	/// A lookup vector that maps between triangle ID (as returned by TriangleAABB::closest_triangle_to_point) and mesh ID.
-	std::vector<size_t> triangle_id_to_mesh_id;
-
-	/// An index of all triangles that belong to a fruit.
-	TriangleAABB aabb;
-
-public:
-	/**
-	 * Create a new PointOnMeshLookup from a vector of meshes.
-	 *
-	 * @param meshes 		The meshes to create the lookup for.
-	 */
-	explicit PointOnMeshLookup(const std::vector<shape_msgs::msg::Mesh> &meshes);
-
-	std::optional<size_t> on_which_mesh(Eigen::Vector3d &point, double margin) const;
-};
-
-class PointSegmenter {
-
-	PointOnMeshLookup lookup;
-
-public:
-	explicit PointSegmenter(const WorkspaceSpec& spec);
-
-	SegmentedPointCloud::ByType segmentPointCloudData(vtkPolyData *pPolyData);
-};
-
 
 #endif //NEW_PLANNERS_TRIANGLEAABB_H

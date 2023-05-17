@@ -121,22 +121,16 @@ add_library(${PROJECT_NAME}_shared
         src/RunPlannerThreaded.h
         src/SamplerWrapper.cpp
         src/SamplerWrapper.h
-        src/ScannablePointsIndex.cpp
-        src/ScannablePointsIndex.h
         src/SingleGoalPlannerMethods.cpp
         src/SingleGoalPlannerMethods.h
         src/StreamingConvexHull.cpp
         src/StreamingConvexHull.h
-        src/StreamingMeshHullAlgorithm.cpp
-        src/StreamingMeshHullAlgorithm.h
         src/TimedCostConvergenceTerminationCondition.cpp
         src/TimedCostConvergenceTerminationCondition.h
         src/TreeMeshes.cpp
         src/TreeMeshes.h
         src/TriangleAABB.cpp
         src/TriangleAABB.h
-        src/experiments/ScannedSurfaceTracker.cpp
-        src/experiments/ScannedSurfaceTracker.h
         src/ompl_custom.cpp
         src/ompl_custom.h
         src/planner_allocators.cpp
@@ -243,52 +237,28 @@ add_library(${PROJECT_NAME}_shared
         src/shell_space/HorizontalOrientedBoundingBox.cpp
         src/shell_space/HorizontalOrientedBoundingBox.h
         src/shell_space/DendriticConvexHullShell.cpp
-        src/shell_space/DendriticConvexHullShell.h src/utilities/delaunay.cpp src/utilities/delaunay.h src/PathLengthPredictor.cpp src/PathLengthPredictor.h src/PathLengthPredictor.h src/shell_space/path_util.h src/shell_space/path_util.cpp src/goal_optimization.cpp src/goal_optimization.cpp src/utilities/midpoint_pull.cpp src/utilities/midpoint_pull.h src/orchards.cpp src/orchards.h src/static_problem_generation.cpp src/static_problem_generation.h src/run_static.cpp src/run_static.h src/utilities/link_trace.cpp src/utilities/link_trace.h src/quickplan.cpp src/quickplan.h)
-
-add_library(${PROJECT_NAME}_sensing
-        src/exploration/CandidatePathGenerator.cpp
-        src/exploration/CandidatePathGenerator.h
-        src/exploration/ColorEncoding.cpp
-        src/exploration/ColorEncoding.h
-        src/exploration/DynamicMeshHullAlgorithm.cpp
-        src/exploration/DynamicMeshHullAlgorithm.h
-        src/exploration/InformationGainModel.cpp
-        src/exploration/InformationGainModel.h
-        src/exploration/KnownFreeSpaceModel.cpp
-        src/exploration/KnownFreeSpaceModel.h
-        src/exploration/LocalOptimizer.cpp
-        src/exploration/LocalOptimizer.h
-        src/exploration/OnlinePointCloudMotionControlAlgorithm.cpp
-        src/exploration/OnlinePointCloudMotionControlAlgorithm.h
-        src/exploration/SegmentedPointCloud.cpp
-        src/exploration/SegmentedPointCloud.h
-        src/exploration/SegmentedRobotPath.cpp
-        src/exploration/SegmentedRobotPath.h
-        src/exploration/SurfletExplorationFrontier.cpp
-        src/exploration/SurfletExplorationFrontier.h
-        src/exploration/SurfletVolume.cpp
-        src/exploration/VtkToPointCloud.cpp
-        src/exploration/VtkToPointCloud.h
-        src/exploration/logging.cpp
-        src/exploration/logging.h
-        src/exploration/scan_points.cpp
-        src/exploration/scan_points.h
-        src/utilities/enclosing_sphere.cpp
-        src/utilities/enclosing_sphere.h
-        src/exploration/DirectPointCloudCollisionDetection.cpp
-        src/exploration/DirectPointCloudCollisionDetection.h
-        src/utilities/discoverability_specifications.h
-
-        src/experiments/initial_orbit_comparison.cpp
-        src/utilities/size_t_iota.h
-        src/shell_space/CapsuleShape.cpp
-        src/shell_space/CapsuleShape.h
-        src/experiments/ApproachPlanning.cpp
-        src/visualization/camera_controls.cpp
-        src/visualization/camera_controls.h
+        src/shell_space/DendriticConvexHullShell.h
+        src/utilities/delaunay.cpp
+        src/utilities/delaunay.h
+        src/PathLengthPredictor.cpp
+        src/PathLengthPredictor.h
+        src/PathLengthPredictor.h
+        src/shell_space/path_util.h
         src/shell_space/path_util.cpp
-
-        )
+        src/goal_optimization.cpp
+        src/goal_optimization.cpp
+        src/utilities/midpoint_pull.cpp
+        src/utilities/midpoint_pull.h
+        src/orchards.cpp
+        src/orchards.h
+        src/static_problem_generation.cpp
+        src/static_problem_generation.h
+        src/run_static.cpp
+        src/run_static.h
+        src/utilities/link_trace.cpp
+        src/utilities/link_trace.h
+        src/quickplan.cpp
+        src/quickplan.h)
 
 add_library(${PROJECT_NAME}_visualization
         src/RobotCameraTracker.cpp
@@ -389,6 +359,11 @@ target_link_libraries(${PROJECT_NAME}_experiment_vizualized_trees_row ${PROJECT_
 
 experiment("chull_underpass_visualized")
 target_link_libraries(${PROJECT_NAME}_experiment_chull_underpass_visualized ${PROJECT_NAME}_visualization)
+
+experiment("photoshoot_tree_models")
+target_link_libraries(${PROJECT_NAME}_experiment_photoshoot_tree_models ${PROJECT_NAME}_visualization)
+
+experiment("CGAL_mesh_paths_comparison")
 
 experiment("tsp_noise_effect")
 

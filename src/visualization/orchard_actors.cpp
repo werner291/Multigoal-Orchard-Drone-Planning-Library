@@ -5,7 +5,6 @@
 #include <range/v3/view/enumerate.hpp>
 #include "orchard_actors.h"
 #include "../utilities/vtk.h"
-#include "../exploration/ColorEncoding.h"
 #include "../apple_status_color_coding.h"
 #include "../utilities/mesh_utils.h"
 
@@ -21,18 +20,18 @@ std::vector<vtkActor *> createActors(const TreeMeshes &meshes, SimpleVtkViewer &
 	vtkNew<vtkActorCollection> actors;
 
 	auto tree_actor = createActorFromMesh(meshes.trunk_mesh);
-	setColorsByEncoding(tree_actor, TRUNK_RGB, false);
+	setColorsByEncoding(tree_actor, {0.5, 0.3, 0.1}, false);
 	actors->AddItem(tree_actor);
 
 	auto leaves_actor = createActorFromMesh(meshes.leaves_mesh);
-	setColorsByEncoding(leaves_actor, LEAVES_RGB, false);
+	setColorsByEncoding(leaves_actor, {0.0, 0.9, 0.0}, false);
 	actors->AddItem(leaves_actor);
 
 	std::vector<vtkActor *> apple_actors;
 
 	for (const auto &[fruit_index, fruit_mesh]: meshes.fruit_meshes | ranges::views::enumerate) {
 		auto fruit_actor = createActorFromMesh(fruit_mesh);
-		fruit_actor->GetProperty()->SetDiffuseColor(APPLE_REMOVED_COLOR.data());
+		fruit_actor->GetProperty()->SetDiffuseColor(0.0, 0.0, 0.0);
 		actors->AddItem(fruit_actor);
 		apple_actors.push_back(fruit_actor);
 	}

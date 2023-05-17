@@ -115,12 +115,9 @@ int main(int argc, char **argv) {
 
 	auto model_names = getTreeModelNames();
 
-	// Truncate to 5 trees for testing.
-	model_names.resize(10);
+//	const auto problems = generateStaticOrchardPlanningProblems(robot, 10, model_names, 5);
 
-	const auto problems = generateStaticOrchardPlanningProblems(robot, 5, model_names, 5);
-
-	//	const auto problems = generateStaticPlanningProblems(robot, 10, model_names);
+	const auto problems = generateStaticPlanningProblems(robot, 10, model_names);
 
 	using namespace ranges;
 
@@ -136,9 +133,9 @@ int main(int argc, char **argv) {
 	runPlannersOnProblemsParallelRecoverable<StaticPlannerAllocatorFn, Problem>(planners,
 																				problems,
 																				runPlannerOnStaticProblem,
-																				"analysis/data/shell_comparison_RAL.json",
+																				"analysis/data/shell_comparison_RAL_big.json",
 																				8,
-																				4,
+																				std::thread::hardware_concurrency(),
 																				42);
 
 	return 0;

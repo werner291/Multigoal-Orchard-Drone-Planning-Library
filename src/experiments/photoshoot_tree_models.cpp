@@ -65,7 +65,7 @@ int main() {
 		}
 
 		VtkRobotmodel robotModel(robot, robotState);
-		viewer.addActorCollection(robotModel.getLinkActors());
+//		viewer.addActorCollection(robotModel.getLinkActors());
 
 		viewer.captureScreenshot("tree_pics/" + modelName + ".png");
 

@@ -76,12 +76,3 @@ void Viewer::setIntervalCallback(const std::function<void()> &callback) {
 	renderWindowInteractor->AddObserver(vtkCommand::TimerEvent, cb);
 }
 
-void Viewer::updateAlgorithmVisualization(const DynamicMeshHullAlgorithm &dbsa) {
-	// Update the visualization of the algorithm internals
-	targetToHullLineSegments.updateLine(extractTargetHullPointsSegments(dbsa));
-	convexHullActor.update(dbsa.getConvexHull()->toMesh());
-	//	visitOrderVisualization.updateLine(extractVisitOrderPoints(dbsa, eePose));
-
-	obstacleSurfacepoints.updatePoints(dbsa.getCollisionDetector().extractPoints());
-}
-

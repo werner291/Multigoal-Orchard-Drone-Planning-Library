@@ -137,14 +137,6 @@ vtkNew<vtkRenderWindowInteractor> buildVisualizerWindowInteractor(vtkNew<vtkRend
 vtkNew<vtkRenderer> buildSensorRenderer();
 
 /**
- * Build a render window for the sensor render.
- * 
- * @param sensorRenderer 		The sensor renderer to build the render window for.
- * @return 						The created render window.
- */
-vtkNew<vtkRenderWindow> buildSensorRenderWindow(vtkRenderer *sensorRenderer);
-
-/**
  * Given an array of RGB values ( in [0,1] ), set the ambient and diffuse colors to that colors.
  *
  * The ambient color will be set such that the object will be rendered with exactly that color,

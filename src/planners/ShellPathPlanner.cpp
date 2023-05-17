@@ -44,7 +44,6 @@ MultiGoalPlanner::PlanResult ShellPathPlanner<ShellPoint>::plan(const ompl::base
 	std::vector<std::pair<size_t, OmplApproachPath<ShellPoint>>> approach_paths;
 
 	for (size_t i = 0; i < goals.size(); ++i) {
-		std::cout << "Planning approach for goal " << i << std::endl;
 		auto approach_path_opt = methods->approach_path(goals[i], *shell);
 		if (approach_path_opt.has_value()) {
 			assert(approach_path_opt->robot_path.getStateCount() > 0);
@@ -74,8 +73,6 @@ MultiGoalPlanner::PlanResult ShellPathPlanner<ShellPoint>::plan(const ompl::base
 		approach_paths = ordered_approaches;
 	}
 
-	std::cout << "After reordering: " << approach_paths.size() << " / " << goals.size() << std::endl;
-
 	// Build the initial approach path from the start state to the first goal.
 	ompl::geometric::PathGeometric path = buildInitialApproach(si,
 															   *shell,
@@ -100,9 +97,6 @@ std::vector<size_t> ShellPathPlanner<ShellPoint>::determineVisitationOrder(const
 																		   const std::optional<OmplApproachPath<ShellPoint>> &initial_approach,
 																		   const std::vector<std::pair<size_t, OmplApproachPath<ShellPoint>>> &approach_paths) const {
 	std::vector<size_t> ordering;
-
-	std::cout << "Strategy: " << distance_prediction_strategy << std::endl;
-
 
 	switch (distance_prediction_strategy) { // Different strategies for ordering the approach paths.
 

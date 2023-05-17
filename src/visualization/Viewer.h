@@ -44,7 +44,6 @@ public:
 
 	void setIntervalCallback(const std::function<void()> &callback);
 
-	void updateAlgorithmVisualization(const DynamicMeshHullAlgorithm &algorithm);
 };
 
 #endif //NEW_PLANNERS_VIEWER_H

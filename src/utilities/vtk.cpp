@@ -18,7 +18,6 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkPlaneSource.h>
 #include "vtk.h"
-#include "../exploration/ColorEncoding.h"
 
 vtkNew<vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel *lm) {
 
@@ -188,14 +187,6 @@ vtkNew<vtkRenderer> buildSensorRenderer() {
 	return sensorRenderer;
 }
 
-vtkNew<vtkRenderWindow> buildSensorRenderWindow(vtkRenderer *sensorRenderer) {
-	vtkNew<vtkRenderWindow> sensorViewWindow;
-	sensorViewWindow->SetSize(SENSOR_RESOLUTION, SENSOR_RESOLUTION);
-	sensorViewWindow->AddRenderer(sensorRenderer);
-	sensorViewWindow->SetWindowName("Robot Sensor View");
-	return sensorViewWindow;
-}
-
 void setColorsByEncoding(vtkNew<vtkActor> &tree_actor, const std::array<double, 3> &rgb, bool usePureColor) {
 	tree_actor->GetProperty()->SetDiffuseColor(rgb.data());
 	tree_actor->GetProperty()->SetAmbientColor(rgb.data());
@@ -213,17 +204,17 @@ vtkNew<vtkActorCollection> buildTreeActors(const TreeMeshes &meshes, bool usePur
 	vtkNew<vtkActorCollection> actors;
 
 	auto tree_actor = createActorFromMesh(meshes.trunk_mesh);
-	setColorsByEncoding(tree_actor, TRUNK_RGB, usePureColor);
+	setColorsByEncoding(tree_actor, {0.5, 0.3, 0.1}, usePureColor);
 
 	auto leaves_actor = createActorFromMesh(meshes.leaves_mesh);
-	setColorsByEncoding(leaves_actor, LEAVES_RGB, usePureColor);
+	setColorsByEncoding(leaves_actor, {0.0, 0.9, 0.0}, usePureColor);
 
 	actors->AddItem(tree_actor);
 	actors->AddItem(leaves_actor);
 
 	for (const auto& fruit_mesh : meshes.fruit_meshes) {
 		auto fruit_actor = createActorFromMesh(fruit_mesh);
-		setColorsByEncoding(fruit_actor, FRUIT_RGB, usePureColor);
+		setColorsByEncoding(fruit_actor, {1.0, 0.0, 0.0}, usePureColor);
 		actors->AddItem(fruit_actor);
 	}
 
@@ -267,7 +258,7 @@ vtkNew<vtkActor> buildGroundPlaneActor(bool usePureColor) {
 	vtkNew<vtkActor> ground_plane_actor;
 	ground_plane_actor->SetMapper(ground_plane_mapper);
 
-	setColorsByEncoding(ground_plane_actor, GROUND_PLANE_RGB, usePureColor);
+	setColorsByEncoding(ground_plane_actor, {0.3, 0.4, 0.1}, usePureColor);
 
 	return ground_plane_actor;
 }

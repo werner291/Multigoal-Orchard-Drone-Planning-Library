@@ -7,7 +7,6 @@
 //
 
 #include "TriangleAABB.h"
-#include "exploration/VtkToPointCloud.h"
 
 TriangleAABB::TriangleAABB(const shape_msgs::msg::Mesh &mesh) {
 
@@ -49,80 +48,4 @@ std::pair<size_t, double> TriangleAABB::closest_triangle_to_point(Eigen::Vector3
 		CGAL::to_double(squared_distance(q_cgal, closest_point))
 	};
 
-}
-
-PointOnMeshLookup::PointOnMeshLookup(const std::vector<shape_msgs::msg::Mesh> &meshes) : aabb(combine_meshes(meshes)) {
-
-	// For every mesh...
-	for (size_t mesh_id = 0; mesh_id < meshes.size(); mesh_id++) {
-		// ...and every triangle in that mesh...
-		for (size_t triangle_id = 0; triangle_id < meshes[mesh_id].triangles.size(); triangle_id++) {
-			// Push a copy of the mesh ID to the triangle ID mapping, such that the triangle ID
-			// can be mapped back to the mesh ID in O(1) time.
-			triangle_id_to_mesh_id.push_back(mesh_id);
-		}
-	}
-}
-
-std::optional<size_t> PointOnMeshLookup::on_which_mesh(Eigen::Vector3d &point, double margin) const {
-
-	// Look up the ID of the closest triangle to the point
-	auto triangle_id = aabb.closest_triangle_to_point(point);
-
-	if (triangle_id.second < margin) {
-		// If it's within the margin, return the mesh ID through `triangle_id_to_mesh_id`
-		return triangle_id_to_mesh_id[triangle_id.first];
-	} else {
-		// Otherwise, return nothing
-		return std::nullopt;
-	}
-
-}
-
-SegmentedPointCloud::ByType PointSegmenter::segmentPointCloudData(vtkPolyData *pPolyData) {
-
-	// Convert the VTK polydata to a point cloud, where every point is
-	// assigned a `SegmentedPointCloud::Type` based on its color.
-	auto points = ::segmentPointCloudData(pPolyData);
-
-	// Allocate a struct to sort the points into for each type
-	SegmentedPointCloud::ByType segmented_points;
-
-	for (auto &point : points.points) {
-
-		switch (point.type) {
-			case SegmentedPointCloud::PT_TARGET:
-
-				// If the point is a target, locate the mesh that it's on
-				if (auto mesh_id = lookup.on_which_mesh(point.position, 0.01)) {
-
-					// If it's on a mesh, add it to the target points
-					segmented_points.target.push_back({
-						point.position,
-						Eigen::Vector3d(0.0,0.0,0.0), // TODO: Get the normal of the triangle
-						*mesh_id
-					});
-
-				}
-				// Else, this must be noise. Ignore it.
-				break;
-
-			case SegmentedPointCloud::PT_OBSTACLE:
-				// Obstacle points are easy: just push them onto the obstacle vector
-				segmented_points.obstacle.push_back(point.position);
-				break;
-			case SegmentedPointCloud::PT_SOFT_OBSTACLE:
-				// Same for soft obstacles
-				segmented_points.soft_obstacle.push_back(point.position);
-				break;
-		}
-
-	}
-
-	// Return the segmented points
-	return segmented_points;
-
-}
-
-PointSegmenter::PointSegmenter(const WorkspaceSpec &spec) : lookup(PointOnMeshLookup(spec.orchard.trees[0].second.fruit_meshes)) {
 }
