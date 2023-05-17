@@ -81,13 +81,17 @@ public:
 	 * @param to 			The end point.
 	 * @return 				A path from the start point to the end point.
 	 */
-	virtual std::shared_ptr<ShellPath<ShellPoint>> path_from_to(const ShellPoint& from, const ShellPoint& to) const = 0;
+	virtual std::shared_ptr<ShellPath<ShellPoint>> path_from_to(const ShellPoint &from, const ShellPoint &to) const = 0;
 
+	/**
+	 * Given n points on the shell, compute a n*n matrix of distances between them.
+	 */
+	virtual std::vector<std::vector<double>> distance_matrix(const std::vector<ShellPoint> &points) const;
 
 	/**
 	 * Return a random shell point on the shell near a given one.
 	 */
-	virtual ShellPoint random_near(const ShellPoint& p, double radius) const {
+	virtual ShellPoint random_near(const ShellPoint &p, double radius) const {
 		// Get a random point on the sphere
 		std::vector<double> pt(3);
 		ompl::RNG rng;
@@ -97,8 +101,34 @@ public:
 		return nearest_point_on_shell(surface_point(p) + Eigen::Vector3d(pt[0], pt[1], pt[2]));
 	}
 
-	virtual double path_length(const std::shared_ptr<ShellPath<ShellPoint>>& path) const = 0;
+	/**
+	 * Compute the length of a path on the shell.
+	 *
+	 * @param path  The path to compute the length of.
+	 * @return 		The length of the path.
+	 */
+	virtual double path_length(const std::shared_ptr<ShellPath<ShellPoint>> &path) const = 0;
+
+
 };
+
+template<typename ShellPoint>
+std::vector<std::vector<double>>
+WorkspaceShell<ShellPoint>::distance_matrix(const std::vector<ShellPoint> &points) const {
+
+	// By default, just call path_from_to for each pair of points and record the length of the path.
+
+	std::vector<std::vector<double>> result(points.size(), std::vector<double>(points.size(), 0.0));
+
+	for (size_t i = 0; i < points.size(); i++) {
+		for (size_t j = 0; j < points.size(); j++) {
+			result[i][j] = path_length(path_from_to(points[i], points[j]));
+		}
+	}
+
+	return result;
+
+}
 
 /**
  * A path across a workspace shell, where the path is defined by a list of ShellPoints.

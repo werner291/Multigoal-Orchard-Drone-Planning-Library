@@ -102,6 +102,16 @@ std::vector<size_t> ShellPathPlanner<ShellPoint>::determineVisitationOrder(const
 
 		case SHELL_PATH_LENGTH: {
 
+			std::vector<ShellPoint> points;
+
+			points.push_back(initial_approach->shell_point);
+			for (const auto &approach_path: approach_paths) {
+				points.push_back(approach_path.second.shell_point);
+			}
+
+			// TODO This is a bit roundabout, since TSP will be reconstructing the matrix we just computed.
+			std::vector<std::vector<double>> distances = shell->distanceMatrix(points);
+
 			ordering = tsp_open_end([&](auto i) {
 				// Use the shell path length as the heuristic.
 				return shell->predict_path_length(initial_approach->shell_point, approach_paths[i].second.shell_point);

@@ -133,14 +133,35 @@ public:
 	path_from_to(const CGALMeshShellPoint &from, const CGALMeshShellPoint &to) const override;
 
 	/**
-	 * Compute the length of a path across the surface between two shell points,
-	 * since a ShellPath does not contain actual information about the mesh, only
-	 * references to points on the mesh surface.
+	 * @brief Compute a path across the surface between two shell points.
 	 *
-	 * @param path 		The path to compute the length for.
-	 * @return 			The length of the path.
+	 * This method uses the CGAL Surface_mesh_shortest_path class to compute the shortest path
+	 * from the start point to the end point on the surface mesh.
+	 *
+	 * @note: The behavior of this function with start/endpoints near edges and vertices is somewhat undefined,
+	 *       further testing and refinement might be necessary to ensure it functions as expected in all scenarios.
+	 *
+	 * @note: For batch computation of distance matrices, it is more efficient to use the distance_matrix method,
+	 *	      as this method will recompute CGAL::Surface_mesh_shortest_path's internal sequence tree for every call.
+	 *
+	 * @param a The start point.
+	 * @param b The end point.
+	 * @return A shared pointer to a PiecewiseLinearPath object representing the path from the start point to the end point.
 	 */
 	double path_length(const std::shared_ptr<ShellPath<CGALMeshShellPoint>> &path) const override;
+
+	/**
+	 * @brief Compute the distance matrix for a set of points on the mesh shell.
+	 *
+	 * This method computes the shortest distance between every pair of points
+	 * in the input vector. The distances are computed using the CGAL Surface_mesh_shortest_path
+	 * class, which calculates shortest paths on a triangulated surface mesh.
+	 *
+	 * @param points A vector of points on the mesh shell for which the distance matrix is to be computed.
+	 * @return A 2D vector representing the distance matrix, where the element at [i][j] is the shortest
+	 *         distance from points[i] to points[j].
+	 */
+	std::vector<std::vector<double>> distance_matrix(const std::vector<CGALMeshShellPoint> &points) const override;
 };
 
 std::shared_ptr<WorkspaceShell<CGALMeshShellPoint>>

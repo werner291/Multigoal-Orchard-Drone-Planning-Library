@@ -112,28 +112,32 @@ Eigen::Vector3d CGALMeshShell::normalAt(const CGALMeshShellPoint &near) const {
 
 std::shared_ptr<ShellPath<CGALMeshShellPoint>> CGALMeshShell::path_from_to(const CGALMeshShellPoint &a, const CGALMeshShellPoint &b) const {
 
-	// Initialize the shortest path algorithm with a reference to the triangle mesh.
+	// Initialize the Surface_mesh_shortest_path object with the surface mesh
 	Surface_mesh_shortest_path shortest_paths(tmesh);
-	// Add pur start point a
+	// Add the start point a as a source point for the shortest path computation
 	shortest_paths.add_source_point(a.point);
 
-	// Compute the path to a from b.
+	// Compute the shortest path from point a to point b
 	PathVisitor v(tmesh);
 	shortest_paths.shortest_path_sequence_to_source_points(b.point.first, b.point.second, v);
 
-	// CGAL gives us the path from the end to the start, so we reverse it.
+	// The computed path is from the end point to the start point, so reverse it to get the path from the start point to the end point
 	std::reverse(v.states.begin(), v.states.end());
 
 	std::vector<CGALMeshShellPoint> points;
 
+	// Add the start point to the path
 	points.push_back(a);
 
+	// Add the intermediate points to the path
 	for (auto &state : v.states) {
 		points.push_back({state, faceNormal(tmesh, state.first)});
 	}
 
+	// Add the end point to the path
 	points.push_back(b);
 
+	// Return the computed path as a PiecewiseLinearPath object
 	return std::make_shared<PiecewiseLinearPath<CGALMeshShellPoint>>(std::move(points));
 
 }
@@ -233,6 +237,38 @@ double CGALMeshShell::path_length(const std::shared_ptr<ShellPath<CGALMeshShellP
 
 Eigen::Vector3d CGALMeshShell::arm_vector(const CGALMeshShellPoint &p) const {
 	return -normalAt(p);
+}
+
+std::vector<std::vector<double>> CGALMeshShell::distance_matrix(const std::vector<CGALMeshShellPoint> &points) const {
+
+	// Initialize the Surface_mesh_shortest_path object with the surface mesh
+	Surface_mesh_shortest_path shortest_paths(tmesh);
+
+	// Initialize a 2D vector to store the distances between each pair of points
+	std::vector<std::vector<double>> distances(points.size(), std::vector<double>(points.size(), 0.0));
+
+	// Iterate over each point in the input vector
+	for (size_t i = 0; i < points.size(); i++) {
+
+		// Add the current point as a source point for the shortest path computation
+		shortest_paths.add_source_point(points[i].point.first, points[i].point.second);
+
+		// For each other point in the vector...
+		for (size_t j = i + 1; j < points.size(); j++) {
+
+			// Compute the shortest distance from the current source point to this point
+			auto result = shortest_paths.shortest_distance_to_source_points(points[j].point.first,
+																			points[j].point.second);
+
+			// Store the computed distance in the distance matrix
+			// The distance from point i to point j is the same as the distance from point j to point i
+			distances[i][j] = result.first;
+			distances[j][i] = result.first;
+		}
+	}
+
+	// Return the computed distance matrix
+	return distances;
 }
 
 std::shared_ptr<WorkspaceShell<CGALMeshShellPoint>>
