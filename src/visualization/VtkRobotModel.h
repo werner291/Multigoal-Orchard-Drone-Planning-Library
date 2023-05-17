@@ -20,9 +20,9 @@ class VtkRobotmodel {
 public:
 	[[nodiscard]] vtkNew<vtkActorCollection> &getLinkActors();
 
-	explicit VtkRobotmodel(const moveit::core::RobotModelConstPtr &robot_model);
-
-	explicit VtkRobotmodel(const moveit::core::RobotModelConstPtr &robot_model, const moveit::core::RobotState& initial_state);
+	explicit VtkRobotmodel(const moveit::core::RobotModelConstPtr &robot_model,
+						   const moveit::core::RobotState &initial_state,
+						   const Eigen::Vector3d &rgb = {0.5, 0.5, 0.5});
 
 	void applyState(const moveit::core::RobotState& st);
 

@@ -13,9 +13,11 @@ vtkNew<vtkActorCollection> &VtkRobotmodel::getLinkActors() {
 	return link_actors;
 }
 
-VtkRobotmodel::VtkRobotmodel(const moveit::core::RobotModelConstPtr &robot_model) : robotModel(robot_model) {
+VtkRobotmodel::VtkRobotmodel(const moveit::core::RobotModelConstPtr &robot_model,
+							 const moveit::core::RobotState &initial_state,
+							 const Eigen::Vector3d &rgb) : robotModel(robot_model) {
 
-	for (const moveit::core::LinkModel* lm : robot_model->getLinkModelsWithCollisionGeometry()) {
+	for (const moveit::core::LinkModel *lm: robot_model->getLinkModelsWithCollisionGeometry()) {
 
 		std::cout << "Visualizing link with mesh " << lm->getVisualMeshFilename() << std::endl;
 
@@ -23,9 +25,11 @@ VtkRobotmodel::VtkRobotmodel(const moveit::core::RobotModelConstPtr &robot_model
 
 			auto mesh = loadRobotMesh(lm->getVisualMeshFilename());
 
-			link_actors->AddItem(createActorFromMesh(mesh));
+			auto actor = createActorFromMesh(mesh);
 
+			actor->GetProperty()->SetColor(rgb.x(), rgb.y(), rgb.z());
 
+			link_actors->AddItem(actor);
 
 		} else {
 
@@ -35,12 +39,14 @@ VtkRobotmodel::VtkRobotmodel(const moveit::core::RobotModelConstPtr &robot_model
 
 			linkActor->SetMapper(linkPolyData);
 
-			linkActor->GetProperty()->SetColor(0.5, 0.5, 0.5);
+			linkActor->GetProperty()->SetColor(rgb.x(), rgb.y(), rgb.z());
 
 			link_actors->AddItem(linkActor);
 		}
 
 	}
+
+	applyState(initial_state);
 
 }
 
@@ -60,9 +66,4 @@ void VtkRobotmodel::applyState(const moveit::core::RobotState &st) {
 		link_actor->SetOrientation(0.0,0.0,0.0);
 		link_actor->RotateWXYZ(tf_rot.angle() / M_PI * 180.0, tf_rot.axis().x(), tf_rot.axis().y(), tf_rot.axis().z());
 	}
-}
-
-VtkRobotmodel::VtkRobotmodel(const moveit::core::RobotModelConstPtr &robot_model, const moveit::core::RobotState &st)
-		: VtkRobotmodel(robot_model) {
-	applyState(st);
 }
