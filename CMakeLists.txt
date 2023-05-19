@@ -258,7 +258,7 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/link_trace.cpp
         src/utilities/link_trace.h
         src/quickplan.cpp
-        src/quickplan.h)
+        src/quickplan.h src/utilities/optimization_meta.h)
 
 add_library(${PROJECT_NAME}_visualization
         src/RobotCameraTracker.cpp
@@ -362,6 +362,9 @@ target_link_libraries(${PROJECT_NAME}_experiment_chull_underpass_visualized ${PR
 
 experiment("photoshoot_tree_models")
 target_link_libraries(${PROJECT_NAME}_experiment_photoshoot_tree_models ${PROJECT_NAME}_visualization)
+
+experiment("midpoint_pull_optimization")
+target_link_libraries(${PROJECT_NAME}_experiment_midpoint_pull_optimization ${PROJECT_NAME}_visualization)
 
 experiment("CGAL_mesh_paths_comparison")
 

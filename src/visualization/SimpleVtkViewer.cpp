@@ -118,7 +118,7 @@ void SimpleVtkViewer::captureScreenshot(const std::string &filename, bool render
 }
 
 void SimpleVtkViewer::addStaticPolyline(const std::vector<Eigen::Vector3d> &points, const Eigen::Vector3d &color) {
-	VtkPolyLineVisualization ee_trace_viz(1.0, 0.0, 0.0);
+	VtkPolyLineVisualization ee_trace_viz(color.x(), color.y(), color.z());
 	ee_trace_viz.updateLine(points);
 	addActor(ee_trace_viz.getActor());
 }

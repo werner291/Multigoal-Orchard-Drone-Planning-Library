@@ -8,7 +8,7 @@ cuttingPlaneChullShell(const AppleTreePlanningScene &scene_info, const ompl::bas
 }
 
 std::shared_ptr<OmplShellSpace<CGALMeshShellPoint>>
-cgalPlaneChullShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
+cgalChullShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si) {
 	auto workspaceShell = horizontalAdapter<CGALMeshShellPoint>(convexHullAroundLeavesCGAL(scene_info, 1.0, 0.0));
 	return OmplShellSpace<CGALMeshShellPoint>::fromWorkspaceShell(workspaceShell, si);
 }

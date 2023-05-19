@@ -121,11 +121,12 @@ int main(int argc, char **argv) {
 	using namespace ranges;
 
 	// The different planners to test.
-	std::vector<std::pair<Json::Value, StaticPlannerAllocatorFn>> planners = {
-			{Json::Value("sphere"), makeShellBasedPlanner<Eigen::Vector3d>(omplSphereShell)},
-//			{Json::Value("cuttingplane"), makeShellBasedPlanner<ConvexHullPoint>(cuttingPlaneChullShell)},
-			{Json::Value("cgal"), makeShellBasedPlanner<CGALMeshShellPoint>(cgalPlaneChullShell)},
-//			{Json::Value("cylinder"), makeShellBasedPlanner<CylinderShellPoint>(cylinderShell)}
+	std::vector<std::pair<Json::Value, StaticPlannerAllocatorFn>> planners = {{Json::Value("sphere"), makeShellBasedPlanner<Eigen::Vector3d>(
+			omplSphereShell)},
+			//			{Json::Value("cuttingplane"), makeShellBasedPlanner<ConvexHullPoint>(cuttingPlaneChullShell)},
+																			  {Json::Value("cgal"),   makeShellBasedPlanner<CGALMeshShellPoint>(
+																					  cgalChullShell)},
+			//			{Json::Value("cylinder"), makeShellBasedPlanner<CylinderShellPoint>(cylinderShell)}
 	};
 
 	// Run the experiments in parallel.

@@ -46,7 +46,7 @@ cuttingPlaneChullShell(const AppleTreePlanningScene &scene_info, const ompl::bas
  * @return A shared_ptr to the OmplShellSpace containing the CGAL-based convex hull.
  */
 std::shared_ptr<OmplShellSpace<CGALMeshShellPoint>>
-cgalPlaneChullShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si);
+cgalChullShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si);
 
 /**
  * @brief Constructs an OmplShellSpace with a cylindrical shell around the leaves of the apple tree.

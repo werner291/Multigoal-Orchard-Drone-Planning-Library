@@ -33,4 +33,8 @@ RobotPath quickPlan(AppleTreePlanningScene &scene,
 					const moveit::core::RobotState &start_state,
 					const StaticPlannerAllocatorFn &planner_allocator);
 
+std::vector<ompl::base::GoalPtr>
+appleGoalsFromScene(AppleTreePlanningScene &scene, ompl::base::SpaceInformationPtr &si);
+
+
 #endif //NEW_PLANNERS_QUICKPLAN_H

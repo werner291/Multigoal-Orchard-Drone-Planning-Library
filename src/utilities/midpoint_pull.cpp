@@ -46,3 +46,65 @@ bool applyMidpointPullToPath(ompl::geometric::PathGeometric &path, int index, do
 
 	return true;
 }
+
+bool midpointPullTryShortenPath(ompl::geometric::PathGeometric &path,
+								const std::vector<std::pair<int, ompl::base::GoalPtr>> &G,
+								std::function<void(ompl::base::State *, const ompl::base::GoalPtr &)> projectGoalRegion,
+								double t) {
+
+	bool pathShortened = false;
+
+	// Create a vector of optionals for quick lookup of associated goal regions
+	std::vector<std::optional<ompl::base::GoalPtr>> goalRegions(path.getStateCount());
+	for (const auto &pair: G) {
+		goalRegions[pair.first] = pair.second;
+	}
+
+	// Iterate over all configurations in the path (except for the first and last configurations)
+	for (auto i = 1; i < path.getStateCount() - 1; ++i) {
+
+		auto si = path.getSpaceInformation();
+		auto *state1 = path.getState(i - 1);
+		auto *state2 = path.getState(i);
+		auto *state3 = path.getState(i + 1);
+
+		// Perform the midpoint pull operation
+		ompl::base::ScopedState<> newState(si);
+		midpointPull(state1, state2, state3, newState.get(), si, t);
+
+		// If the configuration is associated with a goal region, project the new state onto the goal region
+		if (goalRegions[i].has_value()) {
+			projectGoalRegion(newState.get(), *goalRegions[i]);
+		}
+
+		// Calculate the original and new distances
+		auto originalDistance = si->distance(state1, state2) + si->distance(state2, state3);
+		auto newDistance = si->distance(state1, newState.get()) + si->distance(newState.get(), state3);
+
+		// If the new path is shorter and collision-free, replace the configuration with the new state
+		if (newDistance < originalDistance && si->checkMotion(state1, newState.get()) &&
+			si->checkMotion(newState.get(), state3)) {
+			si->copyState(state2, newState.get());
+			pathShortened = true;
+		}
+	}
+
+	return pathShortened;
+}
+
+std::vector<std::pair<int, ompl::base::GoalPtr>>
+extractGoalIndexPairing(const MultiGoalPlanner::PlanResult &planResult, const std::vector<ompl::base::GoalPtr> &goals) {
+	std::vector<std::pair<int, ompl::base::GoalPtr>> goalIndexPairing;
+
+	// Start the index at -1 because we will increment it by the path length at the start of the loop.
+	int currentIndex = -1;
+	for (const auto &segment: planResult.segments) {
+		// Increment the current index by the number of states in the current path segment
+		currentIndex += segment.path_.getStateCount();
+
+		// Add a pair consisting of the current index and the associated goal region to the goal-index pairing
+		goalIndexPairing.emplace_back(currentIndex, goals[segment.to_goal_id_]);
+	}
+
+	return goalIndexPairing;
+}
