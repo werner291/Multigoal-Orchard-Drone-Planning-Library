@@ -210,12 +210,21 @@ CGALMeshShellPoint CGALMeshShell::nearest_point_on_shell(const Eigen::Vector3d &
 
 	} else {
 
-		return {
-			on_mesh,
-			normal
-		};
+		return {on_mesh, normal};
 
 	}
+}
+
+double CGALMeshShell::path_length(const std::vector<CGALMeshShellPoint> &path) const {
+
+	double length = 0.0;
+
+	for (size_t i = 0; i < path.size() - 1; i++) {
+		length += (surface_point(path[i]) - surface_point(path[i + 1])).norm();
+		length += rotation_weight * (arm_vector(path[i]) - arm_vector(path[i + 1])).norm();
+	}
+
+	return length;
 }
 
 double CGALMeshShell::path_length(const std::shared_ptr<ShellPath<CGALMeshShellPoint>> &path) const {
@@ -224,14 +233,7 @@ double CGALMeshShell::path_length(const std::shared_ptr<ShellPath<CGALMeshShellP
 
 	assert(p);
 
-	double length = 0.0;
-
-	for (size_t i = 0; i < p->points.size() - 1; i++) {
-		length += (surface_point(p->points[i]) - surface_point(p->points[i + 1])).norm();
-		length += rotation_weight * (arm_vector(p->points[i]) - arm_vector(p->points[i + 1])).norm();
-	}
-
-	return length;
+	return path_length(p->points);
 }
 
 Eigen::Vector3d CGALMeshShell::arm_vector(const CGALMeshShellPoint &p) const {
@@ -275,7 +277,7 @@ std::vector<std::vector<double>> CGALMeshShell::distance_matrix(const std::vecto
 			geodesic.push_back(points[j]);
 
 			// Return the computed path as a PiecewiseLinearPath object
-			double length = this->path_length(std::make_shared<PiecewiseLinearPath<CGALMeshShellPoint>>(std::move(geodesic)));
+			double length = path_length(geodesic);
 
 			// Store the computed distance in the distance matrix
 			// The distance from point i to point j is the same as the distance from point j to point i
