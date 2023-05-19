@@ -81,6 +81,12 @@ double MoveItShellSpace<ShellPoint>::predict_path_length(const ShellPoint &start
 }
 
 template<typename ShellPoint>
+std::vector<std::vector<double>>
+MoveItShellSpace<ShellPoint>::distance_matrix(const std::vector<ShellPoint> &points) const {
+	return shell->distance_matrix(points);
+}
+
+template<typename ShellPoint>
 RobotPath MoveItShellSpace<ShellPoint>::shellPath(const ShellPoint &start, const ShellPoint &end) const {
 
 	// Get the path from the workspace shell.

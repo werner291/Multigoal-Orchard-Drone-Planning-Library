@@ -51,6 +51,10 @@ public:
 		return shell->path_length(path);
 	}
 
+	std::vector<std::vector<double>> distance_matrix(const std::vector<ShellPoint> &points) const override {
+		return shell->distance_matrix(points);
+	}
+
 };
 
 #endif //NEW_PLANNERS_ARMHORIZONTAL_H

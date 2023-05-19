@@ -44,6 +44,12 @@ double OmplShellSpace<ShellPoint>::predict_path_length(const ShellPoint &start, 
 }
 
 template<typename ShellPoint>
+std::vector<std::vector<double>>
+OmplShellSpace<ShellPoint>::predict_path_lengths(const std::vector<ShellPoint> &points) const {
+	return shell_space->distance_matrix(points);
+}
+
+template<typename ShellPoint>
 ompl::geometric::PathGeometric
 OmplShellSpace<ShellPoint>::shellPath(const ShellPoint &start, const ShellPoint &end) const {
 

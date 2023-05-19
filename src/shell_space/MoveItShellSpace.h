@@ -70,6 +70,11 @@ public:
 	 */
 	RobotPath shellPath(const ShellPoint &start, const ShellPoint &end) const;
 
+	/**
+	 * Given n points on the shell, compute a n*n matrix of distances between them.
+	 */
+	virtual std::vector<std::vector<double>> distance_matrix(const std::vector<ShellPoint> &points) const;
+
 	double predict_path_length(const ShellPoint &start, const ShellPoint &end) const;
 
 	ShellPoint pointNearState(const moveit::core::RobotState &state) const;

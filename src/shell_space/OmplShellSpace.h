@@ -71,6 +71,11 @@ public:
 	double predict_path_length(const ShellPoint &start, const ShellPoint &end) const;
 
 	/**
+	 * @brief Predicts lengths in a nxn matrix of paths in the shell space.
+	 */
+	std::vector<std::vector<double>> predict_path_lengths(const std::vector<ShellPoint> &points) const;
+
+	/**
 	 * @brief Constructs an OmplShellSpace object from a WorkspaceShell object.
 	 *
 	 * This static method constructs an OmplShellSpace object from a WorkspaceShell object.
@@ -104,7 +109,5 @@ public:
 	ShellPoint pointNearGoal(const ompl::base::Goal *goal) const;
 
 };
-
-
 
 #endif //NEW_PLANNERS_OMPLSHELLSPACE_H

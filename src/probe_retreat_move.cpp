@@ -1,12 +1,9 @@
 
 #include <ompl/geometric/PathSimplifier.h>
-#include <boost/range/irange.hpp>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <range/v3/view/for_each.hpp>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 #include "probe_retreat_move.h"
-#include "EndEffectorOnShellGoal.h"
-#include "utilities/general_utilities.h"
 
 ompl::geometric::PathGeometric optimize(const ompl::geometric::PathGeometric& path,
                                         const ompl::base::OptimizationObjectivePtr &objective,
@@ -18,7 +15,7 @@ ompl::geometric::PathGeometric optimize(const ompl::geometric::PathGeometric& pa
     simplifier.simplifyMax(new_path);
 
     if (path.length() < new_path.length()) {
-        std::cout << "Optimization failed: " << path.length() << " vs " << new_path.length() << std::endl;
+//        std::cout << "Optimization failed: " << path.length() << " vs " << new_path.length() << std::endl;
         return path;
     } else {
         return new_path;

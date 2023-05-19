@@ -67,10 +67,9 @@ struct PathVisitor {
 		Eigen::Vector3d pos = toEigen(path_algo.point(edge, t));
 
 		states.push_back(path_algo.face_location(edge, t));
-		// TODO restore
-		//		states.push_back(
-		//				path_algo.face_location(mesh.opposite(edge), 1.0-t)
-		//		);
+					states.push_back(
+						path_algo.face_location(mesh.opposite(edge), 1.0-t)
+				);
 	}
 
 	/**
@@ -241,14 +240,14 @@ Eigen::Vector3d CGALMeshShell::arm_vector(const CGALMeshShellPoint &p) const {
 
 std::vector<std::vector<double>> CGALMeshShell::distance_matrix(const std::vector<CGALMeshShellPoint> &points) const {
 
-	// Initialize the Surface_mesh_shortest_path object with the surface mesh
-	Surface_mesh_shortest_path shortest_paths(tmesh);
-
 	// Initialize a 2D vector to store the distances between each pair of points
 	std::vector<std::vector<double>> distances(points.size(), std::vector<double>(points.size(), 0.0));
 
 	// Iterate over each point in the input vector
 	for (size_t i = 0; i < points.size(); i++) {
+
+		// Initialize the Surface_mesh_shortest_path object with the surface mesh
+		Surface_mesh_shortest_path shortest_paths(tmesh);
 
 		// Add the current point as a source point for the shortest path computation
 		shortest_paths.add_source_point(points[i].point.first, points[i].point.second);
@@ -256,14 +255,32 @@ std::vector<std::vector<double>> CGALMeshShell::distance_matrix(const std::vecto
 		// For each other point in the vector...
 		for (size_t j = i + 1; j < points.size(); j++) {
 
-			// Compute the shortest distance from the current source point to this point
-			auto result = shortest_paths.shortest_distance_to_source_points(points[j].point.first,
-																			points[j].point.second);
+			PathVisitor v(tmesh);
+			shortest_paths.shortest_path_sequence_to_source_points(points[j].point.first, points[j].point.second, v);
+
+			// The computed path is from the end point to the start point, so reverse it to get the path from the start point to the end point
+			std::reverse(v.states.begin(), v.states.end());
+
+			std::vector<CGALMeshShellPoint> geodesic;
+
+			// Add the start point to the path
+			geodesic.push_back(points[i]);
+
+			// Add the intermediate points to the path
+			for (auto &state : v.states) {
+				geodesic.push_back({state, faceNormal(tmesh, state.first)});
+			}
+
+			// Add the end point to the path
+			geodesic.push_back(points[j]);
+
+			// Return the computed path as a PiecewiseLinearPath object
+			double length = this->path_length(std::make_shared<PiecewiseLinearPath<CGALMeshShellPoint>>(std::move(geodesic)));
 
 			// Store the computed distance in the distance matrix
 			// The distance from point i to point j is the same as the distance from point j to point i
-			distances[i][j] = result.first;
-			distances[j][i] = result.first;
+			distances[i][j] = length;
+			distances[j][i] = length;
 		}
 	}
 

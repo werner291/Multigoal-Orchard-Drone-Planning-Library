@@ -3,7 +3,6 @@
 #include <utility>
 
 #include "../DynamicGoalsetPlanningProblem.h"
-#include "../exploration/ColorEncoding.h"
 #include "../planner_allocators.h"
 #include "../planners/CachingDynamicPlanner.h"
 #include "../utilities/run_experiments.h"
@@ -124,16 +123,16 @@ int main(int argc, char **argv) {
 	// The different planners to test.
 	std::vector<std::pair<Json::Value, StaticPlannerAllocatorFn>> planners = {
 			{Json::Value("sphere"), makeShellBasedPlanner<Eigen::Vector3d>(omplSphereShell)},
-			{Json::Value("cuttingplane"), makeShellBasedPlanner<ConvexHullPoint>(cuttingPlaneChullShell)},
+//			{Json::Value("cuttingplane"), makeShellBasedPlanner<ConvexHullPoint>(cuttingPlaneChullShell)},
 			{Json::Value("cgal"), makeShellBasedPlanner<CGALMeshShellPoint>(cgalPlaneChullShell)},
-			{Json::Value("cylinder"), makeShellBasedPlanner<CylinderShellPoint>(cylinderShell)}
+//			{Json::Value("cylinder"), makeShellBasedPlanner<CylinderShellPoint>(cylinderShell)}
 	};
 
 	// Run the experiments in parallel.
 	runPlannersOnProblemsParallelRecoverable<StaticPlannerAllocatorFn, Problem>(planners,
 																				problems,
 																				runPlannerOnStaticProblem,
-																				"analysis/data/shell_comparison_RAL_big.json",
+																				"analysis/data/shell_comparison_RAL.json",
 																				8,
 																				std::thread::hardware_concurrency(),
 																				42);
