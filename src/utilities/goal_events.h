@@ -14,6 +14,7 @@
 #include "../DynamicMultiGoalPlanner.h"
 #include "../RobotPath.h"
 #include "../PathInterrupt.h"
+#include "../CanSeeApple.h"
 
 namespace utilities {
 
@@ -48,7 +49,7 @@ namespace utilities {
 		REMOVED
 	};
 
-	using CanSeeAppleFn = std::function<bool(const moveit::core::RobotState &state, const Apple &apple)> const;
+
 
 	std::optional<GoalSighting> find_earliest_discovery_event(RobotPath &traj,
 															  const std::vector<Apple> &apples,

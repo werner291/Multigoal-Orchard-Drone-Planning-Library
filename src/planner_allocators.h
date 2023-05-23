@@ -14,6 +14,7 @@
 #include "planners/shell_path_planner/Construction.h"
 #include "planners/ShellPathPlanner.h"
 #include "planners/shell_path_planner/MakeshiftPrmApproachPlanningMethods.h"
+#include "SimpleIncrementalTSPMethods.h"
 
 using StaticPlannerPtr = std::shared_ptr<MultiGoalPlanner>;
 using StaticPlannerAllocatorFn = std::function<StaticPlannerPtr(const ompl::base::SpaceInformationPtr &)>;
@@ -41,14 +42,12 @@ DMGPlannerPtr dynamic_planner_initial_orbit(const ompl::base::SpaceInformationPt
 
 DMGPlannerPtr batch_replanner(const ompl::base::SpaceInformationPtr &si);
 
-DMGPlannerPtr dynamic_planner_lci(const ompl::base::SpaceInformationPtr &si);
-
-DMGPlannerPtr dynamic_planner_LIFO(const ompl::base::SpaceInformationPtr &si);
-
-DMGPlannerPtr dynamic_planner_FIFO(const ompl::base::SpaceInformationPtr &si);
-
-DMGPlannerPtr dynamic_planner_FISO(const ompl::base::SpaceInformationPtr &si);
-
-DMGPlannerPtr dynamic_planner_random(const ompl::base::SpaceInformationPtr &si);
+/**
+ * Generates a dynamic planner allocator using the specified TSP strategy and a spherical shell.
+ *
+ * @param strategy The TSP strategy to be used.
+ * @return A shared pointer to a DMGPlanner using the dynamic planner with the specified TSP strategy and a spherical shell.
+ */
+DMGPlannerAllocatorFn dynamic_planner_simple_reorder_sphere(SimpleIncrementalTSPMethods::Strategy strategy);
 
 #endif //NEW_PLANNERS_PLANNER_ALLOCATORS_H

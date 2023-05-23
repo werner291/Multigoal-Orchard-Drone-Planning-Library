@@ -73,9 +73,9 @@ private:
 	 */
 	[[nodiscard]] std::optional<RobotPath> replanFromEvent();
 
-	utilities::CanSeeAppleFn can_see_apple;
+	CanSeeAppleFn can_see_apple;
 public:
-	[[nodiscard]] const utilities::CanSeeAppleFn &getCanSeeApple() const;
+	[[nodiscard]] const CanSeeAppleFn &getCanSeeApple() const;
 
 public:
 
@@ -90,7 +90,7 @@ public:
 									const moveit::core::RobotState &initial_state,
 									const AppleTreePlanningScene &scene,
 									const std::vector<AppleDiscoverabilityType> &discoverability,
-									utilities::CanSeeAppleFn canSeeApple);
+									CanSeeAppleFn canSeeApple);
 
 	/**
 	 * @brief Computes the next robot trajectory.

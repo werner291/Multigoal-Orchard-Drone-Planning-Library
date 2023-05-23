@@ -26,7 +26,7 @@ DynamicGoalVisitationEvaluation::DynamicGoalVisitationEvaluation(std::shared_ptr
 																 const moveit::core::RobotState &initial_state,
 																 const AppleTreePlanningScene &scene,
 																 const std::vector<AppleDiscoverabilityType> &discoverability,
-																 utilities::CanSeeAppleFn canSeeApple)
+																 CanSeeAppleFn canSeeApple)
 		: planner(std::move(planner)), last_robot_state(initial_state), scene(scene), can_see_apple(std::move(canSeeApple)) {
 
 	discovery_status = discoverability | ranges::views::transform(initial_discovery_status) | ranges::to_vector;
@@ -226,7 +226,7 @@ DynamicGoalVisitationEvaluation::getSolutionPathSegments() const {
 	return solution_path_segments;
 }
 
-const utilities::CanSeeAppleFn &DynamicGoalVisitationEvaluation::getCanSeeApple() const {
+const CanSeeAppleFn &DynamicGoalVisitationEvaluation::getCanSeeApple() const {
 	return can_see_apple;
 }
 

@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
 
 	using namespace ranges;
 
-	utilities::CanSeeAppleFn distance_occlusion = [](const moveit::core::RobotState &state, const Apple &apple) {
+	CanSeeAppleFn distance_occlusion = [](const moveit::core::RobotState &state, const Apple &apple) {
 
 		Eigen::Vector3d ee_pos = state.getGlobalLinkTransform("end_effector").translation();
 
@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
 
 	MeshOcclusionModel occlusion_model(alphashape, 0);
 
-	utilities::CanSeeAppleFn leaf_alpha_occlusion = [&](const moveit::core::RobotState &state, const Apple &apple) {
+	CanSeeAppleFn leaf_alpha_occlusion = [&](const moveit::core::RobotState &state, const Apple &apple) {
 
 		Eigen::Vector3d ee_pos = state.getGlobalLinkTransform("end_effector").translation();
 

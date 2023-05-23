@@ -84,12 +84,6 @@ DMGPlannerPtr batch_replanner(const ompl::base::SpaceInformationPtr &si) {
 	(si), true));
 };
 
-DMGPlannerPtr dynamic_planner_lci(const ompl::base::SpaceInformationPtr &si) {
-	return std::make_shared<CachingDynamicPlanner<Eigen::Vector3d>>(std::make_unique<
-			MakeshiftPrmApproachPlanningMethods < Eigen::Vector3d>>
-	(si), std::make_shared<ORToolsTSPMethods>(ORToolsTSPMethods::UpdateStrategy::LEAST_COSTLY_INSERT), paddedOmplSphereShell);
-}
-
 Json::Value runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot, const Experiment &experiment) {
 
 	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
@@ -201,7 +195,7 @@ int main(int argc, char **argv) {
 
 	MeshOcclusionModel occlusion_model(alphashape, 0);
 
-	utilities::CanSeeAppleFn leaf_alpha_occlusion = [&](const moveit::core::RobotState &state, const Apple &apple) {
+	CanSeeAppleFn leaf_alpha_occlusion = [&](const moveit::core::RobotState &state, const Apple &apple) {
 
 		Eigen::Vector3d ee_pos = state.getGlobalLinkTransform("end_effector").translation();
 

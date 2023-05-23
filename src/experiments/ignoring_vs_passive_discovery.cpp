@@ -4,10 +4,8 @@
 
 #include "../AppleTreePlanningScene.h"
 #include "../utilities/experiment_utils.h"
-#include "../vtk/Viewer.h"
 
 #include "../planners/ChangeIgnoringReplannerAdapter.h"
-#include "../exploration/ColorEncoding.h"
 #include "../utilities/goal_events.h"
 #include "../DynamicGoalVisitationEvaluation.h"
 #include "../planners/CachingDynamicPlanner.h"
@@ -17,114 +15,95 @@
 #include "../utilities/MeshOcclusionModel.h"
 #include "../utilities/alpha_shape.h"
 #include "../planner_allocators.h"
+#include "../dynamic_goalset_experiment.h"
 
 #include <vtkProperty.h>
 #include <range/v3/view/iota.hpp>
 
-using DynamicPlannerAllocatorFn = std::function<std::shared_ptr<DynamicMultiGoalPlanner>(const ompl::base::SpaceInformationPtr &)>;
+/**
+ * @brief Constructs a set of standard occlusion models.
+ *
+ * These models provide various ways to determine whether an apple is occluded,
+ * based on several different parameters including distance, angle of view, mesh occlusion,
+ * and combinations of these factors.
+ *
+ * @param meshes Tree meshes to be used for occlusion.
+ * @return An array of pairs. Each pair consists of a string representing the occlusion model's name,
+ *         and a function representing the occlusion model.
+ */
+std::array<std::pair<std::string, CanSeeAppleFn>, 12> mk_standard_occlusion_models(TreeMeshes &meshes) {
 
-struct Experiment {
-	std::pair<std::string, DynamicPlannerAllocatorFn> *planner;
-	std::pair<Json::Value, DynamicGoalsetPlanningProblem> *problem;
+	std::pair<std::string, CanSeeAppleFn> omni_pair = {"omniscient", omniscient_occlusion};
+
+	return {
+			// Basic occlusion functions
+			omni_pair, // I don't know why this needs to be separated out, but the type inference fails otherwise
+			{"distance", distance_occlusion},
+
+			// Field of view occlusions
+			{"angle_end_effector", in_angle(1.0, Eigen::Vector3d::UnitX(), "end_effector")},
+			{"angle_base_link", in_angle(1.0, Eigen::Vector3d::UnitX(), "base_link")},
+
+			// Mesh occlusions
+			{"mesh_occlusion_end_effector", mesh_occludes_vision(meshes.leaves_mesh, "end_effector")},
+			{"mesh_occlusion_base_link", mesh_occludes_vision(meshes.leaves_mesh, "base_link")},
+
+			// Alpha shape occlusions
+			{"alpha_occlusion_end_effector", leaves_alpha_shape_occludes_vision(meshes.leaves_mesh, "end_effector")},
+			{"alpha_occlusion_base_link", leaves_alpha_shape_occludes_vision(meshes.leaves_mesh, "base_link")},
+
+			// Combinations of mesh occlusion and angle occlusion
+			{"mesh_and_angle_end_effector", only_if_both(
+					mesh_occludes_vision(meshes.leaves_mesh, "end_effector"),
+					in_angle(1.0, Eigen::Vector3d::UnitX(), "end_effector")
+			)},
+			{"mesh_and_angle_base_link", only_if_both(
+					mesh_occludes_vision(meshes.leaves_mesh, "base_link"),
+					in_angle(1.0, Eigen::Vector3d::UnitX(), "base_link")
+			)},
+
+			// Combinations of alpha shape occlusion and angle occlusion
+			{"alpha_and_angle_end_effector", only_if_both(
+					leaves_alpha_shape_occludes_vision(meshes.leaves_mesh, "end_effector"),
+					in_angle(1.0, Eigen::Vector3d::UnitX(), "end_effector")
+			)},
+			{"alpha_and_angle_base_link", only_if_both(
+					leaves_alpha_shape_occludes_vision(meshes.leaves_mesh, "base_link"),
+					in_angle(1.0, Eigen::Vector3d::UnitX(), "base_link")
+			)}
+	};
+}
+
+const std::array<Proportions,5> probs = {
+		Proportions {
+				.fraction_true_given = 1.0,
+				.fraction_false_given = 0.0,
+				.fraction_discoverable = 0.0
+		},
+		Proportions {
+				.fraction_true_given = 0.5,
+				.fraction_false_given = 0.0,
+				.fraction_discoverable = 0.5
+		},
+		Proportions {
+				.fraction_true_given = 0.0,
+				.fraction_false_given = 0.0,
+				.fraction_discoverable = 1.0
+		},
+		Proportions {
+				.fraction_true_given = 0.5,
+				.fraction_false_given = 0.5,
+				.fraction_discoverable = 0.0
+		},
+		Proportions {
+				.fraction_true_given = 0.0,
+				.fraction_false_given = 0.5,
+				.fraction_discoverable = 0.5
+		},
 };
 
-Json::Value toJSON(const Experiment &experiment) {
-	Json::Value result;
-	result["planner"] = experiment.planner->first;
-	result["problem"] = experiment.problem->first;
-	return result;
-}
 
-Json::Value runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot,
-										const Experiment &experiment) {
 
-	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
-	// So, we just re-create the state space every time just to be safe.
-	auto ss = omplStateSpaceForDrone(robot);
-
-	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
-	// we'll need to copy this for every thread
-	auto si = loadSpaceInformation(ss, experiment.problem->second.scene);
-
-	// Allocate the planner.
-	auto ompl_planner = experiment.planner->second(si);
-
-	// Wrap it into the adapter that lets us use it with MoveIt types.
-	auto adapter = std::make_shared<DynamicMultiGoalPlannerOmplToMoveitAdapter>(ompl_planner, si, ss);
-
-	// Create the evaluation object.
-	DynamicGoalVisitationEvaluation eval(adapter,
-										 experiment.problem->second.start_state,
-										 experiment.problem->second.scene,
-										 experiment.problem->second.apple_discoverability,
-										 *experiment.problem->second.can_see_apple);
-
-	// Record the start time.
-	auto start_time = std::chrono::high_resolution_clock::now();
-
-	auto stats_at_start = getDiscoveryStatusStats(eval.getDiscoveryStatus());
-
-	// Run the planner for the initial set of goals.
-	eval.runTillCompletion();
-
-	// Record the end time.
-	auto end_time = std::chrono::high_resolution_clock::now();
-
-	int n_visited = (int) ranges::count_if(eval.getDiscoveryStatus(),
-										   [](const auto &status) { return status == utilities::VISITED; });
-
-	double total_path_length = ranges::accumulate(
-			eval.getSolutionPathSegments() | ranges::views::transform([](const auto &segment) {
-				return segment.path.length();
-			}), 0.0);
-
-	std::chrono::nanoseconds total_time = ranges::accumulate(
-			eval.getSolutionPathSegments() | ranges::views::transform([](const auto &segment) {
-				return segment.time;
-			}), std::chrono::nanoseconds(0));
-
-	Json::Value result;
-	result["initial_knowledge"] = toJSON(stats_at_start);
-	result["n_visited"] = n_visited;
-	result["time"] = std::chrono::duration_cast<std::chrono::milliseconds>(total_time).count();
-	result["total_path_length"] = total_path_length;
-	result["solution_segments"] = Json::Value(Json::arrayValue);
-
-	const auto solution = eval.getSolutionPathSegments();
-
-	if (!solution.empty()) {
-
-		for (const auto &segment: solution) {
-
-			Json::Value segment_json;
-			segment_json["time"] = std::chrono::duration_cast<std::chrono::milliseconds>(segment.time).count();
-			segment_json["path_length"] = segment.path.length();
-
-//			for (const auto &waypoint: segment.path.waypoints) {
-//
-//				moveit::core::RobotState waypoint_copy(waypoint);
-//				waypoint_copy.update(true);
-//
-//				Json::Value waypoint_json;
-//				waypoint_json["base_pos"] = toJSON(Eigen::Vector3d(waypoint_copy.getGlobalLinkTransform("base_link")
-//																		   .translation()));
-//				waypoint_json["ee_pos"] = toJSON(Eigen::Vector3d(waypoint_copy.getGlobalLinkTransform("end_effector")
-//																		 .translation()));
-//
-//				segment_json["waypoints"].append(waypoint_json);
-//
-//			}
-
-			segment_json["end_event"] = toJSON(segment.goal_event);
-
-			result["solution_segments"].append(segment_json);
-
-		}
-
-	}
-
-	return result;
-}
 
 int main(int argc, char **argv) {
 
@@ -142,34 +121,6 @@ int main(int argc, char **argv) {
 
 	using namespace ranges;
 
-	utilities::CanSeeAppleFn distance_occlusion = [](const moveit::core::RobotState &state, const Apple &apple) {
-
-		Eigen::Vector3d ee_pos = state.getGlobalLinkTransform("end_effector").translation();
-
-		const double discovery_max_distance = 1.0;
-
-		return (ee_pos - apple.center).squaredNorm() < discovery_max_distance * discovery_max_distance;
-
-	};
-
-	auto alphashape = alphaShape(meshes.leaves_mesh.vertices | ranges::views::transform([](const auto &v) {
-		return Eigen::Vector3d{v.x, v.y, v.z};
-	}) | ranges::to_vector, LEAVES_ALPHA_SQRTRADIUS);
-
-	MeshOcclusionModel occlusion_model(alphashape, 0);
-
-	utilities::CanSeeAppleFn leaf_alpha_occlusion = [&](const moveit::core::RobotState &state, const Apple &apple) {
-
-		Eigen::Vector3d ee_pos = state.getGlobalLinkTransform("end_effector").translation();
-
-		return !occlusion_model.checkOcclusion(apple.center, ee_pos);
-
-	};
-
-	utilities::CanSeeAppleFn omniscient_occlusion = [](const moveit::core::RobotState &state, const Apple &apple) {
-		return true;
-	};
-
 	ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
 	auto repIds = ranges::views::iota(0, 50);
@@ -177,29 +128,32 @@ int main(int argc, char **argv) {
 	// Numbers of apples to throw at the planner.
 	const auto nApples = {10, 50, 100};
 
-	std::vector<Proportions> probs = {
-			//			Proportions {
-			//					.fraction_true_given = 1.0,
-			//					.fraction_false_given = 0.0,
-			//					.fraction_discoverable = 0.0
-			//			},
-			//			Proportions {
-			//					.fraction_true_given = 0.5,
-			//					.fraction_false_given = 0.0,
-			//					.fraction_discoverable = 0.5
-			//			},
-			Proportions{.fraction_true_given = 0.0, .fraction_false_given = 0.0, .fraction_discoverable = 1.0},
-			//			Proportions {
-			//					.fraction_true_given = 0.5,
-			//					.fraction_false_given = 0.5,
-			//					.fraction_discoverable = 0.0
-			//			},
+	std::array<std::pair<std::string, DynamicPlannerAllocatorFn>, 9> PLANNERS_TO_TEST = {
+			// A planner that ignores the dynamic goalset, only planning to the initially-given apples.
+			// It will obviously not ve very optimal, but will serve as a baseline.
+			std::make_pair("change_ignoring", static_planner),
+			// A planner that adds new goals to a "batch" to be replanned to after the current
+			// path has been completed.
+			{"batch_replanner", batch_replanner},
+			// A planner that uses the dynamic goalset, but uses a greedy approach to insert new goals in the visitation order.
+			{"dynamic_planner_lci",
+			 dynamic_planner_simple_reorder_sphere(SimpleIncrementalTSPMethods::LeastCostlyInsertion)},
+			// A planner that inserts new goals simply at the end of the tour
+			{"dynamic_planner_LIFO", dynamic_planner_simple_reorder_sphere(SimpleIncrementalTSPMethods::LastInFirstOut)},
+			// A planner that inserts new goals simply at the beginning of the tour
+			{"dynamic_planner_FIFO", dynamic_planner_simple_reorder_sphere(SimpleIncrementalTSPMethods::FirstInFirstOut)},
+			// A planner that puts goals at the second place in the order.
+			{"dynamic_planner_FISO",
+			 dynamic_planner_simple_reorder_sphere(SimpleIncrementalTSPMethods::FirstInSecondOut)},
+			// A planner that randomizes the order of the goals.
+			{"dynamic_planner_random", dynamic_planner_simple_reorder_sphere(SimpleIncrementalTSPMethods::Random)},
+			// Same as dynamic_planner_fre, but with an initial orbit around the tree to discover some of the dynamic goals
+			{"dynamic_planner_initial_orbit", dynamic_planner_initial_orbit},
+			// A planner that uses the dynamic goalset, and completely reorders the visitation order from scratch every time a goal is added.
+			{"dynamic_planner_fre", dynamic_planner_fre},
 	};
 
-	// The different occlusion functions.
-	auto can_see_apple_fns = {std::make_pair("omniscient", omniscient_occlusion),
-							  std::make_pair("distance", distance_occlusion),
-							  std::make_pair("alpha_shape", leaf_alpha_occlusion)};
+	std::array<std::pair<std::string, CanSeeAppleFn>, 12> can_see_apple_fns = mk_standard_occlusion_models(meshes);
 
 	// Generate a set of problems based on the carthesian product of the above ranges.
 	auto problems =
@@ -230,43 +184,27 @@ int main(int argc, char **argv) {
 				problem_params["visibility_model"] = can_see_apple.first;
 
 				// Create the problem, to be solved by the planners.
-				DynamicGoalsetPlanningProblem problem{.start_state= randomStateOutsideTree(robot,
-																						   repId), .scene=        censored_scene, .apple_discoverability=    discoverability, .can_see_apple=    &can_see_apple
-						.second};
+				DynamicGoalsetPlanningProblem problem{
+					.start_state= randomStateOutsideTree(robot,repId),
+					.scene=        censored_scene,
+					.apple_discoverability=    discoverability,
+					.can_see_apple=    &can_see_apple.second};
 
 				// Return the problem parameters and the problem itself.
 				return {problem_params, problem};
 
 			}) | to_vector;
 
-	// The different planners to test.
-	std::vector<std::pair<std::string, DynamicPlannerAllocatorFn>> planners = {
-			// A planner that ignores the dynamic goalset, only planning to the initially-given apples.
-			// It will obviously not ve very optimal, but will serve as a baseline.
-			{"change_ignoring",               static_planner},
-			// A planner that adds new goals to a "batch" to be replanned to after the current
-			// path has been completed.
-			{"batch_replanner",               batch_replanner},
-			// A planner that uses the dynamic goalset, but uses a greedy approach to insert new goals in the visitation order.
-			{"dynamic_planner_lci",           dynamic_planner_lci},
-			// A planner that uses the dynamic goalset, and completely reorders the visitation order from scratch every time a goal is added.
-			{"dynamic_planner_fre",           dynamic_planner_fre},
-			// A planner that inserts new goals simply at the end of the tour
-			{"dynamic_planner_LIFO",          dynamic_planner_LIFO},
-			// A planner that inserts new goals simply at the beginning of the tour
-			{"dynamic_planner_FIFO",          dynamic_planner_FIFO},
-			// A planner that puts goals at the second place in the order.
-			{"dynamic_planner_FISO",          dynamic_planner_FISO},
-			// A planner that randomizes the order of the goals.
-			{"dynamic_planner_random",        dynamic_planner_random},
-			// // Same as dynamic_planner_fre, but with an initial orbit around the tree to discover some of the dynamic goals
-			{"dynamic_planner_initial_orbit", dynamic_planner_initial_orbit}};
+
 
 	// Take the carthesian product of the different planners and problems,
 	// making it so that every planner is tested on every problem.
-	auto experiments = views::cartesian_product(planners, problems) | views::transform([](const auto &pair) {
+	auto experiments = views::cartesian_product(PLANNERS_TO_TEST, problems) | views::transform([](const auto &pair) {
 		const auto &[planner, problem] = pair;
-		return Experiment{.planner= &planner, .problem= &problem};
+		return Experiment {
+			.planner= &planner,
+			.problem= &problem
+		};
 	}) | to_vector;
 
 	// Run the experiments in parallel.

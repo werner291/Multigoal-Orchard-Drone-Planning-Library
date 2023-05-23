@@ -29,7 +29,7 @@
 std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>
 getOcclusionLineCoordinates(const moveit::core::RobotState &state,
 							const std::vector<Apple> &apples,
-							const utilities::CanSeeAppleFn &can_see_apple) {
+							const CanSeeAppleFn &can_see_apple) {
 
 	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> occlusion_lines;
 
