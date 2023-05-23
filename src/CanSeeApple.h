@@ -2,6 +2,8 @@
 //
 // All rights reserved.
 
+#pragma once
+
 /**
  * @file occlusion_models.h
  * @brief Header file for occlusion related functionality.
@@ -10,11 +12,18 @@
 #include <functional>
 #include <moveit/robot_state/robot_state.h>
 #include "procedural_tree_generation.h"
+#include "TreeMeshes.h"
+
 
 /**
- * @brief Typedef for function taking a RobotState and an Apple as parameters and returning a boolean.
+ * @brief Typedef for function taking a RobotState and an Apple as parameters and returning whether the apple is visible to the robot in that state.
  */
 using CanSeeAppleFn = std::function<bool(const moveit::core::RobotState &state, const Apple &apple)>;
+
+/*
+ * @brief Typedef for function taking a TreeMeshes and returning a CanSeeAppleFn, as a factory for CanSeeAppleFn.
+ */
+using CanSeeAppleFnFactory = std::function<CanSeeAppleFn(TreeMeshes &)>;
 
 /**
  * @brief Function that checks the squared norm of the difference between robot's end effector position and apple's center.

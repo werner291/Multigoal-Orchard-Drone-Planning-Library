@@ -26,6 +26,8 @@
 template <typename ShellPoint>
 using MkWorkspaceShellFn = std::function<std::shared_ptr<WorkspaceShell<ShellPoint>>>;
 
+
+
 /**
  * @brief Constructs an OmplShellSpace with a cutting plane convex hull around the leaves of the apple tree.
  * This function conforms to the MkOmplShellFn template.
@@ -58,5 +60,16 @@ cgalChullShell(const AppleTreePlanningScene &scene_info, const ompl::base::Space
  */
 std::shared_ptr<OmplShellSpace<CylinderShellPoint>>
 cylinderShell(const AppleTreePlanningScene &scene, const ompl::base::SpaceInformationPtr &si);
+
+/**
+ * @brief Constructs an OmplShellSpace with a cutting plane convex hull around the leaves of the apple tree.
+ * This function conforms to the MkOmplShellFn template.
+ *
+ * @param scene_info The AppleTreePlanningScene containing information about the apple tree.
+ * @param si The ompl::base::SpaceInformationPtr for the constructed OmplShellSpace.
+ * @return A shared_ptr to the OmplShellSpace containing the cutting plane convex hull.
+ */
+std::shared_ptr<OmplShellSpace<Eigen::Vector3d>>
+minimumEnclosingSphereShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si);
 
 #endif //NEW_PLANNERS_CONSTRUCTION_H

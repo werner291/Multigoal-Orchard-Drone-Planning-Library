@@ -16,9 +16,11 @@ Json::Value runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot
 	// So, we just re-create the state space every time just to be safe.
 	auto ss = omplStateSpaceForDrone(robot);
 
+	auto scene = createSceneFromTreeModels(*experiment.problem->second.tree_meshes);
+
 	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
 	// we'll need to copy this for every thread
-	auto si = loadSpaceInformation(ss, experiment.problem->second.scene);
+	auto si = loadSpaceInformation(ss, scene);
 
 	// Allocate the planner.
 	auto ompl_planner = experiment.planner->second(si);
@@ -29,9 +31,9 @@ Json::Value runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot
 	// Create the evaluation object.
 	DynamicGoalVisitationEvaluation eval(adapter,
 										 experiment.problem->second.start_state,
-										 experiment.problem->second.scene,
+										 scene,
 										 experiment.problem->second.apple_discoverability,
-										 *experiment.problem->second.can_see_apple);
+										 (*experiment.problem->second.can_see_apple)(*experiment.problem->second.tree_meshes));
 
 	// Record the start time.
 	auto start_time = std::chrono::high_resolution_clock::now();

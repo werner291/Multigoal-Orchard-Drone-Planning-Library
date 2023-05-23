@@ -107,6 +107,17 @@ std::vector<std::string> getTreeNames();
 std::vector<TreeMeshes> loadRandomTreeModels(int n, int max_fruit);
 
 /**
+ * @brief Load the tree models with a limit on the number of fruit meshes.
+ *
+ * We limit fruit numbers because some tree models are very large and crash the program.
+ *
+ * @param max_n The number of tree models to load.
+ * @param max_fruit The maximum number of fruit meshes a tree model can have to be considered.
+ * @return A vector of loaded tree models.
+ */
+std::vector<TreeMeshes> loadAllTreeModels(int max_n, int max_fruit);
+
+/**
  * @brief Create a single row orchard from a given vector of tree models.
  *
  * This function creates a simplified representation of an orchard where all the trees are placed
