@@ -8,6 +8,8 @@
 #include "../utilities/midpoint_pull.h"
 #include "../DroneStateConstraintSampler.h"
 
+#include "../utilities/midpoint_pull.h"
+
 void projectgoalRegion(ompl::base::State *st, const ompl::base::GoalPtr &goal_base) {
 
 	auto goal = std::dynamic_pointer_cast<DroneEndEffectorNearTarget>(goal_base);
@@ -22,6 +24,7 @@ void projectgoalRegion(ompl::base::State *st, const ompl::base::GoalPtr &goal_ba
 	state_space->copyToOMPLState(st, moveit_st);
 
 }
+
 
 int main() {
 
@@ -52,51 +55,27 @@ int main() {
 		item.path_.subdivide();
 	}
 
-	SimpleVtkViewer viz;
-	addTreeMeshesToViewer(viz, models);
-
 	auto path = plan_result.combined();
 
 	double length_before = path.length();
 
 	std::cout << "Path length before: " << length_before << std::endl;
 
-	double t = 1.0;  // Start with t = 1.0
-	double lastLength = length_before;  // Keep track of the last path length
-	double improvementThreshold = 0.01 * length_before; // Set improvement threshold to 1% of the original path length
-	double absoluteImprovement; // Absolute improvement in path length
+	MgODPL::PathShorteningParameters params{.initialT = 1.0, .minimumT = 1e-6, .improvementThresholdPercentage = 1.0,
 
-	do {
-		bool improved = midpointPullTryShortenPath(path,
-												   extractGoalIndexPairing(plan_result, goals),
-												   projectgoalRegion,
-												   t);
-		double currentLength = path.length();
+	};
 
-		// Calculate the absolute improvement
-		absoluteImprovement = lastLength - currentLength;
+	MgODPL::PathShorteningAlgorithm algo(path, plan_result, goals, projectgoalRegion, params);
 
-		std::cout << "Path length after: " << currentLength << std::endl;
+	algo.run();
 
-		// If the path length didn't decrease, or the absolute improvement is less than the threshold, halve t
-		if (!improved || absoluteImprovement < improvementThreshold) {
-			t *= 0.5;
-		}
-
-		// Update the last path length
-		lastLength = currentLength;
-
-		// If t has become very small, break the loop
-		if (t < 1e-6) {
-			break;
-		}
-	} while (absoluteImprovement >=
-			 improvementThreshold);  // Stop when the absolute improvement falls below the threshold
+	path = algo.getResultingPath();
 
 	auto rpath_moveit = omplPathToRobotPath(path);
 
+	SimpleVtkViewer viz;
+	addTreeMeshesToViewer(viz, models);
 	visualizeBaseEndEffectorLadderTrace(viz, rpath_moveit);
-
 	viz.start();
 
 	return 0;
