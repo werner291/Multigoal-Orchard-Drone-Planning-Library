@@ -47,4 +47,30 @@ std::vector<std::pair<Json::Value, Problem>> generateStaticPlanningProblems(move
 																			int numRepetitions,
 																			const std::vector<std::string> &modelNames);
 
+/**
+ * @brief Generates a vector of planning problems, each containing a pair of JSON values and Problem objects.
+ * The planning problems feature multiple trees within a static, fully-known scene.
+ * The function creates a new problem instance for each repetition.
+ *
+ * For each problem, a subset of scenes is randomly picked from the available scenes,
+ * each scene containing a single tree. These scenes are then merged into one combined scene.
+ * The merging process arranges the trees from the individual scenes in a linear pattern,
+ * adding an offset to the x-coordinate of the positions of all the collision objects in each scene.
+ * This results in a scene with multiple trees arranged in a row, with a constant separation distance.
+ *
+ * A random start state is generated for each problem.
+ *
+ * @param robot A shared pointer to a moveit::core::RobotModel object.
+ * @param num_reps The number of repetitions to be performed for each problem, generating that many
+ *        Problem instances with different randomly-generated start states and combined scenes each time.
+ * @param model_names A vector of model names used to create the planning scenes.
+ * @param n_per_scene The number of scenes to be picked and merged for each problem.
+ * @return A vector of pairs, each containing a JSON value and a Problem object representing a planning problem
+ *         with multiple trees in a static, fully-known scene.
+ */
+std::vector<std::pair<Json::Value, Problem>> generateStaticOrchardPlanningProblems(const moveit::core::RobotModelPtr &robot,
+									  int num_reps,
+									  const std::vector<std::string> &model_names,
+									  int n_per_scene);
+
 #endif //NEW_PLANNERS_STATIC_PROBLEM_GENERATION_H

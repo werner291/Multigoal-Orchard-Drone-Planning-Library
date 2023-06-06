@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
 
 	auto robot = loadRobotModel();
 	auto start_state = randomStateOutsideTree(robot, 42);
-	auto planner_allocator = makeShellBasedPlanner<ConvexHullPoint>(cuttingPlaneChullShell);
+	auto planner_allocator = makeShellBasedPlanner<ConvexHullPoint>(cuttingPlaneChullShell, 1.0);
 
 	auto scene = createSceneFromSimplifiedOrchard(orchard);
 

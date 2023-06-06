@@ -9,7 +9,6 @@
 #ifndef NEW_PLANNERS_PLANNER_ALLOCATORS_H
 #define NEW_PLANNERS_PLANNER_ALLOCATORS_H
 
-
 #include "DynamicMultiGoalPlanner.h"
 #include "ORToolsTSPMethods.h"
 #include "SimpleIncrementalTSPMethods.h"
@@ -24,18 +23,40 @@
 #include "shell_space/OmplShellSpace.h"
 #include "shell_space/SphereShell.h"
 
+/// Alias for a shared pointer to a MultiGoalPlanner.
 using StaticPlannerPtr = std::shared_ptr<MultiGoalPlanner>;
+
+/// Alias for a function that creates a MultiGoalPlanner given a SpaceInformation.
 using StaticPlannerAllocatorFn = std::function<StaticPlannerPtr(const ompl::base::SpaceInformationPtr &)>;
 
+/**
+ * @brief Factory function to create a StaticPlannerAllocatorFn that uses a shell-based planner.
+ *
+ * This function returns another function that, when called, creates a StaticPlannerPtr. The created planner
+ * uses the MakeshiftPrmApproachPlanningMethods for path planning, and uses the provided shell builder to assist
+ * in the planning process.
+ *
+ * @tparam ShellPoint The type of points used to define the shell around the goal region.
+ * @param shellBuilder A function to build the shell around a goal region.
+ * @param approach_max_t The maximum time allowed for each planning attempt.
+ *
+ * @return A StaticPlannerAllocatorFn that creates a shell-based planner.
+ */
 template <typename ShellPoint>
-StaticPlannerAllocatorFn makeShellBasedPlanner(MkOmplShellFn<ShellPoint> shellBuilder) {
-	return [shellBuilder](const ompl::base::SpaceInformationPtr& si) -> StaticPlannerPtr {
-		auto planner = std::make_shared<ShellPathPlanner<ShellPoint>>(shellBuilder, std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint>>(si), true);
+StaticPlannerAllocatorFn makeShellBasedPlanner(MkOmplShellFn<ShellPoint> shellBuilder, double approach_max_t) {
+	return [shellBuilder,approach_max_t](const ompl::base::SpaceInformationPtr& si) -> StaticPlannerPtr {
+		auto planner = std::make_shared<ShellPathPlanner<ShellPoint>>(
+				shellBuilder,
+				std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint>>(si, approach_max_t),
+				true);
 		return std::dynamic_pointer_cast<MultiGoalPlanner>(planner);
 	};
 }
 
+/// Alias for a shared pointer to a DynamicMultiGoalPlanner.
 using DMGPlannerPtr = std::shared_ptr<DynamicMultiGoalPlanner>;
+
+/// Alias for a function that creates a DynamicMultiGoalPlanner given a SpaceInformation.
 using DMGPlannerAllocatorFn = std::function<DMGPlannerPtr(const ompl::base::SpaceInformationPtr &)>;
 
 /**

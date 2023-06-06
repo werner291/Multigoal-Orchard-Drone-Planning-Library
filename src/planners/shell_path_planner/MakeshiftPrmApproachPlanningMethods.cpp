@@ -11,7 +11,8 @@
 #include "../../shell_space/CylinderShell.h"
 
 template<typename ShellPoint>
-MakeshiftPrmApproachPlanningMethods<ShellPoint>::MakeshiftPrmApproachPlanningMethods(ompl::base::SpaceInformationPtr si)
+MakeshiftPrmApproachPlanningMethods<ShellPoint>::MakeshiftPrmApproachPlanningMethods(ompl::base::SpaceInformationPtr si,
+																					 double t_max)
 		: si(si) {
 
 	ompl::base::PlannerAllocator mkprm = [](const ompl::base::SpaceInformationPtr &si) {
@@ -20,7 +21,7 @@ MakeshiftPrmApproachPlanningMethods<ShellPoint>::MakeshiftPrmApproachPlanningMet
 
 	ompl::base::OptimizationObjectivePtr objective = std::make_shared<DronePathLengthObjective>(si);
 
-	single_goal_planner_methods = std::make_shared<SingleGoalPlannerMethods>(1.0,
+	single_goal_planner_methods = std::make_shared<SingleGoalPlannerMethods>(t_max,
 																			 si,
 																			 objective,
 																			 mkprm,

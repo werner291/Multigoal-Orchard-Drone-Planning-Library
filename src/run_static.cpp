@@ -6,7 +6,8 @@
 #include <range/v3/range/conversion.hpp>
 #include "run_static.h"
 
-Json::Value runPlannerOnStaticProblem(const StaticPlannerAllocatorFn &planner, const Problem &problem) {
+Json::Value
+runPlannerOnStaticProblem(const StaticPlannerAllocatorFn &planner, const Problem &problem) {
 
 	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
 	// So, we just re-create the state space every time just to be safe.
@@ -28,7 +29,7 @@ Json::Value runPlannerOnStaticProblem(const StaticPlannerAllocatorFn &planner, c
 				 }) | ranges::to_vector;
 
 	// use OMPL non-terminating condition
-	auto ptc = ompl::base::plannerNonTerminatingCondition();
+	auto ptc = ompl::base::timedPlannerTerminationCondition(200);
 
 	// Record the start time.
 	auto start_time = std::chrono::high_resolution_clock::now();

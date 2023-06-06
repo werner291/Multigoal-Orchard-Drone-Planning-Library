@@ -26,8 +26,6 @@
 template <typename ShellPoint>
 using MkWorkspaceShellFn = std::function<std::shared_ptr<WorkspaceShell<ShellPoint>>>;
 
-
-
 /**
  * @brief Constructs an OmplShellSpace with a cutting plane convex hull around the leaves of the apple tree.
  * This function conforms to the MkOmplShellFn template.
