@@ -64,10 +64,15 @@ public:
 		Json::Value &record = records[experiment_i];
 
 		if (record.isObject()) {
-			if (record["parameters"] == parameters) {
+			if (record["parameters"].toStyledString() == parameters.toStyledString()) {
 				// The experiment has already been run, so skip it.
 				return true;
 			} else {
+
+				std::cout << "Parameters do not match." << std::endl;
+				std::cout << "Cached parameters: " << record["parameters"] << std::endl;
+				std::cout << "Current parameters: " << parameters << std::endl;
+
 				// The experiment has supposedly been run, but the parameters do not match.
 				// Results may have been corrupted, so throw an error.
 				throw std::runtime_error("Experiment parameters do not match with cached experiment.");

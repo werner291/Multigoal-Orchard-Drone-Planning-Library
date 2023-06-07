@@ -127,8 +127,6 @@ MultiGoalPlanner::PlanResult MultigoalPrmStar::plan(const ompl::base::SpaceInfor
 
     auto goalVertices = createGoalVertices(*prm, goals, start_state_node, si, samplesPerGoal);
 
-    auto vertices_only = goalVertices | views::transform([&](auto v) { return v.vertex; }) | to_vector;
-
     std::cout << "PRM with " << prm->getRoadmap().m_vertices.size() << " vertices and "
               << prm->getRoadmap().m_edges.size() << " edges" << std::endl;
 
@@ -142,6 +140,11 @@ MultiGoalPlanner::PlanResult MultigoalPrmStar::plan(const ompl::base::SpaceInfor
 									   goalVertices[pair_j.first].vertex[pair_j.second]);
 		return path ? path->length() : std::numeric_limits<double>::infinity();
 	}, goalVertices | views::transform([&](auto v) { return v.vertex.size(); }) | to_vector, ptc);
+
+	if (ordering.empty()) {
+		std::cout << "No solution found" << std::endl;
+		return {};
+	}
 
     std::cout << "Building final path" << std::endl;
 

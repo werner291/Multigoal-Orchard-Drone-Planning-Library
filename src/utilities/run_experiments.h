@@ -67,9 +67,6 @@ void runExperimentsParallelRecoverable(const std::vector<Parameters>& parameters
 			continue;
 		} else {
 
-			// If we get to this point, the experiment has not been run yet.
-			std::cout << "Submitting experiment " << experiment_i << " to the thread pool." << std::endl;
-
 			// Add the experiment to the thread pool.
 			boost::asio::post(pool, [experiment_i=experiment_i,&parameters_pointers,&records_mutex,&experiment, &logger]() {
 
