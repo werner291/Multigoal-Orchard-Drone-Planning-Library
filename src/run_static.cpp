@@ -5,13 +5,33 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
 #include "run_static.h"
+#include "utilities/mesh_utils.h"
 
 Json::Value
 runPlannerOnStaticProblem(const StaticPlannerAllocatorFn &planner, const Problem &problem) {
 
+	double translation_bound = 0.0;
+
+	// Get the AABB of the apple tree.
+	for (const auto& obj : problem.scene.scene_msg->world.collision_objects) {
+
+		assert(obj.meshes.size() == 1);
+		assert(obj.mesh_poses.size() == 1);
+
+		auto aabb = mesh_aabb(obj.meshes[0]);
+
+		translation_bound = std::max(translation_bound, aabb.max().x());
+		translation_bound = std::max(translation_bound, aabb.max().y());
+		translation_bound = std::max(translation_bound, aabb.max().z());
+		translation_bound = std::max(translation_bound, std::abs(aabb.min().x()));
+		translation_bound = std::max(translation_bound, std::abs(aabb.min().y()));
+	}
+
+	translation_bound += 2.0;
+
 	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
 	// So, we just re-create the state space every time just to be safe.
-	auto ss = omplStateSpaceForDrone(problem.start.getRobotModel());
+	auto ss = omplStateSpaceForDrone(problem.start.getRobotModel(), translation_bound);
 
 	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
 	// we'll need to copy this for every thread

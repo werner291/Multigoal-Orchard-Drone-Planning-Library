@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
 
 		// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
 		// So, we just re-create the state space every time just to be safe.
-		auto ss = omplStateSpaceForDrone(robot);
+		auto ss = omplStateSpaceForDrone(robot, TRANSLATION_BOUND);
 
 		// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
 		// we'll need to copy this for every thread

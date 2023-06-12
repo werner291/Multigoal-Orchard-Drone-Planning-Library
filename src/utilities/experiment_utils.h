@@ -140,7 +140,8 @@ moveit::core::RobotState randomStateOutsideTree(const moveit::core::RobotModelCo
  *
  * @return A shared pointer to the loaded state space.
  */
-std::shared_ptr<DroneStateSpace> omplStateSpaceForDrone(const moveit::core::RobotModelConstPtr &model);
+std::shared_ptr<DroneStateSpace>
+omplStateSpaceForDrone(const moveit::core::RobotModelConstPtr &model, double translationBound);
 
 /**
  * @brief Load the space information that represents the given scene, including all the weird idiosyncracies of how we do planning.

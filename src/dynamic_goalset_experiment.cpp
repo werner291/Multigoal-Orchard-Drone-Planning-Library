@@ -14,7 +14,7 @@ Json::Value runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot
 
 	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
 	// So, we just re-create the state space every time just to be safe.
-	auto ss = omplStateSpaceForDrone(robot);
+	auto ss = omplStateSpaceForDrone(robot, TRANSLATION_BOUND);
 
 	auto scene = createSceneFromTreeModels(*experiment.problem->second.tree_meshes);
 

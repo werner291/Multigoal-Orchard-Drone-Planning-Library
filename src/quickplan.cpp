@@ -12,7 +12,7 @@ RobotPath quickPlan(AppleTreePlanningScene &scene,
 					const moveit::core::RobotState &start_state,
 					const StaticPlannerAllocatorFn &planner_allocator) {
 
-	auto ss = omplStateSpaceForDrone(start_state.getRobotModel());
+	auto ss = omplStateSpaceForDrone(start_state.getRobotModel(), TRANSLATION_BOUND);
 	auto si = loadSpaceInformation(ss, scene);
 	auto planner = planner_allocator(si);
 	ompl::base::ScopedState<> start(ss);

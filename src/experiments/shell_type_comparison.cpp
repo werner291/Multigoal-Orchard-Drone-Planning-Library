@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 
 	auto model_names = getTreeModelNames();
 
-	const auto problems = generateStaticPlanningProblems(robot, 10, model_names);
+	const auto problems = generateStaticPlanningProblems(robot, 5, model_names);
 
 	std::cout << "Generated " << problems.size() << " static planning problems." << std::endl;
 
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 	runPlannersOnProblemsParallelRecoverable<StaticPlannerAllocatorFn, Problem>(planners,
 																				problems,
 																				runPlannerOnStaticProblem,
-																				"analysis/data/shell_comparison_RAL_with_prm3.json",
+																				"analysis/data/shell_comparison_RAL_with_prm4.json",
 																				8,
 																				std::thread::hardware_concurrency(),
 																				42);
