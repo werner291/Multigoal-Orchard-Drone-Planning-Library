@@ -13,7 +13,7 @@
 StaticPlannerAllocatorFn
 makeTspOverPRMStarPlanner(double prmBuildTime, size_t samplesPerGoal, bool optimizeSegments, double aabb_padding) {
 	return [=](const ompl::base::SpaceInformationPtr &) -> StaticPlannerPtr {
-		return std::make_shared<MultigoalPrmStar>(prmBuildTime, samplesPerGoal, optimizeSegments);
+		return std::make_shared<MultigoalPrmStar>(prmBuildTime, samplesPerGoal, optimizeSegments, aabb_padding);
 	};
 }
 
@@ -24,11 +24,9 @@ int main(int argc, char **argv) {
 	// Load the robot model.
 	const auto robot = loadRobotModel();
 
-	auto model_names = getTreeModelNames();
+	std::vector<std::string> model_names = {"appletree2"};//getTreeModelNames();
 
-	model_names.resize(3);
-
-	const auto problems = generateStaticPlanningProblems(robot, 4, model_names);
+	const auto problems = generateStaticPlanningProblems(robot, 5, model_names);
 
 	std::cout << "Generated " << problems.size() << " static planning problems." << std::endl;
 
@@ -36,38 +34,23 @@ int main(int argc, char **argv) {
 
 	std::vector<std::pair<Json::Value, StaticPlannerAllocatorFn>> planners;
 
-	// Parameters for shell based planners
-	std::vector<double> shell_approach_max_t_values = {0.1, 0.25, 0.5, 1.0};
-
-	for (auto approach_max_t : shell_approach_max_t_values) {
-		Json::Value planner_params(Json::objectValue);
-
-		planner_params["name"] = "shell_based";
-
-		planner_params["approach_max_t"] = approach_max_t;
-
-		planner_params["shell_type"] = "minimum_enclosing_sphere";
-		planners.emplace_back(planner_params, makeShellBasedPlanner<Eigen::Vector3d>(minimumEnclosingSphereShell, approach_max_t));
-
-		planner_params["shell_type"] = "cgal_convex_hull";
-		planners.emplace_back(planner_params, makeShellBasedPlanner<CGALMeshShellPoint>(cgalChullShell, approach_max_t));
-	}
-
 	// Parameters for tsp over prm planners
-	std::vector<double> prm_build_time_values = {1,2,5,10,15};//,20};
-	std::vector<size_t> samples_per_goal_values = {1, 2, 3, 4, 6, 8};//, 6, 7, 8, 9, 10};
-	std::vector<double> margins = {1.0, 2.0, 5.0};
+	std::vector<double> prm_build_time_values = {2,5,10};//{1,2,5,10,15};//,20};
+	std::vector<size_t> samples_per_goal_values = {5};//{1, 2, 3, 4, 6, 8, 10};//, 6, 7, 8, 9, 10};
+	std::vector<double> outside_tree_margins = {1.0, 2.0, 5.0, 10.0};
 
 	for (auto prm_build_time : prm_build_time_values) {
 		for (auto samples_per_goal : samples_per_goal_values) {
-			for (auto margin : margins) {
+			for (auto margin: outside_tree_margins) {
 				Json::Value planner_params(Json::objectValue);
-				planner_params["name"] = "tsp_over_prm";
+				planner_params["name"] = "tsp_over_prm*";
 				planner_params["prm_build_time"] = prm_build_time;
 				planner_params["samples_per_goal"] = samples_per_goal;
-				planner_params["margin"] = margin;
+				planner_params["optimize_segments"] = true;
+				planner_params["outside_tree_margin"] = margin;
 
-				planners.emplace_back(planner_params, makeTspOverPRMStarPlanner(prm_build_time, samples_per_goal, false, margin));
+				planners.emplace_back(planner_params,
+									  makeTspOverPRMStarPlanner(prm_build_time, samples_per_goal, true, margin));
 			}
 		}
 	}
@@ -78,7 +61,7 @@ int main(int argc, char **argv) {
 	runPlannersOnProblemsParallelRecoverable<StaticPlannerAllocatorFn, Problem>(planners,
 																				problems,
 																				runPlannerOnStaticProblem,
-																				"analysis/data/shell_comparison_RAL_with_prm_variable_margin.json",
+																				"analysis/data/tsp_over_prm_margin.json",
 																				8,
 																				std::thread::hardware_concurrency(),
 																				42);

@@ -342,6 +342,7 @@ experiment("tsp_over_prm_vs_sphereshell")
 experiment("shell_comparison_sphere_armangle")
 experiment("path_length_prediction")
 experiment("shell_type_comparison")
+experiment("tsp_over_prm_bb")
 
 if (ENABLE_VISUALIZATION)
     experiment("initial_orbit_comparison")

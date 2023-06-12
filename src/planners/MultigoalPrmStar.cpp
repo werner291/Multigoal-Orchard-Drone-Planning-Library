@@ -6,6 +6,7 @@
 #include "../ompl_custom.h"
 #include "../utilities/traveling_salesman.h"
 #include "../probe_retreat_move.h"
+#include "../utilities/mesh_utils.h"
 
 #include <range/v3/all.hpp>
 
@@ -103,12 +104,45 @@ std::vector<AppleIdVertexPair> createGoalVertices(PRMCustom &prm,
 
 }
 
+double min_aabb_halfedge(const AppleTreePlanningScene &scene) {
+
+	double translation_bound = 0.0;
+
+	// Get the AABB of the apple tree.
+	for (const auto& obj : scene.scene_msg->world.collision_objects) {
+
+		for (const auto& mesh : obj.meshes) {
+			auto aabb = mesh_aabb(mesh);
+			translation_bound = std::max(translation_bound, aabb.max().x());
+			translation_bound = std::max(translation_bound, aabb.max().y());
+			translation_bound = std::max(translation_bound, aabb.max().z());
+			translation_bound = std::max(translation_bound, std::abs(aabb.min().x()));
+			translation_bound = std::max(translation_bound, std::abs(aabb.min().y()));
+		}
+
+	}
+
+	return translation_bound;
+
+}
 
 MultiGoalPlanner::PlanResult MultigoalPrmStar::plan(const ompl::base::SpaceInformationPtr &si,
 													const ompl::base::State *start,
 													const std::vector<ompl::base::GoalPtr> &goals,
 													const AppleTreePlanningScene &planning_scene,
 													ompl::base::PlannerTerminationCondition &ptc) {
+
+
+
+	si->getStateSpace()->setStateSamplerAllocator([&](const ompl::base::StateSpace *ss) -> ompl::base::StateSamplerPtr {
+
+		double bound = min_aabb_halfedge(planning_scene) + aabb_padding;
+
+		std::cout << "Creating state sampler with bound " << bound << std::endl;
+
+		return std::make_shared<DroneStateSampler>(ss, bound);
+
+	});
 
     std::cout << "Creating PRM ( budget: " << prm_build_time << "s)" << std::endl;
     auto prm = std::make_shared<PRMCustom>(si);
@@ -177,14 +211,15 @@ MultiGoalPlanner::PlanResult MultigoalPrmStar::plan(const ompl::base::SpaceInfor
     return result;
 }
 
-MultigoalPrmStar::MultigoalPrmStar(double prmBuildTime, size_t samplesPerGoal, bool optimizeSegments) : prm_build_time(
-        prmBuildTime), samplesPerGoal(samplesPerGoal), optimize_segments(optimizeSegments) {}
+MultigoalPrmStar::MultigoalPrmStar(double prmBuildTime, size_t samplesPerGoal, bool optimizeSegments, double aabb_padding) : prm_build_time(
+        prmBuildTime), samplesPerGoal(samplesPerGoal), optimize_segments(optimizeSegments), aabb_padding(aabb_padding) {}
 
 Json::Value MultigoalPrmStar::parameters() const {
     Json::Value params;
     params["prm_build_time"] = prm_build_time;
     params["samples_per_goal"] = (int) samplesPerGoal;
     params["optimize_segments"] = optimize_segments;
+	params["aabb_padding"] = aabb_padding;
     return params;
 }
 
