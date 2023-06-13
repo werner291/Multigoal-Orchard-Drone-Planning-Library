@@ -14,6 +14,8 @@
 #include <functional>
 #include <optional>
 
+#include "path.h"
+
 class ShellPoint;
 namespace mgodpl {
 
@@ -170,6 +172,29 @@ namespace mgodpl {
 		return ordering;
 	}
 
+	template<typename Path, typename ShellSpace>
+	Path composeRetreatShellApproachPath(
+			const ApproachPath<Path, typename ShellSpaceTraits<ShellSpace>::ShellPoint>& a1,
+			const ApproachToGoal<Path, typename ShellSpaceTraits<ShellSpace>::ShellPoint, size_t>& a2,
+			const ShellSpace& shell,
+			const LocalOptFn<Path>& local_opt_fn
+			) {
+
+		// Reverse the last approach path, to get back to the shell.
+		auto retreat = path_reverse(a1.path);
+
+		// Compute the shell path between the shell points of the last approach path and the next approach path.
+		auto sp1 = a1.shell_point;
+		auto sp2 = a2.approach_path.shell_point;
+		const auto& shell_path = ShellSpaceTraits<ShellSpace>::shell_path(sp1, sp2);
+
+		// Look up the next approach path.
+		auto approach = a2.approach_path.path;
+
+		// Concatenate the paths together and local-optimize them.
+		return local_opt_fn(PathTraits<Path>::concatenate({std::move(retreat), shell_path, approach}));
+
+	}
 
 	template<typename Path, typename ShellSpace>
 	PlanResult<Path> compose_paths(const LocalOptFn<Path> &local_opt_fn,
@@ -186,48 +211,21 @@ namespace mgodpl {
 		 * which is a bit tricky, so we don't do it for now as this isn't a hot path.
 		 */
 
-		// Step 4.1: Stitch the initial approach path to the first approach path, via the shell.
-		{
+		// Add the path to the result.
+		result.paths.push_back({
+			composeRetreatShellApproachPath<Path, ShellSpace>(initial_approach_path, approach_paths[ordering[0]], shell),
+			approach_paths[ordering[0]].goal
+		});
 
-			// Compute the shell path between the shell points of the initial approach path and the first approach path.
-			auto sp1 = initial_approach_path.approach_path.shell_point;
-			auto sp2 = approach_paths[ordering[0]].approach_path.shell_point;
-			const auto& shell_path = ShellSpaceTraits<ShellSpace>::shell_path(sp1, sp2);
-
-			// Reverse the initial approach path (noting that, since it's an approach path,
-			// it starts at the shell and ends at the initial configuration, and therefore
-			// we need to reverse it to get the path from the initial configuration to the shell).
-			auto i_rev = PathTraits<Path>::reverse(initial_approach_path.approach_path.path);
-
-			// Look up the first approach path.
-			const auto approach = approach_paths[ordering[0]].approach_path.path;
-
-			// Concatenate the paths together and local-optimize them.
-			Path initial_path = local_opt_fn(PathTraits<Path>::concatenate({std::move(i_rev), shell_path, approach}));
-
-			// Add the path to the result.
-			result.paths.push_back({initial_path, approach_paths[ordering[0]].goal});
-		}
 
 		// Step 4.2: Stitch the remaining approach paths together.
 		for (size_t i = 0; i + 1 < approach_paths.size(); ++i) {
 
-			// Reverse the last approach path, to get back to the shell.
-			auto retreat = PathTraits<Path>::reverse(approach_paths[ordering[i]].approach_path.path);
-
-			// Compute the shell path between the shell points of the last approach path and the next approach path.
-			auto sp1 = approach_paths[ordering[i]].approach_path.shell_point;
-			auto sp2 = approach_paths[ordering[i + 1]].approach_path.shell_point;
-			const auto& shell_path = ShellSpaceTraits<ShellSpace>::shell_path(sp1, sp2);
-
-			// Look up the next approach path.
-			auto approach = approach_paths[ordering[i + 1]].approach_path.path;
-
-			// Concatenate the paths together and local-optimize them.
-			Path goal_to_goal = local_opt_fn(PathTraits<Path>::concatenate({std::move(retreat), shell_path, approach}));
-
 			// Add the path to the result.
-			result.paths.push_back({goal_to_goal, approach_paths[ordering[i + 1]].goal});
+			result.paths.push_back({
+				composeRetreatShellApproachPath<Path, ShellSpace>(approach_paths[ordering[i]].approach_path, approach_paths[ordering[i + 1]], shell),
+				approach_paths[ordering[i + 1]].goal
+			});
 		}
 
 		// Return the result.
