@@ -258,7 +258,7 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/link_trace.cpp
         src/utilities/link_trace.h
         src/quickplan.cpp
-        src/quickplan.h src/utilities/optimization_meta.h src/dynamic_goalset_experiment.cpp src/dynamic_goalset_experiment.h src/CanSeeApple.cpp src/CanSeeApple.h)
+        src/quickplan.h src/utilities/optimization_meta.h src/dynamic_goalset_experiment.cpp src/dynamic_goalset_experiment.h src/CanSeeApple.cpp src/CanSeeApple.h src/pure/ShellPathPlanner.h src/pure/moveit_impl/path.h src/pure/approach_planning.h src/pure/ShellPathPlanner_impl.h)
 
 add_library(${PROJECT_NAME}_visualization
         src/RobotCameraTracker.cpp
