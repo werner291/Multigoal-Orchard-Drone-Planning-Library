@@ -13,6 +13,7 @@
 #include "planner_allocators.h"
 #include "static_problem_generation.h"
 
-Json::Value runPlannerOnStaticProblem(const StaticPlannerAllocatorFn &planner, const Problem &problem);
+Json::Value runPlannerOnStaticProblem(const StaticPlannerAllocatorFn &planner,
+									  const Problem &problem);
 
 #endif //NEW_PLANNERS_RUN_STATIC_H

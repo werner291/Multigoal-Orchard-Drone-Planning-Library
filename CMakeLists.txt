@@ -8,6 +8,9 @@ project(MgODPL) # Multigoal Orchard Drone Planning Library
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(VTK_QT_VERSION "6" CACHE STRING "Qt Version")
 
+# Add an option to enable/disable VTK
+option(ENABLE_VISUALIZATION "Enable VISUALizATION support" OFF)
+
 ## System dependencies are found with CMake's conventions
 find_package(Eigen3 REQUIRED)
 find_package(jsoncpp REQUIRED)
@@ -20,10 +23,6 @@ find_package(Qhull REQUIRED)
 
 set(CGAL_DATA_DIR "UNUSED_STOP_WARNING")
 find_package(CGAL REQUIRED)
-find_package(VTK REQUIRED)
-
-find_package(Qt5 COMPONENTS Core Widgets Concurrent REQUIRED)
-set(CMAKE_AUTOMOC ON)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -61,7 +60,6 @@ link_libraries(
         tbb
         ${CGAL_LIBRARIES}
         ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
-        ${VTK_LIBRARIES}
 )
 
 ###########
@@ -260,59 +258,69 @@ add_library(${PROJECT_NAME}_shared
         src/quickplan.cpp
         src/quickplan.h src/utilities/optimization_meta.h src/dynamic_goalset_experiment.cpp src/dynamic_goalset_experiment.h src/CanSeeApple.cpp src/CanSeeApple.h src/pure/ShellPathPlanner.h src/pure/moveit_impl/path.h src/pure/approach_planning.h src/pure/ShellPathPlanner_impl.h)
 
-add_library(${PROJECT_NAME}_visualization
-        src/RobotCameraTracker.cpp
-        src/RobotCameraTracker.h
-        src/apple_status_color_coding.cpp
-        src/apple_status_color_coding.h
-        src/utilities/vtk.cpp
-        src/utilities/vtk.h
-        src/visualization/SimpleVtkViewer.cpp
-        src/visualization/SimpleVtkViewer.h
-        # src/visualization/SimulatedSensor.cpp
-        # src/visualization/SimulatedSensor.h
-        src/visualization/StatusTextViz.cpp
-        src/visualization/StatusTextViz.h
-        src/visualization/VideoRecorder.cpp
-        src/visualization/VideoRecorder.h
-        src/visualization/Viewer.cpp
-        src/visualization/Viewer.h
-        src/visualization/VisualizationSpecifics.cpp
-        src/visualization/VisualizationSpecifics.h
-        src/visualization/VtkRobotModel.cpp
-        src/visualization/VtkRobotModel.h
-        src/visualization/camera_controls.cpp
-        src/visualization/camera_controls.h
-        src/visualization/orchard_actors.cpp
-        src/visualization/orchard_actors.h
-        src/visualization/shell_visualization.cpp
-        src/visualization/shell_visualization.h
-        src/visualization/visualize_dynamic.cpp
-        src/visualization/visualize_dynamic.h
-        src/visualization/visualize_path.cpp
-        src/visualization/visualize_path.h
-        src/visualization/AppleIDSelector.cpp
-        src/visualization/AppleIDSelector.h
-        src/visualization/ShellWrapper.h
-        src/visualization/ObservableInt.cpp
-        src/visualization/ObservableInt.h
-        src/visualization/chain_qt_futures.cpp
-        src/visualization/chain_qt_futures.h
-        src/visualization/TreeMeshesLoader.cpp
-        src/visualization/TreeMeshesLoader.h
-        src/visualization/ActorsVisibilityWidget.cpp
-        src/visualization/ActorsVisibilityWidget.h
-        src/visualization/numeric_combobox.cpp
-        src/visualization/numeric_combobox.h
-        src/visualization/path_visualization.cpp
-        src/visualization/path_visualization.h
-        src/visualization/LabeledActors.cpp
-        src/visualization/LabeledActors.h
-        src/visualization/compute_prm.cpp
-        src/visualization/compute_prm.h
-        )
+if (ENABLE_VISUALIZATION)
+    find_package(VTK REQUIRED)
 
-target_link_libraries(${PROJECT_NAME}_visualization ${PROJECT_NAME}_shared Qt5::Core Qt5::Widgets Qt5::Concurrent)
+    find_package(Qt5 COMPONENTS Core Widgets Concurrent REQUIRED)
+    set(CMAKE_AUTOMOC ON)
+
+    add_library(${PROJECT_NAME}_visualization
+            src/RobotCameraTracker.cpp
+            src/RobotCameraTracker.h
+            src/apple_status_color_coding.cpp
+            src/apple_status_color_coding.h
+            src/utilities/vtk.cpp
+            src/utilities/vtk.h
+            src/visualization/SimpleVtkViewer.cpp
+            src/visualization/SimpleVtkViewer.h
+            # src/visualization/SimulatedSensor.cpp
+            # src/visualization/SimulatedSensor.h
+            src/visualization/StatusTextViz.cpp
+            src/visualization/StatusTextViz.h
+            src/visualization/VideoRecorder.cpp
+            src/visualization/VideoRecorder.h
+            src/visualization/Viewer.cpp
+            src/visualization/Viewer.h
+            src/visualization/VisualizationSpecifics.cpp
+            src/visualization/VisualizationSpecifics.h
+            src/visualization/VtkRobotModel.cpp
+            src/visualization/VtkRobotModel.h
+            src/visualization/camera_controls.cpp
+            src/visualization/camera_controls.h
+            src/visualization/orchard_actors.cpp
+            src/visualization/orchard_actors.h
+            src/visualization/shell_visualization.cpp
+            src/visualization/shell_visualization.h
+            src/visualization/visualize_dynamic.cpp
+            src/visualization/visualize_dynamic.h
+            src/visualization/visualize_path.cpp
+            src/visualization/visualize_path.h
+            src/visualization/AppleIDSelector.cpp
+            src/visualization/AppleIDSelector.h
+            src/visualization/ShellWrapper.h
+            src/visualization/ObservableInt.cpp
+            src/visualization/ObservableInt.h
+            src/visualization/chain_qt_futures.cpp
+            src/visualization/chain_qt_futures.h
+            src/visualization/TreeMeshesLoader.cpp
+            src/visualization/TreeMeshesLoader.h
+            src/visualization/ActorsVisibilityWidget.cpp
+            src/visualization/ActorsVisibilityWidget.h
+            src/visualization/numeric_combobox.cpp
+            src/visualization/numeric_combobox.h
+            src/visualization/path_visualization.cpp
+            src/visualization/path_visualization.h
+            src/visualization/LabeledActors.cpp
+            src/visualization/LabeledActors.h
+            src/visualization/compute_prm.cpp
+            src/visualization/compute_prm.h
+            )
+
+    target_link_libraries(${PROJECT_NAME}_visualization ${PROJECT_NAME}_shared Qt5::Core Qt5::Widgets Qt5::Concurrent)
+    ament_target_dependencies(${PROJECT_NAME}_visualization ${AMENT_DEPS})
+
+
+endif ()
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
@@ -320,7 +328,6 @@ set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "
 
 ament_target_dependencies(${PROJECT_NAME}_shared ${AMENT_DEPS})
 
-ament_target_dependencies(${PROJECT_NAME}_visualization ${AMENT_DEPS})
 
 function(experiment name)
     add_executable(${PROJECT_NAME}_experiment_${name} src/experiments/${name}.cpp)
@@ -335,36 +342,40 @@ experiment("tsp_over_prm_vs_sphereshell")
 experiment("shell_comparison_sphere_armangle")
 experiment("path_length_prediction")
 experiment("shell_type_comparison")
-experiment("initial_orbit_comparison")
-target_link_libraries(${PROJECT_NAME}_experiment_initial_orbit_comparison ${PROJECT_NAME}_visualization)
+experiment("tsp_over_prm_bb")
 
-experiment("exploration")
-target_link_libraries(${PROJECT_NAME}_experiment_exploration ${PROJECT_NAME}_sensing)
+if (ENABLE_VISUALIZATION)
+    experiment("initial_orbit_comparison")
+    target_link_libraries(${PROJECT_NAME}_experiment_initial_orbit_comparison ${PROJECT_NAME}_visualization)
 
-experiment("ignoring_vs_passive_discovery")
+    experiment("exploration")
+    target_link_libraries(${PROJECT_NAME}_experiment_exploration ${PROJECT_NAME}_sensing)
 
-experiment("non_approach_experiment")
+    experiment("ignoring_vs_passive_discovery")
 
-experiment("dynamic_visualized")
-target_link_libraries(${PROJECT_NAME}_experiment_dynamic_visualized ${PROJECT_NAME}_visualization)
+    experiment("non_approach_experiment")
 
-experiment("visualize_prm")
-target_link_libraries(${PROJECT_NAME}_experiment_visualize_prm ${PROJECT_NAME}_visualization)
+    experiment("dynamic_visualized")
+    target_link_libraries(${PROJECT_NAME}_experiment_dynamic_visualized ${PROJECT_NAME}_visualization)
 
-experiment("static_visualized")
-target_link_libraries(${PROJECT_NAME}_experiment_static_visualized ${PROJECT_NAME}_visualization Qt5::Core Qt5::Widgets Qt5::Concurrent)
+    experiment("visualize_prm")
+    target_link_libraries(${PROJECT_NAME}_experiment_visualize_prm ${PROJECT_NAME}_visualization)
 
-experiment("vizualized_trees_row")
-target_link_libraries(${PROJECT_NAME}_experiment_vizualized_trees_row ${PROJECT_NAME}_visualization)
+    experiment("static_visualized")
+    target_link_libraries(${PROJECT_NAME}_experiment_static_visualized ${PROJECT_NAME}_visualization Qt5::Core Qt5::Widgets Qt5::Concurrent)
 
-experiment("chull_underpass_visualized")
-target_link_libraries(${PROJECT_NAME}_experiment_chull_underpass_visualized ${PROJECT_NAME}_visualization)
+    experiment("vizualized_trees_row")
+    target_link_libraries(${PROJECT_NAME}_experiment_vizualized_trees_row ${PROJECT_NAME}_visualization)
 
-experiment("photoshoot_tree_models")
-target_link_libraries(${PROJECT_NAME}_experiment_photoshoot_tree_models ${PROJECT_NAME}_visualization)
+    experiment("chull_underpass_visualized")
+    target_link_libraries(${PROJECT_NAME}_experiment_chull_underpass_visualized ${PROJECT_NAME}_visualization)
 
-experiment("midpoint_pull_optimization")
-target_link_libraries(${PROJECT_NAME}_experiment_midpoint_pull_optimization ${PROJECT_NAME}_visualization)
+    experiment("photoshoot_tree_models")
+    target_link_libraries(${PROJECT_NAME}_experiment_photoshoot_tree_models ${PROJECT_NAME}_visualization)
+
+    experiment("midpoint_pull_optimization")
+    target_link_libraries(${PROJECT_NAME}_experiment_midpoint_pull_optimization ${PROJECT_NAME}_visualization)
+endif ()
 
 experiment("CGAL_mesh_paths_comparison")
 
@@ -376,28 +387,28 @@ experiment("static_new")
 
 include(GoogleTest)
 
-add_executable(${PROJECT_NAME}_tests
-        test/test.cpp
-        #        test/MoveItPathLengthObjectiveTest.cpp
-        #        test/math_test.cpp
-        #        test/CuttingPlaneConvexHullShell_test.cpp
-        #        test/CGALMeshShell_test.cpp
-        #        src/utilities/test/math_utils_test.cpp
-        #        test/SphereShell_test.cpp
-        #        test/StreamingConvexHull_test.cpp
-        #        test/VisualiserTest.cpp
-        #        test/TimedConvergenceTerminationCondition_test.cpp
-        #        test/HashedSpatialIndex_test.cpp
-        #        test/LeavesCollisionChecker_test.cpp
-        #        test/LeavesCollisionChecker_test.cpp
-        #        test/OnlineOrderOptimization_test.cpp
-        #        test/StreamingAlphaShape_test.cpp
-        #        test/PointOnMeshLookup_test.cpp
-        #        test/SurfletVolume_test.cpp
-        test/approachplanning_accuracy.cpp
-        test/CuttingPlaneConvexHullShell_test.cpp
-        test/HorizontalOrientedBoundingBox_test.cpp test/CylinderShell_test.cpp)
-
-target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared ${PROJECT_NAME}_visualization gtest)
-ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})
-gtest_discover_tests(${PROJECT_NAME}_tests)
+#add_executable(${PROJECT_NAME}_tests
+#        test/test.cpp
+#        #        test/MoveItPathLengthObjectiveTest.cpp
+#        #        test/math_test.cpp
+#        #        test/CuttingPlaneConvexHullShell_test.cpp
+#        #        test/CGALMeshShell_test.cpp
+#        #        src/utilities/test/math_utils_test.cpp
+#        #        test/SphereShell_test.cpp
+#        #        test/StreamingConvexHull_test.cpp
+#        #        test/VisualiserTest.cpp
+#        #        test/TimedConvergenceTerminationCondition_test.cpp
+#        #        test/HashedSpatialIndex_test.cpp
+#        #        test/LeavesCollisionChecker_test.cpp
+#        #        test/LeavesCollisionChecker_test.cpp
+#        #        test/OnlineOrderOptimization_test.cpp
+#        #        test/StreamingAlphaShape_test.cpp
+#        #        test/PointOnMeshLookup_test.cpp
+#        #        test/SurfletVolume_test.cpp
+#        test/approachplanning_accuracy.cpp
+#        test/CuttingPlaneConvexHullShell_test.cpp
+#        test/HorizontalOrientedBoundingBox_test.cpp test/CylinderShell_test.cpp)
+#
+#target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared ${PROJECT_NAME}_visualization gtest)
+#ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})
+#gtest_discover_tests(${PROJECT_NAME}_tests)

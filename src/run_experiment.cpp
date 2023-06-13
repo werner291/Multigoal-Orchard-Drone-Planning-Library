@@ -204,7 +204,7 @@ Json::Value run_task(const moveit::core::RobotModelConstPtr &drone, const Run &r
 
 	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
 	// So, we just re-create the state space every time just to be safe.
-	auto threadLocalStateSpace = omplStateSpaceForDrone(drone);
+	auto threadLocalStateSpace = omplStateSpaceForDrone(drone, TRANSLATION_BOUND);
 
 	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
 	// we'll need to copy this every time.
@@ -322,7 +322,8 @@ void run_planner_experiment(const std::vector<NewMultiGoalPlannerAllocatorFn> &a
 	auto rng = std::mt19937(42); // NOLINT(cert-msc51-cpp)
 
 	// Generate the list of planning problems to solve (this is deterministic thanks to seeding the Rng.
-	const auto planning_problems = genPlanningProblems(num_runs, napples, omplStateSpaceForDrone(drone), scenes, rng);
+	const auto planning_problems = genPlanningProblems(num_runs, napples,
+													   omplStateSpaceForDrone(drone, TRANSLATION_BOUND), scenes, rng);
 
 	// Generate the planner-problem pairs.
 	const auto runs = genRuns(allocators, planning_problems, rng);

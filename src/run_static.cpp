@@ -5,12 +5,14 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
 #include "run_static.h"
+#include "utilities/mesh_utils.h"
 
-Json::Value runPlannerOnStaticProblem(const StaticPlannerAllocatorFn &planner, const Problem &problem) {
+Json::Value
+runPlannerOnStaticProblem(const StaticPlannerAllocatorFn &planner, const Problem &problem) {
 
 	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
 	// So, we just re-create the state space every time just to be safe.
-	auto ss = omplStateSpaceForDrone(problem.start.getRobotModel());
+	auto ss = omplStateSpaceForDrone(problem.start.getRobotModel(), TRANSLATION_BOUND);
 
 	// Collision-space is "thread-safe" by using locking. So, if we want to get any speedup at all,
 	// we'll need to copy this for every thread
@@ -28,7 +30,7 @@ Json::Value runPlannerOnStaticProblem(const StaticPlannerAllocatorFn &planner, c
 				 }) | ranges::to_vector;
 
 	// use OMPL non-terminating condition
-	auto ptc = ompl::base::plannerNonTerminatingCondition();
+	auto ptc = ompl::base::timedPlannerTerminationCondition(200);
 
 	// Record the start time.
 	auto start_time = std::chrono::high_resolution_clock::now();

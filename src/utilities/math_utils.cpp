@@ -316,6 +316,8 @@ OctantIterator math_utils::find_octant_containing_point(const Eigen::AlignedBox3
 		}
 	}
 	assert(false && "Point not contained in any octant!");
+
+	return OctantIterator::end();
 }
 
 bool math_utils::point_closer_to_center_than_edge(const Eigen::Vector3d &point, const Eigen::AlignedBox3d &box) {

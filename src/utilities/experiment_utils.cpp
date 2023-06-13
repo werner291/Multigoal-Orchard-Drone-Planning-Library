@@ -220,9 +220,10 @@ loadSpaceInformation(const std::shared_ptr<DroneStateSpace> &stateSpace, const A
 	return initSpaceInformation(scene, scene->getRobotModel(), stateSpace);
 }
 
-std::shared_ptr<DroneStateSpace> omplStateSpaceForDrone(const moveit::core::RobotModelConstPtr &model) {
+std::shared_ptr<DroneStateSpace>
+omplStateSpaceForDrone(const moveit::core::RobotModelConstPtr &model, double translationBound) {
 	ompl_interface::ModelBasedStateSpaceSpecification spec(model, "whole_body");
-	return std::make_shared<DroneStateSpace>(spec, TRANSLATION_BOUND);
+	return std::make_shared<DroneStateSpace>(spec, translationBound);
 }
 
 Apple appleFromMesh(const shape_msgs::msg::Mesh &mesh) {

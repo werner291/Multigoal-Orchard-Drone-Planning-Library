@@ -44,8 +44,9 @@ class MultigoalPrmStar : public MultiGoalPlanner {
     double prm_build_time;
     size_t samplesPerGoal;
     bool optimize_segments;
+	double aabb_padding = 1.0;
 public:
-    MultigoalPrmStar(double prmBuildTime, size_t samplesPerGoal, bool optimizeSegments);
+    MultigoalPrmStar(double prmBuildTime, size_t samplesPerGoal, bool optimizeSegments, double aabb_padding = 1.0);
 
 public:
     PlanResult plan(const ompl::base::SpaceInformationPtr &si,

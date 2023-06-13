@@ -50,7 +50,7 @@ struct AppleTreePlanningScene {
  *
  * @return A vector of AppleTreePlanningScenes for the valid trees.
  */
-std::vector<AppleTreePlanningScene> scenes_for_trees(const std::vector<std::string> &tree_names, const size_t max_fruit = 500);
+std::vector<AppleTreePlanningScene> scenes_for_trees(const std::vector<std::string> &tree_names, const size_t max_fruit = 600);
 
 /**
  * @brief Converts a TreeMeshes object into a PlanningScene message.
