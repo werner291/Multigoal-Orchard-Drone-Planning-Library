@@ -99,7 +99,4 @@ namespace mgodpl {
 
 }
 
-
-
-
 #endif //MGODPL_MINIMUMENCLOSINGSPHERESHELL_H

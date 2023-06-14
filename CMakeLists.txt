@@ -262,7 +262,7 @@ add_library(${PROJECT_NAME}_shared
         src/dynamic_goalset_experiment.h
         src/CanSeeApple.cpp
         src/CanSeeApple.h
-        src/pure/ShellPathPlanner.h src/pure/DynamicShellPathPlanner.h src/pure/moveit_impl/path.h src/pure/path.h src/pure/ompl_impl/path.h src/pure/Shell.h src/pure/shell_space_impl/MinimumEnclosingShell.cpp src/pure/shell_space_impl/MinimumEnclosingSphereShell.h src/pure/ShellConfigurationSpace.h)
+        src/pure/ShellPathPlanner.h src/pure/DynamicShellPathPlanner.h src/pure/moveit_impl/path.h src/pure/path.h src/pure/ompl_impl/path.h src/pure/Shell.h src/pure/shell_space_impl/MinimumEnclosingShell.cpp src/pure/shell_space_impl/MinimumEnclosingSphereShell.h src/pure/ShellConfigurationSpace.h src/pure/WorkspaceShell.h src/pure/shell_space_impl/CGALMeshShell.cpp src/pure/shell_space_impl/CGALMeshShell.h src/pure/shell_space_impl/CGALMeshShell.h)
 
 if (ENABLE_VISUALIZATION)
     find_package(VTK REQUIRED)

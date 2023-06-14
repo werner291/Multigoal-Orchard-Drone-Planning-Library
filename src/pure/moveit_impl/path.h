@@ -30,4 +30,13 @@ RobotPath mgodpl::path_concatenate(RobotPath paths...) {
 	return result;
 }
 
+template<>
+struct mgodpl::path_configuration_t<RobotPath> {
+	using type = moveit::core::RobotState;
+};
+
+namespace mgodpl {
+	using RobotPath = ::RobotPath;
+}
+
 #endif //MGODPL_PATH_H

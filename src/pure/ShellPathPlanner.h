@@ -15,6 +15,7 @@
 #include <optional>
 
 #include "path.h"
+#include "Shell.h"
 
 class ShellPoint;
 namespace mgodpl {
@@ -65,7 +66,7 @@ namespace mgodpl {
 	 * @brief A function that plans an approach path from a shell space to a goal, or nullopt if the path cannot be planned.
 	 */
 	template<typename Path, typename Shell, typename Goal> using PlanShellRetractionPathFn =
-			std::function<std::optional<ApproachPath<Path, typename ShellSpaceTraits<Shell>::ShellPoint>>(const Shell &, Goal)>;
+			std::function<std::optional<ApproachPath<Path, typename shell_point_t<Shell>::type>>(const Shell &, Goal)>;
 
 	/**
 	 * @brief a pair of approach planning functions that, given a shell space, plan an approach path from a shell point to either a goal or a specific configuration.
@@ -79,7 +80,7 @@ namespace mgodpl {
 
 		PlanShellRetractionPathFn<Path, Shell, Goal> plan_shell_retraction_path;
 
-		PlanShellRetractionPathFn<Path, Shell, typename PathTraits<Path>::Configuration> plan_shell_retraction_path_from_configuration;
+		PlanShellRetractionPathFn<Path, Shell, typename path_configuration_t<Path>::type> plan_shell_retraction_path_from_configuration;
 
 	};
 

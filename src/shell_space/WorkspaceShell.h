@@ -19,9 +19,6 @@ public:
 	virtual ~ShellPath() = default;
 };
 
-template<typename ShellPoint>
-class WorkspaceShell;
-
 /**
  * A path across a workspace shell, where the shell is defined by a parametric curve.
  * @tparam ShellPoint		Type of points on the shell.
@@ -45,7 +42,7 @@ public:
  * @tparam ShellPoint	The type of a point on the shell.
  *
  */
-template<typename ShellPoint>
+template<typename ShellPoint, typename SurfacePath = ShellPath<ShellPoint>>
 class WorkspaceShell {
 
 public:

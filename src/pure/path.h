@@ -23,6 +23,11 @@ namespace mgodpl {
 	template<typename Path>
 	Path path_concatenate(Path paths...);
 
+	template<typename Path>
+	struct path_configuration_t {
+		using type = typename Path::Configuration;
+	};
+
 }
 
 #endif //MGODPL_PATH_H
