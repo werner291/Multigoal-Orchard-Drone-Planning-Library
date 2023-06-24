@@ -11,6 +11,9 @@
  * A path through space defined by a vector of robot states, without an associated time component.
  */
 struct RobotPath {
+
+	using Configuration = moveit::core::RobotState;
+
 	std::vector<moveit::core::RobotState> waypoints;
 
 	[[nodiscard]] double length() const;

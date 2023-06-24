@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(mgodpl) # Multigoal Orchard Drone Planning Library
+project(MgODPL) # Multigoal Orchard Drone Planning Library
 
 #if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 #    add_compile_options(-Wall -Wextra -Wpedantic)
@@ -256,6 +256,13 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/link_trace.cpp
         src/utilities/link_trace.h
         src/quickplan.cpp
+        src/quickplan.h
+        src/utilities/optimization_meta.h
+        src/dynamic_goalset_experiment.cpp
+        src/dynamic_goalset_experiment.h
+        src/CanSeeApple.cpp
+        src/CanSeeApple.h
+        src/pure/ShellPathPlanner.h src/pure/DynamicShellPathPlanner.h src/pure/moveit_impl/path.h src/pure/path.h src/pure/ompl_impl/path.h src/pure/Shell.h src/pure/shell_space_impl/MinimumEnclosingShell.cpp src/pure/shell_space_impl/MinimumEnclosingSphereShell.h src/pure/ShellConfigurationSpace.h src/pure/WorkspaceShell.h src/pure/shell_space_impl/CGALMeshShell.cpp src/pure/shell_space_impl/CGALMeshShell.h src/pure/shell_space_impl/CGALMeshShell.h)
         src/quickplan.h src/utilities/optimization_meta.h src/dynamic_goalset_experiment.cpp src/dynamic_goalset_experiment.h src/CanSeeApple.cpp src/CanSeeApple.h src/utilities/fcl_util.cpp src/utilities/fcl_util.h)
 
 if (ENABLE_VISUALIZATION)
@@ -388,28 +395,32 @@ experiment("static_new")
 
 include(GoogleTest)
 
-#add_executable(${PROJECT_NAME}_tests
-#        test/test.cpp
-#        #        test/MoveItPathLengthObjectiveTest.cpp
-#        #        test/math_test.cpp
-#        #        test/CuttingPlaneConvexHullShell_test.cpp
-#        #        test/CGALMeshShell_test.cpp
-#        #        src/utilities/test/math_utils_test.cpp
-#        #        test/SphereShell_test.cpp
-#        #        test/StreamingConvexHull_test.cpp
-#        #        test/VisualiserTest.cpp
-#        #        test/TimedConvergenceTerminationCondition_test.cpp
-#        #        test/HashedSpatialIndex_test.cpp
-#        #        test/LeavesCollisionChecker_test.cpp
-#        #        test/LeavesCollisionChecker_test.cpp
-#        #        test/OnlineOrderOptimization_test.cpp
-#        #        test/StreamingAlphaShape_test.cpp
-#        #        test/PointOnMeshLookup_test.cpp
-#        #        test/SurfletVolume_test.cpp
+add_executable(${PROJECT_NAME}_tests
+        test/test.cpp
+        test/pure_stuff.cpp
+        #        test/MoveItPathLengthObjectiveTest.cpp
+        #        test/math_test.cpp
+        #        test/CuttingPlaneConvexHullShell_test.cpp
+        #        test/CGALMeshShell_test.cpp
+        #        src/utilities/test/math_utils_test.cpp
+        #        test/SphereShell_test.cpp
+        #        test/StreamingConvexHull_test.cpp
+        #        test/VisualiserTest.cpp
+        #        test/TimedConvergenceTerminationCondition_test.cpp
+        #        test/HashedSpatialIndex_test.cpp
+        #        test/LeavesCollisionChecker_test.cpp
+        #        test/LeavesCollisionChecker_test.cpp
+        #        test/OnlineOrderOptimization_test.cpp
+        #        test/StreamingAlphaShape_test.cpp
+        #        test/PointOnMeshLookup_test.cpp
+        #        test/SurfletVolume_test.cpp
 #        test/approachplanning_accuracy.cpp
 #        test/CuttingPlaneConvexHullShell_test.cpp
-#        test/HorizontalOrientedBoundingBox_test.cpp test/CylinderShell_test.cpp)
-#
+#        test/HorizontalOrientedBoundingBox_test.cpp
+#        test/CylinderShell_test.cpp
+        )
+
 #target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared ${PROJECT_NAME}_visualization gtest)
-#ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})
-#gtest_discover_tests(${PROJECT_NAME}_tests)
+target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
+ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})
+gtest_discover_tests(${PROJECT_NAME}_tests)
