@@ -256,7 +256,7 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/link_trace.cpp
         src/utilities/link_trace.h
         src/quickplan.cpp
-        src/quickplan.h src/utilities/optimization_meta.h src/dynamic_goalset_experiment.cpp src/dynamic_goalset_experiment.h src/CanSeeApple.cpp src/CanSeeApple.h)
+        src/quickplan.h src/utilities/optimization_meta.h src/dynamic_goalset_experiment.cpp src/dynamic_goalset_experiment.h src/CanSeeApple.cpp src/CanSeeApple.h src/utilities/fcl_util.cpp src/utilities/fcl_util.h)
 
 if (ENABLE_VISUALIZATION)
     find_package(VTK REQUIRED)
@@ -343,6 +343,7 @@ experiment("shell_comparison_sphere_armangle")
 experiment("path_length_prediction")
 experiment("shell_type_comparison")
 experiment("tsp_over_prm_bb")
+experiment("dynamic_goalset_icra2024")
 
 if (ENABLE_VISUALIZATION)
     experiment("initial_orbit_comparison")
