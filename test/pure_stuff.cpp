@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "../src/pure/ShellPathPlanner.h"
+#include "../src/pure/shell_path_planning.h"
 #include "../src/utilities/experiment_utils.h"
 #include "../src/pure/shell_space_impl/MinimumEnclosingSphereShell.h"
 #include "../src/shell_space/CGALMeshShell.h"

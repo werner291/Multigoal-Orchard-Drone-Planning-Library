@@ -66,3 +66,10 @@ shape_msgs::msg::Mesh convexHull(const std::vector<geometry_msgs::msg::Point> &m
 
 	return mesh;
 }
+
+CGAL::Surface_mesh<mgodpl::chull_tools::Kernel::Point_3>
+mgodpl::chull_tools::computeConvexHullAsMesh(const std::vector<Kernel::Point_3> &points) {
+	mgodpl::chull_tools::Triangle_mesh convexHull;
+	CGAL::convex_hull_3(points.begin(), points.end(), convexHull);
+	return convexHull;
+}

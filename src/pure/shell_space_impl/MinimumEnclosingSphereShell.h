@@ -10,7 +10,9 @@
 #define MGODPL_MINIMUMENCLOSINGSPHERESHELL_H
 
 #include <Eigen/Core>
+
 #include "../Shell.h"
+#include "../distance_matrix.h"
 
 namespace mgodpl {
 
@@ -44,18 +46,20 @@ namespace mgodpl {
 		using type = GreatCirclePath;
 	};
 
-	/**
-	 * @brief Computes the angular distance between two points on the shell of a sphere.
-	 *
-	 * @param shell The sphere shell.
-	 * @param a First point on the shell.
-	 * @param b Second point on the shell.
-	 *
-	 * @return The angular distance between points a and b on the shell.
-	 */
-	template<>
-	double shell_distance(const SphereShell& shell, const SphereShell::SpherePoint& a, const SphereShell::SpherePoint& b) {
-		return std::acos(std::clamp(a.point.dot(b.point) / (shell.radius * shell.radius), -1.0, 1.0));
+	namespace distance_matrix {
+		/**
+		 * @brief Computes the angular distance between two points on the shell of a sphere.
+		 *
+		 * @param shell The sphere shell.
+		 * @param a First point on the shell.
+		 * @param b Second point on the shell.
+		 *
+		 * @return The angular distance between points a and b on the shell.
+		 */
+		template<>
+		double point_distance(const SphereShell &shell, const SphereShell::SpherePoint &a, const SphereShell::SpherePoint &b) {
+			return std::acos(std::clamp(a.point.dot(b.point) / (shell.radius * shell.radius), -1.0, 1.0));
+		}
 	}
 
 	/**
@@ -67,8 +71,8 @@ namespace mgodpl {
 	 * @return The Euclidean coordinates of the shell point.
 	 */
 	template<>
-	SphereShell::SpherePoint shell_point_to_euclidean(const SphereShell& shell, const SphereShell::SpherePoint& point) {
-		return { (point.point - shell.center).normalized() * shell.radius };
+	SphereShell::SpherePoint shell_point_to_euclidean(const SphereShell &shell, const SphereShell::SpherePoint &point) {
+		return {(point.point - shell.center).normalized() * shell.radius};
 	}
 
 	/**
@@ -80,7 +84,7 @@ namespace mgodpl {
 	 * @return The normal vector at the given shell point.
 	 */
 	template<>
-	Eigen::Vector3d normal_at_shell_point(const SphereShell& shell, const SphereShell::SpherePoint& point) {
+	Eigen::Vector3d normal_at_shell_point(const SphereShell &shell, const SphereShell::SpherePoint &point) {
 		return (point.point - shell.center).normalized();
 	}
 
@@ -93,8 +97,8 @@ namespace mgodpl {
 	 * @return The projection of the point onto the shell.
 	 */
 	template<>
-	SphereShell::SpherePoint project_euclidean_to_shell(const SphereShell& shell, const Eigen::Vector3d& point) {
-		return { (point - shell.center).normalized() * shell.radius };
+	SphereShell::SpherePoint project_euclidean_to_shell(const SphereShell &shell, const Eigen::Vector3d &point) {
+		return {(point - shell.center).normalized() * shell.radius};
 	}
 
 }

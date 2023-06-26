@@ -39,4 +39,22 @@ namespace mgodpl {
 	using RobotPath = ::RobotPath;
 }
 
+namespace mgodpl {
+
+	/**
+	 * Construct a path from a pair of configurations, implying a straight line.
+	 */
+	template<>
+	RobotPath straight_path_from_to(
+			const moveit::core::RobotState& start,
+			const moveit::core::RobotState& end) {
+
+		return {
+				.waypoints = {start, end}
+		};
+
+	}
+
+}
+
 #endif //MGODPL_PATH_H

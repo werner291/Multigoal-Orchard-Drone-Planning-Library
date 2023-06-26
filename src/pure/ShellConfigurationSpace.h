@@ -2,55 +2,69 @@
 //
 // All rights reserved.
 
-//
-// Created by werner on 13-6-23.
-//
+/**
+ * @file ShellConfigurationSpace.h
+ *
+ * A shell configuration space is a subspace of the configuration space,
+ * structured in such a way that it is easy to quickly find a path between
+ * pairs of configurations in the subspace, and to find a configuration
+ * close to a given configuration outside the space.
+ *
+ * Typically, a shell configuration space will know a concept of an "internal point",
+ * which is a reduced, more efficient representation of the configurations in the space.
+ *
+ * Note: a shell configuration space is a configuration space; it inherits from that concept.
+ */
 
 #ifndef MGODPL_SHELLCONFIGURATIONSPACE_H
 #define MGODPL_SHELLCONFIGURATIONSPACE_H
 
 #include "Shell.h"
 
-namespace mgodpl {
+#include "configuration_space.h"
 
+namespace mgodpl::shell_configuration_space {
+
+	/**
+	 * @brief Get the internal point type.
+	 */
 	template<typename ShellConfigurationSpace>
-	struct configuration_t {
-		using type = typename ShellConfigurationSpace::ConfigurationSpace::Configuration;
+	struct internal_point_t {
+		using type = typename ShellConfigurationSpace::InternalPoint;
 	};
 
 	/**
-	 * @brief Given a shell point on a shell, return the configuration at that point.
-	 *
-	 * @tparam Shell The type representing the shell.
-	 * @tparam ShellConfigurationSpace The type representing the shell configuration space.
-	 *
-	 * @param shell A reference to the shell.
-	 * @param space A reference to the shell configuration space.
-	 * @param point A shell point within the shell.
-	 *
-	 * @return The configuration at the given shell point.
+	 * @brief Get the path type, defined in terms of the internal point type.
 	 */
-	template<typename Shell, typename ShellConfigurationSpace>
-	typename configuration_t<ShellConfigurationSpace>::type configuration_at_shell_point(const Shell& shell,
-																						 const ShellConfigurationSpace& space,
-																						 const typename shell_point_t<Shell>::type& point);
+	template<typename ShellConfigurationSpace>
+	struct path_t {
+		using type = typename ShellConfigurationSpace::Path;
+	};
+
+	/**
+	 * @brief Given an internal point, return the corresponding configuration.
+	 */
+	template<typename ShellConfigurationSpace>
+	typename configuration_space::configuration_t<ShellConfigurationSpace>::type configuration_at_internal_point(
+			const ShellConfigurationSpace& space,
+			const typename internal_point_t<ShellConfigurationSpace>::type& internal_point);
 
 	/**
 	 * @brief Given a configuration, return a shell point on the shell whose configuration is close.
 	 *
-	 * @tparam Shell The type representing the shell.
 	 * @tparam ShellConfigurationSpace The type representing the shell configuration space.
 	 *
-	 * @param shell A reference to the shell.
 	 * @param space A reference to the shell configuration space.
 	 * @param configuration The configuration for which to find a close shell point.
 	 *
 	 * @return A shell point on the shell whose configuration is close to the given configuration.
 	 */
-	template<typename Shell, typename ShellConfigurationSpace>
-	typename shell_point_t<Shell>::type shell_point_at_configuration(const Shell& shell,
-																	 const ShellConfigurationSpace& space,
-																	 const typename configuration_t<ShellConfigurationSpace>::type& configuration);
+	template<typename ShellConfigurationSpace>
+	typename internal_point_t<ShellConfigurationSpace>::type shell_point_near_configuration(
+			const ShellConfigurationSpace& space,
+			const typename configuration_space::configuration_t<ShellConfigurationSpace>::type& configuration);
+
+
 
 }
 

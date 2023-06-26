@@ -28,6 +28,14 @@ namespace mgodpl {
 		using type = typename Path::Configuration;
 	};
 
+	/**
+	 * Construct a path from a pair of configurations, implying a straight line.
+	 */
+	template<typename Path>
+	Path straight_path_from_to(
+			const typename path_configuration_t<Path>::type& start,
+			const typename path_configuration_t<Path>::type& end);
+
 }
 
 #endif //MGODPL_PATH_H

@@ -37,58 +37,6 @@ namespace mgodpl {
 	};
 
 	/**
-	 * Calculates the distance between two shell points within a shell space.
-	 *
-	 * @tparam Shell  The type of the shell space.
-	 * @param shell        A reference to the shell space.
-	 * @param sp1          The first shell point.
-	 * @param sp2          The second shell point.
-	 * @return             The distance between the two shell points.
-	 */
-	template<typename Shell>
-	double shell_distance(const Shell& shell, const typename shell_point_t<Shell>::type& sp1, const typename shell_point_t<Shell>::type& sp2);
-
-	/**
-	 * Calculates the distances from a single shell point to all other shell points in a list within a shell space.
-	 *
-	 * @tparam Shell      The type of the shell space.
-	 * @param shell            A reference to the shell space.
-	 * @param shell_points     A vector of shell points.
-	 * @return                 A vector of distances from the first shell point to all other shell points.
-	 */
-	template<typename Shell>
-	std::vector<double> shell_distance_one_to_all(const Shell& shell, const std::vector<typename shell_point_t<Shell>::type>& shell_points) {
-		std::vector<double> result;
-		result.reserve(shell_points.size());
-
-		for (const typename shell_point_t<Shell>::type& sp : shell_points) {
-			result.push_back(shell_distance(shell, sp, shell_points[0]));
-		}
-
-		return result;
-	}
-
-	/**
-	 * Calculates the distances between all pairs of shell points in a list within a shell space.
-	 *
-	 * @tparam Shell      The type of the shell space.
-	 * @param shell            A reference to the shell space.
-	 * @param shell_points     A vector of shell points.
-	 * @return                 A two-dimensional vector representing the distances between all pairs of shell points.
-	 */
-	template<typename Shell>
-	std::vector<std::vector<double>> shell_distance_all_to_all(const Shell& shell, const std::vector<typename shell_point_t<Shell>::type>& shell_points) {
-		std::vector<std::vector<double>> result;
-		result.reserve(shell_points.size());
-
-		for (const typename shell_point_t<Shell>::type& sp1 : shell_points) {
-			result.push_back(shell_distance_one_to_all(shell, shell_points));
-		}
-
-		return result;
-	}
-
-	/**
 	 * Computes the path between two shell points within a shell space.
 	 *
 	 * @tparam Shell  The type of the shell space.

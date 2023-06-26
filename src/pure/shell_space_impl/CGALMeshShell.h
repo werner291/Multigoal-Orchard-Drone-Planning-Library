@@ -16,6 +16,7 @@
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/Surface_mesh_shortest_path.h>
 #include <CGAL/AABB_traits.h>
+#include <CGAL/convex_hull_3.h>
 
 namespace mgodpl {
 
@@ -56,10 +57,16 @@ namespace mgodpl {
 
 		}
 
-
 	};
 
+	namespace distance_matrix {
 
+		template<>
+		double point_distance(const CGALMeshShell &shell, const CGALMeshShell::ShellPoint &a, const CGALMeshShell::ShellPoint &b) {
+
+		}
+
+	}
 
 }
 

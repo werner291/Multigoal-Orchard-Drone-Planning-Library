@@ -262,8 +262,26 @@ add_library(${PROJECT_NAME}_shared
         src/dynamic_goalset_experiment.h
         src/CanSeeApple.cpp
         src/CanSeeApple.h
-        src/pure/ShellPathPlanner.h src/pure/DynamicShellPathPlanner.h src/pure/moveit_impl/path.h src/pure/path.h src/pure/ompl_impl/path.h src/pure/Shell.h src/pure/shell_space_impl/MinimumEnclosingShell.cpp src/pure/shell_space_impl/MinimumEnclosingSphereShell.h src/pure/ShellConfigurationSpace.h src/pure/WorkspaceShell.h src/pure/shell_space_impl/CGALMeshShell.cpp src/pure/shell_space_impl/CGALMeshShell.h src/pure/shell_space_impl/CGALMeshShell.h)
-        src/quickplan.h src/utilities/optimization_meta.h src/dynamic_goalset_experiment.cpp src/dynamic_goalset_experiment.h src/CanSeeApple.cpp src/CanSeeApple.h src/utilities/fcl_util.cpp src/utilities/fcl_util.h)
+        src/pure/shell_path_planning.h
+        src/pure/DynamicShellPathPlanner.h
+        src/pure/moveit_impl/path.h
+        src/pure/path.h
+        src/pure/ompl_impl/path.h
+        src/pure/Shell.h
+        src/pure/shell_space_impl/MinimumEnclosingShell.cpp
+        src/pure/shell_space_impl/MinimumEnclosingSphereShell.h
+        src/pure/ShellConfigurationSpace.h
+        src/pure/WorkspaceShell.h
+        src/pure/shell_space_impl/CGALMeshShell.cpp
+        src/pure/shell_space_impl/CGALMeshShell.h
+        src/quickplan.h
+        src/utilities/optimization_meta.h
+        src/dynamic_goalset_experiment.cpp
+        src/dynamic_goalset_experiment.h
+        src/CanSeeApple.cpp
+        src/CanSeeApple.h
+        src/utilities/fcl_util.cpp
+        src/utilities/fcl_util.h src/pure/moveit_impl/ShellConfigurationFromShellSurface.h src/pure/goal_region.h src/pure/end_effector_near_point_goal_region.h src/pure/approach_planning.h src/pure/motion.h src/pure/configuration_space.h src/pure/moveit_impl/MoveitConfigurationSpace.cpp src/pure/moveit_impl/MoveitConfigurationSpace.h src/pure/configuration.h src/pure/collision_checking.h src/pure/moveit_impl/EndEffectorOnPointGoalRegion.h src/pure/moveit_impl/approach_planning.h src/pure/moveit_impl/approach_planning.h src/pure/distance_matrix.h)
 
 if (ENABLE_VISUALIZATION)
     find_package(VTK REQUIRED)
