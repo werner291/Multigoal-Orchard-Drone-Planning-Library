@@ -90,7 +90,7 @@ DMGPlannerAllocatorFn static_planner(MkOmplShellFn<ShellPoint> paddedOmplSphereS
 		return std::make_shared<ChangeIgnoringReplannerAdapter>(
 				std::make_shared<ShellPathPlanner<ShellPoint>>(
 						paddedOmplSphereShell,
-						std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint >>(si),
+						std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint >>(si, 1.0),
 						true
 				)
 		);
@@ -124,7 +124,7 @@ DMGPlannerAllocatorFn batch_replanner(MkOmplShellFn<ShellPoint> paddedOmplSphere
 		return std::make_shared<ChangeAccumulatingPlannerAdapter>(
 				std::make_shared<ShellPathPlanner<ShellPoint>>(
 						paddedOmplSphereShell,
-						std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint >>(si),
+						std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint >>(si, 1.0),
 						true
 				)
 		);
@@ -144,7 +144,7 @@ template <typename ShellPoint>
 DMGPlannerAllocatorFn dynamic_planner_simple_reorder_sphere(SimpleIncrementalTSPMethods::Strategy strategy, MkOmplShellFn<ShellPoint> shellBuilder) {
 	return [strategy, shellBuilder](const ompl::base::SpaceInformationPtr &si) -> DMGPlannerPtr {
 		return std::make_shared<CachingDynamicPlanner<ShellPoint>>(
-				std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint>>(si),
+				std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint>>(si, 1.0),
 				std::make_shared<SimpleIncrementalTSPMethods>(strategy),
 				shellBuilder
 		);

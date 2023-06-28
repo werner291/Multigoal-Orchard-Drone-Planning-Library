@@ -102,7 +102,7 @@ double CGALMeshShell::path_length(const std::shared_ptr<ShellPath<CGALMeshPointA
 }
 
 Eigen::Vector3d CGALMeshShell::arm_vector(const CGALMeshPointAndNormal &p) const {
-	return -normalAt(p);
+	return -p.normal;
 }
 
 std::vector<std::vector<double>> CGALMeshShell::distance_matrix(const std::vector<CGALMeshPointAndNormal> &points) const {
@@ -114,6 +114,10 @@ std::vector<std::vector<double>> CGALMeshShell::distance_matrix(const std::vecto
 
 	return mgodpl::distance_matrix::point_distance_all_to_all<mgodpl::cgal_utils::WeightedMesh, CGALMeshPointAndNormal>(mesh, points);
 
+}
+
+Eigen::Vector3d CGALMeshShell::surface_point(const CGALMeshPointAndNormal &p) const {
+	return toEigen(mgodpl::cgal_utils::to_carthesian(tmesh, p.point));
 }
 
 std::shared_ptr<WorkspaceShell<CGALMeshPointAndNormal>>

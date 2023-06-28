@@ -42,7 +42,7 @@ public:
 	 * @param si    The OMPL SpaceInformation instance that encapsulates the problem space for the planner.
 	 * @param t_max The maximum time allowed for each planning attempt.
 	 */
-	explicit MakeshiftPrmApproachPlanningMethods(ompl::base::SpaceInformationPtr si, double t_max);
+	explicit MakeshiftPrmApproachPlanningMethods(ompl::base::SpaceInformationPtr si, double t_max = 1.0);
 
 	/**
 	 * Method to compute a path from a starting state to a goal state.

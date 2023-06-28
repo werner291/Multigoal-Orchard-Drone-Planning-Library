@@ -145,6 +145,35 @@ std::vector<TreeMeshes> loadRandomTreeModels(const int n, const int max_fruit) {
 	return tree_models;
 }
 
+std::vector<TreeMeshes> loadAllTreeModels(int max_n, int max_fruit) {
+
+	// Get the names of available tree models and shuffle them.
+	auto tree_names = getTreeModelNames();
+
+	// Create a vector to hold the loaded tree models.
+	std::vector<TreeMeshes> tree_models;
+
+	// Loop over the shuffled tree model names.
+	for (const auto &name: tree_names) {
+		// Load the tree model.
+		auto models = loadTreeMeshes(name);
+
+		// If the tree model has a suitable number of fruit meshes, add it to the vector.
+		if (models.fruit_meshes.size() <= max_fruit) {
+			tree_models.push_back(models);
+
+			// If we've loaded enough tree models, stop.
+			if (tree_models.size() == max_n) {
+				break;
+			}
+		}
+	}
+
+	// Return the vector of loaded tree models.
+	return tree_models;
+
+}
+
 SimplifiedOrchard makeSingleRowOrchard(std::vector<TreeMeshes> &tree_models) {
 	double x_displacement = tree_models.size() * 2.0 * -0.5;
 	SimplifiedOrchard orchard;

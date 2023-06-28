@@ -70,7 +70,7 @@ namespace mgodpl::distance_matrix {
 		result.reserve(points.size());
 
 		for (const Point& p1 : points) {
-			result.push_back(point_distance_one_to_all(context, points));
+			result.push_back(point_distance_one_to_all(context, p1, points));
 		}
 
 		return result;

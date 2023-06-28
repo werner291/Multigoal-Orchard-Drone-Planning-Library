@@ -65,15 +65,6 @@ namespace mgodpl {
 		using type = std::vector<cgal_utils::CGALMeshPointAndNormal>;
 	};
 
-	template<>
-	std::vector<cgal_utils::CGALMeshPointAndNormal> shell_path(const mesh_shell::CGALMeshShell &shell,
-															   const cgal_utils::CGALMeshPointAndNormal &sp1,
-															   const cgal_utils::CGALMeshPointAndNormal &sp2) {
-
-
-
-	}
-
 	namespace distance_matrix {
 
 		template<>

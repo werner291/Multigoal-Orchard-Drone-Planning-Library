@@ -14,7 +14,6 @@
 #include "procedural_tree_generation.h"
 #include "TreeMeshes.h"
 
-
 /**
  * @brief Typedef for function taking a RobotState and an Apple as parameters and returning whether the apple is visible to the robot in that state.
  */

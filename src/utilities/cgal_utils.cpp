@@ -117,3 +117,62 @@ double mgodpl::cgal_utils::path_length(const mgodpl::cgal_utils::WeightedMesh &m
 
 	return length;
 }
+
+
+template<>
+std::vector<std::vector<double>> mgodpl::distance_matrix::point_distance_all_to_all(const cgal_utils::WeightedMesh &context,
+														   const std::vector<cgal_utils::CGALMeshPointAndNormal> &points) {
+
+	using namespace cgal_utils;
+
+	// Initialize a 2D vector to store the distances between each pair of points
+	std::vector<std::vector<double>> distances(points.size(), std::vector<double>(points.size(), 0.0));
+
+	// Iterate over each point in the input vector
+	for (size_t i = 0; i < points.size(); i++) {
+
+		// Initialize the Surface_mesh_shortest_path object with the surface mesh
+		Surface_mesh_shortest_path shortest_paths(context.mesh);
+
+		// Add the current point as a source point for the shortest path computation
+		shortest_paths.add_source_point(points[i].point.first, points[i].point.second);
+
+		// For each other point in the vector...
+		for (size_t j = i + 1; j < points.size(); j++) {
+
+			PathVisitor v(context.mesh);
+			shortest_paths.shortest_path_sequence_to_source_points(points[j].point.first,
+																   points[j].point.second,
+																   v);
+
+			// The computed path is from the end point to the start point, so reverse it to get the path from the start point to the end point
+			std::reverse(v.states.begin(), v.states.end());
+
+			std::vector<CGALMeshPointAndNormal> geodesic;
+
+			// Add the start point to the path
+			geodesic.push_back(points[i]);
+
+			// Add the intermediate points to the path
+			for (auto &state: v.states) {
+				geodesic.push_back({state, faceNormal(context.mesh, state.first)});
+			}
+
+			// Add the end point to the path
+			geodesic.push_back(points[j]);
+
+			// Return the computed path as a PiecewiseLinearPath object
+			double length = path_length(context, geodesic);
+
+			// Store the computed distance in the distance matrix
+			// The distance from point i to point j is the same as the distance from point j to point i
+			distances[i][j] = length;
+			distances[j][i] = length;
+		}
+	}
+
+	// Return the computed distance matrix
+	return distances;
+
+}
+

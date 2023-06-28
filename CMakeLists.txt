@@ -281,7 +281,7 @@ add_library(${PROJECT_NAME}_shared
         src/CanSeeApple.cpp
         src/CanSeeApple.h
         src/utilities/fcl_util.cpp
-        src/utilities/fcl_util.h src/pure/moveit_impl/ShellConfigurationFromShellSurface.h src/pure/goal_region.h src/pure/end_effector_near_point_goal_region.h src/pure/approach_planning.h src/pure/motion.h src/pure/configuration_space.h src/pure/moveit_impl/MoveitConfigurationSpace.cpp src/pure/moveit_impl/MoveitConfigurationSpace.h src/pure/configuration.h src/pure/collision_checking.h src/pure/moveit_impl/EndEffectorOnPointGoalRegion.h src/pure/moveit_impl/approach_planning.h src/pure/moveit_impl/approach_planning.h src/pure/distance_matrix.h src/utilities/cgal_utils.cpp src/utilities/cgal_utils.h)
+        src/utilities/fcl_util.h src/pure/moveit_impl/ShellConfigurationFromShellSurface.h src/pure/goal_region.h src/pure/end_effector_near_point_goal_region.h src/pure/approach_planning.h src/pure/motion.h src/pure/configuration_space.h src/pure/moveit_impl/MoveitConfigurationSpace.cpp src/pure/moveit_impl/MoveitConfigurationSpace.h src/pure/configuration.h src/pure/collision_checking.h src/pure/moveit_impl/EndEffectorOnPointGoalRegion.h src/pure/moveit_impl/approach_planning.h src/pure/moveit_impl/approach_planning.h src/pure/distance_matrix.h src/utilities/cgal_utils.cpp src/utilities/cgal_utils.h src/experiments/utilities/default_occlusion_models.cpp src/experiments/utilities/default_occlusion_models.h)
 
 if (ENABLE_VISUALIZATION)
     find_package(VTK REQUIRED)
@@ -369,6 +369,7 @@ experiment("path_length_prediction")
 experiment("shell_type_comparison")
 experiment("tsp_over_prm_bb")
 experiment("dynamic_goalset_icra2024")
+experiment("ignoring_vs_passive_discovery")
 
 if (ENABLE_VISUALIZATION)
     experiment("initial_orbit_comparison")
@@ -376,8 +377,6 @@ if (ENABLE_VISUALIZATION)
 
     experiment("exploration")
     target_link_libraries(${PROJECT_NAME}_experiment_exploration ${PROJECT_NAME}_sensing)
-
-    experiment("ignoring_vs_passive_discovery")
 
     experiment("non_approach_experiment")
 

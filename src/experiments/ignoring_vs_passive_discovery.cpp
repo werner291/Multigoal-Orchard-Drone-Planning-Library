@@ -1,60 +1,20 @@
-#include <range/v3/all.hpp>
-#include <boost/asio.hpp>
-#include <utility>
-
-#include "../AppleTreePlanningScene.h"
-#include "../utilities/experiment_utils.h"
-
-#include "../planners/ChangeIgnoringReplannerAdapter.h"
-#include "../utilities/goal_events.h"
-#include "../DynamicGoalVisitationEvaluation.h"
-#include "../planners/CachingDynamicPlanner.h"
-#include "../utilities/run_experiments.h"
-
-#include "../DynamicGoalsetPlanningProblem.h"
-#include "../utilities/MeshOcclusionModel.h"
-#include "../utilities/alpha_shape.h"
-#include "../planner_allocators.h"
-#include "../dynamic_goalset_experiment.h"
-
-#include <vtkProperty.h>
+#include <array>
+#include <string>
 #include <range/v3/view/iota.hpp>
+#include <range/v3/view/cartesian_product.hpp>
+#include <range/v3/view/transform.hpp>
+#include <range/v3/algorithm/count.hpp>
+#include <range/v3/range/conversion.hpp>
 
-const std::array<std::pair<std::string, CanSeeAppleFnFactory>, 12> OCCLUSION_MODELS = {
-			// Basic occlusion functions
-			std::make_pair<std::string, CanSeeAppleFnFactory>("omniscient", [](TreeMeshes &meshes) -> CanSeeAppleFn{return omniscient_occlusion;}), // If omniscient_occlusion doesn't need `meshes`, you can return it directly.
-			{"distance", [](TreeMeshes &meshes){return distance_occlusion;}}, // Same here.
-
-			// Field of view occlusions
-			{"angle_end_effector", [](TreeMeshes &meshes){return in_angle(1.0, Eigen::Vector3d::UnitX(), "end_effector");}},
-			{"angle_base_link", [](TreeMeshes &meshes){return in_angle(1.0, Eigen::Vector3d::UnitX(), "base_link");}},
-
-			// Mesh occlusions
-			{"mesh_occlusion_end_effector", [](TreeMeshes &meshes){return mesh_occludes_vision(meshes.leaves_mesh, "end_effector");}},
-			{"mesh_occlusion_base_link", [](TreeMeshes &meshes){return mesh_occludes_vision(meshes.leaves_mesh, "base_link");}},
-
-			// Alpha shape occlusions
-			{"alpha_occlusion_end_effector", [](TreeMeshes &meshes){return leaves_alpha_shape_occludes_vision(meshes.leaves_mesh, "end_effector");}},
-			{"alpha_occlusion_base_link", [](TreeMeshes &meshes){return leaves_alpha_shape_occludes_vision(meshes.leaves_mesh, "base_link");}},
-
-			// Combinations of mesh occlusion and angle occlusion
-			{"mesh_and_angle_end_effector", [](TreeMeshes &meshes){
-				return only_if_both(mesh_occludes_vision(meshes.leaves_mesh, "end_effector"), in_angle(1.0, Eigen::Vector3d::UnitX(), "end_effector"));
-			}},
-			{"mesh_and_angle_base_link", [](TreeMeshes &meshes){
-				return only_if_both(mesh_occludes_vision(meshes.leaves_mesh, "base_link"), in_angle(1.0, Eigen::Vector3d::UnitX(), "base_link"));
-			}},
-
-			// Combinations of alpha shape occlusion and angle occlusion
-			{"alpha_and_angle_end_effector", [](TreeMeshes &meshes){
-				return only_if_both(leaves_alpha_shape_occludes_vision(meshes.leaves_mesh, "end_effector"), in_angle(1.0, Eigen::Vector3d::UnitX(), "end_effector"));
-			}},
-			{"alpha_and_angle_base_link", [](TreeMeshes &meshes){
-				return only_if_both(leaves_alpha_shape_occludes_vision(meshes.leaves_mesh, "base_link"), in_angle(1.0, Eigen::Vector3d::UnitX(), "base_link"));
-			}}
-	};
-
-
+#include "../CanSeeApple.h"
+#include "../utilities/discoverability_specifications.h"
+#include "../utilities/experiment_utils.h"
+#include "../utilities/cgal_utils.h"
+#include "../planner_allocators.h"
+#include "utilities/default_occlusion_models.h"
+#include "../DynamicGoalsetPlanningProblem.h"
+#include "../dynamic_goalset_experiment.h"
+#include "../utilities/run_experiments.h"
 
 const std::array<Proportions,5> probs = {
 		Proportions {
@@ -84,18 +44,13 @@ const std::array<Proportions,5> probs = {
 		},
 };
 
-
-
-
 int main(int argc, char **argv) {
 
 	// Load the apple tree meshes.
-	auto models = loadRandomTreeModels(2, 600);
+	auto models = loadAllTreeModels(INT_MAX, 600);
 
 	// Load the robot model.
 	const auto robot = loadRobotModel();
-
-	using namespace ranges;
 
 	ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
@@ -103,7 +58,9 @@ int main(int argc, char **argv) {
 
 	auto repIds = ranges::views::iota(0, 10);
 
-	DMGPlannerAllocatorFn sp = static_planner<mgodpl::cgal_utils::CGALMeshPointAndNormal>(cgalChullShell);
+	using ShellPoint = mgodpl::cgal_utils::CGALMeshPointAndNormal;
+
+	DMGPlannerAllocatorFn sp = static_planner<ShellPoint>(cgalChullShell);
 
 	std::array<std::pair<std::string, DMGPlannerAllocatorFn>, 9> PLANNERS_TO_TEST = {
 			// A planner that ignores the dynamic goalset, only planning to the initially-given apples.
@@ -111,27 +68,27 @@ int main(int argc, char **argv) {
 			std::make_pair("change_ignoring", sp),
 			// A planner that adds new goals to a "batch" to be replanned to after the current
 			// path has been completed.
-			{"batch_replanner", batch_replanner<mgodpl::cgal_utils::CGALMeshPointAndNormal>(cgalChullShell)},
+			{"batch_replanner", batch_replanner<ShellPoint>(cgalChullShell)},
 			// A planner that uses the dynamic goalset, but uses a greedy approach to insert new goals in the visitation order.
-			{"dynamic_planner_lci", dynamic_planner_simple_reorder_sphere<mgodpl::cgal_utils::CGALMeshPointAndNormal>(SimpleIncrementalTSPMethods::Strategy::LeastCostlyInsertion,cgalChullShell)},
+			{"dynamic_planner_lci", dynamic_planner_simple_reorder_sphere<ShellPoint>(SimpleIncrementalTSPMethods::Strategy::LeastCostlyInsertion,cgalChullShell)},
 			// A planner that inserts new goals simply at the end of the tour
-			{"dynamic_planner_LIFO", dynamic_planner_simple_reorder_sphere<mgodpl::cgal_utils::CGALMeshPointAndNormal>(SimpleIncrementalTSPMethods::Strategy::LastInFirstOut,cgalChullShell)},
+			{"dynamic_planner_LIFO", dynamic_planner_simple_reorder_sphere<ShellPoint>(SimpleIncrementalTSPMethods::Strategy::LastInFirstOut,cgalChullShell)},
 			// A planner that inserts new goals simply at the beginning of the tour
-			{"dynamic_planner_FIFO", dynamic_planner_simple_reorder_sphere<mgodpl::cgal_utils::CGALMeshPointAndNormal>(SimpleIncrementalTSPMethods::Strategy::FirstInFirstOut,cgalChullShell)},
+			{"dynamic_planner_FIFO", dynamic_planner_simple_reorder_sphere<ShellPoint>(SimpleIncrementalTSPMethods::Strategy::FirstInFirstOut,cgalChullShell)},
 			// A planner that puts goals at the second place in the order.
-			{"dynamic_planner_FISO", dynamic_planner_simple_reorder_sphere<mgodpl::cgal_utils::CGALMeshPointAndNormal>(SimpleIncrementalTSPMethods::Strategy::FirstInSecondOut,cgalChullShell)},
+			{"dynamic_planner_FISO", dynamic_planner_simple_reorder_sphere<ShellPoint>(SimpleIncrementalTSPMethods::Strategy::FirstInSecondOut,cgalChullShell)},
 			// A planner that randomizes the order of the goals.
-			{"dynamic_planner_random", dynamic_planner_simple_reorder_sphere<mgodpl::cgal_utils::CGALMeshPointAndNormal>(SimpleIncrementalTSPMethods::Strategy::Random,cgalChullShell)},
+			{"dynamic_planner_random", dynamic_planner_simple_reorder_sphere<ShellPoint>(SimpleIncrementalTSPMethods::Strategy::Random,cgalChullShell)},
 			// Same as dynamic_planner_fre, but with an initial orbit around the tree to discover some of the dynamic goals
-			{"dynamic_planner_initial_orbit", dynamic_planner_initial_orbit<mgodpl::cgal_utils::CGALMeshPointAndNormal>(cgalChullShell)},
+			{"dynamic_planner_initial_orbit", dynamic_planner_initial_orbit<ShellPoint>(cgalChullShell)},
 			// A planner that uses the dynamic goalset, and completely reorders the visitation order from scratch every time a goal is added.
-			{"dynamic_planner_fre", dynamic_planner_fre<mgodpl::cgal_utils::CGALMeshPointAndNormal>(cgalChullShell)},
+			{"dynamic_planner_fre", dynamic_planner_fre<ShellPoint>(cgalChullShell)},
 	};
 
 	// Generate a set of problems based on the carthesian product of the above ranges.
 	auto problems =
-			views::cartesian_product(models, repIds, probs, OCCLUSION_MODELS) |
-			views::transform([&](const auto &pair) -> std::pair<Json::Value,DynamicGoalsetPlanningProblem> {
+			ranges::views::cartesian_product(models, repIds, probs, OCCLUSION_MODELS) |
+			ranges::views::transform([&](const auto &pair) -> std::pair<Json::Value,DynamicGoalsetPlanningProblem> {
 
 				// Generate a problem for every unique combination of repetition ID,
 				// discoverability degree, total number of apples and occlusion model.
@@ -161,19 +118,19 @@ int main(int argc, char **argv) {
 				// Return the problem parameters and the problem itself.
 				return {problem_params, problem};
 
-			}) | to_vector;
+			}) | ranges::to_vector;
 
 
 
 	// Take the carthesian product of the different planners and problems,
 	// making it so that every planner is tested on every problem.
-	auto experiments = views::cartesian_product(PLANNERS_TO_TEST, problems) | views::transform([](const auto &pair) {
+	auto experiments = ranges::views::cartesian_product(PLANNERS_TO_TEST, problems) | ranges::views::transform([](const auto &pair) {
 		const auto &[planner, problem] = pair;
 		return Experiment {
 			.planner= &planner,
 			.problem= &problem
 		};
-	}) | to_vector;
+	}) | ranges::to_vector;
 
 	// Run the experiments in parallel.
 	runExperimentsParallelRecoverable<Experiment>(experiments, [&](const Experiment &experiment) {
