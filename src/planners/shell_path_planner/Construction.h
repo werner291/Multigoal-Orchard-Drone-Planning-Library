@@ -45,7 +45,7 @@ cuttingPlaneChullShell(const AppleTreePlanningScene &scene_info, const ompl::bas
  * @param si The ompl::base::SpaceInformationPtr for the constructed OmplShellSpace.
  * @return A shared_ptr to the OmplShellSpace containing the CGAL-based convex hull.
  */
-std::shared_ptr<OmplShellSpace<CGALMeshShellPoint>>
+std::shared_ptr<OmplShellSpace<mgodpl::cgal_utils::CGALMeshPointAndNormal>>
 cgalChullShell(const AppleTreePlanningScene &scene_info, const ompl::base::SpaceInformationPtr &si);
 
 /**

@@ -24,6 +24,6 @@ WorkspaceShell<ShellPoint, ShellPath>::distance_matrix(const std::vector<ShellPo
 }
 
 template class WorkspaceShell<Eigen::Vector3d>;
-template class WorkspaceShell<CGALMeshShellPoint>;
+template class WorkspaceShell<mgodpl::cgal_utils::CGALMeshPointAndNormal>;
 template class WorkspaceShell<ConvexHullPoint>;
 template class WorkspaceShell<CylinderShellPoint>;

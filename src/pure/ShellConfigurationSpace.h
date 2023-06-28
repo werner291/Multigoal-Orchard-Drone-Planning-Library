@@ -37,7 +37,7 @@ namespace mgodpl::shell_configuration_space {
 	 * @brief Get the path type, defined in terms of the internal point type.
 	 */
 	template<typename ShellConfigurationSpace>
-	struct path_t {
+	struct shell_path_t {
 		using type = typename ShellConfigurationSpace::Path;
 	};
 
@@ -63,8 +63,6 @@ namespace mgodpl::shell_configuration_space {
 	typename internal_point_t<ShellConfigurationSpace>::type shell_point_near_configuration(
 			const ShellConfigurationSpace& space,
 			const typename configuration_space::configuration_t<ShellConfigurationSpace>::type& configuration);
-
-
 
 }
 

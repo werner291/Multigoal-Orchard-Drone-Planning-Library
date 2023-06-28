@@ -47,8 +47,8 @@ template std::vector<Eigen::Vector3d> shellPathToPoints(
 		int curve_steps);
 
 template std::vector<Eigen::Vector3d> shellPathToPoints(
-		const std::shared_ptr<ShellPath<CGALMeshShellPoint>> &path,
-		const WorkspaceShell<CGALMeshShellPoint> &shell,
+		const std::shared_ptr<ShellPath<mgodpl::cgal_utils::CGALMeshPointAndNormal>> &path,
+		const WorkspaceShell<mgodpl::cgal_utils::CGALMeshPointAndNormal> &shell,
 		int curve_steps);
 
 

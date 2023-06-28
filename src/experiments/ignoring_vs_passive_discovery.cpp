@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
 
 	auto repIds = ranges::views::iota(0, 10);
 
-	DMGPlannerAllocatorFn sp = static_planner<CGALMeshShellPoint>(cgalChullShell);
+	DMGPlannerAllocatorFn sp = static_planner<mgodpl::cgal_utils::CGALMeshPointAndNormal>(cgalChullShell);
 
 	std::array<std::pair<std::string, DMGPlannerAllocatorFn>, 9> PLANNERS_TO_TEST = {
 			// A planner that ignores the dynamic goalset, only planning to the initially-given apples.
@@ -111,21 +111,21 @@ int main(int argc, char **argv) {
 			std::make_pair("change_ignoring", sp),
 			// A planner that adds new goals to a "batch" to be replanned to after the current
 			// path has been completed.
-			{"batch_replanner", batch_replanner<CGALMeshShellPoint>(cgalChullShell)},
+			{"batch_replanner", batch_replanner<mgodpl::cgal_utils::CGALMeshPointAndNormal>(cgalChullShell)},
 			// A planner that uses the dynamic goalset, but uses a greedy approach to insert new goals in the visitation order.
-			{"dynamic_planner_lci", dynamic_planner_simple_reorder_sphere<CGALMeshShellPoint>(SimpleIncrementalTSPMethods::Strategy::LeastCostlyInsertion,cgalChullShell)},
+			{"dynamic_planner_lci", dynamic_planner_simple_reorder_sphere<mgodpl::cgal_utils::CGALMeshPointAndNormal>(SimpleIncrementalTSPMethods::Strategy::LeastCostlyInsertion,cgalChullShell)},
 			// A planner that inserts new goals simply at the end of the tour
-			{"dynamic_planner_LIFO", dynamic_planner_simple_reorder_sphere<CGALMeshShellPoint>(SimpleIncrementalTSPMethods::Strategy::LastInFirstOut,cgalChullShell)},
+			{"dynamic_planner_LIFO", dynamic_planner_simple_reorder_sphere<mgodpl::cgal_utils::CGALMeshPointAndNormal>(SimpleIncrementalTSPMethods::Strategy::LastInFirstOut,cgalChullShell)},
 			// A planner that inserts new goals simply at the beginning of the tour
-			{"dynamic_planner_FIFO", dynamic_planner_simple_reorder_sphere<CGALMeshShellPoint>(SimpleIncrementalTSPMethods::Strategy::FirstInFirstOut,cgalChullShell)},
+			{"dynamic_planner_FIFO", dynamic_planner_simple_reorder_sphere<mgodpl::cgal_utils::CGALMeshPointAndNormal>(SimpleIncrementalTSPMethods::Strategy::FirstInFirstOut,cgalChullShell)},
 			// A planner that puts goals at the second place in the order.
-			{"dynamic_planner_FISO", dynamic_planner_simple_reorder_sphere<CGALMeshShellPoint>(SimpleIncrementalTSPMethods::Strategy::FirstInSecondOut,cgalChullShell)},
+			{"dynamic_planner_FISO", dynamic_planner_simple_reorder_sphere<mgodpl::cgal_utils::CGALMeshPointAndNormal>(SimpleIncrementalTSPMethods::Strategy::FirstInSecondOut,cgalChullShell)},
 			// A planner that randomizes the order of the goals.
-			{"dynamic_planner_random", dynamic_planner_simple_reorder_sphere<CGALMeshShellPoint>(SimpleIncrementalTSPMethods::Strategy::Random,cgalChullShell)},
+			{"dynamic_planner_random", dynamic_planner_simple_reorder_sphere<mgodpl::cgal_utils::CGALMeshPointAndNormal>(SimpleIncrementalTSPMethods::Strategy::Random,cgalChullShell)},
 			// Same as dynamic_planner_fre, but with an initial orbit around the tree to discover some of the dynamic goals
-			{"dynamic_planner_initial_orbit", dynamic_planner_initial_orbit<CGALMeshShellPoint>(cgalChullShell)},
+			{"dynamic_planner_initial_orbit", dynamic_planner_initial_orbit<mgodpl::cgal_utils::CGALMeshPointAndNormal>(cgalChullShell)},
 			// A planner that uses the dynamic goalset, and completely reorders the visitation order from scratch every time a goal is added.
-			{"dynamic_planner_fre", dynamic_planner_fre<CGALMeshShellPoint>(cgalChullShell)},
+			{"dynamic_planner_fre", dynamic_planner_fre<mgodpl::cgal_utils::CGALMeshPointAndNormal>(cgalChullShell)},
 	};
 
 	// Generate a set of problems based on the carthesian product of the above ranges.

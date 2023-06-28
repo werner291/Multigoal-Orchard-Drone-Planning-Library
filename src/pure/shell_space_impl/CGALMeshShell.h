@@ -18,51 +18,75 @@
 #include <CGAL/AABB_traits.h>
 #include <CGAL/convex_hull_3.h>
 
+#include "../distance_matrix.h"
+#include "../../utilities/cgal_utils.h"
+#include "../Shell.h"
+
 namespace mgodpl {
 
-	struct CGALMeshShell {
+	namespace mesh_shell {
 
-		using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
-		using Triangle_mesh = CGAL::Surface_mesh<Kernel::Point_3>;
-		using Traits = CGAL::Surface_mesh_shortest_path_traits<Kernel, Triangle_mesh>;
-		using Primitive = CGAL::AABB_face_graph_triangle_primitive<Triangle_mesh>;
-		using AABBTraits = CGAL::AABB_traits<Kernel, Primitive>;
-		using Surface_mesh_shortest_path = CGAL::Surface_mesh_shortest_path<Traits>;
-		using CGALMeshPoint = Surface_mesh_shortest_path::Face_location;
+		using namespace cgal_utils;
 
-		struct ShellPoint {
-			CGALMeshPoint point;
-			/// We use an explicit normal here, because the surface normal is poorly defined at the edges and vertices.
-			Eigen::Vector3d normal;
+		struct CGALMeshShell {
+
+			/// The CGAL mesh (a halfedge datastructure) for topology-aware shortest-paths computation.
+			Triangle_mesh tmesh;
+
+			/// An AABB-tree for quick lookup of the on_which_mesh point on the mesh (including facet information)
+			CGAL::AABB_tree<AABBTraits> tree{};
+
+			/// When computing the path_on_shell, the states will be offset from the shell by this distance.
+			double padding = 0.1;
+
+			/// How heavy to weigh rotation in predict_path_length.
+			double rotation_weight = 1.0;
+
+			CGALMeshShell(Triangle_mesh mesh, double rotationWeight, double padding)
+					: rotation_weight(rotationWeight), padding(padding), tmesh(mesh) {
+
+				// We initialize the AABB tree such that we don't have to re-compute it every projection query.
+				Surface_mesh_shortest_path shortest_paths(tmesh);
+				shortest_paths.build_aabb_tree(tree);
+
+			}
+
 		};
 
-		/// The CGAL mesh (a halfedge datastructure) for topology-aware shortest-paths computation.
-		Triangle_mesh tmesh;
+	}
 
-		/// An AABB-tree for quick lookup of the on_which_mesh point on the mesh (including facet information)
-		CGAL::AABB_tree <AABBTraits> tree{};
-
-		/// When computing the path_on_shell, the states will be offset from the shell by this distance.
-		double padding = 0.1;
-
-		/// How heavy to weigh rotation in predict_path_length.
-		double rotation_weight = 1.0;
-
-		CGALMeshShell(Triangle_mesh mesh, double rotationWeight, double padding)
-				: rotation_weight(rotationWeight), padding(padding),tmesh(mesh) {
-
-			// We initialize the AABB tree such that we don't have to re-compute it every projection query.
-			Surface_mesh_shortest_path shortest_paths(tmesh);
-			shortest_paths.build_aabb_tree(tree);
-
-		}
-
+	template<>
+	struct shell_point_t<mesh_shell::CGALMeshShell> {
+		using type = cgal_utils::CGALMeshPointAndNormal;
 	};
+
+	template<>
+	struct shell_path_t<mesh_shell::CGALMeshShell> {
+		using type = std::vector<cgal_utils::CGALMeshPointAndNormal>;
+	};
+
+	template<>
+	std::vector<cgal_utils::CGALMeshPointAndNormal> shell_path(const mesh_shell::CGALMeshShell &shell,
+															   const cgal_utils::CGALMeshPointAndNormal &sp1,
+															   const cgal_utils::CGALMeshPointAndNormal &sp2) {
+
+
+
+	}
 
 	namespace distance_matrix {
 
 		template<>
-		double point_distance(const CGALMeshShell &shell, const CGALMeshShell::ShellPoint &a, const CGALMeshShell::ShellPoint &b) {
+		std::vector<std::vector<double>>
+		point_distance_all_to_all(const mesh_shell::CGALMeshShell &context,
+								  const std::vector<cgal_utils::CGALMeshPointAndNormal> &points) {
+
+			cgal_utils::WeightedMesh weightedMesh{context.tmesh, context.rotation_weight};
+
+			return point_distance_all_to_all(
+					weightedMesh,
+					points
+					);
 
 		}
 

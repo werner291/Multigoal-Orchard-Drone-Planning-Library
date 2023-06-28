@@ -164,4 +164,4 @@ class MoveItShellSpace<CylinderShellPoint>; // For the cylinder shell
 template
 class MoveItShellSpace<ConvexHullPoint>; // For the cutting plane convex hull shell
 template
-class MoveItShellSpace<CGALMeshShellPoint>; // For the CGAL mesh shell
+class MoveItShellSpace<mgodpl::cgal_utils::CGALMeshPointAndNormal>; // For the CGAL mesh shell

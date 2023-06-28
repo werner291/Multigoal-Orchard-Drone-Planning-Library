@@ -35,17 +35,21 @@ namespace mgodpl::distance_matrix {
 	 *
 	 * @tparam Context    The type of the context.
 	 * @tparam Point      The type of the points.
-	 * @param context     A reference to the context.
+	 *
+	 * @param context     A reference to the context, or space in which the points are defined.
+	 * @param p1		  The first point.
 	 * @param points      A vector of points.
 	 * @return            A vector of distances from the first point to all other points.
 	 */
 	template<typename Context, typename Point>
-	std::vector<double> point_distance_one_to_all(const Context& context, const std::vector<Point>& points) {
+	std::vector<double> point_distance_one_to_all(const Context& context,
+												  const Point& p1,
+												  const std::vector<Point>& points) {
 		std::vector<double> result;
 		result.reserve(points.size());
 
 		for (const Point& p : points) {
-			result.push_back(point_distance(context, p, points[0]));
+			result.push_back(point_distance(context, p, p1));
 		}
 
 		return result;

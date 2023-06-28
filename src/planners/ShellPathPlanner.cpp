@@ -236,7 +236,7 @@ template
 class ShellPathPlanner<ConvexHullPoint>;
 
 template
-class ShellPathPlanner<CGALMeshShellPoint>;
+class ShellPathPlanner<mgodpl::cgal_utils::CGALMeshPointAndNormal>;
 
 template
 class ShellPathPlanner<CylinderShellPoint>;

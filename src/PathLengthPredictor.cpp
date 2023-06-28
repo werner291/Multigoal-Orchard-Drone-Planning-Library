@@ -141,8 +141,8 @@ CuttingPlaneConvexHullDistancePredictor::around_leaves(const AppleTreePlanningSc
 
 double CGALConvexHullDistancePredictor::predict_path_length(const Apple &point1, const Apple &point2) {
 
-	const CGALMeshShellPoint &from = enclosing_shell.nearest_point_on_shell(point1.center);
-	const CGALMeshShellPoint &to = enclosing_shell.nearest_point_on_shell(point2.center);
+	const mgodpl::cgal_utils::CGALMeshPointAndNormal &from = enclosing_shell.nearest_point_on_shell(point1.center);
+	const mgodpl::cgal_utils::CGALMeshPointAndNormal &to = enclosing_shell.nearest_point_on_shell(point2.center);
 
 	double d = enclosing_shell.path_length(enclosing_shell.path_from_to(from, to));
 

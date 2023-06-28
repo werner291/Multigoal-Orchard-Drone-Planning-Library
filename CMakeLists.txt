@@ -281,7 +281,7 @@ add_library(${PROJECT_NAME}_shared
         src/CanSeeApple.cpp
         src/CanSeeApple.h
         src/utilities/fcl_util.cpp
-        src/utilities/fcl_util.h src/pure/moveit_impl/ShellConfigurationFromShellSurface.h src/pure/goal_region.h src/pure/end_effector_near_point_goal_region.h src/pure/approach_planning.h src/pure/motion.h src/pure/configuration_space.h src/pure/moveit_impl/MoveitConfigurationSpace.cpp src/pure/moveit_impl/MoveitConfigurationSpace.h src/pure/configuration.h src/pure/collision_checking.h src/pure/moveit_impl/EndEffectorOnPointGoalRegion.h src/pure/moveit_impl/approach_planning.h src/pure/moveit_impl/approach_planning.h src/pure/distance_matrix.h)
+        src/utilities/fcl_util.h src/pure/moveit_impl/ShellConfigurationFromShellSurface.h src/pure/goal_region.h src/pure/end_effector_near_point_goal_region.h src/pure/approach_planning.h src/pure/motion.h src/pure/configuration_space.h src/pure/moveit_impl/MoveitConfigurationSpace.cpp src/pure/moveit_impl/MoveitConfigurationSpace.h src/pure/configuration.h src/pure/collision_checking.h src/pure/moveit_impl/EndEffectorOnPointGoalRegion.h src/pure/moveit_impl/approach_planning.h src/pure/moveit_impl/approach_planning.h src/pure/distance_matrix.h src/utilities/cgal_utils.cpp src/utilities/cgal_utils.h)
 
 if (ENABLE_VISUALIZATION)
     find_package(VTK REQUIRED)

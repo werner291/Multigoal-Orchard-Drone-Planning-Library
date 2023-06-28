@@ -43,7 +43,7 @@ int main() {
 
 	auto ss = omplStateSpaceForDrone(start_state.getRobotModel());
 	auto si = loadSpaceInformation(ss, scene);
-	auto planner = makeShellBasedPlanner<CGALMeshShellPoint>(cgalChullShell, 1.0)(si);
+	auto planner = makeShellBasedPlanner<mgodpl::cgal_utils::CGALMeshPointAndNormal>(cgalChullShell, 1.0)(si);
 	ompl::base::ScopedState<> start(ss);
 	ss->copyToOMPLState(start.get(), start_state);
 	auto ptc = ompl::base::plannerNonTerminatingCondition();

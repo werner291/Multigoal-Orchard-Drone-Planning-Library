@@ -17,6 +17,7 @@
 #include "SphereShell.h"
 #include "CuttingPlaneConvexHullShell.h"
 #include "../AppleTreePlanningScene.h"
+#include "../utilities/cgal_utils.h"
 
 using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
 using Triangle_mesh = CGAL::Surface_mesh<Kernel::Point_3>;
@@ -25,14 +26,6 @@ using Primitive = CGAL::AABB_face_graph_triangle_primitive<Triangle_mesh>;
 using AABBTraits = CGAL::AABB_traits<Kernel, Primitive>;
 using Surface_mesh_shortest_path = CGAL::Surface_mesh_shortest_path<Traits>;
 using CGALMeshPoint = Surface_mesh_shortest_path::Face_location;
-
-struct Point_path_visitor_wrapper;
-
-struct CGALMeshShellPoint {
-	CGALMeshPoint point;
-	/// We use an explicit normal here, because the surface normal is poorly defined at the edges and vertices.
-	Eigen::Vector3d normal;
-};
 
 /**
  * A ShellSpace based on the Surface_mesh_shortest_path module in CGAL.
@@ -50,7 +43,7 @@ struct CGALMeshShellPoint {
  *
  * Paths across the shell are exact shortest-path geodesics between points.
  */
-class CGALMeshShell : public WorkspaceShell<CGALMeshShellPoint> {
+class CGALMeshShell : public WorkspaceShell<mgodpl::cgal_utils::CGALMeshPointAndNormal> {
 
 protected:
 
@@ -66,7 +59,7 @@ protected:
 	/// How heavy to weigh rotation in predict_path_length.
 	double rotation_weight = 1.0;
 
-	double path_length(const std::vector<CGALMeshShellPoint> &path) const;
+	double path_length(const std::vector<mgodpl::cgal_utils::CGALMeshPointAndNormal> &path) const;
 
 public:
 
@@ -82,16 +75,16 @@ public:
 	explicit CGALMeshShell(Triangle_mesh mesh, double rotationWeight, double padding);
 
 	/**
-	 * For a given CGALMeshShellPoint (which really is a face index paired with barycentric coordinates),
+	 * For a given mgodpl::cgal_utils::CGALMeshPointAndNormal (which really is a face index paired with barycentric coordinates),
 	 * compute the normal vector of the face.
 	 *
 	 * Note: this is not the normal vector of the triangle, special cases like edges or vertices are not handled explicitly:
-	 * we exclusively look at the face index in the CGALMeshShellPoint.
+	 * we exclusively look at the face index in the mgodpl::cgal_utils::CGALMeshPointAndNormal.
 	 *
 	 * @param near	The point to compute the normal for.
 	 * @return		The normal vector.
 	 */
-	Eigen::Vector3d normalAt(const CGALMeshShellPoint &near) const;
+	Eigen::Vector3d normalAt(const mgodpl::cgal_utils::CGALMeshPointAndNormal &near) const;
 
 	/**
 	 * Returns an "arm vector", which really is just a normal vector.
@@ -99,7 +92,7 @@ public:
 	 * @param p 		The surface shell point to compute the arm vector for.
 	 * @return 			The arm vector.
 	 */
-	Eigen::Vector3d arm_vector(const CGALMeshShellPoint &p) const override;
+	Eigen::Vector3d arm_vector(const mgodpl::cgal_utils::CGALMeshPointAndNormal &p) const override;
 
 	/**
 	 *
@@ -109,17 +102,17 @@ public:
 	 * the nearest point to the projected point.
 	 *
 	 * @param p 		The point to project onto the mesh.
-	 * @return 			A CGALMeshShellPoint closest to p.
+	 * @return 			A mgodpl::cgal_utils::CGALMeshPointAndNormal closest to p.
 	 */
-	CGALMeshShellPoint nearest_point_on_shell(const Eigen::Vector3d &p) const override;
+	mgodpl::cgal_utils::CGALMeshPointAndNormal nearest_point_on_shell(const Eigen::Vector3d &p) const override;
 
 	/**
-	 * Compute the carthesian coordinates of a CGALMeshShellPoint.
+	 * Compute the carthesian coordinates of a mgodpl::cgal_utils::CGALMeshPointAndNormal.
 	 *
 	 * @param p 		The point to compute the coordinates for.
 	 * @return 			The carthesian coordinates.
 	 */
-	Eigen::Vector3d surface_point(const CGALMeshShellPoint &p) const override;
+	Eigen::Vector3d surface_point(const mgodpl::cgal_utils::CGALMeshPointAndNormal &p) const override;
 
 	/**
 	 * Compute a path across the surface between two shell points.
@@ -131,8 +124,8 @@ public:
 	 * @param to 		The end point.
 	 * @return 			A piecewise-linear path between the two points.
 	 */
-	std::shared_ptr<ShellPath<CGALMeshShellPoint>>
-	path_from_to(const CGALMeshShellPoint &from, const CGALMeshShellPoint &to) const override;
+	std::shared_ptr<ShellPath<mgodpl::cgal_utils::CGALMeshPointAndNormal>>
+	path_from_to(const mgodpl::cgal_utils::CGALMeshPointAndNormal &from, const mgodpl::cgal_utils::CGALMeshPointAndNormal &to) const override;
 
 	/**
 	 * @brief Compute a path across the surface between two shell points.
@@ -150,7 +143,7 @@ public:
 	 * @param b The end point.
 	 * @return A shared pointer to a PiecewiseLinearPath object representing the path from the start point to the end point.
 	 */
-	double path_length(const std::shared_ptr<ShellPath<CGALMeshShellPoint>> &path) const override;
+	double path_length(const std::shared_ptr<ShellPath<mgodpl::cgal_utils::CGALMeshPointAndNormal>> &path) const override;
 
 	/**
 	 * @brief Compute the distance matrix for a set of points on the mesh shell.
@@ -163,10 +156,10 @@ public:
 	 * @return A 2D vector representing the distance matrix, where the element at [i][j] is the shortest
 	 *         distance from points[i] to points[j].
 	 */
-	std::vector<std::vector<double>> distance_matrix(const std::vector<CGALMeshShellPoint> &points) const override;
+	std::vector<std::vector<double>> distance_matrix(const std::vector<mgodpl::cgal_utils::CGALMeshPointAndNormal> &points) const override;
 };
 
-std::shared_ptr<WorkspaceShell<CGALMeshShellPoint>>
+std::shared_ptr<WorkspaceShell<mgodpl::cgal_utils::CGALMeshPointAndNormal>>
 convexHullAroundLeavesCGAL(const AppleTreePlanningScene &scene_info, double rotation_weight, double padding);
 
 #endif //NEW_PLANNERS_CGALMESHSHELL_H

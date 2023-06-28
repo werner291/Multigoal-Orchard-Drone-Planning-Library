@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 		planners.emplace_back(planner_params, makeShellBasedPlanner<Eigen::Vector3d>(minimumEnclosingSphereShell, approach_max_t));
 
 		planner_params["shell_type"] = "cgal_convex_hull";
-		planners.emplace_back(planner_params, makeShellBasedPlanner<CGALMeshShellPoint>(cgalChullShell, approach_max_t));
+		planners.emplace_back(planner_params, makeShellBasedPlanner<mgodpl::cgal_utils::CGALMeshPointAndNormal>(cgalChullShell, approach_max_t));
 	}
 
 	// Parameters for tsp over prm planners

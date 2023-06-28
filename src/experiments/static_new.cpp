@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
 		}, strategy));
 
 		params["shell"] = "CGAL Chull";
-		planners.emplace_back(params, createPlannerPair<CGALMeshShellPoint>([&](const AppleTreePlanningScene &scene) {
+		planners.emplace_back(params, createPlannerPair<mgodpl::cgal_utils::CGALMeshPointAndNormal>([&](const AppleTreePlanningScene &scene) {
 			return convexHullAroundLeavesCGAL(scene, 1.0, 0.1);
 		}, strategy));
 

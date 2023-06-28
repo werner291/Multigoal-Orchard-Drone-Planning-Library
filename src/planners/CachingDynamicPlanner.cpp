@@ -348,4 +348,4 @@ CachingDynamicPlanner<ShellPoint>::CachingDynamicPlanner(const std::shared_ptr<A
 
 // Explicitly instantiate the template for the types we need.
 template class CachingDynamicPlanner<Eigen::Vector3d>;
-template class CachingDynamicPlanner<CGALMeshShellPoint>;
+template class CachingDynamicPlanner<mgodpl::cgal_utils::CGALMeshPointAndNormal>;

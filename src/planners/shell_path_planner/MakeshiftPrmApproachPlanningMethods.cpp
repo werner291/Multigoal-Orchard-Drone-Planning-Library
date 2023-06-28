@@ -99,9 +99,9 @@ class MakeshiftPrmApproachPlanningMethods<Eigen::Vector3d>;
 template
 class MakeshiftPrmApproachPlanningMethods<ConvexHullPoint>;
 
-// Explicit instantiation for CGALMeshShellPoint
+// Explicit instantiation for mgodpl::cgal_utils::CGALMeshPointAndNormal
 template
-class MakeshiftPrmApproachPlanningMethods<CGALMeshShellPoint>;
+class MakeshiftPrmApproachPlanningMethods<mgodpl::cgal_utils::CGALMeshPointAndNormal>;
 
 // Explicit instantiation for CylinderShellPoint
 template

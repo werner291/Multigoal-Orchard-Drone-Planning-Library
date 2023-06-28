@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 
 		auto sphere_shell = OmplShellSpace<Eigen::Vector3d>::fromWorkspaceShell(horizontalAdapter<Eigen::Vector3d>(paddedSphericalShellAroundLeaves(scene, 0.1)), si);
 		auto chull_shell = OmplShellSpace<ConvexHullPoint>::fromWorkspaceShell(cuttingPlaneConvexHullAroundLeaves(scene, 0.0, 0.0), si);
-		auto cgal_shell = OmplShellSpace<CGALMeshShellPoint>::fromWorkspaceShell(convexHullAroundLeavesCGAL(scene, 0.0, 0.0), si);
+		auto cgal_shell = OmplShellSpace<mgodpl::cgal_utils::CGALMeshPointAndNormal>::fromWorkspaceShell(convexHullAroundLeavesCGAL(scene, 0.0, 0.0), si);
 
 		std::vector<std::pair<Json::Value, std::shared_ptr<PathLengthPredictor>>> predictors {
 				pairWithJson(EuclideanDistancePredictor()),

@@ -42,7 +42,7 @@ template std::vector<Eigen::Vector3d> idealizedPathViaShell(const WorkspaceShell
 															const Eigen::Vector3d &goal,
 															int curve_steps);
 
-template std::vector<Eigen::Vector3d> idealizedPathViaShell(const WorkspaceShell<CGALMeshShellPoint> &shell,
+template std::vector<Eigen::Vector3d> idealizedPathViaShell(const WorkspaceShell<mgodpl::cgal_utils::CGALMeshPointAndNormal> &shell,
 															const Eigen::Vector3d &start,
 															const Eigen::Vector3d &goal,
 															int curve_steps);

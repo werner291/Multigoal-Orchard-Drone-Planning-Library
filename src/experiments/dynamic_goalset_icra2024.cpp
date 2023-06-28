@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
 	using namespace fcl_util;
 	using namespace moveit_impl;
 	using namespace shell_path_planning;
+	using namespace mesh_shell;
 
 	using ShellSpace = ShellConfigurationFromShellSurface<CGALMeshShell>;
 
@@ -41,8 +42,6 @@ int main(int argc, char **argv) {
 	const std::vector<Eigen::Vector3d> goal_points = tree_model.fruit_meshes | ranges::views::transform([](const auto& mesh) -> Eigen::Vector3d {
 		return mesh_aabb(mesh).center();
 	}) | ranges::to_vector;
-
-
 
 	std::vector<chull_tools::Kernel::Point_3> points = tree_model.leaves_mesh.vertices | ranges::views::transform([](const auto& vertex) -> chull_tools::Kernel::Point_3 {
 		return chull_tools::Kernel::Point_3(vertex.x, vertex.y, vertex.z);

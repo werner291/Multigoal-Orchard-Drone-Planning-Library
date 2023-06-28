@@ -85,7 +85,7 @@ template
 class OmplShellSpace<ConvexHullPoint>;
 
 template
-class OmplShellSpace<CGALMeshShellPoint>;
+class OmplShellSpace<mgodpl::cgal_utils::CGALMeshPointAndNormal>;
 
 template
 class OmplShellSpace<CylinderShellPoint>;
