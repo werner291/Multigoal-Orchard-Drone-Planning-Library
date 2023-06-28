@@ -27,24 +27,27 @@ const std::array<Proportions,5> probs = {
 				.fraction_false_given = 0.0,
 				.fraction_discoverable = 0.5
 		},
-		Proportions {
-				.fraction_true_given = 0.0,
-				.fraction_false_given = 0.0,
-				.fraction_discoverable = 1.0
-		},
-		Proportions {
-				.fraction_true_given = 0.5,
-				.fraction_false_given = 0.5,
-				.fraction_discoverable = 0.0
-		},
-		Proportions {
-				.fraction_true_given = 0.0,
-				.fraction_false_given = 0.5,
-				.fraction_discoverable = 0.5
-		},
+//		Proportions {
+//				.fraction_true_given = 0.0,
+//				.fraction_false_given = 0.0,
+//				.fraction_discoverable = 1.0
+//		},
+//		Proportions {
+//				.fraction_true_given = 0.5,
+//				.fraction_false_given = 0.5,
+//				.fraction_discoverable = 0.0
+//		},
+//		Proportions {
+//				.fraction_true_given = 0.0,
+//				.fraction_false_given = 0.5,
+//				.fraction_discoverable = 0.5
+//		},
 };
 
 int main(int argc, char **argv) {
+
+	int N_TREES = 1;
+	const int REPETITIONS = 1;
 
 	// Load the apple tree meshes.
 	auto models = loadAllTreeModels(INT_MAX, 600);
@@ -54,9 +57,7 @@ int main(int argc, char **argv) {
 
 	ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
 
-	const int REPETITIONS = 10;
-
-	auto repIds = ranges::views::iota(0, 10);
+	auto repIds = ranges::views::iota(0, REPETITIONS);
 
 	using ShellPoint = mgodpl::cgal_utils::CGALMeshPointAndNormal;
 

@@ -16,7 +16,7 @@
 #include <CGAL/AABB_traits.h>
 #include <CGAL/Surface_mesh_shortest_path.h>
 
-#include "../pure/distance_matrix.h"
+#include "../pure/metric_space.h"
 
 namespace mgodpl {
 
@@ -134,12 +134,18 @@ namespace mgodpl {
 
 	}
 
-	namespace distance_matrix {
+	template<>
+	struct space_point_t<cgal_utils::WeightedMesh> {
+		using type = cgal_utils::CGALMeshPointAndNormal;
+	};
+
+	namespace metric_space {
 		template<>
 		std::vector<std::vector<double>>
 		point_distance_all_to_all(const cgal_utils::WeightedMesh &context,
-														   const std::vector<cgal_utils::CGALMeshPointAndNormal> &points);
+								  const std::vector<cgal_utils::CGALMeshPointAndNormal> &points);
 	}
+
 }
 
 #endif //MGODPL_CGAL_UTILS_H

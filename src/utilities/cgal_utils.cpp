@@ -120,8 +120,8 @@ double mgodpl::cgal_utils::path_length(const mgodpl::cgal_utils::WeightedMesh &m
 
 
 template<>
-std::vector<std::vector<double>> mgodpl::distance_matrix::point_distance_all_to_all(const cgal_utils::WeightedMesh &context,
-														   const std::vector<cgal_utils::CGALMeshPointAndNormal> &points) {
+std::vector<std::vector<double>> mgodpl::metric_space::point_distance_all_to_all(const cgal_utils::WeightedMesh &context,
+																				 const std::vector<cgal_utils::CGALMeshPointAndNormal> &points) {
 
 	using namespace cgal_utils;
 

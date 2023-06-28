@@ -18,7 +18,7 @@
 #include <CGAL/AABB_traits.h>
 #include <CGAL/convex_hull_3.h>
 
-#include "../distance_matrix.h"
+#include "../metric_space.h"
 #include "../../utilities/cgal_utils.h"
 #include "../Shell.h"
 
@@ -61,11 +61,16 @@ namespace mgodpl {
 	};
 
 	template<>
+	struct space_point_t<mesh_shell::CGALMeshShell> {
+		using type = cgal_utils::CGALMeshPointAndNormal;
+	};
+
+	template<>
 	struct shell_path_t<mesh_shell::CGALMeshShell> {
 		using type = std::vector<cgal_utils::CGALMeshPointAndNormal>;
 	};
 
-	namespace distance_matrix {
+	namespace metric_space {
 
 		template<>
 		std::vector<std::vector<double>>

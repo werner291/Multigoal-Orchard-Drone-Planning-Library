@@ -12,7 +12,7 @@
 #include <Eigen/Core>
 
 #include "../Shell.h"
-#include "../distance_matrix.h"
+#include "../metric_space.h"
 
 namespace mgodpl {
 
@@ -32,6 +32,7 @@ namespace mgodpl {
 
 		using ShellPoint = SpherePoint;
 		using ShellPath = GreatCirclePath;
+		using SpacePoint = SpherePoint;
 	};
 
 	// Implement all of Shell.h for SphereShell.
@@ -46,7 +47,7 @@ namespace mgodpl {
 		using type = GreatCirclePath;
 	};
 
-	namespace distance_matrix {
+	namespace metric_space {
 		/**
 		 * @brief Computes the angular distance between two points on the shell of a sphere.
 		 *

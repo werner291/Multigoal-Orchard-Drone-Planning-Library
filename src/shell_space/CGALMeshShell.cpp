@@ -112,7 +112,7 @@ std::vector<std::vector<double>> CGALMeshShell::distance_matrix(const std::vecto
 		rotation_weight
 	};
 
-	return mgodpl::distance_matrix::point_distance_all_to_all<mgodpl::cgal_utils::WeightedMesh, CGALMeshPointAndNormal>(mesh, points);
+	return mgodpl::metric_space::point_distance_all_to_all<mgodpl::cgal_utils::WeightedMesh>(mesh, points);
 
 }
 
