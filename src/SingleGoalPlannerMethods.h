@@ -7,7 +7,11 @@ static const double MAKESHIFT_EXPONENTIAL_SAMPLER_DEVIATION = 0.5;
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/base/Goal.h>
 #include <ompl/base/Planner.h>
+#if __APPLE__
+#include <json/json.h>
+#else
 #include <jsoncpp/json/value.h>
+#endif
 #include <optional>
 #include <utility>
 #include "InformedRobotStateSampler.h"

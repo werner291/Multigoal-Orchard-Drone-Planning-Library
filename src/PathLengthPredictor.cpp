@@ -266,7 +266,7 @@ double DendriticConvexHullDistancePredictor::predict_path_length(const Apple &a1
 	std::vector<dendritic_convex_hull::Point> shell_path;
 	shortest_paths.shortest_path_points_to_source_points(shell_1.first, shell_1.second, std::back_inserter(shell_path));
 
-	auto shell_path_points = shell_path | ranges::view::transform([](const auto &p) {
+	auto shell_path_points = shell_path | ranges::views::transform([](const auto &p) {
 		return Eigen::Vector3d(p.x(), p.y(), p.z());
 	}) | ranges::to_vector;
 

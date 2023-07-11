@@ -137,7 +137,7 @@ public:
 	 *
 	 * @return The name of the planner.
 	 */
-	[[nodiscard]] std::string name() const {
+	[[nodiscard]] std::string name() const override {
 		return "ShellPathPlanner";
 	}
 

@@ -136,7 +136,7 @@ generateStaticOrchardPlanningProblems(const moveit::core::RobotModelPtr &robot,
 
 		Json::Value problem_json;
 		problem_json["scene"] = combined_scene.scene_msg->name;
-		problem_json["n_apples"] = combined_scene.apples.size();
+		problem_json["n_apples"] = (int) combined_scene.apples.size();
 
 		problems.emplace_back(problem_json, problem);
 

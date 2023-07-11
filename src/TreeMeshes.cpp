@@ -120,7 +120,7 @@ std::vector<TreeMeshes> loadRandomTreeModels(const int n, const int max_fruit) {
 	std::mt19937 gen(std::random_device{}());
 
 	// Get the names of available tree models and shuffle them.
-	auto tree_names = getTreeModelNames() | ranges::action::shuffle(gen);
+	auto tree_names = getTreeModelNames() | ranges::actions::shuffle(gen);
 
 	// Create a vector to hold the loaded tree models.
 	std::vector<TreeMeshes> tree_models;

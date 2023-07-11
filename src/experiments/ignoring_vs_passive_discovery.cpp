@@ -102,10 +102,10 @@ int main(int argc, char **argv) {
 
 				// Create a JSON object containing the parameters of the problem for later reference.
 				Json::Value problem_params;
-				problem_params["n_given"] = ranges::count(discoverability, AppleDiscoverabilityType::GIVEN);
-				problem_params["n_discoverable"] = ranges::count(discoverability, AppleDiscoverabilityType::DISCOVERABLE);
-				problem_params["n_false"] = ranges::count(discoverability, AppleDiscoverabilityType::FALSE);
-				problem_params["n_total"] = scene.fruit_meshes.size();
+				problem_params["n_given"] = (int) ranges::count(discoverability, AppleDiscoverabilityType::GIVEN);
+				problem_params["n_discoverable"] = (int) ranges::count(discoverability, AppleDiscoverabilityType::DISCOVERABLE);
+				problem_params["n_false"] = (int) ranges::count(discoverability, AppleDiscoverabilityType::FALSE);
+				problem_params["n_total"] = (int) scene.fruit_meshes.size();
 				problem_params["visibility_model"] = occlusion_model.first;
 
 				// Create the problem, to be solved by the planners.

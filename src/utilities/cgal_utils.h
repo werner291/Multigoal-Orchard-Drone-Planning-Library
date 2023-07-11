@@ -18,6 +18,8 @@
 
 #include "../pure/metric_space.h"
 
+#include <Eigen/Core>
+
 namespace mgodpl {
 
 	namespace cgal_utils {
@@ -122,6 +124,9 @@ namespace mgodpl {
 		struct WeightedMesh {
 			const Triangle_mesh &mesh; ///< The mesh.
 			double rotation_weight; ///< The rotation weight.
+
+			// TODO: Wrap this up into some kind of generic straight-segment-path type.
+			using SpacePath = std::vector<CGALMeshPointAndNormal>; ///< The type of a path on this mesh.
 		};
 
 		/**

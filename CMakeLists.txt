@@ -11,6 +11,9 @@ set(VTK_QT_VERSION "6" CACHE STRING "Qt Version")
 # Add an option to enable/disable VTK
 option(ENABLE_VISUALIZATION "Enable VISUALizATION support" OFF)
 
+# Add an option to enable/disable building the experiments
+option(ENABLE_EXPERIMENTS "Enable EXPERIMENTS" OFF)
+
 ## System dependencies are found with CMake's conventions
 find_package(Eigen3 REQUIRED)
 find_package(jsoncpp REQUIRED)
@@ -19,6 +22,7 @@ find_package(Boost REQUIRED)
 find_package(Bullet REQUIRED)
 find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
+find_package(Qhull REQUIRED)
 find_package(Qhull REQUIRED)
 
 set(CGAL_DATA_DIR "UNUSED_STOP_WARNING")
@@ -59,7 +63,7 @@ link_libraries(
         jsoncpp_lib
         tbb
         ${CGAL_LIBRARIES}
-        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
+        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.dylib
 )
 
 ###########
@@ -281,7 +285,26 @@ add_library(${PROJECT_NAME}_shared
         src/CanSeeApple.cpp
         src/CanSeeApple.h
         src/utilities/fcl_util.cpp
-        src/utilities/fcl_util.h src/pure/moveit_impl/ShellConfigurationFromShellSurface.h src/pure/goal_region.h src/pure/end_effector_near_point_goal_region.h src/pure/approach_planning.h src/pure/motion.h src/pure/configuration_space.h src/pure/moveit_impl/MoveitConfigurationSpace.cpp src/pure/moveit_impl/MoveitConfigurationSpace.h src/pure/configuration.h src/pure/collision_checking.h src/pure/moveit_impl/EndEffectorOnPointGoalRegion.h src/pure/moveit_impl/approach_planning.h src/pure/moveit_impl/approach_planning.h src/pure/metric_space.h src/utilities/cgal_utils.cpp src/utilities/cgal_utils.h src/experiments/utilities/default_occlusion_models.cpp src/experiments/utilities/default_occlusion_models.h src/pure/topological_space.h src/pure/topological_space.h src/pure/topological_space.h)
+        src/utilities/fcl_util.h
+        src/pure/moveit_impl/ShellConfigurationFromShellSurface.h
+        src/pure/goal_region.h
+        src/pure/end_effector_near_point_goal_region.h
+        src/pure/approach_planning.h
+        src/pure/motion.h
+        src/pure/configuration_space.h
+        src/pure/moveit_impl/MoveitConfigurationSpace.cpp
+        src/pure/moveit_impl/MoveitConfigurationSpace.h
+        src/pure/configuration.h src/pure/collision_checking.h
+        src/pure/moveit_impl/EndEffectorOnPointGoalRegion.h
+        src/pure/moveit_impl/approach_planning.h
+        src/pure/moveit_impl/approach_planning.h
+        src/pure/metric_space.h
+        src/utilities/cgal_utils.cpp
+        src/utilities/cgal_utils.h
+        src/pure/topological_space.h
+        src/pure/topological_space.h
+        src/pure/topological_space.h
+        )
 
 if (ENABLE_VISUALIZATION)
     find_package(VTK REQUIRED)
@@ -344,7 +367,6 @@ if (ENABLE_VISUALIZATION)
     target_link_libraries(${PROJECT_NAME}_visualization ${PROJECT_NAME}_shared Qt5::Core Qt5::Widgets Qt5::Concurrent)
     ament_target_dependencies(${PROJECT_NAME}_visualization ${AMENT_DEPS})
 
-
 endif ()
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
@@ -353,62 +375,69 @@ set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "
 
 ament_target_dependencies(${PROJECT_NAME}_shared ${AMENT_DEPS})
 
+if (ENABLE_EXPERIMENTS)
 
-function(experiment name)
-    add_executable(${PROJECT_NAME}_experiment_${name} src/experiments/${name}.cpp)
-    target_link_libraries(${PROJECT_NAME}_experiment_${name} ${PROJECT_NAME}_shared)
-endfunction()
+    add_library(experiments_shared src/experiments/utilities/default_occlusion_models.cpp)
+    target_link_libraries(experiments_shared ${PROJECT_NAME}_shared)
 
-experiment("shellpath")
-experiment("shellpath_shell_inflation")
-experiment("shellpath_shell_bias")
-experiment("shell_comparison")
-experiment("tsp_over_prm_vs_sphereshell")
-experiment("shell_comparison_sphere_armangle")
-experiment("path_length_prediction")
-experiment("shell_type_comparison")
-experiment("tsp_over_prm_bb")
-experiment("dynamic_goalset_icra2024")
-experiment("ignoring_vs_passive_discovery")
+    function(experiment name)
+        add_executable(${PROJECT_NAME}_experiment_${name} src/experiments/${name}.cpp)
+        target_link_libraries(${PROJECT_NAME}_experiment_${name} ${PROJECT_NAME}_shared experiments_shared)
+    endfunction()
 
-if (ENABLE_VISUALIZATION)
-    experiment("initial_orbit_comparison")
-    target_link_libraries(${PROJECT_NAME}_experiment_initial_orbit_comparison ${PROJECT_NAME}_visualization)
+    experiment("shellpath")
+    experiment("shellpath_shell_inflation")
+    experiment("shellpath_shell_bias")
+    experiment("shell_comparison")
+    experiment("tsp_over_prm_vs_sphereshell")
+    experiment("shell_comparison_sphere_armangle")
+    experiment("path_length_prediction")
+    experiment("shell_type_comparison")
+    experiment("tsp_over_prm_bb")
+    experiment("dynamic_goalset_icra2024")
+    experiment("ignoring_vs_passive_discovery")
 
-    experiment("exploration")
-    target_link_libraries(${PROJECT_NAME}_experiment_exploration ${PROJECT_NAME}_sensing)
+    if (ENABLE_VISUALIZATION)
+        experiment("initial_orbit_comparison")
+        target_link_libraries(${PROJECT_NAME}_experiment_initial_orbit_comparison ${PROJECT_NAME}_visualization)
 
-    experiment("non_approach_experiment")
+        experiment("exploration")
+        target_link_libraries(${PROJECT_NAME}_experiment_exploration ${PROJECT_NAME}_sensing)
 
-    experiment("dynamic_visualized")
-    target_link_libraries(${PROJECT_NAME}_experiment_dynamic_visualized ${PROJECT_NAME}_visualization)
+        experiment("non_approach_experiment")
 
-    experiment("visualize_prm")
-    target_link_libraries(${PROJECT_NAME}_experiment_visualize_prm ${PROJECT_NAME}_visualization)
+        experiment("dynamic_visualized")
+        target_link_libraries(${PROJECT_NAME}_experiment_dynamic_visualized ${PROJECT_NAME}_visualization)
 
-    experiment("static_visualized")
-    target_link_libraries(${PROJECT_NAME}_experiment_static_visualized ${PROJECT_NAME}_visualization Qt5::Core Qt5::Widgets Qt5::Concurrent)
+        experiment("visualize_prm")
+        target_link_libraries(${PROJECT_NAME}_experiment_visualize_prm ${PROJECT_NAME}_visualization)
 
-    experiment("vizualized_trees_row")
-    target_link_libraries(${PROJECT_NAME}_experiment_vizualized_trees_row ${PROJECT_NAME}_visualization)
+        experiment("static_visualized")
+        target_link_libraries(${PROJECT_NAME}_experiment_static_visualized ${PROJECT_NAME}_visualization Qt5::Core Qt5::Widgets Qt5::Concurrent)
 
-    experiment("chull_underpass_visualized")
-    target_link_libraries(${PROJECT_NAME}_experiment_chull_underpass_visualized ${PROJECT_NAME}_visualization)
+        experiment("vizualized_trees_row")
+        target_link_libraries(${PROJECT_NAME}_experiment_vizualized_trees_row ${PROJECT_NAME}_visualization)
 
-    experiment("photoshoot_tree_models")
-    target_link_libraries(${PROJECT_NAME}_experiment_photoshoot_tree_models ${PROJECT_NAME}_visualization)
+        experiment("chull_underpass_visualized")
+        target_link_libraries(${PROJECT_NAME}_experiment_chull_underpass_visualized ${PROJECT_NAME}_visualization)
 
-    experiment("midpoint_pull_optimization")
-    target_link_libraries(${PROJECT_NAME}_experiment_midpoint_pull_optimization ${PROJECT_NAME}_visualization)
-endif ()
+        experiment("photoshoot_tree_models")
+        target_link_libraries(${PROJECT_NAME}_experiment_photoshoot_tree_models ${PROJECT_NAME}_visualization)
 
-experiment("CGAL_mesh_paths_comparison")
+        experiment("midpoint_pull_optimization")
+        target_link_libraries(${PROJECT_NAME}_experiment_midpoint_pull_optimization ${PROJECT_NAME}_visualization)
+    endif ()
 
-experiment("tsp_noise_effect")
+    experiment("CGAL_mesh_paths_comparison")
 
-experiment("lci_vs_full_reorder_timing")
+    experiment("tsp_noise_effect")
 
-experiment("static_new")
+    experiment("lci_vs_full_reorder_timing")
+
+    experiment("static_new")
+
+    experiment("dynamic_varying_discoverable")
+endif()
 
 include(GoogleTest)
 

@@ -8,6 +8,8 @@
 
 #include "cgal_utils.h"
 
+#include <Eigen/Dense>
+
 Eigen::Vector3d mgodpl::cgal_utils::toEigen(const Kernel::Point_3 &p) {
 	return  { p.x(), p.y(), p.z() };
 }
@@ -56,9 +58,13 @@ Eigen::Vector3d mgodpl::cgal_utils::faceNormal(const mgodpl::cgal_utils::Triangl
 	Eigen::Vector3d vb(points[1].x(), points[1].y(), points[1].z());
 	Eigen::Vector3d vc(points[2].x(), points[2].y(), points[2].z());
 
+	Eigen::Vector3d AB = vb - va;
+	Eigen::Vector3d AC = vc - va;
+	Eigen::Vector3d crs = AB.cross(AC);
+
 	// Compute the normalized cross product.
 	// This one inexplicably points inward, so we flip it again. Does the CGAL code flip our vertices somewhere?
-	return -(vb - va).cross(vc - va).normalized();
+	return -crs.normalized();
 }
 
 /**
@@ -117,6 +123,7 @@ double mgodpl::cgal_utils::path_length(const mgodpl::cgal_utils::WeightedMesh &m
 
 	return length;
 }
+
 
 
 template<>
