@@ -5,47 +5,77 @@
 #include <geometry_msgs/geometry_msgs/msg/point.hpp>
 #include <moveit_msgs/moveit_msgs/msg/detail/planning_scene__struct.hpp>
 #include "enclosing_sphere.h"
-#include "Seb_point.h"
-#include "Seb.h"
 
-using FT = double;
-using Point = Seb::Point<FT>;
-using PointVector = std::vector<Point>;
-using Miniball = Seb::Smallest_enclosing_ball<FT>;
+#include <CGAL/Cartesian_d.h>
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Min_sphere_of_spheres_d.h>
+#include <CGAL/Exact_rational.h>
+#include <CGAL/Random.h>
 
 namespace utilities {
+
+	bodies::BoundingSphere
+	compute_enclosing_sphere_around_points(const std::vector<Eigen::Vector3d> &points_eigen, const double padding) {
+
+		const int N = 1000;                       // number of spheres
+		const int D = 3;                          // dimension of points
+		const int LOW = 0, HIGH = 10000;          // range of coordinates and radii
+		//		typedef CGAL::Exact_rational              FT;
+		typedef double                          FT;
+		typedef CGAL::Cartesian_d<FT>             K;
+		typedef CGAL::Min_sphere_of_spheres_d_traits_d<K,FT,D> Traits;
+		typedef CGAL::Min_sphere_of_spheres_d<Traits> Min_sphere;
+		typedef K::Point_d                        Point;
+		typedef Traits::Sphere                    Sphere;
+		std::vector<Sphere> S;                  // n spheres
+		FT coord[D];                            // d coordinates
+		CGAL::Random r;                         // random number generator
+
+		for (const auto &point: points_eigen) {
+			for (int j=0; j<D; ++j)
+				coord[j] = point[j];
+			Point p(D,coord,coord+D);             // random center...
+			S.push_back(Sphere(p,0.0)); // ...and random radius
+		}
+
+		Min_sphere ms(S.begin(),S.end());       // check in the spheres
+		assert(ms.is_valid());
+
+		auto center_itr = ms.center_cartesian_begin();
+
+		Eigen::Vector3d center;
+		for (int i=0; i<D; ++i) {
+			center[i] = *center_itr;
+			++center_itr;
+		}
+
+		bodies::BoundingSphere bounding_sphere;
+		bounding_sphere.center = center;
+		bounding_sphere.radius = ms.radius();
+
+		return bounding_sphere;
+
+	}
 
 	bodies::BoundingSphere
 	compute_enclosing_sphere_around_leaves(const moveit_msgs::msg::PlanningScene &planning_scene_message,
 										   const double padding) {
 
-		std::vector<Point> points;
+		std::vector<Eigen::Vector3d> points_eigen;
 
 		for (const auto &col: planning_scene_message.world.collision_objects) {
 			if (col.id == "leaves") {
 				for (const auto &mesh: col.meshes) {
 					for (auto v: mesh.vertices) {
-						std::vector<FT> point_vect{v.x, v.y, v.z};
-
-						points.emplace_back(3, point_vect.begin());
+						points_eigen.emplace_back(v.x, v.y, v.z);
 					}
 				}
 			}
 		}
 
-		Miniball mb(3, points);
-
-		std::vector<FT> center(mb.center_begin(), mb.center_end());
-		FT radius = sqrt(mb.squared_radius());
-
-		Eigen::Vector3d center_eigen(center[0], center[1], center[2]);
-
-		bodies::BoundingSphere sphere;
-		sphere.center = center_eigen;
-		sphere.radius = radius + padding;
-
-		return sphere;
+		return compute_enclosing_sphere_around_points(points_eigen, padding);
 	}
+
 
 	std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const AppleTreePlanningScene &scene_info) {
 		std::vector<geometry_msgs::msg::Point> mesh_points;
@@ -75,36 +105,6 @@ namespace utilities {
 			}
 		}
 		return mesh_points;
-	}
-
-	bodies::BoundingSphere
-	compute_enclosing_sphere_around_points(const std::vector<Eigen::Vector3d> &points_eigen, const double padding) {
-
-		typedef double FT;
-		typedef Seb::Point<FT> Point;
-		typedef std::vector<Point> PointVector;
-		typedef Seb::Smallest_enclosing_ball<FT> Miniball;
-
-		std::vector<Point> points;
-
-		for (const auto &point_eigen: points_eigen) {
-			std::vector<FT> point_vect{point_eigen.x(), point_eigen.y(), point_eigen.z()};
-			points.emplace_back(3, point_vect.begin());
-		}
-
-		Miniball mb(3, points);
-
-		std::vector<FT> center(mb.center_begin(), mb.center_end());
-		FT radius = sqrt(mb.squared_radius());
-
-		Eigen::Vector3d center_eigen(center[0], center[1], center[2]);
-
-		bodies::BoundingSphere sphere;
-		sphere.center = center_eigen;
-		sphere.radius = radius + padding;
-
-		return sphere;
-
 	}
 
 	std::vector<geometry_msgs::msg::Point> extract_leaf_vertices(const SimplifiedOrchard &orchard) {

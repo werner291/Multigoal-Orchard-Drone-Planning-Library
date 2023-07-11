@@ -21,8 +21,6 @@
 #include <geometric_shapes/shape_operations.h>
 #include <ompl/geometric/PathSimplifier.h>
 
-#include "Seb.h"
-
 #include "../AppleTreePlanningScene.h"
 #include "msgs_utilities.h"
 #include "experiment_utils.h"

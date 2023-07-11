@@ -5,7 +5,13 @@
 #include <cstddef>
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/base/Goal.h>
+
+#if __APPLE__
+#include <json/json.h>
+#else
 #include <jsoncpp/json/value.h>
+#endif
+
 #include "../SingleGoalPlannerMethods.h"
 #include "../AppleTreePlanningScene.h"
 #include "../PathInterrupt.h"

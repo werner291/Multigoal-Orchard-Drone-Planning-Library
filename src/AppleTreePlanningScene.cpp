@@ -10,7 +10,6 @@
 
 #include "AppleTreePlanningScene.h"
 #include "utilities/general_utilities.h"
-#include "Seb.h"
 #include "utilities/load_mesh.h"
 
 

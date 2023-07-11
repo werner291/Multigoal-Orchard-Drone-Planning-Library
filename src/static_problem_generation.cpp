@@ -42,7 +42,7 @@ generateStaticPlanningProblems(moveit::core::RobotModelConstPtr robot, int numRe
 				Json::Value problem;
 				problem["repId"] = repId;
 				problem["scene"] = scene.scene_msg->name;
-				problem["n_total"] = scene.apples.size();
+				problem["n_total"] = (int) scene.apples.size();
 
 				// Return the pair containing the JSON value and the Problem object.
 				return std::make_pair(problem, Problem{.start = std::move(start), .scene = std::move(reduced_scene)});

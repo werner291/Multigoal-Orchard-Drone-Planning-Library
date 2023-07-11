@@ -47,7 +47,7 @@ runPlannerOnStaticProblem(const StaticPlannerAllocatorFn &planner, const Problem
 	}
 
 	Json::Value result;
-	result["n_visited"] = eval.segments.size();
+	result["n_visited"] = (int) eval.segments.size();
 	result["time"] = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
 	result["total_path_length"] = eval.length();
 
