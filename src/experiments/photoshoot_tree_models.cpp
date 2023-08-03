@@ -36,6 +36,8 @@ int main() {
 
 	robotState.update(true);
 
+	Json::Value model_stats;
+
 	// Load tree meshes, add them to viewer one at a time, snap a picture, and remove them
 	for (const auto& [index, modelName] : ranges::views::enumerate(modelNames)) {
 
@@ -57,6 +59,11 @@ int main() {
 
 		TreeMeshes treeMeshes = loadTreeMeshes(modelName);
 
+		model_stats[modelName]["trunk"]["vertices"] = (int) treeMeshes.trunk_mesh.vertices.size();
+		model_stats[modelName]["trunk"]["triangles"] = (int) treeMeshes.trunk_mesh.triangles.size();
+		model_stats[modelName]["leaves"]["vertices"] = (int) treeMeshes.leaves_mesh.vertices.size();
+		model_stats[modelName]["leaves"]["triangles"] = (int) treeMeshes.leaves_mesh.triangles.size();
+
 		viewer.addMesh(treeMeshes.trunk_mesh, {0.5, 0.3, 0.1}, 1.0, {0.0, 0.0, 0.0});
 		viewer.addMesh(treeMeshes.leaves_mesh, {0.0, 0.5, 0.0}, 1.0, {0.0, 0.0, 0.0});
 
@@ -70,6 +77,10 @@ int main() {
 		viewer.captureScreenshot("tree_pics/" + modelName + ".png");
 
 	}
+
+	std::ofstream model_stats_file("tree_pics/model_stats.json");
+	model_stats_file << model_stats;
+	model_stats_file.close();
 
 }
 
