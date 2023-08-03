@@ -23,6 +23,8 @@ public:
 
 	[[nodiscard]] virtual Eigen::Vector3d at_t(double t) const = 0;
 
+	virtual ~OrbitPath() = default;
+
 };
 
 class FlatOrbitPath : public OrbitPath {
