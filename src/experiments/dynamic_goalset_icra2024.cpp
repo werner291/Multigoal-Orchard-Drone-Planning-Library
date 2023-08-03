@@ -19,6 +19,7 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/to_container.hpp>
 
+
 int main(int argc, char **argv) {
 
 	using namespace mgodpl;
@@ -28,6 +29,7 @@ int main(int argc, char **argv) {
 	using namespace mesh_shell;
 
 	using ShellSpace = ShellConfigurationFromShellSurface<CGALMeshShell>;
+	using ApproachPath = ApproachPath<RobotPath, mgodpl::cgal_utils::CGALMeshPointAndNormal> ;
 
 	auto drone = loadRobotModel();
 
@@ -57,7 +59,7 @@ int main(int argc, char **argv) {
 	ApproachPlanningFns<RobotPath, ShellSpace, EndEffectorOnPointGoalRegion> approachPlanningFnsInstance;
 
 	// Link the lambdas
-	approachPlanningFnsInstance.plan_shell_retraction_path = [](const ShellSpace& shell, const EndEffectorOnPointGoalRegion& goal_point) -> ApproachPath<RobotPath, CGALMeshShell::ShellPoint> {
+	approachPlanningFnsInstance.plan_shell_retraction_path = [](const ShellSpace& shell, const EndEffectorOnPointGoalRegion& goal_point) -> ApproachPath {
 
 		auto closest_pair = approach_planning::find_closest_configurations(shell, goal_point);
 
@@ -70,7 +72,7 @@ int main(int argc, char **argv) {
 
 	};
 
-	approachPlanningFnsInstance.plan_shell_retraction_path_from_configuration = [](const ShellSpace& shell, const moveit::core::RobotState& goal_configuration) -> ApproachPath<RobotPath, CGALMeshShell::ShellPoint> {
+	approachPlanningFnsInstance.plan_shell_retraction_path_from_configuration = [](const ShellSpace& shell, const moveit::core::RobotState& goal_configuration) -> ApproachPath {
 
 		Eigen::Vector3d ee_pos = goal_configuration.getGlobalLinkTransform(shell.end_effector).translation();
 

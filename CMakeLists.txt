@@ -23,7 +23,6 @@ find_package(Bullet REQUIRED)
 find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
 find_package(Qhull REQUIRED)
-find_package(Qhull REQUIRED)
 
 set(CGAL_DATA_DIR "UNUSED_STOP_WARNING")
 find_package(CGAL REQUIRED)
@@ -49,6 +48,8 @@ include_directories(
         #{CGAL_INCLUDE_DIRS}
         ortools/include
         miniball/cpp/main
+
+        /Users/werner/ros_ws/install/moveit_planners_ompl/include/moveit_planners # WARNING: don't commit this
 )
 
 link_libraries(
@@ -307,10 +308,15 @@ add_library(${PROJECT_NAME}_shared
         )
 
 if (ENABLE_VISUALIZATION)
+
+    message(STATUS "Building with visualization")
+
     find_package(VTK REQUIRED)
 
     find_package(Qt5 COMPONENTS Core Widgets Concurrent REQUIRED)
     set(CMAKE_AUTOMOC ON)
+
+    include_directories(${VTK_INCLUDE_DIRS})
 
     add_library(${PROJECT_NAME}_visualization
             src/RobotCameraTracker.cpp
@@ -427,6 +433,8 @@ if (ENABLE_EXPERIMENTS)
         experiment("midpoint_pull_optimization")
         target_link_libraries(${PROJECT_NAME}_experiment_midpoint_pull_optimization ${PROJECT_NAME}_visualization)
     endif ()
+
+    experiment("treemodels_stats")
 
     experiment("CGAL_mesh_paths_comparison")
 
