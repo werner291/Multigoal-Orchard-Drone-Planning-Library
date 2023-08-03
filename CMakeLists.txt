@@ -400,7 +400,6 @@ if (ENABLE_EXPERIMENTS)
     experiment("path_length_prediction")
     experiment("shell_type_comparison")
     experiment("tsp_over_prm_bb")
-    experiment("dynamic_goalset_icra2024")
     experiment("ignoring_vs_passive_discovery")
 
     if (ENABLE_VISUALIZATION)
@@ -444,7 +443,6 @@ if (ENABLE_EXPERIMENTS)
 
     experiment("static_new")
 
-    experiment("dynamic_varying_discoverable")
 endif()
 
 include(GoogleTest)

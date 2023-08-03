@@ -49,6 +49,9 @@ MultiGoalPlanner::PlanResult ShellPathPlanner<ShellPoint>::plan(const ompl::base
 			assert(approach_path_opt->robot_path.getStateCount() > 0);
 			approach_paths.emplace_back(i, approach_path_opt.value());
 		}
+
+		std::cout << "Planned approach paths for goals: " << (i+1) << " / " << goals.size() << std::endl;
+
 	}
 
 	// If there are no reachable goals, return an empty result.
@@ -56,7 +59,6 @@ MultiGoalPlanner::PlanResult ShellPathPlanner<ShellPoint>::plan(const ompl::base
 		return result;
 	}
 
-	std::cout << "Planned approach paths: " << approach_paths.size() << " / " << goals.size() << std::endl;
 
 	// Determine the order in which to visit the goals.
 	{

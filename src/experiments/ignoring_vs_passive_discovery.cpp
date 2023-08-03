@@ -16,7 +16,7 @@
 #include "../dynamic_goalset_experiment.h"
 #include "../utilities/run_experiments.h"
 
-const std::array<Proportions,5> probs = {
+const std::array<Proportions,3> probs = {
 		Proportions {
 				.fraction_true_given = 1.0,
 				.fraction_false_given = 0.0,
@@ -46,32 +46,32 @@ const std::array<Proportions,5> probs = {
 
 int main(int argc, char **argv) {
 
-	int N_TREES = 1;
+	const int N_TREES = 1;
 	const int REPETITIONS = 1;
 
 	// Load the apple tree meshes.
-	auto models = loadAllTreeModels(INT_MAX, 600);
+	auto models = loadAllTreeModels(N_TREES, 200);
 
 	// Load the robot model.
 	const auto robot = loadRobotModel();
 
-	ompl::msg::setLogLevel(ompl::msg::LOG_WARN);
+	ompl::msg::setLogLevel(ompl::msg::LOG_ERROR);
 
 	auto repIds = ranges::views::iota(0, REPETITIONS);
 
 	using ShellPoint = mgodpl::cgal_utils::CGALMeshPointAndNormal;
 
-	DMGPlannerAllocatorFn sp = static_planner<ShellPoint>(cgalChullShell);
+	DMGPlannerAllocatorFn sp = static_planner<ShellPoint>(cgalChullShell, 0.5);
 
-	std::array<std::pair<std::string, DMGPlannerAllocatorFn>, 9> PLANNERS_TO_TEST = {
+	std::vector<std::pair<std::string, DMGPlannerAllocatorFn>> PLANNERS_TO_TEST = {
 			// A planner that ignores the dynamic goalset, only planning to the initially-given apples.
 			// It will obviously not ve very optimal, but will serve as a baseline.
-			std::make_pair("change_ignoring", sp),
+//			std::make_pair("change_ignoring", sp),
 //			// A planner that adds new goals to a "batch" to be replanned to after the current
 //			// path has been completed.
 //			{"batch_replanner", batch_replanner<ShellPoint>(cgalChullShell)},
-//			// A planner that uses the dynamic goalset, but uses a greedy approach to insert new goals in the visitation order.
-//			{"dynamic_planner_lci", dynamic_planner_simple_reorder_sphere<ShellPoint>(SimpleIncrementalTSPMethods::Strategy::LeastCostlyInsertion,cgalChullShell)},
+			// A planner that uses the dynamic goalset, but uses a greedy approach to insert new goals in the visitation order.
+			{"dynamic_planner_lci", dynamic_planner_simple_reorder_sphere<ShellPoint>(SimpleIncrementalTSPMethods::Strategy::LeastCostlyInsertion,cgalChullShell)},
 //			// A planner that inserts new goals simply at the end of the tour
 //			{"dynamic_planner_LIFO", dynamic_planner_simple_reorder_sphere<ShellPoint>(SimpleIncrementalTSPMethods::Strategy::LastInFirstOut,cgalChullShell)},
 //			// A planner that inserts new goals simply at the beginning of the tour
@@ -83,12 +83,19 @@ int main(int argc, char **argv) {
 //			// Same as dynamic_planner_fre, but with an initial orbit around the tree to discover some of the dynamic goals
 //			{"dynamic_planner_initial_orbit", dynamic_planner_initial_orbit<ShellPoint>(cgalChullShell)},
 //			// A planner that uses the dynamic goalset, and completely reorders the visitation order from scratch every time a goal is added.
-//			{"dynamic_planner_fre", dynamic_planner_fre<ShellPoint>(cgalChullShell)},
+			{"dynamic_planner_fre", dynamic_planner_fre<ShellPoint>(cgalChullShell)},
+	};
+
+	const std::array<std::pair<std::string, CanSeeAppleFnFactory>, 1> OCCLUSION_MODELS_TO_TEST = {
+			std::make_pair("mesh_occlusion_end_effector", [](TreeMeshes &meshes) {
+				// End effector's vision occlusion due to the mesh of leaves
+				return mesh_occludes_vision(meshes.leaves_mesh, "end_effector");
+			})
 	};
 
 	// Generate a set of problems based on the carthesian product of the above ranges.
 	auto problems =
-			ranges::views::cartesian_product(models, repIds, probs, OCCLUSION_MODELS) |
+			ranges::views::cartesian_product(models, repIds, probs, OCCLUSION_MODELS_TO_TEST) |
 			ranges::views::transform([&](const auto &pair) -> std::pair<Json::Value,DynamicGoalsetPlanningProblem> {
 
 				// Generate a problem for every unique combination of repetition ID,
@@ -136,6 +143,6 @@ int main(int argc, char **argv) {
 	// Run the experiments in parallel.
 	runExperimentsParallelRecoverable<Experiment>(experiments, [&](const Experiment &experiment) {
 		return runDynamicPlannerExperiment(robot, experiment);
-	}, "analysis/data/dynamic_log_ral.json", 32, std::thread::hardware_concurrency(), 42);
+	}, "analysis/data/dynamic_log_icra2024.json", 32, std::thread::hardware_concurrency(), 42);
 
 }

@@ -85,12 +85,12 @@ DMGPlannerAllocatorFn dynamic_planner_fre(MkOmplShellFn<ShellPoint> paddedOmplSp
  * @return DMGPlannerAllocatorFn
  */
 template <typename ShellPoint>
-DMGPlannerAllocatorFn static_planner(MkOmplShellFn<ShellPoint> paddedOmplSphereShell) {
-	return [paddedOmplSphereShell](const ompl::base::SpaceInformationPtr &si) -> DMGPlannerPtr {
+DMGPlannerAllocatorFn static_planner(MkOmplShellFn<ShellPoint> paddedOmplSphereShell, const double max_approach_time = 1.0) {
+	return [paddedOmplSphereShell, max_approach_time=max_approach_time](const ompl::base::SpaceInformationPtr &si) -> DMGPlannerPtr {
 		return std::make_shared<ChangeIgnoringReplannerAdapter>(
 				std::make_shared<ShellPathPlanner<ShellPoint>>(
 						paddedOmplSphereShell,
-						std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint >>(si, 1.0),
+						std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint >>(si, max_approach_time),
 						true
 				)
 		);
