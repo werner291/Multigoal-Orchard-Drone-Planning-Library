@@ -46,8 +46,8 @@ const std::array<Proportions,3> probs = {
 
 int main(int argc, char **argv) {
 
-	const int N_TREES = 1;
-	const int REPETITIONS = 1;
+	const int N_TREES = 2;
+	const int REPETITIONS = 5;
 
 	// Load the apple tree meshes.
 	auto models = loadAllTreeModels(N_TREES, 200);
@@ -135,6 +135,7 @@ int main(int argc, char **argv) {
 				problem_params["n_false"] = (int) ranges::count(discoverability, AppleDiscoverabilityType::FALSE);
 				problem_params["n_total"] = (int) scene.fruit_meshes.size();
 				problem_params["visibility_model"] = occlusion_model.first;
+				problem_params["tree_model"] = scene.tree_name;
 
 				// Create the problem, to be solved by the planners.
 				DynamicGoalsetPlanningProblem problem {
