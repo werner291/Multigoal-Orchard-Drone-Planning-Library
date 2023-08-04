@@ -2,35 +2,19 @@
 //
 // All rights reserved.
 
-//
-// Created by werner on 22-2-23.
-//
-
 #ifndef NEW_PLANNERS_ORTOOLSTSPMETHODS_H
 #define NEW_PLANNERS_ORTOOLSTSPMETHODS_H
 
 #include "IncrementalTSPMethods.h"
 
-class ORToolsTSPMethods : public IncrementalTSPMethods {
+namespace mgodpl {
+	namespace tsp_utils {
 
-public:
-	explicit ORToolsTSPMethods();
+		std::vector<size_t> determine_tsp_order_ortools(size_t n ,std::function<double(size_t, size_t)> distance ,std::function<double(size_t)> first_distance);
 
-	std::vector<size_t> initial_ordering(size_t n,
-										 std::function<double(size_t, size_t)> distance,
-										 std::function<double(size_t)> first_distance) const override;
+		IncrementalTSPMethods incremental_tsp_order_ortools_always_reorder();
 
-	std::vector<NewOrderingEntry> update_ordering_with_insertion(size_t old_n,
-																 std::function<double(const NewOrderingEntry &,
-																					  const NewOrderingEntry &)> distance,
-																 std::function<double(const NewOrderingEntry &)> first_distance) const override;
-
-	std::vector<size_t> update_ordering_with_removal(size_t old_n,
-													 size_t removed,
-													 std::function<double(const size_t &, const size_t &)> distance,
-													 std::function<double(const size_t &)> first_distance) const override;
-
-
-};
+	}
+}
 
 #endif //NEW_PLANNERS_ORTOOLSTSPMETHODS_H

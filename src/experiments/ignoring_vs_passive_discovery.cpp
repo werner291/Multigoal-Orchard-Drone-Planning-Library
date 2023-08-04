@@ -71,7 +71,20 @@ int main(int argc, char **argv) {
 //			// path has been completed.
 //			{"batch_replanner", batch_replanner<ShellPoint>(cgalChullShell)},
 			// A planner that uses the dynamic goalset, but uses a greedy approach to insert new goals in the visitation order.
-			{"dynamic_planner_lci", dynamic_planner_simple_reorder_sphere<ShellPoint>(SimpleIncrementalTSPMethods::Strategy::LeastCostlyInsertion,cgalChullShell)},
+			{"dynamic_planner_lci",
+					[](const ompl::base::SpaceInformationPtr &si) -> DMGPlannerPtr {
+						return std::make_shared<CachingDynamicPlanner<ShellPoint>>(
+								std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint>>(si),
+								mgodpl::tsp_utils::IncrementalTSPMethods {
+									.initial_ordering = mgodpl::tsp_utils::determine_tsp_order_ortools,
+									.update_methods = {
+											.update_ordering_with_insertion = mgodpl::tsp_utils::insert_least_costly,
+											.update_ordering_with_removal = mgodpl::tsp_utils::removalBySimpleDeletion
+									}},
+								cgalChullShell
+						);
+					}
+			 },
 //			// A planner that inserts new goals simply at the end of the tour
 //			{"dynamic_planner_LIFO", dynamic_planner_simple_reorder_sphere<ShellPoint>(SimpleIncrementalTSPMethods::Strategy::LastInFirstOut,cgalChullShell)},
 //			// A planner that inserts new goals simply at the beginning of the tour
@@ -83,7 +96,15 @@ int main(int argc, char **argv) {
 //			// Same as dynamic_planner_fre, but with an initial orbit around the tree to discover some of the dynamic goals
 //			{"dynamic_planner_initial_orbit", dynamic_planner_initial_orbit<ShellPoint>(cgalChullShell)},
 //			// A planner that uses the dynamic goalset, and completely reorders the visitation order from scratch every time a goal is added.
-			{"dynamic_planner_fre", dynamic_planner_fre<ShellPoint>(cgalChullShell)},
+			{"dynamic_planner_fre",
+					[](const ompl::base::SpaceInformationPtr &si) -> DMGPlannerPtr {
+						return std::make_shared<CachingDynamicPlanner<ShellPoint>>(
+								std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint>>(si),
+								mgodpl::tsp_utils::incremental_tsp_order_ortools_always_reorder(),
+								cgalChullShell
+						);
+					}
+			 },
 	};
 
 	const std::array<std::pair<std::string, CanSeeAppleFnFactory>, 1> OCCLUSION_MODELS_TO_TEST = {

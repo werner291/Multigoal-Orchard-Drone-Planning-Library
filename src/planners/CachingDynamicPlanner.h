@@ -38,7 +38,7 @@ class CachingDynamicPlanner : public DynamicMultiGoalPlanner {
 	std::shared_ptr<ApproachPlanningMethods<ShellPoint>> approach_planner;
 
 	/// The IncrementalTSPMethods object used to reorder the approach paths.
-	std::shared_ptr<IncrementalTSPMethods> tsp_method;
+	mgodpl::tsp_utils::IncrementalTSPMethods tsp_methods;
 
 	/// The ShellBuilder that is used to construct the shell space from the planning scene.
 	/// since it is only invoked on first path computation, we do store it here instead of
@@ -113,7 +113,7 @@ class CachingDynamicPlanner : public DynamicMultiGoalPlanner {
      * @param approach The approach path to be inserted.
      * @return A vector of NewOrderingEntry structs representing the new ordering of the approach paths.
      */
-	[[nodiscard]] std::vector<IncrementalTSPMethods::NewOrderingEntry>
+	[[nodiscard]] std::vector<mgodpl::tsp_utils::NewOrderingEntry>
 	determine_new_ordering_with_insertion(const OmplApproachPath<ShellPoint> &approach) const;
 
 	/**
@@ -130,7 +130,7 @@ class CachingDynamicPlanner : public DynamicMultiGoalPlanner {
 
 public:
 	explicit CachingDynamicPlanner(const std::shared_ptr<ApproachPlanningMethods<ShellPoint>> &approachPlanner,
-								   const std::shared_ptr<IncrementalTSPMethods> &tspMethod,
+								   mgodpl::tsp_utils::IncrementalTSPMethods tspMethod,
 								   MkOmplShellFn<ShellPoint> shellBuilder);
 
 	virtual ~CachingDynamicPlanner() = default;

@@ -31,7 +31,7 @@ CachingDynamicPlanner<ShellPoint>::replan_after_removal(const ompl::base::SpaceI
 		return continueFromInterrupt(si, current_state, interrupt);
 	}
 
-	auto new_ordering = tsp_method->update_ordering_with_removal(ordering.size(),
+	auto new_ordering = tsp_methods.update_methods.update_ordering_with_removal(ordering.size(),
 																 removed_index,
 																 [&](const size_t &a, const size_t &b) -> double {
 																	 return shell_space->predict_path_length(ordering[a]
@@ -76,15 +76,15 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 
 		// Build a new ordering by moving out of the old ordering, according to the given order.
 		ordering = new_ordering |
-				   ranges::views::transform([&](const IncrementalTSPMethods::NewOrderingEntry &e) -> ApproachToGoal {
+				   ranges::views::transform([&](const mgodpl::tsp_utils::NewOrderingEntry &e) -> ApproachToGoal {
 
-					   if (std::holds_alternative<IncrementalTSPMethods::NewGoal>(e)) {
+					   if (std::holds_alternative<mgodpl::tsp_utils::NewGoal>(e)) {
 						   // If the entry is the new goal, then we'll use the approach path we just computed.
 						   return ApproachToGoal{new_goal, *approach // TODO consider using std::move
 						   };
 					   } else {
 						   // Otherwise, we'll just move the existing entry.
-						   return ordering[std::get<IncrementalTSPMethods::FromOriginal>(e).index]; // TODO consider using std::move
+						   return ordering[std::get<mgodpl::tsp_utils::FromOriginal>(e).index]; // TODO consider using std::move
 					   }
 
 				   }) | ranges::to_vector;
@@ -156,28 +156,28 @@ CachingDynamicPlanner<ShellPoint>::continueFromInterrupt(const ompl::base::Space
 }
 
 template<typename ShellPoint>
-std::vector<IncrementalTSPMethods::NewOrderingEntry>
+std::vector<mgodpl::tsp_utils::NewOrderingEntry>
 CachingDynamicPlanner<ShellPoint>::determine_new_ordering_with_insertion(const OmplApproachPath<ShellPoint> &approach) const {
 
-	auto lookup_index = [&](const IncrementalTSPMethods::NewOrderingEntry &a) {
-		if (std::holds_alternative<IncrementalTSPMethods::NewGoal>(a)) {
+	auto lookup_index = [&](const mgodpl::tsp_utils::NewOrderingEntry &a) {
+		if (std::holds_alternative<mgodpl::tsp_utils::NewGoal>(a)) {
 			return approach.shell_point;
 		} else {
-			return ordering[std::get<IncrementalTSPMethods::FromOriginal>(a).index].approach.shell_point;
+			return ordering[std::get<mgodpl::tsp_utils::FromOriginal>(a).index].approach.shell_point;
 		}
 	};
 
-	auto distance_1 = [&](const IncrementalTSPMethods::NewOrderingEntry &a) {
+	auto distance_1 = [&](const mgodpl::tsp_utils::NewOrderingEntry &a) {
 		return shell_space->predict_path_length(to_shell_cache->shell_point, lookup_index(a));
 	};
 
-	auto distance_2 = [&](const IncrementalTSPMethods::NewOrderingEntry &a,
-						  const IncrementalTSPMethods::NewOrderingEntry &b) {
+	auto distance_2 = [&](const mgodpl::tsp_utils::NewOrderingEntry &a,
+						  const mgodpl::tsp_utils::NewOrderingEntry &b) {
 		return shell_space->predict_path_length(lookup_index(a), lookup_index(b));
 	};
 
 	// Determine the new ordering indices using the TSP method.
-	return tsp_method->update_ordering_with_insertion(ordering.size(), distance_2, distance_1);
+	return tsp_methods.update_methods.update_ordering_with_insertion(ordering.size(), distance_2, distance_1);
 }
 
 template<typename ShellPoint>
@@ -286,7 +286,7 @@ CachingDynamicPlanner<ShellPoint>::plan_initial(const ompl::base::SpaceInformati
 	}
 
 	// Find the indices by which to sort the ordering.
-	auto indices = tsp_method->initial_ordering(ordering.size(), [&](size_t i, size_t j) {
+	auto indices = tsp_methods.initial_ordering(ordering.size(), [&](size_t i, size_t j) {
 		// Use the shell space to predict the path length between each pair of approach paths
 		return shell_space->predict_path_length(ordering[i].approach.shell_point, ordering[j].approach.shell_point);
 	}, [&](size_t i) {
@@ -340,9 +340,9 @@ CachingDynamicPlanner<ShellPoint>::optimizedPointToPoint(const ompl::base::Space
 
 template<typename ShellPoint>
 CachingDynamicPlanner<ShellPoint>::CachingDynamicPlanner(const std::shared_ptr<ApproachPlanningMethods<ShellPoint>> &approachPlanner,
-														 const std::shared_ptr<IncrementalTSPMethods> &tspMethod,
+														 mgodpl::tsp_utils::IncrementalTSPMethods tspMethod,
 														 MkOmplShellFn<ShellPoint> shellBuilder) :
-		approach_planner(approachPlanner), tsp_method(tspMethod), shellBuilder(shellBuilder) {
+		approach_planner(approachPlanner), tsp_methods(tspMethod), shellBuilder(shellBuilder) {
 
 }
 

@@ -5,6 +5,7 @@
 #ifndef NEW_PLANNERS_SIZE_T_IOTA_H
 #define NEW_PLANNERS_SIZE_T_IOTA_H
 
+#include <range/v3/view_facade.hpp>
 
 class size_t_iota_view : public ranges::view_facade<size_t_iota_view> {
 	friend ranges::range_access;
@@ -13,34 +14,22 @@ class size_t_iota_view : public ranges::view_facade<size_t_iota_view> {
 	struct cursor {
 		size_t value;
 
-		size_t read() const noexcept {
-			return value;
-		}
+		size_t read() const noexcept;
 
-		bool equal(const cursor& that) const noexcept {
-			return value == that.value;
-		}
+		bool equal(const cursor& that) const noexcept;
 
-		void next() noexcept {
-			++value;
-		}
+		void next() noexcept;
 	};
 
-	cursor begin_cursor() const noexcept {
-		return {value_};
-	}
+	cursor begin_cursor() const noexcept;
 
-	cursor end_cursor() const noexcept {
-		return {end_};
-	}
+	cursor end_cursor() const noexcept;
 
 public:
 	size_t_iota_view() = default;
-	size_t_iota_view(size_t from, size_t to) noexcept : value_(from), end_(to) {}
+	size_t_iota_view(size_t from, size_t to) noexcept;
 };
 
-size_t_iota_view size_t_iota(size_t from, size_t to) noexcept {
-	return {from, to};
-}
+size_t_iota_view size_t_iota(size_t from, size_t to) noexcept;
 
 #endif //NEW_PLANNERS_SIZE_T_IOTA_H

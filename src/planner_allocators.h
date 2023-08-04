@@ -71,7 +71,7 @@ DMGPlannerAllocatorFn dynamic_planner_fre(MkOmplShellFn<ShellPoint> paddedOmplSp
 	return [paddedOmplSphereShell](const ompl::base::SpaceInformationPtr &si) -> DMGPlannerPtr {
 		return std::make_shared<CachingDynamicPlanner<ShellPoint>>(
 				std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint>>(si),
-				std::make_shared<ORToolsTSPMethods>(),
+				mgodpl::tsp_utils::incremental_tsp_order_ortools_always_reorder(),
 				paddedOmplSphereShell
 		);
 	};
@@ -131,25 +131,25 @@ DMGPlannerAllocatorFn batch_replanner(MkOmplShellFn<ShellPoint> paddedOmplSphere
 	};
 };
 
-/**
- * @brief Dynamic planner with simple reordering on a sphere.
- *
- * @tparam ShellPoint Data type of the shell points.
- * @param strategy The reordering strategy to use.
- * @param paddedOmplSphereShell Function for constructing a OmplShellSpace.
- * @param shellBuilder The function to build shell.
- * @return DMGPlannerAllocatorFn
- */
-template <typename ShellPoint>
-DMGPlannerAllocatorFn dynamic_planner_simple_reorder_sphere(SimpleIncrementalTSPMethods::Strategy strategy, MkOmplShellFn<ShellPoint> shellBuilder) {
-	return [strategy, shellBuilder](const ompl::base::SpaceInformationPtr &si) -> DMGPlannerPtr {
-		return std::make_shared<CachingDynamicPlanner<ShellPoint>>(
-				std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint>>(si, 1.0),
-				std::make_shared<SimpleIncrementalTSPMethods>(strategy),
-				shellBuilder
-		);
-	};
-}
+///**
+// * @brief Dynamic planner with simple reordering on a sphere.
+// *
+// * @tparam ShellPoint Data type of the shell points.
+// * @param strategy The reordering strategy to use.
+// * @param paddedOmplSphereShell Function for constructing a OmplShellSpace.
+// * @param shellBuilder The function to build shell.
+// * @return DMGPlannerAllocatorFn
+// */
+//template <typename ShellPoint>
+//DMGPlannerAllocatorFn dynamic_planner_simple_reorder_sphere(SimpleIncrementalTSPMethods::Strategy strategy, MkOmplShellFn<ShellPoint> shellBuilder) {
+//	return [strategy, shellBuilder](const ompl::base::SpaceInformationPtr &si) -> DMGPlannerPtr {
+//		return std::make_shared<CachingDynamicPlanner<ShellPoint>>(
+//				std::make_unique<MakeshiftPrmApproachPlanningMethods<ShellPoint>>(si, 1.0),
+//				std::make_shared<SimpleIncrementalTSPMethods>(strategy),
+//				shellBuilder
+//		);
+//	};
+//}
 
 
 #endif //NEW_PLANNERS_PLANNER_ALLOCATORS_H

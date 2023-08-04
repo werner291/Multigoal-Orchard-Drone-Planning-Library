@@ -303,9 +303,9 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/cgal_utils.cpp
         src/utilities/cgal_utils.h
         src/pure/topological_space.h
-        src/pure/topological_space.h
-        src/pure/topological_space.h
-        )
+#        src/PeriodicFullReorderingTSPMethods.cpp
+#        src/PeriodicFullReorderingTSPMethods.h
+        src/utilities/size_t_iota.cpp)
 
 if (ENABLE_VISUALIZATION)
 
