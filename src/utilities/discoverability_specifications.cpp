@@ -43,11 +43,18 @@ std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(Proportions p
 
 	size_t n_given = (size_t) (p.fraction_true_given * n_apples);
 	size_t n_dynamic = n_apples - n_given;
+	size_t n_discoverable, n_false;
 
-	double fraction_dynamic_discoverable = std::clamp(p.fraction_discoverable / p.fraction_false_given, 0.0, 1.0);
+	if (n_dynamic > 0) {
+		double fraction_dynamic_discoverable = std::clamp(
+				p.fraction_discoverable / (p.fraction_discoverable + p.fraction_false_given), 0.0, 1.0);
 
-	size_t n_discoverable = (size_t) (fraction_dynamic_discoverable * n_dynamic);
-	size_t n_false = n_dynamic - n_discoverable;
+		n_discoverable = (size_t) (fraction_dynamic_discoverable * n_dynamic);
+		n_false = n_dynamic - n_discoverable;
+	} else {
+		n_discoverable = 0;
+		n_false = 0;
+	}
 
 	assert(n_given + n_discoverable + n_false == n_apples);
 

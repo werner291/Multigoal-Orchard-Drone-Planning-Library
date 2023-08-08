@@ -27,7 +27,7 @@ moveit_msgs::msg::PlanningScene treeMeshesToMoveitSceneMsg(const TreeMeshes &tre
 
 	if (!cached_scene_info) {
 
-		std::cout << "Cached scene info not found, generating new scene info" << std::endl;
+		std::cout << "Cached scene info not found, generating new scene info for model " << tree_meshes.tree_name << std::endl;
 
 		moveit_msgs::msg::PlanningScene planning_scene_message;
 

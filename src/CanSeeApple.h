@@ -22,7 +22,7 @@ using CanSeeAppleFn = std::function<bool(const moveit::core::RobotState &state, 
 /*
  * @brief Typedef for function taking a TreeMeshes and returning a CanSeeAppleFn, as a factory for CanSeeAppleFn.
  */
-using CanSeeAppleFnFactory = std::function<CanSeeAppleFn(TreeMeshes &)>;
+using CanSeeAppleFnFactory = std::function<CanSeeAppleFn(const TreeMeshes &)>;
 
 /**
  * @brief Function that checks the squared norm of the difference between robot's end effector position and apple's center.

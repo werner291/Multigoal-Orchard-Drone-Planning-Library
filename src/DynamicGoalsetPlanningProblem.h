@@ -14,7 +14,7 @@
 struct DynamicGoalsetPlanningProblem {
 
 	moveit::core::RobotState start_state;
-	TreeMeshes* tree_meshes;
+	const TreeMeshes* tree_meshes;
 	std::vector<AppleDiscoverabilityType> apple_discoverability;
 	const CanSeeAppleFnFactory* can_see_apple;
 

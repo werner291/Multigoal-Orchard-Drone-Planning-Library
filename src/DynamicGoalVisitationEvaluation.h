@@ -96,7 +96,7 @@ public:
 	 * @brief Computes the next robot trajectory.
 	 * @return An optional RobotTrajectory object representing the next trajectory.
 	 */
-	std::optional<robot_trajectory::RobotTrajectory> computeNextTrajectory();
+	std::optional<DynamicGoalVisitationEvaluation::SolutionPathSegment> computeNextTrajectory();
 
 	void runTillCompletion();
 

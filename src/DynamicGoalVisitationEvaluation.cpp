@@ -43,7 +43,7 @@ DynamicGoalVisitationEvaluation::DynamicGoalVisitationEvaluation(std::shared_ptr
 
 }
 
-std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation::computeNextTrajectory() {
+std::optional<DynamicGoalVisitationEvaluation::SolutionPathSegment> DynamicGoalVisitationEvaluation::computeNextTrajectory() {
 
 	std::cout << "Computing next trajectory" << std::endl;
 
@@ -143,7 +143,7 @@ std::optional<robot_trajectory::RobotTrajectory> DynamicGoalVisitationEvaluation
 		this->solution_path_segments.push_back(segment_to_add);
 
 		// Return the trajectory
-		return robotPathToConstantSpeedRobotTrajectory(*segment, 1.0);
+		return std::make_optional(segment_to_add);
 
 	} else {
 

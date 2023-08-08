@@ -8,3 +8,4 @@
 /analysis/__pycache__/
 /analysis/.ipynb_checkpoints/
 /analysis/data/
+scene_cached_*

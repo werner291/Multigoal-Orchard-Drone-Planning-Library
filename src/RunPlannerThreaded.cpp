@@ -54,7 +54,7 @@ void RunPlannerThreaded::run() {
 
 			std::unique_lock<std::mutex> lock(traj_mutex);
 
-			trajectory_queue.emplace(PlannerUpdate{*traj, eval.getDiscoveryStatus()});
+			trajectory_queue.emplace(PlannerUpdate{robotPathToConstantSpeedRobotTrajectory(traj->path, 1.0), eval.getDiscoveryStatus()});
 
 			trajectory_queue_cv.notify_one();
 

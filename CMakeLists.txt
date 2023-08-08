@@ -48,8 +48,6 @@ include_directories(
         #{CGAL_INCLUDE_DIRS}
         ortools/include
         miniball/cpp/main
-
-        /Users/werner/ros_ws/install/moveit_planners_ompl/include/moveit_planners # WARNING: don't commit this
 )
 
 link_libraries(
@@ -64,7 +62,7 @@ link_libraries(
         jsoncpp_lib
         tbb
         ${CGAL_LIBRARIES}
-        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.dylib
+        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
 )
 
 ###########
@@ -432,8 +430,6 @@ if (ENABLE_EXPERIMENTS)
         experiment("midpoint_pull_optimization")
         target_link_libraries(${PROJECT_NAME}_experiment_midpoint_pull_optimization ${PROJECT_NAME}_visualization)
     endif ()
-
-    experiment("treemodels_stats")
 
     experiment("CGAL_mesh_paths_comparison")
 

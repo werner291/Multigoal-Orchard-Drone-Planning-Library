@@ -19,7 +19,7 @@ struct Experiment {
 
 Json::Value toJSON(const Experiment &experiment);
 
-Json::Value runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot,
-										const Experiment &experiment);
+Json::Value
+runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot, const Experiment &experiment, bool saveSegments);
 
 #endif //NEW_PLANNERS_DYNAMIC_GOALSET_EXPERIMENT_H

@@ -17,7 +17,7 @@ CachingDynamicPlanner<ShellPoint>::replan_after_removal(const ompl::base::SpaceI
 														const PathInterrupt &interrupt,
 														const AppleTreePlanningScene &planning_scene) {
 
-	std::cout << "CachingDynamicPlanner::replan_after_removal" << std::endl;
+//	std::cout << "CachingDynamicPlanner::replan_after_removal" << std::endl;
 
 	size_t removed_index;
 	for (removed_index = 0; removed_index < ordering.size(); removed_index++) {
@@ -62,7 +62,7 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 														  const PathInterrupt &interrupt,
 														  const AppleTreePlanningScene &planning_scene) {
 
-	std::cout << "CachingDynamicPlanner::replan_after_discovery" << std::endl;
+//	std::cout << "CachingDynamicPlanner::replan_after_discovery" << std::endl;
 
 	// Plan a path to the new goal.
 	auto approach = approach_planner->approach_path(new_goal, *shell_space);
@@ -70,7 +70,7 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 	// If we successfully found a path to the new goal, we can add it to the ordering.
 	if (approach) {
 
-		std::cout << "Found a path to the new goal." << std::endl;
+//		std::cout << "Found a path to the new goal." << std::endl;
 
 		auto new_ordering = determine_new_ordering_with_insertion(*approach);
 
@@ -89,7 +89,7 @@ CachingDynamicPlanner<ShellPoint>::replan_after_discovery(const ompl::base::Spac
 
 				   }) | ranges::to_vector;
 	} else {
-		std::cout << "New goal unreachable." << std::endl;
+//		std::cout << "New goal unreachable." << std::endl;
 	}
 
 	return continueFromInterrupt(si, current_state, interrupt);
@@ -103,13 +103,13 @@ CachingDynamicPlanner<ShellPoint>::continueFromInterrupt(const ompl::base::Space
 														 const PathInterrupt &interrupt) {
 
 	if (this->ordering.empty()) {
-		std::cout << "No goals in ordering." << std::endl;
+//		std::cout << "No goals in ordering." << std::endl;
 		return std::nullopt;
 	}
 
 	if (this->last_emitted_path->goal == this->ordering.front().goal) {
 
-		std::cout << "Continuing from last emitted path." << std::endl;
+//		std::cout << "Continuing from last emitted path." << std::endl;
 
 		utilities::truncatePathToInterrupt(this->last_emitted_path->path, interrupt);
 
@@ -124,7 +124,7 @@ CachingDynamicPlanner<ShellPoint>::continueFromInterrupt(const ompl::base::Space
 
 	} else {
 
-		std::cout << "Ordering changed, replanning." << std::endl;
+//		std::cout << "Ordering changed, replanning." << std::endl;
 
 		// Find a path to the shell. We probably need to recompute the to_shell_cache path since we got interrupted.
 		this->to_shell_cache = this->find_path_to_shell(si, current_state);
@@ -135,12 +135,12 @@ CachingDynamicPlanner<ShellPoint>::continueFromInterrupt(const ompl::base::Space
 			// TODO: we could probably do something better here, such as re-using the last approach path?
 			// Or, maybe try harder/over?
 			// Might not work since we're following an optimized path.
-			std::cout << "Could not find a way back to the shell." << std::endl;
+//			std::cout << "Could not find a way back to the shell." << std::endl;
 
 			return std::nullopt;
 
 		} else {
-			std::cout << "Did find a way back to the shell." << std::endl;
+//			std::cout << "Did find a way back to the shell." << std::endl;
 		}
 
 		// Most likely the next path segment will be requested after visiting the first goal
@@ -210,7 +210,7 @@ CachingDynamicPlanner<ShellPoint>::replan_after_path_end(const ompl::base::Space
 	if (!to_shell) {
 		// TODO: I'm curious if this branch is ever taken, since it's weird to be at the end of a path
 		// and not have the cache be valid at this point in time.
-		std::cout << "Could not find a way back to the shell." << std::endl;
+//		std::cout << "Could not find a way back to the shell." << std::endl;
 		return std::nullopt;
 	}
 
@@ -262,7 +262,7 @@ CachingDynamicPlanner<ShellPoint>::plan_initial(const ompl::base::SpaceInformati
 
 	if (!to_shell) {
 		// If this returns nullopt, the robot might be stuck. Still, it'd be weird, since this should be open space.
-		std::cout << "Could not find a way from the initial state to the shell." << std::endl;
+//		std::cout << "Could not find a way from the initial state to the shell." << std::endl;
 		return std::nullopt;
 	}
 

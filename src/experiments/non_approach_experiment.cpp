@@ -84,7 +84,8 @@ DMGPlannerPtr batch_replanner(const ompl::base::SpaceInformationPtr &si) {
 	(si), true));
 };
 
-Json::Value runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot, const Experiment &experiment) {
+Json::Value
+runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot, const Experiment &experiment, bool saveSegments) {
 
 	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
 	// So, we just re-create the state space every time just to be safe.
@@ -281,7 +282,7 @@ int main(int argc, char **argv) {
 
 	// Run the experiments in parallel.
 	runExperimentsParallelRecoverable<Experiment>(experiments, [&](const Experiment &experiment) {
-		return runDynamicPlannerExperiment(robot, experiment);
+		return runDynamicPlannerExperiment(robot, experiment, true);
 	}, "analysis/data/dynamic_log_advanced.json", 32, std::thread::hardware_concurrency(), 42);
 
 }
