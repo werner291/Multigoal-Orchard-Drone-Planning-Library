@@ -45,8 +45,6 @@ DynamicGoalVisitationEvaluation::DynamicGoalVisitationEvaluation(std::shared_ptr
 
 std::optional<DynamicGoalVisitationEvaluation::SolutionPathSegment> DynamicGoalVisitationEvaluation::computeNextTrajectory() {
 
-	std::cout << "Computing next trajectory" << std::endl;
-
 	// Check if either there is an upcoming goal event or this is the first call to this function
 	// If not, there is no new information and the planner should not be called; if it wanted to
 	// re-plan, it should have done so when previously called.
@@ -62,13 +60,10 @@ std::optional<DynamicGoalVisitationEvaluation::SolutionPathSegment> DynamicGoalV
 
 		// If there is an upcoming goal event, feed the information to the planner and request a replan
 		if (upcoming_goal_event) {
-			std::cout << "Replanning from event" << std::endl;
 			segment = replanFromEvent();
 		} else {
 
 			// If there is no upcoming goal event, plan from scratch.
-
-			std::cout << "Planning from scratch" << std::endl;
 
 			AppleTreePlanningScene censored_scene = getCurrentCensoredScene();
 
@@ -178,7 +173,6 @@ std::optional<RobotPath> DynamicGoalVisitationEvaluation::replanFromEvent() {
 			// If the upcoming goal event is a visitation event
 			const auto &visitation_event = std::get<utilities::PathEnd>(*upcoming_goal_event);
 			segment = planner->replan_after_successful_visit(last_robot_state, scene);
-			std::cout << "Replanning after successful visit" << std::endl;
 			break;
 		}
 		case 1: {
@@ -200,7 +194,6 @@ std::optional<RobotPath> DynamicGoalVisitationEvaluation::replanFromEvent() {
 														scene);
 			}
 
-			std::cout << "Replanning after discovery" << std::endl;
 			break;
 		}
 		default:

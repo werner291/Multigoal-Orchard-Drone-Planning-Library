@@ -50,7 +50,6 @@ runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot, const Expe
 
 	while (true) {
 		iterations += 1;
-		std::cout << "Iterations : " << iterations << std::endl;
 		auto next_trajectory = eval.computeNextTrajectory();
 		if (!next_trajectory.has_value()) {
 			break;  // Break out of the loop if there's no next trajectory

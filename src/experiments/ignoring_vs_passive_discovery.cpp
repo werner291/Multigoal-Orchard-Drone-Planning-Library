@@ -16,11 +16,16 @@
 #include "../dynamic_goalset_experiment.h"
 #include "../utilities/run_experiments.h"
 
-const std::array<Proportions,3> probs = {
+const std::array<Proportions,4> probs = {
 		Proportions {
 				.fraction_true_given = 1.0,
 				.fraction_false_given = 0.0,
 				.fraction_discoverable = 0.0
+		},
+		Proportions {
+				.fraction_true_given = 0.75,
+				.fraction_false_given = 0.0,
+				.fraction_discoverable = 0.25
 		},
 		Proportions {
 				.fraction_true_given = 0.5,
@@ -92,17 +97,40 @@ DMGPlannerPtr dynamicPlannerFREFunction(const ompl::base::SpaceInformationPtr &s
 	);
 }
 
+enum ExperimentMode {
+	THREE_TREE_MODE,
+	THOUSAND_TREE_MODE
+};
+
+const std::string THREE_TREE_STR = "lci_vs_fre";
+const std::string THOUSAND_TREE_STR = "cheaper_planners";
+
+std::optional<ExperimentMode> getExperimentMode(const std::string &mode_arg) {
+	if (mode_arg == THREE_TREE_STR) {
+		return THREE_TREE_MODE;
+	} else if (mode_arg == THOUSAND_TREE_STR) {
+		return THOUSAND_TREE_MODE;
+	}
+	return {};
+}
+
 int main(int argc, char **argv) {
 
-	enum ExperimentMode {
-		THREE_TREE_MODE,
-		THOUSAND_TREE_MODE
-	};
+	if (argc < 2) {
+		std::cerr << "Usage: " << argv[0] << " <mode>" << std::endl;
+		std::cerr << "Where <mode> can be either '" << THREE_TREE_STR << "' or '" << THOUSAND_TREE_STR << "'." << std::endl;
+		return 1;
+	}
 
-	const ExperimentMode mode = THOUSAND_TREE_MODE; // Set this to either THREE_TREE_MODE or THOUSAND_TREE_MODE
+	auto mode = getExperimentMode(argv[1]);
+
+	if (!mode.has_value()) {
+		std::cerr << "Invalid mode specified. Choose either '" << THREE_TREE_STR << "' or '" << THOUSAND_TREE_STR << "'." << std::endl;
+		return 1;
+	}
 
 	// Common Constants
-	const int REPETITIONS = 3;
+	const int REPETITIONS = 10;
 	const bool KEEP_SEGMENTS = false;
 
 	// Load the robot model.
@@ -117,7 +145,7 @@ int main(int argc, char **argv) {
 			})
 	};
 
-	if (mode == THREE_TREE_MODE) {
+	if (*mode == THREE_TREE_MODE) {
 
 		const int N_TREES = 3;
 		const int MAX_FRUIT = 200;

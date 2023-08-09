@@ -186,10 +186,10 @@ CachingDynamicPlanner<ShellPoint>::find_path_to_shell(const ompl::base::SpaceInf
 													  const ompl::base::State *start) {
 
 	if (to_shell_cache.has_value() && si->distance(start, to_shell_cache->robot_path.getStates().back()) < 1.0e-6) {
-		std::cout << "Using cached approach path." << std::endl;
+//		std::cout << "Using cached approach path." << std::endl;
 		return to_shell_cache;
 	} else {
-		std::cout << "Computing new approach path." << std::endl;
+//		std::cout << "Computing new approach path." << std::endl;
 		to_shell_cache = approach_planner->approach_path(start, *shell_space);
 		return to_shell_cache;
 	}
