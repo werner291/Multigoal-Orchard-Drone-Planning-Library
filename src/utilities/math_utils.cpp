@@ -645,3 +645,8 @@ Eigen::Vector3d math_utils::ViewPyramidFaces::closest_point_on_any_plane(const E
 								  closest_point_on_open_triangle(point, top),
 								  closest_point_on_open_triangle(point, bottom)}, point);
 }
+
+template<>
+double mgodpl::utilities::lerp(const double &a, const double &b, double t) {
+	return a + t * (b - a);
+}

@@ -426,6 +426,55 @@ namespace math_utils {
 	Eigen::Vector3d sample_point_on_sphere(Eigen::Vector3d center, double radius);
 }
 
+namespace mgodpl {
+	namespace utilities {
+
+		/**
+		 * @brief Linearly interpolates between two values.
+		 *
+		 * Given two values and a parameter `t` in the range [0, 1], this function
+		 * computes the linear interpolation of the values. When `t` is 0, the result
+		 * is `a`. When `t` is 1, the result is `b`. For other values of `t`, the result
+		 * is a value linearly interpolated between `a` and `b`.
+		 *
+		 * @tparam T The type of the values to interpolate. It should support arithmetic operations.
+		 * @param a The start value.
+		 * @param b The end value.
+		 * @param t The interpolation parameter, usually in the range [0, 1].
+		 * @return The interpolated value between `a` and `b` based on the parameter `t`.
+		 */
+		template<typename T>
+		T lerp(const T &a, const T &b, double t);
+
+		template<>
+		double lerp(const double& a, const double& b, double t);
+
+		/**
+		 * @brief Generate a vector of n values interpolated between two values.
+		 *
+		 * @tparam T The type of the values to interpolate. It should support implement the lerp function (which is already implemented for arithmetic types).
+		 *
+		 * @param a The start value.
+		 * @param b The end value.
+		 * @param n The number of values to interpolate.
+		 */
+		template<typename T>
+		std::vector<T> linspace(const T &a, const T &b, int n) {
+			assert(n >= 2);
+
+			std::vector<T> result;
+			result.reserve(n);
+
+			for (int i = 0; i < n; ++i) {
+				result.push_back(lerp(a, b, (double) i / (double) (n - 1)));
+			}
+
+			return result;
+		}
+
+	}
+}
+
 #if JSON_FUNCTIONS
 
 #include <json/json.h>

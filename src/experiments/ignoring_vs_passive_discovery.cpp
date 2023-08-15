@@ -16,46 +16,14 @@
 #include "../dynamic_goalset_experiment.h"
 #include "../utilities/run_experiments.h"
 
-const std::array<Proportions,4> probs = {
-		Proportions {
-				.fraction_true_given = 1.0,
-				.fraction_false_given = 0.0,
-				.fraction_discoverable = 0.0
-		},
-		Proportions {
-				.fraction_true_given = 0.75,
-				.fraction_false_given = 0.0,
-				.fraction_discoverable = 0.25
-		},
-		Proportions {
-				.fraction_true_given = 0.5,
-				.fraction_false_given = 0.0,
-				.fraction_discoverable = 0.5
-		},
-		Proportions {
-				.fraction_true_given = 0.0,
-				.fraction_false_given = 0.0,
-				.fraction_discoverable = 1.0
-		},
-//		Proportions {
-//				.fraction_true_given = 0.5,
-//				.fraction_false_given = 0.5,
-//				.fraction_discoverable = 0.0
-//		},
-//		Proportions {
-//				.fraction_true_given = 0.0,
-//				.fraction_false_given = 0.5,
-//				.fraction_discoverable = 0.5
-//		},
-};
-
 void runDynamicPlannerExperiments(const bool KEEP_SEGMENTS,
 								  std::vector<TreeMeshes> &models,
 								  const moveit::core::RobotModelPtr &robot,
 								  const int REPETITIONS,
 								  std::vector<std::pair<std::string, DMGPlannerAllocatorFn>> &PLANNERS_TO_TEST,
 								  const std::array<std::pair<std::string, CanSeeAppleFnFactory>, 1> &OCCLUSION_MODELS_TO_TEST,
-								  const std::string &resultsFile);
+								  const std::string &resultsFile,
+								  const std::vector<Proportions> &discoverabilityProportions);
 
 using ShellPoint = mgodpl::cgal_utils::CGALMeshPointAndNormal;
 
@@ -99,38 +67,49 @@ DMGPlannerPtr dynamicPlannerFREFunction(const ompl::base::SpaceInformationPtr &s
 
 enum ExperimentMode {
 	THREE_TREE_MODE,
-	THOUSAND_TREE_MODE
+	ACTIVE_EXPLORATION_CLI_MODE,
+	IMPACT_OF_DELETION_MODE,
 };
 
 const std::string THREE_TREE_STR = "lci_vs_fre";
 const std::string THOUSAND_TREE_STR = "cheaper_planners";
+const std::string IMPACT_OF_DELETION_STR = "impact_of_deletion";
 
 std::optional<ExperimentMode> getExperimentMode(const std::string &mode_arg) {
 	if (mode_arg == THREE_TREE_STR) {
 		return THREE_TREE_MODE;
 	} else if (mode_arg == THOUSAND_TREE_STR) {
-		return THOUSAND_TREE_MODE;
+		return ACTIVE_EXPLORATION_CLI_MODE;
+	} else if (mode_arg == IMPACT_OF_DELETION_STR) {
+		return IMPACT_OF_DELETION_MODE;
 	}
 	return {};
+}
+
+void printUsage(char *const *argv) {
+	std::cerr << "Usage: " << argv[0] << " <mode>" << std::endl;
+	std::cerr << "Where <mode> can be: " << std::endl;
+	std::cerr << "  " << THREE_TREE_STR << ": Compare LCI and FRE on 3 trees." << std::endl;
+	std::cerr << "  " << THOUSAND_TREE_STR << ": Compare LCI and Initial Orbit on 1000 trees." << std::endl;
+	std::cerr << "  " << IMPACT_OF_DELETION_STR << ": Compare LCI and FRE on 3 trees, but with deletion." << std::endl;
 }
 
 int main(int argc, char **argv) {
 
 	if (argc < 2) {
-		std::cerr << "Usage: " << argv[0] << " <mode>" << std::endl;
-		std::cerr << "Where <mode> can be either '" << THREE_TREE_STR << "' or '" << THOUSAND_TREE_STR << "'." << std::endl;
+		printUsage(argv);
 		return 1;
 	}
 
 	auto mode = getExperimentMode(argv[1]);
 
 	if (!mode.has_value()) {
-		std::cerr << "Invalid mode specified. Choose either '" << THREE_TREE_STR << "' or '" << THOUSAND_TREE_STR << "'." << std::endl;
+		std::cerr << "Invalid mode specified." << std::endl;
+		printUsage(argv);
 		return 1;
 	}
 
 	// Common Constants
-	const int REPETITIONS = 10;
 	const bool KEEP_SEGMENTS = false;
 
 	// Load the robot model.
@@ -147,6 +126,15 @@ int main(int argc, char **argv) {
 
 	if (*mode == THREE_TREE_MODE) {
 
+		const int REPETITIONS = 10;
+
+
+		const auto props = mgodpl::utilities::linspace(
+				mgodpl::dynamic_goals::ALL_GIVEN,
+				mgodpl::dynamic_goals::ALL_DISCOVERABLE,
+				4
+		);
+
 		const int N_TREES = 3;
 		const int MAX_FRUIT = 200;
 		auto models = loadAllTreeModels(N_TREES, MAX_FRUIT);
@@ -162,9 +150,17 @@ int main(int argc, char **argv) {
 									 REPETITIONS,
 									 PLANNERS_TO_TEST,
 									 OCCLUSION_MODELS_TO_TEST,
-									 "analysis/data/dynamic_log_icra2024_3trees.json");
+									 "analysis/data/dynamic_log_icra2024_3trees.json",
+									 props);
 
-	} else if (mode == THOUSAND_TREE_MODE) {
+	} else if (mode == ACTIVE_EXPLORATION_CLI_MODE) {
+
+		const auto props = mgodpl::utilities::linspace(
+				mgodpl::dynamic_goals::ALL_GIVEN,
+				mgodpl::dynamic_goals::ALL_DISCOVERABLE,
+				4
+		);
+		const int REPETITIONS = 10;
 
 		const int N_TREES = 1000;
 		const int MAX_FRUIT = 600;
@@ -181,7 +177,55 @@ int main(int argc, char **argv) {
 									 REPETITIONS,
 									 PLANNERS_TO_TEST,
 									 OCCLUSION_MODELS_TO_TEST,
-									 "analysis/data/dynamic_log_icra2024_1000trees.json");
+									 "analysis/data/dynamic_log_icra2024_1000trees.json",
+									 props);
+
+	} else if (mode == IMPACT_OF_DELETION_MODE) {
+
+		// I want to essentially construct a triangle of proportions.
+		// The three vertices are:
+		// 1. All apples are given (ALL_GIVEN)
+		// 2. All apples are discoverable (ALL_DISCOVERABLE)
+		// 3. All apples are false (ALL_FALSE)
+
+		// Then, we generate a set of proportions that are linearly interpolated between these three vertices.
+
+		using namespace mgodpl::utilities;
+		using namespace mgodpl::dynamic_goals;
+
+		const std::vector<Proportions> props = {
+				// First walk the perimeter of the triangle.
+				ALL_GIVEN,
+				lerp(ALL_GIVEN, ALL_DISCOVERABLE, 0.5),
+				ALL_DISCOVERABLE,
+				lerp(ALL_DISCOVERABLE, ALL_FALSE, 0.5),
+				ALL_FALSE,
+				lerp(ALL_FALSE, ALL_GIVEN, 0.5),
+				// Then the center of the triangle.
+				Proportions {
+					.fraction_true_given = 1.0/3.0,
+					.fraction_false_given = 1.0/3.0,
+					.fraction_discoverable = 1.0/3.0
+				}
+		};
+
+		const int REPETITIONS = 2;
+		const int N_TREES = 2;
+		const int MAX_FRUIT = 200;
+		auto models = loadAllTreeModels(N_TREES, MAX_FRUIT);
+
+		std::vector<std::pair<std::string, DMGPlannerAllocatorFn>> PLANNERS_TO_TEST = {
+				{"dynamic_planner_lci", dynamicPlannerLCIFunction},
+		};
+
+		runDynamicPlannerExperiments(KEEP_SEGMENTS,
+									 models,
+									 robot,
+									 REPETITIONS,
+									 PLANNERS_TO_TEST,
+									 OCCLUSION_MODELS_TO_TEST,
+									 "analysis/data/dynamic_log_icra2024_3trees_deletion.json",
+									 props);
 
 	}
 
@@ -194,12 +238,13 @@ void runDynamicPlannerExperiments(const bool KEEP_SEGMENTS,
 								  const int REPETITIONS,
 								  std::vector<std::pair<std::string, DMGPlannerAllocatorFn>> &PLANNERS_TO_TEST,
 								  const std::array<std::pair<std::string, CanSeeAppleFnFactory>, 1> &OCCLUSION_MODELS_TO_TEST,
-								  const std::string &resultsFile) {// Generate a set of problems based on the carthesian product of the above ranges.
+								  const std::string &resultsFile,
+								  const std::vector<Proportions> &discoverabilityProportions) {// Generate a set of problems based on the carthesian product of the above ranges.
 
 	auto repIds = ranges::views::iota(0, REPETITIONS);
 
 	auto problems =
-			ranges::views::cartesian_product(models, repIds, probs, OCCLUSION_MODELS_TO_TEST) |
+			ranges::views::cartesian_product(models, repIds, discoverabilityProportions, OCCLUSION_MODELS_TO_TEST) |
 			ranges::views::transform([&](const auto &pair) -> std::pair<Json::Value,DynamicGoalsetPlanningProblem> {
 
 				// Generate a problem for every unique combination of repetition ID,

@@ -4,34 +4,6 @@
 #include <algorithm>
 #include "discoverability_specifications.h"
 
-std::vector<Proportions> gen_discoverability_proportions() {// Generate a set of probabilities; must sum to 1.
-
-	// FIXME this is bunk, need to fix it if I end up using it again.
-
-	std::vector<Proportions> probs;
-
-	const std::size_t N_PROPORTIONS = 3;
-
-	for (size_t i = 0; i < N_PROPORTIONS; i++) {
-
-		double fraction_true_given = 1.0 - (double) i / (N_PROPORTIONS - 1);
-
-		long sub_proportions = N_PROPORTIONS;
-
-		for (size_t j = 1; j < sub_proportions; j++) {
-
-			double q = (double) j / (double) (sub_proportions - 1);
-
-			probs.emplace_back(Proportions {
-					.fraction_true_given = fraction_true_given,
-					.fraction_false_given = (1.0 - fraction_true_given) * q,
-					.fraction_discoverable = (1.0 - fraction_true_given) * (1.0 - q)
-			});
-		}
-	}
-	return probs;
-}
-
 
 std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(Proportions p, int seed, int n_apples) {
 
@@ -79,4 +51,15 @@ std::vector<AppleDiscoverabilityType> generateAppleDiscoverability(Proportions p
 
 	return apple_discoverability;
 
+}
+
+template<>
+Proportions mgodpl::utilities::lerp(const Proportions &a, const Proportions &b, double t) {
+	Proportions result;
+
+	result.fraction_true_given = lerp(a.fraction_true_given, b.fraction_true_given, t);
+	result.fraction_false_given = lerp(a.fraction_false_given, b.fraction_false_given, t);
+	result.fraction_discoverable = lerp(a.fraction_discoverable, b.fraction_discoverable, t);
+
+	return result;
 }
