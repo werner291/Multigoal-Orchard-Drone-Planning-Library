@@ -29,12 +29,13 @@ DynamicGoalVisitationEvaluation::DynamicGoalVisitationEvaluation(std::shared_ptr
 																 CanSeeAppleFn canSeeApple)
 		: planner(std::move(planner)), last_robot_state(initial_state), scene(scene), can_see_apple(std::move(canSeeApple)) {
 
+	// Set the initial discovery status based on the discoverability vector.
 	discovery_status = discoverability | ranges::views::transform(initial_discovery_status) | ranges::to_vector;
 
-	// For every apple initially visible to the robot, set the discovery status to KNOWN_TO_ROBOT.
-	// Otherwise, it'd be a bit silly that the robot would have to discover an apple that it can already see.
+	// Additionally, for every apple that the robot can see from its initial position, set the discovery status to KNOWN_TO_ROBOT
+	// if the apple is discoverable but not yet known according to the discoverability specification.
 	for (auto [i, apple] : scene.apples | ranges::views::enumerate) {
-		if (can_see_apple(last_robot_state, apple)) {
+		if (can_see_apple(last_robot_state, apple) && discoverability[i] == AppleDiscoverabilityType::DISCOVERABLE) {
 			discovery_status[i] = utilities::DiscoveryStatus::KNOWN_TO_ROBOT;
 		}
 	}
@@ -115,9 +116,10 @@ std::optional<DynamicGoalVisitationEvaluation::SolutionPathSegment> DynamicGoalV
 
 			for (size_t apple_i = 0; apple_i < scene.apples.size(); apple_i++) {
 
+
+				// FIXME: False-positives are flagged as successes soetimes.
 				bool is_actual_target = discovery_status[apple_i] == utilities::DiscoveryStatus::KNOWN_TO_ROBOT ||
-										discovery_status[apple_i] ==
-										utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT ||
+										discovery_status[apple_i] == utilities::DiscoveryStatus::EXISTS_BUT_UNKNOWN_TO_ROBOT ||
 										discovery_status[apple_i] == utilities::DiscoveryStatus::VISITED;
 
 				if (is_actual_target && (end_effector_pos - scene.apples[apple_i].center).norm() < 0.05) {

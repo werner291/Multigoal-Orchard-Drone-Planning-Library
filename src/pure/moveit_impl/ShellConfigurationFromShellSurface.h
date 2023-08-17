@@ -32,7 +32,7 @@ namespace mgodpl {
 
 	}
 
-	namespace shell_configuratiin_space {
+	namespace shell_configuration_space {
 		/**
 		 * @brief Get the internal point type.
 		 */

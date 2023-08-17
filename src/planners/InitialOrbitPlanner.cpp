@@ -67,7 +67,7 @@ InitialOrbitPlanner::replan_after_path_end(const ompl::base::SpaceInformationPtr
 										   const ompl::base::State *current_state,
 										   const AppleTreePlanningScene &planning_scene) {
 
-	std::cout << "Replanning after initial orbit." << std::endl;
+//	std::cout << "Replanning after initial orbit." << std::endl;
 
 	if (initial_orbit_path.has_value()) {
 
@@ -94,7 +94,7 @@ InitialOrbitPlanner::replan_after_discovery(const ompl::base::SpaceInformationPt
 											const PathInterrupt &interrupt,
 											const AppleTreePlanningScene &planning_scene) {
 
-	std::cout << "InitialOrbitPlanner::replan_after_discovery" << std::endl;
+//	std::cout << "InitialOrbitPlanner::replan_after_discovery" << std::endl;
 
 	if (initial_orbit_path.has_value()) {
 

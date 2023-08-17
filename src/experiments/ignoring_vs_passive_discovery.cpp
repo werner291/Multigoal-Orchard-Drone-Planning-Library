@@ -193,29 +193,43 @@ int main(int argc, char **argv) {
 		using namespace mgodpl::utilities;
 		using namespace mgodpl::dynamic_goals;
 
-		const std::vector<Proportions> props = {
-				// First walk the perimeter of the triangle.
-				ALL_GIVEN,
-				lerp(ALL_GIVEN, ALL_DISCOVERABLE, 0.5),
-				ALL_DISCOVERABLE,
-				lerp(ALL_DISCOVERABLE, ALL_FALSE, 0.5),
-				ALL_FALSE,
-				lerp(ALL_FALSE, ALL_GIVEN, 0.5),
-				// Then the center of the triangle.
-				Proportions {
-					.fraction_true_given = 1.0/3.0,
-					.fraction_false_given = 1.0/3.0,
-					.fraction_discoverable = 1.0/3.0
-				}
-		};
+		std::vector<Proportions> props;
 
-		const int REPETITIONS = 2;
+		for (const double true_given : linspace(0.0, 0.5, 2)) {
+			for (const double false_in_given: linspace(0.0, 1.0, 4)) {
+
+				double false_given = false_in_given * (1.0 - true_given);
+				double discoverable = 1.0 - true_given - false_given;
+
+				props.push_back(Proportions {
+					.fraction_true_given = true_given,
+					.fraction_false_given = false_given,
+					.fraction_discoverable = discoverable
+				});
+
+				std::cout << "Discoverable Proportion: " << props.back().fraction_discoverable << std::endl;
+				std::cout << "Given Proportion: " << props.back().fraction_true_given << std::endl;
+				std::cout << "False Proportion: " << props.back().fraction_false_given << std::endl;
+				std::cout << std::endl;
+
+				if(std::abs(
+						props.back().fraction_discoverable +
+						props.back().fraction_true_given +
+						props.back().fraction_false_given - 1.0) > 1e-6) {
+
+					exit(1);
+				}
+			}
+		}
+
+		const int REPETITIONS = 10;
 		const int N_TREES = 2;
 		const int MAX_FRUIT = 200;
 		auto models = loadAllTreeModels(N_TREES, MAX_FRUIT);
 
 		std::vector<std::pair<std::string, DMGPlannerAllocatorFn>> PLANNERS_TO_TEST = {
 				{"dynamic_planner_lci", dynamicPlannerLCIFunction},
+				{"dynamic_planner_initial_orbit", dynamicPlannerInitialOrbitFunction}
 		};
 
 		runDynamicPlannerExperiments(KEEP_SEGMENTS,
