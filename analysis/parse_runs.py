@@ -1,6 +1,7 @@
 import json
 import pandas as pd
 import matplotlib.pyplot as plt
+import itertools
 
 
 def flatten_run_dict(run_dict):
@@ -14,28 +15,31 @@ def flatten_run_dict(run_dict):
         dict: A flat dictionary containing the information from the run object.
     """
     flat_dict = {}
-    parameters_dict = run_dict['parameters']
-    problem_dict = parameters_dict['problem']
-    result_dict = run_dict['result']
-    initial_knowledge_dict = result_dict['initial_knowledge']
+    parameters_dict = run_dict["parameters"]
+    problem_dict = parameters_dict["problem"]
+    result_dict = run_dict["result"]
+    initial_knowledge_dict = result_dict["initial_knowledge"]
 
-    flat_dict.update({
-        'planner': parameters_dict['planner'],
-        'n_discoverable': problem_dict['n_discoverable'],
-        'n_false': problem_dict['n_false'],
-        'n_given': problem_dict['n_given'],
-        'n_total': problem_dict['n_total'],
-        'visibility_model': problem_dict['visibility_model'],
-        'discoverable': initial_knowledge_dict['discoverable'],
-        'false_positives': initial_knowledge_dict['false_positives'],
-        'known_unvisited': initial_knowledge_dict['known_unvisited'],
-        'total': initial_knowledge_dict['total'],
-        'visited': initial_knowledge_dict['visited'],
-        'n_visited': result_dict['n_visited'],
-        'time': result_dict['time'],
-        'total_experiment_runtime': result_dict['total_experiment_runtime'],
-        'total_path_length': result_dict['total_path_length'],
-    })
+    flat_dict.update(
+        {
+            "planner": parameters_dict["planner"],
+            "tree_model": problem_dict["tree_model"],
+            "n_discoverable": problem_dict["n_discoverable"],
+            "n_false": problem_dict["n_false"],
+            "n_given": problem_dict["n_given"],
+            "n_total": problem_dict["n_total"],
+            "visibility_model": problem_dict["visibility_model"],
+            "discoverable": initial_knowledge_dict["discoverable"],
+            "false_positives": initial_knowledge_dict["false_positives"],
+            "known_unvisited": initial_knowledge_dict["known_unvisited"],
+            "total": initial_knowledge_dict["total"],
+            "visited": initial_knowledge_dict["visited"],
+            "n_visited": result_dict["n_visited"],
+            "time": result_dict["time"],
+            "total_experiment_runtime": result_dict["total_experiment_runtime"],
+            "total_path_length": result_dict["total_path_length"],
+        }
+    )
 
     return flat_dict
 
@@ -52,22 +56,30 @@ def flatten_segment_dict(segment_dict):
           The dictionary will have the following keys:
             - path_length (float): The length of the path taken in the segment.
             - time (int): The time taken in the segment.
-            - goals_discovered (int): The number of new goals discovered in the segment.
-            - goals_visited (int): The number of goals visited in the segment.
+            - end_event (str): The type of event that ended the segment.
     """
-    goals_discovered = 0
-    if 'discovery_type' in segment_dict['end_event']:
-        goals_discovered = 1
 
-    goals_visited = 0
-    if 'goals_visited' in segment_dict['end_event']:
-        goals_visited = len(segment_dict['end_event']['goals_visited'])
+    if "discovery_type" in segment_dict["end_event"]:
+        if segment_dict["end_event"]["discovery_type"] == "FOUND_FAKE_GOAL":
+            end_event = "FOUND_FAKE_GOAL"
+
+            # Check the ID of the fake goal against the original planned goal.
+            if segment_dict["end_event"]["goal_id"] == segment_dict["planned_goal"]:
+                end_event = "FOUND_FAKE_GOAL (planned)"
+
+        elif segment_dict["end_event"]["discovery_type"] == "FOUND_NEW_GOAL":
+            end_event = "FOUND_NEW_GOAL"
+        else:
+            raise ValueError("Unknown discovery type: {}".format(segment_dict["end_event"]["discovery_type"]))
+    elif segment_dict["end_event"]["type"] == "PathEnd":
+        end_event = "SUCCESSFUL_VISIT"
+    else:
+        raise ValueError("Unknown end event type: {}".format(segment_dict["end_event"]["type"]))
 
     return {
-        'path_length': segment_dict['path_length'],
-        'time': segment_dict['time'],
-        'goals_discovered': goals_discovered,
-        'goals_visited': goals_visited
+        "path_length": segment_dict["path_length"],
+        "time": segment_dict["time"],
+        "end_event": end_event,
     }
 
 
@@ -87,23 +99,30 @@ def json_to_dataframe(json_data):
     segments_data = []
 
     for i, run_dict in enumerate(json_data):
+        if run_dict is None:
+            continue
+
         run_data = flatten_run_dict(run_dict)
         runs_data.append(run_data)
 
-        segments = []
+        if "solution_segments" in run_dict["result"]:
+            segments = []
 
-        for segment_dict in run_dict['result']['solution_segments']:
-            segment_data = flatten_segment_dict(segment_dict)
-            segments.append(segment_data)
+            for segment_dict in run_dict["result"]["solution_segments"]:
+                segment_data = flatten_segment_dict(segment_dict)
+                segments.append(segment_data)
 
-        segments_data.append(segments)
+            segments_data.append(segments)
 
     runs_df = pd.DataFrame(runs_data)
-    runs_df['length_per_visited'] = runs_df['total_path_length'] / runs_df['n_visited']
-    runs_df['time_per_visited'] = runs_df['time'] / runs_df['n_visited']
+    runs_df["length_per_visited"] = runs_df["total_path_length"] / runs_df["n_visited"]
+    runs_df["time_per_visited"] = runs_df["time"] / runs_df["n_visited"]
     segments_df_list = [pd.DataFrame(run_segments) for run_segments in segments_data]
 
-    return runs_df, segments_df_list
+    if segments_df_list:
+        return runs_df, segments_df_list
+    else:
+        return runs_df
 
 
 def load_json(filename):
@@ -140,15 +159,13 @@ def load_and_process_json(filename):
             - run_id (int): a foreign key linking to the corresponding row in the first DataFrame
             - path_length (float): the length of the path taken during the segment
             - time (int): the runtime of the segment in milliseconds
-            - goals_discovered (int): the number of new goals discovered during the segment
-            - goals_visited (int): the number of goals visited during the segment
+            - end_event (str): the type of event that ended the segment
 
     Raises:
     - ValueError: if the file at the given filepath is not a valid JSON array
     """
     data = load_json(filename)
-    runs_df, segments_df = json_to_dataframe(data)
-    return runs_df, segments_df
+    return json_to_dataframe(data)
 
 
 def make_boxplots(runs, metrics=None):
@@ -173,26 +190,28 @@ def make_boxplots(runs, metrics=None):
     None
     """
 
-    scenario_params = ['n_total', 'n_discoverable', 'visibility_model']
+    scenario_params = ["n_total", "n_discoverable", "visibility_model"]
 
     if metrics is None:
-        metrics = ['length_per_visited', 'n_visited']
+        metrics = ["length_per_visited", "n_visited"]
 
     n_scenarios = len(runs.groupby(scenario_params))
 
     # Create a grid of subplots with the dimensions based on the number of metrics and scenario_params
-    fig, axes = plt.subplots(n_scenarios, len(metrics), figsize=(5 * len(scenario_params), 8 * n_scenarios))
+    fig, axes = plt.subplots(
+        n_scenarios, len(metrics), figsize=(5 * len(scenario_params), 8 * n_scenarios)
+    )
 
     # Loop through runs grouped by scenario_params, and plot each metric in a separate row
-    for (((n, nd, v), df), ax_row) in zip(runs.groupby(scenario_params), axes):
+    for ((n, nd, v), df), ax_row in zip(runs.groupby(scenario_params), axes):
         # Loop through the metrics and plot boxplots for each metric and group
-        for (column, ax) in zip(metrics, ax_row):
+        for column, ax in zip(metrics, ax_row):
             # Create a boxplot for the current metric and group
-            df.boxplot(column, rot=90, by='planner', ax=ax)
+            df.boxplot(column, rot=90, by="planner", ax=ax)
 
             # Set the title, x-axis label, and y-axis label for the current subplot
-            ax.set_title('{}, n={}, d={}, v={}'.format(column, n, nd, v))
-            ax.set_xlabel('Planner')
+            ax.set_title("{}, n={}, d={}, v={}".format(column, n, nd, v))
+            ax.set_xlabel("Planner")
             ax.set_ylabel(column)
 
             # Set the y-axis lower limit to 0
@@ -203,3 +222,69 @@ def make_boxplots(runs, metrics=None):
 
     # Display the generated boxplots
     plt.show()
+
+
+def df_zipgroupby(dfs, key):
+    """
+    Group rows from multiple dataframes by the given key, yielding pairs pf the form (value, groups), where value is
+    the value of the key column for that group, and groups is a list of dataframes, one for each input dataframe,
+
+    :param dfs:     the dataframes to be grouped
+    :param key:     the name of the column to be used as the key
+    :return:        an iterator over (value, groups) pairs
+    """
+
+    for groups in itertools.zip_longest(*[df.groupby(key) for df in dfs]):
+        group_key = groups[0][0]
+        group_dfs = [group[1] for group in groups]
+        yield group_key, group_dfs
+
+
+def subplots_from_groupings(df, rows_variable, columns_variable, figsize=(12, 8)):
+    """
+    Generate a grid of subplots based on a pair of column values in the dataframe(s).
+
+    The names must be available as named columns in the dataframe(s).
+
+    The unique values of the column designated by the columns_variable will be used to generate the columns of the grid.
+    Similarly, the unique values of the column designated by the rows_variable will be used to generate the rows of the grid.
+
+    One or more dataframes can be passed to this function. If multiple dataframes are passed, each must have the given
+    columns_variable and rows_variable available as named columns.
+
+    :param df: one or more dataframes to be plotted
+    :param columns_variable: the name of the column to be used for the columns of the grid
+    :param rows_variable: the name of the column to be used for the rows of the grid
+    :param figsize: the size of the figure to be generated
+    """
+
+    ## Depending on whether there is one or more dataframes, we need to handle the subplots differently
+    if type(df) is pd.DataFrame:
+        n_rows = df.groupby(columns_variable)[rows_variable].nunique().max()
+        n_cols = df.groupby(rows_variable)[columns_variable].nunique().max()
+
+        fig, axs = plt.subplots(
+            n_rows,
+            n_cols,
+            figsize=figsize,
+        )
+
+        for row_i, (row_name, group) in enumerate(df.groupby(rows_variable)):
+            for col_i, (col_name, group_df) in enumerate(
+                    group.groupby(columns_variable)
+            ):
+                yield (row_i, col_i), (row_name, col_name), group_df, axs[row_i, col_i]
+
+    else:
+        n_rows = max([df.groupby(columns_variable)[rows_variable].nunique().max() for df in df])
+        n_cols = max([df.groupby(rows_variable)[columns_variable].nunique().max() for df in df])
+
+        fig, axs = plt.subplots(
+            n_rows,
+            n_cols,
+            figsize=figsize,
+        )
+
+        for row_i, (row_name, row_dfs) in enumerate(df_zipgroupby(df, rows_variable)):
+            for col_i, (col_name, col_dfs) in enumerate(df_zipgroupby(row_dfs, columns_variable)):
+                yield (row_i, col_i), (row_name, col_name), col_dfs, axs[row_i][col_i]

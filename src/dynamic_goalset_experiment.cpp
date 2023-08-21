@@ -97,9 +97,12 @@ runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot, const Expe
 				Json::Value segment_json;
 				segment_json["time"] = std::chrono::duration_cast<std::chrono::milliseconds>(segment.time).count();
 				segment_json["path_length"] = segment.path.length();
-
-
 				segment_json["end_event"] = toJSON(segment.goal_event);
+				if (segment.planned_goal_id) {
+					segment_json["planned_goal"] = (int) *segment.planned_goal_id;
+				} else {
+					segment_json["planned_goal"] = Json::nullValue;
+				}
 
 				result["solution_segments"].append(segment_json);
 

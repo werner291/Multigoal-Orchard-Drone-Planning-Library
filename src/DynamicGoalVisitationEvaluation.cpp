@@ -88,6 +88,18 @@ std::optional<DynamicGoalVisitationEvaluation::SolutionPathSegment> DynamicGoalV
 		// Check if the robot will discover any apples during the trajectory
 		auto event = utilities::find_earliest_discovery_event(*segment, scene.apples, can_see_apple, discovery_status);
 
+		// Check what the original goal of the path segment was by finding the apple closest to the end of the path segment.
+		std::optional<utilities::GoalId> apple_id {};
+		double min_dist = 0.05;
+
+		for (auto [i, apple] : scene.apples | ranges::views::enumerate) {
+			double dist = (segment->waypoints.back().getGlobalLinkTransform("end_effector").translation() - apple.center).norm();
+			if (dist < min_dist) {
+				min_dist = dist;
+				apple_id = (utilities::GoalId) i;
+			}
+		}
+
 		if (event) {
 
 			// If the robot will discover an apple, set the upcoming goal event to the discovery event
@@ -106,7 +118,6 @@ std::optional<DynamicGoalVisitationEvaluation::SolutionPathSegment> DynamicGoalV
 		} else {
 
 			// Check if the end-effector is at any of the goals.
-
 			Eigen::Vector3d end_effector_pos = segment->waypoints
 					.back()
 					.getGlobalLinkTransform("end_effector")
@@ -135,7 +146,11 @@ std::optional<DynamicGoalVisitationEvaluation::SolutionPathSegment> DynamicGoalV
 		// Set the robot state to the end of the trajectory
 		last_robot_state = segment->waypoints.back();
 
-		SolutionPathSegment segment_to_add {*segment, *upcoming_goal_event, end_time - start_time};
+		SolutionPathSegment segment_to_add {
+			*segment,
+			apple_id,
+			*upcoming_goal_event,
+			end_time - start_time};
 
 		this->solution_path_segments.push_back(segment_to_add);
 

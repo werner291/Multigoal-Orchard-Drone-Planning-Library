@@ -19,6 +19,23 @@ struct Proportions {
 		os << "Proportions: " << fraction_true_given << ", " << fraction_false_given << ", " << fraction_discoverable;
 		return os;
 	}
+
+	// Lexicographic ordering
+	bool operator<(const Proportions &other) const {
+		if (fraction_true_given < other.fraction_true_given) {
+			return true;
+		} else if (fraction_true_given > other.fraction_true_given) {
+			return false;
+		} else {
+			if (fraction_false_given < other.fraction_false_given) {
+				return true;
+			} else if (fraction_false_given > other.fraction_false_given) {
+				return false;
+			} else {
+				return fraction_discoverable < other.fraction_discoverable;
+			}
+		}
+	}
 };
 
 namespace mgodpl {

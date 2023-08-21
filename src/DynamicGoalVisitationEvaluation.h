@@ -37,6 +37,8 @@ public:
 	struct SolutionPathSegment {
 		/// The path segment.
 		RobotPath path;
+		/// The Id of the goal that was the original target of the path segment.
+		std::optional<utilities::GoalId> planned_goal_id;
 		/// The goal event that triggered the end of the path segment, if any.
 		utilities::GoalEvent goal_event;
 		/// The time used to compute the path segment.

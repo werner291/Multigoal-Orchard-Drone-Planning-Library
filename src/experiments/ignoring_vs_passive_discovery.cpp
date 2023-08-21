@@ -109,8 +109,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	// Common Constants
-	const bool KEEP_SEGMENTS = false;
+
 
 	// Load the robot model.
 	const auto robot = loadRobotModel();
@@ -127,7 +126,8 @@ int main(int argc, char **argv) {
 	if (*mode == THREE_TREE_MODE) {
 
 		const int REPETITIONS = 10;
-
+		// Common Constants
+		const bool KEEP_SEGMENTS = false;
 
 		const auto props = mgodpl::utilities::linspace(
 				mgodpl::dynamic_goals::ALL_GIVEN,
@@ -164,6 +164,8 @@ int main(int argc, char **argv) {
 
 		const int N_TREES = 1000;
 		const int MAX_FRUIT = 600;
+		// Common Constants
+		const bool KEEP_SEGMENTS = false;
 		auto models = loadAllTreeModels(N_TREES, MAX_FRUIT);
 
 		std::vector<std::pair<std::string, DMGPlannerAllocatorFn>> PLANNERS_TO_TEST = {
@@ -193,41 +195,47 @@ int main(int argc, char **argv) {
 		using namespace mgodpl::utilities;
 		using namespace mgodpl::dynamic_goals;
 
-		std::vector<Proportions> props;
+		std::set<Proportions> props {};
 
+		// A set of proportions featuring no false entries.
+		for (const double discoverable : linspace(0.0, 1.0, 5)) {
+			props.insert(Proportions {
+				.fraction_true_given = 1.0 - discoverable,
+				.fraction_false_given = 0.0,
+				.fraction_discoverable = discoverable
+			});
+		}
+
+		// For 50% and 0% true-given, different values of false-given.
 		for (const double true_given : linspace(0.0, 0.5, 2)) {
-			for (const double false_in_given: linspace(0.0, 1.0, 4)) {
+			for (const double false_in_given: linspace(0.0, 1.0, 6)) {
 
 				double false_given = false_in_given * (1.0 - true_given);
 				double discoverable = 1.0 - true_given - false_given;
 
-				props.push_back(Proportions {
+				props.insert(Proportions {
 					.fraction_true_given = true_given,
 					.fraction_false_given = false_given,
 					.fraction_discoverable = discoverable
 				});
-
-				std::cout << "Discoverable Proportion: " << props.back().fraction_discoverable << std::endl;
-				std::cout << "Given Proportion: " << props.back().fraction_true_given << std::endl;
-				std::cout << "False Proportion: " << props.back().fraction_false_given << std::endl;
-				std::cout << std::endl;
-
-				if(std::abs(
-						props.back().fraction_discoverable +
-						props.back().fraction_true_given +
-						props.back().fraction_false_given - 1.0) > 1e-6) {
-
-					exit(1);
-				}
 			}
 		}
 
-		const int REPETITIONS = 10;
-		const int N_TREES = 2;
+		std::vector<Proportions> props_vec {props.begin(), props.end()};
+
+		for (const auto &prop : props_vec) {
+			std::cout << "True-given: " << prop.fraction_true_given << ", False-given: " << prop.fraction_false_given << ", Discoverable: " << prop.fraction_discoverable << std::endl;
+		}
+
+		const int REPETITIONS = 5;
+		const int N_TREES = 3;
 		const int MAX_FRUIT = 200;
+		// Common Constants
+		const bool KEEP_SEGMENTS = true;
 		auto models = loadAllTreeModels(N_TREES, MAX_FRUIT);
 
 		std::vector<std::pair<std::string, DMGPlannerAllocatorFn>> PLANNERS_TO_TEST = {
+				{"dynamic_planner_fre", dynamicPlannerFREFunction},
 				{"dynamic_planner_lci", dynamicPlannerLCIFunction},
 				{"dynamic_planner_initial_orbit", dynamicPlannerInitialOrbitFunction}
 		};
@@ -238,8 +246,8 @@ int main(int argc, char **argv) {
 									 REPETITIONS,
 									 PLANNERS_TO_TEST,
 									 OCCLUSION_MODELS_TO_TEST,
-									 "analysis/data/dynamic_log_icra2024_3trees_deletion.json",
-									 props);
+									 "analysis/data/dynamic_log_icra2024_3trees_deletion_3.json",
+									 props_vec);
 
 	}
 
