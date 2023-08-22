@@ -36,6 +36,7 @@ def flatten_run_dict(run_dict):
             "visited": initial_knowledge_dict["visited"],
             "n_visited": result_dict["n_visited"],
             "time": result_dict["time"],
+            "timeout": result_dict["timeout"],
             "total_experiment_runtime": result_dict["total_experiment_runtime"],
             "total_path_length": result_dict["total_path_length"],
         }
@@ -288,3 +289,18 @@ def subplots_from_groupings(df, rows_variable, columns_variable, figsize=(12, 8)
         for row_i, (row_name, row_dfs) in enumerate(df_zipgroupby(df, rows_variable)):
             for col_i, (col_name, col_dfs) in enumerate(df_zipgroupby(row_dfs, columns_variable)):
                 yield (row_i, col_i), (row_name, col_name), col_dfs, axs[row_i][col_i]
+
+
+def merge_segments(segments):
+    '''
+    Merge a list of segments into a single dataframe, adding a column for the segment index and run index.
+
+    :param segments:    a list of dataframes, each representing a segment
+    :return:            a single dataframe containing all segments
+    '''
+    segs = []
+    for i,seg in enumerate(segments):
+        seg = seg.reset_index().rename(columns={'index': 'segment_index'})
+        seg['run_index'] = i
+        segs.append(seg)
+    return pd.concat(segs)
