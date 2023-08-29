@@ -110,7 +110,6 @@ int main(int argc, char **argv) {
 	}
 
 
-
 	// Load the robot model.
 	const auto robot = loadRobotModel();
 	ompl::msg::setLogLevel(ompl::msg::LOG_ERROR);
