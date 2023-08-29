@@ -303,7 +303,10 @@ add_library(${PROJECT_NAME}_shared
         src/pure/topological_space.h
 #        src/PeriodicFullReorderingTSPMethods.cpp
 #        src/PeriodicFullReorderingTSPMethods.h
-        src/utilities/size_t_iota.cpp)
+        src/utilities/size_t_iota.cpp
+        src/pure/ompl_impl/OmplShellSpace.h
+        src/pure/ompl_impl/configuration_space.h
+        src/pure/ompl_impl/OmplShellSpace.cpp)
 
 if (ENABLE_VISUALIZATION)
 
@@ -399,6 +402,8 @@ if (ENABLE_EXPERIMENTS)
     experiment("shell_type_comparison")
     experiment("tsp_over_prm_bb")
     experiment("ignoring_vs_passive_discovery")
+
+    experiment("approach_planning")
 
     if (ENABLE_VISUALIZATION)
         experiment("initial_orbit_comparison")
