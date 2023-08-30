@@ -306,7 +306,11 @@ add_library(${PROJECT_NAME}_shared
         src/utilities/size_t_iota.cpp
         src/pure/ompl_impl/OmplShellSpace.h
         src/pure/ompl_impl/configuration_space.h
-        src/pure/ompl_impl/OmplShellSpace.cpp)
+        src/pure/ompl_impl/OmplShellSpace.cpp
+        src/any_to_any_dijkstra.cpp
+        src/any_to_any_dijkstra.h
+        src/MyCollisionEnv.cpp
+        src/MyCollisionEnv.h)
 
 if (ENABLE_VISUALIZATION)
 
