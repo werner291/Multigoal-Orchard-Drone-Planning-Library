@@ -8,6 +8,7 @@
 #include <ompl/base/terminationconditions/CostConvergenceTerminationCondition.h>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
+#include <range/v3/view/zip.hpp>
 
 #include "../utilities/experiment_utils.h"
 #include "../utilities/cgal_utils.h"
@@ -20,110 +21,12 @@
 #include "../pure/ompl_impl/OmplShellSpace.h"
 #include "../pure/ompl_impl/configuration_space.h"
 #include "../planners/MultigoalPrmStar.h"
-
-std::vector<std::vector<PRMCustom::Vertex>> any_to_any(
-		const PRMCustom &graph,
-		std::vector<PRMCustom::Vertex> start_points,
-		std::vector<std::vector<PRMCustom::Vertex>> goal_groups) {
-
-	/**
-	 * A vertex in the roadmap with a parent vertex and a cost.
-	 */
-	struct Parent {
-		// The best parent vertex. (nullopt if this is the start vertex or if the node has not been visited.)
-		std::optional<PRMCustom::Vertex> best_parent;
-		// The cost of the best path to this vertex. (INFINITY if this node has not been visited.)
-		double cost = INFINITY;
-		// Whether this vertex has been visited.
-		bool visited = false;
-	};
-
-	// Initialize a vector of "parent" vertices for each graph vertex.
-	std::vector<Parent> parents(graph.getRoadmap().m_vertices.size());
-
-	/**
-	 * A candidate edge to explore.
-	 */
-	struct Candidate {
-		// The vertex we're coming from. (nullopt if this is the start vertex.)
-		std::optional<PRMCustom::Vertex> to_vertex;
-		// The vertex we're going to.
-		PRMCustom::Vertex from_vertex;
-		// The cost of the edge.
-		double cost = INFINITY;
-	};
-
-	// Initialize a priority queue of candidates.
-	std::priority_queue<Candidate, std::vector<Candidate>, std::function<bool(const Candidate &, const Candidate &)>> queue(
-			[](const Candidate &a, const Candidate &b) {
-				return a.cost > b.cost;
-			});
-
-	// Put the start vertices into the queue.
-	for (const auto &start_point: start_points) {
-		// Candidate edges incoming to the start vertex have no cost.
-		// There is effectively an implicit "start" vertex, signaled by a nullopt "from" vertex.
-		queue.push({{}, start_point, 0.0});
-	}
-
-	// Iterate over the queue until it's empty.
-	while (!queue.empty()) {
-
-		// Get the next vertex to expand.
-		Candidate candidate = queue.top();
-		// Remove it from the queue.
-		queue.pop();
-
-		// Look up the vertex we're entering.
-		Parent &parent = parents[candidate.to_vertex];
-
-		// If we've already visited this vertex, then we can skip it.
-		if (parent.visited) {
-			continue;
-		}
-
-		// Mark it as visited.
-		parent.visited = true;
-
-		// Update the parent vertex.
-		parent.best_parent = candidate.from_vertex;
-
-		// Update the cost.
-		parent.cost = candidate.cost;
-
-		// Expand the vertex by looking up its neighbors (boost graph)
-		// and adding them to the queue.
-
-		for (const auto& e : boost::make_iterator_range(boost::out_edges(candidate.to_vertex, graph.getRoadmap()))) {
-
-			// Get the target vertex.
-			PRMCustom::Vertex target_vertex = boost::target(e, graph);
-
-			// Look up the parent vertex.
-			Parent &target_parent = parents[target_vertex];
-
-			// If we've already visited this vertex, then we can skip it.
-			if (target_parent.visited) {
-				continue;
-			}
-
-			// Compute the cost of the edge.
-			double edge_cost = graph[e].weight;
-
-			// Add the edge to the queue.
-			queue.push({target_vertex, candidate.to_vertex, candidate.cost + edge_cost});
-
-		}
-
-	}
-
-	return nullptr;
-}
+#include "../any_to_any_dijkstra.h"
 
 int main(int argc, char **argv) {
 
-	const int N_TREES = 2;
-	const int MAX_FRUIT = 100;
+	const int N_TREES = 10;
+	const int MAX_FRUIT = 300;
 
 	auto models = loadAllTreeModels(N_TREES, MAX_FRUIT);
 	auto robot = loadRobotModel();
@@ -147,7 +50,7 @@ int main(int argc, char **argv) {
 
 		tree_results["n_total"] = (int) tree_models.fruit_meshes.size();
 
-		const auto scene = createSceneFromTreeModels(tree_models);
+		auto scene = createSceneFromTreeModels(tree_models);
 
 		auto ss = omplStateSpaceForDrone(robot, TRANSLATION_BOUND);
 		auto si = loadSpaceInformation(ss, scene);
@@ -182,6 +85,12 @@ int main(int argc, char **argv) {
 
 			// Build a roadmap.
 			PRMCustom prm(si);
+
+			auto objective = std::make_shared<DronePathLengthObjective>(si);
+			auto pdef = std::make_shared<ompl::base::ProblemDefinition>(si);
+			pdef->setOptimizationObjective(objective);
+			prm.setProblemDefinition(pdef);
+
 			prm.constructRoadmap(ompl::base::timedPlannerTerminationCondition(1.0));
 
 			ompl::base::ScopedState<> shell_state(si);
@@ -193,25 +102,53 @@ int main(int argc, char **argv) {
 				shell_vertices.push_back(prm.insert_state(shell_state.get()));
 			}
 
+			auto time_start = std::chrono::high_resolution_clock::now();
+
 			// Connect to the goals.
 			std::vector<std::vector<PRMCustom::Vertex>> goal_vertices;
+			goal_vertices.reserve(goal_regions.size());
 
 			for (const auto &goal_region: goal_regions) {
 				// FIXME: Yikes ugly cast.
-				prm.tryConnectGoal(*goal_region->as<ompl::base::GoalSampleableRegion>(), 5);
+				goal_vertices.push_back(prm.tryConnectGoal(*goal_region->as<ompl::base::GoalSampleableRegion>(), 5));
 			}
 
+			auto time_end = std::chrono::high_resolution_clock::now();
+			std::cout << "Inserting special states took " << std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count() << "ms" << std::endl;
+
 			// Use a variant of Dijkstra to find the shortest path from any of the shell vertices to any of the goal vertices.
-			auto paths_in_graph = any_to_any(prm.getRoadmap(), shell_vertices, goal_vertices);
+			auto paths_in_graph = mgodpl::any_to_any_dijkstra::any_to_any(
+					prm.getRoadmap(),
+					[&](const PRMCustom::Vertex& a, const PRMCustom::Vertex& b) {
+						return prm.getSpaceInformation()->distance(prm.getState(a), prm.getState(b));
+					},
+					shell_vertices,
+					goal_vertices
+					);
 
-			throw std::runtime_error("Not implemented.");
 
-			return {};
+			std::vector<std::optional<Path>> paths;
+			paths.reserve(goal_regions.size());
+
+			for (const auto &path_in_graph: paths_in_graph) {
+				if (path_in_graph.size() >= 2) {
+					ompl::geometric::PathGeometric path(si);
+					for (const auto &vertex: path_in_graph) {
+						path.append(prm.getState(vertex));
+					}
+					paths.push_back(path);
+				} else {
+					paths.push_back(std::nullopt);
+				}
+			}
+
+			return paths;
 
 		};
 
 		const std::vector<std::pair<std::string, BatchApproachFn>> planners = {
-				{"makeshift", batch_makeshift}
+//				{"makeshift", batch_makeshift},
+				{"roadmap", batch_roadmap}
 		};
 
 		// Iterate over the planners one by one.
@@ -247,7 +184,7 @@ int main(int argc, char **argv) {
 
 			planner_results["total_planning_time"] = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
 
-			tree_results[planner_name] = planner_results;
+			tree_results["by_planner"][planner_name] = planner_results;
 
 		}
 
@@ -255,8 +192,8 @@ int main(int argc, char **argv) {
 
 	}
 
-	std::ofstream file("analysis/data/approach_planning.json");
-	file << results;
-	file.close();
+//	std::ofstream file("analysis/data/approach_planning.json");
+//	file << results;
+//	file.close();
 
 }
