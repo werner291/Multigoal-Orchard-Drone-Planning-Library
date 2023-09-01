@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
 		);
 
 		const int N_TREES = 3;
-		const int MAX_FRUIT = 200;
+		const int MAX_FRUIT = 100;
 		auto models = loadAllTreeModels(N_TREES, MAX_FRUIT);
 
 		std::vector<std::pair<std::string, DMGPlannerAllocatorFn>> PLANNERS_TO_TEST = {
@@ -228,7 +228,7 @@ int main(int argc, char **argv) {
 
 		const int REPETITIONS = 5;
 		const int N_TREES = 3;
-		const int MAX_FRUIT = 200;
+		const int MAX_FRUIT = 100;
 		// Common Constants
 		const bool KEEP_SEGMENTS = true;
 		auto models = loadAllTreeModels(N_TREES, MAX_FRUIT);
@@ -245,7 +245,7 @@ int main(int argc, char **argv) {
 									 REPETITIONS,
 									 PLANNERS_TO_TEST,
 									 OCCLUSION_MODELS_TO_TEST,
-									 "analysis/data/dynamic_log_icra2024_3trees_deletion_3.json",
+									 "analysis/data/dynamic_log_icra2024_3trees_deletion_smalltrees.json",
 									 props_vec);
 
 	}
@@ -311,6 +311,6 @@ void runDynamicPlannerExperiments(const bool KEEP_SEGMENTS,
 
 	// Run the experiments in parallel.
 	runExperimentsParallelRecoverable<Experiment>(experiments, [&](const Experiment &experiment) {
-		return runDynamicPlannerExperiment(robot, experiment, KEEP_SEGMENTS);
+		return runDynamicPlannerExperiment(robot, experiment, KEEP_SEGMENTS, std::chrono::minutes(10));
 	}, resultsFile, 32, std::thread::hardware_concurrency(), 42);
 }
