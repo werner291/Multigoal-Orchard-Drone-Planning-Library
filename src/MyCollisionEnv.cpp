@@ -8,29 +8,30 @@
 
 #include "MyCollisionEnv.h"
 
-void MyCollisionEnv::checkSelfCollision(const collision_detection::CollisionRequest &req,
-										collision_detection::CollisionResult &res,
-										const moveit::core::RobotState &state) const {
+/**
+ * Assuming a linear interpolation between state1 and state2, what is the maximum velocity of any point on any collision object?
+ *
+ * @param state1 The start state
+ * @param state2 The end state
+ * @return 		 The maximum velocity of any point on any collision object
+ */
+double motionMaximumVelocity(
+		const moveit::core::RobotState &state1,
+		const moveit::core::RobotState &state2
+		) {
 
-}
+	assert(state1.getRobotModel() == state2.getRobotModel());
 
-void MyCollisionEnv::checkSelfCollision(const collision_detection::CollisionRequest &req,
-										collision_detection::CollisionResult &res,
-										const moveit::core::RobotState &state,
-										const collision_detection::AllowedCollisionMatrix &acm) const {
+	const auto &robot_model = state1.getRobotModel();
 
-}
+	struct Frame {
+		const double maxVelocity = 0.0;
+		const moveit::core::JointModel* frame;
+	};
 
-void MyCollisionEnv::checkRobotCollision(const collision_detection::CollisionRequest &req,
-										 collision_detection::CollisionResult &res,
-										 const moveit::core::RobotState &state) const {
+	std::vector<Frame> stack;
 
-}
-
-void MyCollisionEnv::checkRobotCollision(const collision_detection::CollisionRequest &req,
-										 collision_detection::CollisionResult &res,
-										 const moveit::core::RobotState &state,
-										 const collision_detection::AllowedCollisionMatrix &acm) const {
+	robot_model->getRootJoint()
 
 }
 
@@ -40,38 +41,13 @@ void MyCollisionEnv::checkRobotCollision(const collision_detection::CollisionReq
 										 const moveit::core::RobotState &state2,
 										 const collision_detection::AllowedCollisionMatrix &acm) const {
 
+
+
 }
 
 void MyCollisionEnv::checkRobotCollision(const collision_detection::CollisionRequest &req,
 										 collision_detection::CollisionResult &res,
 										 const moveit::core::RobotState &state1,
 										 const moveit::core::RobotState &state2) const {
-
-}
-
-void MyCollisionEnv::distanceSelf(const collision_detection::DistanceRequest &req,
-								  collision_detection::DistanceResult &res,
-								  const moveit::core::RobotState &state) const {
-
-}
-
-void MyCollisionEnv::distanceRobot(const collision_detection::DistanceRequest &req,
-								   collision_detection::DistanceResult &res,
-								   const moveit::core::RobotState &state) const {
-
-}
-
-MyCollisionEnv::MyCollisionEnv(const moveit::core::RobotModelConstPtr &model, double padding, double scale) {
-	MyCollisionEnv(model, nullptr, padding, scale);
-}
-
-MyCollisionEnv::MyCollisionEnv(const moveit::core::RobotModelConstPtr &model,
-							   const collision_detection::WorldPtr &world,
-							   double padding,
-							   double scale) {
-
-}
-
-MyCollisionEnv::MyCollisionEnv(const MyCollisionEnv &other, const collision_detection::WorldPtr &world) {
-	throw std::runtime_error("Not implemented");
+	CollisionEnvFCL::checkRobotCollision(req, res, state1, state2);
 }
