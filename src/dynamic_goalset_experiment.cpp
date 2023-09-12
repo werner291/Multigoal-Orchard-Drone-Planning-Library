@@ -11,7 +11,10 @@
 
 
 Json::Value
-runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot, const Experiment &experiment, bool saveSegments) {
+runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot,
+							const Experiment &experiment,
+							bool saveSegments,
+							std::chrono::minutes max_timeout) {
 
 	// *Somewhere* in the state space is something that isn't thread-safe despite const-ness.
 	// So, we just re-create the state space every time just to be safe.
@@ -61,7 +64,7 @@ runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot, const Expe
 		total_time += current_time;
 
 		// Check if the total time exceeds 60 seconds, and break if true
-		if (total_time >= std::chrono::minutes(3)) {
+		if (total_time >= max_timeout) {
 			timeout = true;
 			break;
 		}

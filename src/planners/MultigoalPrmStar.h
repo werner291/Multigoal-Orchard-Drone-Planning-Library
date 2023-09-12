@@ -21,6 +21,10 @@ public:
 
     Vertex insert_state(const ompl::base::State *st);
 
+	const ompl::base::State * getState(Vertex v) const {
+		return stateProperty_[v];
+	}
+
     /**
      * Try to connect two vertices/states with a path. As an added optimization,
      * first check if the two vertices are even in the same component.
