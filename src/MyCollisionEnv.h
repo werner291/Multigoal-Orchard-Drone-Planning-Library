@@ -11,6 +11,9 @@
 class MyCollisionEnv : public collision_detection::CollisionEnvFCL {
 
 public:
+	MyCollisionEnv() = delete;
+
+	MyCollisionEnv(const moveit::core::RobotModelConstPtr& model, const collision_detection::WorldPtr& world, double padding = 0.0, double scale = 1.0);
 
 	void checkRobotCollision(const collision_detection::CollisionRequest &req,
 							 collision_detection::CollisionResult &res,
