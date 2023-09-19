@@ -15,16 +15,20 @@ public:
 
 	MyCollisionEnv(const moveit::core::RobotModelConstPtr& model, const collision_detection::WorldPtr& world, double padding = 0.0, double scale = 1.0);
 
-	void checkRobotCollision(const collision_detection::CollisionRequest &req,
-							 collision_detection::CollisionResult &res,
-							 const moveit::core::RobotState &state1,
-							 const moveit::core::RobotState &state2,
-							 const collision_detection::AllowedCollisionMatrix &acm) const override;
+	struct ContinuousCollisionRequest {
+		double distance_threshold;
+	};
 
-	void checkRobotCollision(const collision_detection::CollisionRequest &req,
-							 collision_detection::CollisionResult &res,
+	struct ContinuousCollisionResult : public collision_detection::CollisionResult {
+		double time_of_contact;
+	};
+
+	void checkRobotCollision(const ContinuousCollisionRequest &req,
+							 ContinuousCollisionResult &res,
 							 const moveit::core::RobotState &state1,
-							 const moveit::core::RobotState &state2) const override;
+							 const moveit::core::RobotState &state2) const;
+
+
 
 };
 
