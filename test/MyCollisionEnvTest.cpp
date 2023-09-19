@@ -7,6 +7,7 @@
 #include "../src/utilities/experiment_utils.h"
 #include "../src/MyCollisionEnv.h"
 #include "../src/utilities/moveit.h"
+#include "../src/utilities/moveit_motion_velocity.h"
 
 TEST(MyCollisionEnv, test1) {
 
@@ -71,6 +72,57 @@ TEST(MyCollisionEnv, test1) {
 
 		ASSERT_TRUE(res.collision);
 		ASSERT_NEAR(res.time_of_contact, 0.5, 0.2);
+	}
+
+}
+
+TEST(MyCollisionEnv, max_velocity) {
+
+	auto robot = loadRobotModel();
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<> dis(-1.0, 1.0);
+
+	for (int i = 0; i < 100000; ++i) {
+
+		moveit::core::RobotState state1(robot);
+		state1.setToRandomPositions();
+		setBaseTranslation(state1, Eigen::Vector3d(dis(gen), dis(gen), dis(gen)));
+		state1.update(true);
+
+
+		moveit::core::RobotState state2(robot);
+		state2.setToRandomPositions();
+		setBaseTranslation(state2, Eigen::Vector3d(dis(gen), dis(gen), dis(gen)));
+		state2.update(true);
+
+		double max_velocity = mgodpl::motionMaximumVelocity(state1, state2);
+
+		// Pick a random link.
+		std::uniform_int_distribution<> link_dis(0, robot->getLinkModelNames().size() - 1);
+		int link_index = 2;//TODO link_dis(gen);
+
+		// Pick a random point in the aabb of the link.
+		const auto &link = robot->getLinkModels()[link_index];
+		const auto aabb_halfextents = link->getShapeExtentsAtOrigin() / 2.0;
+		const auto aabb_center = link->getCenteredBoundingBoxOffset();
+
+		Eigen::Vector3d point(aabb_center.x() + aabb_halfextents.x() * dis(gen),
+							  aabb_center.y() + aabb_halfextents.y() * dis(gen),
+							  aabb_center.z() + aabb_halfextents.z() * dis(gen));
+
+		// Find the point back in the two states.
+		Eigen::Vector3d point1 = state1.getGlobalLinkTransform(link) * point;
+		Eigen::Vector3d point2 = state2.getGlobalLinkTransform(link) * point;
+
+		// Find the velocity of the point.
+		EXPECT_LE((point2 - point1).norm(), max_velocity);
+
+		if ((point2 - point1).norm() > max_velocity) {
+			std::cout << "max_velocity: " << max_velocity << std::endl;
+			std::cout << "Link name: " << link->getName() << std::endl;
+		}
 	}
 
 }
