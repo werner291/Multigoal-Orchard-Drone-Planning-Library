@@ -61,11 +61,11 @@ int main() {
 
 	std::cout << "Path length before: " << length_before << std::endl;
 
-	MgODPL::PathShorteningParameters params{.initialT = 1.0, .minimumT = 1e-6, .improvementThresholdPercentage = 1.0,
+	mgodpl::PathShorteningParameters params{.initialT = 1.0, .minimumT = 1e-6, .improvementThresholdPercentage = 1.0,
 
 	};
 
-	MgODPL::PathShorteningAlgorithm algo(path, plan_result, goals, projectgoalRegion, params);
+	mgodpl::PathShorteningAlgorithm algo(path, plan_result, goals, projectgoalRegion, params);
 
 	algo.run();
 

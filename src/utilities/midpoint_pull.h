@@ -18,7 +18,7 @@
 
 #include "../planners/MultiGoalPlanner.h"
 
-namespace MgODPL::midpoint_pull {
+namespace mgodpl::midpoint_pull {
 	/**
 		 * @brief Perform the midpoint pull operation on a triplet of states, smoothing out that section of the path.
 		 *

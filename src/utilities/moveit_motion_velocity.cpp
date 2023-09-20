@@ -150,36 +150,20 @@ double mgodpl::motionMaximumVelocity(const moveit::core::RobotState &state1, con
 		// Get the velocity of the link relative to the attachment frame of the joint.
 		Velocity linkVelocity = jointVelocity(frame.frame, state1, state2);
 
-		double
-
 		const moveit::core::LinkModel *link = frame.frame->getChildLinkModel();
+
+		double thisLinkMaxAngularVelocity = std::abs(linkVelocity.angular.angle()) + frame.parentMaxAngularVelocity;
+		double thisLinkMaxLinearVelocity = linkVelocity.linear.norm() + frame.parentMaxLinearVelocity + thisLinkMaxAngularVelocity * link->getJointOriginTransform().translation().norm();
+
 
 		// Find the furthest point from the origin within the AABB of the link,
 		// in the frame of the link itself (without considering any relation to the parent link).
 		Eigen::Vector3d localFurthestPoint = furthestPointFromOriginInLink(link);
 
-		// Find the maximum distance of any point in the AABB of the current link from the origin of the parent link. (TODO: what about the joint transform?)
-		double maxDistanceFromParentOrigin = localFurthestPoint.norm() + link->getJointOriginTransform().translation().norm();
+		double furthest_point_velocity = thisLinkMaxLinearVelocity + thisLinkMaxAngularVelocity * localFurthestPoint.norm();
 
-		// Compute the maximum velocity of that furthest point in the frame of the attachment point of the joint...
-
-		// ...as caused by the joint moving.
-		double maxVelocityFromJoint = max_velocity_at_distance(linkVelocity, furthestPointAbs.norm());
-
-		// Get the furthest possible distance of any point in the AABB from the attachment point of the joint to the parent link.
-		double linkOffsetMagnitude = link->getJointOriginTransform().translation().norm();
-		double furthest_point_from_joint_frame_distance = furthestPointAbs.norm() + linkOffsetMagnitude;
-
-		// ...as caused by the parent moving.
-		double maxVelocityFromParent = frame.parentMaxLinearVelocity +
-				frame.parentMaxAngularVelocity * furthest_point_from_joint_frame_distance;
-
-		// The global maximum velocity is the sum of the two.
-		double global_max_velocity = maxVelocityFromJoint + maxVelocityFromParent;
-
-		// Keep track of the global maximum velocity.
-		if (global_max_velocity > maxVelocity) {
-			maxVelocity = global_max_velocity;
+		if (furthest_point_velocity > maxVelocity) {
+			maxVelocity = furthest_point_velocity;
 		}
 
 		// Then push the children onto the stack.
@@ -187,8 +171,8 @@ double mgodpl::motionMaximumVelocity(const moveit::core::RobotState &state1, con
 
 			// Double-check if this is right...
 			stack.push_back({
-				.parentMaxLinearVelocity= frame.parentMaxAngularVelocity + linkVelocity.linear.norm(),
-				.parentMaxAngularVelocity= frame.parentMaxAngularVelocity + std::abs(linkVelocity.angular.angle()),
+				.parentMaxLinearVelocity= thisLinkMaxLinearVelocity,
+				.parentMaxAngularVelocity= thisLinkMaxAngularVelocity,
 				.frame= child
 			});
 		}

@@ -20,6 +20,9 @@ struct Experiment {
 Json::Value toJSON(const Experiment &experiment);
 
 Json::Value
-runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot, const Experiment &experiment, bool saveSegments);
+runDynamicPlannerExperiment(const moveit::core::RobotModelPtr &robot,
+							const Experiment &experiment,
+							bool saveSegments,
+							std::chrono::minutes max_timeout);
 
 #endif //NEW_PLANNERS_DYNAMIC_GOALSET_EXPERIMENT_H

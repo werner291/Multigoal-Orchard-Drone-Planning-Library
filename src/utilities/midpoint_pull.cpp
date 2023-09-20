@@ -8,7 +8,7 @@
 
 #include "midpoint_pull.h"
 
-namespace MgODPL::midpoint_pull {
+namespace mgodpl::midpoint_pull {
 
 	void midpointPull(const ompl::base::State *state1,
 					  const ompl::base::State *state2,

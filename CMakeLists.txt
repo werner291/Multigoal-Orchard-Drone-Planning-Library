@@ -310,7 +310,9 @@ add_library(${PROJECT_NAME}_shared
         src/any_to_any_dijkstra.cpp
         src/any_to_any_dijkstra.h
         src/MyCollisionEnv.cpp
-        src/MyCollisionEnv.h)
+        src/MyCollisionEnv.h
+        src/utilities/moveit_motion_velocity.cpp
+        src/utilities/moveit_motion_velocity.h)
 
 if (ENABLE_VISUALIZATION)
 
@@ -454,7 +456,7 @@ include(GoogleTest)
 
 add_executable(${PROJECT_NAME}_tests
         test/test.cpp
-        test/pure_stuff.cpp
+        test/MyCollisionEnvTest.cpp
         #        test/MoveItPathLengthObjectiveTest.cpp
         #        test/math_test.cpp
         #        test/CuttingPlaneConvexHullShell_test.cpp

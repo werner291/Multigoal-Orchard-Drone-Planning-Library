@@ -2,7 +2,7 @@
 
 ## Description
 
-Multigoal Drone Planning Library (MgODPL) is a project developed to facilitate multi-goal drone planning in orchard-like environments.
+Multigoal Drone Planning Library (mgodpl) is a project developed to facilitate multi-goal drone planning in orchard-like environments.
 
 ## Publications
 
