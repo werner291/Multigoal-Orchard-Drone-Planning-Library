@@ -216,8 +216,6 @@ TEST(MyCollisionEnv, engineered_collision) {
 		// Check that the time of contact is close to the interpolation time, or before.
 		// We leave a generous margin of 0.1.
 		ASSERT_LE(res.time_of_contact, t + 0.1);
-
-		std::cout << "Time of contact: " << res.time_of_contact << " (t = " << t << ")" << std::endl;
 	}
 
 }
