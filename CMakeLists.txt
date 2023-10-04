@@ -16,13 +16,13 @@ option(ENABLE_EXPERIMENTS "Enable EXPERIMENTS" OFF)
 
 ## System dependencies are found with CMake's conventions
 find_package(Eigen3 REQUIRED)
-find_package(jsoncpp REQUIRED)
 find_package(fcl REQUIRED)
 find_package(Boost REQUIRED)
 find_package(Bullet REQUIRED)
 find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
 find_package(Qhull REQUIRED)
+find_package(ortools REQUIRED)
 
 set(CGAL_DATA_DIR "UNUSED_STOP_WARNING")
 find_package(CGAL REQUIRED)
@@ -34,6 +34,11 @@ find_package(moveit_msgs REQUIRED)
 find_package(moveit_ros_planning REQUIRED)
 find_package(moveit_planners_ompl REQUIRED)
 find_package(shape_msgs REQUIRED)
+find_package(jsoncpp REQUIRED)
+
+# Ament seems to complain about moveit_planners_ompl exporting a non-existent include directory, see https://github.com/lopsided98/nix-ros-overlay/issues/312
+# Is there a way to get this to be at least semi-nonbroken?
+set(HACKY_MOVEIT_INCLUDE /nix/store/mg432iy0715cc7fylwg10bsdhsg4qy30-ros-rolling-moveit-planners-ompl-2.8.0-r2/include/moveit_planners)
 
 include_directories(
         ${EIGEN3_INCLUDE_DIRS}
@@ -48,7 +53,9 @@ include_directories(
         #{CGAL_INCLUDE_DIRS}
         ortools/include
         miniball/cpp/main
+        ${HACKY_MOVEIT_INCLUDE}
 )
+
 
 link_libraries(
         ${EIGEN_LIBRARIES}
@@ -384,7 +391,7 @@ endif ()
 
 target_compile_definitions(${PROJECT_NAME}_shared PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
-set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "moveit_planners_ompl" "rclcpp" "ompl")
+set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" "ompl")
 
 ament_target_dependencies(${PROJECT_NAME}_shared ${AMENT_DEPS})
 

@@ -9,7 +9,7 @@
 #if __APPLE__
 #include <json/json.h>
 #else
-#include <jsoncpp/json/value.h>
+#include <json/value.h>
 #endif
 
 #include "../SingleGoalPlannerMethods.h"

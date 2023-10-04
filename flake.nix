@@ -18,15 +18,19 @@
           moveit-core
           moveit-planners-ompl
           pythonPackages.matplotlib
-                pythonPackages.notebook
-                pythonPackages.numpy
-                pythonPackages.pandas
-                cmake
-                jsoncpp
-                range-v3
-                cgal
-                gmp
-                mpfr
+            pythonPackages.notebook
+            pythonPackages.numpy
+            pythonPackages.pandas
+            cmake
+            jsoncpp
+            range-v3
+            cgal_5
+            gmp
+            mpfr
+            or-tools
+            re2
+            CoinMP
+            glpk
         ];
       };
     };

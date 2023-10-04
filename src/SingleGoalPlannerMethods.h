@@ -10,7 +10,7 @@ static const double MAKESHIFT_EXPONENTIAL_SAMPLER_DEVIATION = 0.5;
 #if __APPLE__
 #include <json/json.h>
 #else
-#include <jsoncpp/json/value.h>
+#include <json/value.h>
 #endif
 #include <optional>
 #include <utility>
