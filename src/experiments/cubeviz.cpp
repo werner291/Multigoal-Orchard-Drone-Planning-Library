@@ -93,20 +93,25 @@ Grid3D<bool> compute_visible(const Grid3D<bool>& occluding, const std::array<siz
 		// Find the neighboring (shared face!) cell that's closest to the view center.
 
 		// Direction to the eye center.
-		Eigen::Vector3i direction = cell_pt - Eigen::Vector3i((int)view_center[0], (int)view_center[1], (int)view_center[2]);
+		Eigen::Vector3i direction =  Eigen::Vector3i((int)view_center[0], (int)view_center[1], (int)view_center[2]) - cell_pt;
 		Eigen::Vector3i step = direction_to_faced_neighbor(direction);
 
-		std::cout << "Cell: " << cell_pt.transpose() << std::endl;
-		std::cout << "Direction: " << direction.transpose() << std::endl;
-		std::cout << "Step: " << step.transpose() << std::endl;
+//		std::cout << "Eye center: " << view_center[0] << ", " << view_center[1] << ", " << view_center[2] << std::endl;
+//		std::cout << "Cell: " << cell_pt.transpose() << std::endl;
+//		std::cout << "Direction: " << direction.transpose() << std::endl;
+//		std::cout << "Step: " << step.transpose() << std::endl;
 
 		// Assert in-bounds.
-		assert(cell_pt.x()+step.x() >= 0 && cell_pt.x()+step.x() < sizes[0]);
-		assert(cell_pt.y()+step.y() >= 0 && cell_pt.y()+step.y() < sizes[1]);
-		assert(cell_pt.z()+step.z() >= 0 && cell_pt.z()+step.z() < sizes[2]);
+		assert(cell_pt.x()+step.x() >= 0); assert(cell_pt.x()+step.x() < sizes[0]);
+		assert(cell_pt.y()+step.y() >= 0); assert(cell_pt.y()+step.y() < sizes[1]);
+		assert(cell_pt.z()+step.z() >= 0); assert(cell_pt.z()+step.z() < sizes[2]);
 
 		// Find the neighboring cell.
-//		bool neighbour_visible = visible[{x+step.x(), y+step.y(), z+step.z()}];
+		bool neighbour_visible = visible[{
+				(size_t) (cell_pt.x()+step.x()),
+				(size_t) (cell_pt.y()+step.y()),
+				(size_t) (cell_pt.z()+step.z())
+		}];
 
 		bool self_is_occluded = occluding[{(size_t)cell_pt.x(), (size_t)cell_pt.y(), (size_t)cell_pt.z()}];
 
@@ -115,7 +120,7 @@ Grid3D<bool> compute_visible(const Grid3D<bool>& occluding, const std::array<siz
 //			visible[{x,y,z}] = true;
 //		}
 
-		visible[{(size_t)cell_pt.x(), (size_t)cell_pt.y(), (size_t)cell_pt.z()}] = !self_is_occluded;
+		visible[{(size_t)cell_pt.x(), (size_t)cell_pt.y(), (size_t)cell_pt.z()}] = !self_is_occluded && neighbour_visible;
 	}
 
 	return visible;
@@ -128,7 +133,7 @@ int main(int argc, char **argv) {
 
 	// Let's create a nxnxn grid of boolean values...
 
-	const size_t SUBDIVISIONS = 20;
+	const size_t SUBDIVISIONS = 100;
 
 	mgodpl::math::AABBGrid grid_coords(
 			Eigen::AlignedBox3d(Eigen::Vector3d(-5.0, -5.0, 0.0), Eigen::Vector3d(5.0, 5.0, 10.0)),
