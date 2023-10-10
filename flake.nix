@@ -15,9 +15,9 @@
       devShells.x86_64-linux.default = pkgs.mkShell {
         name = "My ROS Project Build Environment";
         buildInputs = with pkgs; with pkgs.rosPackages.rolling; [
-          moveit-core
-          moveit-planners-ompl
-          pythonPackages.matplotlib
+            moveit-core
+            moveit-planners-ompl
+            pythonPackages.matplotlib
             pythonPackages.notebook
             pythonPackages.numpy
             pythonPackages.pandas
@@ -31,6 +31,8 @@
             re2
             CoinMP
             glpk
+            vtk
+	    eigen
         ];
       };
     };

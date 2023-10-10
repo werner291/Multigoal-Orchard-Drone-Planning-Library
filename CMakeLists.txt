@@ -6,7 +6,7 @@ project(MgODPL) # Multigoal Orchard Drone Planning Library
 #endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(VTK_QT_VERSION "6" CACHE STRING "Qt Version")
+#set(VTK_QT_VERSION "6" CACHE STRING "Qt Version")
 
 # Add an option to enable/disable VTK
 option(ENABLE_VISUALIZATION "Enable VISUALizATION support" OFF)
@@ -35,6 +35,10 @@ find_package(moveit_ros_planning REQUIRED)
 find_package(moveit_planners_ompl REQUIRED)
 find_package(shape_msgs REQUIRED)
 find_package(jsoncpp REQUIRED)
+
+if (ENABLE_VISUALIZATION)
+    find_package(VTK REQUIRED)
+endif ()
 
 # Ament seems to complain about moveit_planners_ompl exporting a non-existent include directory, see https://github.com/lopsided98/nix-ros-overlay/issues/312
 # Is there a way to get this to be at least semi-nonbroken?
@@ -67,9 +71,9 @@ link_libraries(
         qhullcpp
         HACD # Note: the HACD library is included Bullet's "extra" libraries
         jsoncpp_lib
-        tbb
+#        tbb
         ${CGAL_LIBRARIES}
-        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
+#        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
 )
 
 ###########
@@ -327,8 +331,8 @@ if (ENABLE_VISUALIZATION)
 
     find_package(VTK REQUIRED)
 
-    find_package(Qt5 COMPONENTS Core Widgets Concurrent REQUIRED)
-    set(CMAKE_AUTOMOC ON)
+#    find_package(Qt5 COMPONENTS Core Widgets Concurrent REQUIRED)
+#    set(CMAKE_AUTOMOC ON)
 
     include_directories(${VTK_INCLUDE_DIRS})
 
@@ -341,8 +345,6 @@ if (ENABLE_VISUALIZATION)
             src/utilities/vtk.h
             src/visualization/SimpleVtkViewer.cpp
             src/visualization/SimpleVtkViewer.h
-            # src/visualization/SimulatedSensor.cpp
-            # src/visualization/SimulatedSensor.h
             src/visualization/StatusTextViz.cpp
             src/visualization/StatusTextViz.h
             src/visualization/VideoRecorder.cpp
@@ -363,28 +365,16 @@ if (ENABLE_VISUALIZATION)
             src/visualization/visualize_dynamic.h
             src/visualization/visualize_path.cpp
             src/visualization/visualize_path.h
-            src/visualization/AppleIDSelector.cpp
-            src/visualization/AppleIDSelector.h
             src/visualization/ShellWrapper.h
-            src/visualization/ObservableInt.cpp
-            src/visualization/ObservableInt.h
-            src/visualization/chain_qt_futures.cpp
-            src/visualization/chain_qt_futures.h
-            src/visualization/TreeMeshesLoader.cpp
-            src/visualization/TreeMeshesLoader.h
-            src/visualization/ActorsVisibilityWidget.cpp
-            src/visualization/ActorsVisibilityWidget.h
-            src/visualization/numeric_combobox.cpp
-            src/visualization/numeric_combobox.h
-            src/visualization/path_visualization.cpp
-            src/visualization/path_visualization.h
+#            src/visualization/path_visualization.cpp
+#            src/visualization/path_visualization.h
             src/visualization/LabeledActors.cpp
             src/visualization/LabeledActors.h
             src/visualization/compute_prm.cpp
             src/visualization/compute_prm.h
             )
 
-    target_link_libraries(${PROJECT_NAME}_visualization ${PROJECT_NAME}_shared Qt5::Core Qt5::Widgets Qt5::Concurrent)
+    target_link_libraries(${PROJECT_NAME}_visualization ${PROJECT_NAME}_shared)# Qt5::Core Qt5::Widgets Qt5::Concurrent)
     ament_target_dependencies(${PROJECT_NAME}_visualization ${AMENT_DEPS})
 
 endif ()
@@ -434,7 +424,7 @@ if (ENABLE_EXPERIMENTS)
         target_link_libraries(${PROJECT_NAME}_experiment_visualize_prm ${PROJECT_NAME}_visualization)
 
         experiment("static_visualized")
-        target_link_libraries(${PROJECT_NAME}_experiment_static_visualized ${PROJECT_NAME}_visualization Qt5::Core Qt5::Widgets Qt5::Concurrent)
+        target_link_libraries(${PROJECT_NAME}_experiment_static_visualized ${PROJECT_NAME}_visualization)
 
         experiment("vizualized_trees_row")
         target_link_libraries(${PROJECT_NAME}_experiment_vizualized_trees_row ${PROJECT_NAME}_visualization)
@@ -447,6 +437,9 @@ if (ENABLE_EXPERIMENTS)
 
         experiment("midpoint_pull_optimization")
         target_link_libraries(${PROJECT_NAME}_experiment_midpoint_pull_optimization ${PROJECT_NAME}_visualization)
+
+        experiment("cubeviz")
+        target_link_libraries(${PROJECT_NAME}_experiment_cubeviz ${PROJECT_NAME}_visualization)
     endif ()
 
     experiment("CGAL_mesh_paths_comparison")

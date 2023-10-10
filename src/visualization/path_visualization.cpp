@@ -1,8 +1,6 @@
 
 #include "path_visualization.h"
 
-#include "../shell_space/WorkspaceShell.h"
-
 #include "../shell_space/path_util.h"
 
 template <typename ShellPoint>
