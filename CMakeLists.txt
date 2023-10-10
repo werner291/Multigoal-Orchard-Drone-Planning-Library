@@ -323,7 +323,14 @@ add_library(${PROJECT_NAME}_shared
         src/MyCollisionEnv.cpp
         src/MyCollisionEnv.h
         src/utilities/moveit_motion_velocity.cpp
-        src/utilities/moveit_motion_velocity.h)
+        src/utilities/moveit_motion_velocity.h
+        src/utilities/math/AABBGrid.h
+        src/utilities/GridVec.cpp
+        src/utilities/GridVec.h)
+
+add_library(math_utils
+        src/utilities/math/AABBGrid.h
+        src/utilities/math/AABBGrid.cpp)
 
 if (ENABLE_VISUALIZATION)
 
@@ -387,12 +394,12 @@ ament_target_dependencies(${PROJECT_NAME}_shared ${AMENT_DEPS})
 
 if (ENABLE_EXPERIMENTS)
 
-    add_library(experiments_shared src/experiments/utilities/default_occlusion_models.cpp)
-    target_link_libraries(experiments_shared ${PROJECT_NAME}_shared)
+#    add_library(experiments_shared src/experiments/utilities/default_occlusion_models.cpp)
+#    target_link_libraries(experiments_shared ${PROJECT_NAME}_shared)
 
     function(experiment name)
         add_executable(${PROJECT_NAME}_experiment_${name} src/experiments/${name}.cpp)
-        target_link_libraries(${PROJECT_NAME}_experiment_${name} ${PROJECT_NAME}_shared experiments_shared)
+        target_link_libraries(${PROJECT_NAME}_experiment_${name} ${PROJECT_NAME}_shared math_utils)
     endfunction()
 
     experiment("shellpath")
