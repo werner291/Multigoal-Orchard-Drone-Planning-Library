@@ -37,8 +37,9 @@ namespace mgodpl {
 		 * @return 				A Grid3D<bool> representing the visible space from that view center.
 		 */
 		Grid3D<bool> opaque_to_visible(const math::AABBGrid &gridcoords,
-														 const Grid3D<bool> &occluding,
-														 const math::Vec3d &view_center);
+									   const Grid3D<bool> &occluding,
+									   const math::Vec3d &view_center,
+									   bool boundary_cells_are_visible);
 	}
 }
 

@@ -81,4 +81,15 @@ namespace mgodpl::math {
 
 	}
 
+	std::optional<AABBd> AABBGrid::getAABB(const AABBi &box) const {
+		auto lower = getAABB(box.min());
+		auto upper = getAABB(box.max());
+
+		if (lower.has_value() && upper.has_value()) {
+			return AABBd(lower->min(), upper->max());
+		} else {
+			return std::nullopt;
+		}
+	}
+
 }

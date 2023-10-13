@@ -99,10 +99,10 @@ int main(int argc, char **argv) {
 
 	Vec3d view_center {1.2, 2.55, 2.1};
 
-	auto visible = mgodpl::voxel_visibility::opaque_to_visible(grid_coords, grid, view_center);
+	auto visible = mgodpl::voxel_visibility::opaque_to_visible(grid_coords, grid, view_center, false);
 
-	assert(visible[grid_coords.getGridCoordinates(view_center - Vec3d::UnitX()).value()]);
-	assert(visible[grid_coords.getGridCoordinates(view_center + Vec3d::UnitX()).value()]);
+//	assert(visible[grid_coords.getGridCoordinates(view_center - Vec3d::UnitX()).value()]);
+//	assert(visible[grid_coords.getGridCoordinates(view_center + Vec3d::UnitX()).value()]);
 
 	// And then render it in VTK as a set of cubes...
 

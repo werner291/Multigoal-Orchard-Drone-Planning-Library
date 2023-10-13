@@ -15,5 +15,5 @@ mgodpl::math::Vec3d mgodpl::math::Segment3d::closest_point(const mgodpl::math::V
 }
 
 mgodpl::math::ParametricLine mgodpl::math::Segment3d::extend_to_line() const {
-	return ParametricLine(a, b - a);
+	return {a, b - a};
 }

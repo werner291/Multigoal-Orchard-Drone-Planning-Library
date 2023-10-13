@@ -14,7 +14,8 @@ option(ENABLE_VISUALIZATION "Enable VISUALizATION support" OFF)
 # Add an option to enable/disable building the experiments
 option(ENABLE_EXPERIMENTS "Enable EXPERIMENTS" OFF)
 
-option(LEIGHTWEIGHT_ONLY "Enable LEIGHTWEIGHT_ONLY" OFF)
+# Add an option to build tests or not.
+option(ENABLE_TESTS "Enable TESTS" OFF)
 
 ## System dependencies are found with CMake's conventions
 #find_package(Eigen3 REQUIRED)
@@ -166,9 +167,11 @@ endif ()
 include(GoogleTest)
 
 add_executable(${PROJECT_NAME}_tests
-        test/math/AABBGrid_test.cpp
         test/test.cpp
-        )
+        test/math/AABBGrid_test.cpp
+        test/math/AABB_test.cpp
+        test/experiment_utils/voxel_visibility_test.cpp
+)
 
-target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared math_utils gtest)
+target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils gtest)
 gtest_discover_tests(${PROJECT_NAME}_tests)

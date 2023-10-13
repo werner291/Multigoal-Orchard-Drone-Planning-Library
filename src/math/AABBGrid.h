@@ -41,6 +41,13 @@ namespace mgodpl::math {
 		[[nodiscard]] std::optional<AABBd> getAABB(const Vec3i &coord) const;
 
 		/**
+		 * Get the AABB that covers the given AABBi in the grid.
+		 * @param box 	The AABBi to get the AABB for.
+		 * @return 		The AABB that covers the given AABBi in the grid, or std::nullopt if the AABBi is out of bounds.
+		 */
+		[[nodiscard]] std::optional<AABBd> getAABB(const AABBi &box) const;
+
+		/**
 		 * Given a 3D vector/point, get the grid coordinates of the AABB that contains it.
 		 *
 		 *	@param point 	The point to get the grid coordinates of.

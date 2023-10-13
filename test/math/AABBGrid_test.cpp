@@ -10,24 +10,24 @@
 #include <random>
 #include <boost/range/irange.hpp>
 
-#include "../src/utilities/math/AABBGrid.h"
+#include "../../src/math/Vec3.h"
+#include "../../src/math/AABBGrid.h"
+
+using namespace mgodpl;
+using namespace math;
 
 TEST(AABBGridTest, aabb_test) {
 
+	std::random_device rd;
+	std::mt19937 gen(rd());
+
 	for (int rep_i : boost::irange(0,10)) {
-		// Generate a random AABB.
-		Eigen::AlignedBox3d aabb(Eigen::Vector3d::Random() * 100.0, Eigen::Vector3d::Random() * 100.0);
 
-		// Swap the min and max if necessary.
-		for (int i = 0; i < 3; ++i) {
-			if (aabb.min()[i] > aabb.max()[i]) {
-				std::swap(aabb.min()[i], aabb.max()[i]);
-			}
-		}
+		std::uniform_real_distribution<> aabb_dis(-10.0, 10.0);
+		AABBd aabb = AABBd::inverted_infinity();
+		aabb.expand({aabb_dis(gen), aabb_dis(gen), aabb_dis(gen)});
+		aabb.expand({aabb_dis(gen), aabb_dis(gen), aabb_dis(gen)});
 
-		// Pick random subdivisions between 1 and 10.
-		std::random_device rd;
-		std::mt19937 gen(rd());
 		std::uniform_int_distribution<> dis(1, 10);
 
 		size_t nx = dis(gen);
@@ -42,9 +42,7 @@ TEST(AABBGridTest, aabb_test) {
 			std::uniform_real_distribution<> dis(0.0, 1.0);
 
 			// Generate a random point in the AABB.
-			Eigen::Vector3d point{aabb.min().x() + dis(gen) * aabb.sizes().x(),
-								  aabb.min().y() + dis(gen) * aabb.sizes().y(),
-								  aabb.min().z() + dis(gen) * aabb.sizes().z()};
+			Vec3d point = aabb.min() + aabb.size() * Vec3d(dis(gen), dis(gen), dis(gen));
 
 			// Get the grid coordinates.
 			auto grid_coords = grid.getGridCoordinates(point);
