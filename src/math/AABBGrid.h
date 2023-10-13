@@ -5,8 +5,9 @@
 #ifndef MGODPL_GRIDAABB_H
 #define MGODPL_GRIDAABB_H
 
-#include <Eigen/Geometry>
 #include <optional>
+
+#include "AABB.h"
 
 namespace mgodpl::math {
 
@@ -17,7 +18,7 @@ namespace mgodpl::math {
 	 */
 	class AABBGrid {
 
-		Eigen::AlignedBox3d base_aabb;
+		AABBd base_aabb;
 		size_t nx, ny, nz;
 
 	public:
@@ -28,7 +29,7 @@ namespace mgodpl::math {
 		 * @param ny 			The number of subdivisions in the y direction.
 		 * @param nz 			The number of subdivisions in the z direction.
 		 */
-		AABBGrid(const Eigen::AlignedBox3d &base_aabb, size_t nx, size_t ny, size_t nz);
+		AABBGrid(const AABBd &base_aabb, size_t nx, size_t ny, size_t nz);
 
 		/**
 		 * Get the AABB at the given grid coordinates.
@@ -37,7 +38,7 @@ namespace mgodpl::math {
 		 * @param z 	The z coordinate.
 		 * @return 		The AABB at the given grid coordinates, or std::nullopt if the coordinates are out of bounds.
 		 */
-		[[nodiscard]] std::optional<Eigen::AlignedBox3d> getAABB(const Eigen::Vector3i &coord) const;
+		[[nodiscard]] std::optional<AABBd> getAABB(const Vec3i &coord) const;
 
 		/**
 		 * Given a 3D vector/point, get the grid coordinates of the AABB that contains it.
@@ -45,20 +46,20 @@ namespace mgodpl::math {
 		 *	@param point 	The point to get the grid coordinates of.
 		 *	@return 		The grid coordinates of the AABB that contains the given point, or std::nullopt if the point is out of bounds.
 		 */
-		[[nodiscard]] std::optional<Eigen::Vector3i> getGridCoordinates(const Eigen::Vector3d &point) const;
+		[[nodiscard]] std::optional<Vec3i> getGridCoordinates(const Vec3d &point) const;
 
 		/**
 		 * Get the size of a single grid cell.
 		 * @return The size of a single grid cell as a 3D vector.
 		 */
-		[[nodiscard]] Eigen::Vector3d cellSize() const;
+		[[nodiscard]] Vec3d cellSize() const;
 
 		/**
 		 * Given an AlignedBox3d, return an AlignedBox3i of all grid coordinates touched by the box.
 		 *
 		 * Min/max coordinates are inclusive.
 		 */
-		[[nodiscard]] std::optional<Eigen::AlignedBox3i> touchedCoordinates(const Eigen::AlignedBox3d &box) const;
+		[[nodiscard]] std::optional<AABBi> touchedCoordinates(const AABBd &box) const;
 
 	private:
 		/**
@@ -66,7 +67,7 @@ namespace mgodpl::math {
 		 * @param coord 	The grid coordinates.
 		 * @return		The minimum point of the AABB at the given grid coordinates.
 		 */
-		[[nodiscard]] Eigen::Vector3d cellMin(const Eigen::Vector3i &coord) const;
+		[[nodiscard]] Vec3d cellMin(const Vec3i &coord) const;
 	};
 
 }

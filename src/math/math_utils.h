@@ -1,3 +1,7 @@
+// Copyright (c) 2022 University College Roosevelt
+//
+// All rights reserved.
+
 //
 // Created by werner on 3-8-22.
 //
@@ -12,6 +16,7 @@
 #include <optional>
 #include <variant>
 #include "EigenExt.h"
+#include "Vec3.h"
 
 /**
  * Given two lines, expressed in origin-vector form, find the points of on_which_mesh approach.
@@ -30,7 +35,7 @@ closest_point_on_line(const Eigen::ParametrizedLine<double, 3> &l1, const Eigen:
  * @param point 	The point.
  * @return 			The parameter t, such that line.pointAt(t) is the projection of the point onto the line.
  */
-double projectionParameter(const Eigen::ParametrizedLine<double, 3> &line, const Eigen::Vector3d &point);
+double projectionParameter(const Eigen::ParametrizedLine<double, 3> &line, const mgodpl::math::Vec3d &point);
 
 /**
  *
@@ -47,21 +52,21 @@ double projectionParameter(const Eigen::ParametrizedLine<double, 3> &line, const
  * @param vc	The third vertex of the triangle.
  * @return		The barycentric coordinates of the point (alpha, beta, gamma).
  */
-Eigen::Vector3d project_barycentric(const Eigen::Vector3d &qp,
-									const Eigen::Vector3d &va,
-									const Eigen::Vector3d &vb,
-									const Eigen::Vector3d &vc);
+mgodpl::math::Vec3d project_barycentric(const mgodpl::math::Vec3d &qp,
+									const mgodpl::math::Vec3d &va,
+									const mgodpl::math::Vec3d &vb,
+									const mgodpl::math::Vec3d &vc);
 
 
-Eigen::Vector3d closest_point_on_triangle(const Eigen::Vector3d &p,
-										  const Eigen::Vector3d &va,
-										  const Eigen::Vector3d &vb,
-										  const Eigen::Vector3d &vc);
+mgodpl::math::Vec3d closest_point_on_triangle(const mgodpl::math::Vec3d &p,
+										  const mgodpl::math::Vec3d &va,
+										  const mgodpl::math::Vec3d &vb,
+										  const mgodpl::math::Vec3d &vc);
 
 struct OpenTriangle {
-	Eigen::Vector3d apex;
-	Eigen::Vector3d dir1;
-	Eigen::Vector3d dir2;
+	mgodpl::math::Vec3d apex;
+	mgodpl::math::Vec3d dir1;
+	mgodpl::math::Vec3d dir2;
 
 	[[nodiscard]] EigenExt::UVector3d normal() const {
 		return EigenExt::UVector3d(dir1.cross(dir2).normalized());
@@ -75,7 +80,7 @@ struct OpenTriangle {
 /*
  * Compute the closest point on an "open triangle", the triangle defined by a pair of rays with a common origin.
  */
-Eigen::Vector3d closest_point_on_open_triangle(const Eigen::Vector3d &p, const OpenTriangle &triangle);
+mgodpl::math::Vec3d closest_point_on_open_triangle(const mgodpl::math::Vec3d &p, const OpenTriangle &triangle);
 
 /**
  * If the point p is within a given margin distance from one of the vertices of the triangle,
@@ -88,10 +93,10 @@ Eigen::Vector3d closest_point_on_open_triangle(const Eigen::Vector3d &p, const O
  * @param margin 	The margin distance.
  * @return 			A point within the triangle at least margin distance from the vertices near p.
  */
-Eigen::Vector3d cheat_away_from_vertices(const Eigen::Vector3d &p,
-										 const Eigen::Vector3d &va,
-										 const Eigen::Vector3d &vb,
-										 const Eigen::Vector3d &vc,
+mgodpl::math::Vec3d cheat_away_from_vertices(const mgodpl::math::Vec3d &p,
+										 const mgodpl::math::Vec3d &va,
+										 const mgodpl::math::Vec3d &vb,
+										 const mgodpl::math::Vec3d &vc,
 										 const double margin = 1.0e-6);
 
 using Plane3d = Eigen::Hyperplane<double, 3>;
@@ -104,7 +109,7 @@ using Plane3d = Eigen::Hyperplane<double, 3>;
  * @param p3 	The third point.
  * @return 		The plane passing through the three points.
  */
-Plane3d plane_from_points(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, const Eigen::Vector3d &p3);
+Plane3d plane_from_points(const mgodpl::math::Vec3d &p1, const mgodpl::math::Vec3d &p2, const mgodpl::math::Vec3d &p3);
 
 enum TriangleEdgeId {
 	EDGE_AB = 0, EDGE_BC = 1, EDGE_CA = 2
@@ -126,8 +131,8 @@ std::array<TriangleEdgeId, 2> edges_adjacent_to_vertex(TriangleVertexId vertex);
  * @param p3 		The third vertex of the triangle.
  * @return 			A point uniformly at random on the surface of the triangle.
  */
-Eigen::Vector3d
-uniform_point_on_triangle(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, const Eigen::Vector3d &p3);
+mgodpl::math::Vec3d
+uniform_point_on_triangle(const mgodpl::math::Vec3d &p1, const mgodpl::math::Vec3d &p2, const mgodpl::math::Vec3d &p3);
 
 /**
  * Returns whether there exists an find_intersection between the given sphere and AABB.
@@ -137,7 +142,7 @@ uniform_point_on_triangle(const Eigen::Vector3d &p1, const Eigen::Vector3d &p2, 
  * @param aabb 					The AABB.
  * @return 						True if there exists an find_intersection, false otherwise.
  */
-bool hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sphere_center,
+bool hollow_sphere_intersects_hollow_aabb(const mgodpl::math::Vec3d &sphere_center,
 										  double sphere_radius,
 										  const Eigen::AlignedBox3d &aabb);
 
@@ -190,7 +195,7 @@ namespace math_utils {
 	 * @param point The point to search for.
 	 * @return The OctantIterator of the octant containing the point.
 	 */
-	OctantIterator find_octant_containing_point(const Eigen::AlignedBox3d &box, const Eigen::Vector3d &point);
+	OctantIterator find_octant_containing_point(const Eigen::AlignedBox3d &box, const mgodpl::math::Vec3d &point);
 
 	/**
 	 * Returns the parameter value of the given parametrized line at the plane defined by the given
@@ -203,25 +208,7 @@ namespace math_utils {
 	 */
 	double param_at_plane(const EigenExt::ParametrizedLine3d &p, int d, double value);
 
-	struct Segment3d {
-		Eigen::Vector3d start;
-		Eigen::Vector3d end;
-
-		Segment3d(const Eigen::Vector3d &start, const Eigen::Vector3d &end);
-
-		/**
-		 * Compute the point on the segment closest to the given point.
-		 *
-		 * @param p 	The point to compute the closest point to.
-		 * @return 		The point on the segment closest to p.
-		 */
-		[[nodiscard]] Eigen::Vector3d closest_point(const Eigen::Vector3d &p) const;
-
-		[[nodiscard]] Eigen::Vector3d displacement() const;
-
-		[[nodiscard]] Eigen::ParametrizedLine<double, 3> extended_line() const;
-
-	};
+	
 
 	/**
 	 * @brief Check whether the given AABB fully contains the given line segment.
@@ -235,19 +222,9 @@ namespace math_utils {
     @param box The bounding box to check within.
     @return true if the point is closer to the center of the box than the edge length, false otherwise.
     */
-	bool point_closer_to_center_than_edge(const Eigen::Vector3d &point, const Eigen::AlignedBox3d &box);
+	bool point_closer_to_center_than_edge(const mgodpl::math::Vec3d &point, const Eigen::AlignedBox3d &box);
 
-	/**
- 	 * @brief Computes the find_intersection parameters of the given line segment with the given AABB.
-     * If the line segment intersects the AABB, returns the parameters at which the line intersects
-     * the minimum and maximum corner of the AABB. If the line segment does not intersect the AABB,
-     * returns an empty optional.
-     * @param box The AABB to intersect with the line segment.
-     * @param segment The line segment to intersect with the AABB.
-     * @return The find_intersection parameters of the line segment with the AABB, or an empty optional if no find_intersection.
-     */
-	std::optional<std::array<double, 2>>
-	line_aabb_intersection_params(const Eigen::AlignedBox3d &box, const EigenExt::ParametrizedLine3d &segment);
+
 
 	/**
 	 * This function checks whether a hollow sphere intersects with a hollow axis-aligned bounding box (AABB).
@@ -258,7 +235,7 @@ namespace math_utils {
 	 *
 	 * @return True if the sphere intersects with the AABB, false otherwise.
 	 */
-	bool hollow_sphere_intersects_hollow_aabb(const Eigen::Vector3d &sphere_center,
+	bool hollow_sphere_intersects_hollow_aabb(const mgodpl::math::Vec3d &sphere_center,
 											  const double sphere_radius,
 											  const Eigen::AlignedBox3d &aabb);
 
@@ -271,13 +248,13 @@ namespace math_utils {
 	 *
 	 * @return The point in the list that is closest to p.
 	 */
-	Eigen::Vector3d closest_point_in_list(std::initializer_list<Eigen::Vector3d> points, const Eigen::Vector3d &p);
+	mgodpl::math::Vec3d closest_point_in_list(std::initializer_list<mgodpl::math::Vec3d> points, const mgodpl::math::Vec3d &p);
 
 	struct Ray3d {
-		Eigen::Vector3d origin;
-		Eigen::Vector3d direction;
+		mgodpl::math::Vec3d origin;
+		mgodpl::math::Vec3d direction;
 
-		Ray3d(const Eigen::Vector3d &origin, const Eigen::Vector3d &direction);
+		Ray3d(const mgodpl::math::Vec3d &origin, const mgodpl::math::Vec3d &direction);
 
 		/**
 		 * Compute the point on the ray closest to the given point.
@@ -285,7 +262,7 @@ namespace math_utils {
 		 * @param p 	The point to compute the closest point to.
 		 * @return 		The point on the ray closest to p.
 		 */
-		[[nodiscard]] Eigen::Vector3d closest_point(const Eigen::Vector3d &p) const;
+		[[nodiscard]] mgodpl::math::Vec3d closest_point(const mgodpl::math::Vec3d &p) const;
 
 		/**
 		 * Extend to a ParametrizedLine3d.
@@ -295,17 +272,6 @@ namespace math_utils {
 		[[nodiscard]] EigenExt::ParametrizedLine3d extended_line() const;
 	};
 
-	/**
-	  *	@brief Determines whether the given line segment intersects the given AABB.
-	  *
-	  *	Precise definition: function returns True if, for a segment S and an AABB B,
-	  *	there exists a point P on the segment on the boundary or inside the AABB.
-	  *
-	  *	@param box The AABB to test for find_intersection with the line segment.
-	  *	@param segment The line segment to test for find_intersection with the AABB.
-	  *	@return True if the line segment intersects the AABB, false otherwise.
-	  */
-	bool segment_intersects_aabb_volume(const Eigen::AlignedBox3d &box, const Segment3d &segment);
 
 	/**
 	 * @brief Return the find_intersection of the given line with the given plane.
@@ -324,7 +290,7 @@ namespace math_utils {
 	 * @param margin The extra tolerance when checking whether t-values are within [0, 1].
 	 * @return Variant of either nothing, the find_intersection point, or the line segment if the line segment is coplanar with the plane.
 	 */
-	std::variant<std::monostate, Eigen::Vector3d, Segment3d>
+	std::variant<std::monostate, mgodpl::math::Vec3d, Segment3d>
 	find_intersection(const Segment3d &segment, const Eigen::Hyperplane<double, 3> &plane, double margin = 0.0);
 
 	/**
@@ -346,7 +312,7 @@ namespace math_utils {
 		 * @brief Check whether a point lies inside of the view pyramid.
 		 * @param point The point to check.
 		 */
-		[[nodiscard]] bool contains(const Eigen::Vector3d &point) const;
+		[[nodiscard]] bool contains(const mgodpl::math::Vec3d &point) const;
 
 		/**
 		 * @brief Finds the closest point on any of the faces of the view pyramid to the given point.
@@ -354,7 +320,7 @@ namespace math_utils {
 		 * @param point 		The point to find the closest point to.
 		 * @return 				The closest point on any of the faces of the view pyramid to the given point.
 		 */
-		[[nodiscard]] Eigen::Vector3d closest_point_on_any_plane(const Eigen::Vector3d &point) const;
+		[[nodiscard]] mgodpl::math::Vec3d closest_point_on_any_plane(const mgodpl::math::Vec3d &point) const;
 	};
 
 	/**
@@ -374,16 +340,16 @@ namespace math_utils {
 	bool intersects(const Eigen::AlignedBox3d &box, const EigenExt::Plane3d &plane);
 
 	struct Triangle3d {
-		Eigen::Vector3d a;
-		Eigen::Vector3d b;
-		Eigen::Vector3d c;
+		mgodpl::math::Vec3d a;
+		mgodpl::math::Vec3d b;
+		mgodpl::math::Vec3d c;
 	};
 
 	struct Quad3d {
-		Eigen::Vector3d a;
-		Eigen::Vector3d b;
-		Eigen::Vector3d c;
-		Eigen::Vector3d d;
+		mgodpl::math::Vec3d a;
+		mgodpl::math::Vec3d b;
+		mgodpl::math::Vec3d c;
+		mgodpl::math::Vec3d d;
 	};
 
 	std::array<Segment3d, 12> aabb_edges(const Eigen::AlignedBox3d &box);
@@ -405,7 +371,7 @@ namespace math_utils {
 	 * @param p 			The point to search for.
 	 * @return 				The index of the point closest to p.
 	 */
-	Eigen::Vector3d closest_point_in_list(std::initializer_list<Eigen::Vector3d> points, const Eigen::Vector3d &p);
+	mgodpl::math::Vec3d closest_point_in_list(std::initializer_list<mgodpl::math::Vec3d> points, const mgodpl::math::Vec3d &p);
 
 	/**
 	 * An AABB with (inf, inf, inf) as the minimum and (-inf, -inf, -inf) as the maximum,
@@ -415,9 +381,9 @@ namespace math_utils {
 	 * By convention, this is the standard "empty" box within this project.
 	 */
 	const Eigen::AlignedBox3d INVERTED_INFINITE_BOX = {
-			Eigen::Vector3d{std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(),
+			mgodpl::math::Vec3d{std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(),
 							std::numeric_limits<double>::infinity()},
-			Eigen::Vector3d{-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(),
+			mgodpl::math::Vec3d{-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(),
 							-std::numeric_limits<double>::infinity()}};
 
 	/**
@@ -427,7 +393,7 @@ namespace math_utils {
 	 * @param radius 		The radius of the sphere.
 	 * @return 				A point on the sphere.
 	 */
-	Eigen::Vector3d sample_point_on_sphere(Eigen::Vector3d center, double radius);
+	mgodpl::math::Vec3d sample_point_on_sphere(mgodpl::math::Vec3d center, double radius);
 }
 
 namespace mgodpl {
@@ -484,20 +450,20 @@ namespace mgodpl {
 #include <json/json.h>
 
 /**
- * Convert an Eigen::Vector3d to a JSON array
+ * Convert an mgodpl::math::Vec3d to a JSON array
  *
- * @param v  Eigen::Vector3d
+ * @param v  mgodpl::math::Vec3d
  * @return JSON array
  */
-Json::Value toJSON(const Eigen::Vector3d &v);
+Json::Value toJSON(const mgodpl::math::Vec3d &v);
 
 /**
- * Convert a JSON array to an Eigen::Vector3d
+ * Convert a JSON array to an mgodpl::math::Vec3d
  *
  * @param json  JSON array
- * @return Eigen::Vector3d
+ * @return mgodpl::math::Vec3d
  */
-Eigen::Vector3d fromJsonVector3d(const Json::Value &json);
+mgodpl::math::Vec3d fromJsonVector3d(const Json::Value &json);
 
 /**
  * Convert an Eigen::Quaterniond to a JSON array

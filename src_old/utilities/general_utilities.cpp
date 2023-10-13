@@ -151,54 +151,7 @@ sampleInformedQuaternion(const Eigen::Quaterniond &qa, const Eigen::Quaterniond 
 	return Eigen::Quaterniond(result_vec.w(), result_vec.x(), result_vec.y(), result_vec.z());
 }
 
-std::vector<std::vector<size_t>> connected_vertex_components(const shape_msgs::msg::Mesh &mesh) {
 
-	// Create a numeric index of the list of vertices.
-	/// Initially, just the range [0,num_vertices), but will be updated to point to the connected component ID.
-	auto connected_component_ids = index_vector(mesh.vertices);
-
-	// Map of connected components, with identifiers mapping to vector of vertex indices.
-	std::unordered_map<size_t, std::vector<size_t>> connected_components;
-
-	// Starts out as singletons of each vertex.
-	for (const auto &vertex_id: connected_component_ids) {
-		connected_components.insert({vertex_id, {vertex_id}});
-	}
-
-	// Iterate over all mesh triangles.
-	for (const auto &triangle: mesh.triangles) {
-		// And over every vertex-to-vertex connection in the triangle.
-		// We only need to consider two, since connections are transitive.
-		for (size_t i: {0, 1}) {
-
-			// Look up the connected component IDs for each.
-			size_t ccidA = connected_component_ids[triangle.vertex_indices[i]];
-			size_t ccidB = connected_component_ids[triangle.vertex_indices[i + 1]];
-
-			// If they're in different components, merge the components.
-			if (ccidA != ccidB) {
-
-				// Add all the vertices from the second component to the first.
-				for (const auto &in_ccb: connected_components[ccidB]) {
-					connected_components[ccidA].push_back(in_ccb);
-					// Update the backpointer to the component ID.
-					connected_component_ids[in_ccb] = ccidA;
-				}
-
-				// Remove the second component.
-				connected_components.erase(ccidB);
-			}
-
-		}
-	}
-
-	// Return a vector of connected components.
-	std::vector<std::vector<size_t>> result;
-	for (auto [_id, contents]: connected_components) {
-		result.push_back(std::move(contents));
-	}
-	return result;
-}
 
 std::vector<shape_msgs::msg::Mesh> convex_decomposition(const shape_msgs::msg::Mesh &mesh, const double concavity) {
 

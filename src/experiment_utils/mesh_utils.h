@@ -8,8 +8,7 @@
 
 #include <Eigen/Core>
 #include <shape_msgs/msg/mesh.hpp>
-#include "general_utilities.h"
-#include "msgs_utilities.h"
+#include "../math/AABB.h"
 
 /**
  * Find the on_which_mesh point on the surface of the given mesh to the given point.
@@ -22,14 +21,7 @@
  */
 Eigen::Vector3d closestPointOnMesh(const shape_msgs::msg::Mesh &mesh, const Eigen::Vector3d &query_point);
 
-/**
- * Given a mesh, return a vector of meshes where each mesh is a connected component of the original mesh,
- * where two vertices are connected if they are connected by at least one triangle.
- *
- * @param combined_mesh 		The mesh to split into connected components.
- * @return 						A vector of meshes, where each mesh is a connected component of the original mesh.
- */
-std::vector<shape_msgs::msg::Mesh> break_down_to_connected_components(const shape_msgs::msg::Mesh &combined_mesh);
+
 
 /**
  * Given a vector of meshes, return a single mesh combining all the meshes in the vector.
@@ -49,7 +41,7 @@ shape_msgs::msg::Mesh combine_meshes(const std::vector<shape_msgs::msg::Mesh> &m
  *
  * @return 			The AABB of the vertices of the given mesh.
  */
-Eigen::AlignedBox3d mesh_aabb(const shape_msgs::msg::Mesh &mesh);
+mgodpl::math::AABBd mesh_aabb(const shape_msgs::msg::Mesh &mesh);
 
 /**
  * @brief Creates a flat ground plane mesh centered at the origin with the specified width and height.

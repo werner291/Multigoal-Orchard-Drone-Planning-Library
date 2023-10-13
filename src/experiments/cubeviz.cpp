@@ -13,16 +13,19 @@
 #include <vtkProperty.h>
 
 #include "../visualization/SimpleVtkViewer.h"
-#include "../utilities/math/AABBGrid.h"
-#include "../utilities/math/vecmath_utils.h"
-#include "../utilities/math/grid_utils.h"
-#include "../utilities/GridVec.h"
-#include "../utilities/msgs_utilities.h"
-#include "../voxel_visibility.h"
-#include <boost/range/irange.hpp>
+#include "../math/AABBGrid.h"
+#include "../math/grid_utils.h"
+#include "../experiment_utils/GridVec.h"
+#include "../experiment_utils/TreeMeshes.h"
+#include "../experiment_utils/voxel_visibility.h"
+
 #include <vtkSphereSource.h>
+#include <boost/range/irange.hpp>
 
 using namespace std;
+using namespace mgodpl;
+using namespace math;
+using namespace tree_meshes;
 
 vtkNew<vtkPoints>
 grid_to_points(const size_t SUBDIVISIONS,
@@ -56,6 +59,10 @@ grid_to_points(const size_t SUBDIVISIONS,
 	return points;
 }
 
+Vec3d toVec3d(const geometry_msgs::msg::Point& p) {
+	return Vec3d(p.x, p.y, p.z);
+}
+
 int main(int argc, char **argv) {
 
 	auto treeMeshes = loadTreeMeshes("appletree");
@@ -63,8 +70,8 @@ int main(int argc, char **argv) {
 	// Let's create a nxnxn grid of boolean values...
 	const size_t SUBDIVISIONS = 30;
 
-	mgodpl::math::AABBGrid grid_coords(
-			Eigen::AlignedBox3d(Eigen::Vector3d(-3.0, -3.0, 0.0), Eigen::Vector3d(3.0, 3.0, 6.0)),
+	AABBGrid grid_coords(
+			AABBd(Vec3d(-3.0, -3.0, 0.0), Vec3d(3.0, 3.0, 6.0)),
 			SUBDIVISIONS,SUBDIVISIONS,SUBDIVISIONS);
 
 	Grid3D<bool> grid(SUBDIVISIONS,SUBDIVISIONS,SUBDIVISIONS, false);
@@ -72,32 +79,30 @@ int main(int argc, char **argv) {
 	// For every leaf in the tree, set the corresponding grid cell to true.
 	for (const auto &triangle: treeMeshes.leaves_mesh.triangles) {
 
-		Eigen::Vector3d a = toEigen(treeMeshes.leaves_mesh.vertices[triangle.vertex_indices[0]]);
-		Eigen::Vector3d b = toEigen(treeMeshes.leaves_mesh.vertices[triangle.vertex_indices[1]]);
-		Eigen::Vector3d c = toEigen(treeMeshes.leaves_mesh.vertices[triangle.vertex_indices[2]]);
+		Vec3d a = toVec3d(treeMeshes.leaves_mesh.vertices[triangle.vertex_indices[0]]);
+		Vec3d b = toVec3d(treeMeshes.leaves_mesh.vertices[triangle.vertex_indices[1]]);
+		Vec3d c = toVec3d(treeMeshes.leaves_mesh.vertices[triangle.vertex_indices[2]]);
 
-		Eigen::AlignedBox3d triangle_aabb(a, a);
-		triangle_aabb.extend(b);
-		triangle_aabb.extend(c);
+		AABBd triangle_aabb = AABBd::from_points<3>({a, b, c});
 
 		auto grid_aabb = *grid_coords.touchedCoordinates(triangle_aabb);
 
 		for (int x : boost::irange(grid_aabb.min().x(), grid_aabb.max().x() + 1)) {
 			for (int y : boost::irange(grid_aabb.min().y(), grid_aabb.max().y() + 1)) {
 				for (int z : boost::irange(grid_aabb.min().z(), grid_aabb.max().z() + 1)) {
-					grid[{(size_t)x, (size_t)y, (size_t)z}] = true;
+					grid[{x, y, z}] = true;
 				}
 			}
 		}
 
 	}
 
-	Eigen::Vector3d view_center {1.2, 2.55, 2.1};
+	Vec3d view_center {1.2, 2.55, 2.1};
 
 	auto visible = mgodpl::voxel_visibility::opaque_to_visible(grid_coords, grid, view_center);
 
-	assert(visible[grid_coords.getGridCoordinates(view_center - Eigen::Vector3d::UnitX()).value()]);
-	assert(visible[grid_coords.getGridCoordinates(view_center + Eigen::Vector3d::UnitX()).value()]);
+	assert(visible[grid_coords.getGridCoordinates(view_center - Vec3d::UnitX()).value()]);
+	assert(visible[grid_coords.getGridCoordinates(view_center + Vec3d::UnitX()).value()]);
 
 	// And then render it in VTK as a set of cubes...
 
@@ -141,7 +146,8 @@ int main(int argc, char **argv) {
 	viewer.addActor(actor);
 	viewer.addActor(sphereActor);
 
-	addTreeMeshesToViewer(viewer, treeMeshes);
+	viewer.addMesh(treeMeshes.leaves_mesh, Vec3d(0.0, 0.5, 0.0));
+	viewer.addMesh(treeMeshes.trunk_mesh, Vec3d(0.5, 0.3, 0.1));
 
 	viewer.start();
 

@@ -87,16 +87,6 @@ vtkNew<vtkLight> mkWhiteAmbientLight() {
 	return light;
 }
 
-void setCameraFromEigen(const Eigen::Isometry3d &tf, vtkCamera *pCamera) {
-	Eigen::Vector3d eye_center = tf.translation();
-	Eigen::Vector3d eye_focus = tf * Eigen::Vector3d(0, 1.0, 0.0);
-	Eigen::Vector3d eye_up = tf.rotation() * Eigen::Vector3d(0, 0.0, 1.0);
-
-	pCamera->SetPosition(eye_center.x(), eye_center.y(), eye_center.z());
-	pCamera->SetFocalPoint(eye_focus.x(), eye_focus.y(), eye_focus.z());
-	pCamera->SetViewUp(eye_up.x(), eye_up.y(), eye_up.z());
-}
-
 void addActorCollectionToRenderer(vtkActorCollection *orchard_actors, vtkRenderer *sensorRenderer) {
 	for (int i = 0; i < orchard_actors->GetNumberOfItems(); i++) {
 		sensorRenderer->AddActor(vtkActor::SafeDownCast(orchard_actors->GetItemAsObject(i)));
@@ -152,41 +142,6 @@ vtkNew<vtkActor> createActorFromMesh(const shape_msgs::msg::Mesh &mesh) {
 	return actor;
 }
 
-
-// vtkNew<vtkPolyData> mkVtkPolyDataFromScannablePoints(const std::vector<ScanTargetPoint> &scan_targets) {
-// 	vtkNew<vtkUnsignedCharArray> colors;
-// 	colors->SetNumberOfComponents(3);
-
-// 	vtkNew<vtkPoints> fruitSurfacePointsVtk;
-// 	vtkNew<vtkCellArray> fruitSurfaceCells;
-
-// 	for (const auto &point: scan_targets) {
-// 		auto pt_id = fruitSurfacePointsVtk->InsertNextPoint(point.point.data());
-// 		fruitSurfaceCells->InsertNextCell({pt_id});
-
-// 		colors->InsertNextTuple3(0, 0, 255);
-// 	}
-
-// 	vtkNew<vtkPolyData> fruitSurfacePolyData;
-// 	fruitSurfacePolyData->SetPoints(fruitSurfacePointsVtk);
-// 	fruitSurfacePolyData->SetVerts(fruitSurfaceCells);
-// 	fruitSurfacePolyData->GetPointData()->SetScalars(colors);
-// 	return fruitSurfacePolyData;
-// }
-
-vtkNew<vtkRenderer> buildSensorRenderer() {
-
-	vtkNew<vtkRenderer> sensorRenderer;
-	sensorRenderer->SetBackground(0.0, 0.0, 0.0);
-	sensorRenderer->GetActiveCamera()->SetClippingRange(0.1, 10.0);
-
-	vtkNew<vtkLight> solidColorLight = mkWhiteAmbientLight();
-	sensorRenderer->RemoveAllLights();
-	sensorRenderer->AddLight(solidColorLight);
-
-	return sensorRenderer;
-}
-
 void setColorsByEncoding(vtkNew<vtkActor> &tree_actor, const std::array<double, 3> &rgb, bool usePureColor) {
 	tree_actor->GetProperty()->SetDiffuseColor(rgb.data());
 	tree_actor->GetProperty()->SetAmbientColor(rgb.data());
@@ -199,7 +154,7 @@ void setColorsByEncoding(vtkNew<vtkActor> &tree_actor, const std::array<double, 
 	}
 }
 
-vtkNew<vtkActorCollection> buildTreeActors(const TreeMeshes &meshes, bool usePureColor) {
+vtkNew<vtkActorCollection> buildTreeActors(const mgodpl::tree_meshes::TreeMeshes &meshes, bool usePureColor) {
 
 	vtkNew<vtkActorCollection> actors;
 
@@ -221,7 +176,7 @@ vtkNew<vtkActorCollection> buildTreeActors(const TreeMeshes &meshes, bool usePur
 	return actors;
 }
 
-vtkNew<vtkActorCollection> buildOrchardActors(const SimplifiedOrchard &orchard, bool usePureColor) {
+vtkNew<vtkActorCollection> buildOrchardActors(const mgodpl::tree_meshes::SimplifiedOrchard &orchard, bool usePureColor) {
 
 	vtkNew<vtkActorCollection> orchard_actors;
 
@@ -308,91 +263,8 @@ std::vector<vtkSmartPointer<vtkActor>> createColoredMeshActors(const std::vector
 
 }
 
-vtkFunctionalCallback *vtkFunctionalCallback::New() {
-	return new vtkFunctionalCallback;
-}
 
-void vtkFunctionalCallback::Execute(vtkObject *caller, unsigned long eventId, void *) {
-	if (eventId == event_id) {
-		callback();
-	}
-}
 
-void vtkFunctionalCallback::setEventId(unsigned long eventId) {
-	event_id = eventId;
-}
-
-VtkPolyLineVisualization::VtkPolyLineVisualization(float r, float g, float b) {
-	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
-	visitOrderVisualizationActor->SetMapper(visitOrderVisualizationMapper);
-	visitOrderVisualizationActor->GetProperty()->SetColor(r,g,b);
-	visitOrderVisualizationActor->GetProperty()->SetLineWidth(5);
-	visitOrderVisualizationActor->GetProperty()->SetPointSize(8);
-
-}
-
-vtkActor *VtkPolyLineVisualization::getActor() {
-	return visitOrderVisualizationActor;
-}
-
-void VtkPolyLineVisualization::updateLine(const std::vector<Eigen::Vector3d> &points) {
-
-	assert(!points.empty());
-
-	vtkNew<vtkPoints> pointsVtk;
-	vtkNew<vtkCellArray> cells;
-
-	vtkNew<vtkCellArray> pointsCells;
-
-	auto previousPointId = pointsVtk->InsertNextPoint(points[0].data());
-
-	pointsCells->InsertNextCell(1);
-	pointsCells->InsertCellPoint(previousPointId);
-
-	for (size_t i = 1; i < points.size(); ++i) {
-		cells->InsertNextCell(2);
-		cells->InsertCellPoint(previousPointId);
-		cells->InsertCellPoint(previousPointId = pointsVtk->InsertNextPoint(points[i].data()));
-
-		pointsCells->InsertNextCell(1);
-		pointsCells->InsertCellPoint(previousPointId);
-	}
-
-	visitOrderVisualizationData->SetPoints(pointsVtk);
-	visitOrderVisualizationData->SetLines(cells);
-	visitOrderVisualizationData->SetVerts(pointsCells);
-
-	visitOrderVisualizationData->Modified();
-}
-
-VtkLineSegmentsVisualization::VtkLineSegmentsVisualization(float r, float g, float b) {
-	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
-	visitOrderVisualizationActor->SetMapper(visitOrderVisualizationMapper);
-	visitOrderVisualizationActor->GetProperty()->SetColor(r, g, b);
-	visitOrderVisualizationActor->GetProperty()->SetLineWidth(2);
-}
-
-vtkActor *VtkLineSegmentsVisualization::getActor() {
-	return visitOrderVisualizationActor;
-}
-
-void VtkLineSegmentsVisualization::updateLine(const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> &points) {
-
-	vtkNew<vtkPoints> pointsVtk;
-	vtkNew<vtkCellArray> cells;
-
-	for (const auto& [p1, p2] : points) {
-		cells->InsertNextCell(2);
-		cells->InsertCellPoint(pointsVtk->InsertNextPoint(p1.data()));
-		cells->InsertCellPoint(pointsVtk->InsertNextPoint(p2.data()));
-	}
-
-	visitOrderVisualizationData->SetPoints(pointsVtk);
-	visitOrderVisualizationData->SetLines(cells);
-
-	visitOrderVisualizationData->Modified();
-
-}
 
 VtkPointCloudVisualization::VtkPointCloudVisualization(float r, float g, float b) {
 	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
@@ -405,7 +277,7 @@ vtkActor *VtkPointCloudVisualization::getActor() {
 	return visitOrderVisualizationActor;
 }
 
-void VtkPointCloudVisualization::updatePoints(const std::vector<Eigen::Vector3d> &points) {
+void VtkPointCloudVisualization::updatePoints(const std::vector<mgodpl::math::Vec3d> &points) {
 
 	assert(!points.empty());
 
@@ -414,7 +286,7 @@ void VtkPointCloudVisualization::updatePoints(const std::vector<Eigen::Vector3d>
 
 	for (const auto &p: points) {
 		cells->InsertNextCell(1);
-		cells->InsertCellPoint(pointsVtk->InsertNextPoint(p.data()));
+		cells->InsertCellPoint(pointsVtk->InsertNextPoint(p.components.data()));
 	}
 
 	visitOrderVisualizationData->SetPoints(pointsVtk);

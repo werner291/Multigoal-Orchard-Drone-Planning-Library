@@ -2,10 +2,18 @@
 #define NEW_PLANNERS_ROBOTPATH_H
 
 #include <vector>
-#include <moveit/robot_state/robot_state.h>
-#include <moveit/robot_trajectory/robot_trajectory.h>
 #include <ompl/geometric/PathGeometric.h>
 #include "PathInterrupt.h"
+
+// Moveit pulls in Eigen/Geometry, which is a massive dependency.
+// Instead, we forward declare the RobotState class and include the header in RobotPath.cpp.
+namespace moveit::core {
+	class RobotState;
+}
+
+namespace robot_trajectory {
+	class RobotTrajectory;
+}
 
 /**
  * A path through space defined by a vector of robot states, without an associated time component.
