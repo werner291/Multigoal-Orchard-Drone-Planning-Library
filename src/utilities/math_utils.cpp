@@ -252,11 +252,19 @@ EigenExt::ParametrizedLine3d math_utils::Ray3d::extended_line() const {
 }
 
 double math_utils::param_at_plane(const EigenExt::ParametrizedLine3d &p, int d, double value) {
+
+	// Extract the direction component of the line in the given dimension.
 	double dir_dim = p.direction()[d];
+
+	// If the direction component is zero, the line is parallel to the plane.
 	if (dir_dim == 0.0) {
 		return NAN;
 	} else {
+
+		// Otherwise, compute the delta between the value and the origin in the given dimension.
 		double delta = value - p.origin()[d];
+
+		// Return the parameter at the plane.
 		return delta / dir_dim;
 	}
 }
@@ -296,15 +304,15 @@ math_utils::line_aabb_intersection_params(const Eigen::AlignedBox3d &box, const 
 	}
 }
 
-bool math_utils::segment_intersects_aabb(const Eigen::AlignedBox3d &box, const Segment3d &segment) {
+bool math_utils::segment_intersects_aabb_volume(const Eigen::AlignedBox3d &box, const Segment3d &segment) {
 
 	auto intersections = line_aabb_intersection_params(box, segment.extended_line());
 
 	if (!intersections) {
 		return false;
 	} else {
-		return (*intersections)[0] >= 0.0 && (*intersections)[0] <= 1.0 && (*intersections)[1] >= 0.0 &&
-			   (*intersections)[1] <= 1.0;
+		return (*intersections)[0] <= 1.0 // The segment starts before exiting the box
+		  && (*intersections)[1] >= 0.0; // The segment ends after entering the box
 	}
 
 }

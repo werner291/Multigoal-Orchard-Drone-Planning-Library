@@ -27,9 +27,7 @@ Eigen::Matrix<double, 3, 1> mgodpl::math::AABBGrid::cellMin(const Eigen::Vector3
 	auto min = base_aabb.min();
 	auto cell_size = cellSize();
 
-	return {min.x() + (double) coord.x() * cell_size.x(),
-													   min.y() + (double) coord.y() * cell_size.y(),
-													   min.z() + (double) coord.z() * cell_size.z()};
+	return min + Eigen::Vector3d(coord.x(), coord.y(), coord.z()).cwiseProduct(cell_size);
 }
 
 Eigen::Vector3d mgodpl::math::AABBGrid::cellSize() const {

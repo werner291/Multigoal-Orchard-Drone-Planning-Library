@@ -43,6 +43,7 @@ endif ()
 # Ament seems to complain about moveit_planners_ompl exporting a non-existent include directory, see https://github.com/lopsided98/nix-ros-overlay/issues/312
 # Is there a way to get this to be at least semi-nonbroken?
 set(HACKY_MOVEIT_INCLUDE /nix/store/mg432iy0715cc7fylwg10bsdhsg4qy30-ros-rolling-moveit-planners-ompl-2.8.0-r2/include/moveit_planners)
+set(HACKY_MOVEIT_LINK /nix/store/mg432iy0715cc7fylwg10bsdhsg4qy30-ros-rolling-moveit-planners-ompl-2.8.0-r2/)
 
 include_directories(
         ${EIGEN3_INCLUDE_DIRS}
@@ -62,7 +63,7 @@ include_directories(
 
 
 link_libraries(
-        ${EIGEN_LIBRARIES}
+#        ${EIGEN_LIBRARIES}
         ${FCL_LIBRARIES}
         ${Boost_LIBRARIES}
         ${BULLET_LIBRARIES}
@@ -74,6 +75,7 @@ link_libraries(
 #        tbb
         ${CGAL_LIBRARIES}
 #        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
+        moveit_ompl_interface
 )
 
 ###########
@@ -324,13 +326,17 @@ add_library(${PROJECT_NAME}_shared
         src/MyCollisionEnv.h
         src/utilities/moveit_motion_velocity.cpp
         src/utilities/moveit_motion_velocity.h
-        src/utilities/math/AABBGrid.h
         src/utilities/GridVec.cpp
-        src/utilities/GridVec.h)
+        src/utilities/GridVec.h
+        src/voxel_visibility.cpp
+        src/voxel_visibility.h)
 
 add_library(math_utils
         src/utilities/math/AABBGrid.h
-        src/utilities/math/AABBGrid.cpp)
+        src/utilities/math/AABBGrid.cpp
+        src/utilities/math/vecmath_utils.h
+        src/utilities/math/grid_utils.cpp
+        src/utilities/math/grid_utils.h)
 
 if (ENABLE_VISUALIZATION)
 
@@ -465,7 +471,9 @@ add_executable(${PROJECT_NAME}_tests
         test/test.cpp
         test/MyCollisionEnvTest.cpp
         #        test/MoveItPathLengthObjectiveTest.cpp
-        #        test/math_test.cpp
+                test/math_test.cpp
+        test/AABBGrid_test.cpp
+        test/voxel_visibility_test.cpp
         #        test/CuttingPlaneConvexHullShell_test.cpp
         #        test/CGALMeshShell_test.cpp
         #        src/utilities/test/math_utils_test.cpp
@@ -487,6 +495,6 @@ add_executable(${PROJECT_NAME}_tests
         )
 
 #target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared ${PROJECT_NAME}_visualization gtest)
-target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared gtest)
+target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_shared math_utils gtest)
 ament_target_dependencies(${PROJECT_NAME}_tests ${AMENT_DEPS})
 gtest_discover_tests(${PROJECT_NAME}_tests)

@@ -2,8 +2,6 @@
 //
 // All rights reserved.
 
-#include <vector>
-
 #include <vtkActor.h>
 #include <vtkCubeSource.h>
 #include <vtkGlyph3D.h>
@@ -13,118 +11,49 @@
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
-#include <boost/range/irange.hpp>
 
 #include "../visualization/SimpleVtkViewer.h"
 #include "../utilities/math/AABBGrid.h"
+#include "../utilities/math/vecmath_utils.h"
+#include "../utilities/math/grid_utils.h"
 #include "../utilities/GridVec.h"
 #include "../utilities/msgs_utilities.h"
+#include "../voxel_visibility.h"
+#include <boost/range/irange.hpp>
+#include <vtkSphereSource.h>
 
 using namespace std;
 
-/**
- * A struct that produces a discretely space-filling spiral centered on (0,0,0),
- * returning points in order of increasing distance from the origin.
- *
- * In 1D, that'd be the sequence:
- * 	0, 1, -1, 2, -2, 3, -3, 4, -4, ...
- *
- * In 2D, that'd be the sequence:
- *  (0,0),
- *  (1,0), (0,1), (-1,0), (0,-1),
- *  (1,1), (-1,1), (-1,-1), (1,-1),
- *  (2,0), (
- */
-struct SpiralCoordinates {
+vtkNew<vtkPoints>
+grid_to_points(const size_t SUBDIVISIONS,
+			   const mgodpl::math::AABBGrid &grid_coords,
+			   const Grid3D<bool> &grid,
+			   bool negate) {
+	vtkNew<vtkPoints> points;
 
+	// Allocate a point for every true value in the grid.
+	for (int x = 0; x < SUBDIVISIONS; x++) {
+		for (int y = 0; y < SUBDIVISIONS; y++) {
+			for (int z = 0; z < SUBDIVISIONS; z++) {
 
+				bool invisible = grid[{x, y, z}];
+				
+				if (negate) {
+					invisible = !invisible;
+				}
+				
+				bool neighbour_visible = grid.voxel_has_different_neighbor({x, y, z});
 
-};
+				if (invisible && neighbour_visible) {
 
-Eigen::Vector3i
-direction_to_faced_neighbor(const Eigen::Vector3i &direction) {// Find the axis with biggest absolute value.
-	Eigen::Vector3i step;
+					auto aabb = grid_coords.getAABB({x, y, z});
 
-	if (std::abs(direction.x()) >= std::abs(direction.y()) && std::abs(direction.x()) >= std::abs(direction.z())) {
-		step = {direction.x() > 0 ? 1 : -1, 0, 0};
-	} else if (std::abs(direction.y()) >= std::abs(direction.x()) && std::abs(direction.y()) >= std::abs(direction.z())) {
-		step = {0, direction.y() > 0 ? 1 : -1, 0};
-	} else {
-		step = {0, 0, direction.z() > 0 ? 1 : -1};
-	}
-	return step;
-}
-
-Grid3D<bool> compute_visible(const Grid3D<bool>& occluding, const std::array<size_t,3>& view_center) {
-
-	auto sizes = occluding.size();
-
-	Grid3D<bool> visible(sizes[0], sizes[1], sizes[2], false);
-
-	visible[view_center] = true;
-
-	// Generate all coordinates in the grid. (Ugh, can we generate these with a sequence/spiral of some sort instead?)
-
-	std::vector<Eigen::Vector3i> coordinates;
-
-	for (int x : boost::irange(0, (int)sizes[0])) {
-		for (int y : boost::irange(0, (int)sizes[1])) {
-			for (int z : boost::irange(0, (int)sizes[2])) {
-				coordinates.push_back({x, y, z});
+					points->InsertNextPoint(aabb->center().x(), aabb->center().y(), aabb->center().z());
+				}
 			}
 		}
 	}
-
-	// Sort by distance from the view center.
-
-	std::sort(coordinates.begin(), coordinates.end(), [&view_center](const auto& a, const auto& b) {
-		return (a[0]-view_center[0])*(a[0]-view_center[0]) + (a[1]-view_center[1])*(a[1]-view_center[1]) + (a[2]-view_center[2])*(a[2]-view_center[2]) <
-				(b[0]-view_center[0])*(b[0]-view_center[0]) + (b[1]-view_center[1])*(b[1]-view_center[1]) + (b[2]-view_center[2])*(b[2]-view_center[2]);
-	});
-
-	// Iterate in order:
-
-	for (Eigen::Vector3i cell_pt : coordinates) {
-
-		if (cell_pt == Eigen::Vector3i((int)view_center[0], (int)view_center[1], (int)view_center[2])) {
-			continue;
-		}
-
-		// Find the neighboring (shared face!) cell that's closest to the view center.
-
-		// Direction to the eye center.
-		Eigen::Vector3i direction =  Eigen::Vector3i((int)view_center[0], (int)view_center[1], (int)view_center[2]) - cell_pt;
-		Eigen::Vector3i step = direction_to_faced_neighbor(direction);
-
-//		std::cout << "Eye center: " << view_center[0] << ", " << view_center[1] << ", " << view_center[2] << std::endl;
-//		std::cout << "Cell: " << cell_pt.transpose() << std::endl;
-//		std::cout << "Direction: " << direction.transpose() << std::endl;
-//		std::cout << "Step: " << step.transpose() << std::endl;
-
-		// Assert in-bounds.
-		assert(cell_pt.x()+step.x() >= 0); assert(cell_pt.x()+step.x() < sizes[0]);
-		assert(cell_pt.y()+step.y() >= 0); assert(cell_pt.y()+step.y() < sizes[1]);
-		assert(cell_pt.z()+step.z() >= 0); assert(cell_pt.z()+step.z() < sizes[2]);
-
-		// Find the neighboring cell.
-		bool neighbour_visible = visible[{
-				(size_t) (cell_pt.x()+step.x()),
-				(size_t) (cell_pt.y()+step.y()),
-				(size_t) (cell_pt.z()+step.z())
-		}];
-
-		bool self_is_occluded = occluding[{(size_t)cell_pt.x(), (size_t)cell_pt.y(), (size_t)cell_pt.z()}];
-
-//		// If the neighbor is visible, this cell is visible too.
-//		if (neighbour_visible && !self_is_occluded) {
-//			visible[{x,y,z}] = true;
-//		}
-
-		visible[{(size_t)cell_pt.x(), (size_t)cell_pt.y(), (size_t)cell_pt.z()}] = !self_is_occluded && neighbour_visible;
-	}
-
-	return visible;
-
+	return points;
 }
 
 int main(int argc, char **argv) {
@@ -132,11 +61,10 @@ int main(int argc, char **argv) {
 	auto treeMeshes = loadTreeMeshes("appletree");
 
 	// Let's create a nxnxn grid of boolean values...
-
-	const size_t SUBDIVISIONS = 100;
+	const size_t SUBDIVISIONS = 30;
 
 	mgodpl::math::AABBGrid grid_coords(
-			Eigen::AlignedBox3d(Eigen::Vector3d(-5.0, -5.0, 0.0), Eigen::Vector3d(5.0, 5.0, 10.0)),
+			Eigen::AlignedBox3d(Eigen::Vector3d(-3.0, -3.0, 0.0), Eigen::Vector3d(3.0, 3.0, 6.0)),
 			SUBDIVISIONS,SUBDIVISIONS,SUBDIVISIONS);
 
 	Grid3D<bool> grid(SUBDIVISIONS,SUBDIVISIONS,SUBDIVISIONS, false);
@@ -164,37 +92,18 @@ int main(int argc, char **argv) {
 
 	}
 
-	auto visible = compute_visible(grid, {1,4,4});
+	Eigen::Vector3d view_center {1.2, 2.55, 2.1};
+
+	auto visible = mgodpl::voxel_visibility::opaque_to_visible(grid_coords, grid, view_center);
+
+	assert(visible[grid_coords.getGridCoordinates(view_center - Eigen::Vector3d::UnitX()).value()]);
+	assert(visible[grid_coords.getGridCoordinates(view_center + Eigen::Vector3d::UnitX()).value()]);
 
 	// And then render it in VTK as a set of cubes...
 
 	vtkNew<vtkNamedColors> colors;
 
-	vtkNew<vtkPoints> points;
-
-	// Allocate a point for every true value in the grid.
-	for (int x = 0; x < SUBDIVISIONS; x++) {
-		for (int y = 0; y < SUBDIVISIONS; y++) {
-			for (int z = 0; z < SUBDIVISIONS; z++) {
-
-				bool invisible = !visible[{(size_t)x, (size_t)y, (size_t)z}];
-
-				bool neighbour_visible = (x == 0 || visible[{(size_t) (x-1), (size_t) y, (size_t) z}]) ||
-										 (x == SUBDIVISIONS-1 || visible[{(size_t) (x+1), (size_t) y, (size_t) z}]) ||
-										 (y == 0 || visible[{(size_t) x, (size_t) (y-1), (size_t) z}]) ||
-										 (y == SUBDIVISIONS-1 || visible[{(size_t) x, (size_t) (y+1), (size_t) z}]) ||
-										 (z == 0 || visible[{(size_t) x, (size_t) y, (size_t) (z-1)}]) ||
-										 (z == SUBDIVISIONS-1 || visible[{(size_t) x, (size_t) y, (size_t) (z+1)}]);
-
-				if (invisible && neighbour_visible) {
-
-					auto aabb = grid_coords.getAABB({(size_t)x, (size_t)y, (size_t)z});
-
-					points->InsertNextPoint(aabb->center().x(), aabb->center().y(), aabb->center().z());
-				}
-			}
-		}
-	}
+	vtkNew<vtkPoints> points = grid_to_points(SUBDIVISIONS, grid_coords, visible, false);
 
 	vtkNew<vtkPolyData> polydata;
 	polydata->SetPoints(points);
@@ -216,9 +125,21 @@ int main(int argc, char **argv) {
 	actor->SetMapper(mapper);
 	actor->GetProperty()->SetColor(colors->GetColor3d("Salmon").GetData());
 
+	// And add a sphere for the viewpoint.
+	vtkNew<vtkSphereSource> sphereSource;
+	sphereSource->SetCenter(view_center.x(), view_center.y(), view_center.z());
+	sphereSource->SetRadius(0.1);
+
+	vtkNew<vtkPolyDataMapper> sphereMapper;
+	sphereMapper->SetInputConnection(sphereSource->GetOutputPort());
+
+	vtkNew<vtkActor> sphereActor;
+	sphereActor->SetMapper(sphereMapper);
+	sphereActor->GetProperty()->SetColor(colors->GetColor3d("Red").GetData());
+
 	SimpleVtkViewer viewer;
 	viewer.addActor(actor);
-
+	viewer.addActor(sphereActor);
 
 	addTreeMeshesToViewer(viewer, treeMeshes);
 

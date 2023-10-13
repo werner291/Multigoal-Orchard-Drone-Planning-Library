@@ -297,11 +297,15 @@ namespace math_utils {
 
 	/**
 	  *	@brief Determines whether the given line segment intersects the given AABB.
+	  *
+	  *	Precise definition: function returns True if, for a segment S and an AABB B,
+	  *	there exists a point P on the segment on the boundary or inside the AABB.
+	  *
 	  *	@param box The AABB to test for find_intersection with the line segment.
 	  *	@param segment The line segment to test for find_intersection with the AABB.
 	  *	@return True if the line segment intersects the AABB, false otherwise.
 	  */
-	bool segment_intersects_aabb(const Eigen::AlignedBox3d &box, const Segment3d &segment);
+	bool segment_intersects_aabb_volume(const Eigen::AlignedBox3d &box, const Segment3d &segment);
 
 	/**
 	 * @brief Return the find_intersection of the given line with the given plane.
