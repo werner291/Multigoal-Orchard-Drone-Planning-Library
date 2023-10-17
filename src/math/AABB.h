@@ -126,6 +126,19 @@ namespace mgodpl::math {
 		static AABB inverted_infinity() {
 			return AABB(Vec3<Scalar>(INFINITY, INFINITY, INFINITY), Vec3<Scalar>(-INFINITY, -INFINITY, -INFINITY));
 		}
+
+		/**
+		 * @brief Inflate the AABB by a given amount.
+		 * @param d 		The amount to inflate the AABB by.
+		 * @return 			The inflated AABB.
+		 */
+		AABB inflated(Scalar d) const {
+			return AABB(_min - Vec3<Scalar>(d, d, d), _max + Vec3<Scalar>(d, d, d));
+		}
+
+		AABB translated(Vec3<Scalar> vec3) const {
+			return {_min + vec3, _max + vec3};
+		}
 	};
 
 	using AABBd = AABB<double>; // Double precision AABB

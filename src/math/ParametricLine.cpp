@@ -21,3 +21,12 @@ const mgodpl::math::Vec3d &mgodpl::math::ParametricLine::direction() const {
 const mgodpl::math::Vec3d &mgodpl::math::ParametricLine::origin() const {
 	return _origin;
 }
+
+mgodpl::math::Vec3d mgodpl::math::ParametricLine::pointAt(double &d) {
+	return _origin + _direction * d;
+}
+
+mgodpl::math::ParametricLine
+mgodpl::math::ParametricLine::through_points(const mgodpl::math::Vec3d &vec3, mgodpl::math::Vec3d vec31) {
+	return ParametricLine(vec3, vec31 - vec3);
+}

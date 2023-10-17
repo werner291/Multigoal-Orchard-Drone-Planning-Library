@@ -106,6 +106,15 @@ add_library(math_utils
         src/math/Segment3d.h
         src/math/intersections.cpp
         src/math/intersections.h
+        src/math/Triangle.h
+        src/math/OpenPyramid.h
+        src/math/Plane.cpp
+        src/math/Plane.h
+        src/math/HalfSpace.cpp
+        src/math/HalfSpace.h
+        src/math/Boolean.h
+        src/math/lp.cpp
+        src/math/lp.h
 )
 
 if (ENABLE_EXPERIMENTS)
@@ -171,6 +180,8 @@ add_executable(${PROJECT_NAME}_tests
         test/math/AABBGrid_test.cpp
         test/math/AABB_test.cpp
         test/experiment_utils/voxel_visibility_test.cpp
+        test/math/intersection_test.cpp
+        test/math/lp_test.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils gtest)

@@ -68,6 +68,8 @@ namespace mgodpl::math {
 		 */
 		[[nodiscard]] std::optional<AABBi> touchedCoordinates(const AABBd &box) const;
 
+		const AABBd &baseAABB() const;
+
 	private:
 		/**
 		 * Get the minimum point of the AABB at the given grid coordinates.

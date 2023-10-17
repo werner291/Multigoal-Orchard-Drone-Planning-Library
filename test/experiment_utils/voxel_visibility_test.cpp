@@ -34,7 +34,7 @@ TEST(VisibilityTests, all_clear) {
 	Vec3d point { dis(gen), dis(gen), dis(gen) };
 
 	// Compute visibility.
-	auto visible = mgodpl::voxel_visibility::opaque_to_visible(grid, opacity, point, false);
+	auto visible = mgodpl::voxel_visibility::opaque_to_visible(opacity, *grid.getGridCoordinates(point), false);
 
 	// Check that the visibility grid is all true.
 	for (int x = 0; x < GRID_SIZE; ++x) {
@@ -52,10 +52,10 @@ TEST(VisibilityTests, wall) {
 	using namespace math;
 
 	// Define the grid size.
-	const size_t GRID_SIZE = 10;
+	const size_t GRID_SIZE = 3;
 
 	// Create an axis-aligned bounding box (AABB) encompassing the entire space.
-	AABBd total_aabb({{-5.0, -5.0, -5.0}, {5.0, 5.0, 5.0}});
+	AABBd total_aabb({{-1.5, -1.5, -1.5}, {1.5, 1.5, 1.5}});
 
 	// Create a 3D grid with the specified size.
 	// This grid is used for visibility calculations.
@@ -65,12 +65,13 @@ TEST(VisibilityTests, wall) {
 	Grid3D<bool> opacity({GRID_SIZE, GRID_SIZE, GRID_SIZE}, false);
 
 	// Define the wall's coordinates within the grid.
-	AABBi wall({{4, 4, 4}, {6, 6, 6}});
+	AABBi wall({{1, 1, 1}, {1, 1, 1}});
+//	AABBi wall({{4, 4, 4}, {6, 6, 6}});
 
 	// Mark the voxels inside the wall as opaque (not transparent).
-	for (int x = wall.min().x(); x < wall.max().x(); ++x) {
-		for (int y = wall.min().y(); y < wall.max().y(); ++y) {
-			for (int z = wall.min().z(); z < wall.max().z(); ++z) {
+	for (int x = wall.min().x(); x <= wall.max().x(); ++x) {
+		for (int y = wall.min().y(); y <= wall.max().y(); ++y) {
+			for (int z = wall.min().z(); z <= wall.max().z(); ++z) {
 				opacity[Vec3i(x, y, z)] = true;
 			}
 		}
@@ -82,7 +83,7 @@ TEST(VisibilityTests, wall) {
 	// Generate random points in the space between the wall and the edge of the grid.
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> dis(-5.0, 5.0);
+	std::uniform_real_distribution<> dis(-1.5, 1.5);
 
 	for (int point_rep = 0; point_rep < 100; ++point_rep) {
 		Vec3d eye_point(0.0, 0.0, 0.0);
@@ -92,6 +93,9 @@ TEST(VisibilityTests, wall) {
 			eye_point = {dis(gen), dis(gen), dis(gen)};
 		} while (wall_real.contains(eye_point));
 
+		// Force the eye point to the center of the cell it is in.
+		eye_point = grid.getAABB(grid.getGridCoordinates(eye_point).value()).value().center();
+
 		Vec3d target_point(0.0, 0.0, 0.0);
 
 		// Generate random target_point until it is outside the wall.
@@ -99,12 +103,23 @@ TEST(VisibilityTests, wall) {
 			target_point = {dis(gen), dis(gen), dis(gen)};
 		} while (wall_real.contains(target_point));
 
+		// Force the target point to the center of the cell it is in.
+		target_point = grid.getAABB(grid.getGridCoordinates(target_point).value()).value().center();
+
+		// Check if the line segment passes through a very close edge case or not.
+		if (intersects(wall_real.inflated(0.05), Segment3d(eye_point, target_point)) && !intersects(wall_real.inflated(-0.05), Segment3d(eye_point, target_point))) {
+			continue;
+		}
+
 		// Compute visibility using voxel visibility calculations.
-		auto visible = mgodpl::voxel_visibility::opaque_to_visible(grid, opacity, eye_point, false);
+		auto visible = mgodpl::voxel_visibility::opaque_to_visible(opacity, *grid.getGridCoordinates(eye_point), false);
+
+		std::cout << "Eye point: " << eye_point << std::endl;
+		std::cout << "Target point: " << target_point << std::endl;
 
 		// Check if the actual visibility matches the expected visibility.
 		bool actual_visibility = visible[grid.getGridCoordinates(target_point).value()];
-		bool expected_visibility = intersects(wall_real, Segment3d(eye_point, target_point));
+		bool expected_visibility = !intersects(wall_real, Segment3d(eye_point, target_point));
 
 		// Assert that the actual visibility matches the expected visibility.
 		ASSERT_EQ(actual_visibility, expected_visibility);

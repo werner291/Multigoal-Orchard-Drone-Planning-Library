@@ -92,4 +92,8 @@ namespace mgodpl::math {
 		}
 	}
 
+	const AABBd &AABBGrid::baseAABB() const {
+		return base_aabb;
+	}
+
 }

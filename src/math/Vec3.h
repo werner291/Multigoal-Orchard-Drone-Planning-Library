@@ -11,6 +11,8 @@
 
 #include <array>
 #include <cmath>
+#include <ostream>
+#include <cassert>
 
 namespace mgodpl::math {
 
@@ -66,6 +68,18 @@ namespace mgodpl::math {
 		 */
 		Vec3 operator/(const Vec3 &other) const {
 			return {x() / other.x(), y() / other.y(), z() / other.z()};
+		}
+
+		void operator/=(const Scalar &scalar) {
+			x() /= scalar;
+			y() /= scalar;
+			z() /= scalar;
+		}
+
+		void operator*=(const Scalar &scalar) {
+			x() *= scalar;
+			y() *= scalar;
+			z() *= scalar;
 		}
 
 		/**
@@ -205,11 +219,11 @@ namespace mgodpl::math {
 			assert(squaredNorm() > 0.0);
 
 			if (std::abs(x()) >= std::abs(y()) && std::abs(x()) >= std::abs(z())) {
-				return {x() > 0 ? 1 : -1, 0, 0};
+				return Vec3(x() > 0 ? 1 : -1, 0, 0);
 			} else if (std::abs(y()) >= std::abs(x()) && std::abs(y()) >= std::abs(z())) {
-				return {0, y() > 0 ? 1 : -1, 0};
+				return Vec3(0, y() > 0 ? 1 : -1, 0);
 			} else {
-				return {0, 0, z() > 0 ? 1 : -1};
+				return Vec3(0, 0, z() > 0 ? 1 : -1);
 			}
 		}
 
@@ -220,8 +234,39 @@ namespace mgodpl::math {
 			return components.data();
 		}
 
-		const Scalar dot(Vec3 vec3) {
+		Scalar dot(Vec3 vec3) const {
 			return x() * vec3.x() + y() * vec3.y() + z() * vec3.z();
+		}
+
+		/**
+		 * Unary minus.
+		 */
+		Vec3 operator-() const {
+			return {-x(), -y(), -z()};
+		}
+
+		/**
+		 * Stream output operator.
+		 */
+		friend std::ostream &operator<<(std::ostream &os, const Vec3 &vec3) {
+			os << "(" << vec3.x() << ", " << vec3.y() << ", " << vec3.z() << ")";
+			return os;
+		}
+
+		Vec3 <Scalar> normalized() const {
+			return *this / norm();
+		}
+
+		Vec3 cross(Vec3 other) const {
+			return {
+				y() * other.z() - z() * other.y(),
+				z() * other.x() - x() * other.z(),
+				x() * other.y() - y() * other.x()
+			};
+		}
+
+		Vec3 round() const {
+			return {std::round(x()), std::round(y()), std::round(z())};
 		}
 	};
 

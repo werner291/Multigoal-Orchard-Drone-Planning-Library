@@ -41,6 +41,10 @@ namespace mgodpl::math {
 		 * @return 		The point on the line closest to p.
 		 */
 		[[nodiscard]] const Vec3d& origin() const;
+
+		Vec3d pointAt(double &d);
+
+		static ParametricLine through_points(const Vec3d &vec3, Vec3d vec31);
 	};
 }
 
