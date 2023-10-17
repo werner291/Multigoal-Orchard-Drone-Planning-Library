@@ -11,6 +11,8 @@
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
+#include <vtkCamera.h>
+#include <vtkRenderer.h>
 
 #include "../visualization/SimpleVtkViewer.h"
 #include "../math/AABBGrid.h"
@@ -75,16 +77,12 @@ int main(int argc, char **argv) {
 			AABBd(Vec3d(-3.0, -3.0, 0.0), Vec3d(3.0, 3.0, 6.0)),
 			SUBDIVISIONS,SUBDIVISIONS,SUBDIVISIONS);
 
-
 	Vec3d view_center1 {2.0, 2.55, 2.1};
-	Vec3d view_center2 {0.5, 2.55, 2.1};
+	Vec3d view_center2 {-2.0, 2.55, 2.1};
 
 	// And then render it in VTK as a set of cubes...
 
 	vtkNew<vtkNamedColors> colors;
-
-
-
 	vtkNew<vtkPolyData> polydata;
 
 	// Create anything you want here, we will use a cube for the demo.
@@ -125,12 +123,19 @@ int main(int argc, char **argv) {
 	double t = 0;
 	double step = 0.01;
 
+	Grid3D<bool> seen_space(SUBDIVISIONS,SUBDIVISIONS,SUBDIVISIONS, false);
+
+	Vec3d tree_center(0.0,0.0,2.0);
+
+	viewer.viewerRenderer->GetActiveCamera()->SetPosition(-2.0,10.0,8.0);
+	viewer.viewerRenderer->GetActiveCamera()->SetFocalPoint(0.0, 0.0, 2.0);
+	viewer.viewerRenderer->GetActiveCamera()->SetViewUp(0.0, 0.0, 1.0);
+
 	viewer.addTimerCallback([&]() {
 
 		Vec3d view_center = view_center1 * (1.0 - t) + view_center2 * t;
 
-		Grid3D<bool> grid(SUBDIVISIONS,SUBDIVISIONS,SUBDIVISIONS, false);
-		vtkNew<vtkPoints> points = grid_to_points(SUBDIVISIONS, grid_coords, grid, false);
+		Grid3D<bool> occluded_space(SUBDIVISIONS, SUBDIVISIONS, SUBDIVISIONS, false);
 
 		// For every leaf in the tree, set the corresponding grid cell to true.
 		for (const auto &triangle: treeMeshes.leaves_mesh.triangles) {
@@ -143,17 +148,34 @@ int main(int argc, char **argv) {
 					a,b,c
 			};
 
-			mgodpl::voxel_visibility::cast_occlusion(grid_coords, grid, tri, view_center);
+			mgodpl::voxel_visibility::cast_occlusion(grid_coords, occluded_space, tri, view_center);
 
 //			break;
 		}
 
-		polydata->SetPoints(grid_to_points(SUBDIVISIONS, grid_coords, grid, false));
+		// All non-occluded space will now be added to the seen space.
+		for (const auto &coord: boost::irange(0, (int) SUBDIVISIONS)) {
+			for (const auto &coord2: boost::irange(0, (int) SUBDIVISIONS)) {
+				for (const auto &coord3: boost::irange(0, (int) SUBDIVISIONS)) {
+					if (!occluded_space[{coord, coord2, coord3}]) {
+						seen_space[{coord, coord2, coord3}] = true;
+					}
+				}
+			}
+		}
+
+		polydata->SetPoints(grid_to_points(SUBDIVISIONS, grid_coords, seen_space, true));
 
 		sphereSource->SetCenter(view_center.x(), view_center.y(), view_center.z());
 		t += step;
 
+		if (t > 1.0) {
+			viewer.stop();
+		}
+
 	});
+
+	viewer.startRecording("cubeviz.ogv");
 
 	viewer.start();
 

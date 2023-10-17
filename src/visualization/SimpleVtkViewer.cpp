@@ -40,8 +40,12 @@ namespace mgodpl {
 			}
 		});
 
-		enforceCameraUp(viewerRenderer, renderWindowInteractor);
 
+
+	}
+
+	void SimpleVtkViewer::lockCameraUp() {
+		enforceCameraUp(viewerRenderer, renderWindowInteractor);
 	}
 
 	void SimpleVtkViewer::addActor(vtkActor *actor) {

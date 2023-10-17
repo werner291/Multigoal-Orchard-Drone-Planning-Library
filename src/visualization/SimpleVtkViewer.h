@@ -117,6 +117,7 @@ namespace mgodpl {
 		void addStaticLines(const std::vector<std::pair<math::Vec3d, math::Vec3d>> &lines,
 							const math::Vec3d &color);
 
+		void lockCameraUp();
 	};
 
 }
