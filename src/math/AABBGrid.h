@@ -8,6 +8,7 @@
 #include <optional>
 
 #include "AABB.h"
+#include "RangeInclusive.h"
 
 namespace mgodpl::math {
 
@@ -62,6 +63,11 @@ namespace mgodpl::math {
 		[[nodiscard]] Vec3d cellSize() const;
 
 		/**
+		 * Get the size of the grid.
+		 */
+		[[nodiscard]] Vec3i size() const;
+
+		/**
 		 * Given an AlignedBox3d, return an AlignedBox3i of all grid coordinates touched by the box.
 		 *
 		 * Min/max coordinates are inclusive.
@@ -69,6 +75,8 @@ namespace mgodpl::math {
 		[[nodiscard]] std::optional<AABBi> touchedCoordinates(const AABBd &box) const;
 
 		const AABBd &baseAABB() const;
+
+
 
 	private:
 		/**

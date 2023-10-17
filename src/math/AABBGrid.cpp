@@ -96,4 +96,8 @@ namespace mgodpl::math {
 		return base_aabb;
 	}
 
+	Vec3i AABBGrid::size() const {
+		return Vec3i(nx, ny, nz);
+	}
+
 }

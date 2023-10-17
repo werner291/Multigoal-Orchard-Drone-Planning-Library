@@ -110,6 +110,8 @@ add_library(math_utils
         src/math/OpenPyramid.h
         src/math/Plane.cpp
         src/math/Plane.h
+        src/math/RangeInclusive.h
+        src/math/RangeInclusive.cpp
 )
 
 if (ENABLE_EXPERIMENTS)

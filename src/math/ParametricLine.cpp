@@ -22,7 +22,7 @@ const mgodpl::math::Vec3d &mgodpl::math::ParametricLine::origin() const {
 	return _origin;
 }
 
-mgodpl::math::Vec3d mgodpl::math::ParametricLine::pointAt(double &d) {
+mgodpl::math::Vec3d mgodpl::math::ParametricLine::pointAt(double d) const {
 	return _origin + _direction * d;
 }
 

@@ -15,7 +15,6 @@
 
 namespace mgodpl::math {
 
-
 	double param_at_plane(const ParametricLine &p, int d, double value);
 
 	/**

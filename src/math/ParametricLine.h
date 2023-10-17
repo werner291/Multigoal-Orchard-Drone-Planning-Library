@@ -42,7 +42,7 @@ namespace mgodpl::math {
 		 */
 		[[nodiscard]] const Vec3d& origin() const;
 
-		Vec3d pointAt(double &d);
+		Vec3d pointAt(double d) const;
 
 		static ParametricLine through_points(const Vec3d &vec3, Vec3d vec31);
 	};
