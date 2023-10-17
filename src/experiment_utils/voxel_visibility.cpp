@@ -120,9 +120,9 @@ namespace mgodpl {
 	void voxel_visibility::cast_occlusion(const AABBGrid& grid, Grid3D<bool>& occluded, const Triangle& triangle, const Vec3d& eye) {
 
 		// Find the points at which the rays from the eye to the triangle vertices intersect the grid base AABB.
-		ParametricLine line_a = ParametricLine::through_points(eye, triangle.a);
-		ParametricLine line_b = ParametricLine::through_points(eye, triangle.b);
-		ParametricLine line_c = ParametricLine::through_points(eye, triangle.c);
+		ParametricLine line_a {triangle.a, triangle.a - eye};
+		ParametricLine line_b {triangle.b, triangle.b - eye};
+		ParametricLine line_c {triangle.c, triangle.c - eye};
 
 		// Find the start and end parameters for the parametric lines.
 		// Specifically, we wish to find the X-parameter range that is covered by the occluded area.
