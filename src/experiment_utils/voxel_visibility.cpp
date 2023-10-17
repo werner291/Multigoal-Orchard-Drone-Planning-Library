@@ -16,9 +16,6 @@
 #include "../math/intersections.h"
 #include "../math/Triangle.h"
 #include "GridVec.h"
-#include "../math/Plane.h"
-#include "../math/lp.h"
-#include "../math/OpenPyramid.h"
 
 namespace mgodpl {
 
@@ -131,10 +128,13 @@ namespace mgodpl {
 		// Specifically, we wish to find the X-parameter range that is covered by the occluded area.
 		double t_a_min = std::max(0.0, param_at_plane(line_a,0,grid.baseAABB().min()[0]));
 		double t_a_max = std::max(0.0, param_at_plane(line_a,0,grid.baseAABB().max()[0]));
+		if (t_a_max < t_a_min) std::swap(t_a_max, t_a_min);
 		double t_b_min = std::max(0.0, param_at_plane(line_b,0,grid.baseAABB().min()[0]));
 		double t_b_max = std::max(0.0, param_at_plane(line_b,0,grid.baseAABB().max()[0]));
+		if (t_b_max < t_b_min) std::swap(t_b_max, t_b_min);
 		double t_c_min = std::max(0.0, param_at_plane(line_c,0,grid.baseAABB().min()[0]));
 		double t_c_max = std::max(0.0, param_at_plane(line_c,0,grid.baseAABB().max()[0]));
+		if (t_c_max < t_c_min) std::swap(t_c_max, t_c_min);
 
 		double x_min = std::min({line_a.pointAt(t_a_min)[0], line_a.pointAt(t_a_max)[0],
 								 line_b.pointAt(t_b_min)[0], line_b.pointAt(t_b_max)[0],
@@ -155,6 +155,9 @@ namespace mgodpl {
 				0, (int) occluded.size()[0]
 				);
 
+		std::cout << "X slice: " << gx_min << " to " << gx_max << "\n";
+		std::cout << "TA range: " << t_a_min << " to " << t_a_max << "\n";
+
 		// Iterate over the grid coordinates.
 		for (int x = gx_min; x < gx_max; ++x) {
 
@@ -162,13 +165,20 @@ namespace mgodpl {
 			double slice_xmin = grid.baseAABB().min()[0] + x * grid.cellSize()[0];
 			double slice_xmax = grid.baseAABB().min()[0] + (x + 1) * grid.cellSize()[0];
 
+			std::cout << "Slice X: " << slice_xmin << " to " << slice_xmax << std::endl;
+
 			// Get the line parameters at which the lines enter/exit the slice.
 			double t_slice_a_min = std::clamp(param_at_plane(line_a,0,slice_xmin),t_a_min, t_a_max);
 			double t_slice_a_max = std::clamp(param_at_plane(line_a,0,slice_xmax),t_a_min, t_a_max);
+			if (t_slice_a_max < t_slice_a_min) std::swap(t_slice_a_max, t_slice_a_min);
 			double t_slice_b_min = std::clamp(param_at_plane(line_b,0,slice_xmin),t_b_min, t_b_max);
 			double t_slice_b_max = std::clamp(param_at_plane(line_b,0,slice_xmax),t_b_min, t_b_max);
+			if (t_slice_b_max < t_slice_b_min) std::swap(t_slice_b_max, t_slice_b_min);
 			double t_slice_c_max = std::clamp(param_at_plane(line_c,0,slice_xmin),t_c_min, t_c_max);
 			double t_slice_c_min = std::clamp(param_at_plane(line_c,0,slice_xmax),t_c_min, t_c_max);
+			if (t_slice_c_max < t_slice_c_min) std::swap(t_slice_c_max, t_slice_c_min);
+
+			std::cout << "T slice A: " << t_slice_a_min << " to " << t_slice_a_max << " clamped to " << t_a_min << " to " << t_a_max << std::endl;
 
 			// Grab the y-parameter range covered by those line segments.
 			double y_min = std::min({line_a.pointAt(t_slice_a_min).y(), line_a.pointAt(t_slice_a_max).y(),
@@ -178,6 +188,8 @@ namespace mgodpl {
 			double y_max = std::max({line_a.pointAt(t_slice_a_min).y(), line_a.pointAt(t_slice_a_max).y(),
 									 line_b.pointAt(t_slice_b_min).y(), line_b.pointAt(t_slice_b_max).y(),
 									 line_c.pointAt(t_slice_c_min).y(), line_c.pointAt(t_slice_c_max).y()});
+
+			std::cout << "Y range: " << y_min << " to " << y_max << std::endl;
 
 			// ...and the corresponding grid Y-coordinate range.
 			int gy_min = std::clamp(
@@ -190,6 +202,8 @@ namespace mgodpl {
 					0, (int) occluded.size()[1]
 					);
 
+			std::cout << "Y slice: " << gy_min << " to " << gy_max << "\n";
+
 			// Iterate over the grid coordinates along the y-dimension
 			for (int y = gy_min; y < gy_max; ++y) {
 
@@ -200,10 +214,13 @@ namespace mgodpl {
 				// Get the line parameters at which the lines enter/exit the row.
 				double t_row_a_min = std::max(0.0, param_at_plane(line_a,1,row_ymin));
 				double t_row_a_max = std::max(0.0, param_at_plane(line_a,1,row_ymax));
+				if (t_row_a_max < t_row_a_min) std::swap(t_row_a_max, t_row_a_min);
 				double t_row_b_min = std::max(0.0, param_at_plane(line_b,1,row_ymin));
 				double t_row_b_max = std::max(0.0, param_at_plane(line_b,1,row_ymax));
+				if (t_row_b_max < t_row_b_min) std::swap(t_row_b_max, t_row_b_min);
 				double t_row_c_min = std::max(0.0, param_at_plane(line_c,1,row_ymin));
 				double t_row_c_max = std::max(0.0, param_at_plane(line_c,1,row_ymax));
+				if (t_row_c_max < t_row_c_min) std::swap(t_row_c_max, t_row_c_min);
 
 				// Grab the z-parameter range covered by those line segments.
 				double z_min = std::min({line_a.pointAt(t_row_a_min).z(), line_a.pointAt(t_row_a_max).z(),

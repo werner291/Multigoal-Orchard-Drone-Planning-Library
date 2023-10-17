@@ -110,11 +110,6 @@ add_library(math_utils
         src/math/OpenPyramid.h
         src/math/Plane.cpp
         src/math/Plane.h
-        src/math/HalfSpace.cpp
-        src/math/HalfSpace.h
-        src/math/Boolean.h
-        src/math/lp.cpp
-        src/math/lp.h
 )
 
 if (ENABLE_EXPERIMENTS)
