@@ -68,3 +68,14 @@ double mgodpl::math::param_at_plane(const mgodpl::math::ParametricLine &p, int d
 		return delta / dir_dim;
 	}
 }
+
+std::optional<double> mgodpl::math::param_at_plane(const mgodpl::math::Ray &r, int d, double value) {
+
+	double t = param_at_plane(r.parametric_line(), d, value);
+
+	if (t >= 0.0) {
+		return t;
+	} else {
+		return std::nullopt;
+	}
+}

@@ -100,4 +100,17 @@ namespace mgodpl::math {
 		return Vec3i(nx, ny, nz);
 	}
 
+	std::optional<int> AABBGrid::getCoordinateInDimension(const double &value, const int &dimension) const {
+
+
+		if (value < base_aabb.min()[dimension] || value > base_aabb.max()[dimension]) {
+			return std::nullopt;
+		} else {
+			return (value - base_aabb.min()[dimension]) / cellSize()[dimension];
+
+		}
+
+
+	}
+
 }

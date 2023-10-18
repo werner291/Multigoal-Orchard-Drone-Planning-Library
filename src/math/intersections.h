@@ -12,10 +12,34 @@
 #include <optional>
 #include "Segment3d.h"
 #include "AABB.h"
+#include "Ray.h"
 
 namespace mgodpl::math {
 
+	/**
+	 * Given a parametric line and a dimension, compute the parameter at which the line intersects
+	 * the plane perpendicular to the given dimension at the given value.
+	 *
+	 * For example, for d = 1, this will be when the line crosses the y = value plane.
+	 *
+	 * @param p		The parametric line.
+	 * @param d 	The dimension of the plane to intersect with.
+	 * @param value The value of the plane to intersect with.
+	 * @return		The parameter at which the line intersects the plane.
+	 */
 	double param_at_plane(const ParametricLine &p, int d, double value);
+
+	/**
+	 * Givena ray and a dimension, compute the parameter at which the ray intersects.
+	 *
+	 * For example, for d = 1, this will be when the ray crosses the y = value plane.
+	 *
+	 * @param r		The ray.
+	 * @param d 	The dimension of the plane to intersect with.
+	 * @param value The value of the plane to intersect with.
+	 * @return		The parameter at which the ray intersects the plane.
+	 */
+	std::optional<double> param_at_plane(const Ray &r, int d, double value);
 
 	/**
 	  *	@brief Determines whether the given line segment intersects the given AABB.

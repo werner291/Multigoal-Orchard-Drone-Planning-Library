@@ -139,6 +139,10 @@ namespace mgodpl::math {
 		AABB translated(Vec3<Scalar> vec3) const {
 			return {_min + vec3, _max + vec3};
 		}
+
+		AABB combined(AABB aabb) const {
+			return AABB(_min.min(aabb._min), _max.max(aabb._max));
+		}
 	};
 
 	using AABBd = AABB<double>; // Double precision AABB

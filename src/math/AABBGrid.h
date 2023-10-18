@@ -57,6 +57,15 @@ namespace mgodpl::math {
 		[[nodiscard]] std::optional<Vec3i> getGridCoordinates(const Vec3d &point) const;
 
 		/**
+		 * Given a 3D vector/point, get the grid coordinates of the AABB that contains it.
+		 *
+		 * @param value 		The value to get the grid coordinates of.
+		 * @param dimension 	The dimension to get the grid coordinates in.
+		 * @return 				The grid coordinates of the AABB that contains the given value, or std::nullopt if the value is out of bounds.
+		 */
+		[[nodiscard]] std::optional<int> getCoordinateInDimension(const double &value, const int &dimension) const;
+
+		/**
 		 * Get the size of a single grid cell.
 		 * @return The size of a single grid cell as a 3D vector.
 		 */

@@ -15,6 +15,8 @@
 #include "../math/Segment3d.h"
 #include "../math/intersections.h"
 #include "../math/Triangle.h"
+#include "../math/Ray.h"
+#include "../math/DomainSlice.h"
 #include "GridVec.h"
 
 namespace mgodpl {
@@ -106,6 +108,104 @@ namespace mgodpl {
 			   std::max(vector.z() * aabb.min().z(), vector.z() * aabb.max().z());
 	}
 
+	// 		ParametricLine line_a {triangle.a + (triangle.a - eye).normalized() * cell_size, triangle.a - eye};
+
+
+
+	/**
+	 * Given an eye poisiton and a point, compute the ray occluded by that point, plus an optional offset.
+	 *
+	 * @param eye 		The eye position.
+	 * @param occluding_point 	The point.
+	 * @param offset	How far behind the point to put the 0-point of the line.
+	 *
+	 * @return 			The ray.
+	 */
+	Ray occluded_ray(const Vec3d &eye, const Vec3d &occluding_point, double offset = 0.0) {
+
+		Vec3d direction = (occluding_point - eye).normalized();
+		Vec3d origin = occluding_point + direction * offset;
+
+		return {origin, direction};
+
+	}
+
+	/**
+	 * An axis-aligned slab.
+	 */
+	template<typename Scalar>
+	struct AASlab {
+		int dimension;
+		RangeInclusive<Scalar> range;
+	};
+
+	/**
+	 * That is, an axis-aligned bounding box that is infinite in one dimension,or an intersection of two slabs.
+	 */
+	template<typename Scalar>
+	struct AAColumn {
+		int infinite_dimension; // The dimension in which the column is infinite (0 = x, 1 = y, 2 = z).
+		RangeInclusive<Scalar> range1, range2; // The ranges in the finite dimensions.
+	};
+
+	using RaySlice = DomainSlice<const Ray,RangeInclusiveD>;
+
+	/**
+	 * Restrict a ray to an AABB.
+	 */
+	RaySlice restrict_to_aabb(const Ray& ray, const AABBd& aabb) {
+		// Find the intersections of the extended line.
+		std::optional<std::array<double, 2>> intersections = line_aabb_intersection_params(aabb, ray.parametric_line());
+		assert(intersections.has_value());
+		return {
+				ray, {intersections->at(0), intersections->at(1)}
+		};
+	}
+
+	/**
+	 * Restrict a ray to an AABB.
+	 *
+	 * Returns nullopt if the ray lies outside the AABB.
+	 */
+	std::optional<RaySlice> restrict_to_aabb(const RaySlice& ray, const AABBd& aabb) {
+		// Find the intersections of the extended line.
+		std::optional<std::array<double, 2>> intersections = line_aabb_intersection_params(aabb, ray.slice_of.parametric_line());
+
+		if (!intersections.has_value() || intersections->at(0) > ray.range.max || intersections->at(1) < ray.range.min) {
+			return std::nullopt;
+		}
+
+		return {{
+				ray.slice_of, {std::max(intersections->at(0), ray.range.min), std::min(intersections->at(1), ray.range.max)}
+		}};
+
+	}
+
+	// Function that computes occseg_a.slice_of.pointAt(occseg_a.range.min).x(), occseg_a.slice_of.pointAt(occseg_a.range.max).x() :
+	Segment3d realize(const RaySlice &ray) {
+		return {
+				ray.slice_of.pointAt(ray.range.min),
+				ray.slice_of.pointAt(ray.range.max)
+		};
+	}
+
+	AABBd aabb_of(const Segment3d& segment) {
+		AABBd aabb = AABBd::inverted_infinity();
+		aabb.expand(segment.a);
+		aabb.expand(segment.b);
+		return aabb;
+	}
+
+	// Function that computes occseg_a.slice_of.pointAt(occseg_a.range.min).x(), occseg_a.slice_of.pointAt(occseg_a.range.max).x() :
+	RangeInclusiveD realization_range_dim(const RaySlice& ray, int dimension) {
+		const auto& realization = realize(ray);
+
+		return {
+				std::min(realization.a[dimension], realization.b[dimension]),
+				std::max(realization.a[dimension], realization.b[dimension])
+		};
+	}
+
 	/**
 	 * In a given visibility grid, set all cells occluded by a triangle to false.
 	 *
@@ -119,120 +219,125 @@ namespace mgodpl {
 	 */
 	void voxel_visibility::cast_occlusion(const AABBGrid& grid, Grid3D<bool>& occluded, const Triangle& triangle, const Vec3d& eye) {
 
-		// Find the points at which the rays from the eye to the triangle vertices intersect the grid base AABB.
-		ParametricLine line_a {triangle.a, triangle.a - eye};
-		ParametricLine line_b {triangle.b, triangle.b - eye};
-		ParametricLine line_c {triangle.c, triangle.c - eye};
+		// Skip triangles with 0 area.
+		if (triangle.area() < 1e-6) {
+			return;
+		}
 
-		// Find the start and end parameters for the parametric lines.
-		// Specifically, we wish to find the X-parameter range that is covered by the occluded area.
-		double t_a_min = std::max(0.0, param_at_plane(line_a,0,grid.baseAABB().min()[0]));
-		double t_a_max = std::max(0.0, param_at_plane(line_a,0,grid.baseAABB().max()[0]));
-		if (t_a_max < t_a_min) std::swap(t_a_max, t_a_min);
-		double t_b_min = std::max(0.0, param_at_plane(line_b,0,grid.baseAABB().min()[0]));
-		double t_b_max = std::max(0.0, param_at_plane(line_b,0,grid.baseAABB().max()[0]));
-		if (t_b_max < t_b_min) std::swap(t_b_max, t_b_min);
-		double t_c_min = std::max(0.0, param_at_plane(line_c,0,grid.baseAABB().min()[0]));
-		double t_c_max = std::max(0.0, param_at_plane(line_c,0,grid.baseAABB().max()[0]));
-		if (t_c_max < t_c_min) std::swap(t_c_max, t_c_min);
+		double cell_size = grid.cellSize().norm();
+		Ray ray_a = occluded_ray(eye, triangle.a, cell_size);
+		Ray ray_b = occluded_ray(eye, triangle.b, cell_size);
+		Ray ray_c = occluded_ray(eye, triangle.c, cell_size);
 
-		double x_min = std::min({line_a.pointAt(t_a_min)[0], line_a.pointAt(t_a_max)[0],
-								 line_b.pointAt(t_b_min)[0], line_b.pointAt(t_b_max)[0],
-								 line_c.pointAt(t_c_min)[0], line_c.pointAt(t_c_max)[0]});
+		// Find the occluded rays from the eye to the triangle vertices, restricted to the base AABB of the grid.
+		// The occluded area will be, effectively, the intersection of the base AABB and the convex hull of the three rays.
+		const auto& occseg_a = restrict_to_aabb({ray_a,{0.0,INFINITY}}, grid.baseAABB());
+		const auto& occseg_b = restrict_to_aabb({ray_b,{0.0,INFINITY}}, grid.baseAABB());
+		const auto& occseg_c = restrict_to_aabb({ray_c,{0.0,INFINITY}}, grid.baseAABB());
 
-		double x_max = std::max({line_a.pointAt(t_a_min)[0], line_a.pointAt(t_a_max)[0],
-								 line_b.pointAt(t_b_min)[0], line_b.pointAt(t_b_max)[0],
-								 line_c.pointAt(t_c_min)[0], line_c.pointAt(t_c_max)[0]});
+		// Get the AABB of the intersection.
+		AABBd occ_aabb = AABBd::inverted_infinity();
 
-		// ...and the corresponding grid X-coordinate range.
-		int gx_min = std::clamp(
-				(int) std::floor((x_min - grid.baseAABB().min()[0]) / grid.cellSize()[0]),
-				0, (int) occluded.size()[0]
-				);
+		if (occseg_a.has_value()) {
+			occ_aabb.expand(occseg_a->slice_of.pointAt(occseg_a->range.min));
+			occ_aabb.expand(occseg_a->slice_of.pointAt(occseg_a->range.max));
+		}
 
-		int gx_max = std::clamp(
-				(int) std::ceil((x_max - grid.baseAABB().min()[0]) / grid.cellSize()[0]),
-				0, (int) occluded.size()[0]
-				);
+		if (occseg_b.has_value()) {
+			occ_aabb.expand(occseg_b->slice_of.pointAt(occseg_b->range.min));
+			occ_aabb.expand(occseg_b->slice_of.pointAt(occseg_b->range.max));
+		}
+
+		if (occseg_c.has_value()) {
+			occ_aabb.expand(occseg_c->slice_of.pointAt(occseg_c->range.min));
+			occ_aabb.expand(occseg_c->slice_of.pointAt(occseg_c->range.max));
+		}
+
+		AABBi occ_aabb_grid = grid.touchedCoordinates(occ_aabb).value();
 
 		// Iterate over the grid coordinates.
-		for (int x = gx_min; x < gx_max; ++x) {
+		for (int x = occ_aabb_grid.min().x(); x <= occ_aabb_grid.max().x(); ++x) {
 
 			// Get the X-range for the slice.
 			double slice_xmin = grid.baseAABB().min()[0] + x * grid.cellSize()[0];
 			double slice_xmax = grid.baseAABB().min()[0] + (x + 1) * grid.cellSize()[0];
 
-			// Get the line parameters at which the lines enter/exit the slice.
-			double t_slice_a_min = std::clamp(param_at_plane(line_a,0,slice_xmin),t_a_min, t_a_max);
-			double t_slice_a_max = std::clamp(param_at_plane(line_a,0,slice_xmax),t_a_min, t_a_max);
-			if (t_slice_a_max < t_slice_a_min) std::swap(t_slice_a_max, t_slice_a_min);
-			double t_slice_b_min = std::clamp(param_at_plane(line_b,0,slice_xmin),t_b_min, t_b_max);
-			double t_slice_b_max = std::clamp(param_at_plane(line_b,0,slice_xmax),t_b_min, t_b_max);
-			if (t_slice_b_max < t_slice_b_min) std::swap(t_slice_b_max, t_slice_b_min);
-			double t_slice_c_max = std::clamp(param_at_plane(line_c,0,slice_xmin),t_c_min, t_c_max);
-			double t_slice_c_min = std::clamp(param_at_plane(line_c,0,slice_xmax),t_c_min, t_c_max);
-			if (t_slice_c_max < t_slice_c_min) std::swap(t_slice_c_max, t_slice_c_min);
+			// Compute the AABB of the slice.
+			AABBd slice_aabb_x {
+				Vec3d(slice_xmin, grid.baseAABB().min()[1], grid.baseAABB().min()[2]),
+				Vec3d(slice_xmax, grid.baseAABB().max()[1], grid.baseAABB().max()[2])
+			};
 
-			// Grab the y-parameter range covered by those line segments.
-			double y_min = std::min({line_a.pointAt(t_slice_a_min).y(), line_a.pointAt(t_slice_a_max).y(),
-									 line_b.pointAt(t_slice_b_min).y(), line_b.pointAt(t_slice_b_max).y(),
-									 line_c.pointAt(t_slice_c_min).y(), line_c.pointAt(t_slice_c_max).y()});
+			// Emit geogebra code for the AABB as a concex hull of its corner points.
 
-			double y_max = std::max({line_a.pointAt(t_slice_a_min).y(), line_a.pointAt(t_slice_a_max).y(),
-									 line_b.pointAt(t_slice_b_min).y(), line_b.pointAt(t_slice_b_max).y(),
-									 line_c.pointAt(t_slice_c_min).y(), line_c.pointAt(t_slice_c_max).y()});
+			const auto& line_a_slice_x = restrict_to_aabb(*occseg_a, slice_aabb_x);
+			const auto& line_b_slice_x = restrict_to_aabb(*occseg_b, slice_aabb_x);
+			const auto& line_c_slice_x = restrict_to_aabb(*occseg_c, slice_aabb_x);
 
-			// ...and the corresponding grid Y-coordinate range.
-			int gy_min = std::clamp(
-					(int) std::floor((y_min - grid.baseAABB().min().y()) / grid.cellSize().y()),
-					0, (int) occluded.size()[1]
-					);
+			if (!line_a_slice_x.has_value() && !line_b_slice_x.has_value() && !line_c_slice_x.has_value()) {
+				continue;
+			}
 
-			int gy_max = std::clamp(
-					(int) std::ceil((y_max - grid.baseAABB().min().y()) / grid.cellSize().y()),
-					0, (int) occluded.size()[1]
-					);
+			AABBd occ_aabb_x = AABBd::inverted_infinity();
+
+			if (line_a_slice_x.has_value()) {
+				occ_aabb_x.expand(line_a_slice_x->slice_of.pointAt(line_a_slice_x->range.min));
+				occ_aabb_x.expand(line_a_slice_x->slice_of.pointAt(line_a_slice_x->range.max));
+			}
+
+			if (line_b_slice_x.has_value()) {
+				occ_aabb_x.expand(line_b_slice_x->slice_of.pointAt(line_b_slice_x->range.min));
+				occ_aabb_x.expand(line_b_slice_x->slice_of.pointAt(line_b_slice_x->range.max));
+			}
+
+			if (line_c_slice_x.has_value()) {
+				occ_aabb_x.expand(line_c_slice_x->slice_of.pointAt(line_c_slice_x->range.min));
+				occ_aabb_x.expand(line_c_slice_x->slice_of.pointAt(line_c_slice_x->range.max));
+			}
+
+			AABBi occ_aabb_grid_x = grid.touchedCoordinates(occ_aabb_x).value();
 
 			// Iterate over the grid coordinates along the y-dimension
-			for (int y = gy_min; y < gy_max; ++y) {
+			for (int y = occ_aabb_grid_x.min().y(); y <= occ_aabb_grid_x.max().y(); ++y) {
 
 				// Get the Y-range for the row.
 				double row_ymin = grid.baseAABB().min().y() + y * grid.cellSize().y();
 				double row_ymax = grid.baseAABB().min().y() + (y + 1) * grid.cellSize().y();
 
-				// Get the line parameters at which the lines enter/exit the row.
-				double t_row_a_min = std::max(0.0, param_at_plane(line_a,1,row_ymin));
-				double t_row_a_max = std::max(0.0, param_at_plane(line_a,1,row_ymax));
-				if (t_row_a_max < t_row_a_min) std::swap(t_row_a_max, t_row_a_min);
-				double t_row_b_min = std::max(0.0, param_at_plane(line_b,1,row_ymin));
-				double t_row_b_max = std::max(0.0, param_at_plane(line_b,1,row_ymax));
-				if (t_row_b_max < t_row_b_min) std::swap(t_row_b_max, t_row_b_min);
-				double t_row_c_min = std::max(0.0, param_at_plane(line_c,1,row_ymin));
-				double t_row_c_max = std::max(0.0, param_at_plane(line_c,1,row_ymax));
-				if (t_row_c_max < t_row_c_min) std::swap(t_row_c_max, t_row_c_min);
+				AABBd slice_aabb_y {
+						Vec3d(slice_aabb_x.min().x(), row_ymin, slice_aabb_x.min().z()),
+						Vec3d(slice_aabb_x.max().x(), row_ymax, slice_aabb_x.max().z())
+				};
 
-				// Grab the z-parameter range covered by those line segments.
-				double z_min = std::min({line_a.pointAt(t_row_a_min).z(), line_a.pointAt(t_row_a_max).z(),
-										 line_b.pointAt(t_row_b_min).z(), line_b.pointAt(t_row_b_max).z(),
-										 line_c.pointAt(t_row_c_min).z(), line_c.pointAt(t_row_c_max).z()});
+				const auto& line_a_slice_y = restrict_to_aabb(*occseg_a, slice_aabb_y);
+				const auto& line_b_slice_y = restrict_to_aabb(*occseg_b, slice_aabb_y);
+				const auto& line_c_slice_y = restrict_to_aabb(*occseg_c, slice_aabb_y);
 
-				double z_max = std::max({line_a.pointAt(t_row_a_min).z(), line_a.pointAt(t_row_a_max).z(),
-										 line_b.pointAt(t_row_b_min).z(), line_b.pointAt(t_row_b_max).z(),
-										 line_c.pointAt(t_row_c_min).z(), line_c.pointAt(t_row_c_max).z()});
+				if (!line_a_slice_y.has_value() && !line_b_slice_y.has_value() && !line_c_slice_y.has_value()) {
+					continue;
+				}
 
-				// ...and the corresponding grid Z-coordinate range.
-				int gz_min = std::clamp(
-						(int) std::floor((z_min - grid.baseAABB().min().z()) / grid.cellSize().z()),
-						0, (int) occluded.size()[2]
-						);
+				AABBd occ_aabb_y = AABBd::inverted_infinity();
 
-				int gz_max = std::clamp(
-						(int) std::ceil((z_max - grid.baseAABB().min().z()) / grid.cellSize().z()),
-						0, (int) occluded.size()[2]
-						);
+				if (line_a_slice_y.has_value()) {
+					occ_aabb_y.expand(line_a_slice_y->slice_of.pointAt(line_a_slice_y->range.min));
+					occ_aabb_y.expand(line_a_slice_y->slice_of.pointAt(line_a_slice_y->range.max));
+				}
+
+				if (line_b_slice_y.has_value()) {
+					occ_aabb_y.expand(line_b_slice_y->slice_of.pointAt(line_b_slice_y->range.min));
+					occ_aabb_y.expand(line_b_slice_y->slice_of.pointAt(line_b_slice_y->range.max));
+				}
+
+				if (line_c_slice_y.has_value()) {
+					occ_aabb_y.expand(line_c_slice_y->slice_of.pointAt(line_c_slice_y->range.min));
+					occ_aabb_y.expand(line_c_slice_y->slice_of.pointAt(line_c_slice_y->range.max));
+				}
+
+				AABBi occ_aabb_grid_y = grid.touchedCoordinates(occ_aabb_y).value();
 
 				// Iterate over the grid coordinates along the z-dimension
-				for (int z = gz_min; z < gz_max; ++z) {
+				for (int z = occ_aabb_grid_y.min().z(); z <= occ_aabb_grid_y.max().z(); ++z) {
 					// Mark the cell as occluded.
 					occluded[Vec3i(x, y, z)] = true;
 				}

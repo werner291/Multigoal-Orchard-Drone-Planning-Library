@@ -112,6 +112,9 @@ add_library(math_utils
         src/math/Plane.h
         src/math/RangeInclusive.h
         src/math/RangeInclusive.cpp
+        src/math/Ray.h
+        src/math/Ray.cpp
+        src/math/DomainSlice.h
 )
 
 if (ENABLE_EXPERIMENTS)

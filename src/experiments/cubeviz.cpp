@@ -68,6 +68,13 @@ Vec3d toVec3d(const geometry_msgs::msg::Point& p) {
 
 int main(int argc, char **argv) {
 
+	bool record = false;
+	for (int i = 0; i < argc; ++i) {
+		if (strcmp(argv[i], "--record") == 0) {
+			record = true;
+		}
+	}
+
 	auto treeMeshes = loadTreeMeshes("appletree");
 
 	// Let's create a nxnxn grid of boolean values...
@@ -175,7 +182,8 @@ int main(int argc, char **argv) {
 
 	});
 
-	viewer.startRecording("cubeviz.ogv");
+	if (record)
+		viewer.startRecording("cubeviz.ogv");
 
 	viewer.start();
 
