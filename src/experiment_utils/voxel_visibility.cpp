@@ -214,24 +214,126 @@ namespace mgodpl {
 	}
 
 	/**
+	 * Given a slab and a triangle, compute the AABB of the portion of  the triangle
+	 * that lies on the inside of the slab.
+	 *
+	 * @param slab 			The slab.
+	 * @param triangle 		The triangle.
+	 * @return 				The AABB of the portion of the triangle that lies on the inside of the slab.
+	 */
+	std::optional<AABBd> aabbInSlab(const AASlab<double>& slab, const Triangle& triangle) {
+
+		AABBd aabb = AABBd::inverted_infinity();
+
+		// For each point, if it's in the slab, expand the AABB.
+		for (const auto& point : {triangle.a, triangle.b, triangle.c}) {
+			if (slab.range.contains(point[slab.dimension])) {
+				aabb.expand(point);
+			}
+		}
+
+		std::array<Segment3d, 3> segments {
+				{Segment3d{triangle.a, triangle.b},
+				 Segment3d{triangle.b, triangle.c},
+				 Segment3d{triangle.c, triangle.a}}
+		};
+
+		// For every intersection point of one of the edges with a slab plane, expand the AABB.
+		for (const auto& x : {slab.range.min, slab.range.max}) {
+
+			for (auto& segment : segments) {
+
+				auto line = segment.extend_to_line();
+
+				double t = param_at_plane(line, slab.dimension, x);
+
+				if (t >= 0.0 && t <= 1.0) {
+					Vec3d pt = line.pointAt(t);
+					aabb.expand(pt);
+				}
+
+			}
+
+
+		}
+
+		// if all finite, then return, otherwise nullopt.
+		if (finite(aabb.min().x()) && finite(aabb.min().y()) && finite(aabb.min().z()) &&
+			finite(aabb.max().x()) && finite(aabb.max().y()) && finite(aabb.max().z())) {
+			return aabb;
+		} else {
+			return std::nullopt;
+		}
+
+	}
+
+	std::optional<AABBd> rayInSlab(const AASlab<double> &slab, const Ray &ray) {
+
+		// If the ray is parallel to the slab, there is no intersection.
+		if (ray.direction()[slab.dimension] == 0.0) {
+			return std::nullopt;
+		}
+
+		const auto& t1 = param_at_plane(ray, slab.dimension, slab.range.min);
+		const auto& t2 = param_at_plane(ray, slab.dimension, slab.range.max);
+
+		if (!t1.has_value() && !t2.has_value()) {
+			return std::nullopt;
+		}
+
+		AABBd aabb = AABBd::inverted_infinity();
+
+		if (t1) aabb.expand(ray.pointAt(*t1));
+		if (t2) aabb.expand(ray.pointAt(*t2));
+
+		assert(slab.range.min - 1e-6 <= aabb.min()[slab.dimension] && slab.range.max + 1e-6 >= aabb.max()[slab.dimension]);
+
+		return aabb;
+
+	}
+
+	/**
 	 * Given a slab and a set of rays, compute the AABB of the intersections of the rays with the slab.
 	 *
 	 * @param slab 		The slab.
 	 * @param rays 		The rays.
 	 * @return 			The AABB of the intersections of the rays with the slab.
 	 */
-	AABBd aabbInSlab(const AASlab<double> &slab, const std::array<Ray, 3> &rays) {
+	std::optional<AABBd> aabbInSlab(const AASlab<double> &slab, const std::array<Ray, 3> &rays) {
 
-		AABBd aabb = AABBd::inverted_infinity();
+		const auto& triangle_aabb = aabbInSlab(slab, Triangle{rays[0].pointAt(0.0), rays[1].pointAt(0.0), rays[2].pointAt(0.0)});
+		const auto& ray0_aabb = rayInSlab(slab, rays[0]);
+		const auto& ray1_aabb = rayInSlab(slab, rays[1]);
+		const auto& ray2_aabb = rayInSlab(slab, rays[2]);
 
-		for (const auto& ray : rays) {
-			for (const auto& x : {slab.range.min, slab.range.max}) {
-				Vec3d point = ray.pointAt(param_at_plane(ray, slab.dimension, x).value_or(0.0));
-				aabb.expand(point);
-			}
+		if (!triangle_aabb.has_value() && !ray0_aabb.has_value() && !ray1_aabb.has_value() && !ray2_aabb.has_value()) {
+			return std::nullopt;
 		}
 
-		return aabb;
+		AABBd total_aabb = AABBd::inverted_infinity();
+
+		if (triangle_aabb.has_value()) {
+			total_aabb = total_aabb.combined(*triangle_aabb);
+		}
+
+		if (ray0_aabb.has_value()) {
+			total_aabb = total_aabb.combined(*ray0_aabb);
+		}
+
+		if (ray1_aabb.has_value()) {
+			total_aabb = total_aabb.combined(*ray1_aabb);
+		}
+
+		if (ray2_aabb.has_value()) {
+			total_aabb = total_aabb.combined(*ray2_aabb);
+		}
+
+		assert(
+				slab.range.min - 1e-6 <= total_aabb.min()[slab.dimension] &&
+				slab.range.max + 1e-6 >= total_aabb.max()[slab.dimension]
+				);
+
+		return total_aabb;
 	}
 
 	/**
@@ -249,14 +351,26 @@ namespace mgodpl {
 		const auto& aabb_y = aabbInSlab({1, {aabb.min().y(), aabb.max().y()}}, rays);
 		const auto& aabb_z = aabbInSlab({2, {aabb.min().z(), aabb.max().z()}}, rays);
 
-		// Grab the intersection.
-		const auto& intersection = aabb_x.intersection(aabb_y);
+		// It's an intersection, so if there's no intersection in any of the slabs,
+		// there's no intersection in total either.
 
-		if (!intersection.has_value()) {
+		if (!aabb_x.has_value() || !aabb_y.has_value() || !aabb_z.has_value()) {
 			return std::nullopt;
 		}
 
-		return intersection->intersection(aabb_z);
+		const auto& xy = aabb_x->intersection(*aabb_y);
+
+		if (!xy.has_value()) {
+			return std::nullopt;
+		}
+
+		const auto& result = xy->intersection(*aabb_z);
+
+		if (result) {
+			assert(aabb.inflated(1.0e-6).contains(*result));
+		}
+
+		return result;
 
 	}
 
@@ -278,6 +392,8 @@ namespace mgodpl {
 
 		double cell_size = grid.cellSize().norm();
 
+		double margin = cell_size * 1e-10;
+
 		// The occluded volume is the convex hull of the three rays, limited to the parent AABB.
 		const std::array<Ray, 3> rays {
 				occluded_ray(eye, triangle.a, cell_size),
@@ -288,10 +404,8 @@ namespace mgodpl {
 		// Compute the AABB of the intersection of the occluded volume and the grid AABB.
 		const auto& occluded_volume_aabb = aabbInAABB(grid.baseAABB(), rays);
 
-		const int grid_xmin = *grid.getCoordinateInDimension(occluded_volume_aabb->min().x(), 0);
-		const int grid_xmax = *grid.getCoordinateInDimension(occluded_volume_aabb->max().x(), 0);
-
-		std::cout << "Grid from " << grid_xmin << " to " << grid_xmax << "\n";
+		const int grid_xmin = *grid.getCoordinateInDimension(occluded_volume_aabb->min().x() + margin, 0);
+		const int grid_xmax = *grid.getCoordinateInDimension(occluded_volume_aabb->max().x() - margin, 0);
 
 		for (int x = grid_xmin; x <= grid_xmax; ++x) {
 
@@ -312,8 +426,8 @@ namespace mgodpl {
 
 			assert(occluded_volume_aabb->inflated(1.0e-6).contains(*occluded_aabb_in_xslice));
 
-			const int grid_ymin = *grid.getCoordinateInDimension(occluded_aabb_in_xslice->min().y(), 1);
-			const int grid_ymax = *grid.getCoordinateInDimension(occluded_aabb_in_xslice->max().y(), 1);
+			const int grid_ymin = *grid.getCoordinateInDimension(occluded_aabb_in_xslice->min().y() + margin, 1);
+			const int grid_ymax = *grid.getCoordinateInDimension(occluded_aabb_in_xslice->max().y() - margin, 1);
 
 			for (int y = grid_ymin; y <= grid_ymax; ++y) {
 
@@ -330,10 +444,10 @@ namespace mgodpl {
 					continue;
 				}
 
-				assert(occluded_aabb_in_xslice->inflated(1.0e-6).contains(*occluded_aabb_in_xyslice));
+				assert(xy_slice_aabb.inflated(1.0e-6).contains(*occluded_aabb_in_xyslice));
 
-				const int grid_zmin = *grid.getCoordinateInDimension(occluded_aabb_in_xyslice->min().z(), 2);
-				const int grid_zmax = *grid.getCoordinateInDimension(occluded_aabb_in_xyslice->max().z(), 2);
+				const int grid_zmin = *grid.getCoordinateInDimension(occluded_aabb_in_xyslice->min().z() + margin, 2);
+				const int grid_zmax = *grid.getCoordinateInDimension(occluded_aabb_in_xyslice->max().z() - margin, 2);
 
 				for (int z = grid_zmin; z <= grid_zmax; ++z) {
 

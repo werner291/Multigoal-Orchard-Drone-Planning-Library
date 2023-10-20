@@ -21,6 +21,10 @@ namespace mgodpl::math {
 		[[nodiscard]] RangeInclusive clamp(const RangeInclusive &other) const {
 			return RangeInclusive(std::max(min, other.min), std::min(max, other.max));
 		}
+
+		[[nodiscard]] bool contains(Scalar value) const {
+			return min <= value && value <= max;
+		}
 	};
 
 	typedef RangeInclusive<double> RangeInclusiveD;

@@ -36,7 +36,15 @@ namespace mgodpl::math {
 			return line;
 		}
 
-		[[nodiscard]] Vec3<double> pointAt(double aDouble) const;
+		[[nodiscard]] Vec3d pointAt(double aDouble) const;
+
+		[[nodiscard]] const Vec3d& origin() const {
+			return line.origin();
+		}
+
+		[[nodiscard]] const Vec3d& direction() const {
+			return line.direction();
+		}
 	};
 }
 
