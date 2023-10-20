@@ -268,6 +268,10 @@ namespace mgodpl::math {
 		Vec3 round() const {
 			return {std::round(x()), std::round(y()), std::round(z())};
 		}
+
+		bool operator==(const Vec3 &other) const {
+			return x() == other.x() && y() == other.y() && z() == other.z();
+		}
 	};
 
 	using Vec3d = Vec3<double>;

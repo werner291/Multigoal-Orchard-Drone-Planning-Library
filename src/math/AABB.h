@@ -59,6 +59,10 @@ namespace mgodpl::math {
 			return pt.dominates(_min) && _max.dominates(pt);
 		}
 
+		bool contains(const AABB<Scalar> &aabb) const {
+			return contains(aabb._min) && contains(aabb._max);
+		}
+
 		/**
 		 * @brief Get the center of the AABB.
 		 *
@@ -82,7 +86,7 @@ namespace mgodpl::math {
 		 *
 		 * @return The minimum coordinate of the AABB.
 		 */
-		Vec3<Scalar> min() const {
+		const Vec3<Scalar>& min() const {
 			return _min;
 		}
 
@@ -91,9 +95,29 @@ namespace mgodpl::math {
 		 *
 		 * @return The maximum coordinate of the AABB.
 		 */
-		Vec3<Scalar> max() const {
+		const Vec3<Scalar>& max() const {
 			return _max;
 		}
+
+		/**
+ * @brief Get the minimum coordinate of the AABB.
+ *
+ * @return The minimum coordinate of the AABB.
+ */
+		 Vec3<Scalar>& min()  {
+			return _min;
+		}
+
+		/**
+		 * @brief Get the maximum coordinate of the AABB.
+		 *
+		 * @return The maximum coordinate of the AABB.
+		 */
+		 Vec3<Scalar>& max()  {
+			return _max;
+		}
+
+
 
 		/**
 		 * @brief Check whether this AABB intersects with another AABB. This includes the case where the AABBs touch.
@@ -142,6 +166,14 @@ namespace mgodpl::math {
 
 		AABB combined(AABB aabb) const {
 			return AABB(_min.min(aabb._min), _max.max(aabb._max));
+		}
+
+		std::optional<AABB> intersection(const AABB &aabb) const {
+			if (intersects(aabb)) {
+				return AABB(_min.max(aabb._min), _max.min(aabb._max));
+			} else {
+				return std::nullopt;
+			}
 		}
 	};
 

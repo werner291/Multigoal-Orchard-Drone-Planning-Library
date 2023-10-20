@@ -138,9 +138,22 @@ int main(int argc, char **argv) {
 	viewer.viewerRenderer->GetActiveCamera()->SetFocalPoint(0.0, 0.0, 2.0);
 	viewer.viewerRenderer->GetActiveCamera()->SetViewUp(0.0, 0.0, 1.0);
 
+	enum VisualizedVolume {
+		OCCLUDED,
+		UNSEEN
+	};
+
+	VisualizedVolume visualized_volume = OCCLUDED;
+
 	viewer.addTimerCallback([&]() {
 
-		Vec3d view_center = view_center1 * (1.0 - t) + view_center2 * t;
+		Vec3d view_center(
+				std::cos(t * M_PI) * 3.0,
+				std::sin(t * M_PI) * 3.0,
+				2.0
+				);
+
+				//view_center1 * (1.0 - t) + view_center2 * t;
 
 		Grid3D<bool> occluded_space(SUBDIVISIONS, SUBDIVISIONS, SUBDIVISIONS, false);
 
@@ -157,27 +170,29 @@ int main(int argc, char **argv) {
 
 			mgodpl::voxel_visibility::cast_occlusion(grid_coords, occluded_space, tri, view_center);
 
-//			break;
+			break;
 		}
 
-		// All non-occluded space will now be added to the seen space.
-		for (const auto &coord: boost::irange(0, (int) SUBDIVISIONS)) {
-			for (const auto &coord2: boost::irange(0, (int) SUBDIVISIONS)) {
-				for (const auto &coord3: boost::irange(0, (int) SUBDIVISIONS)) {
-					if (!occluded_space[{coord, coord2, coord3}]) {
-						seen_space[{coord, coord2, coord3}] = true;
-					}
-				}
-			}
-		}
+//		// All non-occluded space will now be added to the seen space.
+//		for (const auto &coord: boost::irange(0, (int) SUBDIVISIONS)) {
+//			for (const auto &coord2: boost::irange(0, (int) SUBDIVISIONS)) {
+//				for (const auto &coord3: boost::irange(0, (int) SUBDIVISIONS)) {
+//					if (!occluded_space[{coord, coord2, coord3}]) {
+//						seen_space[{coord, coord2, coord3}] = true;
+//					}
+//				}
+//			}
+//		}
 
-		polydata->SetPoints(grid_to_points(SUBDIVISIONS, grid_coords, seen_space, true));
+		polydata->SetPoints(grid_to_points(SUBDIVISIONS, grid_coords, occluded_space, false));
+//		polydata->SetPoints(grid_to_points(SUBDIVISIONS, grid_coords, seen_space, true));
 
 		sphereSource->SetCenter(view_center.x(), view_center.y(), view_center.z());
 		t += step;
 
-		if (t > 1.0) {
-			viewer.stop();
+		if (t > 2.0 * M_PI) {
+			t = 0;
+//			viewer.stop();
 		}
 
 	});

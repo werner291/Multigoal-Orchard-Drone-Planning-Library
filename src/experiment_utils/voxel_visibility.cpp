@@ -54,7 +54,7 @@ namespace mgodpl {
 
 
 		// Iterate in order.
-		for (const Vec3i& cell : cells_in_order) {
+		for (const Vec3i &cell: cells_in_order) {
 
 			// Ignore transparent cells.
 			if (!occluding[cell]) {
@@ -65,14 +65,13 @@ namespace mgodpl {
 			ray_step /= std::max({std::abs(ray_step.x()), std::abs(ray_step.y()), std::abs(ray_step.z())});
 
 			// Get a line from the cell center away from the eye point.
-			ParametricLine line(
-					cell.cast<double>(),
-					ray_step
-					);
+			ParametricLine line(cell.cast<double>(), ray_step);
 
 			double t = 0.0;
 
-			for (Vec3i current_cell = cell; visible.in_bounds(current_cell); current_cell = line.pointAt(t).round().cast<int>(), t += 1.0) {
+			for (Vec3i current_cell = cell; visible.in_bounds(current_cell); current_cell = line.pointAt(t)
+					.round()
+					.cast<int>(), t += 1.0) {
 
 				// If the cell is not transparent, mark it as visible.
 				visible[current_cell] = false;
@@ -102,7 +101,7 @@ namespace mgodpl {
 	 * @param aabb 			The aabb.
 	 * @return 				The maximum dot product of any point in the AABB and the vector.
 	 */
-	double maxDot(const Vec3d &vector, const AABBd& aabb) {
+	double maxDot(const Vec3d &vector, const AABBd &aabb) {
 		return std::max(vector.x() * aabb.min().x(), vector.x() * aabb.max().x()) +
 			   std::max(vector.y() * aabb.min().y(), vector.y() * aabb.max().y()) +
 			   std::max(vector.z() * aabb.min().z(), vector.z() * aabb.max().z());
@@ -148,18 +147,16 @@ namespace mgodpl {
 		RangeInclusive<Scalar> range1, range2; // The ranges in the finite dimensions.
 	};
 
-	using RaySlice = DomainSlice<const Ray,RangeInclusiveD>;
+	using RaySlice = DomainSlice<const Ray, RangeInclusiveD>;
 
 	/**
 	 * Restrict a ray to an AABB.
 	 */
-	RaySlice restrict_to_aabb(const Ray& ray, const AABBd& aabb) {
+	RaySlice restrict_to_aabb(const Ray &ray, const AABBd &aabb) {
 		// Find the intersections of the extended line.
 		std::optional<std::array<double, 2>> intersections = line_aabb_intersection_params(aabb, ray.parametric_line());
 		assert(intersections.has_value());
-		return {
-				ray, {intersections->at(0), intersections->at(1)}
-		};
+		return {ray, {intersections->at(0), intersections->at(1)}};
 	}
 
 	/**
@@ -167,29 +164,28 @@ namespace mgodpl {
 	 *
 	 * Returns nullopt if the ray lies outside the AABB.
 	 */
-	std::optional<RaySlice> restrict_to_aabb(const RaySlice& ray, const AABBd& aabb) {
+	std::optional<RaySlice> restrict_to_aabb(const RaySlice &ray, const AABBd &aabb) {
 		// Find the intersections of the extended line.
-		std::optional<std::array<double, 2>> intersections = line_aabb_intersection_params(aabb, ray.slice_of.parametric_line());
+		std::optional<std::array<double, 2>> intersections = line_aabb_intersection_params(aabb,
+																						   ray.slice_of
+																								   .parametric_line());
 
-		if (!intersections.has_value() || intersections->at(0) > ray.range.max || intersections->at(1) < ray.range.min) {
+		if (!intersections.has_value() || intersections->at(0) > ray.range.max ||
+			intersections->at(1) < ray.range.min) {
 			return std::nullopt;
 		}
 
-		return {{
-				ray.slice_of, {std::max(intersections->at(0), ray.range.min), std::min(intersections->at(1), ray.range.max)}
-		}};
+		return {{ray.slice_of,
+				 {std::max(intersections->at(0), ray.range.min), std::min(intersections->at(1), ray.range.max)}}};
 
 	}
 
 	// Function that computes occseg_a.slice_of.pointAt(occseg_a.range.min).x(), occseg_a.slice_of.pointAt(occseg_a.range.max).x() :
 	Segment3d realize(const RaySlice &ray) {
-		return {
-				ray.slice_of.pointAt(ray.range.min),
-				ray.slice_of.pointAt(ray.range.max)
-		};
+		return {ray.slice_of.pointAt(ray.range.min), ray.slice_of.pointAt(ray.range.max)};
 	}
 
-	AABBd aabb_of(const Segment3d& segment) {
+	AABBd aabb_of(const Segment3d &segment) {
 		AABBd aabb = AABBd::inverted_infinity();
 		aabb.expand(segment.a);
 		aabb.expand(segment.b);
@@ -197,13 +193,71 @@ namespace mgodpl {
 	}
 
 	// Function that computes occseg_a.slice_of.pointAt(occseg_a.range.min).x(), occseg_a.slice_of.pointAt(occseg_a.range.max).x() :
-	RangeInclusiveD realization_range_dim(const RaySlice& ray, int dimension) {
-		const auto& realization = realize(ray);
+	RangeInclusiveD realization_range_dim(const RaySlice &ray, int dimension) {
+		const auto &realization = realize(ray);
 
-		return {
-				std::min(realization.a[dimension], realization.b[dimension]),
-				std::max(realization.a[dimension], realization.b[dimension])
-		};
+		return {std::min(realization.a[dimension], realization.b[dimension]),
+				std::max(realization.a[dimension], realization.b[dimension])};
+	}
+
+	/**
+	 * Given an AABB grid, a dimension, and an index, compute the range of the slice in that dimension.
+	 *
+	 * @param grid 				The grid.
+	 * @param dimension 		The dimension.
+	 * @param index 			The index.
+	 * @return 					The range of the slice in that dimension.
+	 */
+	RangeInclusiveD slice_range(const AABBGrid &grid, int dimension, int index) {
+		return {grid.baseAABB().min()[dimension] + index * grid.cellSize()[dimension],
+				grid.baseAABB().min()[dimension] + (index + 1) * grid.cellSize()[dimension]};
+	}
+
+	/**
+	 * Given a slab and a set of rays, compute the AABB of the intersections of the rays with the slab.
+	 *
+	 * @param slab 		The slab.
+	 * @param rays 		The rays.
+	 * @return 			The AABB of the intersections of the rays with the slab.
+	 */
+	AABBd aabbInSlab(const AASlab<double> &slab, const std::array<Ray, 3> &rays) {
+
+		AABBd aabb = AABBd::inverted_infinity();
+
+		for (const auto& ray : rays) {
+			for (const auto& x : {slab.range.min, slab.range.max}) {
+				Vec3d point = ray.pointAt(param_at_plane(ray, slab.dimension, x).value_or(0.0));
+				aabb.expand(point);
+			}
+		}
+
+		return aabb;
+	}
+
+	/**
+	 * Given an AABB and a set of rays, compute the AABB of the intersection of
+	 * the convex hull of the rays and the volume delimited by the AABB.
+	 *
+	 * @param aabb 		The AABB.
+	 * @param rays 		The rays.
+	 *
+	 * @return 			The AABB of the intersection of the convex hull of the rays and the volume delimited by the AABB, or nullopt if the convex hull does not intersect the AABB.
+	 */
+	std::optional<AABBd> aabbInAABB(const AABBd &aabb, const std::array<Ray, 3> &rays) {
+
+		const auto& aabb_x = aabbInSlab({0, {aabb.min().x(), aabb.max().x()}}, rays);
+		const auto& aabb_y = aabbInSlab({1, {aabb.min().y(), aabb.max().y()}}, rays);
+		const auto& aabb_z = aabbInSlab({2, {aabb.min().z(), aabb.max().z()}}, rays);
+
+		// Grab the intersection.
+		const auto& intersection = aabb_x.intersection(aabb_y);
+
+		if (!intersection.has_value()) {
+			return std::nullopt;
+		}
+
+		return intersection->intersection(aabb_z);
+
 	}
 
 	/**
@@ -217,133 +271,85 @@ namespace mgodpl {
 	 * @param triangle	The triangle.
 	 * @param eye		The eye point.
 	 */
-	void voxel_visibility::cast_occlusion(const AABBGrid& grid, Grid3D<bool>& occluded, const Triangle& triangle, const Vec3d& eye) {
-
-		// Skip triangles with 0 area.
-		if (triangle.area() < 1e-6) {
-			return;
-		}
+	void voxel_visibility::cast_occlusion(const AABBGrid &grid,
+										  Grid3D<bool> &occluded,
+										  const Triangle &triangle,
+										  const Vec3d &eye) {
 
 		double cell_size = grid.cellSize().norm();
-		Ray ray_a = occluded_ray(eye, triangle.a, cell_size);
-		Ray ray_b = occluded_ray(eye, triangle.b, cell_size);
-		Ray ray_c = occluded_ray(eye, triangle.c, cell_size);
 
-		// Find the occluded rays from the eye to the triangle vertices, restricted to the base AABB of the grid.
-		// The occluded area will be, effectively, the intersection of the base AABB and the convex hull of the three rays.
-		const auto& occseg_a = restrict_to_aabb({ray_a,{0.0,INFINITY}}, grid.baseAABB());
-		const auto& occseg_b = restrict_to_aabb({ray_b,{0.0,INFINITY}}, grid.baseAABB());
-		const auto& occseg_c = restrict_to_aabb({ray_c,{0.0,INFINITY}}, grid.baseAABB());
+		// The occluded volume is the convex hull of the three rays, limited to the parent AABB.
+		const std::array<Ray, 3> rays {
+				occluded_ray(eye, triangle.a, cell_size),
+				occluded_ray(eye, triangle.b, cell_size),
+				occluded_ray(eye, triangle.c, cell_size),
+		};
 
-		// Get the AABB of the intersection.
-		AABBd occ_aabb = AABBd::inverted_infinity();
+		// Compute the AABB of the intersection of the occluded volume and the grid AABB.
+		const auto& occluded_volume_aabb = aabbInAABB(grid.baseAABB(), rays);
 
-		if (occseg_a.has_value()) {
-			occ_aabb.expand(occseg_a->slice_of.pointAt(occseg_a->range.min));
-			occ_aabb.expand(occseg_a->slice_of.pointAt(occseg_a->range.max));
-		}
+		const int grid_xmin = *grid.getCoordinateInDimension(occluded_volume_aabb->min().x(), 0);
+		const int grid_xmax = *grid.getCoordinateInDimension(occluded_volume_aabb->max().x(), 0);
 
-		if (occseg_b.has_value()) {
-			occ_aabb.expand(occseg_b->slice_of.pointAt(occseg_b->range.min));
-			occ_aabb.expand(occseg_b->slice_of.pointAt(occseg_b->range.max));
-		}
+		std::cout << "Grid from " << grid_xmin << " to " << grid_xmax << "\n";
 
-		if (occseg_c.has_value()) {
-			occ_aabb.expand(occseg_c->slice_of.pointAt(occseg_c->range.min));
-			occ_aabb.expand(occseg_c->slice_of.pointAt(occseg_c->range.max));
-		}
+		for (int x = grid_xmin; x <= grid_xmax; ++x) {
 
-		AABBi occ_aabb_grid = grid.touchedCoordinates(occ_aabb).value();
-
-		// Iterate over the grid coordinates.
-		for (int x = occ_aabb_grid.min().x(); x <= occ_aabb_grid.max().x(); ++x) {
-
-			// Get the X-range for the slice.
-			double slice_xmin = grid.baseAABB().min()[0] + x * grid.cellSize()[0];
-			double slice_xmax = grid.baseAABB().min()[0] + (x + 1) * grid.cellSize()[0];
-
-			// Compute the AABB of the slice.
-			AABBd slice_aabb_x {
-				Vec3d(slice_xmin, grid.baseAABB().min()[1], grid.baseAABB().min()[2]),
-				Vec3d(slice_xmax, grid.baseAABB().max()[1], grid.baseAABB().max()[2])
+			// Get the AABB of the slice.
+			const AABBd slice_aabb {
+					grid.baseAABB().min() + Vec3d(x * grid.cellSize().x(), 0.0, 0.0),
+					grid.baseAABB().min() + Vec3d((x + 1) * grid.cellSize().x(),
+												  grid.baseAABB().size().y(),
+												  grid.baseAABB().size().z())
 			};
 
-			// Emit geogebra code for the AABB as a concex hull of its corner points.
+			// Compute the AABB of the intersection of the occluded volume and the slice AABB.
+			const auto& occluded_aabb_in_xslice = aabbInAABB(slice_aabb, rays);
 
-			const auto& line_a_slice_x = restrict_to_aabb(*occseg_a, slice_aabb_x);
-			const auto& line_b_slice_x = restrict_to_aabb(*occseg_b, slice_aabb_x);
-			const auto& line_c_slice_x = restrict_to_aabb(*occseg_c, slice_aabb_x);
-
-			if (!line_a_slice_x.has_value() && !line_b_slice_x.has_value() && !line_c_slice_x.has_value()) {
+			if (!occluded_aabb_in_xslice.has_value()) {
 				continue;
 			}
 
-			AABBd occ_aabb_x = AABBd::inverted_infinity();
+			assert(occluded_volume_aabb->inflated(1.0e-6).contains(*occluded_aabb_in_xslice));
 
-			if (line_a_slice_x.has_value()) {
-				occ_aabb_x.expand(line_a_slice_x->slice_of.pointAt(line_a_slice_x->range.min));
-				occ_aabb_x.expand(line_a_slice_x->slice_of.pointAt(line_a_slice_x->range.max));
-			}
+			const int grid_ymin = *grid.getCoordinateInDimension(occluded_aabb_in_xslice->min().y(), 1);
+			const int grid_ymax = *grid.getCoordinateInDimension(occluded_aabb_in_xslice->max().y(), 1);
 
-			if (line_b_slice_x.has_value()) {
-				occ_aabb_x.expand(line_b_slice_x->slice_of.pointAt(line_b_slice_x->range.min));
-				occ_aabb_x.expand(line_b_slice_x->slice_of.pointAt(line_b_slice_x->range.max));
-			}
+			for (int y = grid_ymin; y <= grid_ymax; ++y) {
 
-			if (line_c_slice_x.has_value()) {
-				occ_aabb_x.expand(line_c_slice_x->slice_of.pointAt(line_c_slice_x->range.min));
-				occ_aabb_x.expand(line_c_slice_x->slice_of.pointAt(line_c_slice_x->range.max));
-			}
-
-			AABBi occ_aabb_grid_x = grid.touchedCoordinates(occ_aabb_x).value();
-
-			// Iterate over the grid coordinates along the y-dimension
-			for (int y = occ_aabb_grid_x.min().y(); y <= occ_aabb_grid_x.max().y(); ++y) {
-
-				// Get the Y-range for the row.
-				double row_ymin = grid.baseAABB().min().y() + y * grid.cellSize().y();
-				double row_ymax = grid.baseAABB().min().y() + (y + 1) * grid.cellSize().y();
-
-				AABBd slice_aabb_y {
-						Vec3d(slice_aabb_x.min().x(), row_ymin, slice_aabb_x.min().z()),
-						Vec3d(slice_aabb_x.max().x(), row_ymax, slice_aabb_x.max().z())
+				const AABBd xy_slice_aabb = {
+						slice_aabb.min() + Vec3d(0.0, y * grid.cellSize().y(), 0.0),
+						slice_aabb.min() + Vec3d(slice_aabb.size().x(), (y + 1) * grid.cellSize().y(),
+												  slice_aabb.size().z())
 				};
 
-				const auto& line_a_slice_y = restrict_to_aabb(*occseg_a, slice_aabb_y);
-				const auto& line_b_slice_y = restrict_to_aabb(*occseg_b, slice_aabb_y);
-				const auto& line_c_slice_y = restrict_to_aabb(*occseg_c, slice_aabb_y);
+				// Compute the AABB of the intersection of the occluded volume and the slice AABB.
+				const auto& occluded_aabb_in_xyslice = aabbInAABB(xy_slice_aabb, rays);
 
-				if (!line_a_slice_y.has_value() && !line_b_slice_y.has_value() && !line_c_slice_y.has_value()) {
+				if (!occluded_aabb_in_xyslice.has_value()) {
 					continue;
 				}
 
-				AABBd occ_aabb_y = AABBd::inverted_infinity();
+				assert(occluded_aabb_in_xslice->inflated(1.0e-6).contains(*occluded_aabb_in_xyslice));
 
-				if (line_a_slice_y.has_value()) {
-					occ_aabb_y.expand(line_a_slice_y->slice_of.pointAt(line_a_slice_y->range.min));
-					occ_aabb_y.expand(line_a_slice_y->slice_of.pointAt(line_a_slice_y->range.max));
+				const int grid_zmin = *grid.getCoordinateInDimension(occluded_aabb_in_xyslice->min().z(), 2);
+				const int grid_zmax = *grid.getCoordinateInDimension(occluded_aabb_in_xyslice->max().z(), 2);
+
+				for (int z = grid_zmin; z <= grid_zmax; ++z) {
+
+					occluded[{x, y, z}] = true;
+
 				}
 
-				if (line_b_slice_y.has_value()) {
-					occ_aabb_y.expand(line_b_slice_y->slice_of.pointAt(line_b_slice_y->range.min));
-					occ_aabb_y.expand(line_b_slice_y->slice_of.pointAt(line_b_slice_y->range.max));
-				}
-
-				if (line_c_slice_y.has_value()) {
-					occ_aabb_y.expand(line_c_slice_y->slice_of.pointAt(line_c_slice_y->range.min));
-					occ_aabb_y.expand(line_c_slice_y->slice_of.pointAt(line_c_slice_y->range.max));
-				}
-
-				AABBi occ_aabb_grid_y = grid.touchedCoordinates(occ_aabb_y).value();
-
-				// Iterate over the grid coordinates along the z-dimension
-				for (int z = occ_aabb_grid_y.min().z(); z <= occ_aabb_grid_y.max().z(); ++z) {
-					// Mark the cell as occluded.
-					occluded[Vec3i(x, y, z)] = true;
-				}
 			}
+
 		}
 
+
+
 	}
+
+
+
 
 }

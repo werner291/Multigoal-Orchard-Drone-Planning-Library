@@ -56,8 +56,7 @@ namespace mgodpl {
 							Grid3D<bool>& occluded,
 							const math::Triangle& triangle,
 							const math::Vec3d& eye);
-
-		}
+	}
 }
 
 #endif //MGODPL_VOXEL_VISIBILITY_H
