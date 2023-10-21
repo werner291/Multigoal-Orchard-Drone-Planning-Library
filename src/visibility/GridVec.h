@@ -13,7 +13,9 @@
 #include <vector>
 #include <cstddef>
 #include <cassert>
+#include <optional>
 #include "../math/grid_utils.h"
+#include "../math/Vec3.h"
 
 namespace mgodpl {
 
@@ -27,6 +29,7 @@ namespace mgodpl {
 		size_t nx, ny, nz;
 
 	public:
+
 		/**
 		 * Create a new 3D grid.
 		 * @param nx The number of grid cells in the x direction.
@@ -121,7 +124,35 @@ namespace mgodpl {
 
 			return false;
 		}
+
+		/**
+		 * Given a coordinate and a grid, return the next grid coordinate in lexicographical order.
+		 *
+		 * This is to prevent triple-nested for loops.
+		 */
+		[[nodiscard]] std::optional<math::Vec3i> next_coord_lexicographical(const math::Vec3i &coord) const {
+
+			// Check that the coordinate is in bounds.
+			assert(in_bounds(coord));
+
+			// Advance the Z-coordinate.
+			if (coord.z() < nz - 1) {
+				return {{coord.x(), coord.y(), coord.z() + 1}};
+			} else if (coord.y() < ny - 1) {
+				return {{coord.x(), coord.y() + 1, 0}};
+			} else if (coord.x() < nx - 1) {
+				return {{coord.x() + 1, 0, 0}};
+			} else {
+				return {};
+			}
+		}
+
+		[[nodiscard]] math::Vec3i first_lexicographical_coord() const {
+			return {0, 0, 0};
+		}
 	};
+
+
 
 }
 

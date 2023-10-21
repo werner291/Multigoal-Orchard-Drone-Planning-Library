@@ -10,24 +10,17 @@
 #define MGODPL_TRIANGLE_H
 
 #include "Vec3.h"
+#include "AABB.h" // TODO: I prefer moving this to some kinda "Compute AABB" header.
 
 namespace mgodpl::math {
 	struct Triangle {
 		Vec3d a, b, c;
 
-		AABBd aabb() const {
-			AABBd box = AABBd::inverted_infinity();
+		Triangle(const Vec3d &a, const Vec3d &b, const Vec3d &c);
 
-			box.expand(a);
-			box.expand(b);
-			box.expand(c);
+		[[nodiscard]] Vec3d normal() const;
 
-			return box;
-		}
-
-		[[nodiscard]] double area() const {
-			return 0.5 * (b - a).cross(c - a).norm();
-		}
+		[[nodiscard]] double area() const;
 	};
 }
 

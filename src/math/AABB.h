@@ -6,6 +6,8 @@
 #define MGODPL_AABB_H
 
 #include <algorithm>
+#include <optional>
+
 #include "Vec3.h"
 
 namespace mgodpl::math {

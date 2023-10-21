@@ -115,6 +115,9 @@ add_library(math_utils
         src/math/Ray.h
         src/math/Ray.cpp
         src/math/DomainSlice.h
+        src/math/Triangle.cpp
+        src/math/aabb_of.cpp
+        src/math/aabb_of.h
 )
 
 if (ENABLE_EXPERIMENTS)
@@ -126,10 +129,10 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/mesh_connected_components.h
             src/experiment_utils/load_mesh.h
             src/experiment_utils/load_mesh.cpp
-            src/experiment_utils/GridVec.h
-            src/experiment_utils/GridVec.cpp
-            src/experiment_utils/voxel_visibility.h
-            src/experiment_utils/voxel_visibility.cpp
+            src/visibility/GridVec.h
+            src/visibility/GridVec.cpp
+            src/visibility/voxel_visibility.h
+            src/visibility/voxel_visibility.cpp
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")

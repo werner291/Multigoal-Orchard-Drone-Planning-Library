@@ -17,9 +17,9 @@
 #include "../visualization/SimpleVtkViewer.h"
 #include "../math/AABBGrid.h"
 #include "../math/grid_utils.h"
-#include "../experiment_utils/GridVec.h"
+#include "../visibility/GridVec.h"
 #include "../experiment_utils/TreeMeshes.h"
-#include "../experiment_utils/voxel_visibility.h"
+#include "../visibility/voxel_visibility.h"
 #include "../math/Triangle.h"
 
 #include <vtkSphereSource.h>
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
 	viewer.addMesh(treeMeshes.trunk_mesh, Vec3d(0.5, 0.3, 0.1));
 
 	double t = 0;
-	double step = 0.01;
+	double step = 0.1;
 
 	Grid3D<bool> seen_space(SUBDIVISIONS,SUBDIVISIONS,SUBDIVISIONS, false);
 
@@ -145,11 +145,23 @@ int main(int argc, char **argv) {
 
 	VisualizedVolume visualized_volume = OCCLUDED;
 
+	std::vector<Triangle> triangles;
+
+	// For every leaf in the tree, set the corresponding grid cell to true.
+	for (const auto &triangle: treeMeshes.leaves_mesh.triangles) {
+
+		Vec3d a = toVec3d(treeMeshes.leaves_mesh.vertices[triangle.vertex_indices[0]]);
+		Vec3d b = toVec3d(treeMeshes.leaves_mesh.vertices[triangle.vertex_indices[1]]);
+		Vec3d c = toVec3d(treeMeshes.leaves_mesh.vertices[triangle.vertex_indices[2]]);
+
+		triangles.emplace_back(a,b,c);
+	}
+
 	viewer.addTimerCallback([&]() {
 
 		Vec3d view_center(
-				std::cos(t * M_PI) * 3.0,
-				std::sin(t * M_PI) * 3.0,
+				std::cos(t) * 3.0,
+				std::sin(t) * 3.0,
 				2.0
 				);
 
@@ -158,20 +170,9 @@ int main(int argc, char **argv) {
 		Grid3D<bool> occluded_space(SUBDIVISIONS, SUBDIVISIONS, SUBDIVISIONS, false);
 
 		// For every leaf in the tree, set the corresponding grid cell to true.
-		for (const auto &triangle: treeMeshes.leaves_mesh.triangles) {
 
-			Vec3d a = toVec3d(treeMeshes.leaves_mesh.vertices[triangle.vertex_indices[0]]);
-			Vec3d b = toVec3d(treeMeshes.leaves_mesh.vertices[triangle.vertex_indices[1]]);
-			Vec3d c = toVec3d(treeMeshes.leaves_mesh.vertices[triangle.vertex_indices[2]]);
+			mgodpl::voxel_visibility::cast_occlusion(grid_coords, occluded_space, triangles, view_center);
 
-			Triangle tri {
-					a,b,c
-			};
-
-			mgodpl::voxel_visibility::cast_occlusion(grid_coords, occluded_space, tri, view_center);
-
-			break;
-		}
 
 //		// All non-occluded space will now be added to the seen space.
 //		for (const auto &coord: boost::irange(0, (int) SUBDIVISIONS)) {
@@ -191,8 +192,10 @@ int main(int argc, char **argv) {
 		t += step;
 
 		if (t > 2.0 * M_PI) {
-			t = 0;
 //			viewer.stop();
+			t = 0;
+		} else {
+			std::cout << "T: " << t << " / " << 2.0 * M_PI << std::endl;
 		}
 
 	});
