@@ -133,6 +133,12 @@ if (ENABLE_EXPERIMENTS)
             src/visibility/GridVec.cpp
             src/visibility/voxel_visibility.h
             src/visibility/voxel_visibility.cpp
+            src/visibility/Octree.cpp
+            src/visibility/Octree.h
+            src/visibility/octree_visibility.cpp
+            src/visibility/octree_visibility.h
+            src/visibility/visibility_geometry.cpp
+            src/visibility/visibility_geometry.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")

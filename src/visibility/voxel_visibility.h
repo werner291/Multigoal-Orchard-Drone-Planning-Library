@@ -51,8 +51,7 @@ namespace mgodpl {
 		 * @param triangles 		The triangles.
 		 * @param eye 				The eye point.
 		 */
-		void cast_occlusion(const math::AABBGrid& grid,
-							Grid3D<bool>& occluded,
+		Grid3D<bool> cast_occlusion(const math::AABBGrid& grid,
 							const std::vector<math::Triangle>& triangles,
 							const math::Vec3d& eye);
 	}

@@ -177,6 +177,10 @@ namespace mgodpl::math {
 				return std::nullopt;
 			}
 		}
+
+		Scalar volume() const {
+			return size().x() * size().y() * size().z();
+		}
 	};
 
 	using AABBd = AABB<double>; // Double precision AABB

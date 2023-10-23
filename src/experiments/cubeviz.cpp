@@ -13,6 +13,8 @@
 #include <vtkProperty.h>
 #include <vtkCamera.h>
 #include <vtkRenderer.h>
+#include <vtkDoubleArray.h>
+#include <vtkPointData.h>
 
 #include "../visualization/SimpleVtkViewer.h"
 #include "../math/AABBGrid.h"
@@ -21,6 +23,7 @@
 #include "../experiment_utils/TreeMeshes.h"
 #include "../visibility/voxel_visibility.h"
 #include "../math/Triangle.h"
+#include "../visibility/octree_visibility.h"
 
 #include <vtkSphereSource.h>
 #include <boost/range/irange.hpp>
@@ -29,6 +32,8 @@ using namespace std;
 using namespace mgodpl;
 using namespace math;
 using namespace tree_meshes;
+using namespace visibility;
+using namespace voxel_visibility;
 
 vtkNew<vtkPoints>
 grid_to_points(const size_t SUBDIVISIONS,
@@ -62,10 +67,44 @@ grid_to_points(const size_t SUBDIVISIONS,
 	return points;
 }
 
-Vec3d toVec3d(const geometry_msgs::msg::Point& p) {
-	return Vec3d(p.x, p.y, p.z);
+using namespace visibility;
+
+std::pair<vtkSmartPointer<vtkPoints>,vtkSmartPointer<vtkDoubleArray>> octree_to_points(const AABBd& parent, const VisibilityOctree& octree) {
+	vtkNew<vtkPoints> points;
+	vtkNew<vtkDoubleArray> values;
+
+	std::vector<std::pair<AABBd, const VisibilityOctree::Node*>> stack {
+		{parent, &octree._root}
+	};
+
+	while (!stack.empty()) {
+		auto [aabb, node] = stack.back();
+		stack.pop_back();
+
+		if (const auto& leaf = std::get_if<VisibilityOctree::LeafNode>(node)) {
+			if (leaf->data) {
+				points->InsertNextPoint(aabb.center().x(), aabb.center().y(), aabb.center().z());
+				values->InsertNextValue(aabb.size().x());
+			}
+		} else if (const auto& split = std::get_if<VisibilityOctree::SplitNode>(node)) {
+			for (size_t i = 0; i < 8; ++i) {
+				stack.emplace_back(childAABB(aabb, i), &split->children->at(i));
+			}
+		}
+	}
+
+	return {
+		points,
+		values
+	};
+
 }
 
+Vec3d toVec3d(const geometry_msgs::msg::Point& p) {
+	return {p.x, p.y, p.z};
+}
+
+// A trait for
 int main(int argc, char **argv) {
 
 	bool record = false;
@@ -98,7 +137,7 @@ int main(int argc, char **argv) {
 	vtkNew<vtkGlyph3D> glyph3D;
 	glyph3D->SetSourceConnection(cubeSource->GetOutputPort());
 	glyph3D->SetInputData(polydata);
-	glyph3D->SetScaleFactor(6.0 / (double) SUBDIVISIONS);
+//	glyph3D->SetScaleFactor(6.0 / (double) SUBDIVISIONS);
 	glyph3D->Update();
 
 	// Visualize
@@ -165,14 +204,8 @@ int main(int argc, char **argv) {
 				2.0
 				);
 
-				//view_center1 * (1.0 - t) + view_center2 * t;
-
-		Grid3D<bool> occluded_space(SUBDIVISIONS, SUBDIVISIONS, SUBDIVISIONS, false);
-
-		// For every leaf in the tree, set the corresponding grid cell to true.
-
-			mgodpl::voxel_visibility::cast_occlusion(grid_coords, occluded_space, triangles, view_center);
-
+//		const Grid3D<bool>& occluded_space = cast_occlusion(grid_coords, triangles, view_center);
+		const VisibilityOctree& occluded_space_octree = cast_occlusion(grid_coords.baseAABB(), triangles, view_center);
 
 //		// All non-occluded space will now be added to the seen space.
 //		for (const auto &coord: boost::irange(0, (int) SUBDIVISIONS)) {
@@ -185,14 +218,18 @@ int main(int argc, char **argv) {
 //			}
 //		}
 
-		polydata->SetPoints(grid_to_points(SUBDIVISIONS, grid_coords, occluded_space, false));
+//		polydata->SetPoints(grid_to_points(SUBDIVISIONS, grid_coords, occluded_space, false));
 //		polydata->SetPoints(grid_to_points(SUBDIVISIONS, grid_coords, seen_space, true));
+
+		const auto& [points, values] = octree_to_points(grid_coords.baseAABB(), occluded_space_octree);
+		polydata->SetPoints(points);
+		polydata->GetPointData()->SetScalars(values);
 
 		sphereSource->SetCenter(view_center.x(), view_center.y(), view_center.z());
 		t += step;
 
 		if (t > 2.0 * M_PI) {
-//			viewer.stop();
+			viewer.stop();
 			t = 0;
 		} else {
 			std::cout << "T: " << t << " / " << 2.0 * M_PI << std::endl;
@@ -201,7 +238,7 @@ int main(int argc, char **argv) {
 	});
 
 	if (record)
-		viewer.startRecording("cubeviz.ogv");
+		viewer.startRecording("cubeviz_all.ogv");
 
 	viewer.start();
 
