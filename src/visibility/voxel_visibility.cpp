@@ -26,6 +26,10 @@ namespace mgodpl {
 	using namespace math;
 	using namespace visibility;
 
+	struct RaySlice {
+		const Ray& ray;
+		RangeInclusiveD t_range;
+	};
 
 	/**
 	 * In a given visibility grid, set all cells occluded by a triangle to false.
@@ -55,11 +59,11 @@ namespace mgodpl {
 									  occluded_ray(eye, triangle.c, cell_size),};
 
 		// Compute the AABB of the intersection of the occluded volume and the grid AABB.
-		const auto &occluded_volume_aabb = aabbInAABB(grid.baseAABB(), rays);
+		const auto &occluded_volume_aabb = aabbInAABB(grid.baseAABB(), rays, 0);
 
 		// Find the grid x-coordinates affected by that.
-		const int grid_xmin = *grid.getCoordinateInDimension(occluded_volume_aabb->min().x() + margin, 0);
-		const int grid_xmax = *grid.getCoordinateInDimension(occluded_volume_aabb->max().x() - margin, 0);
+		const int grid_xmin = *grid.getCoordinateInDimension(occluded_volume_aabb->min + margin, 0);
+		const int grid_xmax = *grid.getCoordinateInDimension(occluded_volume_aabb->max - margin, 0);
 
 		// Iterate over all grid x-coordinates, treating the volume one slice of grid cells at a time.
 		for (int x = grid_xmin; x <= grid_xmax; ++x) {
@@ -71,7 +75,7 @@ namespace mgodpl {
 																 grid.baseAABB().size().z())};
 
 			// Compute the AABB of the intersection of the occluded volume and the slice AABB.
-			const auto &occluded_aabb_in_xslice = aabbInAABB(slice_aabb, rays);
+			const auto &occluded_aabb_in_xslice = aabbInAABB(slice_aabb, rays, 1);
 
 			// If there is no intersection, skip this slice since it's not occluded at all.
 			if (!occluded_aabb_in_xslice.has_value()) {
@@ -79,11 +83,11 @@ namespace mgodpl {
 			}
 
 			// Sanity check: the intersection AABB should be contained in the slice AABB.
-			assert(occluded_volume_aabb->inflated(1.0e-6).contains(*occluded_aabb_in_xslice));
+			assert(slice_aabb.inflated(1.0e-6).contains(*occluded_aabb_in_xslice));
 
 			// Find the grid y-coordinates affected by that.
-			const int grid_ymin = *grid.getCoordinateInDimension(occluded_aabb_in_xslice->min().y() + margin, 1);
-			const int grid_ymax = *grid.getCoordinateInDimension(occluded_aabb_in_xslice->max().y() - margin, 1);
+			const int grid_ymin = *grid.getCoordinateInDimension(occluded_aabb_in_xslice->min + margin, 1);
+			const int grid_ymax = *grid.getCoordinateInDimension(occluded_aabb_in_xslice->max - margin, 1);
 
 			// Now, iterate over all grid y-coordinates, each time treating a single column of grid cells.
 			for (int y = grid_ymin; y <= grid_ymax; ++y) {
@@ -95,7 +99,7 @@ namespace mgodpl {
 																	  slice_aabb.size().z())};
 
 				// Compute the AABB of the intersection of the occluded volume and the slice AABB.
-				const auto &occluded_aabb_in_xyslice = aabbInAABB(xy_slice_aabb, rays);
+				const auto &occluded_aabb_in_xyslice = aabbInAABB(xy_slice_aabb, rays, 2);
 
 				// If there is no intersection, skip this column since it's not occluded at all.
 				if (!occluded_aabb_in_xyslice.has_value()) {
@@ -106,8 +110,8 @@ namespace mgodpl {
 				assert(xy_slice_aabb.inflated(1.0e-6).contains(*occluded_aabb_in_xyslice));
 
 				// Find the grid z-coordinates affected by that.
-				const int grid_zmin = *grid.getCoordinateInDimension(occluded_aabb_in_xyslice->min().z() + margin, 2);
-				const int grid_zmax = *grid.getCoordinateInDimension(occluded_aabb_in_xyslice->max().z() - margin, 2);
+				const int grid_zmin = *grid.getCoordinateInDimension(occluded_aabb_in_xyslice->min + margin, 2);
+				const int grid_zmax = *grid.getCoordinateInDimension(occluded_aabb_in_xyslice->max - margin, 2);
 
 				// Mark all affected grid cells as occluded.
 				for (int z = grid_zmin; z <= grid_zmax; ++z) {

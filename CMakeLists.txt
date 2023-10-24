@@ -85,7 +85,8 @@ set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#SET(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
+set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
 #SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
 set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" "ompl")
@@ -120,6 +121,21 @@ add_library(math_utils
         src/math/aabb_of.h
 )
 
+add_library(visibility
+        src/visibility/GridVec.h
+        src/visibility/GridVec.cpp
+        src/visibility/voxel_visibility.h
+        src/visibility/voxel_visibility.cpp
+        src/visibility/Octree.cpp
+        src/visibility/Octree.h
+#        src/visibility/octree_visibility.cpp
+        src/visibility/octree_visibility.h
+        src/visibility/visibility_geometry.cpp
+        src/visibility/visibility_geometry.h
+)
+target_link_libraries(visibility math_utils)
+#target_compile_options(visibility PRIVATE -O3)
+
 if (ENABLE_EXPERIMENTS)
     # A library that is mostly useful for running the experiments.
     add_library(experiment_utils
@@ -129,21 +145,11 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/mesh_connected_components.h
             src/experiment_utils/load_mesh.h
             src/experiment_utils/load_mesh.cpp
-            src/visibility/GridVec.h
-            src/visibility/GridVec.cpp
-            src/visibility/voxel_visibility.h
-            src/visibility/voxel_visibility.cpp
-            src/visibility/Octree.cpp
-            src/visibility/Octree.h
-            src/visibility/octree_visibility.cpp
-            src/visibility/octree_visibility.h
-            src/visibility/visibility_geometry.cpp
-            src/visibility/visibility_geometry.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
-    target_link_libraries(experiment_utils math_utils)
+    target_link_libraries(experiment_utils math_utils visibility)
     ament_target_dependencies(experiment_utils ${AMENT_DEPS})
 endif()
 

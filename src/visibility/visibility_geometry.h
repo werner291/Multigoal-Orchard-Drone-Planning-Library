@@ -40,34 +40,6 @@ namespace mgodpl::visibility {
 	};
 
 	/**
-	 * Given a slab and a triangle, compute the AABB of the portion of the triangle
-	 * that lies on the inside of the slab.
-	 *
-	 * @param slab 			The slab.
-	 * @param triangle 		The triangle.
-	 * @return 				The AABB of the portion of the triangle that lies on the inside of the slab.
-	 */
-	std::optional<mgodpl::math::AABBd> aabbInSlab(const AASlab<double> &slab, const mgodpl::math::Triangle &triangle);
-
-	/**
- * Compute the AABB of the portion of the ray that lies on the inside of the slab.
- *
- * @param slab      The slab.
- * @param ray       The ray.
- * @return          The AABB of the portion of the ray that lies on the inside of the slab.
- */
-	std::optional<mgodpl::math::AABBd> rayInSlab(const AASlab<double> &slab, const mgodpl::math::Ray &ray);
-
-	/**
-	 * Given a slab and a set of rays, compute the AABB of the intersections of the rays with the slab.
-	 *
-	 * @param slab 		The slab.
-	 * @param rays 		The rays.
-	 * @return 			The AABB of the intersections of the rays with the slab.
-	 */
-	std::optional<mgodpl::math::AABBd> aabbInSlab(const AASlab<double> &slab, const std::array<mgodpl::math::Ray, 3> &rays);
-
-	/**
 	 * Given an AABB and a set of rays, compute the AABB of the intersection of
 	 * the convex hull of the rays and the volume delimited by the AABB.
 	 *
@@ -76,7 +48,8 @@ namespace mgodpl::visibility {
 	 *
 	 * @return 			The AABB of the intersection of the convex hull of the rays and the volume delimited by the AABB, or nullopt if the convex hull does not intersect the AABB.
 	 */
-	std::optional<mgodpl::math::AABBd> aabbInAABB(const mgodpl::math::AABBd &aabb, const std::array<mgodpl::math::Ray, 3> &rays);
+	std::optional<math::RangeInclusiveD>
+	aabbInAABB(const math::AABBd &aabb, const std::array<mgodpl::math::Ray, 3> &rays, int dim);
 
 	std::vector<std::pair<double, const math::Triangle *>> sorted_by_distance(
 			const std::vector<mgodpl::math::Triangle> &triangles,

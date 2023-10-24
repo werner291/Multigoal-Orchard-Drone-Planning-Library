@@ -6,6 +6,7 @@
 // Created by werner on 10/23/23.
 //
 
+#include <chrono>
 #include "octree_visibility.h"
 #include "Octree.h"
 #include "visibility_geometry.h"
@@ -34,11 +35,12 @@ namespace mgodpl::visibility {
 
 	}
 
-	VisibilityOctree cast_occlusion(const AABBd &base_volume,
-						const std::vector<math::Triangle> &triangles,
-						const Vec3d &eye) {
+	VisibilityOctree cast_occlusion_batch_sorting(const math::AABBd &base_volume,
+												  const std::vector<math::Triangle> &triangles,
+												  const math::Vec3d &eye) {
 
 		VisibilityOctree occluded;
+
 
 		// Sort by distance from the viewpoint, then process in order.
 		for (const auto& [_distance, triangle] : sorted_by_distance(triangles, eye)) {
@@ -93,7 +95,7 @@ namespace mgodpl::visibility {
 		}
 
 		// Grab the affected volume.
-		const auto& intersection_aabb = aabbInAABB(volume, rays);
+		const auto& intersection_aabb = aabbInAABB(volume, rays, 0);
 
 		// Three cases: no intersection, partial intersection, contained.
 
@@ -142,6 +144,49 @@ namespace mgodpl::visibility {
 
 		cast_occlusion_internal(base_volume, occluded._root, rays,
 								depth);
+
+	}
+
+	struct RaySlice {
+		const Ray ray;
+		RangeInclusiveD t_range;
+	};
+
+	VisibilityOctree::Node cast_occlusion_batch_internal_dnc(
+			const math::AABBd &volume,
+			const std::vector<std::array<RaySlice,3>>& rays,
+			const math::Vec3d &eye
+			) {
+
+		double x_min = volume.min().x();
+		double x_max = volume.max().x();
+		double x_split = (x_min + x_max) / 2.0;
+
+		std::vector<std::array<RaySlice,3>> rays_sub;
+
+		// Expanding AABB idea?! An expanding cube around the eye point, and maintain the density of stuff on the surface?
+
+		for (const auto& ray_slice : rays) {
+			for (const auto& ray : ray_slice) {
+				double ox = ray.ray.origin().x();
+				double dx = ray.ray.direction().x();
+				double crossover_t = (x_split - ox) / dx;
+
+				if (ray.t_range.contains(crossover_t)) {
+					rays_sub.push_back(ray_slice);
+					break;
+				}
+			}
+
+
+		}
+
+	};
+
+	VisibilityOctree
+	cast_occlusion_batch_dnc(const math::AABBd &base_volume, std::vector<math::Triangle> triangles, const math::Vec3d &eye) {
+
+//		return VisibilityOctree { cast_occlusion_batch_internal_dnc(base_volume, triangles, eye) };
 
 	}
 }

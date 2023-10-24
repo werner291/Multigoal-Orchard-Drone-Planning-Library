@@ -42,6 +42,11 @@ namespace mgodpl {
 							const math::Triangle& triangle,
 							const math::Vec3d& eye);
 
+		void cast_occlusion_slices(const math::AABBGrid& grid,
+							Grid3D<bool>& occluded,
+							const math::Triangle& triangle,
+							const math::Vec3d& eye);
+
 		/**
 		 * In a given visibility grid, set all cells occluded by a set of triangles to false,
 		 * processing the triangles as a batch.

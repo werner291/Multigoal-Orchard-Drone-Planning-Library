@@ -113,4 +113,8 @@ namespace mgodpl::math {
 
 	}
 
+	int AABBGrid::dim_coord_unckeched(const double &value, const int &dimension) const {
+		return (int) std::floor((value - base_aabb.min()[dimension]) / cellSize()[dimension]);
+	}
+
 }

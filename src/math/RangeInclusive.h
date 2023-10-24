@@ -9,6 +9,8 @@
 #ifndef MGODPL_RANGEINCLUSIVE_H
 #define MGODPL_RANGEINCLUSIVE_H
 
+#include <optional>
+
 namespace mgodpl::math {
 
 	template<typename Scalar>
@@ -24,6 +26,20 @@ namespace mgodpl::math {
 
 		[[nodiscard]] bool contains(Scalar value) const {
 			return min <= value && value <= max;
+		}
+
+		void expand(const Scalar &d) {
+			min = std::min(min, d);
+			max = std::max(max, d);
+		}
+
+		std::optional<RangeInclusive> intersect(RangeInclusive inclusive) const {
+			// If overlapping, return the intersection.
+			if (inclusive.min <= max && min <= inclusive.max) {
+				return std::make_optional(RangeInclusive(std::max(min, inclusive.min), std::min(max, inclusive.max)));
+			} else {
+				return std::nullopt;
+			}
 		}
 	};
 
