@@ -27,6 +27,7 @@
 
 #include <vtkSphereSource.h>
 #include <boost/range/irange.hpp>
+#include <chrono>
 
 using namespace std;
 using namespace mgodpl;
@@ -196,6 +197,8 @@ int main(int argc, char **argv) {
 		triangles.emplace_back(a,b,c);
 	}
 
+
+
 	viewer.addTimerCallback([&]() {
 
 		Vec3d view_center(
@@ -204,7 +207,11 @@ int main(int argc, char **argv) {
 				2.0
 				);
 
+		const auto& time_before = std::chrono::high_resolution_clock::now();
 		const Grid3D<bool>& occluded_space = cast_occlusion(grid_coords, triangles, view_center);
+		const auto& time_after = std::chrono::high_resolution_clock::now();
+		std::cout << "Occlusion took " << std::chrono::duration_cast<std::chrono::milliseconds>(time_after - time_before).count() << " ms" << std::endl;
+
 //		const VisibilityOctree& occluded_space_octree = cast_occlusion_batch_sorting(grid_coords.baseAABB(),
 //																					 triangles,
 //																					 view_center);
