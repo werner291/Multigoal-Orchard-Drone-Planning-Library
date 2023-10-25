@@ -48,8 +48,8 @@ namespace mgodpl::visibility {
 	 *
 	 * @return 			The AABB of the intersection of the convex hull of the rays and the volume delimited by the AABB, or nullopt if the convex hull does not intersect the AABB.
 	 */
-	std::optional<math::RangeInclusiveD>
-	aabbInAABB(const math::AABBd &aabb, const std::array<mgodpl::math::Ray, 3> &rays, int dim);
+	std::optional<math::AABBd>
+	aabbInAABB(const math::AABBd &aabb, const std::array<mgodpl::math::Ray, 3> &rays);
 
 	std::vector<std::pair<double, const math::Triangle *>> sorted_by_distance(
 			const std::vector<mgodpl::math::Triangle> &triangles,

@@ -95,7 +95,7 @@ namespace mgodpl::visibility {
 		}
 
 		// Grab the affected volume.
-		const auto& intersection_aabb = aabbInAABB(volume, rays, 0);
+		const auto& intersection_aabb = aabbInAABB(volume, rays);
 
 		// Three cases: no intersection, partial intersection, contained.
 

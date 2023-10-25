@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
 	vtkNew<vtkGlyph3D> glyph3D;
 	glyph3D->SetSourceConnection(cubeSource->GetOutputPort());
 	glyph3D->SetInputData(polydata);
-//	glyph3D->SetScaleFactor(6.0 / (double) SUBDIVISIONS);
+	glyph3D->SetScaleFactor(6.0 / (double) SUBDIVISIONS);
 	glyph3D->Update();
 
 	// Visualize
@@ -159,9 +159,20 @@ int main(int argc, char **argv) {
 	sphereActor->SetMapper(sphereMapper);
 	sphereActor->GetProperty()->SetColor(colors->GetColor3d("Red").GetData());
 
+	// Add a sphere for the first triangle
+	vtkNew<vtkSphereSource> sphereSource2;
+	sphereSource2->SetCenter(0.0, 0.0, 2.0);
+	sphereSource2->SetRadius(0.1);
+	vtkNew<vtkPolyDataMapper> sphereMapper2;
+	sphereMapper2->SetInputConnection(sphereSource2->GetOutputPort());
+	vtkNew<vtkActor> sphereActor2;
+	sphereActor2->SetMapper(sphereMapper2);
+	sphereActor2->GetProperty()->SetColor(colors->GetColor3d("Blue").GetData());
+
 	SimpleVtkViewer viewer;
 	viewer.addActor(actor);
 	viewer.addActor(sphereActor);
+	viewer.addActor(sphereActor2);
 
 	viewer.addMesh(treeMeshes.leaves_mesh, Vec3d(0.0, 0.5, 0.0));
 	viewer.addMesh(treeMeshes.trunk_mesh, Vec3d(0.5, 0.3, 0.1));
@@ -196,6 +207,11 @@ int main(int argc, char **argv) {
 		triangles.emplace_back(a,b,c);
 	}
 
+	// Set the second sphere's center to the centroid of the first triangle.
+	sphereSource2->SetCenter((triangles[0].a.x() + triangles[0].b.x() + triangles[0].c.x()) / 3.0,
+							 (triangles[0].a.y() + triangles[0].b.y() + triangles[0].c.y()) / 3.0,
+							 (triangles[0].a.z() + triangles[0].b.z() + triangles[0].c.z()) / 3.0);
+
 	viewer.addTimerCallback([&]() {
 
 		Vec3d view_center(
@@ -205,6 +221,11 @@ int main(int argc, char **argv) {
 				);
 
 		const Grid3D<bool>& occluded_space = cast_occlusion(grid_coords, triangles, view_center);
+
+//		Grid3D<bool> occluded_space(SUBDIVISIONS,SUBDIVISIONS,SUBDIVISIONS, false);
+
+//		cast_occlusion(grid_coords, occluded_space, triangles[0], view_center);
+
 //		const VisibilityOctree& occluded_space_octree = cast_occlusion_batch_sorting(grid_coords.baseAABB(),
 //																					 triangles,
 //																					 view_center);
@@ -231,7 +252,7 @@ int main(int argc, char **argv) {
 		t += step;
 
 		if (t > 2.0 * M_PI) {
-			viewer.stop();
+//			viewer.stop();
 			t = 0;
 		} else {
 			std::cout << "T: " << t << " / " << 2.0 * M_PI << std::endl;

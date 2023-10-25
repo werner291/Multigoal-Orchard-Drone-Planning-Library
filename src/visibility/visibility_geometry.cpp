@@ -65,10 +65,8 @@ namespace mgodpl::visibility {
 //		}
 	}
 
-	std::optional<RangeInclusiveD>
-	aabbInAABB(const math::AABBd &aabb,
-			   const std::array<mgodpl::math::Ray, 3> &rays,
-			   int dim) {
+	std::optional<AABBd>
+	aabbInAABB(const math::AABBd &aabb, const std::array<mgodpl::math::Ray, 3> &rays) {
 
 		// TODO account for the triangle of origins.
 
@@ -112,10 +110,7 @@ namespace mgodpl::visibility {
 			total_aabb = *isect;
 		}
 
-		return std::make_optional<RangeInclusiveD>(
-			total_aabb.min()[dim],
-			total_aabb.max()[dim]
-		);
+		return total_aabb;
 	}
 
 	std::vector<std::pair<double, const math::Triangle *>>
