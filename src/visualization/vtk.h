@@ -17,14 +17,6 @@
 #include "../experiment_utils/TreeMeshes.h"
 
 /**
- * Returns a vtkPolyDataMapper for the collision geometry of the given robot LinkModel.
- *
- * @param lm 		The LinkModel to get the collision geometry for.
- * @return 			A vtkPolyDataMapper for the collision geometry of the given robot LinkModel.
- */
-vtkNew<vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel *lm);
-
-/**
  * Build a pure white ambient light, to bring out the ambient color of the objects without modification (and preserve the color encoding).
  *
  * @return 			A pure white ambient light.

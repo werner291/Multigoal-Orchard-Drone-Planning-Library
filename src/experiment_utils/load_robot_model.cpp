@@ -16,6 +16,7 @@ moveit::core::RobotModelPtr mgodpl::experiment_assets::loadRobotModel(double bas
 	urdf->initFile("test_robots/urdf/bot.urdf");
 
 	if (urdf->getName() == "") {
+		std::cerr << "Failed to load the robot model. Typically, this is because the assets are in the wrong place. Ensure that the working directory is set to the root of the project containing the 'test_robots' folder." << std::endl;
 		throw std::runtime_error("Failed to load robot model; is the path correct?");
 	}
 

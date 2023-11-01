@@ -15,16 +15,12 @@
 
 #include "VideoRecorder.h"
 
-
-
 // Forward declarations.
 class vtkActor;
 class vtkActorCollection;
 class vtkRenderer;
 class vtkRenderWindow;
 class vtkRenderWindowInteractor;
-
-struct RobotPath;
 
 namespace mgodpl {
 

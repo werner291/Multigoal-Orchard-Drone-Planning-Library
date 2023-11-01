@@ -1,6 +1,6 @@
 #include <geometric_shapes/shapes.h>
 #include <geometric_shapes/shape_operations.h>
-#include "load_mesh.h"
+#include "load_mesh_ros.h"
 
 shape_msgs::msg::Mesh meshMsgFromResource(const std::string &resource) {
 	std::shared_ptr<shapes::Mesh> mesh_shape(shapes::createMeshFromResource(resource));

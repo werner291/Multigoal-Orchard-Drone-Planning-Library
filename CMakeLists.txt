@@ -133,6 +133,7 @@ add_library(visibility
         src/visibility/visibility_geometry.cpp
         src/visibility/visibility_geometry.h
 )
+
 target_link_libraries(visibility math_utils)
 #target_compile_options(visibility PRIVATE -O3)
 
@@ -143,8 +144,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/TreeMeshes.cpp
             src/experiment_utils/mesh_connected_components.cpp
             src/experiment_utils/mesh_connected_components.h
-            src/experiment_utils/load_mesh.h
-            src/experiment_utils/load_mesh.cpp
+            src/experiment_utils/load_mesh_ros.h
+            src/experiment_utils/load_mesh_ros.cpp
             src/experiment_utils/load_robot_model.h
             src/experiment_utils/load_robot_model.cpp
     )
@@ -178,6 +179,8 @@ if (ENABLE_VISUALIZATION)
             src/visualization/VtkPolyLineVisualization.h
             src/visualization/VtkLineSegmentVizualization.cpp
             src/visualization/VtkLineSegmentVizualization.h
+            src/visualization/VtkRobotModel.h
+            src/visualization/VtkRobotModel.cpp
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})

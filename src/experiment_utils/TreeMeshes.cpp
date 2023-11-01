@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include "TreeMeshes.h"
-#include "load_mesh.h"
+#include "load_mesh_ros.h"
 #include "mesh_connected_components.h"
 
 namespace mgodpl::tree_meshes {
