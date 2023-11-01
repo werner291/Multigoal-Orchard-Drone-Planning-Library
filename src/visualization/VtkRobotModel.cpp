@@ -88,7 +88,15 @@ namespace mgodpl::visualization {
 								 const moveit::core::RobotState &initial_state,
 								 const math::Vec3d &rgb) : robotModel(std::move(robot_model)) {
 
-		for (const moveit::core::LinkModel *lm: robot_model->getLinkModelsWithCollisionGeometry()) {
+		generateLinkActors(rgb);
+
+		applyState(initial_state);
+
+	}
+
+	void
+	VtkRobotModel::generateLinkActors(const math::Vec3d &rgb) {
+		for (const moveit::core::LinkModel *lm: robotModel->getLinkModelsWithCollisionGeometry()) {
 
 			std::cout << "Visualizing link with mesh " << lm->getVisualMeshFilename() << std::endl;
 
@@ -116,9 +124,6 @@ namespace mgodpl::visualization {
 			}
 
 		}
-
-		applyState(initial_state);
-
 	}
 
 	void VtkRobotModel::applyState(const moveit::core::RobotState &st) {

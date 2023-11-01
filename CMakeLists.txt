@@ -86,8 +86,8 @@ set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
-#SET(CMAKE_C_FLAGS_DEBUG "-O0")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
 set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" "ompl")
 
@@ -148,6 +148,10 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/load_mesh_ros.cpp
             src/experiment_utils/load_robot_model.h
             src/experiment_utils/load_robot_model.cpp
+            src/experiment_utils/moveit_state_tools.cpp
+            src/experiment_utils/moveit_state_tools.h
+            src/experiment_utils/snake_path.cpp
+            src/experiment_utils/snake_path.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")

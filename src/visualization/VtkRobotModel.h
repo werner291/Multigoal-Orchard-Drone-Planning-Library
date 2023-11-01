@@ -39,6 +39,7 @@ namespace mgodpl::visualization {
 
 		void applyState(const moveit::core::RobotState &st);
 
+		void generateLinkActors(const math::Vec3d &rgb);
 	};
 }
 
