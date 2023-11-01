@@ -145,6 +145,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/mesh_connected_components.h
             src/experiment_utils/load_mesh.h
             src/experiment_utils/load_mesh.cpp
+            src/experiment_utils/load_robot_model.h
+            src/experiment_utils/load_robot_model.cpp
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
@@ -185,6 +187,10 @@ if (ENABLE_VISUALIZATION)
     add_executable(vizcube_lightweight src/experiments/cubeviz.cpp)
     target_link_libraries(vizcube_lightweight math_utils ${PROJECT_NAME}_visualisation experiment_utils)
     ament_target_dependencies(vizcube_lightweight shape_msgs)
+
+    add_executable(no_preknowledge src/experiments/no_preknowledge.cpp)
+    target_link_libraries(no_preknowledge math_utils ${PROJECT_NAME}_visualisation experiment_utils)
+    ament_target_dependencies(no_preknowledge shape_msgs)
 
 endif ()
 
