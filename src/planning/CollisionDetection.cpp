@@ -8,7 +8,7 @@
 
 #include "CollisionDetection.h"
 
-#include <moveit/collision_detection_bullet/collision_env_bullet.h>
+#include <moveit/collision_detection_fcl/collision_env_fcl.h>
 #include <geometric_shapes/shape_operations.h>
 
 bool mgodpl::moveit_facade::CollisionDetection::collides(const mgodpl::moveit_facade::JointSpacePoint &state) {
@@ -46,7 +46,7 @@ bool mgodpl::moveit_facade::CollisionDetection::collides_ccd(const mgodpl::movei
 mgodpl::moveit_facade::CollisionDetection::CollisionDetection(const std::vector<shape_msgs::msg::Mesh> &obstacle_meshes,
 															  const moveit::core::RobotModelConstPtr robot) {
 
-	this->collision_env = std::make_shared<collision_detection::CollisionEnvBullet>(robot);
+	this->collision_env = std::make_shared<collision_detection::CollisionEnvFcl>(robot);
 
 	// Add the obstacles to the collision environment.
 	for (const auto &mesh : obstacle_meshes) {
