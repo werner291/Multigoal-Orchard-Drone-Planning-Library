@@ -6,20 +6,20 @@
 #ifndef NEW_PLANNERS_MESH_UTILS_H
 #define NEW_PLANNERS_MESH_UTILS_H
 
-#include <Eigen/Core>
+//#include <Eigen/Core>
 #include <shape_msgs/msg/mesh.hpp>
 #include "../math/AABB.h"
 
-/**
- * Find the on_which_mesh point on the surface of the given mesh to the given point.
- *
- * Takes O(n) in the number of triangles in the mesh.
- *
- * @param mesh 			The mesh to find the on_which_mesh point on.
- * @param query_point 	The point to find the on_which_mesh point to.
- * @return 				The on_which_mesh point on the mesh to the given point.
- */
-Eigen::Vector3d closestPointOnMesh(const shape_msgs::msg::Mesh &mesh, const Eigen::Vector3d &query_point);
+///**
+// * Find the on_which_mesh point on the surface of the given mesh to the given point.
+// *
+// * Takes O(n) in the number of triangles in the mesh.
+// *
+// * @param mesh 			The mesh to find the on_which_mesh point on.
+// * @param query_point 	The point to find the on_which_mesh point to.
+// * @return 				The on_which_mesh point on the mesh to the given point.
+// */
+//Eigen::Vector3d closestPointOnMesh(const shape_msgs::msg::Mesh &mesh, const Eigen::Vector3d &query_point);
 
 
 
@@ -66,14 +66,14 @@ shape_msgs::msg::Mesh createGroundPlane(double width, double height);
  */
 void append_mesh(shape_msgs::msg::Mesh &left_mesh, const shape_msgs::msg::Mesh &right_mesh);
 
-/**
- * Applies a translation to the vertices of the given mesh.
- *
- * @param mesh 		The mesh to translate.
- * @param translation 	The translation to apply to the vertices of the mesh.
- *
- * @return 			The translated mesh.
- */
-shape_msgs::msg::Mesh translate_mesh(shape_msgs::msg::Mesh mesh, const Eigen::Vector3d &translation);
+///**
+// * Applies a translation to the vertices of the given mesh.
+// *
+// * @param mesh 		The mesh to translate.
+// * @param translation 	The translation to apply to the vertices of the mesh.
+// *
+// * @return 			The translated mesh.
+// */
+//shape_msgs::msg::Mesh translate_mesh(shape_msgs::msg::Mesh mesh, const Eigen::Vector3d &translation);
 
 #endif //NEW_PLANNERS_MESH_UTILS_H

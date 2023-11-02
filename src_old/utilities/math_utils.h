@@ -16,7 +16,7 @@
 #include <optional>
 #include <variant>
 #include "EigenExt.h"
-#include "Vec3.h"
+#include "../../src/math/Vec3.h"
 
 /**
  * Given two lines, expressed in origin-vector form, find the points of on_which_mesh approach.

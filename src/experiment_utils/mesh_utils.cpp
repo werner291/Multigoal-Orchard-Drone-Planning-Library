@@ -1,25 +1,25 @@
 
 #include "mesh_utils.h"
 
-Eigen::Vector3d closestPointOnMesh(const shape_msgs::msg::Mesh &mesh, const Eigen::Vector3d &query_point) {
-	double closest_distance = std::numeric_limits<double>::max();
-	Eigen::Vector3d closest_point;
-
-	for (const auto &tr: mesh.triangles) {
-		Eigen::Vector3d a = toEigen(mesh.vertices[tr.vertex_indices[0]]);
-		Eigen::Vector3d b = toEigen(mesh.vertices[tr.vertex_indices[1]]);
-		Eigen::Vector3d c = toEigen(mesh.vertices[tr.vertex_indices[2]]);
-
-		Eigen::Vector3d candidate = closest_point_on_triangle(query_point, a, b, c);
-
-		double distance = (query_point - candidate).norm();
-		if (distance < closest_distance) {
-			closest_distance = distance;
-			closest_point = candidate;
-		}
-	}
-	return closest_point;
-}
+//Eigen::Vector3d closestPointOnMesh(const shape_msgs::msg::Mesh &mesh, const Eigen::Vector3d &query_point) {
+//	double closest_distance = std::numeric_limits<double>::max();
+//	Eigen::Vector3d closest_point;
+//
+//	for (const auto &tr: mesh.triangles) {
+//		Eigen::Vector3d a = toEigen(mesh.vertices[tr.vertex_indices[0]]);
+//		Eigen::Vector3d b = toEigen(mesh.vertices[tr.vertex_indices[1]]);
+//		Eigen::Vector3d c = toEigen(mesh.vertices[tr.vertex_indices[2]]);
+//
+//		Eigen::Vector3d candidate = closest_point_on_triangle(query_point, a, b, c);
+//
+//		double distance = (query_point - candidate).norm();
+//		if (distance < closest_distance) {
+//			closest_distance = distance;
+//			closest_point = candidate;
+//		}
+//	}
+//	return closest_point;
+//}
 
 shape_msgs::msg::Mesh combine_meshes(const std::vector<shape_msgs::msg::Mesh> &meshes) {
 
@@ -119,14 +119,14 @@ void append_mesh(shape_msgs::msg::Mesh &left_mesh, const shape_msgs::msg::Mesh &
 	}
 }
 
-shape_msgs::msg::Mesh translate_mesh(shape_msgs::msg::Mesh mesh, const Eigen::Vector3d &translation) {
-
-	for (auto &vertex : mesh.vertices) {
-		vertex.x += translation.x();
-		vertex.y += translation.y();
-		vertex.z += translation.z();
-	}
-
-	return mesh;
-
-}
+//shape_msgs::msg::Mesh translate_mesh(shape_msgs::msg::Mesh mesh, const Eigen::Vector3d &translation) {
+//
+//	for (auto &vertex : mesh.vertices) {
+//		vertex.x += translation.x();
+//		vertex.y += translation.y();
+//		vertex.z += translation.z();
+//	}
+//
+//	return mesh;
+//
+//}

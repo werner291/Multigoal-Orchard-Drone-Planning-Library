@@ -9,7 +9,6 @@
 #include <queue>
 
 #include "../math/grid_utils.h"
-#include "../math/vecmath_utils.h"
 #include "../math/AABBGrid.h"
 #include "../math/Segment3d.h"
 #include "../math/intersections.h"

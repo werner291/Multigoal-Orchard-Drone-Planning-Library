@@ -11,7 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Add an option to enable/disable VTK
 option(ENABLE_VISUALIZATION "Enable VISUALizATION support" OFF)
 
-# Add an option to enable/disable building the experiments
+# Add an option to enable/disable building the experiment_state_tools
 option(ENABLE_EXPERIMENTS "Enable EXPERIMENTS" OFF)
 
 # Add an option to build tests or not.
@@ -100,7 +100,6 @@ add_library(math_utils
         src/math/Vec3.h
         src/math/grid_utils.h
         src/math/grid_utils.cpp
-        src/math/vecmath_utils.h
         src/math/ParametricLine.cpp
         src/math/ParametricLine.h
         src/math/Segment3d.cpp
@@ -135,10 +134,24 @@ add_library(visibility
 )
 
 target_link_libraries(visibility math_utils)
+
+add_library(planning
+    src/planning/RobotAlgorithm.h
+        src/planning/BlindlyMoveToNextFruit.h
+        src/planning/BlindlyMoveToNextFruit.cpp
+        src/planning/moveit_facade.h
+        src/planning/moveit_facade.cpp
+        src/planning/moveit_state_tools.h
+        src/planning/moveit_state_tools.cpp
+)
+
+target_link_libraries(planning math_utils)
+ament_target_dependencies(planning ${AMENT_DEPS})
+
 #target_compile_options(visibility PRIVATE -O3)
 
 if (ENABLE_EXPERIMENTS)
-    # A library that is mostly useful for running the experiments.
+    # A library that is mostly useful for running the experiment_state_tools.
     add_library(experiment_utils
             src/experiment_utils/TreeMeshes.h
             src/experiment_utils/TreeMeshes.cpp
@@ -148,10 +161,10 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/load_mesh_ros.cpp
             src/experiment_utils/load_robot_model.h
             src/experiment_utils/load_robot_model.cpp
-            src/experiment_utils/moveit_state_tools.cpp
-            src/experiment_utils/moveit_state_tools.h
             src/experiment_utils/snake_path.cpp
             src/experiment_utils/snake_path.h
+            src/experiment_utils/mesh_utils.h
+            src/experiment_utils/mesh_utils.cpp
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
@@ -167,7 +180,7 @@ if (ENABLE_VISUALIZATION)
     find_package(VTK REQUIRED)
     include_directories(${VTK_INCLUDE_DIRS})
 
-    # A library for vizualizing the experiments.
+    # A library for vizualizing the experiment_state_tools.
     add_library(${PROJECT_NAME}_visualisation
             src/visualization/vtk.h
             src/visualization/vtk.cpp
@@ -196,7 +209,7 @@ if (ENABLE_VISUALIZATION)
     ament_target_dependencies(vizcube_lightweight shape_msgs)
 
     add_executable(no_preknowledge src/experiments/no_preknowledge.cpp)
-    target_link_libraries(no_preknowledge math_utils ${PROJECT_NAME}_visualisation experiment_utils)
+    target_link_libraries(no_preknowledge math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(no_preknowledge shape_msgs)
 
 endif ()

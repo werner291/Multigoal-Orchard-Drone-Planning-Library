@@ -15,6 +15,7 @@
 #include <vtkNew.h>
 
 #include "../math/Vec3.h"
+#include "../planning/moveit_facade.h"
 
 namespace moveit::core {
 	class RobotModel;
@@ -34,10 +35,10 @@ namespace mgodpl::visualization {
 		[[nodiscard]] vtkNew<vtkActorCollection> &getLinkActors();
 
 		explicit VtkRobotModel(moveit::core::RobotModelConstPtr robot_model,
-							   const moveit::core::RobotState &initial_state,
+							   const moveit_facade::JointSpacePoint &initial_state,
 							   const math::Vec3d &rgb);
 
-		void applyState(const moveit::core::RobotState &st);
+		void applyState(const moveit_facade::JointSpacePoint &state);
 
 		void generateLinkActors(const math::Vec3d &rgb);
 	};

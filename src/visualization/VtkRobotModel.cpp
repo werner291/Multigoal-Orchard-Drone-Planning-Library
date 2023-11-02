@@ -85,7 +85,7 @@ namespace mgodpl::visualization {
 	}
 
 	VtkRobotModel::VtkRobotModel(moveit::core::RobotModelConstPtr robot_model,
-								 const moveit::core::RobotState &initial_state,
+								 const moveit_facade::JointSpacePoint &initial_state,
 								 const math::Vec3d &rgb) : robotModel(std::move(robot_model)) {
 
 		generateLinkActors(rgb);
@@ -94,8 +94,7 @@ namespace mgodpl::visualization {
 
 	}
 
-	void
-	VtkRobotModel::generateLinkActors(const math::Vec3d &rgb) {
+	void VtkRobotModel::generateLinkActors(const math::Vec3d &rgb) {
 		for (const moveit::core::LinkModel *lm: robotModel->getLinkModelsWithCollisionGeometry()) {
 
 			std::cout << "Visualizing link with mesh " << lm->getVisualMeshFilename() << std::endl;
@@ -126,14 +125,18 @@ namespace mgodpl::visualization {
 		}
 	}
 
-	void VtkRobotModel::applyState(const moveit::core::RobotState &st) {
-		for (size_t i = 0; i < link_actors->GetNumberOfItems(); ++i) {
+	void VtkRobotModel::applyState(const moveit_facade::JointSpacePoint &st) {
+
+		moveit::core::RobotState moveit_state(robotModel);
+		st.to_moveit(moveit_state, true);
+
+		for (size_t i = 0; i < (int) link_actors->GetNumberOfItems(); ++i) {
 
 			auto link_actor = vtkActor::SafeDownCast(link_actors->GetItemAsObject(i));
 			auto lm = robotModel->getLinkModelsWithCollisionGeometry()[i];
 
 			auto transform = lm->getCollisionOriginTransforms()[0];
-			auto tf = st.getGlobalLinkTransform(lm);
+			auto tf = moveit_state.getGlobalLinkTransform(lm);
 			auto total_tf = tf * transform;
 
 			Eigen::Vector3d tf_trans = total_tf.translation();
