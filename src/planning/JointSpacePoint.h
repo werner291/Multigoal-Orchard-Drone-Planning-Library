@@ -2,8 +2,8 @@
 //
 // All rights reserved.
 
-#ifndef MGODPL_MOVEIT_FACADE_H
-#define MGODPL_MOVEIT_FACADE_H
+#ifndef MGODPL_JOINTSPACEPOINT_H
+#define MGODPL_JOINTSPACEPOINT_H
 
 #include "../math/Vec3.h"
 
@@ -88,4 +88,4 @@ namespace mgodpl::moveit_facade {
 								double t);
 }
 
-#endif //MGODPL_MOVEIT_FACADE_H
+#endif //MGODPL_JOINTSPACEPOINT_H

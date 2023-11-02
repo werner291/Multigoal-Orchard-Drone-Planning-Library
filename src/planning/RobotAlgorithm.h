@@ -12,7 +12,7 @@
 #include <vector>
 #include <optional>
 #include "../math/Vec3.h"
-#include "moveit_facade.h"
+#include "JointSpacePoint.h"
 
 namespace mgodpl::planning {
 

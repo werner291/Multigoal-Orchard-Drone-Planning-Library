@@ -6,7 +6,7 @@
 // Created by werner on 11/2/23.
 //
 
-#include "moveit_facade.h"
+#include "JointSpacePoint.h"
 
 #include <moveit/robot_state/robot_state.h>
 

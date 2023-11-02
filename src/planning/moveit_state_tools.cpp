@@ -8,7 +8,7 @@
 
 #include "moveit_state_tools.h"
 #include "../math/Vec3.h"
-#include "moveit_facade.h"
+#include "JointSpacePoint.h"
 
 #include <moveit/robot_state/robot_state.h>
 

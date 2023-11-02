@@ -15,7 +15,7 @@
 #include <vtkNew.h>
 
 #include "../math/Vec3.h"
-#include "../planning/moveit_facade.h"
+#include "../planning/JointSpacePoint.h"
 
 namespace moveit::core {
 	class RobotModel;

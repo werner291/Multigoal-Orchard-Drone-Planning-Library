@@ -137,12 +137,14 @@ target_link_libraries(visibility math_utils)
 
 add_library(planning
     src/planning/RobotAlgorithm.h
-        src/planning/BlindlyMoveToNextFruit.h
-        src/planning/BlindlyMoveToNextFruit.cpp
-        src/planning/moveit_facade.h
-        src/planning/moveit_facade.cpp
-        src/planning/moveit_state_tools.h
-        src/planning/moveit_state_tools.cpp
+    src/planning/BlindlyMoveToNextFruit.h
+    src/planning/BlindlyMoveToNextFruit.cpp
+    src/planning/JointSpacePoint.h
+    src/planning/JointSpacePoint.cpp
+    src/planning/moveit_state_tools.h
+    src/planning/moveit_state_tools.cpp
+    src/planning/CollisionDetection.h
+    src/planning/CollisionDetection.cpp
 )
 
 target_link_libraries(planning math_utils)

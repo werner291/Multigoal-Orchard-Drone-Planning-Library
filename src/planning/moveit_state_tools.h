@@ -11,7 +11,7 @@
 
 #include <memory>
 #include "../math/Vec3.h"
-#include "moveit_facade.h"
+#include "JointSpacePoint.h"
 
 /**
  * A collection of utility functions that compute or modify robot states

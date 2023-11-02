@@ -12,6 +12,7 @@
 #include "../planning/RobotAlgorithm.h"
 #include "../planning/BlindlyMoveToNextFruit.h"
 #include "../experiment_utils/mesh_utils.h"
+#include "../planning/CollisionDetection.h"
 
 static const double STEP_SIZE = 0.1;
 using namespace mgodpl;
@@ -45,6 +46,8 @@ int main() {
 
 	double total_distance = 0.0;
 
+	CollisionDetection collision_detection({tree_model.trunk_mesh}, robot);
+
 	viewer.addTimerCallback([&]() {
 		if (next_state) {
 
@@ -60,6 +63,11 @@ int main() {
 			}
 
 			robotModelViz.applyState(current_state);
+
+			if (collision_detection.collides(current_state)) {
+				std::cout << "Collision!" << std::endl;
+				next_state = std::nullopt;
+			}
 
 			std::cout << "Total distance:  " << total_distance << std::endl;
 
