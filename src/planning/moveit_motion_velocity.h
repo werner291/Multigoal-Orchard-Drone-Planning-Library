@@ -9,9 +9,15 @@
 #ifndef MGODPL_MOVEIT_MOTION_VELOCITY_H
 #define MGODPL_MOVEIT_MOTION_VELOCITY_H
 
-#include <Eigen/Core>
-#include <Eigen/Geometry>
-#include <moveit/robot_state/robot_state.h>
+namespace moveit {
+	namespace core {
+		class RobotState;
+		class RevoluteJointModel;
+		class JointModel;
+	}
+}
+
+#include "../math/Vec3.h"
 
 namespace mgodpl {
 
@@ -19,8 +25,8 @@ namespace mgodpl {
 	 * A velocity in 3D space consisting of a linear and an angular component.
 	 */
 	struct Velocity {
-		Eigen::Vector3d linear;		/// Linear velocity; translation over one time step.
-		Eigen::AngleAxisd angular;  /// Angular velocity; rotation over one time step.
+		math::Vec3d linear;		/// Linear velocity; translation over one time step.
+		math::Vec3d angular;  /// Angular velocity; rotation over one time step.
 	};
 
 	/**
@@ -30,7 +36,7 @@ namespace mgodpl {
 	 * @param point 		The point on the rigid body, in local coordinates
 	 * @return 				The velocity of the point
 	 */
-	Eigen::Vector3d velocity_at_point(const Velocity &velocity, const Eigen::Vector3d &point);
+	math::Vec3d velocity_at_point(const Velocity &velocity, const math::Vec3d &point);
 
 	/**
 	 * \brief Computes the maximum linear velocity of any point on a rigid body at a given distance from the origin,
