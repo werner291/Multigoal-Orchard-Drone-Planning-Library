@@ -13,6 +13,7 @@
 #include <optional>
 #include "../math/Vec3.h"
 #include "JointSpacePoint.h"
+#include "../experiment_utils/VoxelShroudedSceneInfo.h"
 
 namespace mgodpl::planning {
 
@@ -28,19 +29,12 @@ namespace mgodpl::planning {
 
 	public:
 
-		struct ExternalStateUpdate {
-
-			const moveit_facade::JointSpacePoint& current_state;
-			const std::vector<math::Vec3d>& newly_detected_fruits;
-
-		};
-
 		/**
 		 * The most important function of the algorithm. Given a state, return the next state.
 		 * @param state
 		 * @return
 		 */
-		virtual std::optional<moveit_facade::JointSpacePoint> nextMovement(const ExternalStateUpdate& state) = 0;
+		virtual std::optional<moveit_facade::JointSpacePoint> nextMovement(mgodpl::experiments::VoxelShroudedSceneInfoUpdate state) = 0;
 	};
 
 

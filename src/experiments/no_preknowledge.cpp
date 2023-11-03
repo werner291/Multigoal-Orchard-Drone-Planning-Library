@@ -20,6 +20,7 @@
 #include "../visibility/GridVec.h"
 #include "../math/Triangle.h"
 #include "../visibility/voxel_visibility.h"
+#include "../experiment_utils/VoxelShroudedSceneInfo.h"
 
 static const double STEP_SIZE = 0.1;
 using namespace mgodpl;
@@ -29,7 +30,7 @@ using namespace moveit_facade;
 using namespace planning;
 using namespace math;
 
-Vec3d toVec3d(const geometry_msgs::msg::Point& p) {
+Vec3d toVec3d(const geometry_msgs::msg::Point &p) {
 	return {p.x, p.y, p.z};
 }
 
@@ -37,11 +38,11 @@ int main() {
 
 	// TODO: Reminder, write down the idea of the snake path!
 
-	const auto& robot = experiment_assets::loadRobotModel(1.0);
+	const auto &robot = experiment_assets::loadRobotModel(1.0);
 
-	const auto& tree_model = tree_meshes::loadTreeMeshes("appletree");
+	const auto &tree_model = tree_meshes::loadTreeMeshes("appletree");
 
-	const auto& fruit_positions = tree_model.fruit_meshes | ranges::views::transform([](const auto& mesh) {
+	const auto &fruit_positions = tree_model.fruit_meshes | ranges::views::transform([](const auto &mesh) {
 		return mesh_aabb(mesh).center();
 	}) | ranges::to<std::vector>();
 
@@ -54,7 +55,7 @@ int main() {
 
 	const std::shared_ptr<RobotAlgorithm> algorithm = std::make_shared<BlindlyMoveToNextFruit>(robot);
 
-	std::optional<JointSpacePoint> next_state = algorithm->nextMovement({current_state, {}});
+	std::optional<JointSpacePoint> next_state{};
 
 	double total_distance = 0.0;
 
@@ -62,13 +63,11 @@ int main() {
 
 	const size_t SUBDIVISIONS = 50;
 
-	AABBGrid grid_coords(
-			AABBd(Vec3d(-3.0, -3.0, 0.0), Vec3d(3.0, 3.0, 6.0)),
-			SUBDIVISIONS,SUBDIVISIONS,SUBDIVISIONS);
+	AABBGrid grid_coords(AABBd(Vec3d(-3.0, -3.0, 0.0), Vec3d(3.0, 3.0, 6.0)), SUBDIVISIONS, SUBDIVISIONS, SUBDIVISIONS);
 
 	Grid3D<bool> seen_space(grid_coords.size(), false);
 
-	VtkVoxelGrid voxel_grid(grid_coords, seen_space, {0.3,0.3,0.3}, true);
+	VtkVoxelGrid voxel_grid(grid_coords, seen_space, {0.3, 0.3, 0.3}, true);
 	viewer.addActor(voxel_grid.getActor());
 
 	std::vector<Triangle> triangles;
@@ -80,35 +79,68 @@ int main() {
 		Vec3d b = toVec3d(tree_model.leaves_mesh.vertices[triangle.vertex_indices[1]]);
 		Vec3d c = toVec3d(tree_model.leaves_mesh.vertices[triangle.vertex_indices[2]]);
 
-		triangles.emplace_back(a,b,c);
+		triangles.emplace_back(a, b, c);
 	}
 
 	Grid3D<std::vector<Vec3d>> apples_in_cells(grid_coords.size(), {});
 
-	for (const auto& apple : fruit_positions) {
+	for (const auto &apple: fruit_positions) {
 		Vec3i coords = grid_coords.getGridCoordinates(apple).value();
 		apples_in_cells[coords].push_back(apple);
 	}
 
-	bool first = true;
+	{
+		const Grid3D<bool> &occluded_space = voxel_visibility::cast_occlusion(grid_coords,
+																			  triangles,
+																			  computeEndEffectorPosition(*robot,
+																										 current_state));
+
+		std::vector<Vec3d> newly_detected_fruits;
+
+		for (size_t x = 0; x < SUBDIVISIONS; x++) {
+			for (size_t y = 0; y < SUBDIVISIONS; y++) {
+				for (size_t z = 0; z < SUBDIVISIONS; z++) {
+					Vec3i coords = {(int) x, (int) y, (int) z};
+
+					if (!seen_space[coords] && !occluded_space[coords]) {
+						seen_space[coords] = true;
+						for (const auto &apple: apples_in_cells[coords]) {
+							newly_detected_fruits.push_back(apple);
+						}
+					}
+
+				}
+			}
+		}
+
+		voxel_grid.update(seen_space);
+
+		next_state = algorithm->nextMovement(experiments::VoxelShroudedSceneInfoUpdate::make_filtered(tree_model,
+																									  grid_coords,
+																									  seen_space,
+																									  occluded_space,
+																									  current_state));
+	}
+
 
 	viewer.addTimerCallback([&]() {
-		if (next_state || first) {
-			first = false;
+		if (next_state) {
 
-			const Grid3D<bool>& occluded_space = voxel_visibility::cast_occlusion(grid_coords, triangles, computeEndEffectorPosition(*robot, current_state));
+			const Grid3D<bool> &occluded_space = voxel_visibility::cast_occlusion(grid_coords,
+																				  triangles,
+																				  computeEndEffectorPosition(*robot,
+																											 current_state));
 
 			std::vector<Vec3d> newly_detected_fruits;
 
 			for (size_t x = 0; x < SUBDIVISIONS; x++) {
 				for (size_t y = 0; y < SUBDIVISIONS; y++) {
 					for (size_t z = 0; z < SUBDIVISIONS; z++) {
-
-						Vec3i coords = {(int)x, (int)y, (int)z};
+						Vec3i coords = {(int) x, (int) y, (int) z};
 
 						if (!seen_space[coords] && !occluded_space[coords]) {
 							seen_space[coords] = true;
-							for (const auto& apple : apples_in_cells[coords]) {
+							for (const auto &apple: apples_in_cells[coords]) {
 								newly_detected_fruits.push_back(apple);
 							}
 						}
@@ -116,6 +148,7 @@ int main() {
 					}
 				}
 			}
+
 
 			voxel_grid.update(seen_space);
 
@@ -134,7 +167,11 @@ int main() {
 				robotModelViz.applyState(current_state);
 			} else {
 				std::cout << "Newly detected fruits: " << newly_detected_fruits.size() << std::endl;
-				next_state = algorithm->nextMovement({current_state, newly_detected_fruits});
+				next_state = algorithm->nextMovement(experiments::VoxelShroudedSceneInfoUpdate::make_filtered(tree_model,
+																											  grid_coords,
+																											  seen_space,
+																											  occluded_space,
+																											  current_state));
 			}
 
 			if (collision_detection.collides(current_state)) {
@@ -150,8 +187,9 @@ int main() {
 
 	viewer.addMesh(tree_model.trunk_mesh, {0.5, 0.3, 0.1});
 	viewer.addMesh(tree_model.leaves_mesh, {0.1, 0.5, 0.1});
-	for (const auto& fruit : tree_model.fruit_meshes) viewer.addMesh(fruit, {0.5, 0.1, 0.1});
-	viewer.addMesh(createGroundPlane(5.0,5.0), {0.3, 0.5, 0.1});
+	for (const auto &fruit: tree_model.fruit_meshes)
+		viewer.addMesh(fruit, {0.5, 0.1, 0.1});
+	viewer.addMesh(createGroundPlane(5.0, 5.0), {0.3, 0.5, 0.1});
 
 	viewer.start();
 

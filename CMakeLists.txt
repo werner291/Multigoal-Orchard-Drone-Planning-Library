@@ -176,6 +176,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/snake_path.h
             src/experiment_utils/mesh_utils.h
             src/experiment_utils/mesh_utils.cpp
+            src/experiment_utils/VoxelShroudedSceneInfo.cpp
+            src/experiment_utils/VoxelShroudedSceneInfo.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
