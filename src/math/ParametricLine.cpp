@@ -14,14 +14,6 @@ mgodpl::math::Vec3d mgodpl::math::ParametricLine::closest_point(const mgodpl::ma
 	return _origin + _direction * (p - _origin).dot(_direction);
 }
 
-const mgodpl::math::Vec3d &mgodpl::math::ParametricLine::direction() const {
-	return _direction;
-}
-
-const mgodpl::math::Vec3d &mgodpl::math::ParametricLine::origin() const {
-	return _origin;
-}
-
 mgodpl::math::Vec3d mgodpl::math::ParametricLine::pointAt(double d) const {
 	return _origin + _direction * d;
 }

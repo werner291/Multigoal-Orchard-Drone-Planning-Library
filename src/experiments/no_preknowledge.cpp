@@ -54,13 +54,13 @@ int main() {
 
 	const std::shared_ptr<RobotAlgorithm> algorithm = std::make_shared<BlindlyMoveToNextFruit>(robot);
 
-	std::optional<JointSpacePoint> next_state = algorithm->nextMovement({current_state, fruit_positions});
+	std::optional<JointSpacePoint> next_state = algorithm->nextMovement({current_state, {}});
 
 	double total_distance = 0.0;
 
 	CollisionDetection collision_detection({tree_model.trunk_mesh}, robot);
 
-	const size_t SUBDIVISIONS = 30;
+	const size_t SUBDIVISIONS = 50;
 
 	AABBGrid grid_coords(
 			AABBd(Vec3d(-3.0, -3.0, 0.0), Vec3d(3.0, 3.0, 6.0)),
@@ -90,8 +90,11 @@ int main() {
 		apples_in_cells[coords].push_back(apple);
 	}
 
+	bool first = true;
+
 	viewer.addTimerCallback([&]() {
-		if (next_state) {
+		if (next_state || first) {
+			first = false;
 
 			const Grid3D<bool>& occluded_space = voxel_visibility::cast_occlusion(grid_coords, triangles, computeEndEffectorPosition(*robot, current_state));
 
@@ -103,7 +106,7 @@ int main() {
 
 						Vec3i coords = {(int)x, (int)y, (int)z};
 
-						if (seen_space[coords] && !occluded_space[coords]) {
+						if (!seen_space[coords] && !occluded_space[coords]) {
 							seen_space[coords] = true;
 							for (const auto& apple : apples_in_cells[coords]) {
 								newly_detected_fruits.push_back(apple);
@@ -113,6 +116,8 @@ int main() {
 					}
 				}
 			}
+
+			voxel_grid.update(seen_space);
 
 			double distance = moveit_joint_distance(*robot, current_state, *next_state);
 

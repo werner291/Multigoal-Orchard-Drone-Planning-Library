@@ -41,6 +41,17 @@ namespace mgodpl {
 	 * @param triangle	The triangle.
 	 * @param eye		The eye point.
 	 */
+	/**
+	 * In a given visibility grid, set all cells occluded by a triangle to false.
+	 *
+	 * This works by essentially considering the open infinite pyramid formed
+	 * with eye eye at the apex and the triangle as the "base", though extended
+	 * infinitely in all directions.
+	 *
+	 * @param grid		The visibility grid.
+	 * @param triangle	The triangle.
+	 * @param eye		The eye point.
+	 */
 	void voxel_visibility::cast_occlusion(const AABBGrid &grid,
 										  Grid3D<bool> &occluded,
 										  const Triangle &triangle,
@@ -57,60 +68,97 @@ namespace mgodpl {
 									  occluded_ray(eye, triangle.b, cell_size),
 									  occluded_ray(eye, triangle.c, cell_size),};
 
-		// Compute the AABB of the intersection of the occluded volume and the grid AABB.
-		const auto &occluded_volume_aabb = aabbInAABB(grid.baseAABB(), rays, 0);
+		double xmin = grid.baseAABB().min().x();
+		double xmax = grid.baseAABB().max().x();
+
+		for (const int dim : {0,1,2}) {
+			double dim_xmin = INFINITY;
+			double dim_xmax = -INFINITY;
+			for (const Ray& ray : rays) {
+				if (ray.direction()[dim] == 0.0) continue;
+				double t1 = std::max(0.0,(grid.baseAABB().min()[dim] - ray.origin()[dim]) / ray.direction()[dim]);
+				double t2 = std::max(0.0,(grid.baseAABB().max()[dim] - ray.origin()[dim]) / ray.direction()[dim]);
+				double x1 = ray.origin()[0] + t1 * ray.direction()[0];
+				double x2 = ray.origin()[0] + t2 * ray.direction()[0];
+				dim_xmin = std::min(dim_xmin, std::min(x1, x2));
+				dim_xmax = std::max(dim_xmax, std::max(x1, x2));
+			}
+			xmin = std::max(xmin, dim_xmin);
+			xmax = std::min(xmax, dim_xmax);
+		}
 
 		// Find the grid x-coordinates affected by that.
-		const int grid_xmin = *grid.getCoordinateInDimension(occluded_volume_aabb->min().x() + margin, 0);
-		const int grid_xmax = *grid.getCoordinateInDimension(occluded_volume_aabb->max().x() - margin, 0);
+		const int grid_xmin = *grid.getCoordinateInDimension(xmin + margin, 0);
+		const int grid_xmax = *grid.getCoordinateInDimension(xmax - margin, 0);
 
 		// Iterate over all grid x-coordinates, treating the volume one slice of grid cells at a time.
 		for (int x = grid_xmin; x <= grid_xmax; ++x) {
 
-			// Get the AABB of the slice.
-			const AABBd slice_aabb{grid.baseAABB().min() + Vec3d(x * grid.cellSize().x(), 0.0, 0.0),
-								   grid.baseAABB().min() + Vec3d((x + 1) * grid.cellSize().x(),
-																 grid.baseAABB().size().y(),
-																 grid.baseAABB().size().z())};
+			double x_slice_min = grid.baseAABB().min().x() + x * grid.cellSize().x();
+			double x_slice_max = grid.baseAABB().min().x() + (x + 1) * grid.cellSize().x();
 
-			// Compute the AABB of the intersection of the occluded volume and the slice AABB.
-			const auto &occluded_aabb_in_xslice = aabbInAABB(slice_aabb, rays, 1);
+			AABBd slice_aabb {
+				{x_slice_min, grid.baseAABB().min().y(), grid.baseAABB().min().z()},
+				{x_slice_max, grid.baseAABB().max().y(), grid.baseAABB().max().z()}
+			};
 
-			// If there is no intersection, skip this slice since it's not occluded at all.
-			if (!occluded_aabb_in_xslice.has_value()) {
-				continue;
+			double ymin = slice_aabb.min().y();
+			double ymax = slice_aabb.max().y();
+
+			for (const int dim : {0,1,2}) {
+				double dim_ymin = INFINITY;
+				double dim_ymax = -INFINITY;
+				for (const Ray& ray : rays) {
+					if (ray.direction()[dim] == 0.0) continue;
+					double t1 = std::max(0.0,(slice_aabb.min()[dim] - ray.origin()[dim]) / ray.direction()[dim]);
+					double t2 = std::max(0.0,(slice_aabb.max()[dim] - ray.origin()[dim]) / ray.direction()[dim]);
+					double y1 = ray.origin()[1] + t1 * ray.direction()[1];
+					double y2 = ray.origin()[1] + t2 * ray.direction()[1];
+					dim_ymin = std::min(dim_ymin, std::min(y1, y2));
+					dim_ymax = std::max(dim_ymax, std::max(y1, y2));
+				}
+				ymin = std::max(ymin, dim_ymin);
+				ymax = std::min(ymax, dim_ymax);
 			}
 
-			// Sanity check: the intersection AABB should be contained in the slice AABB.
-			assert(slice_aabb.inflated(1.0e-6).contains(*occluded_aabb_in_xslice));
-
 			// Find the grid y-coordinates affected by that.
-			const int grid_ymin = *grid.getCoordinateInDimension(occluded_aabb_in_xslice->min().y() + margin, 1);
-			const int grid_ymax = *grid.getCoordinateInDimension(occluded_aabb_in_xslice->max().y() - margin, 1);
+			const int grid_ymin = *grid.getCoordinateInDimension(ymin + margin, 1);
+			const int grid_ymax = *grid.getCoordinateInDimension(ymax - margin, 1);
+//			const int grid_ymin = *grid.getCoordinateInDimension(triangle.a.y() + margin, 1);
+//			const int grid_ymax = *grid.getCoordinateInDimension(triangle.a.y() - margin, 1);
 
 			// Now, iterate over all grid y-coordinates, each time treating a single column of grid cells.
 			for (int y = grid_ymin; y <= grid_ymax; ++y) {
 
-				// Get the AABB of the column.
-				const AABBd xy_slice_aabb = {slice_aabb.min() + Vec3d(0.0, y * grid.cellSize().y(), 0.0),
-											 slice_aabb.min() + Vec3d(slice_aabb.size().x(),
-																	  (y + 1) * grid.cellSize().y(),
-																	  slice_aabb.size().z())};
+				double column_ymin = grid.baseAABB().min().y() + y * grid.cellSize().y();
+				double column_ymax = grid.baseAABB().min().y() + (y + 1) * grid.cellSize().y();
 
-				// Compute the AABB of the intersection of the occluded volume and the slice AABB.
-				const auto &occluded_aabb_in_xyslice = aabbInAABB(xy_slice_aabb, rays, 2);
+				AABBd column_aabb {
+					{slice_aabb.min().x(), column_ymin, slice_aabb.min().z()},
+					{slice_aabb.max().x(), column_ymax, slice_aabb.max().z()}
+				};
 
-				// If there is no intersection, skip this column since it's not occluded at all.
-				if (!occluded_aabb_in_xyslice.has_value()) {
-					continue;
+				double zmin = column_aabb.min().z();
+				double zmax = column_aabb.max().z();
+
+				for (const int dim : {0,1,2}) {
+					double dim_zmin = INFINITY;
+					double dim_zmax = -INFINITY;
+					for (const Ray& ray : rays) {
+						if (ray.direction()[dim] == 0.0) continue;
+						double t1 = std::max(0.0,(column_aabb.min()[dim] - ray.origin()[dim]) / ray.direction()[dim]);
+						double t2 = std::max(0.0,(column_aabb.max()[dim] - ray.origin()[dim]) / ray.direction()[dim]);
+						double z1 = ray.origin()[2] + t1 * ray.direction()[2];
+						double z2 = ray.origin()[2] + t2 * ray.direction()[2];
+						dim_zmin = std::min(dim_zmin, std::min(z1, z2));
+						dim_zmax = std::max(dim_zmax, std::max(z1, z2));
+					}
+					zmin = std::max(zmin, dim_zmin);
+					zmax = std::min(zmax, dim_zmax);
 				}
 
-				// Sanity check: the intersection AABB should be contained in the slice AABB.
-				assert(xy_slice_aabb.inflated(1.0e-6).contains(*occluded_aabb_in_xyslice));
-
-				// Find the grid z-coordinates affected by that.
-				const int grid_zmin = *grid.getCoordinateInDimension(occluded_aabb_in_xyslice->min().z() + margin, 2);
-				const int grid_zmax = *grid.getCoordinateInDimension(occluded_aabb_in_xyslice->max().z() - margin, 2);
+				const int grid_zmin = *grid.getCoordinateInDimension(zmin + margin, 2);
+				const int grid_zmax = *grid.getCoordinateInDimension(zmax - margin, 2);
 
 				// Mark all affected grid cells as occluded.
 				for (int z = grid_zmin; z <= grid_zmax; ++z) {

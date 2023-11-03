@@ -32,7 +32,9 @@ namespace mgodpl::math {
 		 * @param p 	The point to compute the closest point to.
 		 * @return 		The point on the line closest to p.
 		 */
-		[[nodiscard]] const Vec3d& direction() const;
+		[[nodiscard]] inline const Vec3d& direction() const {
+			return _direction;
+		}
 
 		/**
 		 * Compute the point on the line closest to the given point.
@@ -40,7 +42,9 @@ namespace mgodpl::math {
 		 * @param p 	The point to compute the closest point to.
 		 * @return 		The point on the line closest to p.
 		 */
-		[[nodiscard]] const Vec3d& origin() const;
+		[[nodiscard]] inline const Vec3d& origin() const {
+			return _origin;
+		}
 
 		Vec3d pointAt(double d) const;
 
