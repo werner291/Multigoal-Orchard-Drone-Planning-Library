@@ -7,6 +7,7 @@
 
 #include <moveit/collision_detection/collision_env.h>
 #include <moveit/collision_detection_fcl/collision_env_fcl.h>
+#include "moveit_forward_declarations.h"
 
 class MyCollisionEnv : public collision_detection::CollisionEnvFCL {
 

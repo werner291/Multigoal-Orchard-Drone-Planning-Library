@@ -12,7 +12,11 @@
 #include <vector>
 #include "../math/Vec3.h"
 #include "RobotAlgorithm.h"
-#include "moveit_state_tools.h"
+#include "moveit_forward_declarations.h"
+
+namespace mgodpl::moveit_facade {
+	class CollisionDetection;
+}
 
 namespace mgodpl::planning {
 

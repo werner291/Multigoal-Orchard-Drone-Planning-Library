@@ -7,6 +7,7 @@
 //
 
 #include "load_robot_model.h"
+#include "../planning/moveit_forward_declarations.h"
 
 #include <moveit/robot_model/robot_model.h>
 

@@ -9,6 +9,8 @@
 #include "moveit_state_tools.h"
 #include "../math/Vec3.h"
 #include "JointSpacePoint.h"
+#include "moveit_forward_declarations.h"
+#include "../math/Polar.h"
 
 #include <moveit/robot_state/robot_state.h>
 
@@ -83,6 +85,34 @@ namespace mgodpl::experiment_state_tools {
 		pos[6] = q.w();
 
 		return moveit_facade::JointSpacePoint::from_moveit(state);
+	}
+
+	moveit_facade::JointSpacePoint robotStateFromPointAndArmvec(const moveit::core::RobotModelConstPtr &drone,
+																const Vec3d &desired_ee_pos,
+																const Vec3d &armvec) {
+
+		// Ensure armvec is normalized
+		assert(std::abs(armvec.norm() - 1.0) < 1e-6);
+
+		math::Polar polar = math::pointToPolar(armvec);
+
+		Eigen::Quaterniond qd(Eigen::AngleAxisd(2.0 * M_PI - (M_PI / 2.0 - polar.azimuth), Eigen::Vector3d::UnitZ()));
+
+		// Pick a base joint angle such that the arm is pointing in the right direction.
+
+		moveit::core::RobotState st(drone);
+
+		moveit_facade::JointSpacePoint point(std::vector(drone->getVariableCount(), 0.0));
+
+		point.joint_values[3] = qd.x();
+		point.joint_values[4] = qd.y();
+		point.joint_values[5] = qd.z();
+		point.joint_values[6] = qd.w();
+
+		moveEndEffectorToPoint(*drone, point, desired_ee_pos);
+
+		return point;
+
 	}
 
 

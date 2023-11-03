@@ -10,6 +10,7 @@
 #include <moveit/robot_state/robot_state.h>
 #include "BlindlyMoveToNextFruit.h"
 #include "JointSpacePoint.h"
+#include "moveit_state_tools.h"
 
 namespace mgodpl::planning {
 
@@ -34,7 +35,7 @@ namespace mgodpl::planning {
 		auto closest_fruit = std::min_element(fruit_to_visit.begin(),
 											  fruit_to_visit.end(),
 											  [&](const math::Vec3d &a, const math::Vec3d &b) {
-												  return (a - ee_pos).norm() < (b - ee_pos).norm();
+												  return (a - ee_pos).squaredNorm() < (b - ee_pos).squaredNorm();
 											  });
 
 		JointSpacePoint next_state = state.current_state;

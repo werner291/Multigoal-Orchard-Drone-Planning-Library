@@ -7,6 +7,7 @@
 //
 
 #include "snake_path.h"
+
 #include <moveit/robot_state/robot_state.h>
 
 namespace mgodpl::moveit_state_tools {

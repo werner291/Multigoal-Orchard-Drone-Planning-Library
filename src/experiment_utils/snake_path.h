@@ -11,10 +11,7 @@
 
 #include <functional>
 #include "../math/Vec3.h"
-
-namespace moveit::core {
-	class RobotState;
-}
+#include "../planning/moveit_forward_declarations.h"
 
 namespace mgodpl::moveit_state_tools {
 

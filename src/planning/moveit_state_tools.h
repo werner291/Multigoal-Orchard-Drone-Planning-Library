@@ -12,6 +12,7 @@
 #include <memory>
 #include "../math/Vec3.h"
 #include "JointSpacePoint.h"
+#include "moveit_forward_declarations.h"
 
 /**
  * A collection of utility functions that compute or modify robot states
@@ -62,6 +63,11 @@ namespace mgodpl::experiment_state_tools {
 	moveit_facade::JointSpacePoint randomStateOutsideTree(
 			const moveit::core::RobotModel& robot,
 			int seed);
+
+
+	moveit_facade::JointSpacePoint robotStateFromPointAndArmvec(const moveit::core::RobotModelConstPtr &drone,
+														  const math::Vec3d &desired_ee_pos,
+														  const math::Vec3d &armvec);
 
 }
 

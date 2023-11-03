@@ -6,6 +6,7 @@
 #define MGODPL_JOINTSPACEPOINT_H
 
 #include "../math/Vec3.h"
+#include "moveit_forward_declarations.h"
 
 #include <random>
 #include <vector>
@@ -13,11 +14,6 @@
 
 // Forward declarations of MoveIt stuff. We don't import them because MoveIt likes
 // to import a lot of stuff (Mostly Eigen) that we don't want to be imported everywhere.
-namespace moveit::core {
-	class RobotModel;
-	using RobotModelConstPtr = std::shared_ptr<const RobotModel>;
-	class RobotState;
-}
 
 /**
  * This namespace contains a few functions that make it easier to interface with MoveIt,

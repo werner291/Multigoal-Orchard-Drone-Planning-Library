@@ -12,6 +12,7 @@
 #include <memory>
 #include <shape_msgs/msg/mesh.hpp>
 #include "JointSpacePoint.h"
+#include "moveit_forward_declarations.h"
 
 class MyCollisionEnv;
 

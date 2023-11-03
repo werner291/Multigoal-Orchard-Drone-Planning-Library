@@ -36,37 +36,7 @@ using namespace tree_meshes;
 using namespace visibility;
 using namespace voxel_visibility;
 
-vtkNew<vtkPoints>
-grid_to_points(const size_t SUBDIVISIONS,
-			   const mgodpl::math::AABBGrid &grid_coords,
-			   const Grid3D<bool> &grid,
-			   bool negate) {
-	vtkNew<vtkPoints> points;
 
-	// Allocate a point for every true value in the grid.
-	for (int x = 0; x < SUBDIVISIONS; x++) {
-		for (int y = 0; y < SUBDIVISIONS; y++) {
-			for (int z = 0; z < SUBDIVISIONS; z++) {
-
-				bool invisible = grid[{x, y, z}];
-				
-				if (negate) {
-					invisible = !invisible;
-				}
-				
-				bool neighbour_visible = grid.voxel_has_different_neighbor({x, y, z});
-
-				if (invisible && neighbour_visible) {
-
-					auto aabb = grid_coords.getAABB({x, y, z});
-
-					points->InsertNextPoint(aabb->center().x(), aabb->center().y(), aabb->center().z());
-				}
-			}
-		}
-	}
-	return points;
-}
 
 using namespace visibility;
 

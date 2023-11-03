@@ -18,6 +18,7 @@ namespace moveit {
 }
 
 #include "../math/Vec3.h"
+#include "moveit_forward_declarations.h"
 
 namespace mgodpl {
 

@@ -16,6 +16,7 @@
 
 #include "../math/Vec3.h"
 #include "../planning/JointSpacePoint.h"
+#include "../planning/moveit_forward_declarations.h"
 
 namespace moveit::core {
 	class RobotModel;

@@ -9,6 +9,7 @@
 #include "CollisionDetection.h"
 #include "moveit_motion_velocity.h"
 #include "MyCollisionEnv.h"
+#include "moveit_forward_declarations.h"
 
 #include <moveit/collision_detection_fcl/collision_env_fcl.h>
 #include <geometric_shapes/shape_operations.h>

@@ -10,11 +10,7 @@
 #define MGODPL_LOAD_ROBOT_MODEL_H
 
 #include <memory>
-
-namespace moveit::core {
-	class RobotModel;
-	using RobotModelPtr = std::shared_ptr<RobotModel>;
-}
+#include "../planning/moveit_forward_declarations.h"
 
 namespace mgodpl::experiment_assets {
 

@@ -7,6 +7,7 @@
 //
 
 #include "JointSpacePoint.h"
+#include "moveit_forward_declarations.h"
 
 #include <moveit/robot_state/robot_state.h>
 

@@ -5,6 +5,7 @@
 #include <geometric_shapes/shapes.h>
 #include "MyCollisionEnv.h"
 #include "moveit_motion_velocity.h"
+#include "moveit_forward_declarations.h"
 
 MyCollisionEnv::MyCollisionEnv(const moveit::core::RobotModelConstPtr &model,
 							   const collision_detection::WorldPtr &world,

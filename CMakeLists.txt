@@ -118,6 +118,8 @@ add_library(math_utils
         src/math/Triangle.cpp
         src/math/aabb_of.cpp
         src/math/aabb_of.h
+        src/math/Polar.cpp
+        src/math/Polar.h
 )
 
 add_library(visibility
@@ -149,6 +151,8 @@ add_library(planning
     src/planning/MyCollisionEnv.cpp
     src/planning/moveit_motion_velocity.h
     src/planning/moveit_motion_velocity.cpp
+        src/planning/NextTargetSelector.cpp
+        src/planning/NextTargetSelector.h
 )
 
 target_link_libraries(planning math_utils)
@@ -204,6 +208,8 @@ if (ENABLE_VISUALIZATION)
             src/visualization/VtkLineSegmentVizualization.h
             src/visualization/VtkRobotModel.h
             src/visualization/VtkRobotModel.cpp
+            src/visualization/voxels.cpp
+            src/visualization/voxels.h
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
