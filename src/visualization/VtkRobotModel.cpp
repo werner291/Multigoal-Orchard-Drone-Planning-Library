@@ -130,7 +130,7 @@ namespace mgodpl::visualization {
 		moveit::core::RobotState moveit_state(robotModel);
 		st.to_moveit(moveit_state, true);
 
-		for (size_t i = 0; i < (int) link_actors->GetNumberOfItems(); ++i) {
+		for (size_t i = 0; i < (size_t) link_actors->GetNumberOfItems(); ++i) {
 
 			auto link_actor = vtkActor::SafeDownCast(link_actors->GetItemAsObject(i));
 			auto lm = robotModel->getLinkModelsWithCollisionGeometry()[i];

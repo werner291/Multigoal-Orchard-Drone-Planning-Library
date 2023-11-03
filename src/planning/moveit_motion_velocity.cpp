@@ -14,22 +14,21 @@
 namespace mgodpl {
 	using namespace math;
 
-	Vec3d mgodpl::velocity_at_point(const mgodpl::Velocity &velocity, const Vec3d &point) {
-		return velocity.linear + velocity.angular.axis().cross(point) * velocity.angular.angle();
+	Vec3d velocity_at_point(const Velocity &velocity, const Vec3d &point) {
+		return velocity.linear + velocity.angular.cross(point);
 	}
 
-	double mgodpl::max_velocity_at_distance(const mgodpl::Velocity &velocity, const double &distance) {
-		assert(std::abs(velocity.angular.axis().squaredNorm() - 1.0) < 1e-6);
+	double max_velocity_at_distance(const Velocity &velocity, const double &distance) {
 
-		return velocity.linear.norm() + std::abs(velocity.angular.angle()) * distance;
+		return velocity.linear.norm() + velocity.angular.norm() * distance;
 
 	}
 
-	mgodpl::Velocity mgodpl::getRevoluteVelocity(const moveit::core::RobotState &state1,
-												 const moveit::core::RobotState &state2,
-												 const moveit::core::RevoluteJointModel *revJoint) {
+	Velocity getRevoluteVelocity(const moveit::core::RobotState &state1,
+								 const moveit::core::RobotState &state2,
+								 const moveit::core::RevoluteJointModel *revJoint) {
 
-		const Vec3d &axis = revJoint->getAxis();
+		const Vec3d axis(revJoint->getAxis().data());
 
 		// Calculate the angle change between the two states.
 		double angle = state2.getVariablePosition(revJoint->getFirstVariableIndex()) -
@@ -44,10 +43,11 @@ namespace mgodpl {
 				// The linear velocity is zero for revolute joints.
 				.linear = Vec3d::Zero(),
 				// Assemble the angle and the axis into an AngleAxis object.
-				.angular = Eigen::AngleAxisd(angle, axis)};
+				.angular = axis * angle
+		};
 	}
 
-	mgodpl::Velocity mgodpl::getTransformBasedVelocity(const moveit::core::JointModel *joint,
+	Velocity getTransformBasedVelocity(const moveit::core::JointModel *joint,
 													   const moveit::core::RobotState &state1,
 													   const moveit::core::RobotState &state2) {
 
@@ -59,12 +59,17 @@ namespace mgodpl {
 		// Compute the relative transform between the two states.
 		Eigen::Isometry3d tf = tf1.inverse() * tf2;
 
+		Eigen::AngleAxisd rot(tf.rotation());
+
 		// The velocity is the relative transform between the two states, assumed to occur over one time unit.
 		// We break it down into a linear and an angular component.
-		return {.linear = tf.translation(), .angular = Eigen::AngleAxisd(tf.rotation())};
+		return {
+			.linear = Vec3d(tf.translation().data()),
+			.angular = Vec3d(rot.axis().data()) * rot.angle()
+		};
 	}
 
-	mgodpl::Velocity mgodpl::jointVelocity(const moveit::core::JointModel *joint,
+	Velocity jointVelocity(const moveit::core::JointModel *joint,
 										   const moveit::core::RobotState &state1,
 										   const moveit::core::RobotState &state2) {
 
@@ -111,7 +116,7 @@ namespace mgodpl {
 
 		// Calculate half extents and centered offset of the Axis-Aligned Bounding Box (AABB)
 		const auto aabbHalfextents = link->getShapeExtentsAtOrigin() / 2.0;
-		const auto aabbCenter = link->getCenteredBoundingBoxOffset();
+		const Vec3d aabbCenter(link->getCenteredBoundingBoxOffset().data());
 
 		// Get one of the corners of the AABB that is furthest away from the origin.
 		Vec3d furthestPointAbs(aabbCenter.x() > 0 ? aabbHalfextents.x() : -aabbHalfextents.x(),
@@ -119,14 +124,12 @@ namespace mgodpl {
 							   aabbCenter.z() > 0 ? aabbHalfextents.z() : -aabbHalfextents.z());
 
 		// Add the centered offset to obtain the absolute coordinates of the furthest point
-		furthestPointAbs += aabbCenter;
-
-		return furthestPointAbs;
+		return furthestPointAbs + aabbCenter;
 	}
 
 
-	double
-	mgodpl::motionMaximumVelocity(const moveit::core::RobotState &state1, const moveit::core::RobotState &state2) {
+	double motionMaximumVelocity(const moveit::core::RobotState &state1,
+								 const moveit::core::RobotState &state2) {
 
 		assert(state1.getRobotModel() == state2.getRobotModel());
 
@@ -155,7 +158,7 @@ namespace mgodpl {
 
 			const moveit::core::LinkModel *link = frame.frame->getChildLinkModel();
 
-			double thisLinkMaxAngularVelocity = std::abs(linkVelocity.angular.angle()) + frame.parentMaxAngularVelocity;
+			double thisLinkMaxAngularVelocity = linkVelocity.angular.norm() + frame.parentMaxAngularVelocity;
 			double thisLinkMaxLinearVelocity = linkVelocity.linear.norm() + frame.parentMaxLinearVelocity +
 											   thisLinkMaxAngularVelocity *
 											   link->getJointOriginTransform().translation().norm();

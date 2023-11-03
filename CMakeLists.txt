@@ -145,6 +145,10 @@ add_library(planning
     src/planning/moveit_state_tools.cpp
     src/planning/CollisionDetection.h
     src/planning/CollisionDetection.cpp
+    src/planning/MyCollisionEnv.h
+    src/planning/MyCollisionEnv.cpp
+    src/planning/moveit_motion_velocity.h
+    src/planning/moveit_motion_velocity.cpp
 )
 
 target_link_libraries(planning math_utils)
@@ -212,7 +216,7 @@ if (ENABLE_VISUALIZATION)
 
     add_executable(no_preknowledge src/experiments/no_preknowledge.cpp)
     target_link_libraries(no_preknowledge math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-    ament_target_dependencies(no_preknowledge shape_msgs)
+    ament_target_dependencies(no_preknowledge shape_msgs moveit_core)
 
 endif ()
 

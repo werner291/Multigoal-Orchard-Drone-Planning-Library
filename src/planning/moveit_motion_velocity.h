@@ -47,6 +47,7 @@ namespace mgodpl {
 	 * @return 				The maximum linear velocity of any point on the rigid body at the given distance from the origin
 	 */
 	double max_velocity_at_distance(const Velocity &velocity, const double &distance);
+
 	/**
 	 * Calculate the velocity of a revolute joint between two robot states.
 	 *

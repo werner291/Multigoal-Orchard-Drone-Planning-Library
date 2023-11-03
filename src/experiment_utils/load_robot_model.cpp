@@ -8,7 +8,7 @@
 
 #include "load_robot_model.h"
 
-#include <moveit_core/moveit/robot_model/robot_model.h>
+#include <moveit/robot_model/robot_model.h>
 
 moveit::core::RobotModelPtr mgodpl::experiment_assets::loadRobotModel(double base_joint_weight) {
 

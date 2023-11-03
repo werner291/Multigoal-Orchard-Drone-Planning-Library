@@ -48,6 +48,10 @@ int main() {
 
 	CollisionDetection collision_detection({tree_model.trunk_mesh}, robot);
 
+	if (collision_detection.collides_ccd(current_state, *next_state)) {
+		std::cout << "Will collide!" << std::endl;
+	}
+
 	viewer.addTimerCallback([&]() {
 		if (next_state) {
 
@@ -57,6 +61,13 @@ int main() {
 				total_distance += distance;
 				current_state = *next_state;
 				next_state = algorithm->nextMovement({current_state, {}});
+
+				if (next_state) {
+					if (collision_detection.collides_ccd(current_state, *next_state)) {
+						std::cout << "Will collide!" << std::endl;
+					}
+				}
+
 			} else {
 				total_distance += STEP_SIZE;
 				current_state = interpolate(*robot, current_state, *next_state, STEP_SIZE / distance);
