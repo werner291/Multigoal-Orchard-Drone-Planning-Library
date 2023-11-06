@@ -274,6 +274,7 @@ namespace mgodpl::math {
 		bool operator==(const Vec3 &other) const {
 			return x() == other.x() && y() == other.y() && z() == other.z();
 		}
+
 	};
 
 	using Vec3d = Vec3<double>;

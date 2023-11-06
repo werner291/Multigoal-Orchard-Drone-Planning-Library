@@ -34,7 +34,10 @@ namespace mgodpl::planning {
 		 * @param state
 		 * @return
 		 */
-		virtual std::optional<moveit_facade::JointSpacePoint> nextMovement(mgodpl::experiments::VoxelShroudedSceneInfoUpdate state) = 0;
+		virtual std::optional<moveit_facade::JointSpacePoint> nextMovement(const mgodpl::experiments::VoxelShroudedSceneInfoUpdate& state) = 0;
+
+		virtual ~RobotAlgorithm() = default;
+
 	};
 
 

@@ -36,12 +36,7 @@ namespace mgodpl::moveit_facade {
 	}
 
 	math::Vec3d computeEndEffectorPosition(const moveit::core::RobotModel &robot, const JointSpacePoint &state) {
-		moveit::core::RobotModelConstPtr fake_shared_ptr(&robot, [](const moveit::core::RobotModel *) {});
-		moveit::core::RobotState moveit_state(fake_shared_ptr);
-		state.to_moveit(moveit_state, true);
-		moveit_state.update(true);
-
-		return math::Vec3d(moveit_state.getGlobalLinkTransform("end_effector").translation().data());
+		return computeLinkEffectorPosition(robot, state, "end_effector");
 	}
 
 	double
@@ -56,11 +51,22 @@ namespace mgodpl::moveit_facade {
 
 		JointSpacePoint result = a;
 
-		for (size_t i = 0; i < a.joint_values.size(); ++i) {
-			result.joint_values[i] = a.joint_values[i] * (1.0 - t) + b.joint_values[i] * t;
-		}
+		robot.interpolate(a.joint_values.data(), b.joint_values.data(), t, result.joint_values.data());
 
 		return result;
+
+	}
+
+	math::Vec3d computeLinkEffectorPosition(const moveit::core::RobotModel &robot,
+											const JointSpacePoint &state,
+											const std::string &link_name) {
+
+		moveit::core::RobotModelConstPtr fake_shared_ptr(&robot, [](const moveit::core::RobotModel *) {});
+		moveit::core::RobotState moveit_state(fake_shared_ptr);
+		state.to_moveit(moveit_state, true);
+		moveit_state.update(true);
+
+		return math::Vec3d(moveit_state.getGlobalLinkTransform(link_name).translation().data());
 
 	}
 }

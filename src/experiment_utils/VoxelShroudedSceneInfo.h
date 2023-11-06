@@ -29,13 +29,15 @@ namespace mgodpl {
 			const Grid3D<bool> &seen_space;
 			const Grid3D<bool> &occluded_space;
 			const moveit_facade::JointSpacePoint &current_state;
+			const std::vector<math::Vec3d> newly_detected_fruits;
 
 			static VoxelShroudedSceneInfoUpdate make_filtered(
 					const tree_meshes::TreeMeshes &tree_meshes,
 					const math::AABBGrid &grid_coords,
 					const Grid3D<bool> &seen_space,
 					const Grid3D<bool> &occluded_space,
-					const moveit_facade::JointSpacePoint &current_state
+					const moveit_facade::JointSpacePoint &current_state,
+					const std::vector<math::Vec3d>& newly_detected_fruits
 					);
 		};
 

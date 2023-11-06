@@ -22,11 +22,10 @@ option(ENABLE_TESTS "Enable TESTS" OFF)
 find_package(fcl REQUIRED)
 find_package(Boost REQUIRED)
 find_package(Bullet REQUIRED)
-find_package(ompl REQUIRED)
+#find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
 find_package(Qhull REQUIRED)
-#find_package(ortools REQUIRED)
-#set(ORTOOLS_LIBRARIES ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so)
+find_package(ortools REQUIRED)
 
 set(CGAL_DATA_DIR "UNUSED_STOP_WARNING")
 find_package(CGAL REQUIRED)
@@ -35,15 +34,15 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(moveit_core REQUIRED)
 find_package(moveit_msgs REQUIRED)
-find_package(moveit_ros_planning REQUIRED)
-find_package(moveit_planners_ompl REQUIRED)
+#find_package(moveit_ros_planning REQUIRED)
+#find_package(moveit_planners_ompl REQUIRED)
 find_package(shape_msgs REQUIRED)
 find_package(jsoncpp REQUIRED)
 
 # Ament seems to complain about moveit_planners_ompl exporting a non-existent include directory, see https://github.com/lopsided98/nix-ros-overlay/issues/312
 # Is there a way to get this to be at least semi-nonbroken?
-set(HACKY_MOVEIT_INCLUDE /nix/store/mg432iy0715cc7fylwg10bsdhsg4qy30-ros-rolling-moveit-planners-ompl-2.8.0-r2/include/moveit_planners)
-set(HACKY_MOVEIT_LINK /nix/store/mg432iy0715cc7fylwg10bsdhsg4qy30-ros-rolling-moveit-planners-ompl-2.8.0-r2/)
+#set(HACKY_MOVEIT_INCLUDE /nix/store/mg432iy0715cc7fylwg10bsdhsg4qy30-ros-rolling-moveit-planners-ompl-2.8.0-r2/include/moveit_planners)
+#set(HACKY_MOVEIT_LINK /nix/store/mg432iy0715cc7fylwg10bsdhsg4qy30-ros-rolling-moveit-planners-ompl-2.8.0-r2/)
 
 include_directories(
 #        ${EIGEN3_INCLUDE_DIRS}
@@ -52,13 +51,13 @@ include_directories(
         ${Boost_INCLUDE_DIRS}
         ${GTEST_INCLUDE_DIRS}
         ${BULLET_INCLUDE_DIRS}
-        ${OMPL_INCLUDE_DIRS}
+#        ${OMPL_INCLUDE_DIRS}
         ${QHULL_INCLUDE_DIRS}
         ${VTK_INCLUDE_DIRS}
         #{CGAL_INCLUDE_DIRS}
         ortools/include
         miniball/cpp/main
-        ${HACKY_MOVEIT_INCLUDE}
+#        ${HACKY_MOVEIT_INCLUDE}
 )
 
 
@@ -67,14 +66,14 @@ link_libraries(
         ${FCL_LIBRARIES}
         ${Boost_LIBRARIES}
         ${BULLET_LIBRARIES}
-        ${OMPL_LIBRARIES}
+#        ${OMPL_LIBRARIES}
         ${VTK_LIBRARIES}
         qhullcpp
         HACD # Note: the HACD library is included Bullet's "extra" libraries
         jsoncpp_lib
 #        tbb
         ${CGAL_LIBRARIES}
-        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
+#        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
 #        moveit_ompl_interface
 )
 
@@ -90,7 +89,7 @@ set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 SET(CMAKE_C_FLAGS_DEBUG "-O0")
 
-set(AMENT_DEPS "moveit_core" "moveit_msgs" "moveit_planners_ompl" "shape_msgs" "rclcpp" "ompl")
+set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" )# "ompl")
 
 # A small library featuring some vector math (not depending on Eigen)
 # and some general-purpose geometry utilities.
@@ -154,6 +153,10 @@ add_library(planning
     src/planning/moveit_motion_velocity.cpp
         src/planning/NextTargetSelector.cpp
         src/planning/NextTargetSelector.h
+        src/planning/CollisionPrediction.cpp
+        src/planning/CollisionPrediction.h
+        src/planning/MonadicBehavior.h
+        src/planning/JointSpacePath.h
 )
 
 target_link_libraries(planning math_utils)
@@ -213,10 +216,12 @@ if (ENABLE_VISUALIZATION)
             src/visualization/VtkRobotModel.cpp
             src/visualization/voxels.cpp
             src/visualization/voxels.h
+            src/visualization/VtkEndAndBaseTraceVisualization.cpp
+            src/visualization/VtkEndAndBaseTraceVisualization.h
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
-    ament_target_dependencies(${PROJECT_NAME}_visualisation "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" "ompl")
+    ament_target_dependencies(${PROJECT_NAME}_visualisation "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" )#"ompl")
     target_link_libraries(${PROJECT_NAME}_visualisation ${VTK_LIBRARIES} experiment_utils)
 
     add_executable(vizcube_lightweight src/experiments/cubeviz.cpp)

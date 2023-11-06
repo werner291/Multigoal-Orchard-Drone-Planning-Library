@@ -9,6 +9,7 @@
 #ifndef MGODPL_BLINDLYMOVETONEXTFRUIT_H
 #define MGODPL_BLINDLYMOVETONEXTFRUIT_H
 
+#include <utility>
 #include <vector>
 #include "../math/Vec3.h"
 #include "RobotAlgorithm.h"
@@ -20,6 +21,8 @@ namespace mgodpl::moveit_facade {
 
 namespace mgodpl::planning {
 
+
+
 	/**
 	 * A stupid algorithm that automatically moves until the end-effector of the robot
 	 * is on the closest fruit.
@@ -28,13 +31,26 @@ namespace mgodpl::planning {
 
 		const moveit::core::RobotModelConstPtr robot_model;
 
-		std::vector<math::Vec3d> fruit_to_visit {};
+
+
+		struct NextTargetPlan {
+			std::vector<moveit_facade::JointSpacePoint> path;
+			math::Vec3d target;
+		};
 
 	public:
 
-		explicit BlindlyMoveToNextFruit(const moveit::core::RobotModelConstPtr& robot_model) : robot_model(robot_model) {}
+		// Information about current behavior.
+		std::optional<NextTargetPlan> plan = std::nullopt;
 
-		std::optional<moveit_facade::JointSpacePoint> nextMovement(const ExternalStateUpdate &state) override;
+		/**
+		 * The list of fruit that is known about, may be reachable, and has not been visited yet.
+		 */
+		std::vector<math::Vec3d> fruit_to_visit {};
+
+		explicit BlindlyMoveToNextFruit(moveit::core::RobotModelConstPtr  robot_model) : robot_model(std::move(robot_model)) {}
+
+		std::optional<moveit_facade::JointSpacePoint> nextMovement(const mgodpl::experiments::VoxelShroudedSceneInfoUpdate &state) override;
 
 	};
 

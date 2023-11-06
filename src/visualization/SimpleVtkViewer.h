@@ -85,10 +85,10 @@ namespace mgodpl {
 		 * @param mesh 			The mesh to add.
 		 * @param color 		The color of the mesh.
 		 */
-		void addMesh(const shape_msgs::msg::Mesh &mesh,
-					 const math::Vec3d &color,
-					 double opacity = 1.0,
-					 const math::Vec3d &position = math::Vec3d::Zero());
+		vtkSmartPointer<vtkActor> addMesh(const shape_msgs::msg::Mesh &mesh,
+										  const math::Vec3d &color,
+										  double opacity = 1.0,
+										  const math::Vec3d &position = math::Vec3d::Zero());
 
 		/**
 		 * Add a callback that is called every time the simulation is rendered.

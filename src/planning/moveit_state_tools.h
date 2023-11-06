@@ -65,9 +65,9 @@ namespace mgodpl::experiment_state_tools {
 			int seed);
 
 
-	moveit_facade::JointSpacePoint robotStateFromPointAndArmvec(const moveit::core::RobotModelConstPtr &drone,
-														  const math::Vec3d &desired_ee_pos,
-														  const math::Vec3d &armvec);
+	moveit_facade::JointSpacePoint robotStateFromPointAndArmvec(const moveit::core::RobotModel &drone,
+																const math::Vec3d &desired_ee_pos,
+																const math::Vec3d &armvec);
 
 }
 

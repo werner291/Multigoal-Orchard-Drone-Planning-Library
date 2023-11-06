@@ -87,10 +87,10 @@ namespace mgodpl {
 		videoRecorder.reset();
 	}
 
-	void SimpleVtkViewer::addMesh(const shape_msgs::msg::Mesh &mesh,
-								  const Vec3d &color,
-								  double opacity,
-								  const Vec3d &position) {
+	vtkSmartPointer<vtkActor> SimpleVtkViewer::addMesh(const shape_msgs::msg::Mesh &mesh,
+													   const Vec3d &color,
+													   double opacity,
+													   const Vec3d &position) {
 
 		Vec3d origin = position;
 
@@ -105,6 +105,8 @@ namespace mgodpl {
 		actor->SetPosition(origin[0], origin[1], origin[2]);
 
 		addActor(actor);
+
+		return actor;
 
 	}
 

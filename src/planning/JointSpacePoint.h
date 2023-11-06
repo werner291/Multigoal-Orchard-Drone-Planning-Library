@@ -58,6 +58,18 @@ namespace mgodpl::moveit_facade {
 	math::Vec3d computeEndEffectorPosition(const moveit::core::RobotModel& robot, const JointSpacePoint &state);
 
 	/**
+	 * Compute the position of the end-effector of the robot in the given state, assumed to be named "end_effector".
+	 *
+	 * Note: This function will compute the full forward kinematics; you should cache
+	 * the result if you need it multiple times, or for multiple links.
+	 *
+	 * @param robot 		The robot model.
+	 * @param state 		The joint-space state.
+	 * @return 				The position of the end-effector.
+	 */
+	math::Vec3d computeLinkEffectorPosition(const moveit::core::RobotModel& robot, const JointSpacePoint &state, const std::string& link_name);
+
+	/**
 	 * The distance between two points in joint space, as defined by RobotModel::distance.
 	 *
 	 * @param robot 		The robot model.
