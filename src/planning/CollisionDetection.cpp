@@ -29,7 +29,7 @@ bool mgodpl::moveit_facade::CollisionDetection::collides(const mgodpl::moveit_fa
 }
 
 bool mgodpl::moveit_facade::CollisionDetection::collides_ccd(const mgodpl::moveit_facade::JointSpacePoint &state1,
-															 const mgodpl::moveit_facade::JointSpacePoint &state2) {
+															 const mgodpl::moveit_facade::JointSpacePoint &state2) const {
 
 	MyCollisionEnv::ContinuousCollisionRequest request;
 	MyCollisionEnv::ContinuousCollisionResult result;
@@ -61,5 +61,17 @@ mgodpl::moveit_facade::CollisionDetection::CollisionDetection(const std::vector<
 				Eigen::Isometry3d::Identity()
 				);
 	}
+
+}
+
+bool mgodpl::moveit_facade::CollisionDetection::path_collides(const mgodpl::moveit_facade::JointSpacePath &path) {
+
+	for (size_t i = 0; i + 1 < path.path.size(); ++i) {
+		if (collides_ccd(path.path[i], path.path[i + 1])) {
+			return true;
+		}
+	}
+
+	return false;
 
 }

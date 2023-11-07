@@ -35,6 +35,15 @@ namespace mgodpl::moveit_facade {
 
 	}
 
+	bool JointSpacePoint::significantly_different_from(const JointSpacePoint &other, double threshold) const {
+		for (int i = 0; i < joint_values.size(); ++i) {
+			if (std::abs(joint_values[i] - other.joint_values[i]) > threshold) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	math::Vec3d computeEndEffectorPosition(const moveit::core::RobotModel &robot, const JointSpacePoint &state) {
 		return computeLinkEffectorPosition(robot, state, "end_effector");
 	}

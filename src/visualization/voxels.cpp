@@ -45,7 +45,7 @@ vtkNew <vtkPoints> mgodpl::visualization::grid_to_points(const size_t SUBDIVISIO
 mgodpl::visualization::VtkVoxelGrid::VtkVoxelGrid(const mgodpl::math::AABBGrid &grid_coords,
 												  const mgodpl::Grid3D<bool> &grid,
 												  const mgodpl::math::Vec3d &rgb,
-												  bool negate) : negate(negate), grid_coords(grid_coords) {
+												  bool negate) : grid_coords(grid_coords), negate(negate) {
 
 	vtkNew<vtkNamedColors> colors;
 

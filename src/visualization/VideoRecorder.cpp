@@ -43,4 +43,6 @@ void VideoRecorder::finish() {
 
 	moviewriter->End();
 	finished = true;
+
+	std::cout << "Finished exporting video." << std::endl;
 }

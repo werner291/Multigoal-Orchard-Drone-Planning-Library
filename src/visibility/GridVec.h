@@ -83,7 +83,7 @@ namespace mgodpl {
 		 *
 		 * @return	The size of the grid, in number of blocks per dimension.
 		 */
-		const math::Vec3i size() const {
+		[[nodiscard]] const math::Vec3i size() const {
 			return {(int) nx, (int) ny, (int) nz};
 		}
 
@@ -92,7 +92,7 @@ namespace mgodpl {
 		 * @param pt	The grid coordinate.
 		 * @return	True/false depending on whether the grid coordinate is within the grid bounds.
 		 */
-		bool in_bounds(const math::Vec3i &pt) const {
+		[[nodiscard]] bool in_bounds(const math::Vec3i &pt) const {
 			return pt.x() >= 0 && pt.x() < nx && pt.y() >= 0 && pt.y() < ny && pt.z() >= 0 && pt.z() < nz;
 		}
 
@@ -108,7 +108,7 @@ namespace mgodpl {
 		 * @param grid 			The grid.
 		 * @return 				True/false depending on whether the voxel has a different neighbor, or is at the boundary.
 		 */
-		bool voxel_has_different_neighbor(const math::Vec3i &coord) const {
+		[[nodiscard]] bool voxel_has_different_neighbor(const math::Vec3i &coord) const {
 			const auto &v_center = (*this)[coord];
 			const auto &size = grid.size();
 

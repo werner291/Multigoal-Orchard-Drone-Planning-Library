@@ -43,6 +43,19 @@ namespace mgodpl::moveit_facade {
 
 		/// Construct a point from the position variables of the given RobotState.
 		static JointSpacePoint from_moveit(const moveit::core::RobotState& state);
+
+		/**
+		 * Check whether this point is significantly different from another point. This uses the absolute difference
+		 * between the joint values, and returns true if any of the differences is larger than the given threshold.
+		 *
+		 * Note: this does not consider complicated things like joint limits, floating joints, etc...
+		 * Though for a simple difference check this is good enough.
+		 *
+		 * @param other 		The point to compare to.
+		 * @param threshold 	The threshold.
+		 * @return 				True if the points are significantly different.
+		 */
+		bool significantly_different_from(const JointSpacePoint& other, double threshold = 0.001) const;
 	};
 
 	/**

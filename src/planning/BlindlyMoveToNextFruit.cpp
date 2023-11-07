@@ -25,58 +25,12 @@
 #include "../math/AABB.h"
 #include "../math/AABBGrid.h"
 #include "../visibility/GridVec.h"
-
-// Make a CGAL convex hull.
-using K = CGAL::Exact_predicates_inexact_constructions_kernel;
-using Point_3 = K::Point_3;
-using Surface_mesh = CGAL::Surface_mesh<Point_3>;
-using Traits = CGAL::Surface_mesh_shortest_path_traits<K, Surface_mesh>;
-using Surface_mesh_shortest_path = CGAL::Surface_mesh_shortest_path<Traits>;
-using Primitive = CGAL::AABB_face_graph_triangle_primitive<Surface_mesh>;
-using AABBTraits = CGAL::AABB_traits<K, Primitive>;
-
-/**
- * @struct PathVisitor
- * @brief Visitor for Surface_mesh_shortest_path::shortest_path_sequence_to_source_points to build a robot path.
- */
-struct PathVisitor {
-
-	const Surface_mesh &mesh; ///< Reference to the triangle mesh
-	Surface_mesh_shortest_path &path_algo; ///< Shortest path algorithm struct (for point lookups and such)
-	std::vector<Surface_mesh_shortest_path::Face_location> &states; ///< The path being built.
-
-	/**
-	 * @brief Called when the path leaves a face through a half-edge.
-	 * @param edge The half-edge for leaving the face (NOT the opposite half-edge where we enter the face!)
-	 * @param t Interpolation value between the two vertices of the half-edge where the intersection occurs.
-	 */
-	void operator()(Surface_mesh_shortest_path::halfedge_descriptor edge, Surface_mesh_shortest_path::FT t) {
-		states.push_back(path_algo.face_location(edge, t));
-		states.push_back(path_algo.face_location(mesh.opposite(edge), 1.0 - t));
-	}
-
-	/**
-	 * @brief Called when the path *exactly* crosses an edge.
-	 * @param vertex The vertex of the edge where the path crosses.
-	 */
-	void operator()(Surface_mesh_shortest_path::vertex_descriptor vertex) {
-		states.push_back(path_algo.face_location(vertex));
-	}
-
-	/**
-	 * @brief Called when the path includes a point on the interior of a face.
-	 * @param f The face where the path has a point.
-	 * @param location The location of the point on the face (in barycentric coordinates)
-	 */
-	void operator()(Surface_mesh_shortest_path::face_descriptor f,
-					Surface_mesh_shortest_path::Barycentric_coordinates location) {
-		states.push_back({f, location});
-	}
-};
+#include "cgal_chull_shortest_paths.h"
 
 namespace mgodpl::planning {
 
 	using namespace moveit_facade;
+	using namespace cgal;
 
 	Surface_mesh make_chull(const std::vector<math::Vec3d> &points) {
 		Surface_mesh mesh;
@@ -131,11 +85,10 @@ namespace mgodpl::planning {
 			std::cout << "We have a plan." << std::endl;
 
 			// Take and delete the front point in the plan.
-			const PlanState& plan_state = plan.front();
+			const PlanState &plan_state = plan.front();
 
 			// Check if we're at the first state in the plan.
-			if (this->robot_model->distance(plan_state.point.joint_values.data(),
-								            state.current_state.joint_values.data()) < 0.001) {
+			if (!plan_state.point.significantly_different_from(state.current_state.joint_values, 1e-6)) {
 
 				std::cout << "We're at the first state in the plan." << std::endl;
 
@@ -151,18 +104,10 @@ namespace mgodpl::planning {
 			}
 		}
 
-		// Check if the rest of the plan is still valid; delete it if not.
-		for (size_t step = 0; step < this->plan.size(); ++step) {
 
-			if (collision_detection.collides_ccd(step == 0 ? state.current_state : this->plan[step - 1].point, this->plan[step].point)) {
-
-				std::cout << "Plan invalid after step " << step << std::endl;
-
-				// If we collide, we need to replan. (TODO: check if we can still reuse part of the plan).
-				this->plan = {};
-
-			}
-
+		if (!current_path_is_collision_free(state.current_state, collision_detection)) {
+			std::cout << "Current path is not collision-free; clearing." << std::endl;
+			this->plan.clear();
 		}
 
 		if (!this->plan.empty()) {
@@ -200,12 +145,10 @@ namespace mgodpl::planning {
 		distances.reserve(fruit_to_visit.size());
 
 		// Get the geodesic distance to all the fruit.
-		for (const auto& fruit : fruit_to_visit) {
+		for (const auto &fruit: fruit_to_visit) {
 
 			// Find the closest point on the chull to the closest fruit.
-			const auto &[face2, bary2] = mesh_path.locate(Point_3(fruit.x(),
-																  fruit.y(),
-																  fruit.z()), tree);
+			const auto &[face2, bary2] = mesh_path.locate(Point_3(fruit.x(), fruit.y(), fruit.z()), tree);
 
 			double distance = mesh_path.shortest_distance_to_source_points(face2, bary2).first;
 
@@ -226,7 +169,7 @@ namespace mgodpl::planning {
 				}
 			}
 
-			const auto& closest_fruit = fruit_to_visit[closest_fruit_index];
+			const auto &closest_fruit = fruit_to_visit[closest_fruit_index];
 
 			std::cout << "Closest fruit: " << closest_fruit << std::endl;
 
@@ -246,7 +189,18 @@ namespace mgodpl::planning {
 																									  nm2_vec.normalized(),
 																									  -nm2_vec);
 
+			JointSpacePoint at_target = outside_tree;
 
+			// Move the end-effector to the closest fruit.
+			experiment_state_tools::moveEndEffectorNearPoint(*robot_model, at_target, closest_fruit, max_target_distance);
+
+			if (collision_detection.collides_ccd(outside_tree, at_target)) {
+				// We can't get there by a simple movement. We'll wanna do proper approach planning at some point.
+				std::cout << "Can't get to fruit by simple movement." << std::endl;
+				fruit_to_visit.erase(fruit_to_visit.begin() + (long) closest_fruit_index);
+				distances.erase(distances.begin() + (long) closest_fruit_index);
+				continue;
+			}
 
 			std::vector<Surface_mesh_shortest_path::Face_location> path;
 
@@ -256,21 +210,6 @@ namespace mgodpl::planning {
 
 			std::reverse(path.begin(), path.end());
 
-			JointSpacePoint at_target = outside_tree;
-
-			// Move the end-effector to the closest fruit.
-			experiment_state_tools::moveEndEffectorToPoint(*robot_model, at_target, closest_fruit);
-
-			assert(collision_detection.collides_ccd(outside_tree, at_target) == collision_detection.collides_ccd(at_target, outside_tree));
-
-			if (collision_detection.collides_ccd(outside_tree, at_target)) {
-				// We can't get there by a simple movement. We'll wanna do proper approach planning at some point.
-				std::cout << "Can't get to fruit by simple movement." << std::endl;
-				fruit_to_visit.erase(fruit_to_visit.begin() + closest_fruit_index);
-				distances.erase(distances.begin() + closest_fruit_index);
-				continue;
-			}
-
 			// Let's build the following path:
 
 			// 1. From the current state to the state on the chull.
@@ -278,9 +217,7 @@ namespace mgodpl::planning {
 			// 3. Go down into the tree up to the fruit.
 			// 4. Go back up to the chull.
 
-			std::vector<PlanState> path_states {
-					{.point = current_outside_tree, .target = std::nullopt},
-			};
+			std::vector<PlanState> path_states{{.point = current_outside_tree, .target = std::nullopt},};
 
 			for (const auto &[face, barycentric]: path) {
 				const auto &pt = mesh_path.point(face, barycentric);
@@ -304,8 +241,13 @@ namespace mgodpl::planning {
 			this->plan = path_states;
 
 			// Sanity check: make sure the path is collision-free.
-			for (size_t step = 0; step < this->plan.size(); ++step) {
-				assert(!collision_detection.collides_ccd(step == 0 ? state.current_state : this->plan[step - 1].point, this->plan[step].point));
+			if (!current_path_is_collision_free(state.current_state, collision_detection)) {
+				// TODO: if this fails, it's probably due to asymmetries in the CCD collision checking.
+				std::cout << "Computed path is not collision-free." << std::endl;
+				this->plan.clear();
+				fruit_to_visit.erase(fruit_to_visit.begin() + (long) closest_fruit_index);
+				distances.erase(distances.begin() + (long) closest_fruit_index);
+				continue;
 			}
 
 			return this->plan.front().point;
@@ -314,6 +256,27 @@ namespace mgodpl::planning {
 		std::cout << "No more fruit to visit." << std::endl;
 
 		return std::nullopt;
+
+	}
+
+	bool BlindlyMoveToNextFruit::current_path_is_collision_free(const moveit_facade::JointSpacePoint& robot_current_state,
+																const moveit_facade::CollisionDetection& collision_detection) {
+
+		if (this->plan.empty()) {
+			return true;
+		}
+
+		if (collision_detection.collides_ccd(robot_current_state, this->plan.front().point)) {
+			return false;
+		}
+
+		for (size_t step = 0; step + 1 < this->plan.size(); ++step) {
+			if (collision_detection.collides_ccd(this->plan[step].point, this->plan[step + 1].point)) {
+				return false;
+			}
+		}
+
+		return true;
 
 	}
 }

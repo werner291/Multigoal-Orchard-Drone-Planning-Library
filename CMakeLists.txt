@@ -159,6 +159,8 @@ add_library(planning
         src/planning/MonadicBehavior.h
         src/planning/JointSpacePath.h
         src/planning/JointSpacePath.cpp
+        src/planning/cgal_chull_shortest_paths.cpp
+        src/planning/cgal_chull_shortest_paths.h
 )
 
 target_link_libraries(planning math_utils)

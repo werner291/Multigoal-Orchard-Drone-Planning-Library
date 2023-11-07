@@ -13,6 +13,7 @@
 #include <shape_msgs/msg/mesh.hpp>
 #include "JointSpacePoint.h"
 #include "moveit_forward_declarations.h"
+#include "JointSpacePath.h"
 
 class MyCollisionEnv;
 
@@ -30,8 +31,11 @@ namespace mgodpl::moveit_facade {
 
 		bool collides(const JointSpacePoint& state);
 
-		bool collides_ccd(const JointSpacePoint& state1, const JointSpacePoint& state2);
+		bool collides_ccd(const JointSpacePoint& state1, const JointSpacePoint& state2) const;
+
+		bool path_collides(const JointSpacePath& path);
 	};
+
 
 }
 

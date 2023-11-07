@@ -112,5 +112,32 @@ namespace mgodpl::experiment_state_tools {
 
 	}
 
+	void moveEndEffectorNearPoint(const moveit::core::RobotModel &robot,
+								  moveit_facade::JointSpacePoint &state,
+								  const Vec3d &target,
+								  double maxDistance) {
+
+		// Get the end-effector position.
+		math::Vec3d ee_pos = moveit_facade::computeEndEffectorPosition(robot, state);
+
+		// Get the direction to the target.
+		math::Vec3d delta = target - ee_pos;
+
+		// Get the distance to the target.
+		double distance = delta.norm();
+
+		if (distance > maxDistance) {
+			delta = delta.normalized() * (distance - maxDistance);
+
+			// Apply.
+			state.joint_values[0] += delta.x();
+			state.joint_values[1] += delta.y();
+			state.joint_values[2] += delta.z();
+		}
+
+		// else, we're already close enough, so do nothing.
+
+	}
+
 
 }

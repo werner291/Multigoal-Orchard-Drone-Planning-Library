@@ -36,6 +36,8 @@ namespace mgodpl::planning {
 			std::optional<math::Vec3d> target;
 		};
 
+		const double max_target_distance = 0.1;
+
 	public:
 
 		// Information about current upcoming plan.
@@ -49,6 +51,9 @@ namespace mgodpl::planning {
 		explicit BlindlyMoveToNextFruit(moveit::core::RobotModelConstPtr  robot_model) : robot_model(std::move(robot_model)) {}
 
 		std::optional<moveit_facade::JointSpacePoint> nextMovement(const mgodpl::experiments::VoxelShroudedSceneInfoUpdate &state) override;
+
+		bool current_path_is_collision_free(const moveit_facade::JointSpacePoint& robot_current_state,
+											const moveit_facade::CollisionDetection& collision_detection);
 
 	};
 

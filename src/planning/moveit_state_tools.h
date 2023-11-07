@@ -31,7 +31,22 @@ namespace mgodpl::experiment_state_tools {
 			const moveit::core::RobotModel& robot,
 			moveit_facade::JointSpacePoint &state,
 			const math::Vec3d &target
-			);
+	);
+
+	/**
+ * Translate the robot such that the end-effector is at the given target.
+ *
+ * @param robot 		The robot model.
+ * @param state 		The state to modify. (Mutated)
+ * @param target 		The target position.
+	 * @param maxDistance 	The maximum distance to the target.
+ */
+	void moveEndEffectorNearPoint(
+			const moveit::core::RobotModel& robot,
+			moveit_facade::JointSpacePoint &state,
+			const math::Vec3d &target,
+			double maxDistance
+	);
 
 	/**
 	 * Generate a state where the drone has an upright base, and is otherwise randomized.
