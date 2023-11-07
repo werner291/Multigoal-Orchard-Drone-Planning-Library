@@ -14,7 +14,7 @@
 #include <moveit/collision_detection_fcl/collision_env_fcl.h>
 #include <geometric_shapes/shape_operations.h>
 
-bool mgodpl::moveit_facade::CollisionDetection::collides(const mgodpl::moveit_facade::JointSpacePoint &state) {
+bool mgodpl::moveit_facade::CollisionDetection::collides(const mgodpl::moveit_facade::JointSpacePoint &state) const {
 
 	collision_detection::CollisionRequest request;
 	collision_detection::CollisionResult result;

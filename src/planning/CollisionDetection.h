@@ -29,7 +29,7 @@ namespace mgodpl::moveit_facade {
 		explicit CollisionDetection(const std::vector<shape_msgs::msg::Mesh> &obstacle_meshes,
 									const moveit::core::RobotModelConstPtr robot);
 
-		bool collides(const JointSpacePoint& state);
+		bool collides(const JointSpacePoint& state) const;
 
 		bool collides_ccd(const JointSpacePoint& state1, const JointSpacePoint& state2) const;
 
