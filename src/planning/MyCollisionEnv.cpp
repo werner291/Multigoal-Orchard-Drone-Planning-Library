@@ -57,10 +57,20 @@ void MyCollisionEnv::checkRobotCollision(const MyCollisionEnv::ContinuousCollisi
 		if (distanceResult.minimum_distance.distance < req.distance_threshold) {
 			res.collision = true;
 			res.time_of_contact = time;
+			std::cout << "CCD failed at time " << time << std::endl;
 			return;
 		} else {
 			time += distanceResult.minimum_distance.distance / maxVelocity;
 		}
+	}
+
+	// Finally, check the end state.
+	this->collision_detection::CollisionEnvFCL::checkRobotCollision(collisionRequest, collisionResult, state2);
+
+	if (collisionResult.collision) {
+		res.collision = true;
+		res.time_of_contact = 1.0;
+		return;
 	}
 
 	res.collision = false;
