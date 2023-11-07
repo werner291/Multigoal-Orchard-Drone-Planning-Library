@@ -33,15 +33,11 @@ void updateTrace(const moveit::core::RobotModelPtr &robot,
 				 const std::shared_ptr<mgodpl::planning::BlindlyMoveToNextFruit> &algorithm,
 				 mgodpl::visualization::VtkEndAndBaseTraceVisualization &trace_visualization) {
 
-	if (!algorithm->plan) {
-		trace_visualization.updateLine({{}});
-	}
-
 	mgodpl::moveit_facade::JointSpacePath interpolated_path;
 
-	for (int segment = 0; segment < algorithm->plan->path.size(); ++segment) {
-		const auto &a = segment == 0 ? current_state : algorithm->plan->path[segment - 1];
-		const auto &b = algorithm->plan->path[segment];
+	for (int segment = 0; segment < algorithm->plan.size(); ++segment) {
+		const auto &a = segment == 0 ? current_state : algorithm->plan[segment - 1].point;
+		const auto &b = algorithm->plan[segment].point;
 
 		for (int i = 0; i < 20; ++i) {
 			interpolated_path.path.push_back(interpolate(*robot, a, b, i / 20.0));

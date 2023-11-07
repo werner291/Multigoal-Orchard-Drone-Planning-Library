@@ -24,25 +24,25 @@ vtkActor *VtkPolyLineVisualization::getActor() {
 
 void VtkPolyLineVisualization::updateLine(const std::vector<mgodpl::math::Vec3d> &points) {
 
-	assert(!points.empty());
-
 	vtkNew<vtkPoints> pointsVtk;
 	vtkNew<vtkCellArray> cells;
 
 	vtkNew<vtkCellArray> pointsCells;
 
-	auto previousPointId = pointsVtk->InsertNextPoint(points[0].data());
-
-	pointsCells->InsertNextCell(1);
-	pointsCells->InsertCellPoint(previousPointId);
-
-	for (size_t i = 1; i < points.size(); ++i) {
-		cells->InsertNextCell(2);
-		cells->InsertCellPoint(previousPointId);
-		cells->InsertCellPoint(previousPointId = pointsVtk->InsertNextPoint(points[i].data()));
+	if (!points.empty()) {
+		auto previousPointId = pointsVtk->InsertNextPoint(points[0].data());
 
 		pointsCells->InsertNextCell(1);
 		pointsCells->InsertCellPoint(previousPointId);
+
+		for (size_t i = 1; i < points.size(); ++i) {
+			cells->InsertNextCell(2);
+			cells->InsertCellPoint(previousPointId);
+			cells->InsertCellPoint(previousPointId = pointsVtk->InsertNextPoint(points[i].data()));
+
+			pointsCells->InsertNextCell(1);
+			pointsCells->InsertCellPoint(previousPointId);
+		}
 	}
 
 	visitOrderVisualizationData->SetPoints(pointsVtk);

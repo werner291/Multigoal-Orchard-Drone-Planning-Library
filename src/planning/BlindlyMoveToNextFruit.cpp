@@ -26,8 +26,8 @@
 using K = CGAL::Exact_predicates_inexact_constructions_kernel;
 using Point_3 = K::Point_3;
 using Surface_mesh = CGAL::Surface_mesh<Point_3>;
-typedef CGAL::Surface_mesh_shortest_path_traits<K, Surface_mesh> Traits;
-typedef CGAL::Surface_mesh_shortest_path<Traits> Surface_mesh_shortest_path;
+using Traits = CGAL::Surface_mesh_shortest_path_traits<K, Surface_mesh>;
+using Surface_mesh_shortest_path = CGAL::Surface_mesh_shortest_path<Traits>;
 using Primitive = CGAL::AABB_face_graph_triangle_primitive<Surface_mesh>;
 using AABBTraits = CGAL::AABB_traits<K, Primitive>;
 
@@ -73,7 +73,6 @@ struct PathVisitor {
 namespace mgodpl::planning {
 
 	using namespace moveit_facade;
-
 
 	Surface_mesh make_chull(const std::vector<math::Vec3d> &points) {
 		Surface_mesh mesh;
@@ -123,70 +122,50 @@ namespace mgodpl::planning {
 												state.filtered_tree_meshes.trunk_mesh}, robot_model);
 
 		// Check if we even have a plan.
-		if (this->plan) {
+		if (!this->plan.empty()) {
 
 			std::cout << "We have a plan." << std::endl;
 
+			// Take and delete the front point in the plan.
+			const PlanState& plan_state = plan.front();
+
 			// Check if we're at the first state in the plan.
 			if (this->robot_model
-						->distance(this->plan->path.front().joint_values.data(),
-								   state.current_state.joint_values.data()) < 0.001) {
+						->distance(plan_state.point.joint_values.data(), state.current_state.joint_values.data()) <
+				0.001) {
 
 				std::cout << "We're at the first state in the plan." << std::endl;
 
-				// Remove the first state in the plan, since we're there and we don't need it anymore.
-				this->plan->path.erase(this->plan->path.begin());
-
-				if (this->plan->path.empty()) {
-					// If we're done with the plan. We've visited the apple! Remove it from the list.
-
-					std::cout << "We're done with the plan." << std::endl;
-
-					fruit_to_visit.erase(std::remove(fruit_to_visit.begin(), fruit_to_visit.end(), this->plan->target),
-										 fruit_to_visit.end());
-
-					std::cout << "Checking off target " << this->plan->target << std::endl;
-
-					this->plan.reset();
-
-				} else {
-
-					// If we still have a plan, see if it's still valid.
-
-					std::cout << "We still have a plan." << std::endl;
-
-					for (size_t step = 0; step < this->plan->path.size(); ++step) {
-
-						if (collision_detection.collides_ccd(
-								step == 0 ? state.current_state : this->plan->path[step - 1], this->plan->path[step])) {
-
-							std::cout << "Plan invalid after step " << step << std::endl;
-
-							// If we collide, we need to replan.
-							this->plan = std::nullopt;
-							break;
-
-						}
-
-					}
-
-					if (this->plan) {
-
-						std::cout << "Plan still valid; returning next step." << std::endl;
-
-						return this->plan->path.front();
-
-					}
-
+				// If we were supposed to go to a fruit check it off. (assert to make sure we're actually at the fruit).
+				if (plan_state.target) {
+					assert((ee_pos - *plan_state.target).squaredNorm() < 0.001);
+					fruit_to_visit.erase(std::find(fruit_to_visit.begin(), fruit_to_visit.end(), *plan_state.target));
+					std::cout << "Checked off fruit at " << *plan_state.target << std::endl;
 				}
+
+				this->plan.erase(this->plan.begin());
+
+			}
+		}
+
+		// Check if the rest of the plan is still valid; delete it if not.
+		for (size_t step = 0; step < this->plan.size(); ++step) {
+
+			if (collision_detection.collides_ccd(step == 0 ? state.current_state : this->plan[step - 1].point, this->plan[step].point)) {
+
+				std::cout << "Plan invalid after step " << step << std::endl;
+
+				// If we collide, we need to replan. (TODO: check if we can still reuse part of the plan).
+				this->plan = {};
 
 			}
 
 		}
 
-		assert(!this->plan);
-
-		std::cout << "We don't have a plan." << std::endl;
+		if (!this->plan.empty()) {
+			std::cout << "Returning next state in plan." << std::endl;
+			return this->plan.front().point;
+		}
 
 		// Build the Chull and an AABB thereof.
 
@@ -248,10 +227,14 @@ namespace mgodpl::planning {
 
 			mesh_path.shortest_path_sequence_to_source_points(face2, bary2, path_visitor);
 
+			std::reverse(path.begin(), path.end());
+
 			JointSpacePoint at_target = outside_tree;
 
 			// Move the end-effector to the closest fruit.
 			experiment_state_tools::moveEndEffectorToPoint(*robot_model, at_target, *closest_fruit);
+
+			assert(collision_detection.collides_ccd(outside_tree, at_target) == collision_detection.collides_ccd(at_target, outside_tree));
 
 			if (collision_detection.collides_ccd(outside_tree, at_target)) {
 				// We can't get there by a simple movement. We'll wanna do proper approach planning at some point.
@@ -267,7 +250,9 @@ namespace mgodpl::planning {
 			// 3. Go down into the tree up to the fruit.
 			// 4. Go back up to the chull.
 
-			moveit_facade::JointSpacePath jspath{.path = {current_outside_tree}};
+			std::vector<PlanState> path_states {
+					{.point = current_outside_tree, .target = std::nullopt},
+			};
 
 			for (const auto &[face, barycentric]: path) {
 				const auto &pt = mesh_path.point(face, barycentric);
@@ -281,17 +266,23 @@ namespace mgodpl::planning {
 																										   nm_vec.normalized(),
 																										   -nm_vec);
 
-				jspath.path.push_back(outside_tree);
+				path_states.push_back({.point = outside_tree, .target = std::nullopt});
 			}
 
-			jspath.path.push_back(at_target);
-			jspath.path.push_back(outside_tree);
+			path_states.push_back({.point = outside_tree, .target = {}});
+			path_states.push_back({.point = at_target, .target = *closest_fruit});
+			path_states.push_back({.point = outside_tree, .target = {}});
 
-			this->plan = {.path = jspath.path, .target = *closest_fruit};
+			this->plan = path_states;
 
-			std::cout << "Path length: " << jspath.path.size() << std::endl;
+			// Sanity check: make sure the path is collision-free.
+			for (size_t step = 0; step < this->plan.size(); ++step) {
 
-			return jspath.path.front();
+				assert(!collision_detection.collides_ccd(step == 0 ? state.current_state : this->plan[step - 1].point, this->plan[step].point));
+
+			}
+
+			return this->plan.front().point;
 		}
 
 		std::cout << "No more fruit to visit." << std::endl;

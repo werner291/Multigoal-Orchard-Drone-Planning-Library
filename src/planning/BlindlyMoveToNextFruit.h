@@ -31,17 +31,15 @@ namespace mgodpl::planning {
 
 		const moveit::core::RobotModelConstPtr robot_model;
 
-
-
-		struct NextTargetPlan {
-			std::vector<moveit_facade::JointSpacePoint> path;
-			math::Vec3d target;
+		struct PlanState {
+			moveit_facade::JointSpacePoint point;
+			std::optional<math::Vec3d> target;
 		};
 
 	public:
 
-		// Information about current behavior.
-		std::optional<NextTargetPlan> plan = std::nullopt;
+		// Information about current upcoming plan.
+		std::vector<PlanState> plan {};
 
 		/**
 		 * The list of fruit that is known about, may be reachable, and has not been visited yet.

@@ -25,7 +25,8 @@ find_package(Bullet REQUIRED)
 #find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
 find_package(Qhull REQUIRED)
-find_package(ortools REQUIRED)
+#find_package(ortools REQUIRED)
+#set(ORTOOLS_LIBRARIES ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so)
 
 set(CGAL_DATA_DIR "UNUSED_STOP_WARNING")
 find_package(CGAL REQUIRED)
@@ -34,8 +35,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(moveit_core REQUIRED)
 find_package(moveit_msgs REQUIRED)
-#find_package(moveit_ros_planning REQUIRED)
-#find_package(moveit_planners_ompl REQUIRED)
+find_package(moveit_ros_planning REQUIRED)
+find_package(moveit_planners_ompl REQUIRED)
 find_package(shape_msgs REQUIRED)
 find_package(jsoncpp REQUIRED)
 
@@ -73,7 +74,7 @@ link_libraries(
         jsoncpp_lib
 #        tbb
         ${CGAL_LIBRARIES}
-#        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
+        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
 #        moveit_ompl_interface
 )
 
@@ -86,8 +87,8 @@ set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
-SET(CMAKE_C_FLAGS_DEBUG "-O0")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
+SET(CMAKE_C_FLAGS_DEBUG "-Og")
 
 set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" )# "ompl")
 
@@ -157,6 +158,7 @@ add_library(planning
         src/planning/CollisionPrediction.h
         src/planning/MonadicBehavior.h
         src/planning/JointSpacePath.h
+        src/planning/JointSpacePath.cpp
 )
 
 target_link_libraries(planning math_utils)
