@@ -66,6 +66,13 @@ namespace mgodpl::experiment_state_tools {
 			const int seed
 			);
 
+	moveit_facade::JointSpacePoint randomUprightWithBaseNearState(
+			const moveit::core::RobotModel& robot,
+			double distance_bound,
+			const moveit_facade::JointSpacePoint& state,
+			const int seed
+			);
+
 	/**
 	 * Generate a random state where the robot is positioned entirely outside the tree.
 	 *

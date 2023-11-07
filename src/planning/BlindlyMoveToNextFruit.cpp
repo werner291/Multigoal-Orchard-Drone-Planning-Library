@@ -48,6 +48,7 @@ namespace mgodpl::planning {
 		return mesh;
 	}
 
+
 	std::optional<JointSpacePoint>
 	BlindlyMoveToNextFruit::nextMovement(const mgodpl::experiments::VoxelShroudedSceneInfoUpdate &state) {
 
@@ -94,16 +95,22 @@ namespace mgodpl::planning {
 
 				// If we were supposed to go to a fruit check it off. (assert to make sure we're actually at the fruit).
 				if (plan_state.target) {
-					assert((ee_pos - *plan_state.target).squaredNorm() < 0.001);
-					fruit_to_visit.erase(std::find(fruit_to_visit.begin(), fruit_to_visit.end(), *plan_state.target));
+					assert((ee_pos - *plan_state.target).squaredNorm() < this->max_target_distance + 1e-6);
+					auto itr = std::find(fruit_to_visit.begin(), fruit_to_visit.end(), *plan_state.target);
+					if(itr == fruit_to_visit.end()) {
+						std::cout << "Fruit at " << *plan_state.target << " was already checked off?!" << std::endl;
+						abort();
+					}
+					fruit_to_visit.erase(itr);
 					std::cout << "Checked off fruit at " << *plan_state.target << std::endl;
+					on_target_reached(*plan_state.target);
+
 				}
 
 				this->plan.erase(this->plan.begin());
 
 			}
 		}
-
 
 		if (!current_path_is_collision_free(state.current_state, collision_detection)) {
 			std::cout << "Current path is not collision-free; clearing." << std::endl;
@@ -169,7 +176,7 @@ namespace mgodpl::planning {
 				}
 			}
 
-			const auto &closest_fruit = fruit_to_visit[closest_fruit_index];
+			math::Vec3d closest_fruit = fruit_to_visit[closest_fruit_index];
 
 			std::cout << "Closest fruit: " << closest_fruit << std::endl;
 
@@ -189,14 +196,48 @@ namespace mgodpl::planning {
 																									  nm2_vec.normalized(),
 																									  -nm2_vec);
 
-			JointSpacePoint at_target = outside_tree;
+			double max_distance_from_straight = INFINITY;
+			JointSpacePoint at_target_valid = outside_tree;
 
-			// Move the end-effector to the closest fruit.
-			experiment_state_tools::moveEndEffectorNearPoint(*robot_model, at_target, closest_fruit, max_target_distance);
+			experiment_state_tools::moveEndEffectorNearPoint(*robot_model,
+															 at_target_valid,
+															 closest_fruit,
+															 max_target_distance);
 
-			if (collision_detection.collides_ccd(outside_tree, at_target)) {
-				// We can't get there by a simple movement. We'll wanna do proper approach planning at some point.
-				std::cout << "Can't get to fruit by simple movement." << std::endl;
+			if (!collision_detection.collides_ccd(current_outside_tree, outside_tree)) {
+				max_distance_from_straight = moveit_joint_distance(*robot_model, at_target_valid, outside_tree);
+			} else {
+
+				for (int goal_sample_i = 0; goal_sample_i < 1000; ++goal_sample_i) {
+
+					// Generate a random state.
+					JointSpacePoint goal_state = experiment_state_tools::randomUprightWithBaseNearState(*robot_model,
+																										0.5,
+																										at_target_valid,
+																										goal_sample_i);
+
+					// Move the end-effector to the closest fruit.
+					experiment_state_tools::moveEndEffectorNearPoint(*robot_model,
+																	 goal_state,
+																	 closest_fruit,
+																	 max_target_distance);
+
+					double distance = moveit_joint_distance(*robot_model, outside_tree, goal_state);
+
+					if (distance < max_distance_from_straight &&
+						!collision_detection.collides_ccd(goal_state, outside_tree)) {
+
+						max_distance_from_straight = distance;
+						at_target_valid = goal_state;
+
+					}
+
+				}
+			}
+
+			if (!finite(max_distance_from_straight)) {
+				std::cout << "Can't get to fruit at " << closest_fruit << std::endl;
+				on_target_rejected(closest_fruit);
 				fruit_to_visit.erase(fruit_to_visit.begin() + (long) closest_fruit_index);
 				distances.erase(distances.begin() + (long) closest_fruit_index);
 				continue;
@@ -235,18 +276,22 @@ namespace mgodpl::planning {
 			}
 
 			path_states.push_back({.point = outside_tree, .target = {}});
-			path_states.push_back({.point = at_target, .target = closest_fruit});
+			path_states.push_back({.point = at_target_valid, .target = closest_fruit});
 			path_states.push_back({.point = outside_tree, .target = {}});
 
 			this->plan = path_states;
+
+			localOptimizeCurrentPlan(state.current_state, collision_detection);
 
 			// Sanity check: make sure the path is collision-free.
 			if (!current_path_is_collision_free(state.current_state, collision_detection)) {
 				// TODO: if this fails, it's probably due to asymmetries in the CCD collision checking.
 				std::cout << "Computed path is not collision-free." << std::endl;
 				this->plan.clear();
+				on_target_rejected(closest_fruit);
 				fruit_to_visit.erase(fruit_to_visit.begin() + (long) closest_fruit_index);
 				distances.erase(distances.begin() + (long) closest_fruit_index);
+				std::cout << "Rejecting fruit at " << closest_fruit << std::endl;
 				continue;
 			}
 
@@ -259,8 +304,9 @@ namespace mgodpl::planning {
 
 	}
 
-	bool BlindlyMoveToNextFruit::current_path_is_collision_free(const moveit_facade::JointSpacePoint& robot_current_state,
-																const moveit_facade::CollisionDetection& collision_detection) {
+	bool
+	BlindlyMoveToNextFruit::current_path_is_collision_free(const moveit_facade::JointSpacePoint &robot_current_state,
+														   const moveit_facade::CollisionDetection &collision_detection) {
 
 		if (this->plan.empty()) {
 			return true;
@@ -278,5 +324,53 @@ namespace mgodpl::planning {
 
 		return true;
 
+	}
+
+	void BlindlyMoveToNextFruit::localOptimizeCurrentPlan(const JointSpacePoint &robot_current_state,
+														  const CollisionDetection &collision_detection) {
+
+		// An empty plan is as short as it gets; no need to do anything.
+		if (this->plan.empty()) {
+			return;
+		}
+
+		shortcutBySkipping(robot_current_state, collision_detection);
+
+	}
+
+	void BlindlyMoveToNextFruit::shortcutBySkipping(const JointSpacePoint &robot_current_state,
+													const CollisionDetection &collision_detection) {
+
+		// Try to find pairs of states in the plan where the motion between them is collision-free,
+		// such that we can skip all intermediate states. As a rule, we may not skip states where
+		// the robot's end-effector is at a fruit, or we'll end up skipping the fruit.
+		for (size_t segment_i = 0; segment_i < plan.size(); ++segment_i) {
+			// Iterate over all steps in the plan (count the current state as step 0).
+
+			// The start of the segment.
+			const JointSpacePoint &from_state = segment_i == 0 ? robot_current_state : plan[segment_i - 1].point;
+
+			// Store the end of the segment as the first jump candidate. If it remains the same, we won't jump.
+			size_t jump_to = segment_i;
+
+			// Then, we'll keep increasing it as long as we maintain a valid jump.
+			while (
+					jump_to + 1 < plan.size() && // Jump at most as far as the last step; always keep the last step
+					!plan[jump_to].target && // Do not jump further than a state that has a fruit.
+					!collision_detection.collides_ccd(from_state, plan[jump_to + 1].point)) { // Only jump if the motion is collision-free.
+				++jump_to;
+			}
+
+			// If we didn't jump, we're done with this segment.
+			if (jump_to == segment_i) {
+				continue;
+			}
+
+			std::cout << "Jumping from " << segment_i << " to " << jump_to << std::endl;
+
+			// We can jump from step_i to jump_to; we do so by deleting all intermediate steps.
+			plan.erase(plan.begin() + (long) segment_i, plan.begin() + (long) jump_to);
+
+		}
 	}
 }

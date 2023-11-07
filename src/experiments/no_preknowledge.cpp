@@ -6,6 +6,7 @@
 #include <range/v3/view/transform.hpp>
 
 #include <vtkProperty.h>
+#include <unordered_set>
 
 #include "../experiment_utils/load_robot_model.h"
 #include "../visualization/SimpleVtkViewer.h"
@@ -147,6 +148,34 @@ int main() {
 
 	const auto algorithm = std::make_shared<BlindlyMoveToNextFruit>(robot);
 
+	std::unordered_set<math::Vec3d> visited_fruits;
+	std::unordered_set<math::Vec3d> rejected_fruits;
+
+	algorithm->on_target_rejected = [&](const Vec3d &fruit) {
+
+		// If it was visited, abort, this is wrong.
+		if (visited_fruits.find(fruit) != visited_fruits.end()) {
+			std::cout << "Visited fruit rejected!" << std::endl;
+			exit(1);
+		}
+
+		fruit_actors[fruit]->GetProperty()->SetColor(0.0, 0.0, 0.0);
+		rejected_fruits.insert(fruit);
+	};
+
+	algorithm->on_target_reached = [&](const Vec3d &fruit) {
+
+		// If it was rejected, abort, this is wrong.
+		if (rejected_fruits.find(fruit) != rejected_fruits.end()) {
+			std::cout << "Rejected fruit reached: " << fruit << std::endl;
+			exit(1);
+		}
+
+		fruit_actors[fruit]->GetProperty()->SetColor(1.0, 1.0, 0.0);
+		visited_fruits.insert(fruit);
+	};
+
+
 	std::optional<JointSpacePoint> next_state{};
 
 	double total_distance = 0.0;
@@ -234,14 +263,6 @@ int main() {
 				}
 
 				robotModelViz.applyState(current_state);
-
-				// If the end-effector is close to any of the targets, change the color.
-				for (const auto &fruit: fruit_positions) {
-					if ((fruit - computeEndEffectorPosition(*robot, current_state)).norm() <
-						FRUIT_VISIT_DISTANCE_THRESHOLD) {
-						fruit_actors[fruit]->GetProperty()->SetColor(1.0, 0.5, 0.0);
-					}
-				}
 
 			} else {
 				std::cout << "Newly detected fruits: " << newly_detected_fruits.size() << std::endl;

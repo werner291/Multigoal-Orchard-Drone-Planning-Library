@@ -40,6 +40,10 @@ namespace mgodpl::planning {
 
 	public:
 
+		// A set of callbacks that are called when targets are either successfully reached or rejected.
+		std::function<void(const math::Vec3d&)> on_target_reached = [](const math::Vec3d&){};
+		std::function<void(const math::Vec3d&)> on_target_rejected = [](const math::Vec3d&){};
+
 		// Information about current upcoming plan.
 		std::vector<PlanState> plan {};
 
@@ -55,6 +59,11 @@ namespace mgodpl::planning {
 		bool current_path_is_collision_free(const moveit_facade::JointSpacePoint& robot_current_state,
 											const moveit_facade::CollisionDetection& collision_detection);
 
+		void localOptimizeCurrentPlan(const moveit_facade::JointSpacePoint& robot_current_state,
+									  const moveit_facade::CollisionDetection& collision_detection);
+
+		void shortcutBySkipping(const moveit_facade::JointSpacePoint &robot_current_state,
+								const moveit_facade::CollisionDetection &collision_detection);
 	};
 
 }

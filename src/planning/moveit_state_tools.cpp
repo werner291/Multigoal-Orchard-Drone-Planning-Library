@@ -139,5 +139,37 @@ namespace mgodpl::experiment_state_tools {
 
 	}
 
+	moveit_facade::JointSpacePoint randomUprightWithBaseNearState(const moveit::core::RobotModel &robot,
+																  double distance_bound,
+																  const moveit_facade::JointSpacePoint &state,
+																  const int seed) {
+
+		random_numbers::RandomNumberGenerator rng(seed);
+
+		moveit_facade::JointSpacePoint new_state = state;
+
+		for (const moveit::core::JointModel* jm : robot.getJointModels()) {
+
+			jm->getVariableRandomPositionsNearBy(rng, new_state.joint_values.data() + jm->getFirstVariableIndex(), state.joint_values.data() + jm->getFirstVariableIndex(),
+			distance_bound);
+
+		}
+
+		// The base must be upright.
+		// Compute a random yaw-rotation, and assign it to the quaternion of the floating base.
+		Eigen::Quaterniond random_rotation(Eigen::AngleAxisd(rng.uniformReal(-distance_bound,distance_bound), Eigen::Vector3d::UnitZ()));
+		Eigen::Quaterniond original_rotation(state.joint_values[6], state.joint_values[3], state.joint_values[4], state.joint_values[5]);
+		// Compose the two.
+		Eigen::Quaterniond new_rotation = random_rotation * original_rotation;
+		// Assign the new rotation to the state.
+		new_state.joint_values[3] = new_rotation.x();
+		new_state.joint_values[4] = new_rotation.y();
+		new_state.joint_values[5] = new_rotation.z();
+		new_state.joint_values[6] = new_rotation.w();
+
+		return new_state;
+
+	}
+
 
 }
