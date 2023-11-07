@@ -15,12 +15,16 @@
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/AABB_traits.h>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
+#include <CGAL/Polygon_mesh_processing/measure.h>
 
 #include "BlindlyMoveToNextFruit.h"
 #include "JointSpacePoint.h"
 #include "JointSpacePath.h"
 #include "moveit_state_tools.h"
 #include "CollisionDetection.h"
+#include "../math/AABB.h"
+#include "../math/AABBGrid.h"
+#include "../visibility/GridVec.h"
 
 // Make a CGAL convex hull.
 using K = CGAL::Exact_predicates_inexact_constructions_kernel;
@@ -130,9 +134,8 @@ namespace mgodpl::planning {
 			const PlanState& plan_state = plan.front();
 
 			// Check if we're at the first state in the plan.
-			if (this->robot_model
-						->distance(plan_state.point.joint_values.data(), state.current_state.joint_values.data()) <
-				0.001) {
+			if (this->robot_model->distance(plan_state.point.joint_values.data(),
+								            state.current_state.joint_values.data()) < 0.001) {
 
 				std::cout << "We're at the first state in the plan." << std::endl;
 
@@ -179,6 +182,9 @@ namespace mgodpl::planning {
 		// Find the point on the chull closest to the current end-effector position.
 		const auto &[face1, bary1] = mesh_path.locate(Point_3(ee_pos.x(), ee_pos.y(), ee_pos.z()), tree);
 
+		// Geodesic path along the convex hull.
+		mesh_path.add_source_point(face1, bary1);
+
 		const auto &pt1 = mesh_path.point(face1, bary1);
 		const auto &nm1 = CGAL::Polygon_mesh_processing::compute_face_normal(face1, mesh);
 
@@ -190,22 +196,44 @@ namespace mgodpl::planning {
 																										   nm1_vec.normalized(),
 																										   -nm1_vec);
 
+		std::vector<double> distances;
+		distances.reserve(fruit_to_visit.size());
+
+		// Get the geodesic distance to all the fruit.
+		for (const auto& fruit : fruit_to_visit) {
+
+			// Find the closest point on the chull to the closest fruit.
+			const auto &[face2, bary2] = mesh_path.locate(Point_3(fruit.x(),
+																  fruit.y(),
+																  fruit.z()), tree);
+
+			double distance = mesh_path.shortest_distance_to_source_points(face2, bary2).first;
+
+			distances.push_back(distance);
+
+		}
+
 		// Keep trying to plan to one of the apples. If we can't, we'll just keep trying until we can or run out of apples.
 		while (!fruit_to_visit.empty()) {
 
-			// Find the closest fruit (Euclidean distance for now; we'll want to use the mesh path later).
-			auto closest_fruit = std::min_element(fruit_to_visit.begin(),
-												  fruit_to_visit.end(),
-												  [&](const math::Vec3d &a, const math::Vec3d &b) {
-													  return (a - ee_pos).squaredNorm() < (b - ee_pos).squaredNorm();
-												  });
+			size_t closest_fruit_index = 0;
+			double closest_fruit_distance = distances[0];
 
-			std::cout << "Closest fruit: " << *closest_fruit << std::endl;
+			for (size_t i = 1; i < fruit_to_visit.size(); ++i) {
+				if (distances[i] < closest_fruit_distance) {
+					closest_fruit_index = i;
+					closest_fruit_distance = distances[i];
+				}
+			}
+
+			const auto& closest_fruit = fruit_to_visit[closest_fruit_index];
+
+			std::cout << "Closest fruit: " << closest_fruit << std::endl;
 
 			// Find the closest point on the chull to the closest fruit.
-			const auto &[face2, bary2] = mesh_path.locate(Point_3(closest_fruit->x(),
-																  closest_fruit->y(),
-																  closest_fruit->z()), tree);
+			const auto &[face2, bary2] = mesh_path.locate(Point_3(closest_fruit.x(),
+																  closest_fruit.y(),
+																  closest_fruit.z()), tree);
 
 			const auto &pt2 = mesh_path.point(face2, bary2);
 			const auto &nm2 = CGAL::Polygon_mesh_processing::compute_face_normal(face2, mesh);
@@ -218,8 +246,7 @@ namespace mgodpl::planning {
 																									  nm2_vec.normalized(),
 																									  -nm2_vec);
 
-			// Geodesic path along the convex hull.
-			mesh_path.add_source_point(face1, bary1);
+
 
 			std::vector<Surface_mesh_shortest_path::Face_location> path;
 
@@ -232,14 +259,15 @@ namespace mgodpl::planning {
 			JointSpacePoint at_target = outside_tree;
 
 			// Move the end-effector to the closest fruit.
-			experiment_state_tools::moveEndEffectorToPoint(*robot_model, at_target, *closest_fruit);
+			experiment_state_tools::moveEndEffectorToPoint(*robot_model, at_target, closest_fruit);
 
 			assert(collision_detection.collides_ccd(outside_tree, at_target) == collision_detection.collides_ccd(at_target, outside_tree));
 
 			if (collision_detection.collides_ccd(outside_tree, at_target)) {
 				// We can't get there by a simple movement. We'll wanna do proper approach planning at some point.
 				std::cout << "Can't get to fruit by simple movement." << std::endl;
-				fruit_to_visit.erase(closest_fruit);
+				fruit_to_visit.erase(fruit_to_visit.begin() + closest_fruit_index);
+				distances.erase(distances.begin() + closest_fruit_index);
 				continue;
 			}
 
@@ -270,16 +298,14 @@ namespace mgodpl::planning {
 			}
 
 			path_states.push_back({.point = outside_tree, .target = {}});
-			path_states.push_back({.point = at_target, .target = *closest_fruit});
+			path_states.push_back({.point = at_target, .target = closest_fruit});
 			path_states.push_back({.point = outside_tree, .target = {}});
 
 			this->plan = path_states;
 
 			// Sanity check: make sure the path is collision-free.
 			for (size_t step = 0; step < this->plan.size(); ++step) {
-
 				assert(!collision_detection.collides_ccd(step == 0 ? state.current_state : this->plan[step - 1].point, this->plan[step].point));
-
 			}
 
 			return this->plan.front().point;
