@@ -335,6 +335,7 @@ namespace mgodpl::planning {
 		}
 
 		shortcutBySkipping(robot_current_state, collision_detection);
+		optimizeByMidpointPulling(robot_current_state, collision_detection);
 
 	}
 
@@ -371,6 +372,48 @@ namespace mgodpl::planning {
 			// We can jump from step_i to jump_to; we do so by deleting all intermediate steps.
 			plan.erase(plan.begin() + (long) segment_i, plan.begin() + (long) jump_to);
 
+		}
+	}
+
+	void BlindlyMoveToNextFruit::optimizeByMidpointPulling(const JointSpacePoint &robot_current_state,
+														   const CollisionDetection &collision_detection) {
+
+		// Find triplets of states.
+		for (size_t triplet_midpoint = 0; triplet_midpoint + 1 < plan.size(); ++triplet_midpoint) {
+
+			// The start of the segment.
+			const JointSpacePoint &from_state =
+					triplet_midpoint == 0 ? robot_current_state : plan[triplet_midpoint - 1].point;
+
+			// The end of the segment.
+			const JointSpacePoint &to_state = plan[triplet_midpoint + 1].point;
+
+			// The midpoint of the segment.
+			const JointSpacePoint &midpoint_state = plan[triplet_midpoint].point;
+
+			// Get a point halfway between from_state and to_state.
+			JointSpacePoint halfway_state = interpolate(*robot_model, from_state, to_state, 0.5);
+
+			for (const double aggressiveness : {0.1, 0.2, 0.5}) {
+				// Then, a point halfway between the midpoint and the halfway point.
+				JointSpacePoint halfway_midpoint_state = interpolate(*robot_model, halfway_state, midpoint_state, aggressiveness);
+
+				// If it's an at-target state, reproject it.
+				if (plan[triplet_midpoint].target) {
+					experiment_state_tools::moveEndEffectorNearPoint(*robot_model,
+																	 halfway_midpoint_state,
+																	 *plan[triplet_midpoint].target,
+																	 max_target_distance);
+				}
+
+				// If it's collision-free, we can replace the midpoint with the halfway midpoint.
+				if (!collision_detection.collides_ccd(from_state, halfway_midpoint_state) &&
+					!collision_detection.collides_ccd(halfway_midpoint_state, to_state)) {
+
+					plan[triplet_midpoint].point = halfway_midpoint_state;
+
+				}
+			}
 		}
 	}
 }

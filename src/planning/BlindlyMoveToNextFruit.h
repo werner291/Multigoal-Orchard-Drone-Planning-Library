@@ -64,6 +64,12 @@ namespace mgodpl::planning {
 
 		void shortcutBySkipping(const moveit_facade::JointSpacePoint &robot_current_state,
 								const moveit_facade::CollisionDetection &collision_detection);
+
+		void shortcutWithInterpolation(const moveit_facade::JointSpacePoint &robot_current_state,
+									   const moveit_facade::CollisionDetection &collision_detection);
+
+		void optimizeByMidpointPulling(const moveit_facade::JointSpacePoint &robot_current_state,
+									   const moveit_facade::CollisionDetection &collision_detection);
 	};
 
 }

@@ -27,7 +27,7 @@
 #include "../visualization/VtkEndAndBaseTraceVisualization.h"
 #include "../planning/JointSpacePath.h"
 
-static const double STEP_SIZE = 0.05;
+static const double STEP_SIZE = 0.1;
 
 static const double FRUIT_VISIT_DISTANCE_THRESHOLD = 0.15;
 
