@@ -22,7 +22,7 @@ option(ENABLE_TESTS "Enable TESTS" OFF)
 find_package(fcl REQUIRED)
 find_package(Boost REQUIRED)
 find_package(Bullet REQUIRED)
-#find_package(ompl REQUIRED)
+find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
 find_package(Qhull REQUIRED)
 #find_package(ortools REQUIRED)
@@ -52,7 +52,7 @@ include_directories(
         ${Boost_INCLUDE_DIRS}
         ${GTEST_INCLUDE_DIRS}
         ${BULLET_INCLUDE_DIRS}
-#        ${OMPL_INCLUDE_DIRS}
+        ${OMPL_INCLUDE_DIRS}
         ${QHULL_INCLUDE_DIRS}
         ${VTK_INCLUDE_DIRS}
         #{CGAL_INCLUDE_DIRS}
@@ -88,7 +88,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
-SET(CMAKE_C_FLAGS_DEBUG "-Og")
 
 set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" )# "ompl")
 
@@ -161,6 +160,8 @@ add_library(planning
         src/planning/JointSpacePath.cpp
         src/planning/cgal_chull_shortest_paths.cpp
         src/planning/cgal_chull_shortest_paths.h
+        src/planning/ConvexHullSpace.cpp
+        src/planning/ConvexHullSpace.h
 )
 
 target_link_libraries(planning math_utils)
@@ -227,7 +228,7 @@ if (ENABLE_VISUALIZATION)
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
-    ament_target_dependencies(${PROJECT_NAME}_visualisation "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" )#"ompl")
+    ament_target_dependencies(${PROJECT_NAME}_visualisation "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" "ompl")
     target_link_libraries(${PROJECT_NAME}_visualisation ${VTK_LIBRARIES} experiment_utils)
 
     add_executable(vizcube_lightweight src/experiments/cubeviz.cpp)

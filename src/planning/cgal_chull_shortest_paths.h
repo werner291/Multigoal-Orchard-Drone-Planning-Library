@@ -9,6 +9,7 @@
 #ifndef MGODPL_CGAL_CHULL_SHORTEST_PATHS_H
 #define MGODPL_CGAL_CHULL_SHORTEST_PATHS_H
 
+// TODO: Can I use forward declarations here instead of including the whole header?
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Surface_mesh_shortest_path/Surface_mesh_shortest_path_traits.h>

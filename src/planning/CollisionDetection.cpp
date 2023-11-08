@@ -31,20 +31,7 @@ bool mgodpl::moveit_facade::CollisionDetection::collides(const mgodpl::moveit_fa
 bool mgodpl::moveit_facade::CollisionDetection::collides_ccd(const mgodpl::moveit_facade::JointSpacePoint &state1,
 															 const mgodpl::moveit_facade::JointSpacePoint &state2) const {
 
-	MyCollisionEnv::ContinuousCollisionRequest request;
-	MyCollisionEnv::ContinuousCollisionResult result;
-
-	request.distance_threshold = 0.01;
-
-	moveit::core::RobotState robot_state1(collision_env->getRobotModel());
-	moveit::core::RobotState robot_state2(collision_env->getRobotModel());
-
-	state1.to_moveit(robot_state1);
-	state2.to_moveit(robot_state2);
-
-	collision_env->checkRobotCollision(request, result, robot_state1, robot_state2);
-
-	return result.collision;
+	return collision_ccd_toi(state1, state2).has_value();
 
 }
 
@@ -73,5 +60,30 @@ bool mgodpl::moveit_facade::CollisionDetection::path_collides(const mgodpl::move
 	}
 
 	return false;
+
+}
+
+std::optional<double>
+mgodpl::moveit_facade::CollisionDetection::collision_ccd_toi(const mgodpl::moveit_facade::JointSpacePoint &state1,
+															 const mgodpl::moveit_facade::JointSpacePoint &state2) const {
+
+	MyCollisionEnv::ContinuousCollisionRequest request;
+	MyCollisionEnv::ContinuousCollisionResult result;
+
+	request.distance_threshold = 0.01;
+
+	moveit::core::RobotState robot_state1(collision_env->getRobotModel());
+	moveit::core::RobotState robot_state2(collision_env->getRobotModel());
+
+	state1.to_moveit(robot_state1);
+	state2.to_moveit(robot_state2);
+
+	collision_env->checkRobotCollision(request, result, robot_state1, robot_state2);
+
+	if (result.collision) {
+		return result.time_of_contact;
+	} else {
+		return std::nullopt;
+	}
 
 }
