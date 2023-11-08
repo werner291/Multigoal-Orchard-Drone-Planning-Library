@@ -88,8 +88,8 @@ namespace mgodpl {
 		}
 
 		// Find the grid x-coordinates affected by that.
-		const int grid_xmin = *grid.getCoordinateInDimension(xmin + margin, 0);
-		const int grid_xmax = *grid.getCoordinateInDimension(xmax - margin, 0);
+		const int grid_xmin = grid.getCoordinateInDimension(xmin + margin, 0);
+		const int grid_xmax = grid.getCoordinateInDimension(xmax - margin, 0);
 
 		// Iterate over all grid x-coordinates, treating the volume one slice of grid cells at a time.
 		for (int x = grid_xmin; x <= grid_xmax; ++x) {
@@ -122,8 +122,8 @@ namespace mgodpl {
 			}
 
 			// Find the grid y-coordinates affected by that.
-			const int grid_ymin = *grid.getCoordinateInDimension(ymin + margin, 1);
-			const int grid_ymax = *grid.getCoordinateInDimension(ymax - margin, 1);
+			const int grid_ymin = grid.getCoordinateInDimension(ymin + margin, 1);
+			const int grid_ymax = grid.getCoordinateInDimension(ymax - margin, 1);
 //			const int grid_ymin = *grid.getCoordinateInDimension(triangle.a.y() + margin, 1);
 //			const int grid_ymax = *grid.getCoordinateInDimension(triangle.a.y() - margin, 1);
 
@@ -157,8 +157,8 @@ namespace mgodpl {
 					zmax = std::min(zmax, dim_zmax);
 				}
 
-				const int grid_zmin = *grid.getCoordinateInDimension(zmin + margin, 2);
-				const int grid_zmax = *grid.getCoordinateInDimension(zmax - margin, 2);
+				const int grid_zmin = grid.getCoordinateInDimension(zmin + margin, 2);
+				const int grid_zmax = grid.getCoordinateInDimension(zmax - margin, 2);
 
 				// Mark all affected grid cells as occluded.
 				for (int z = grid_zmin; z <= grid_zmax; ++z) {

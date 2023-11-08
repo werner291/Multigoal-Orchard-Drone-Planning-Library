@@ -10,12 +10,12 @@
 #include <moveit/robot_state/robot_state.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Surface_mesh_shortest_path.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/convex_hull_3.h>
-#include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/AABB_traits.h>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
-#include <CGAL/Polygon_mesh_processing/measure.h>
+#include <range/v3/view/transform.hpp>
+#include <range/v3/range/conversion.hpp>
+#include <CGAL/Surface_mesh_shortest_path/Surface_mesh_shortest_path.h>
 
 #include "BlindlyMoveToNextFruit.h"
 #include "JointSpacePoint.h"
@@ -27,10 +27,12 @@
 #include "../visibility/GridVec.h"
 #include "cgal_chull_shortest_paths.h"
 
+
 namespace mgodpl::planning {
 
 	using namespace moveit_facade;
 	using namespace cgal;
+	using namespace experiment_state_tools;
 
 	Surface_mesh make_chull(const std::vector<math::Vec3d> &points) {
 		Surface_mesh mesh;
@@ -46,6 +48,154 @@ namespace mgodpl::planning {
 		CGAL::convex_hull_3(cgal_points.begin(), cgal_points.end(), mesh);
 
 		return mesh;
+	}
+
+	class ConvexHullShellSpace {
+
+		Surface_mesh mesh;
+		Surface_mesh_shortest_path mesh_path;
+		CGAL::AABB_tree<AABBTraits> tree;
+		moveit::core::RobotModelConstPtr robot_model;
+
+	public:
+
+		using ShellPoint = Surface_mesh_shortest_path::Face_location;
+
+		/**
+		 * Buidl a shell space based on the convex hull around the given set of points.
+		 *
+		 * @param points 	The points to build the convex hull around.
+		 */
+		ConvexHullShellSpace(const std::vector<math::Vec3d> &points, const moveit::core::RobotModelConstPtr &robotModel)
+			: mesh(make_chull(points)),
+			  mesh_path(mesh),
+			  tree(),
+			  robot_model(robotModel)
+		{
+			mesh_path.build_aabb_tree(tree);
+		}
+
+		/**
+		 * Find the closest point on the convex hull to the given point.
+		 *
+		 * @param point	The point to find the closest point on the convex hull to.
+		 * @return	The closest point on the convex hull to the given point.
+		 */
+		ShellPoint closestPoint(const math::Vec3d &point) const {
+			return mesh_path.locate(Point_3(point.x(), point.y(), point.z()), tree);
+		}
+
+		JointSpacePoint shell_state(const ShellPoint &sp) const {
+			const auto &pt = mesh_path.point(sp.first, sp.second);
+			const auto &nm = CGAL::Polygon_mesh_processing::compute_face_normal(sp.first, mesh);
+
+			math::Vec3d pt_vec(pt.x(), pt.y(), pt.z());
+			math::Vec3d nm_vec(nm.x(), nm.y(), nm.z());
+
+			return robotStateFromPointAndArmvec(*robot_model,
+											   pt_vec + nm_vec.normalized(),
+											   -nm_vec);
+		}
+
+		std::vector<double> distances_to_many(const ShellPoint &sp, const std::vector<ShellPoint> &other_points) const {
+			Surface_mesh_shortest_path other_mesh_path(mesh);
+			other_mesh_path.add_source_point(sp.first, sp.second);
+
+			return other_points | ranges::views::transform([&](const auto &other_sp) {
+				return other_mesh_path.shortest_distance_to_source_points(other_sp.first, other_sp.second).first;
+			}) | ranges::to<std::vector>();
+		}
+
+		std::vector<ShellPoint> path_along_shell(const ShellPoint& start, const ShellPoint& end) const {
+
+			Surface_mesh_shortest_path other_mesh_path(mesh); // TODO: this rebuilds the sequence tree; that might not be necessary? Can we cache the last source point?
+
+			other_mesh_path.add_source_point(start.first, start.second);
+
+			std::vector<ShellPoint> path;
+
+			PathVisitor path_visitor{.mesh = mesh, .path_algo = other_mesh_path, .states = path};
+
+			other_mesh_path.shortest_path_sequence_to_source_points(
+					end.first,
+					end.second,
+					path_visitor
+			);
+
+			std::reverse(path.begin(), path.end());
+
+			return path;
+
+		}
+
+	};
+
+	struct ApproachPath {
+		Surface_mesh_shortest_path::Face_location face_location;
+		JointSpacePath path;
+	};
+
+	/**
+		 * Plan a single approach path from outside the convex hull shell to fruit.
+		 *
+		 * @param collision		The collision detection object.
+		 * @param fruit			The fruit to approach.
+		 * @param mesh			The convex hull mesh.
+		 * @param mesh_path		The convex hull mesh path algorithm struct, which we abuse to compute the face locations.
+		 *
+		 * @return The approach path, or std::nullopt if no path could be found.
+		 */
+	std::optional<ApproachPath> plan_single_approach_path(
+			const moveit::core::RobotModel &robot_model,
+			const ConvexHullShellSpace& sp,
+			const CollisionDetection& collision,
+			const math::Vec3d& closest_fruit,
+			const double max_target_distance) {
+
+		// First, perform a naive projection to get a rough idea of where the path should go.
+		const auto& fruit_projected_shellpoint = sp.closestPoint(closest_fruit);
+		const auto& projected_outside_tree = sp.shell_state(fruit_projected_shellpoint);
+
+		// Project the shell state onto the goal region.
+		JointSpacePoint at_target = projected_outside_tree;
+		moveEndEffectorNearPoint(robot_model, at_target, closest_fruit, max_target_distance);
+
+		if (!collision.collides_ccd(projected_outside_tree, at_target)) {
+			// The straight segment is collision-free.
+			ApproachPath approach_path;
+			approach_path.face_location = fruit_projected_shellpoint;
+			approach_path.path.path = {projected_outside_tree, at_target};
+			return approach_path;
+		} else {
+			return std::nullopt;
+		}
+
+//
+//
+//		for (int attempt = 0; attempt < 10; ++attempt) {
+//
+//			// Stupid method: Check if the straight segment is collision-free. If so, return it. If not, return nullopt.
+//
+//			// Find the closest point on the chull to the closest fruit.
+////			const auto& sp = sp.closestPoint(closest_fruit);
+//
+//			const JointSpacePoint outside_tree;
+//			shellState(mesh, mesh_path, face2, bary2, robot_model, outside_tree);
+//
+//			JointSpacePoint at_target_valid = outside_tree;
+//
+//			moveEndEffectorNearPoint(robot_model, at_target_valid, closest_fruit, max_target_distance);
+//
+//			if (!collision.collides_ccd(outside_tree, at_target_valid)) {
+//				// The straight segment is collision-free.
+//				ApproachPath approach_path;
+//				approach_path.face_location = {face2, bary2};
+//				approach_path.path.path = {outside_tree, at_target_valid};
+//				return approach_path;
+//			} else {
+//				return std::nullopt;
+//			}
+//		}
 	}
 
 
@@ -83,28 +233,19 @@ namespace mgodpl::planning {
 		// Check if we even have a plan.
 		if (!this->plan.empty()) {
 
-			std::cout << "We have a plan." << std::endl;
-
 			// Take and delete the front point in the plan.
 			const PlanState &plan_state = plan.front();
 
 			// Check if we're at the first state in the plan.
 			if (!plan_state.point.significantly_different_from(state.current_state.joint_values, 1e-6)) {
 
-				std::cout << "We're at the first state in the plan." << std::endl;
-
 				// If we were supposed to go to a fruit check it off. (assert to make sure we're actually at the fruit).
 				if (plan_state.target) {
 					assert((ee_pos - *plan_state.target).squaredNorm() < this->max_target_distance + 1e-6);
 					auto itr = std::find(fruit_to_visit.begin(), fruit_to_visit.end(), *plan_state.target);
-					if(itr == fruit_to_visit.end()) {
-						std::cout << "Fruit at " << *plan_state.target << " was already checked off?!" << std::endl;
-						abort();
-					}
+					assert(itr != fruit_to_visit.end());
 					fruit_to_visit.erase(itr);
-					std::cout << "Checked off fruit at " << *plan_state.target << std::endl;
 					on_target_reached(*plan_state.target);
-
 				}
 
 				this->plan.erase(this->plan.begin());
@@ -113,55 +254,26 @@ namespace mgodpl::planning {
 		}
 
 		if (!current_path_is_collision_free(state.current_state, collision_detection)) {
-			std::cout << "Current path is not collision-free; clearing." << std::endl;
 			this->plan.clear();
 		}
 
 		if (!this->plan.empty()) {
-			std::cout << "Returning next state in plan." << std::endl;
 			return this->plan.front().point;
 		}
 
+		const std::vector<math::Vec3d> leaf_vertices = state.filtered_tree_meshes.leaves_mesh.vertices | ranges::views::transform([](const auto &vertex) {
+			return math::Vec3d(vertex.x, vertex.y, vertex.z);
+		}) | ranges::to<std::vector>();
+
 		// Build the Chull and an AABB thereof.
-
-		Surface_mesh mesh = make_chull(fruit_to_visit);
-
-		CGAL::AABB_tree<AABBTraits> tree{};
-
-		Surface_mesh_shortest_path mesh_path(mesh);
-		mesh_path.build_aabb_tree(tree);
+		ConvexHullShellSpace sp(leaf_vertices, robot_model);
 
 		// Find the point on the chull closest to the current end-effector position.
-		const auto &[face1, bary1] = mesh_path.locate(Point_3(ee_pos.x(), ee_pos.y(), ee_pos.z()), tree);
+		const ConvexHullShellSpace::ShellPoint current_state_sp = sp.closestPoint(ee_pos);
 
-		// Geodesic path along the convex hull.
-		mesh_path.add_source_point(face1, bary1);
-
-		const auto &pt1 = mesh_path.point(face1, bary1);
-		const auto &nm1 = CGAL::Polygon_mesh_processing::compute_face_normal(face1, mesh);
-
-		math::Vec3d pt1_vec(pt1.x(), pt1.y(), pt1.z());
-		math::Vec3d nm1_vec(nm1.x(), nm1.y(), nm1.z());
-
-		const JointSpacePoint &current_outside_tree = experiment_state_tools::robotStateFromPointAndArmvec(*robot_model,
-																										   pt1_vec +
-																										   nm1_vec.normalized(),
-																										   -nm1_vec);
-
-		std::vector<double> distances;
-		distances.reserve(fruit_to_visit.size());
-
-		// Get the geodesic distance to all the fruit.
-		for (const auto &fruit: fruit_to_visit) {
-
-			// Find the closest point on the chull to the closest fruit.
-			const auto &[face2, bary2] = mesh_path.locate(Point_3(fruit.x(), fruit.y(), fruit.z()), tree);
-
-			double distance = mesh_path.shortest_distance_to_source_points(face2, bary2).first;
-
-			distances.push_back(distance);
-
-		}
+		std::vector<double> distances = sp.distances_to_many(current_state_sp, fruit_to_visit | ranges::views::transform([&](const auto &fruit) {
+			return sp.closestPoint(fruit);
+		}) | ranges::to<std::vector>());
 
 		// Keep trying to plan to one of the apples. If we can't, we'll just keep trying until we can or run out of apples.
 		while (!fruit_to_visit.empty()) {
@@ -178,108 +290,34 @@ namespace mgodpl::planning {
 
 			math::Vec3d closest_fruit = fruit_to_visit[closest_fruit_index];
 
-			std::cout << "Closest fruit: " << closest_fruit << std::endl;
+			const auto& approach_path = plan_single_approach_path(*robot_model,
+																 sp,
+																  collision_detection,
+																 closest_fruit,
+																 this->max_target_distance);
 
-			// Find the closest point on the chull to the closest fruit.
-			const auto &[face2, bary2] = mesh_path.locate(Point_3(closest_fruit.x(),
-																  closest_fruit.y(),
-																  closest_fruit.z()), tree);
-
-			const auto &pt2 = mesh_path.point(face2, bary2);
-			const auto &nm2 = CGAL::Polygon_mesh_processing::compute_face_normal(face2, mesh);
-
-			math::Vec3d pt2_vec(pt2.x(), pt2.y(), pt2.z());
-			math::Vec3d nm2_vec(nm2.x(), nm2.y(), nm2.z());
-
-			const JointSpacePoint outside_tree = experiment_state_tools::robotStateFromPointAndArmvec(*robot_model,
-																									  pt2_vec +
-																									  nm2_vec.normalized(),
-																									  -nm2_vec);
-
-			double max_distance_from_straight = INFINITY;
-			JointSpacePoint at_target_valid = outside_tree;
-
-			experiment_state_tools::moveEndEffectorNearPoint(*robot_model,
-															 at_target_valid,
-															 closest_fruit,
-															 max_target_distance);
-
-			if (!collision_detection.collides_ccd(current_outside_tree, outside_tree)) {
-				max_distance_from_straight = moveit_joint_distance(*robot_model, at_target_valid, outside_tree);
-			} else {
-
-				for (int goal_sample_i = 0; goal_sample_i < 1000; ++goal_sample_i) {
-
-					// Generate a random state.
-					JointSpacePoint goal_state = experiment_state_tools::randomUprightWithBaseNearState(*robot_model,
-																										0.5,
-																										at_target_valid,
-																										goal_sample_i);
-
-					// Move the end-effector to the closest fruit.
-					experiment_state_tools::moveEndEffectorNearPoint(*robot_model,
-																	 goal_state,
-																	 closest_fruit,
-																	 max_target_distance);
-
-					double distance = moveit_joint_distance(*robot_model, outside_tree, goal_state);
-
-					if (distance < max_distance_from_straight &&
-						!collision_detection.collides_ccd(goal_state, outside_tree)) {
-
-						max_distance_from_straight = distance;
-						at_target_valid = goal_state;
-
-					}
-
-				}
-			}
-
-			if (!finite(max_distance_from_straight)) {
-				std::cout << "Can't get to fruit at " << closest_fruit << std::endl;
+			if (!approach_path) {
+				std::cout << "No approach path found." << std::endl;
 				on_target_rejected(closest_fruit);
 				fruit_to_visit.erase(fruit_to_visit.begin() + (long) closest_fruit_index);
 				distances.erase(distances.begin() + (long) closest_fruit_index);
+				std::cout << "Rejecting fruit at " << closest_fruit << std::endl;
 				continue;
 			}
 
-			std::vector<Surface_mesh_shortest_path::Face_location> path;
-
-			PathVisitor path_visitor{.mesh = mesh, .path_algo = mesh_path, .states = path};
-
-			mesh_path.shortest_path_sequence_to_source_points(face2, bary2, path_visitor);
-
-			std::reverse(path.begin(), path.end());
-
-			// Let's build the following path:
-
-			// 1. From the current state to the state on the chull.
-			// 2. Along the chull to the state up close to the fruit.
-			// 3. Go down into the tree up to the fruit.
-			// 4. Go back up to the chull.
-
-			std::vector<PlanState> path_states{{.point = current_outside_tree, .target = std::nullopt},};
-
-			for (const auto &[face, barycentric]: path) {
-				const auto &pt = mesh_path.point(face, barycentric);
-				const auto &nm = CGAL::Polygon_mesh_processing::compute_face_normal(face, mesh);
-
-				math::Vec3d pt_vec(pt.x(), pt.y(), pt.z());
-				math::Vec3d nm_vec(nm.x(), nm.y(), nm.z());
-
-				const JointSpacePoint &outside_tree = experiment_state_tools::robotStateFromPointAndArmvec(*robot_model,
-																										   pt_vec +
-																										   nm_vec.normalized(),
-																										   -nm_vec);
-
-				path_states.push_back({.point = outside_tree, .target = std::nullopt});
+			for (const auto &shell_point: sp.path_along_shell(current_state_sp, approach_path->face_location)) {
+				this->plan.push_back({.point = sp.shell_state(shell_point), .target = std::nullopt});
 			}
 
-			path_states.push_back({.point = outside_tree, .target = {}});
-			path_states.push_back({.point = at_target_valid, .target = closest_fruit});
-			path_states.push_back({.point = outside_tree, .target = {}});
+			for (size_t approach_path_i = 0; approach_path_i + 1 < approach_path->path.path.size(); ++approach_path_i) {
+				this->plan.push_back({.point = approach_path->path.path[approach_path_i], .target = std::nullopt});
+			}
 
-			this->plan = path_states;
+			this->plan.push_back({.point = approach_path->path.path.back(), .target = closest_fruit});
+
+			for (size_t approach_path_i = approach_path->path.path.size(); approach_path_i > 0; --approach_path_i) {
+				this->plan.push_back({.point = approach_path->path.path[approach_path_i-1], .target = std::nullopt});
+			}
 
 			localOptimizeCurrentPlan(state.current_state, collision_detection);
 

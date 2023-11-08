@@ -48,7 +48,7 @@ namespace mgodpl {
 		/**
 		 * Create a new 3D grid, filled with the given value.
 		 */
-		Grid3D(const math::Vec3i &size, const T &value) : grid(size.x() * size.y() * size.z(), value), nx(size.x()),
+		Grid3D(const math::Vec3<size_t> &size, const T &value) : grid(size.x() * size.y() * size.z(), value), nx(size.x()),
 														   ny(size.y()), nz(size.z()) {
 		}
 

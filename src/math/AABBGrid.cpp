@@ -31,10 +31,6 @@ namespace mgodpl::math {
 		return min + Vec3d(coord.x(), coord.y(), coord.z()) * cell_size;
 	}
 
-	Vec3d mgodpl::math::AABBGrid::cellSize() const {
-		return base_aabb.size() / Vec3d((double) nx, (double) ny, (double) nz);
-	}
-
 	std::optional<Vec3i> mgodpl::math::AABBGrid::getGridCoordinates(const Vec3d &point) const {
 
 		if (!base_aabb.contains(point)) {
@@ -94,27 +90,6 @@ namespace mgodpl::math {
 
 	const AABBd &AABBGrid::baseAABB() const {
 		return base_aabb;
-	}
-
-	Vec3i AABBGrid::size() const {
-		return Vec3i(nx, ny, nz);
-	}
-
-	std::optional<int> AABBGrid::getCoordinateInDimension(const double &value, const int &dimension) const {
-
-
-		if (value < base_aabb.min()[dimension] || value > base_aabb.max()[dimension]) {
-			return std::nullopt;
-		} else {
-			return (value - base_aabb.min()[dimension]) / cellSize()[dimension];
-
-		}
-
-
-	}
-
-	int AABBGrid::dim_coord_unckeched(const double &value, const int &dimension) const {
-		return (int) std::floor((value - base_aabb.min()[dimension]) / cellSize()[dimension]);
 	}
 
 }

@@ -61,9 +61,12 @@ namespace mgodpl::math {
 		 *
 		 * @param value 		The value to get the grid coordinates of.
 		 * @param dimension 	The dimension to get the grid coordinates in.
-		 * @return 				The grid coordinates of the AABB that contains the given value, or std::nullopt if the value is out of bounds.
+		 * @return 				The grid coordinates of the AABB that contains the given value.
 		 */
-		[[nodiscard]] std::optional<int> getCoordinateInDimension(const double &value, const int &dimension) const;
+		[[nodiscard]] inline int getCoordinateInDimension(const double &value, const int &dimension) const {
+			assert(base_aabb.min()[dimension] <= value && value <= base_aabb.max()[dimension]);
+			return (int) std::floor((value - base_aabb.min()[dimension]) / cellSize()[dimension]);
+		}
 
 		/**
 		 * Given a 3D vector/point, get the grid coordinates of the AABB that contains it.
@@ -72,18 +75,24 @@ namespace mgodpl::math {
 		 * @param dimension 	The dimension to get the grid coordinates in.
 		 * @return 				The grid coordinates of the AABB that contains the given value, or std::nullopt if the value is out of bounds.
 		 */
-		[[nodiscard]] int dim_coord_unckeched(const double &value, const int &dimension) const;
+		[[nodiscard]] inline int dim_coord_unckeched(const double &value, const int &dimension) const {
+			return (int) std::floor((value - base_aabb.min()[dimension]) / cellSize()[dimension]);
+		}
 
 		/**
 		 * Get the size of a single grid cell.
 		 * @return The size of a single grid cell as a 3D vector.
 		 */
-		[[nodiscard]] Vec3d cellSize() const;
+		[[nodiscard]] inline Vec3d cellSize() const {
+			return base_aabb.size() / Vec3d((double) nx, (double) ny, (double) nz);
+		}
 
 		/**
 		 * Get the size of the grid.
 		 */
-		[[nodiscard]] Vec3i size() const;
+		[[nodiscard]] inline Vec3<size_t> size() const {
+			return {nx, ny, nz};
+		}
 
 		/**
 		 * Given an AlignedBox3d, return an AlignedBox3i of all grid coordinates touched by the box.
