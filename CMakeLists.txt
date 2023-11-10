@@ -239,6 +239,10 @@ if (ENABLE_VISUALIZATION)
     target_link_libraries(no_preknowledge math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(no_preknowledge shape_msgs moveit_core)
 
+    add_executable(approach_planning src/experiments/approach_planning.cpp)
+    target_link_libraries(approach_planning math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(approach_planning shape_msgs moveit_core)
+
 endif ()
 
 include(GoogleTest)
