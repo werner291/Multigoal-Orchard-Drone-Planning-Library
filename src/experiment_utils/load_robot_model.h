@@ -14,7 +14,7 @@
 
 namespace mgodpl::experiment_assets {
 
-	moveit::core::RobotModelPtr loadRobotModel(double base_joint_weight);
+	moveit::core::RobotModelPtr loadRobotModel(double base_joint_weight = 1.0);
 
 }
 

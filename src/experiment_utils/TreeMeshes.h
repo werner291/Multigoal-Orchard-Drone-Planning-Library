@@ -92,6 +92,8 @@ namespace mgodpl::tree_meshes {
 	 */
 	std::vector<TreeMeshes> loadAllTreeModels(int max_n, int max_fruit);
 
+	std::vector<TreeMeshes> loadAllTreeMeshes();
+
 	/**
 	 * @brief Create a single row orchard from a given vector of tree models.
 	 *
@@ -103,6 +105,8 @@ namespace mgodpl::tree_meshes {
 	 * @return A SimplifiedOrchard object representing the created orchard.
 	 */
 	SimplifiedOrchard makeSingleRowOrchard(std::vector<TreeMeshes> &tree_models);
+
+	std::vector<math::Vec3d> computeFruitPositions(const TreeMeshes &tree_meshes);
 
 }
 

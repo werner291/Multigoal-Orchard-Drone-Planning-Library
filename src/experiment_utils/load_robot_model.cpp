@@ -13,16 +13,14 @@
 
 moveit::core::RobotModelPtr mgodpl::experiment_assets::loadRobotModel(double base_joint_weight) {
 
-	auto urdf = std::make_shared<urdf::Model>();
-	urdf->initFile("test_robots/urdf/bot.urdf");
+	// Get the project root directory, and append test_robots/urdf/bot.urdf
 
-	if (urdf->getName() == "") {
-		std::cerr << "Failed to load the robot model. Typically, this is because the assets are in the wrong place. Ensure that the working directory is set to the root of the project containing the 'test_robots' folder." << std::endl;
-		throw std::runtime_error("Failed to load robot model; is the path correct?");
-	}
+	std::string source_path = MYSOURCE_ROOT;
+	auto urdf = std::make_shared<urdf::Model>();
+	urdf->initFile(source_path + "/test_robots/urdf/bot.urdf");
 
 	auto srdf = std::make_shared<srdf::Model>();
-	srdf->initFile(*urdf, "test_robots/config/aerial_manipulator_drone.srdf");
+	srdf->initFile(*urdf, source_path + "/test_robots/config/aerial_manipulator_drone.srdf");
 
 	auto robot = std::make_shared<moveit::core::RobotModel>(urdf, srdf);
 

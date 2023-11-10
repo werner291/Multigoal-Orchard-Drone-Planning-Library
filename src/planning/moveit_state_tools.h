@@ -91,6 +91,8 @@ namespace mgodpl::experiment_state_tools {
 																const math::Vec3d &desired_ee_pos,
 																const math::Vec3d &armvec);
 
+	moveit_facade::JointSpacePoint genGoalSampleUniform(const math::Vec3d &target, int seed, const moveit::core::RobotModel &robot);
+
 }
 
 #endif //MGODPL_MOVEIT_STATE_TOOLS_H

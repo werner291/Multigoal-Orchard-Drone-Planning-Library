@@ -9,6 +9,7 @@
 #include "TreeMeshes.h"
 #include "load_mesh_ros.h"
 #include "mesh_connected_components.h"
+#include "mesh_utils.h"
 
 namespace mgodpl::tree_meshes {
 	/**
@@ -57,9 +58,12 @@ namespace mgodpl::tree_meshes {
 
 	std::vector<std::string> getTreeModelNames(const std::string path) {
 
+		std::string root(MYSOURCE_ROOT);
+
+
 		std::vector<std::string> modelNames;
 
-		for (const auto &entry: std::filesystem::directory_iterator(path)) {
+		for (const auto &entry: std::filesystem::directory_iterator(root + "/3d-models/")) {
 
 			// Check if the file is a *_trunk.dae file
 
@@ -147,6 +151,29 @@ namespace mgodpl::tree_meshes {
 		return tree_models;
 	}
 
+	std::vector<TreeMeshes> loadAllTreeMeshes() {
+
+		// Get the names of available tree models and shuffle them.
+		auto tree_names = getTreeModelNames();
+
+		// Create a vector to hold the loaded tree models.
+		std::vector<TreeMeshes> tree_models;
+
+		// Loop over the shuffled tree model names.
+		for (const auto &name: tree_names) {
+			// Load the tree model.
+			auto models = loadTreeMeshes(name);
+
+			// If the tree model has a suitable number of fruit meshes, add it to the vector.
+				tree_models.push_back(models);
+
+		}
+
+		// Return the vector of loaded tree models.
+		return tree_models;
+
+	}
+
 	std::vector<TreeMeshes> loadAllTreeModels(int max_n, int max_fruit) {
 
 		// Get the names of available tree models and shuffle them.
@@ -185,6 +212,14 @@ namespace mgodpl::tree_meshes {
 			x_displacement += 2.0;
 		}
 		return orchard;
+	}
+
+	std::vector<math::Vec3d> computeFruitPositions(const TreeMeshes &tree_meshes) {
+		std::vector<math::Vec3d> fruit_positions;
+		for (const auto &fruit_mesh: tree_meshes.fruit_meshes) {
+			fruit_positions.push_back(mesh_aabb(fruit_mesh).center());
+		}
+		return fruit_positions;
 	}
 }
 

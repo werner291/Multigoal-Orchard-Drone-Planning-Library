@@ -275,6 +275,30 @@ namespace mgodpl::math {
 			return x() == other.x() && y() == other.y() && z() == other.z();
 		}
 
+		double getX() const {
+			return x();
+		}
+
+		double getY() const {
+			return y();
+		}
+
+		double getZ() const {
+			return z();
+		}
+
+		void setX(double x) {
+			this->x() = x;
+		}
+
+		void setY(double y) {
+			this->y() = y;
+		}
+
+		void setZ(double z) {
+			this->z() = z;
+		}
+
 	};
 
 	using Vec3d = Vec3<double>;

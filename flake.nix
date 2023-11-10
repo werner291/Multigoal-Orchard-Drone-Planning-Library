@@ -20,11 +20,9 @@
         name = "My ROS Project Build Environment";
         buildInputs = with pkgs; with pkgs.rosPackages.rolling; [
             moveit-core
+            ompl
 #            moveit-planners-ompl
-            pythonPackages.matplotlib
-            pythonPackages.notebook
-            pythonPackages.numpy
-            pythonPackages.pandas
+            (python3.withPackages(ps: with ps; [ matplotlib jupyterlab numpy pandas pybind11 seaborn ]))
             cmake
             jsoncpp
             range-v3

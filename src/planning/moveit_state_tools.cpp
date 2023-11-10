@@ -171,5 +171,13 @@ namespace mgodpl::experiment_state_tools {
 
 	}
 
+	moveit_facade::JointSpacePoint genGoalSampleUniform(const Vec3d &target, int seed, const moveit::core::RobotModel &robot) {
+		moveit_facade::JointSpacePoint jt = experiment_state_tools::randomUprightWithBase(robot, 0.0, seed);
+		experiment_state_tools::moveEndEffectorNearPoint(
+				robot, jt, target, 0.
+		);
+		return jt;
+	}
+
 
 }

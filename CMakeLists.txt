@@ -25,7 +25,7 @@ find_package(Bullet REQUIRED)
 find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
 find_package(Qhull REQUIRED)
-#find_package(ortools REQUIRED)
+find_package(ortools REQUIRED)
 #set(ORTOOLS_LIBRARIES ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so)
 
 set(CGAL_DATA_DIR "UNUSED_STOP_WARNING")
@@ -35,8 +35,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(moveit_core REQUIRED)
 find_package(moveit_msgs REQUIRED)
-find_package(moveit_ros_planning REQUIRED)
-find_package(moveit_planners_ompl REQUIRED)
+#find_package(moveit_ros_planning REQUIRED)
+#find_package(moveit_planners_ompl REQUIRED)
 find_package(shape_msgs REQUIRED)
 find_package(jsoncpp REQUIRED)
 
@@ -74,8 +74,9 @@ link_libraries(
         jsoncpp_lib
 #        tbb
         ${CGAL_LIBRARIES}
-        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
+#        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
 #        moveit_ompl_interface
+        ${ORTOOLS_LIBRARIES}
 )
 
 ###########
@@ -258,3 +259,10 @@ add_executable(${PROJECT_NAME}_tests
 
 target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils gtest)
 gtest_discover_tests(${PROJECT_NAME}_tests)
+
+# Pybind11 stuff.
+find_package(pybind11 REQUIRED)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+pybind11_add_module(pymgodpl src/python_bindings.cpp)
+target_link_libraries(pymgodpl PRIVATE math_utils visibility planning experiment_utils ${PROJECT_NAME}_visualisation ${VTK_LIBRARIES})
+ament_target_dependencies(pymgodpl PUBLIC ${AMENT_DEPS})
