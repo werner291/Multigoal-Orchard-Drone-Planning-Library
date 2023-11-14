@@ -21,6 +21,7 @@ namespace mgodpl {
 	using namespace math;
 
 	SimpleVtkViewer::SimpleVtkViewer() {
+
 		// Set up the render window.
 		visualizerWindow->SetSize(800, 600);
 		visualizerWindow->SetWindowName("Robot Path Planning");
@@ -40,12 +41,17 @@ namespace mgodpl {
 			}
 		});
 
-
-
 	}
 
 	void SimpleVtkViewer::lockCameraUp() {
 		enforceCameraUp(viewerRenderer, renderWindowInteractor);
+	}
+
+	void SimpleVtkViewer::setCameraTransform(const math::Vec3d& position, const math::Vec3d& lookAt)
+	{
+		viewerRenderer->GetActiveCamera()->SetPosition(position.data());
+		viewerRenderer->GetActiveCamera()->SetFocalPoint(lookAt.data());
+		viewerRenderer->GetActiveCamera()->SetViewUp(0, 0, 1);
 	}
 
 	void SimpleVtkViewer::addActor(vtkActor *actor) {
@@ -110,7 +116,6 @@ namespace mgodpl {
 
 	}
 
-
 	void SimpleVtkViewer::captureScreenshot(const std::string &filename, bool render) {
 
 		assert(boost::algorithm::ends_with(filename, ".png"));
@@ -132,7 +137,26 @@ namespace mgodpl {
 
 	}
 
-//	void SimpleVtkViewer::addStaticPolyline(const std::vector<Vec3d> &points, const Vec3d &color) {
+	vtkSmartPointer<vtkImageData> SimpleVtkViewer::currentImage()
+	{
+
+		std::cout << "rendering" << std::endl;
+
+		visualizerWindow->Render();
+
+		vtkNew<vtkWindowToImageFilter> windowToImageFilter;
+		windowToImageFilter->SetInput(visualizerWindow);
+		windowToImageFilter->SetInputBufferTypeToRGBA(); // Also record the alpha (transparency) channel
+		windowToImageFilter->ReadFrontBufferOff();
+		windowToImageFilter->Update();
+		//
+		// return windowToImageFilter->GetOutput();
+
+		return nullptr;
+	}
+
+
+	//	void SimpleVtkViewer::addStaticPolyline(const std::vector<Vec3d> &points, const Vec3d &color) {
 //		VtkPolyLineVisualization ee_trace_viz(color.x(), color.y(), color.z());
 //		ee_trace_viz.updateLine(points);
 //		addActor(ee_trace_viz.getActor());

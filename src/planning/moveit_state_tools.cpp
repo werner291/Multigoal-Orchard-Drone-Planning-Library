@@ -29,7 +29,7 @@ namespace mgodpl::experiment_state_tools {
 		random_numbers::RandomNumberGenerator rng(seed);
 
 		double random_t = rng.uniformReal(-M_PI, M_PI);
-		double height = rng.uniformReal(0.5, 2.0);
+		double height = rng.uniformReal(0.5, 5.0);
 
 		double radius = 4.0;
 
@@ -173,8 +173,18 @@ namespace mgodpl::experiment_state_tools {
 
 	moveit_facade::JointSpacePoint genGoalSampleUniform(const Vec3d &target, int seed, const moveit::core::RobotModel &robot) {
 		moveit_facade::JointSpacePoint jt = experiment_state_tools::randomUprightWithBase(robot, 0.0, seed);
+
+		// Generate a point uniformly on a 3D sphere.
+
+		random_numbers::RandomNumberGenerator rng(seed);
+		rng.gaussian01();
+		rng.gaussian01();
+		rng.gaussian01();
+
+		Vec3d random_point(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
+
 		experiment_state_tools::moveEndEffectorNearPoint(
-				robot, jt, target, 0.
+				robot, jt, target + random_point.normalized() * 0.05, 0.
 		);
 		return jt;
 	}

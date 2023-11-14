@@ -44,7 +44,7 @@ namespace mgodpl::tree_meshes {
 	 * @param path The path of the directory to search. Default is "./3d-models/".
 	 * @return A vector of tree model names.
 	 */
-	std::vector<std::string> getTreeModelNames(const std::string path = "./3d-models/");
+	std::vector<std::string> getTreeModelNames();
 
 	/**
 	 * @struct SimplifiedOrchard

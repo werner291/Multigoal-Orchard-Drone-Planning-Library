@@ -5,6 +5,8 @@ project(MgODPL) # Multigoal Orchard Drone Planning Library
 #    add_compile_options(-Wall -Wextra -Wpedantic)
 #endif()
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #set(VTK_QT_VERSION "6" CACHE STRING "Qt Version")
 
@@ -25,8 +27,16 @@ find_package(Bullet REQUIRED)
 find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
 find_package(Qhull REQUIRED)
-find_package(ortools REQUIRED)
-#set(ORTOOLS_LIBRARIES ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so)
+
+find_file (DEBIAN_FOUND debian_version debconf.conf
+        PATHS /etc
+)
+
+if (DEBIAN_FOUND)
+    set(ORTOOLS_LIBRARIES ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so)
+else()
+    find_package(ortools REQUIRED)
+endif()
 
 set(CGAL_DATA_DIR "UNUSED_STOP_WARNING")
 find_package(CGAL REQUIRED)
