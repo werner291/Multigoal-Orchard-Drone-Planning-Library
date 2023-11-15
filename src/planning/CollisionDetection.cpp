@@ -7,24 +7,19 @@
 //
 
 #include "CollisionDetection.h"
-#include "moveit_motion_velocity.h"
+
 #include "MyCollisionEnv.h"
 #include "moveit_forward_declarations.h"
 
 #include <moveit/collision_detection_fcl/collision_env_fcl.h>
 #include <geometric_shapes/shape_operations.h>
 
+#include <fcl/geometry/bvh/BVH_model.h>
+#include <fcl/geometry/shape/box.h>
+#include <fcl/math/bv/OBB.h>
+#include <fcl/math/bv/RSS.h>
+
 bool mgodpl::moveit_facade::CollisionDetection::collides(const mgodpl::moveit_facade::JointSpacePoint &state) const {
-
-	collision_detection::CollisionRequest request;
-	collision_detection::CollisionResult result;
-
-	moveit::core::RobotState robot_state(collision_env->getRobotModel());
-	state.to_moveit(robot_state);
-
-	collision_env->collision_detection::CollisionEnvFCL::checkRobotCollision(request, result, robot_state);
-
-	return result.collision;
 
 }
 
@@ -36,17 +31,48 @@ bool mgodpl::moveit_facade::CollisionDetection::collides_ccd(const mgodpl::movei
 }
 
 mgodpl::moveit_facade::CollisionDetection::CollisionDetection(const std::vector<shape_msgs::msg::Mesh> &obstacle_meshes,
-															  const moveit::core::RobotModelConstPtr robot) {
+															  const moveit::core::RobotModelConstPtr robot) :
+	robot_model(robot),
+    obstacle_bvh_obb(std::make_shared<fcl::BvhModel<fcl::OBBd>>()),
+	obstacle_bvh_rss(std::make_shared<fcl::BvhModel<fcl::RSSd>>()) {
 
-	this->collision_env = std::make_shared<MyCollisionEnv>(robot, std::make_shared<collision_detection::World>(), 0.0, 1.0);
+	// this->collision_env = std::make_shared<MyCollisionEnv>(robot, std::make_shared<collision_detection::World>(), 0.0, 1.0);
+	//
+	// // Add the obstacles to the collision environment.
+	// for (const auto &mesh : obstacle_meshes) {
+	// 	this->collision_env->getWorld()->addToObject(
+	// 			"static_obstacles",
+	// 			shapes::ShapeConstPtr(shapes::constructShapeFromMsg(mesh)),
+	// 			Eigen::Isometry3d::Identity()
+	// 			);
+	// }
 
-	// Add the obstacles to the collision environment.
+	obstacle_bvh_obb->beginModel();
+	obstacle_bvh_rss->beginModel();
+
+
+
 	for (const auto &mesh : obstacle_meshes) {
-		this->collision_env->getWorld()->addToObject(
-				"static_obstacles",
-				shapes::ShapeConstPtr(shapes::constructShapeFromMsg(mesh)),
-				Eigen::Isometry3d::Identity()
-				);
+
+		std::vector<fcl::Vector3d> vertices;
+		std::vector<fcl::Triangle> triangles;
+
+		for (const auto& vertex: mesh.vertices) {
+			vertices.emplace_back(vertex.x, vertex.y, vertex.z);
+		}
+
+		for (const auto &triangle : mesh.triangles) {
+
+			triangles.emplace_back(
+					triangle.vertex_indices[0],
+					triangle.vertex_indices[1],
+					triangle.vertex_indices[2]
+					);
+
+		}
+
+		obstacle_bvh_obb->addSubModel(vertices, triangles);
+
 	}
 
 }

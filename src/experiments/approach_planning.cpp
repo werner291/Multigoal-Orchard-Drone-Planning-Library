@@ -120,9 +120,6 @@ std::vector<int> mksamples(const moveit::core::RobotModelPtr& robot, const shape
     // Make the collision object with identity transform.
     fcl::CollisionObjectd tco(g, fcl::Transform3d::Identity());
 
-    long t1 = 0;
-    long t2 = 0;
-
     for (const auto& f : fruit)
     {
         int successes = 0;
@@ -133,39 +130,32 @@ std::vector<int> mksamples(const moveit::core::RobotModelPtr& robot, const shape
         {
             JointSpacePoint jt = experiment_state_tools::genGoalSampleUniform(f, rng, *robot);
 
-            const auto time_before = std::chrono::high_resolution_clock::now();
             bool collides;
             fcl::Vector3d contact_point;
             check_collision_custom(robot, tco, jt, collides, contact_point);
-            const auto time_after = std::chrono::high_resolution_clock::now();
 
-            bool collides_old = cd.collides(jt);
-
-            const auto time_after2 = std::chrono::high_resolution_clock::now();
-
-            t1 += std::chrono::duration_cast<std::chrono::nanoseconds>(time_after - time_before).count();
-            t2 += std::chrono::duration_cast<std::chrono::nanoseconds>(time_after2 - time_after).count();
-
-            if (collides_old != collides)
-            {
-                std::cout << "Collision detection disagrees with FCL!" << std::endl;
-                std::cout << "Moveit says: " << cd.collides(jt) << std::endl;
-                std::cout << "We say: " << collides << std::endl;
-
-                SimpleVtkViewer viewer;
-                viewer.addMesh(shape, {0.5, 0.3, 0.1});
-
-                mkPointMarkerSphere(Vec3d(contact_point.data()), viewer);
-
-                visualization::VtkRobotModel robotModelViz(
-                    robot, jt, !collides ? Vec3d(0.5, 0.5, 0.5) : Vec3d(0.5, 0.0, 0.0));
-
-
-                viewer.addActorCollection(robotModelViz.getLinkActors());
-                viewer.start();
-
-                abort();
-            }
+            // bool collides_old = cd.collides(jt);
+            //
+            // if (collides_old != collides)
+            // {
+            //     std::cout << "Collision detection disagrees with FCL!" << std::endl;
+            //     std::cout << "Moveit says: " << cd.collides(jt) << std::endl;
+            //     std::cout << "We say: " << collides << std::endl;
+            //
+            //     SimpleVtkViewer viewer;
+            //     viewer.addMesh(shape, {0.5, 0.3, 0.1});
+            //
+            //     mkPointMarkerSphere(Vec3d(contact_point.data()), viewer);
+            //
+            //     visualization::VtkRobotModel robotModelViz(
+            //         robot, jt, !collides ? Vec3d(0.5, 0.5, 0.5) : Vec3d(0.5, 0.0, 0.0));
+            //
+            //
+            //     viewer.addActorCollection(robotModelViz.getLinkActors());
+            //     viewer.start();
+            //
+            //     abort();
+            // }
 
             if (!collides)
             {
@@ -180,8 +170,6 @@ std::vector<int> mksamples(const moveit::core::RobotModelPtr& robot, const shape
 
         success_counts.push_back(successes);
     }
-
-    std::cout << "Benchmark difference: " << t1 << " vs " << t2 << std::endl;
 
     return success_counts;
 }

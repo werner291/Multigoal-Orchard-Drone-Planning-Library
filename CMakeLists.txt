@@ -254,6 +254,9 @@ if (ENABLE_VISUALIZATION)
     target_link_libraries(approach_planning math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(approach_planning shape_msgs moveit_core)
 
+    add_executable(collision_detection_mwe src/experiments/collision_detection_mwe.cpp)
+    ament_target_dependencies(collision_detection_mwe shape_msgs moveit_core random_numbers)
+
 endif ()
 
 include(GoogleTest)

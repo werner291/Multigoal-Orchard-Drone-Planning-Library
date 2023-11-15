@@ -15,6 +15,23 @@
 #include "moveit_forward_declarations.h"
 #include "JointSpacePath.h"
 
+namespace fcl
+{
+	template<typename S>
+	struct OBB;
+
+	using OBBd = OBB<double>;
+
+	template<typename S>
+	struct RSS;
+
+	using RSSd = RSS<double>;
+
+	template<typename BV>
+	class BvhModel;
+}
+
+
 class MyCollisionEnv;
 
 namespace mgodpl::moveit_facade {
@@ -23,7 +40,10 @@ namespace mgodpl::moveit_facade {
      *  Class that wraps the collision detection functionality of MoveIt.
 	 */
 	class CollisionDetection {
-		std::shared_ptr<MyCollisionEnv> collision_env = nullptr;
+
+		moveit::core::RobotModelConstPtr robot_model;
+		std::shared_ptr<fcl::BvhModel<fcl::OBBd>> obstacle_bvh_obb;
+		std::shared_ptr<fcl::BvhModel<fcl::RSSd>> obstacle_bvh_rss;
 
 	public:
 		explicit CollisionDetection(const std::vector<shape_msgs::msg::Mesh> &obstacle_meshes,
