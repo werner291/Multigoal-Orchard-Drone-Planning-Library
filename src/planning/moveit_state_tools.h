@@ -14,6 +14,11 @@
 #include "JointSpacePoint.h"
 #include "moveit_forward_declarations.h"
 
+namespace random_numbers
+{
+	class RandomNumberGenerator;
+}
+
 /**
  * A collection of utility functions that compute or modify robot states
  * in a way that makes sense in the context of the experiments.
@@ -63,14 +68,14 @@ namespace mgodpl::experiment_state_tools {
 	moveit_facade::JointSpacePoint randomUprightWithBase(
 			const moveit::core::RobotModel& robot,
 			double translation_bound,
-			const int seed
+			random_numbers::RandomNumberGenerator& rng
 			);
 
 	moveit_facade::JointSpacePoint randomUprightWithBaseNearState(
 			const moveit::core::RobotModel& robot,
 			double distance_bound,
 			const moveit_facade::JointSpacePoint& state,
-			const int seed
+			random_numbers::RandomNumberGenerator& rng
 			);
 
 	/**
@@ -84,14 +89,17 @@ namespace mgodpl::experiment_state_tools {
 	 */
 	moveit_facade::JointSpacePoint randomStateOutsideTree(
 			const moveit::core::RobotModel& robot,
-			int seed);
+			random_numbers::RandomNumberGenerator& rng);
 
 
 	moveit_facade::JointSpacePoint robotStateFromPointAndArmvec(const moveit::core::RobotModel &drone,
 																const math::Vec3d &desired_ee_pos,
 																const math::Vec3d &armvec);
 
-	moveit_facade::JointSpacePoint genGoalSampleUniform(const math::Vec3d &target, int seed, const moveit::core::RobotModel &robot);
+	moveit_facade::JointSpacePoint genGoalSampleUniform(
+		const math::Vec3d &target,
+		random_numbers::RandomNumberGenerator& rng,
+		const moveit::core::RobotModel &robot);
 
 }
 

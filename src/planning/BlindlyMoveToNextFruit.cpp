@@ -117,7 +117,7 @@ namespace mgodpl::planning {
 			JointSpacePoint goal_state = randomUprightWithBaseNearState(robot_model,
 																		1.0,
 																		projected_outside_tree,
-																		rng.uniformInteger(0, INT_MAX));
+																		rng);
 			moveEndEffectorNearPoint(robot_model, goal_state, closest_fruit, max_target_distance);
 
 			if (!collision.collides(goal_state)) {
@@ -192,7 +192,7 @@ namespace mgodpl::planning {
 			JointSpacePoint random_state = randomUprightWithBaseNearState(robot_model,
 																		  aggressiveness,
 																		  at_target,
-																		  rng.uniformInteger(0, INT_MAX));
+																		  rng);
 
 			// Try to project it down to the goal region.
 			JointSpacePoint projected_state = random_state;
@@ -223,7 +223,7 @@ namespace mgodpl::planning {
 			JointSpacePoint random_state = randomUprightWithBaseNearState(robot_model,
 																		  aggressiveness,
 																		  at_target,
-																		  rng.uniformInteger(0, INT_MAX));
+																		  rng);
 
 			// Find the closest existing node.
 			auto closest = std::min_element(tree_arena.begin(),

@@ -135,9 +135,10 @@ namespace mgodpl::visualization {
 			auto link_actor = vtkActor::SafeDownCast(link_actors->GetItemAsObject(i));
 			auto lm = robotModel->getLinkModelsWithCollisionGeometry()[i];
 
-			auto transform = lm->getCollisionOriginTransforms()[0];
-			auto tf = moveit_state.getGlobalLinkTransform(lm);
-			auto total_tf = tf * transform;
+			// auto transform = lm->getCollisionOriginTransforms()[0];
+			// auto tf = moveit_state.getGlobalLinkTransform(lm);
+			// auto total_tf = tf * transform;
+			auto total_tf = moveit_state.getCollisionBodyTransform(lm, 0);
 
 			Eigen::Vector3d tf_trans = total_tf.translation();
 			link_actor->SetPosition(tf_trans.x(), tf_trans.y(), tf_trans.z());
