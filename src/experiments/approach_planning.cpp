@@ -33,26 +33,6 @@ using namespace tree_meshes;
 using namespace math;
 using namespace moveit_facade;
 
-vtkSmartPointer<vtkActor> mkPointMarkerSphere(const math::Vec3d& target,
-                                              SimpleVtkViewer& viewer)
-{
-    // Create a mapper and actor for the sphere.
-    // Create a small sphere at the target point.
-    vtkNew<vtkSphereSource> sphere;
-    sphere->SetRadius(0.05);
-    sphere->Update();
-
-    vtkNew<vtkPolyDataMapper> sphereMapper;
-    sphereMapper->SetInputConnection(sphere->GetOutputPort());
-    vtkNew<vtkActor> sphereActor;
-    sphereActor->SetMapper(sphereMapper);
-    sphereActor->GetProperty()->SetColor(1, 0, 0);
-    sphereActor->SetPosition(target.x(), target.y(), target.z());
-    viewer.addActor(sphereActor);
-
-    return sphereActor;
-}
-
 void check_collision_custom(const moveit::core::RobotModelPtr& robot, fcl::CollisionObjectd tco, JointSpacePoint jt, bool& collides, fcl::Vector3d& contact_point)
 {
     moveit::core::RobotState state(robot);

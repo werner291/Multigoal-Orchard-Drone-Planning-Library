@@ -98,7 +98,7 @@ set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -O3")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" )# "ompl")
 
@@ -236,6 +236,8 @@ if (ENABLE_VISUALIZATION)
             src/visualization/voxels.h
             src/visualization/VtkEndAndBaseTraceVisualization.cpp
             src/visualization/VtkEndAndBaseTraceVisualization.h
+            src/visualization/quick_markers.h
+            src/visualization/quick_markers.cpp
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
@@ -253,6 +255,10 @@ if (ENABLE_VISUALIZATION)
     add_executable(approach_planning src/experiments/approach_planning.cpp)
     target_link_libraries(approach_planning math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(approach_planning shape_msgs moveit_core)
+
+    add_executable(goal_construction src/experiments/goal_construction.cpp)
+    target_link_libraries(goal_construction math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(goal_construction shape_msgs moveit_core)
 
     add_executable(collision_detection_mwe src/experiments/collision_detection_mwe.cpp)
     ament_target_dependencies(collision_detection_mwe shape_msgs moveit_core random_numbers)
