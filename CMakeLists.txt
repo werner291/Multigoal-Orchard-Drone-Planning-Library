@@ -17,6 +17,9 @@ option(ENABLE_EXPERIMENTS "Enable EXPERIMENTS" OFF)
 # Add an option to build tests or not.
 option(ENABLE_TESTS "Enable TESTS" OFF)
 
+# Add an option for Python byndings.
+option(ENABLE_PYTHON_BINDINGS "Enable PYTHON BINDINGS" OFF)
+
 ## System dependencies are found with CMake's conventions
 #find_package(Eigen3 REQUIRED)
 find_package(fcl REQUIRED)
@@ -260,9 +263,13 @@ add_executable(${PROJECT_NAME}_tests
 target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils gtest)
 gtest_discover_tests(${PROJECT_NAME}_tests)
 
-# Pybind11 stuff.
-find_package(pybind11 REQUIRED)
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
-pybind11_add_module(pymgodpl src/python_bindings.cpp)
-target_link_libraries(pymgodpl PRIVATE math_utils visibility planning experiment_utils ${PROJECT_NAME}_visualisation ${VTK_LIBRARIES})
-ament_target_dependencies(pymgodpl PUBLIC ${AMENT_DEPS})
+if (ENABLE_PYTHON_BINDINGS)
+    message(STATUS "Building with Python bindings")
+
+    # Pybind11 stuff.
+    find_package(pybind11 REQUIRED)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+    pybind11_add_module(pymgodpl src/python_bindings.cpp)
+    target_link_libraries(pymgodpl PRIVATE math_utils visibility planning experiment_utils ${PROJECT_NAME}_visualisation ${VTK_LIBRARIES})
+    ament_target_dependencies(pymgodpl PUBLIC ${AMENT_DEPS})
+endif ()
