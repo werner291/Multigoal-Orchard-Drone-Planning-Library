@@ -56,7 +56,7 @@ namespace mgodpl::tree_meshes {
 		return meshes;
 	}
 
-	std::vector<std::string> getTreeModelNames(const std::string path) {
+	std::vector<std::string> getTreeModelNames() {
 
 		std::string root(MYSOURCE_ROOT);
 

@@ -94,11 +94,10 @@
     </link>
 
 
-    <joint name="end_effector_joint" type="continuous">
+    <joint name="end_effector_joint" type="fixed">
         <parent link="arm3"/>
         <child link="end_effector"/>
         <origin xyz="0.0 0.25 0.0"/>
-        <axis xyz="0 1 0"/>
     </joint>
 
     <link name="end_effector">

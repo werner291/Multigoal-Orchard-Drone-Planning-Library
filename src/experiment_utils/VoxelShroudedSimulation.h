@@ -9,6 +9,8 @@
 #ifndef MGODPL_VOXELSHROUDEDSIMULATION_H
 #define MGODPL_VOXELSHROUDEDSIMULATION_H
 
+#include <random_numbers/random_numbers.h>
+
 #include "../math/Vec3.h"
 #include "../planning/moveit_forward_declarations.h"
 #include "TreeMeshes.h"
@@ -38,6 +40,8 @@ namespace mgodpl::simulation {
 
 		/// The tree model.
 		const tree_meshes::TreeMeshes tree_model;
+
+		random_numbers::RandomNumberGenerator rng;
 
 		const std::vector<math::Vec3d> fruit_positions;
 

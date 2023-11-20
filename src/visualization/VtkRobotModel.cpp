@@ -18,17 +18,32 @@
 #include "../experiment_utils/load_mesh_ros.h"
 #include "vtk.h"
 
-vtkNew<vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel *lm) {
 
-	// Allocate a new polydata mapper
-	vtkNew<vtkPolyDataMapper> linkPolyData;
+namespace mgodpl::visualization {
 
-	// Get the first shape of the link (assuming it has one)
-	assert(lm->getShapes().size() >= 1);
-	auto shape = lm->getShapes()[0];
+	vtkNew<vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel* lm)
+	{
 
-	// Get the shape type and jump to the appropriate case
-	switch (shape->type) {
+		// Allocate a new polydata mapper
+		vtkNew<vtkPolyDataMapper> linkPolyData;
+
+		if (lm->getName() == "end_effector") { // Hacky, but it works. For some reason, non-mesh visual geometries are not stored in the link model.
+			vtkNew<vtkCubeSource> cubeSource;
+			cubeSource->SetXLength(0.08);
+			cubeSource->SetYLength(0.08);
+			cubeSource->SetZLength(0.08);
+
+			linkPolyData->SetInputConnection(cubeSource->GetOutputPort());
+
+			return linkPolyData;
+		}
+
+		// Get the first shape of the link (assuming it has one)
+		assert(lm->getShapes().size() >= 1);
+		auto shape = lm->getShapes()[0];
+
+		// Get the shape type and jump to the appropriate case
+		switch (shape->type) {
 
 		case shapes::SPHERE: {
 			auto sphere = std::dynamic_pointer_cast<const shapes::Sphere>(shape);
@@ -73,12 +88,10 @@ vtkNew<vtkPolyDataMapper> polyDataForLink(const moveit::core::LinkModel *lm) {
 			throw std::runtime_error("Unknown shape type");
 			break;
 		}
+		}
+
+		return linkPolyData;
 	}
-
-	return linkPolyData;
-}
-
-namespace mgodpl::visualization {
 
 	vtkNew<vtkActorCollection> &VtkRobotModel::getLinkActors() {
 		return link_actors;
@@ -94,33 +107,41 @@ namespace mgodpl::visualization {
 
 	}
 
+	vtkSmartPointer<vtkActor> VtkRobotModel::actorForLink(const math::Vec3d& rgb, const moveit::core::LinkModel* lm)
+	{
+		if (!lm->getVisualMeshFilename().empty()) {
+
+			auto mesh = loadRobotMesh(lm->getVisualMeshFilename());
+
+			vtkSmartPointer<vtkActor> actor = createActorFromMesh(mesh);
+
+			actor->GetProperty()->SetColor(rgb.x(), rgb.y(), rgb.z());
+
+			return actor;
+
+		} else {
+
+			vtkNew<vtkActor> linkActor;
+
+			vtkNew<vtkPolyDataMapper> linkPolyData = polyDataForLink(lm);
+
+			linkActor->SetMapper(linkPolyData);
+
+			linkActor->GetProperty()->SetColor(rgb.x(), rgb.y(), rgb.z());
+
+			return linkActor;
+		}
+	}
+
 	void VtkRobotModel::generateLinkActors(const math::Vec3d &rgb) {
 		for (const moveit::core::LinkModel *lm: robotModel->getLinkModelsWithCollisionGeometry()) {
 
 			std::cout << "Visualizing link with mesh " << lm->getVisualMeshFilename() << std::endl;
 
-			if (!lm->getVisualMeshFilename().empty()) {
+			vtkSmartPointer<vtkActor> actor;
+			actorForLink(rgb, lm);
 
-				auto mesh = loadRobotMesh(lm->getVisualMeshFilename());
-
-				auto actor = createActorFromMesh(mesh);
-
-				actor->GetProperty()->SetColor(rgb.x(), rgb.y(), rgb.z());
-
-				link_actors->AddItem(actor);
-
-			} else {
-
-				vtkNew<vtkActor> linkActor;
-
-				vtkNew<vtkPolyDataMapper> linkPolyData = polyDataForLink(lm);
-
-				linkActor->SetMapper(linkPolyData);
-
-				linkActor->GetProperty()->SetColor(rgb.x(), rgb.y(), rgb.z());
-
-				link_actors->AddItem(linkActor);
-			}
+			this->link_actors->AddItem(actor);
 
 		}
 	}
@@ -135,9 +156,10 @@ namespace mgodpl::visualization {
 			auto link_actor = vtkActor::SafeDownCast(link_actors->GetItemAsObject(i));
 			auto lm = robotModel->getLinkModelsWithCollisionGeometry()[i];
 
-			auto transform = lm->getCollisionOriginTransforms()[0];
-			auto tf = moveit_state.getGlobalLinkTransform(lm);
-			auto total_tf = tf * transform;
+			// auto transform = lm->getCollisionOriginTransforms()[0];
+			// auto tf = moveit_state.getGlobalLinkTransform(lm);
+			// auto total_tf = tf * transform;
+			auto total_tf = moveit_state.getCollisionBodyTransform(lm, 0);
 
 			Eigen::Vector3d tf_trans = total_tf.translation();
 			link_actor->SetPosition(tf_trans.x(), tf_trans.y(), tf_trans.z());

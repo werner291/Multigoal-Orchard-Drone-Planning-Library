@@ -74,11 +74,12 @@ simulation::VoxelShroudedSimulation::VoxelShroudedSimulation(moveit::core::Robot
 															 const double stepSize)
 		: robot_model(std::move(robot_model)),
 		  tree_model(std::move(tree_model)),
+		  rng(seed),
 		  fruit_positions(this->tree_model.fruit_meshes | ranges::views::transform([](const auto &mesh) {
 			  return mesh_aabb(mesh).center();
 		  }) | ranges::to<std::vector>()),
 		  algorithm(std::make_shared<planning::BlindlyMoveToNextFruit>(this->robot_model)),
-		  current_state(experiment_state_tools::randomStateOutsideTree(*this->robot_model, seed)),
+		  current_state(experiment_state_tools::randomStateOutsideTree(*this->robot_model, this->rng)),
 		  collision_detection({this->tree_model.trunk_mesh}, this->robot_model),
 		  grid_coords(AABBd(Vec3d(-3.0, -3.0, 0.0), Vec3d(3.0, 3.0, 6.0)), 50, 50, 50),
 		  seen_space(grid_coords.size(), false),

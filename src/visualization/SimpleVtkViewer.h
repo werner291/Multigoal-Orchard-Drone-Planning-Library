@@ -63,6 +63,11 @@ namespace mgodpl {
 		void captureScreenshot(const std::string &filename, bool render = true);
 
 		/**
+		 * \brief Renders a single frame of the simulation and returns as an image.
+		 */
+		vtkSmartPointer<vtkImageData> currentImage();
+
+		/**
 		 * Stop recording a video and discard the results.
 		 */
 		void discardVideo();
@@ -110,10 +115,9 @@ namespace mgodpl {
 
 		void addStaticPolyline(const std::vector<math::Vec3d> &points, const math::Vec3d &color);
 
-		void addStaticLines(const std::vector<std::pair<math::Vec3d, math::Vec3d>> &lines,
-							const math::Vec3d &color);
-
 		void lockCameraUp();
+
+		void setCameraTransform(const math::Vec3d &position, const math::Vec3d &lookAt);
 	};
 
 }

@@ -39,6 +39,8 @@ namespace mgodpl::visualization {
 							   const moveit_facade::JointSpacePoint &initial_state,
 							   const math::Vec3d &rgb);
 
+		static vtkSmartPointer<vtkActor> actorForLink(const math::Vec3d& rgb, const moveit::core::LinkModel* lm);
+
 		void applyState(const moveit_facade::JointSpacePoint &state);
 
 		void generateLinkActors(const math::Vec3d &rgb);

@@ -21,15 +21,12 @@ namespace mgodpl::experiment_state_tools {
 
 	using namespace math;
 
-	moveit_facade::JointSpacePoint randomStateOutsideTree(const moveit::core::RobotModel &robot, const int seed) {
+	moveit_facade::JointSpacePoint randomStateOutsideTree(const moveit::core::RobotModel &robot, random_numbers::RandomNumberGenerator& rng) {
 
-		moveit_facade::JointSpacePoint state = randomUprightWithBase(robot, 0.0, seed);
-
-		// Get the Rng
-		random_numbers::RandomNumberGenerator rng(seed);
+		moveit_facade::JointSpacePoint state = randomUprightWithBase(robot, 0.0, rng);
 
 		double random_t = rng.uniformReal(-M_PI, M_PI);
-		double height = rng.uniformReal(0.5, 2.0);
+		double height = rng.uniformReal(0.5, 5.0);
 
 		double radius = 4.0;
 
@@ -59,32 +56,28 @@ namespace mgodpl::experiment_state_tools {
 	}
 
 	moveit_facade::JointSpacePoint
-	randomUprightWithBase(const moveit::core::RobotModel &robot, double translation_bound, const int seed) {
+	randomUprightWithBase(const moveit::core::RobotModel &robot, double translation_bound, random_numbers::RandomNumberGenerator& rng) {
 
-		moveit::core::RobotModelConstPtr fake_shared_ptr(&robot, [](const moveit::core::RobotModel *) {});
-		moveit::core::RobotState state(fake_shared_ptr);
-
-		// Set the state to uniformly random values.
-		// Unfortunately, this puts the base at the origin and the rotation will not be upright. We need to fix that.
-		state.setToRandomPositions();
-
-		// Get an Rng
-		random_numbers::RandomNumberGenerator rng(seed);
+		moveit_facade::JointSpacePoint state(std::vector(robot.getVariableCount(), 0.0));
 
 		// Randomize the floating base within a box defined by the translation_bound.
-		double *pos = state.getVariablePositions();
-		pos[0] = rng.uniformReal(-translation_bound, translation_bound);
-		pos[1] = rng.uniformReal(-translation_bound, translation_bound);
-		pos[2] = rng.uniformReal(0 /* Do not put it underground */, translation_bound);
+		state.joint_values[0] = rng.uniformReal(-translation_bound, translation_bound);
+		state.joint_values[1] = rng.uniformReal(-translation_bound, translation_bound);
+		state.joint_values[2] = rng.uniformReal(0 /* Do not put it underground */, translation_bound);
 
 		// Compute a random yaw-rotation, and assign it to the quaternion of the floating base.
 		Eigen::Quaterniond q(Eigen::AngleAxisd(rng.uniformReal(-M_PI, M_PI), Eigen::Vector3d::UnitZ()));
-		pos[3] = q.x();
-		pos[4] = q.y();
-		pos[5] = q.z();
-		pos[6] = q.w();
+		state.joint_values[3] = q.x();
+		state.joint_values[4] = q.y();
+		state.joint_values[5] = q.z();
+		state.joint_values[6] = q.w();
 
-		return moveit_facade::JointSpacePoint::from_moveit(state);
+		// The other variables are joint arm angles.
+		for (int var_i = 7; var_i < robot.getVariableCount(); ++var_i) {
+			state.joint_values[var_i] = rng.uniformReal(-1.0, 1.0); // TODO: this is hardcoded; look at the URDF instead. Also, should that maybe not be [-pi/2,pi/2]?
+		}
+
+		return state;
 	}
 
 	moveit_facade::JointSpacePoint robotStateFromPointAndArmvec(const moveit::core::RobotModel &drone,
@@ -171,10 +164,18 @@ namespace mgodpl::experiment_state_tools {
 
 	}
 
-	moveit_facade::JointSpacePoint genGoalSampleUniform(const Vec3d &target, int seed, const moveit::core::RobotModel &robot) {
-		moveit_facade::JointSpacePoint jt = experiment_state_tools::randomUprightWithBase(robot, 0.0, seed);
+	moveit_facade::JointSpacePoint genGoalSampleUniform(const Vec3d &target, random_numbers::RandomNumberGenerator& rng, const moveit::core::RobotModel &robot) {
+		moveit_facade::JointSpacePoint jt = experiment_state_tools::randomUprightWithBase(robot, 0.0, rng);
+
+		// Generate a point uniformly on a 3D sphere.
+		rng.gaussian01();
+		rng.gaussian01();
+		rng.gaussian01();
+
+		Vec3d random_point(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
+
 		experiment_state_tools::moveEndEffectorNearPoint(
-				robot, jt, target, 0.
+				robot, jt, target + random_point.normalized() * 0.05, 0.
 		);
 		return jt;
 	}

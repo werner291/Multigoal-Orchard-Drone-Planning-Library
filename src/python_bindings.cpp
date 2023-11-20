@@ -5,7 +5,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/complex.h>
-#include <moveit_core/moveit/robot_model/robot_model.h>
+#include <moveit/robot_model/robot_model.h>
 #include "experiment_utils/load_robot_model.h"
 #include "planning/moveit_state_tools.h"
 
@@ -13,6 +13,8 @@
 #include <vtkSphereSource.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
+#include <vtkImageData.h>
+#include <vtkPointData.h>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
 #include "experiment_utils/TreeMeshes.h"
@@ -29,7 +31,7 @@ using namespace tree_meshes;
 using namespace math;
 using namespace moveit_facade;
 
-vtkSmartPointer<vtkActor> mkPointMarkerSphere(math::Vec3d &target, SimpleVtkViewer &viewer) {// Create a mapper and actor for the sphere.
+vtkSmartPointer<vtkActor> mkPointMarkerSphere(const math::Vec3d& target, SimpleVtkViewer &viewer) {// Create a mapper and actor for the sphere.
 	// Create a small sphere at the target point.
 	vtkNew<vtkSphereSource> sphere;
 	sphere->SetRadius(0.1);
@@ -74,6 +76,14 @@ int add(int i, int j) {
 	return i + j;
 }
 
+// TODO: Bit clumsy, I'm sure there's a better way to do this.
+struct RGBData
+{
+	size_t width;
+	size_t height;
+	std::vector<uint8_t> data;
+};
+
 PYBIND11_MODULE(pymgodpl, m) {
 
 	py::class_<math::Vec3d>(m, "Vec3d")
@@ -114,6 +124,8 @@ PYBIND11_MODULE(pymgodpl, m) {
 
 	m.def("load_all_tree_meshes", &mgodpl::tree_meshes::loadAllTreeMeshes, "Load the meshes for all trees.");
 
+	m.def("tree_models_list", &mgodpl::tree_meshes::getTreeModelNames, "Get a list of all tree models.");
+
 	// I'm sure this is actually supposed to be in the ROS libraries but I don't feel like digging right now.
 	// I'll just treat is as an opaque type.
 	py::class_<shape_msgs::msg::Mesh>(m, "Mesh");
@@ -137,4 +149,48 @@ PYBIND11_MODULE(pymgodpl, m) {
 	m.def("sample_goal_region", &mgodpl::experiment_state_tools::genGoalSampleUniform, "Generate a random state that is valid for the drone where the drone's end-effector is near the target.");
 
 	m.def("thingy", &thingy, "Do the thingy.");
+
+	py::class_<RGBData>(m, "RGBData", py::buffer_protocol())
+		.def_buffer([](RGBData &m) -> py::buffer_info {
+			return py::buffer_info(
+				m.data.data(),
+				sizeof(uint8_t),
+				py::format_descriptor<uint8_t>::format(),
+				3,
+				std::vector<long>{ (long) m.height, (long) m.width, 3},
+				{sizeof(uint8_t) * 3 * m.width, sizeof(uint8_t) * 3, sizeof(uint8_t)}
+			);
+		});
+
+	py::class_<SimpleVtkViewer>(m, "SimpleVtkViewer")
+		.def(py::init<>())
+		.def("position_camera", &SimpleVtkViewer::setCameraTransform, "Set the camera position and focal point.")
+		.def("show", [](SimpleVtkViewer &viewer) {
+			const auto& img = viewer.currentImage();
+
+			// std::cout << "Got image of size " << img->GetDimensions()[0] << "x" << img->GetDimensions()[1] << std::endl;
+
+			// Return the RGB as a wxhx3 numpy array.
+			RGBData rgb_data;
+
+			// assert(img->GetNumberOfScalarComponents() == 3);
+			//
+			// rgb_data.width = img->GetDimensions()[0];
+			// rgb_data.height = img->GetDimensions()[1];
+			//
+			// // Copy the RGB data.
+			//
+			// rgb_data.data.reserve(rgb_data.width * rgb_data.height * 3);
+			//
+			// for (int i = 0; i < rgb_data.width * rgb_data.height; ++i) {
+			// 	auto pixel = img->GetPointData()->GetScalars()->GetTuple3(i);
+			// 	rgb_data.data.push_back((u_int8_t) std::clamp(pixel[0], 0.0, 255.0));
+			// 	rgb_data.data.push_back((u_int8_t) std::clamp(pixel[1], 0.0, 255.0));
+			// 	rgb_data.data.push_back((u_int8_t) std::clamp(pixel[2], 0.0, 255.0));
+			// }
+
+			return rgb_data;
+
+		});
+
 }
