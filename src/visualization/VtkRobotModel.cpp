@@ -138,10 +138,7 @@ namespace mgodpl::visualization {
 
 			std::cout << "Visualizing link with mesh " << lm->getVisualMeshFilename() << std::endl;
 
-			vtkSmartPointer<vtkActor> actor;
-			actorForLink(rgb, lm);
-
-			this->link_actors->AddItem(actor);
+			this->link_actors->AddItem(actorForLink(rgb, lm));
 
 		}
 	}
