@@ -202,6 +202,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/VoxelShroudedSceneInfo.h
             src/experiment_utils/VoxelShroudedSimulation.cpp
             src/experiment_utils/VoxelShroudedSimulation.h
+            src/experiment_utils/fcl_utils.cpp
+            src/experiment_utils/fcl_utils.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")

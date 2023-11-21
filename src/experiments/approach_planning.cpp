@@ -3,29 +3,21 @@
 // All rights reserved.
 
 #include <chrono>
-#include <vtkActor.h>
-#include <vtkSphereSource.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkProperty.h>
 #include <fcl/geometry/bvh/BVH_model.h>
 #include <fcl/geometry/shape/box.h>
 #include <fcl/narrowphase/collision-inl.h>
 #include <fcl/narrowphase/collision_object.h>
 #include <fcl/narrowphase/collision_request.h>
 #include <geometric_shapes/shapes.h>
-#include <moveit/collision_detection_fcl/collision_common.h>
 #include <moveit/robot_state/robot_state.h>
 #include <random_numbers/random_numbers.h>
-#include <range/v3/view/transform.hpp>
 #include <range/v3/view/enumerate.hpp>
 
 #include "../experiment_utils/TreeMeshes.h"
-#include "../visualization/SimpleVtkViewer.h"
 #include "../experiment_utils/load_robot_model.h"
 #include "../planning/CollisionDetection.h"
-#include "../planning/JointSpacePoint.h"
 #include "../planning/moveit_state_tools.h"
-#include "../visualization/VtkRobotModel.h"
+#include "../experiment_utils/fcl_utils.h"
 
 using namespace mgodpl;
 using namespace tree_meshes;
@@ -66,7 +58,7 @@ void check_collision_custom(const moveit::core::RobotModelPtr& robot, fcl::Colli
 }
 
 std::vector<int> mksamples(const moveit::core::RobotModelPtr& robot, const shape_msgs::msg::Mesh& shape,
-                           const std::vector<math::Vec3d>& fruit, const size_t N_SAMPLES)
+						   const std::vector<math::Vec3d>& fruit, const size_t N_SAMPLES)
 {
     std::vector<int> success_counts;
     success_counts.reserve(fruit.size());
@@ -75,29 +67,9 @@ std::vector<int> mksamples(const moveit::core::RobotModelPtr& robot, const shape
 
     CollisionDetection cd({shape}, robot);
 
-    auto g = std::make_shared<fcl::BVHModel<fcl::OBBd>>();
+	std::shared_ptr<fcl::BVHModel<fcl::OBBd>> g = fcl_utils::meshToFclBVH(shape);
 
-    std::cout << "N triangles: " << shape.triangles.size() << std::endl;
-
-    std::vector<fcl::Triangle> tri_indices(shape.triangles.size());
-    for (unsigned int i = 0; i < shape.triangles.size(); ++i)
-    {
-        tri_indices[i] =
-            fcl::Triangle(
-                shape.triangles[i].vertex_indices[0],
-                shape.triangles[i].vertex_indices[1],
-                shape.triangles[i].vertex_indices[2]);
-    }
-
-    std::vector<fcl::Vector3d> points(shape.vertices.size());
-    for (unsigned int i = 0; i < shape.vertices.size(); ++i)
-        points[i] = fcl::Vector3d(shape.vertices[i].x, shape.vertices[i].y, shape.vertices[i].z);
-
-    g->beginModel();
-    g->addSubModel(points, tri_indices);
-    g->endModel();
-
-    // Make the collision object with identity transform.
+	// Make the collision object with identity transform.
     fcl::CollisionObjectd tco(g, fcl::Transform3d::Identity());
 
     for (const auto& f : fruit)
