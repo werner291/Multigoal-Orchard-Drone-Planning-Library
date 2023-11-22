@@ -198,7 +198,7 @@ struct GoalStateAlgorithm {
 	std::shared_ptr<fcl::BVHModel<fcl::OBBd>> tree_bvh;
 	fcl::CollisionObjectd tree_co;
 	random_numbers::RandomNumberGenerator _rng;
-	const moveit::core::RobotModelConstPtr &robot;
+	moveit::core::RobotModelConstPtr robot;
 	math::Vec3d target;
 
 	std::vector<const moveit::core::LinkModel *> kinematic_chain;
@@ -206,59 +206,13 @@ struct GoalStateAlgorithm {
 	struct TfTreeNode {
 		size_t depth; // How many joints have been determined at this point. (Note the fixed joint at the end!)
 		Eigen::Isometry3d link_tf;
-		std::vector<std::pair<double, TfTreeNode>> children;
+		std::vector<std::pair<double, size_t>> children;
 	};
 
-	std::vector<TfTreeNode> root_nodes;
+	std::vector<TfTreeNode> nodes;
 
-	void genRootNode(const std::vector<double> &joint_values, const Eigen::Isometry3d &end_effector_tf) {
+	std::vector<size_t> genRootNode() {
 
-		TfTreeNode tf_tree {
-			.depth=0, // There are no links past the end effector, so we have depth 0.
-			.link_tf=end_effector_tf, // Store the transform of the end-effector.
-			.children={} // We'll fill this in later.
-		};
-
-		// We'll work out way down the chain from the end-effector to the base.
-		TfTreeNode *current_node = &tf_tree;
-
-		for (size_t depth = 1; depth < kinematic_chain.size(); ++depth) {
-
-			const moveit::core::LinkModel *child_link = kinematic_chain[depth - 1];
-
-			// We use 0 for the fixed joint; otherwise, we use one of the revolute joint values.
-			// Note: the joint value is the value of the joint that connect the link `link` to its child.
-			// At depth == 1, that would be the value of the fixed joint between the end-effector and the last link.
-			double joint_value = depth == 1 ? 0.0 : joint_values[depth - 2];
-
-			// Compute the transform of the link, given the joint value and the transform of the child link.
-			Eigen::Isometry3d link_tf = parent_tf_from_child(joint_value, *child_link, current_node->link_tf);
-
-			// Add the link to the tree.
-			current_node->children.emplace_back(
-					joint_values[depth - 1],
-					TfTreeNode { depth, link_tf, {} });
-
-			// Move down the tree.
-			current_node = &current_node->children.back().second;
-		}
-
-		// Store the root nodes.
-		root_nodes.push_back(tf_tree);
-	}
-
-	GoalStateAlgorithm(const moveit::core::RobotModelConstPtr &robot,
-					   const shape_msgs::msg::Mesh &tree_model,
-					   const math::Vec3d &target,
-					   const random_numbers::RandomNumberGenerator &rng) :
-			tree_bvh(fcl_utils::meshToFclBVH(tree_model)),
-			tree_co(tree_bvh, fcl::Transform3d::Identity()),
-			_rng(rng),
-			robot(robot),
-			target(target),
-			kinematic_chain(mkInvertedKinematicChain(robot)) {
-
-		// Generate a single goal state.
 		moveit_facade::JointSpacePoint gs = experiment_state_tools::genGoalSampleUniform(target, _rng, *robot);
 
 		std::vector<double> joint_values;
@@ -272,7 +226,49 @@ struct GoalStateAlgorithm {
 
 		Eigen::Isometry3d end_effector_tf = gs_mt.getGlobalLinkTransform("end_effector");
 
-		genRootNode(joint_values, end_effector_tf);
+		std::vector<size_t> new_nodes;
+
+		// We'll work out way down the chain from the end-effector to the base.
+		for (size_t depth = 1; depth < kinematic_chain.size(); ++depth) {
+
+			const moveit::core::LinkModel *child_link = kinematic_chain[depth - 1];
+
+			// We use 0 for the fixed joint; otherwise, we use one of the revolute joint values.
+			// Note: the joint value is the value of the joint that connect the link `link` to its child.
+			// At depth == 1, that would be the value of the fixed joint between the end-effector and the last link.
+			double joint_value = depth == 1 ? 0.0 : joint_values[depth - 2];
+
+			// Compute the transform of the link, given the joint value and the transform of the child link.
+			Eigen::Isometry3d link_tf = parent_tf_from_child(joint_value, *child_link, depth == 1 ? end_effector_tf
+																								 : nodes.back().link_tf);
+
+			if (checkLinkCollision(tree_co, child_link->getParentLinkModel(), link_tf)) {
+				std::cout << "Collision after " << depth << " joints!" << std::endl;
+				break;
+			}
+
+			if (depth > 1) {
+				nodes.back().children.emplace_back(joint_value, nodes.size());
+			}
+
+			nodes.push_back(TfTreeNode { depth, link_tf, {} });
+			new_nodes.push_back(nodes.size() - 1);
+
+		}
+
+		return new_nodes;
+	}
+
+	GoalStateAlgorithm(const moveit::core::RobotModelConstPtr &robot,
+					   const shape_msgs::msg::Mesh &tree_model,
+					   const math::Vec3d &target,
+					   const random_numbers::RandomNumberGenerator &rng) :
+			tree_bvh(fcl_utils::meshToFclBVH(tree_model)),
+			tree_co(tree_bvh, fcl::Transform3d::Identity()),
+			_rng(rng),
+			robot(robot),
+			target(target),
+			kinematic_chain(mkInvertedKinematicChain(robot)) {
 
 	}
 
@@ -401,17 +397,16 @@ struct GoalStateAlgorithm {
 		return error < 0.01;
 	}
 
-	void iterate() {
+	void
+	try_branch_from(size_t current_node) {// Find out how many free joints remain, assuming that the link represented by the current node is locked in place.
+// The calculation works as follows:
+// 		If current_node->depth == 1, then we only passed the fixed joint, so there are 3 free revolute joints.
+//			Thus, kinematic_chain.size() - 1 == 3, since we need to ignore the base joint (which uses a floating parent joint).
+		int remaining_joints = kinematic_chain.size() - 1 - nodes[current_node].depth;
 
-		// Grab a random TfTreeNode to branch off of.
-		// We will be adding an additional child to this node.
-		TfTreeNode *current_node = &root_nodes[0].children[0].second;
-
-		// Find out how many free joints remain, assuming that the link represented by the current node is locked in place.
-		// The calculation works as follows:
-		// 		If current_node->depth == 1, then we only passed the fixed joint, so there are 3 free revolute joints.
-		//			Thus, kinematic_chain.size() - 1 == 3, since we need to ignore the base joint (which uses a floating parent joint).
-		int remaining_joints = kinematic_chain.size() - 1 - current_node->depth;
+		if (remaining_joints == 0) {
+			return;
+		}
 
 		// Generate random joint values for the remaining joints.
 		std::vector<double> joint_values(remaining_joints);
@@ -420,35 +415,46 @@ struct GoalStateAlgorithm {
 		}
 
 		// Push the base upright; this may fail if the IK problem either has no solution, or the solver gets stuck in a local minimum.
-		// Though, since we pick joint values at random, we should eventually find a solution on a later attempt.
-		bool can_solve_ik = bringBaseUpright(current_node->depth-1, current_node->link_tf, joint_values);
+// Though, since we pick joint values at random, we should eventually find a solution on a later attempt.
+		bool can_solve_ik = bringBaseUpright(nodes[current_node].depth - 1, nodes[current_node].link_tf, joint_values);
 
 		// If we can solve the IK problem, add a new chain of nodes to the tree.
-		if (can_solve_ik) {
+		if (can_solve_ik || true) {
 
 			// Create a new subtree with the given joint values.
 			for (double &joint_value: joint_values) {
 
 				// Compute the transform of the new node.
-				const moveit::core::LinkModel *&child_link = kinematic_chain[current_node->depth];
+				const moveit::core::LinkModel *&child_link = kinematic_chain[nodes[current_node].depth];
 
 				// Make sure we're actually using a revolute joint, since there's so much indexing magic.
 				assert(child_link->getParentJointModel()->getType() == moveit::core::JointModel::REVOLUTE);
 
-				Eigen::Isometry3d tf = parent_tf_from_child(joint_value,*child_link,current_node->link_tf);
+				Eigen::Isometry3d tf = parent_tf_from_child(joint_value, *child_link, nodes[current_node].link_tf);
+
+				bool collides = checkLinkCollision(tree_co, child_link->getParentLinkModel(), tf);
+
+				if (collides) {
+					std::cout << "Collision!" << std::endl;
+					break;
+				}
 
 				// Add the new node.
-				current_node->children.emplace_back(joint_value, TfTreeNode{
-						current_node->depth + 1,
-						tf,
-						{}
-				});
+				nodes[current_node].children.emplace_back(joint_value, nodes.size());
+				nodes.push_back(TfTreeNode {nodes[current_node].depth + 1, tf, {} });
 
 				// Move to the new node.
-				current_node = &current_node->children.back().second;
+				current_node = nodes.size() - 1;
 			}
 		}
+	}
 
+	void iterate() {
+		const auto& new_nodes = genRootNode();
+
+		if (!new_nodes.empty()) {
+			try_branch_from(new_nodes[0]);
+		}
 	}
 
 };
@@ -492,48 +498,32 @@ int main() {
 		if (timer-- == 0) {
 			gsa.iterate();
 			timer = 10;
-		}
 
-
-		// Delete old actors.
-		for (auto &actor: link_actors) {
-			viewer.viewerRenderer->RemoveActor(actor);
-		}
-
-		std::vector<const GoalStateAlgorithm::TfTreeNode *> stack;
-		for (const auto &root_node: gsa.root_nodes) {
-			stack.push_back(&root_node);
-		}
-
-		while (!stack.empty()) {
-
-			const GoalStateAlgorithm::TfTreeNode *current_node = stack.back();
-
-			stack.pop_back();
-
-			const moveit::core::LinkModel *link = gsa.kinematic_chain[current_node->depth];
-
-			if (!link->getCollisionOriginTransforms().empty()) {
-				Eigen::Isometry3d transform = current_node->link_tf * link->getCollisionOriginTransforms()[0];
-
-				bool collides = checkLinkCollision(gsa.tree_co, link, current_node->link_tf);
-
-				auto link_actor = visualization::VtkRobotModel::actorForLink({
-																					 collides ? 1.0 : 0.8,
-																					 collides ? 0.0 : 0.8,
-																					 collides ? 0.0 : 0.8
-					},
-																			 link);
-
-				applyEigenTransformToActor(transform, link_actor);
-
-				viewer.addActor(link_actor);
+			// Delete old actors.
+			for (auto &actor: link_actors) {
+				viewer.viewerRenderer->RemoveActor(actor);
 			}
 
-			for (const auto &child: current_node->children) {
-				stack.push_back(&child.second);
-			}
+			for (auto &current_node: gsa.nodes) {
 
+				const moveit::core::LinkModel *link = gsa.kinematic_chain[current_node.depth];
+
+				if (!link->getCollisionOriginTransforms().empty()) {
+					Eigen::Isometry3d transform = current_node.link_tf * link->getCollisionOriginTransforms()[0];
+
+
+					auto link_actor = visualization::VtkRobotModel::actorForLink({
+																						 0.8,
+																						 0.8,
+																						 0.8
+																				 },
+																				 link);
+
+					applyEigenTransformToActor(transform, link_actor);
+
+					viewer.addActor(link_actor);
+				}
+			}
 		}
 
 	});
