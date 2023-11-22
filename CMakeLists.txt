@@ -176,6 +176,7 @@ add_library(planning
         src/planning/cgal_chull_shortest_paths.h
         src/planning/ConvexHullSpace.cpp
         src/planning/ConvexHullSpace.h
+
 )
 
 target_link_libraries(planning math_utils)
@@ -204,6 +205,9 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/VoxelShroudedSimulation.h
             src/experiment_utils/fcl_utils.cpp
             src/experiment_utils/fcl_utils.h
+            src/planning/IncrementalGoalStateGenerator.cpp
+            src/planning/IncrementalGoalStateGenerator.h
+            src/planning/fcl_forward_declarations.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
