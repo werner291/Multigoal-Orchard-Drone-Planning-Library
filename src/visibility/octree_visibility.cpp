@@ -105,7 +105,7 @@ namespace mgodpl::visibility {
 		}
 
 		// If there's a full intersection, then the entire volume is occluded.
-		// At max depth, a partial intersection is treated as a full intersection.
+		// At max n_variables_determined, a partial intersection is treated as a full intersection.
 		if (intersection_aabb->volume() - 1e-10 >= volume.volume() || max_depth == 0) {
 			occluded = VisibilityOctree::LeafNode { true };
 			return;
