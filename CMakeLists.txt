@@ -134,6 +134,10 @@ add_library(math_utils
         src/math/aabb_of.h
         src/math/Polar.cpp
         src/math/Polar.h
+        src/math/Quaternion.cpp
+        src/math/Quaternion.h
+        src/math/Transform.cpp
+        src/math/Transform.h
 )
 
 add_library(visibility
@@ -176,6 +180,8 @@ add_library(planning
         src/planning/cgal_chull_shortest_paths.h
         src/planning/ConvexHullSpace.cpp
         src/planning/ConvexHullSpace.h
+        src/planning/RobotModel.cpp
+        src/planning/RobotModel.h
 
 )
 
@@ -208,6 +214,10 @@ if (ENABLE_EXPERIMENTS)
             src/planning/IncrementalGoalStateGenerator.cpp
             src/planning/IncrementalGoalStateGenerator.h
             src/planning/fcl_forward_declarations.h
+            src/experiment_utils/procedural_robot_models.cpp
+            src/experiment_utils/procedural_robot_models.h
+            src/experiment_utils/shapes.cpp
+            src/experiment_utils/shapes.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")

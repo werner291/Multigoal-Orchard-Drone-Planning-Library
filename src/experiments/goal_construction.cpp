@@ -25,6 +25,7 @@
 #include "../experiment_utils/TreeMeshes.h"
 #include "../experiment_utils/fcl_utils.h"
 #include "../planning/IncrementalGoalStateGenerator.h"
+#include "../experiment_utils/procedural_robot_models.h"
 
 using namespace mgodpl;
 
@@ -55,20 +56,13 @@ void applyEigenTransformToActor(Eigen::Isometry3d &transform, vtkActor *actor) {
 
 int main() {
 
-	const auto &robot = mgodpl::experiment_assets::loadRobotModel(1.0);
+	const auto &robot = mgodpl::experiments::createProceduralRobotModel();
 
 	const auto &tree_model = mgodpl::tree_meshes::loadTreeMeshes("appletree");
 
 	math::Vec3d target(1.0, 0.0, 2.0);
 
 	random_numbers::RandomNumberGenerator rng(43);
-
-	GoalStateAlgorithm gsa(
-			robot,
-			tree_model.trunk_mesh,
-			target,
-			rng);
-
 
 	mgodpl::SimpleVtkViewer viewer;
 	viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
@@ -90,39 +84,15 @@ int main() {
 	viewer.addTimerCallback([&]() {
 
 		if (timer-- == 0) {
-			gsa.iterate();
 			timer = 10;
 
 			// Delete old actors.
 			for (auto &actor: link_actors) {
 				viewer.viewerRenderer->RemoveActor(actor);
 			}
-
-			for (auto &current_node: gsa.nodes) {
-
-				const moveit::core::LinkModel *link = gsa.kinematic_chain[current_node.depth];
-
-				if (!link->getCollisionOriginTransforms().empty()) {
-					Eigen::Isometry3d transform = current_node.link_tf * link->getCollisionOriginTransforms()[0];
-
-
-					auto link_actor = visualization::VtkRobotModel::actorForLink({
-																						 0.8,
-																						 0.8,
-																						 0.8
-																				 },
-																				 link);
-
-					applyEigenTransformToActor(transform, link_actor);
-
-					viewer.addActor(link_actor);
-				}
-			}
 		}
 
 	});
-
-//	viewer.startRecording("last_link_steady.ogv");
 
 	viewer.start();
 

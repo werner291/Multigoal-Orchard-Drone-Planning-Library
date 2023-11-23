@@ -81,8 +81,8 @@ namespace mgodpl {
 		assert(!state1.hasVelocities() && !state2.hasVelocities());
 
 		// Different joints work differently.
-		// Especially revolute joints have to be treated specially since the rotation may be more than pi.
-		// If it is, we must NOT treat it as a rotation of less than pi in the other direction.
+		// Especially revolute joints have to be treated specially since the orientation may be more than pi.
+		// If it is, we must NOT treat it as a orientation of less than pi in the other direction.
 		switch (joint->getType()) {
 
 			case moveit::core::JointModel::UNKNOWN:

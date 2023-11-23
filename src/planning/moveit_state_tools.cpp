@@ -65,7 +65,7 @@ namespace mgodpl::experiment_state_tools {
 		state.joint_values[1] = rng.uniformReal(-translation_bound, translation_bound);
 		state.joint_values[2] = rng.uniformReal(0 /* Do not put it underground */, translation_bound);
 
-		// Compute a random yaw-rotation, and assign it to the quaternion of the floating base.
+		// Compute a random yaw-orientation, and assign it to the quaternion of the floating base.
 		Eigen::Quaterniond q(Eigen::AngleAxisd(rng.uniformReal(-M_PI, M_PI), Eigen::Vector3d::UnitZ()));
 		state.joint_values[3] = q.x();
 		state.joint_values[4] = q.y();
@@ -149,12 +149,12 @@ namespace mgodpl::experiment_state_tools {
 		}
 
 		// The base must be upright.
-		// Compute a random yaw-rotation, and assign it to the quaternion of the floating base.
+		// Compute a random yaw-orientation, and assign it to the quaternion of the floating base.
 		Eigen::Quaterniond random_rotation(Eigen::AngleAxisd(rng.uniformReal(-distance_bound,distance_bound), Eigen::Vector3d::UnitZ()));
 		Eigen::Quaterniond original_rotation(state.joint_values[6], state.joint_values[3], state.joint_values[4], state.joint_values[5]);
 		// Compose the two.
 		Eigen::Quaterniond new_rotation = random_rotation * original_rotation;
-		// Assign the new rotation to the state.
+		// Assign the new orientation to the state.
 		new_state.joint_values[3] = new_rotation.x();
 		new_state.joint_values[4] = new_rotation.y();
 		new_state.joint_values[5] = new_rotation.z();

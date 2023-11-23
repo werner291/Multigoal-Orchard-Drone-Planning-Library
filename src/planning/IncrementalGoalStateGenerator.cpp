@@ -54,10 +54,10 @@ std::vector<const moveit::core::LinkModel *> mkInvertedKinematicChain(const move
 	return kinematic_chain;
 }
 /**
- * Computes a minimal rotation to get the given orientation to be upright.
+ * Computes a minimal orientation to get the given orientation to be upright.
  *
  * @param orientation The orientation to get upright.
- * @return The rotation to apply to get the given orientation to be upright.
+ * @return The orientation to apply to get the given orientation to be upright.
  */
 Eigen::AngleAxisd rotation_to_upright(const Eigen::Isometry3d::RotationReturnType &orientation) {
 	Eigen::Vector3d local_up = orientation * Eigen::Vector3d(0.0, 0.0, 1.0);
@@ -67,7 +67,7 @@ Eigen::AngleAxisd rotation_to_upright(const Eigen::Isometry3d::RotationReturnTyp
 
 	Eigen::AngleAxisd ideal_rotation(ideal_angle, ideal_axis);
 
-	// Sanity check: the rotation should bring the local up to UNIT_Z.
+	// Sanity check: the orientation should bring the local up to UNIT_Z.
 	assert(std::abs((ideal_rotation * local_up).z() - 1.0) < 0.0001);
 
 	return ideal_rotation;
@@ -170,15 +170,15 @@ namespace mgodpl {
 		std::vector<double> gradients;
 		gradients.reserve(jointValues.size());
 
-		// For each joint, compute the alignment with the ideal rotation angle.
+		// For each joint, compute the alignment with the ideal orientation angle.
 		for (size_t i = 0; i < jointValues.size(); ++i) {
 			// Compute the axis of the revolute joint in the global frame of reference.
 			Eigen::Vector3d actual_axis =
-					free_link_tfs[i].rotation()  // <- The rotation of the parent link.
+					free_link_tfs[i].rotation()  // <- The orientation of the parent link.
 					*
 					local_axes[i];             // <- The axis of the revolute joint in the parent link's frame of reference.
 
-			// The gradient factor, or how strongly a rotation in this revolution joint contributes to the ideal rotation.
+			// The gradient factor, or how strongly a orientation in this revolution joint contributes to the ideal orientation.
 			double gradient = ideal_rotation.axis().dot(actual_axis);
 
 			gradients.push_back(gradient);
@@ -221,7 +221,7 @@ namespace mgodpl {
 
 		do {
 
-			// Compute the influence of every free joint on the rotation of the base.
+			// Compute the influence of every free joint on the orientation of the base.
 			std::vector<double> gradients = revolute_joint_gradients(jointValues,
 																	 local_axes,
 																	 free_link_tfs,
@@ -238,7 +238,7 @@ namespace mgodpl {
 			// Recompute the transforms of the free links.
 			free_link_tfs = this->free_link_tfs(jointValues, locked_link_tf);
 
-			// Recompute the ideal rotation.
+			// Recompute the ideal orientation.
 			ideal_rotation = rotation_to_upright(free_link_tfs.back().rotation());
 
 			// Recompute the error.

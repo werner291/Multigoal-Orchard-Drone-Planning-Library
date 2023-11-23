@@ -27,7 +27,7 @@ namespace mgodpl {
 	 */
 	struct Velocity {
 		math::Vec3d linear;		/// Linear velocity; translation over one time step.
-		math::Vec3d angular;  /// Angular velocity; rotation over one time step.
+		math::Vec3d angular;  /// Angular velocity; orientation over one time step.
 	};
 
 	/**
