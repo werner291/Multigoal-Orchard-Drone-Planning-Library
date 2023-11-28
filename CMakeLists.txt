@@ -182,6 +182,8 @@ add_library(planning
         src/planning/ConvexHullSpace.h
         src/planning/RobotModel.cpp
         src/planning/RobotModel.h
+        src/planning/latitude_sweep.cpp
+        src/planning/latitude_sweep.h
 
 )
 
@@ -218,6 +220,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/procedural_robot_models.h
             src/experiment_utils/shapes.cpp
             src/experiment_utils/shapes.h
+            src/experiment_utils/positioned_shape.cpp
+            src/experiment_utils/positioned_shape.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")

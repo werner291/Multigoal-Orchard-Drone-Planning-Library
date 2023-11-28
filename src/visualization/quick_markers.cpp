@@ -12,8 +12,10 @@
 
 namespace mgodpl::visualization
 {
-    vtkSmartPointer<vtkActor> mkPointMarkerSphere(const mgodpl::math::Vec3d& target,
-                                                  mgodpl::SimpleVtkViewer& viewer)
+    vtkSmartPointer<vtkActor> mkPointMarkerSphere(mgodpl::SimpleVtkViewer& viewer,
+        const mgodpl::math::Vec3d& target,
+        const math::Vec3d& color
+        )
     {
         // Create a mapper and actor for the sphere.
         // Create a small sphere at the target point.
@@ -25,7 +27,7 @@ namespace mgodpl::visualization
         sphereMapper->SetInputConnection(sphere->GetOutputPort());
         vtkNew<vtkActor> sphereActor;
         sphereActor->SetMapper(sphereMapper);
-        sphereActor->GetProperty()->SetColor(1, 0, 0);
+        sphereActor->GetProperty()->SetColor(color.x(), color.y(), color.z());
         sphereActor->SetPosition(target.x(), target.y(), target.z());
         viewer.addActor(sphereActor);
 

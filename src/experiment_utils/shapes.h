@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <variant>
+
 #include "../math/Vec3.h"
 
 namespace mgodpl {

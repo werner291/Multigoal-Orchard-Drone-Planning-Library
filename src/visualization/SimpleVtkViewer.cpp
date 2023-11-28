@@ -17,6 +17,7 @@
 #include "VtkFunctionalCallback.h"
 #include "camera_controls.h"
 #include "vtk.h"
+#include "../experiment_utils/positioned_shape.h"
 #include "../experiment_utils/TreeMeshes.h"
 #include "../math/Transform.h"
 #include "../experiment_utils/shapes.h"
@@ -173,6 +174,20 @@ namespace mgodpl {
 		                  axisangle.axis.x(),
 		                  axisangle.axis.y(),
 		                  axisangle.axis.z());
+	}
+
+	vtkSmartPointer<vtkActor> SimpleVtkViewer::addPositionedShape(const PositionedShape& shape,
+		const math::Vec3d& color, double opacity)
+	{
+
+		if (const auto& box = std::get_if<Box>(&shape.shape)) {
+			return addBox(box->size, shape.transform, color);
+		} else if (const auto& mesh = std::get_if<Mesh>(&shape.shape)) {
+			return addMesh(*mesh, shape.transform, color, opacity);
+		} else {
+			throw std::runtime_error("Unknown shape type");
+		}
+
 	}
 
 	vtkSmartPointer<vtkActor> SimpleVtkViewer::addBox(const math::Vec3d& size, const math::Transformd& transform,

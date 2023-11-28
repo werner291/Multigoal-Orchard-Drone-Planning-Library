@@ -16,8 +16,10 @@ namespace mgodpl
 
 namespace mgodpl::visualization
 {
-    vtkSmartPointer<vtkActor> mkPointMarkerSphere(const mgodpl::math::Vec3d& target,
-                                                  mgodpl::SimpleVtkViewer& viewer);
+    vtkSmartPointer<vtkActor> mkPointMarkerSphere(mgodpl::SimpleVtkViewer& viewer,
+        const mgodpl::math::Vec3d& target,
+        const math::Vec3d& color
+        );
 }
 
 #endif //QUICK_MARKERS_H

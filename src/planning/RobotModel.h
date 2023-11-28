@@ -15,6 +15,7 @@
 
 #include "../math/Transform.h"
 #include "../experiment_utils/shapes.h"
+#include "../experiment_utils/positioned_shape.h"
 
 /**
  * @brief This namespace contains all code related to modeling robots.
@@ -99,19 +100,6 @@ namespace mgodpl::robot_model {
 		}
 
 		/**
-		 * @brief Geometry associated with a link; essentially a rigid body with a shape and a transform.
-		 */
-		struct LinkGeometry {
-
-			/// The shape of the geometry, such as a box or a mesh.
-			Shape shape;
-
-			/// The transform of the geometry relative to the link's local frame of reference.
-			math::Transformd transform;
-
-		};
-
-		/**
 		 * @brief A link, which is a rigid body that can be connected to other links via joints.
 		 */
 		struct Link {
@@ -123,10 +111,10 @@ namespace mgodpl::robot_model {
 			std::vector<JointId> joints {};
 
 			/// The collision geometry of the link.
-			std::vector<LinkGeometry> collision_geometry {};
+			std::vector<PositionedShape> collision_geometry {};
 
 			/// The visual geometry of the link.
-			std::vector<LinkGeometry> visual_geometry {};
+			std::vector<PositionedShape> visual_geometry {};
 		};
 
 		/**

@@ -23,7 +23,13 @@ class vtkRenderWindow;
 class vtkRenderWindowInteractor;
 
 namespace mgodpl {
+	struct PositionedShape;
 	struct Mesh;
+
+	namespace robot_model
+	{
+		struct RobotModel;
+	}
 
 	namespace math
 	{
@@ -115,6 +121,10 @@ namespace mgodpl {
 			const math::Vec3d &color,
 			double opacity = 1.0);
 		void set_transform(const math::Transformd& transform, vtkActor* actor);
+
+		vtkSmartPointer<vtkActor> addPositionedShape(const PositionedShape& shape,
+													 const math::Vec3d& color,
+													 double opacity = 1.0);
 
 		/**
 		 * Add a box to the scene with a given size, transform and color.
