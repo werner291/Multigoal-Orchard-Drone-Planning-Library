@@ -13,6 +13,11 @@
 
 namespace mgodpl::math {
 
+	struct AxisAngled {
+		Vec3d axis;
+		double angle;
+	};
+
 	/**
 	 * @brief A quaternion in the form of (x, y, z, w), interpreted as a rotation.
 	 */
@@ -57,6 +62,17 @@ namespace mgodpl::math {
 					.w = std::cos(half_angle)
 			};
 		}
+
+		[[nodiscard]] AxisAngled toAxisAngle() const {
+			double angle = 2.0 * std::acos(w);
+			double sin_half_angle = std::sin(angle / 2.0);
+			return {
+					.axis = {x / sin_half_angle, y / sin_half_angle, z / sin_half_angle},
+					.angle = angle
+			};
+		}
+
+
 	};
 
 }

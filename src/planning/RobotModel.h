@@ -28,8 +28,9 @@ namespace mgodpl::robot_model {
 	 *
 	 * Note: there is no absolute frame of reference; the model is defined in terms of relative transformations between links and joints.
 	 */
-	struct RobotModel {
+	class RobotModel {
 
+	public:
 		/// The index of a link in the links vector. Will remain valid as long as links are not removed.
 		using LinkId = size_t;
 
@@ -119,13 +120,13 @@ namespace mgodpl::robot_model {
 			std::string name;
 
 			/// The joints that connect this link to other links (IDs into the joints vector).
-			std::vector<JointId> joints;
+			std::vector<JointId> joints {};
 
 			/// The collision geometry of the link.
-			std::vector<LinkGeometry> collision_geometry;
+			std::vector<LinkGeometry> collision_geometry {};
 
 			/// The visual geometry of the link.
-			std::vector<LinkGeometry> visual_geometry;
+			std::vector<LinkGeometry> visual_geometry {};
 		};
 
 		/**
@@ -162,11 +163,33 @@ namespace mgodpl::robot_model {
 		 */
 		[[nodiscard]] JointId findJointByName(const std::string &name) const;
 
+		[[nodiscard]] size_t count_joint_variables() const;
+
+		/**
+		 * @brief	Returns the links in the model.
+		 *
+		 * @return  The links in the model as a read-only vector.
+		 */
+		[[nodiscard]] const std::vector<Link>& getLinks() const {
+			return links;
+		}
+
+		/**
+		 * @brief	Returns the joints in the model.
+		 * @return	The joints in the model as a read-only vector.
+		 */
+		[[nodiscard]] const std::vector<Joint>& getJoints() const {
+			return joints;
+		}
+
+	private:
+
 		/// The links in the model.
 		std::vector<Link> links;
 
 		/// The joints in the model.
 		std::vector<Joint> joints;
+
 
 	};
 

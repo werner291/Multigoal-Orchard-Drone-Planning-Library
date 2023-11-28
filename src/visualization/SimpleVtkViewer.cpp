@@ -11,10 +11,15 @@
 #include <boost/algorithm/string/predicate.hpp>
 
 #include "SimpleVtkViewer.h"
+
+#include <vtkCubeSource.h>
+
 #include "VtkFunctionalCallback.h"
 #include "camera_controls.h"
 #include "vtk.h"
 #include "../experiment_utils/TreeMeshes.h"
+#include "../math/Transform.h"
+#include "../experiment_utils/shapes.h"
 
 namespace mgodpl {
 
@@ -111,6 +116,85 @@ namespace mgodpl {
 		actor->SetPosition(origin[0], origin[1], origin[2]);
 
 		addActor(actor);
+
+		return actor;
+
+	}
+
+	vtkSmartPointer<vtkActor> SimpleVtkViewer::addMesh(const mgodpl::Mesh& mesh, const math::Transformd& transform,
+		const math::Vec3d& color, double opacity)
+	{
+
+		// Make the vtkPoints for the mesh.
+		vtkNew<vtkPoints> points;
+		for (const auto& vertex : mesh.vertices) {
+			points->InsertNextPoint(vertex.x(), vertex.y(), vertex.z());
+		}
+
+		// Make the vtkCellArray for the mesh.
+		vtkNew<vtkCellArray> cells;
+		for (const auto& triangle : mesh.triangles) {
+			cells->InsertNextCell({
+				triangle[0],
+				triangle[1],
+				triangle[2]
+			});
+		}
+
+		// PolyData.
+		vtkNew<vtkPolyData> polyData;
+		polyData->SetPoints(points);
+		polyData->SetPolys(cells);
+
+		// Mapper and actor with transform.
+		vtkNew<vtkPolyDataMapper> mapper;
+		mapper->SetInputData(polyData);
+
+		vtkNew<vtkActor> actor;
+		actor->SetMapper(mapper);
+		actor->GetProperty()->SetColor(color.x(), color.y(), color.z());
+		actor->GetProperty()->SetOpacity(opacity);
+
+		set_transform(transform, actor);
+
+		this->addActor(actor);
+
+		return actor;
+
+	}
+
+	void SimpleVtkViewer::set_transform(const math::Transformd& transform, vtkActor* actor)
+	{
+		actor->SetPosition(transform.translation.x(), transform.translation.y(), transform.translation.z());
+
+		const auto& axisangle = transform.orientation.toAxisAngle();
+
+		actor->RotateWXYZ(axisangle.angle / M_PI * 180.0,
+		                  axisangle.axis.x(),
+		                  axisangle.axis.y(),
+		                  axisangle.axis.z());
+	}
+
+	vtkSmartPointer<vtkActor> SimpleVtkViewer::addBox(const math::Vec3d& size, const math::Transformd& transform,
+	                                                  const math::Vec3d& color)
+	{
+
+		vtkNew<vtkCubeSource> cubeSource;
+		cubeSource->SetXLength(size.x());
+		cubeSource->SetYLength(size.y());
+		cubeSource->SetZLength(size.z());
+		cubeSource->Update();
+
+		vtkNew<vtkPolyDataMapper> mapper;
+		mapper->SetInputConnection(cubeSource->GetOutputPort());
+
+		vtkNew<vtkActor> actor;
+		actor->SetMapper(mapper);
+		actor->GetProperty()->SetColor(color.x(), color.y(), color.z());
+
+		set_transform(transform, actor);
+
+		this->addActor(actor);
 
 		return actor;
 

@@ -5,9 +5,7 @@
 #ifndef MGODPL_PROCEDURAL_ROBOT_MODELS_H
 #define MGODPL_PROCEDURAL_ROBOT_MODELS_H
 
-namespace mgodpl::robot_model {
-	struct RobotModel;
-}
+#include "../planning/RobotModel.h"
 
 namespace mgodpl::experiments {
 

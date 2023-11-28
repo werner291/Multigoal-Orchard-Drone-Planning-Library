@@ -3,29 +3,19 @@
 //
 
 #include <vtkProperty.h>
-#include <moveit/robot_model/link_model.h>
 #include <moveit/robot_model/robot_model.h>
 #include <random_numbers/random_numbers.h>
 #include <moveit/robot_state/robot_state.h>
-#include <fcl/narrowphase/collision_object.h>
 #include <fcl/geometry/bvh/BVH_model.h>
-#include <fcl/geometry/shape/box.h>
-#include <fcl/narrowphase/collision-inl.h>
-#include <fcl/narrowphase/collision_request.h>
-#include <geometric_shapes/shapes.h>
 #include <vtkRenderer.h>
 
-#include "../experiment_utils/load_robot_model.h"
 #include "../experiment_utils/mesh_utils.h"
 #include "../planning/moveit_state_tools.h"
 #include "../visualization/SimpleVtkViewer.h"
-#include "../visualization/VtkRobotModel.h"
 #include "../visualization/quick_markers.h"
-#include "../planning/JointSpacePoint.h"
 #include "../experiment_utils/TreeMeshes.h"
-#include "../experiment_utils/fcl_utils.h"
-#include "../planning/IncrementalGoalStateGenerator.h"
 #include "../experiment_utils/procedural_robot_models.h"
+#include "../experiment_utils/fcl_utils.h"
 
 using namespace mgodpl;
 
@@ -54,6 +44,12 @@ void applyEigenTransformToActor(Eigen::Isometry3d &transform, vtkActor *actor) {
 					  tfRot.axis().z());
 }
 
+struct RobotState
+{
+	math::Transformd base_tf;
+	std::vector<double> joint_values;
+};
+
 int main() {
 
 	const auto &robot = mgodpl::experiments::createProceduralRobotModel();
@@ -62,7 +58,7 @@ int main() {
 
 	math::Vec3d target(1.0, 0.0, 2.0);
 
-	random_numbers::RandomNumberGenerator rng(43);
+	random_numbers::RandomNumberGenerator rng(42);
 
 	mgodpl::SimpleVtkViewer viewer;
 	viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
@@ -77,20 +73,67 @@ int main() {
 
 	bool algo_continue = true;
 
-	std::vector<vtkSmartPointer<vtkActor>> link_actors;
+	assert(robot.count_joint_variables() == 1);
 
-	int timer = 10;
+	const size_t N_SAMPLES = 10;
 
-	viewer.addTimerCallback([&]() {
+	for (size_t i = 0; i < N_SAMPLES; ++i)
+	{
+		RobotState state {
+			.base_tf = math::Transformd {
+				.translation = math::Vec3d(0.0, 0.0, 0.0),
+				.orientation = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), rng.uniformReal(-M_PI, M_PI))
+				},
+			.joint_values = { rng.uniformReal(-M_PI/2.0, M_PI/2.0) }
+		};
 
-		if (timer-- == 0) {
-			timer = 10;
+		robot_model::RobotModel::LinkId flying_base = robot.findLinkByName("flying_base");
+		robot_model::RobotModel::LinkId end_effector = robot.findLinkByName("end_effector");
 
-			// Delete old actors.
-			for (auto &actor: link_actors) {
-				viewer.viewerRenderer->RemoveActor(actor);
+		const auto& fk = robot_model::forwardKinematics(
+			robot,
+			state.joint_values,
+			flying_base,
+			state.base_tf
+			);
+
+		math::Vec3d target_delta = target - fk.forLink(end_effector).translation;
+
+		state.base_tf.translation = state.base_tf.translation + target_delta;
+
+		const auto& fk_at_target = robot_model::forwardKinematics(
+			robot,
+			state.joint_values,
+			flying_base,
+			state.base_tf
+			);
+
+		// Allocate a BVH mesh for the tree trunk.
+		const auto& tree_trunk_bvh = mgodpl::fcl_utils::meshToFclBVH(tree_model.trunk_mesh);
+
+		for (int i = 0; i < fk_at_target.link_transforms.size(); ++i)
+		{
+			auto& link_tf = fk_at_target.link_transforms[i];
+
+			for (const auto& geometry : robot.getLinks()[i].visual_geometry.empty() ? robot.getLinks()[i].collision_geometry : robot.getLinks()[i].visual_geometry)
+			{
+				if (const auto& box = std::get_if<Box>(&geometry.shape))
+				{
+					viewer.addBox(box->size, link_tf.then(geometry.transform), {0.5,0.5,0.5});
+				}
+				else if (const auto& mesh = std::get_if<Mesh>(&geometry.shape))
+				{
+					viewer.addMesh(*mesh, link_tf.then(geometry.transform), {0.5,0.5,0.5});
+				}
+				else
+				{
+					throw std::runtime_error("Unknown geometry type.");
+				}
 			}
 		}
+	}
+
+	viewer.addTimerCallback([&]() {
 
 	});
 

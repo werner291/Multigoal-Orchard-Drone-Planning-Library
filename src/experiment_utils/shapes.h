@@ -25,6 +25,11 @@ namespace mgodpl {
 		std::vector<std::array<size_t, 3>> triangles;
 	};
 
+	enum class ShapeType {
+		BOX = 0,
+		MESH = 1,
+	};
+
 	using Shape = std::variant<Box, Mesh>;
 
 	Mesh loadMesh(const std::string& path);

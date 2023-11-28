@@ -23,6 +23,12 @@ class vtkRenderWindow;
 class vtkRenderWindowInteractor;
 
 namespace mgodpl {
+	struct Mesh;
+
+	namespace math
+	{
+		struct Transformd;
+	}
 
 	namespace tree_meshes {
 		struct TreeMeshes;
@@ -85,7 +91,7 @@ namespace mgodpl {
 		void addActorCollection(vtkActorCollection *actors);
 
 		/**
-		 * Add a mesh to the scene, adsuming no transformations.
+		 * Add a mesh to the scene, assuming no transformations.
 		 *
 		 * @param mesh 			The mesh to add.
 		 * @param color 		The color of the mesh.
@@ -94,6 +100,32 @@ namespace mgodpl {
 										  const math::Vec3d &color,
 										  double opacity = 1.0,
 										  const math::Vec3d &position = math::Vec3d::Zero());
+
+		/**
+		 * Add a mesh to the scene, with a given transform.
+		 *
+		 * @param mesh 			The mesh to add.
+		 * @param transform 	The transform of the mesh.
+		 * @param color			The color of the mesh.
+		 * @param opacity		The opacity of the mesh.
+		 */
+		vtkSmartPointer<vtkActor> addMesh(
+			const mgodpl::Mesh	&mesh,
+			const math::Transformd &transform,
+			const math::Vec3d &color,
+			double opacity = 1.0);
+		void set_transform(const math::Transformd& transform, vtkActor* actor);
+
+		/**
+		 * Add a box to the scene with a given size, transform and color.
+		 *
+		 * @param size 			The size of the box.
+		 * @param transform 	The transform of the box.
+		 * @param color			The color of the box.
+		 */
+		vtkSmartPointer<vtkActor> addBox(const math::Vec3d &size,
+										 const math::Transformd &transform,
+										 const math::Vec3d &color);
 
 		/**
 		 * Add a callback that is called every time the simulation is rendered.
