@@ -14,8 +14,10 @@ namespace mgodpl
     {
         math::Vec3d delta = point - center;
 
-        double distance_xy = std::sqrt(delta.x() * delta.x() + delta.y() * delta.y());
+        // Distance from the vertical axis through the center of the sphere.
+        const double distance_xy = std::sqrt(delta.x() * delta.x() + delta.y() * delta.y());
 
+        // Compute the latitude.
         return std::atan2(delta.z(), distance_xy);
     }
 
@@ -26,30 +28,43 @@ namespace mgodpl
         return std::atan2(delta.y(), delta.x());
     }
 
-    std::array<size_t, 3> triangle_vertex_types(const Triangle& triangle, const math::Vec3d& center)
+    PolarCoordinates polar_coordinates(const math::Vec3d& point, const math::Vec3d& center)
     {
-        // Sort by longitude.
+        return PolarCoordinates{latitude(point, center), longitude(point, center)};
+    }
+
+    std::array<size_t, 3> triangle_vertices_by_longitude(const Triangle& triangle, const math::Vec3d& center)
+    {
+        // Create an array to store the original vertex indices: {0, 1, 2}.
         std::array<size_t, 3> vertex_indices = {0, 1, 2};
+
+        // Sort the vertex indices based on their longitude values.
         std::sort(vertex_indices.begin(), vertex_indices.end(), [&](size_t a, size_t b)
         {
+            // Calculate the longitude of each vertex relative to the specified center.
             double l1 = longitude(triangle.vertices[a], center);
             double l2 = longitude(triangle.vertices[b], center);
 
+            // Use the sign og the signed longitude difference to determine the order.
             return signed_longitude_difference(l1, l2) < 0;
         });
+
+        // Return the reordered vertex indices based on longitude.
         return vertex_indices;
     }
 
     std::vector<VertexEvent> longitude_sweep_events(const std::vector<Triangle>& triangles, const math::Vec3d& center)
     {
+        // Create a vector to store the events.
         std::vector<VertexEvent> vertex_events;
 
+        // For each triangle...
         for (size_t triangle_index = 0; triangle_index < triangles.size(); ++triangle_index)
         {
             const Triangle& triangle = triangles[triangle_index];
 
-            // Sort by longitude.
-            std::array<size_t, 3> vertex_indices = triangle_vertex_types(triangle, center);
+            // Sort the indices of the triangle vertices by longitude.
+            std::array<size_t, 3> vertex_indices = triangle_vertices_by_longitude(triangle, center);
 
             // Then, create three events: one for each vertex, in order of longitude.
             vertex_events.push_back(VertexEvent{
@@ -88,7 +103,7 @@ namespace mgodpl
         // Compute the difference:
         double difference = first - second;
 
-        // Put it into the range [-pi, pi] (TODO: check if this is correct; the wrapping is confusing me)
+        // Put it into the range [-pi, pi]
         if (difference > M_PI)
         {
             difference -= 2 * M_PI;
@@ -105,10 +120,10 @@ namespace mgodpl
                                          double sweep_longitude, const math::Vec3d& center)
     {
         // First, compute the lat/lon of the segment start and end projected onto the sphere.
-        double start_longitude = longitude(segment_start, center);
-        double start_latitude = latitude(segment_start, center);
-        double end_longitude = longitude(segment_end, center);
-        double end_latitude = latitude(segment_end, center);
+        const double start_longitude = longitude(segment_start, center);
+        const double start_latitude = latitude(segment_start, center);
+        const double end_longitude = longitude(segment_end, center);
+        const double end_latitude = latitude(segment_end, center);
 
         // Check if the segment is in the right order.
         assert(signed_longitude_difference(end_longitude, start_longitude) > 0);
@@ -118,7 +133,7 @@ namespace mgodpl
         assert(signed_longitude_difference(end_longitude, sweep_longitude) >= 0);
 
         // Compute the interpolation factor. (TODO: check if this is correct; should there be some idea of linearization?)
-        double interpolation_factor = signed_longitude_difference(sweep_longitude, start_longitude) /
+        const double interpolation_factor = signed_longitude_difference(sweep_longitude, start_longitude) /
             signed_longitude_difference(end_longitude, start_longitude);
 
         // Interpolate the latitude (this doesn't wrap since latitudes are in the range [-pi/2, pi/2]).
@@ -128,8 +143,10 @@ namespace mgodpl
     std::array<ArcSegmentIntersection, 2> current_segment_intersections(const TriangleIntersection& intersection,
                                                                         double longitude)
     {
-        assert(longitude >= intersection.opening_longitude);
+        // Precondition check: the longitude should be in the range of the intersection.
+        assert(signed_longitude_difference(longitude, intersection.opening_longitude) >= 0);
 
+        // Check whether we're before or after the inflection point.
         if (signed_longitude_difference(longitude, intersection.inflection_longitude) <= 0)
         {
             // The intersections are with the edges (opening, inflection), (opening, closing).
@@ -167,23 +184,24 @@ namespace mgodpl
     std::array<double, 2> latitude_range(const TriangleIntersection& intersection, double longitude,
                                          const math::Vec3d& center, const std::vector<Triangle>& triangles)
     {
+        // Precondition check: the longitude should be in the range of the intersection.
         assert(signed_longitude_difference(longitude, intersection.opening_longitude) >= 0);
         assert(signed_longitude_difference(longitude, intersection.closing_longitude) <= 0);
 
         // First, compute the current segment intersections.
-        std::array<ArcSegmentIntersection, 2> intersections = current_segment_intersections(intersection, longitude);
+        const auto& [i1,i2] = current_segment_intersections(intersection, longitude);
 
         // Then, compute the latitudes of the intersections.
         double latitude1 = segment_intersection_latitude(
-            triangles[intersections[0].triangle_index].vertices[intersections[0].edge_start_vertex_index],
-            triangles[intersections[0].triangle_index].vertices[intersections[0].edge_end_vertex_index],
+            triangles[i1.triangle_index].vertices[i1.edge_start_vertex_index],
+            triangles[i1.triangle_index].vertices[i1.edge_end_vertex_index],
             longitude,
             center
         );
 
         double latitude2 = segment_intersection_latitude(
-            triangles[intersections[1].triangle_index].vertices[intersections[1].edge_start_vertex_index],
-            triangles[intersections[1].triangle_index].vertices[intersections[1].edge_end_vertex_index],
+            triangles[i2.triangle_index].vertices[i2.edge_start_vertex_index],
+            triangles[i2.triangle_index].vertices[i2.edge_end_vertex_index],
             longitude,
             center
         );
@@ -201,7 +219,7 @@ namespace mgodpl
             const Triangle& triangle = triangles[triangle_index];
 
             // Sort by longitude.
-            std::array<size_t, 3> vertex_indices = triangle_vertex_types(triangle, center);
+            std::array<size_t, 3> vertex_indices = triangle_vertices_by_longitude(triangle, center);
 
             const double opening_longitude = longitude(triangle.vertices[vertex_indices[0]], center);
             const double closing_longitude = longitude(triangle.vertices[vertex_indices[2]], center);
@@ -239,7 +257,7 @@ namespace mgodpl
         case TRIANGLE_INTERSECTION_START:
             {
                 // Sort the triangle vertices (TODO: duplicating this a bit; can we cache this?)
-                std::array<size_t, 3> vertex_indices = triangle_vertex_types(triangles[event.triangle_index], center);
+                std::array<size_t, 3> vertex_indices = triangle_vertices_by_longitude(triangles[event.triangle_index], center);
 
                 // A new triangle intersection starts; add it to the list.
                 intersections.intersections.push_back({
@@ -284,16 +302,17 @@ namespace mgodpl
         const std::vector<Triangle>& triangles)
     {
         // Step 1: compute the occupied list of latitude ranges.
-        std::vector<std::array<double, 2>> occupied_latitude_ranges = intersections.intersections | ranges::views::transform(
-            [&](const TriangleIntersection& intersection)
-            {
-                auto range = latitude_range(intersection, sweep_longitude, center, triangles);
-                if (range[0] > range[1])
+        std::vector<std::array<double, 2>> occupied_latitude_ranges = intersections.intersections |
+            ranges::views::transform(
+                [&](const TriangleIntersection& intersection)
                 {
-                    std::swap(range[0], range[1]);
-                }
-                return range;
-            }) | ranges::to<std::vector>();
+                    auto range = latitude_range(intersection, sweep_longitude, center, triangles);
+                    if (range[0] > range[1])
+                    {
+                        std::swap(range[0], range[1]);
+                    }
+                    return range;
+                }) | ranges::to<std::vector>();
 
         // Step 2: sort by start latitude.
         std::sort(occupied_latitude_ranges.begin(), occupied_latitude_ranges.end(), [](const auto& a, const auto& b)
@@ -353,5 +372,24 @@ namespace mgodpl
         }
 
         return free_latitude_ranges;
+    }
+
+    OrderedPolarTriangle polar_triangle(const Triangle& triangle, const math::Vec3d& center)
+    {
+        std::array<PolarCoordinates, 3> vertices{
+            polar_coordinates(triangle.vertices[0], center),
+            polar_coordinates(triangle.vertices[1], center),
+            polar_coordinates(triangle.vertices[2], center)
+        };
+
+        // Sort by longitude; compare by signed longitude difference.
+        if (signed_longitude_difference(vertices[0].longitude, vertices[1].longitude) > 0)
+        {
+            std::swap(vertices[0], vertices[1]);
+        }
+
+        return {
+            .vertices = vertices
+        };
     }
 }

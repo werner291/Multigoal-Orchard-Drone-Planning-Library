@@ -5,7 +5,6 @@
 #ifndef LATITUDE_SWEEP_H
 #define LATITUDE_SWEEP_H
 
-#include <algorithm>
 #include <vector>
 
 #include "../math/Vec3.h"
@@ -15,6 +14,20 @@ namespace mgodpl
     struct Triangle
     {
         std::array<math::Vec3d, 3> vertices;
+    };
+
+    struct PolarCoordinates
+    {
+        double latitude;
+        double longitude;
+    };
+
+    /**
+     * \brief A triangle whose vertices are in polar coordinates, sorted by longitude (taking wrapping into account).
+     */
+    struct OrderedPolarTriangle
+    {
+        std::array<PolarCoordinates, 3> vertices;
     };
 
     /**
@@ -36,6 +49,14 @@ namespace mgodpl
      * \return          The longitude, as a double in the range [-pi, pi].
      */
     double longitude(const math::Vec3d& point, const math::Vec3d& center);
+
+    /**
+     * \brief   Convert a point to polar coordinates.
+     * \param point The point to convert.
+     * \param center The center of the sphere.
+     * \return  The polar coordinates of the point.
+     */
+    PolarCoordinates polar_coordinates(const math::Vec3d& point, const math::Vec3d& center);
 
     /**
      * \brief A struct representing the type of an event in the sweep algorithm.
@@ -68,7 +89,7 @@ namespace mgodpl
     /**
      * Given a triangle, find the index of the opening, closing and inflection vertices.
      */
-    std::array<size_t, 3> triangle_vertex_types(const Triangle& triangle, const math::Vec3d& center);
+    std::array<size_t, 3> triangle_vertices_by_longitude(const Triangle& triangle, const math::Vec3d& center);
 
     /**
      * \brief Compute a vector of events in order of longitude.
@@ -186,7 +207,8 @@ namespace mgodpl
      *
      * \return A vector of TriangleIntersections, in no particular order.
      */
-    OngoingIntersections triangle_intersections(const std::vector<Triangle>& triangles, const math::Vec3d& center,
+    OngoingIntersections triangle_intersections(const std::vector<Triangle>& triangles,
+                                                const math::Vec3d& center,
                                                 double sweep_longitude);
 
     /**
@@ -212,6 +234,16 @@ namespace mgodpl
                                                             const math::Vec3d& center,
                                                             double sweep_longitude,
                                                             const std::vector<Triangle>& triangles);
+
+    /**
+     * \brief   Convert a triangle to longitude-sorted polar coordinates.
+     *
+     * \warning The vertices will be reordered.
+     *
+     * \param triangle The triangle to convert.
+     * \param center The center of the sphere.
+     */
+    OrderedPolarTriangle polar_triangle(const Triangle& triangle, const math::Vec3d& center);
 }
 
 #endif //LATITUDE_SWEEP_H

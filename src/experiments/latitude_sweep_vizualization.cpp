@@ -27,6 +27,7 @@ int main(int argc, char** argv)
     const math::Vec3d target = {0.2, 0.5, 3.0};
 
     SimpleVtkViewer viewer;
+    viewer.lockCameraUp();
     viewer.setCameraTransform(target + math::Vec3d{1.0, 0.0, 0.0}, target);
 
     visualization::mkPointMarkerSphere(viewer, target, {1.0, 0.0, 0.0});
@@ -65,7 +66,7 @@ int main(int argc, char** argv)
     viewer.addTimerCallback([&]()
     {
 
-        longitude += 0.001;
+        longitude += 0.0005;
 
         std::vector<math::Vec3d> points;
         for (int lat_i = 0; lat_i <= 32; ++lat_i)
@@ -99,7 +100,7 @@ int main(int argc, char** argv)
             for (int lat_i = 0; lat_i < n_points; ++lat_i)
             {
                 double latitude1 = latitudes[0] + lat_i * (latitudes[1] - latitudes[0]) / (double) n_points;
-                double latitude2 = latitudes[0] + (lat_i + 1) * (latitudes[1] - latitudes[0]) / 16.0;
+                double latitude2 = latitudes[0] + (lat_i + 1) * (latitudes[1] - latitudes[0]) / (double) n_points;
 
                 math::Vec3d ray1(
                     cos(latitude1) * cos(longitude),
