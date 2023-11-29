@@ -89,18 +89,15 @@ int main(int argc, char** argv)
         );
 
         std::vector<std::pair<math::Vec3d, math::Vec3d>> intersection_points;
-        for (const auto& intersection : intersections.intersections)
+        for (const auto& latitudes : free_latitude_ranges(intersections, target, longitude, triangles))
         {
-            const auto& latitudes = latitude_range(
-                intersection,
-                longitude,
-                target,
-                triangles
-            );
+            double length = latitudes[1] - latitudes[0];
 
-            for (int lat_i = 0; lat_i <= 16; ++lat_i)
+            size_t n_points = 1;//std::max(1, (int) (length * 16.0));
+
+            for (int lat_i = 0; lat_i <= n_points; ++lat_i)
             {
-                double latitude1 = latitudes[0] + lat_i * (latitudes[1] - latitudes[0]) / 16.0;
+                double latitude1 = latitudes[0] + lat_i * (latitudes[1] - latitudes[0]) / (double) n_points;
                 // double latitude2 = latitudes[0] + (lat_i + 1) * (latitudes[1] - latitudes[0]) / 16.0;
 
                 math::Vec3d ray1(

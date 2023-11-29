@@ -210,6 +210,21 @@ namespace mgodpl
      */
     void update_intersections(OngoingIntersections& intersections, const VertexEvent& event,
                               const std::vector<Triangle>& triangles, const math::Vec3d& center);
+
+    /**
+     * Given a set of OngoingIntersections, compute the free latitude ranges.
+     *
+     * \param   intersections   The ongoing intersections.
+     * \param   center          The center of the sphere.
+     * \param   sweep_longitude The longitude of the sweep arc.
+     * \param   triangles       The triangles that the intersections index into.
+     *
+     * \return  A vector of latitude ranges, as pairs of doubles in the range [-pi/2, pi/2].
+     */
+    std::vector<std::array<double, 2>> free_latitude_ranges(const OngoingIntersections& intersections,
+                                                            const math::Vec3d& center,
+                                                            double sweep_longitude,
+                                                            const std::vector<Triangle>& triangles);
 }
 
 #endif //LATITUDE_SWEEP_H

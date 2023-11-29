@@ -333,4 +333,82 @@ namespace mgodpl
             break;
         }
     }
+
+    std::vector<std::array<double, 2>> free_latitude_ranges(
+        const OngoingIntersections& intersections,
+        const math::Vec3d& center,
+        double sweep_longitude,
+        const std::vector<Triangle>& triangles)
+    {
+        // Step 1: compute the occupied list of latitude ranges.
+        std::vector<std::array<double, 2>> occupied_latitude_ranges = intersections.intersections | ranges::views::transform(
+            [&](const TriangleIntersection& intersection)
+            {
+                auto range = latitude_range(intersection, sweep_longitude, center, triangles);
+                if (range[0] > range[1])
+                {
+                    std::swap(range[0], range[1]);
+                }
+                return range;
+            }) | ranges::to<std::vector>();
+
+        // Step 2: sort by start latitude.
+        std::sort(occupied_latitude_ranges.begin(), occupied_latitude_ranges.end(), [](const auto& a, const auto& b)
+        {
+            return a[0] < b[0];
+        });
+
+        // Step 3: merge overlapping ranges.
+        std::vector<std::array<double, 2>> merged_latitude_ranges;
+        for (const auto& range : occupied_latitude_ranges)
+        {
+            if (merged_latitude_ranges.empty())
+            {
+                merged_latitude_ranges.push_back(range);
+            }
+            else
+            {
+                if (range[0] <= merged_latitude_ranges.back()[1])
+                {
+                    // Overlapping ranges; merge.
+                    merged_latitude_ranges.back()[1] = std::max(merged_latitude_ranges.back()[1], range[1]);
+                }
+                else
+                {
+                    // Non-overlapping ranges; add.
+                    merged_latitude_ranges.push_back(range);
+                }
+            }
+        }
+
+        // Step 4: take the complement of the merged ranges.
+        std::vector<std::array<double, 2>> free_latitude_ranges;
+        if (merged_latitude_ranges.empty())
+        {
+            // If there are no ranges, the entire sphere is free.
+            free_latitude_ranges.push_back({-M_PI / 2.0, M_PI / 2.0});
+        }
+        else
+        {
+            // Otherwise, the first range starts at the bottom of the sphere.
+            if (merged_latitude_ranges.front()[0] > -M_PI / 2.0)
+            {
+                free_latitude_ranges.push_back({-M_PI / 2.0, merged_latitude_ranges.front()[0]});
+            }
+
+            // Then, add the ranges in between.
+            for (size_t i = 0; i < merged_latitude_ranges.size() - 1; ++i)
+            {
+                free_latitude_ranges.push_back({merged_latitude_ranges[i][1], merged_latitude_ranges[i + 1][0]});
+            }
+
+            // Then, add the last range.
+            if (merged_latitude_ranges.back()[1] < M_PI / 2.0)
+            {
+                free_latitude_ranges.push_back({merged_latitude_ranges.back()[1], M_PI / 2.0});
+            }
+        }
+
+        return free_latitude_ranges;
+    }
 }
