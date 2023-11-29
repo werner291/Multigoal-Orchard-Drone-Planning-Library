@@ -286,6 +286,10 @@ if (ENABLE_VISUALIZATION)
     add_executable(collision_detection_mwe src/experiments/collision_detection_mwe.cpp)
     ament_target_dependencies(collision_detection_mwe shape_msgs moveit_core random_numbers)
 
+    add_executable(latitude_sweep_vizualization src/experiments/latitude_sweep_vizualization.cpp)
+    target_link_libraries(latitude_sweep_vizualization math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(latitude_sweep_vizualization shape_msgs moveit_core)
+
 endif ()
 
 include(GoogleTest)
