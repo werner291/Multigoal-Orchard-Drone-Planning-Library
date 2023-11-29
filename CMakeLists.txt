@@ -253,6 +253,8 @@ if (ENABLE_VISUALIZATION)
             src/visualization/VtkPolyLineVisualization.h
             src/visualization/VtkLineSegmentVizualization.cpp
             src/visualization/VtkLineSegmentVizualization.h
+            src/visualization/VtkTriangleSetVisualization.h
+            src/visualization/VtkTriangleSetVisualization.cpp
             src/visualization/VtkRobotModel.h
             src/visualization/VtkRobotModel.cpp
             src/visualization/voxels.cpp

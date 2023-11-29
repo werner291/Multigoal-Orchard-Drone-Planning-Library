@@ -12,6 +12,7 @@
 
 #include "../planning/latitude_sweep.h"
 #include "../visualization/VtkLineSegmentVizualization.h"
+#include "../visualization/VtkTriangleSetVisualization.h"
 
 using namespace mgodpl;
 
@@ -38,7 +39,7 @@ int main(int argc, char** argv)
     VtkPolyLineVisualization line_visualization(1.0,0.0,1.0);
     viewer.addActor(line_visualization.getActor());
 
-    VtkLineSegmentsVisualization intersections_visualization(1.0, 1.0, 0.0);
+    VtkTriangleSetVisualization intersections_visualization(1.0, 1.0, 0.0);
     viewer.addActor(intersections_visualization.getActor());
 
     const std::vector<Triangle> triangles = model.trunk_mesh.triangles | ranges::views::transform(
@@ -88,17 +89,17 @@ int main(int argc, char** argv)
             longitude
         );
 
-        std::vector<std::pair<math::Vec3d, math::Vec3d>> intersection_points;
+        std::vector<std::array<math::Vec3d, 3>> intersection_points;
         for (const auto& latitudes : free_latitude_ranges(intersections, target, longitude, triangles))
         {
             double length = latitudes[1] - latitudes[0];
 
-            size_t n_points = 1;//std::max(1, (int) (length * 16.0));
+            size_t n_points = std::max(1, (int) (length * 16.0));
 
-            for (int lat_i = 0; lat_i <= n_points; ++lat_i)
+            for (int lat_i = 0; lat_i < n_points; ++lat_i)
             {
                 double latitude1 = latitudes[0] + lat_i * (latitudes[1] - latitudes[0]) / (double) n_points;
-                // double latitude2 = latitudes[0] + (lat_i + 1) * (latitudes[1] - latitudes[0]) / 16.0;
+                double latitude2 = latitudes[0] + (lat_i + 1) * (latitudes[1] - latitudes[0]) / 16.0;
 
                 math::Vec3d ray1(
                     cos(latitude1) * cos(longitude),
@@ -106,20 +107,23 @@ int main(int argc, char** argv)
                     sin(latitude1)
                 );
 
-                // math::Vec3d ray2(
-                //     cos(latitude2) * cos(longitude),
-                //     cos(latitude2) * sin(longitude),
-                //     sin(latitude2)
-                // );
-
-                intersection_points.emplace_back(
-                    target + ray1 * 1.1,
-                    target// + ray2 * 1.1
+                math::Vec3d ray2(
+                    cos(latitude2) * cos(longitude),
+                    cos(latitude2) * sin(longitude),
+                    sin(latitude2)
                 );
+
+                std::array<math::Vec3d, 3> triangle_points{
+                    target + ray1 * 1.0,
+                    target + ray2 * 1.0,
+                    target
+                };
+
+                intersection_points.push_back(triangle_points);
             }
         }
 
-        intersections_visualization.updateLine(intersection_points);
+        intersections_visualization.updateTriangles(intersection_points);
 
     });
 
