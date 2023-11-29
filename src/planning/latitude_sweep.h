@@ -27,13 +27,6 @@ namespace mgodpl
      */
     double latitude(const math::Vec3d& point, const math::Vec3d& center);
 
-    enum VertexType
-    {
-        CLOSING,
-        OPENING,
-        INFLECTION
-    };
-
     /**
      * \brief Compute the longitude of the projection of a point on a sphere (poles on the Z-axis).
      *
@@ -43,12 +36,6 @@ namespace mgodpl
      * \return          The longitude, as a double in the range [-pi, pi].
      */
     double longitude(const math::Vec3d& point, const math::Vec3d& center);
-
-    struct PointWithPolar
-    {
-        math::Vec3d point;
-        double latitude, longitude;
-    };
 
     /**
      * \brief A struct representing the type of an event in the sweep algorithm.

@@ -7,63 +7,6 @@
 #include <queue>
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/transform.hpp>
-//
-// # Longitude sweep
-//
-// ***Longitude sweep instead of latitude sweep to avoid having critical points on triangle edges?***
-//
-// Core idea; animation in Geogebra:
-// <iframe src="https://www.geogebra.org/calculator/dtfhc69t?embed" width="800" height="600" allowfullscreen style="border: 1px solid #e4e4e4;border-radius: 4px;" frameborder="0"></iframe>
-// To maintain: the colored arcs (red, green) at any one time:
-// ![[Pasted image 20231129094615.png]]
-//
-// It seems like we can break down further to the level of individual triangles:
-//
-// Given:
-// * A triangle T with vertices $a,b,c \in \Reals^3$.
-// * A center point $c \in \Reals^3$.
-//
-// Return the sweep angles at which:
-// * The sweep arc starts intersecting with the triangle.
-// * The sweep arc stops intersecting with the triangle.
-// * The sweep arc hits the third vertex.
-//
-// The start/stop/hit problem breaks down [[#Vertex encounter time]]
-//
-// And, know:
-// * Between the start and the stop, what is the latitude range triangle?
-//
-// That's gonna need to be a function from longitude to a range of latitudes.
-// ### Vertex encounter time
-//
-// Given:
-// * A point $a$ in $\Reals^3$
-// * A center point $c \in \Reals^3$
-//
-// Return the sweep angles at which:
-// * The arc hits point $a$.
-//
-// Easy: that's just $a$'s longitude.
-//
-// ### Latitude to longitude range
-//
-// Given points on the sphere:
-// * $a = (\phi_a,\theta_a)$
-// * $b = (\phi_b,\theta_b)$
-// * $c = (\phi_c,\theta_c)$ with $\phi_c < \phi_b$ and $\theta_c < \theta_b$ (W.L.O.G.)
-// * A sweep angle $\phi \in [\phi_a, \phi_c]$
-//
-// Return:
-// * The range of $[\theta_1,\theta_2]$ covered by the intersection of the sweep arc at $\phi$ and the spherical triangle $a,b,c$.
-//
-// Can be broken down into: finding the intersections of the sweep arc with the two arc segments $(a,b)$ and $(a,c)$.
-// ### Sweep arc intersection
-//
-// Given an arc segment $(a,b)$ between points on a sphere, and a pole-to-pole latitude line at longitude $\phi$ that intersects the arc $(a,b)$, compute the intersection point and characterize the change in that point as a function of $\phi$.
-//
-// Bonus: if we know the rate of change, we can also calculate the encounter times of the interactions.
-//
-
 
 namespace mgodpl
 {
