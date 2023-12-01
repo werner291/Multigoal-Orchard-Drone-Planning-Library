@@ -31,7 +31,7 @@ namespace mgodpl
 
     PolarCoordinates polar_coordinates(const math::Vec3d& point, const math::Vec3d& center)
     {
-        return PolarCoordinates{latitude(point, center), longitude(point, center)};
+        return PolarCoordinates{latitude(point, center), longitude(point, center), (point - center).norm()};
     }
 
     std::array<size_t, 3> triangle_vertices_by_longitude(const Triangle& triangle, const math::Vec3d& center)
@@ -153,6 +153,43 @@ namespace mgodpl
         return start_latitude + interpolation_factor * (end_latitude - start_latitude);
     }
 
+	PolarCoordinates segment_intersection(
+			const math::Vec3d& segment_start,
+			const math::Vec3d& segment_end,
+			double sweep_longitude,
+			const math::Vec3d& center) {
+
+		// First, compute the lat/lon of the segment start and end projected onto the sphere.
+		const double start_longitude = longitude(segment_start, center);
+		const double start_latitude = latitude(segment_start, center);
+		const double end_longitude = longitude(segment_end, center);
+		const double end_latitude = latitude(segment_end, center);
+
+		// Check if the segment is in the right order.
+		assert(signed_longitude_difference(end_longitude, start_longitude) > 0);
+
+		// Check that the intersection exists.
+		assert(signed_longitude_difference(sweep_longitude, start_longitude) >= 0);
+		assert(signed_longitude_difference(end_longitude, sweep_longitude) >= 0);
+
+		// Compute the interpolation factor. (TODO: check if this is correct; should there be some idea of linearization?)
+		const double interpolation_factor = signed_longitude_difference(sweep_longitude, start_longitude) /
+											signed_longitude_difference(end_longitude, start_longitude);
+
+		double start_radius = (segment_start - center).norm();
+		double end_radius = (segment_end - center).norm();
+
+
+
+		return {
+				start_latitude + interpolation_factor * (end_latitude - start_latitude),
+				sweep_longitude,
+				start_radius + interpolation_factor * (end_radius - start_radius)
+		};
+
+
+	}
+
     std::array<ArcSegmentIntersection, 2> current_segment_intersections(const TriangleIntersection& intersection,
                                                                         double longitude)
     {
@@ -221,6 +258,68 @@ namespace mgodpl
 
         return {latitude1, latitude2};
     }
+
+
+	std::array<PolarCoordinates, 2> intersection_arc(const TriangleIntersection &intersection,
+													 double longitude,
+													 const math::Vec3d &center,
+													 const std::vector<Triangle> &triangles) {
+
+		// Precondition check: the longitude should be in the range of the intersection.
+		assert(signed_longitude_difference(longitude, intersection.opening_longitude) >= 0);
+		assert(signed_longitude_difference(longitude, intersection.closing_longitude) <= 0);
+
+		// First, compute the current segment intersections.
+		const auto& [i1,i2] = current_segment_intersections(intersection, longitude);
+
+		// Then, compute the latitudes of the intersections.
+		const auto& int1 = segment_intersection(
+				triangles[i1.triangle_index].vertices[i1.edge_start_vertex_index],
+				triangles[i1.triangle_index].vertices[i1.edge_end_vertex_index],
+				longitude,
+				center
+		);
+
+		const auto& int2 = segment_intersection(
+				triangles[i2.triangle_index].vertices[i2.edge_start_vertex_index],
+				triangles[i2.triangle_index].vertices[i2.edge_end_vertex_index],
+				longitude,
+				center
+		);
+
+		if (int1.latitude > int2.latitude) {
+			return {
+					int2,
+					int1
+			};
+		} else {
+			return {
+					int1,
+					int2
+			};
+		}
+
+	}
+
+	std::array<double, 2> vertical_padded_latitude_range(
+			const TriangleIntersection& intersection,
+			double longitude,
+			double vertical_padding,
+			const math::Vec3d& center,
+			const std::vector<Triangle>& triangles
+	) {
+
+		auto [a,b] = intersection_arc(intersection, longitude, center, triangles);
+
+		double padding_a = std::atan(vertical_padding / a.radius);
+		double padding_b = std::atan(vertical_padding / b.radius);
+
+		return {
+				a.latitude - padding_a,
+				b.latitude + padding_b
+		};
+
+	}
 
     OngoingIntersections triangle_intersections(const std::vector<Triangle>& triangles, const math::Vec3d& center,
                                                 const double sweep_longitude)
@@ -308,22 +407,20 @@ namespace mgodpl
         }
     }
 
-    std::vector<std::array<double, 2>> free_latitude_ranges(
-        const OngoingIntersections& intersections,
-        const math::Vec3d& center,
-        double sweep_longitude,
-        const std::vector<Triangle>& triangles)
+    std::vector<std::array<double, 2>> free_latitude_ranges(const OngoingIntersections &intersections,
+															const math::Vec3d &center,
+															double sweep_longitude,
+															const std::vector<Triangle> &triangles,
+															double vertical_padding)
     {
-        // Step 1: compute the occupied list of latitude ranges.
+
+
+		// Step 1: compute the occupied list of latitude ranges.
         std::vector<std::array<double, 2>> occupied_latitude_ranges = intersections.intersections |
             ranges::views::transform(
                 [&](const TriangleIntersection& intersection)
                 {
-                    auto range = latitude_range(intersection, sweep_longitude, center, triangles);
-                    if (range[0] > range[1])
-                    {
-                        std::swap(range[0], range[1]);
-                    }
+                    auto range = vertical_padded_latitude_range(intersection, sweep_longitude, vertical_padding, center, triangles);
                     return range;
                 }) | ranges::to<std::vector>();
 

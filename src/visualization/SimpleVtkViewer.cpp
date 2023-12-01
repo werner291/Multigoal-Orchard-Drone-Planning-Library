@@ -181,7 +181,7 @@ namespace mgodpl {
 	{
 
 		if (const auto& box = std::get_if<Box>(&shape.shape)) {
-			return addBox(box->size, shape.transform, color);
+			return addBox(box->size, shape.transform, color, opacity);
 		} else if (const auto& mesh = std::get_if<Mesh>(&shape.shape)) {
 			return addMesh(*mesh, shape.transform, color, opacity);
 		} else {
@@ -190,8 +190,10 @@ namespace mgodpl {
 
 	}
 
-	vtkSmartPointer<vtkActor> SimpleVtkViewer::addBox(const math::Vec3d& size, const math::Transformd& transform,
-	                                                  const math::Vec3d& color)
+	vtkSmartPointer<vtkActor> SimpleVtkViewer::addBox(const math::Vec3d &size,
+													  const math::Transformd &transform,
+													  const math::Vec3d &color,
+													  double d)
 	{
 
 		vtkNew<vtkCubeSource> cubeSource;
@@ -206,6 +208,7 @@ namespace mgodpl {
 		vtkNew<vtkActor> actor;
 		actor->SetMapper(mapper);
 		actor->GetProperty()->SetColor(color.x(), color.y(), color.z());
+		actor->GetProperty()->SetOpacity(d);
 
 		set_transform(transform, actor);
 

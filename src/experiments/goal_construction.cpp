@@ -364,9 +364,9 @@ int main()
     }
 
     std::cout
-        << "Hardest target is "
-        << hardest_target << " with collision probability " << collision_probabilities[
-        hardest_target] << std::endl;
+        << "Hardest target is " << hardest_target
+		<< " at coords " << targets[hardest_target]
+		<< " with collision probability " << collision_probabilities[hardest_target] << std::endl;
 
     {
         gen_color_coded_states(robot, flying_base, end_effector, tree_trunk_object, rng, viewer, targets,

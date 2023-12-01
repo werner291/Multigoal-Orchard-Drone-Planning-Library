@@ -68,7 +68,7 @@ TEST(latitude_sweep_tests, kinetic_datastructure_vs_bruteforce) {
 			);
 
 			std::vector<std::array<math::Vec3d, 3>> intersection_points;
-			for (const auto &latitudes: free_latitude_ranges(intersections, target, longitude, triangles)) {
+			for (const auto &latitudes: free_latitude_ranges(intersections, target, longitude, triangles, 0.0)) {
 				double length = latitudes[1] - latitudes[0];
 
 				size_t n_points = std::max(1, (int) (length * 16.0));

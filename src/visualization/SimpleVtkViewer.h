@@ -133,9 +133,8 @@ namespace mgodpl {
 		 * @param transform 	The transform of the box.
 		 * @param color			The color of the box.
 		 */
-		vtkSmartPointer<vtkActor> addBox(const math::Vec3d &size,
-										 const math::Transformd &transform,
-										 const math::Vec3d &color);
+		vtkSmartPointer<vtkActor>
+		addBox(const math::Vec3d &size, const math::Transformd &transform, const math::Vec3d &color, double d=1.0);
 
 		/**
 		 * Add a callback that is called every time the simulation is rendered.

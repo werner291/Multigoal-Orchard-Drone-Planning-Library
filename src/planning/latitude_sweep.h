@@ -31,12 +31,13 @@ namespace mgodpl
 	};
 
 	/**
-	 * \brief A struct representing a latitude/longitude pair.
+	 * \brief A struct representing a latitude/longitude pair, with a radius.
 	 */
     struct PolarCoordinates
     {
         double latitude;
         double longitude;
+		double radius;
     };
 
 	/**
@@ -152,11 +153,17 @@ namespace mgodpl
      *
      * \return                 The latitude of the intersection point in the range [-pi/2, pi/2].
      */
-    double segment_intersection_latitude(
-        const math::Vec3d& segment_start,
-        const math::Vec3d& segment_end,
-        double sweep_longitude,
-        const math::Vec3d& center);
+	double segment_intersection_latitude(
+			const math::Vec3d& segment_start,
+			const math::Vec3d& segment_end,
+			double sweep_longitude,
+			const math::Vec3d& center);
+
+	PolarCoordinates segment_intersection(
+			const math::Vec3d& segment_start,
+			const math::Vec3d& segment_end,
+			double sweep_longitude,
+			const math::Vec3d& center);
 
     /**
      * \brief A struct describing the (ongoing) intersection of a sweep arc with an edge of a spherical triangle.
@@ -220,6 +227,51 @@ namespace mgodpl
         const math::Vec3d& center,
         const std::vector<Triangle>& triangles
     );
+
+	/**
+	 * \brief	Given an ongoing triangle intersection and a longitude, compute the endpoints of the intersection arc.
+	 *
+	 * @param intersection 		The triangle intersection.
+	 * @param longitude 		The longitude of the sweep arc.
+	 * @param center 			The center of the sphere.
+	 * @param triangles 		The vector of triangles that the intersection indexes into.
+	 *
+	 * \pre 	The longitude is in the range [opening_longitude, closing_longitude]. (Checked by assertion.)
+	 *
+	 * @return 					The endpoints of the intersection arc, as a pair of polar coordinates.
+	 */
+	std::array<PolarCoordinates, 2> intersection_arc(const TriangleIntersection& intersection,
+													 double longitude,
+													 const math::Vec3d& center,
+													 const std::vector<Triangle>& triangles);
+
+	/**
+     * \brief Given an ongoing triangle intersection and a longitude, compute the latitude range of the intersection,
+     * 		  but restrict the range such that a minimum linear padding is added to the range.
+     *
+     * We'd like to find the range of latitudes, such that for every latitude `lat` in the range,
+     * we can construct a rectangle whose median line is a ray originating at the center with polar
+     * direction (lat,lon), with width `2 * vertical_padding`.
+     *
+     * TODO: This is vague; need to write down formally with some pictures.
+     *
+     * \param   intersection      The triangle intersection.
+     * \param   longitude         The longitude of the sweep arc.
+     * \param   vertical_padding  The amount of padding to add to the vertical range.
+     * \param   center            The center of the sphere.
+     * \param   triangles         The vector of triangles that the intersection indexes into.
+     *
+     * \pre     The longitude is in the range [opening_longitude, closing_longitude]. (Checked by assertion.)
+     *
+     * \return A range of latitudes, as a pair of doubles in the range [-pi/2, pi/2] (note: bounds are unordered).
+     */
+	std::array<double, 2> vertical_padded_latitude_range(
+			const TriangleIntersection& intersection,
+			double longitude,
+			double vertical_padding,
+			const math::Vec3d& center,
+			const std::vector<Triangle>& triangles
+	);
 
     struct OngoingIntersections
     {
@@ -288,10 +340,11 @@ namespace mgodpl
      *
      * \return  A vector of latitude ranges, as pairs of doubles in the range [-pi/2, pi/2].
      */
-    std::vector<std::array<double, 2>> free_latitude_ranges(const OngoingIntersections& intersections,
-                                                            const math::Vec3d& center,
-                                                            double sweep_longitude,
-                                                            const std::vector<Triangle>& triangles);
+	std::vector<std::array<double, 2>> free_latitude_ranges(const OngoingIntersections &intersections,
+															const math::Vec3d &center,
+															double sweep_longitude,
+															const std::vector<Triangle> &triangles,
+															double vertical_padding);
 
     /**
      * \brief   Convert a triangle to longitude-sorted polar coordinates.

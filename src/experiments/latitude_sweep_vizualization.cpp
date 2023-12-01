@@ -131,7 +131,7 @@ int main(int argc, char** argv)
 	const auto& tree_trunk_bvh = mgodpl::fcl_utils::meshToFclBVH(model.trunk_mesh);
 	fcl::CollisionObjectd tree_trunk_object(tree_trunk_bvh);
 
-    const math::Vec3d target = {0.2, 0.5, 3.0};
+    const math::Vec3d target(-0.195487, -0.769218, 1.34947);
 
     SimpleVtkViewer viewer;
     viewer.lockCameraUp();
@@ -176,6 +176,8 @@ int main(int argc, char** argv)
 
 	int counter = 10;
 
+	int n_cchecks = 0;
+
     viewer.addTimerCallback([&]()
     {
 
@@ -207,35 +209,28 @@ int main(int argc, char** argv)
 
         line_visualization.updateLine(points);
 
-
-
-		const auto& free_latitudes = free_latitude_ranges(iterator->second, target, longitude, triangles);
+		const auto& free_latitudes = free_latitude_ranges(iterator->second, target, longitude, triangles, 0.25);
 
 		update_free_latitude_ranges_visualization(target, intersections_visualization, longitude, free_latitudes);
 
-		if (counter-- > 0) {
-			return;
-		}
-		counter = 50;
+//		if (counter-- > 0) {
+//			return;
+//		}
+//		counter = 50;
 
 		math::Transformd base_tf {
 						.translation = math::Vec3d(0.0, 0.0, 0.0),
 						.orientation = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), longitude + M_PI/2.0)
 				};
 
-
 		// For all the midpoints, try placing the robot's arm.
 		for (const auto& latitudes : free_latitudes)
 		{
 			double amplitude = latitudes[1] - latitudes[0];
 
-			if (amplitude < 0.1) {
-				continue;
-			}
-
 			double mid_latitude = (latitudes[0] + latitudes[1]) / 2.0;
 
-			std::vector<double> arm_angles { mid_latitude };
+			std::vector<double> arm_angles { -mid_latitude };
 
 			const auto& fk = mgodpl::robot_model::forwardKinematics(robot, arm_angles, flying_base, base_tf);
 
@@ -256,7 +251,35 @@ int main(int argc, char** argv)
 				viewer.addPositionedShape(positioned_shape, {1.0, 0.0, 0.0});
 			} else {
 				viewer.addPositionedShape(positioned_shape, {0.0, 1.0, 0.0});
+
+				// Do that for the base link too:
+
+				PositionedShape positioned_shape2 {
+						.shape = robot.getLinks()[flying_base].collision_geometry[0].shape,
+						.transform = fk2.forLink(flying_base).then(robot.getLinks()[flying_base].collision_geometry[0].transform)
+				};
+
+				bool collision2 = check_link_collision(robot.getLinks()[flying_base], tree_trunk_object, fk2.forLink(flying_base));
+
+				n_cchecks++;
+
+				std::cout << "n_cchecks: " << n_cchecks << std::endl;
+
+				if (collision2) {
+//				viewer.addPositionedShape(positioned_shape2, {1.0, 0.0, 0.0});
+				} else {
+
+					PositionedShape positioned_shape3 {
+							.shape = robot.getLinks()[flying_base].visual_geometry[0].shape,
+							.transform = fk2.forLink(flying_base).then(robot.getLinks()[flying_base].collision_geometry[0].transform)
+					};
+
+					viewer.addPositionedShape(positioned_shape2, {0.0, 1.0, 0.0}, 0.5);
+					viewer.addPositionedShape(positioned_shape3, {0.0, 1.0, 0.0});
+				}
 			}
+
+
 		}
 
 	});
