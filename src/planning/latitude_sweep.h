@@ -11,16 +11,46 @@
 
 namespace mgodpl
 {
+	/**
+	 * \brief A triangle in 3D space, with vertices in Cartesian coordinates.
+	 */
     struct Triangle
     {
         std::array<math::Vec3d, 3> vertices;
     };
 
+	/**
+	 * A struct that describes whether a latitude is the start or end of a range.
+	 *
+	 * For a start, the latitude is the lower bound of the range.
+	 * For an end, the latitude is the upper bound of the range.
+	 */
+	enum LatitudeStartEnd {
+		START,
+		END
+	};
+
+	/**
+	 * \brief A struct representing a latitude/longitude pair.
+	 */
     struct PolarCoordinates
     {
         double latitude;
         double longitude;
     };
+
+	/**
+	 * \brief A struct representing an ongoing intersection of a sweep arc with an edge of a spherical triangle.
+	 *
+	 * Invariant: start.longitude <= end.longitude (taking wrapping into account), and start.latitude <= end.latitude.
+	 */
+	struct OngoingEdgeIntersection {
+		PolarCoordinates start;
+		PolarCoordinates end;
+		LatitudeStartEnd start_end;
+
+		// sorting operator by starting latitude.
+	};
 
     /**
      * \brief A triangle whose vertices are in polar coordinates, sorted by longitude (taking wrapping into account).
@@ -96,7 +126,9 @@ namespace mgodpl
      *
      * For every triangle, three events are created: one for each vertex; Then, all events are sorted by longitude.
      */
-    std::vector<VertexEvent> longitude_sweep_events(const std::vector<Triangle>& triangles, const math::Vec3d& center);
+	std::vector<VertexEvent> longitude_sweep_events(const std::vector<Triangle> &triangles,
+													const math::Vec3d &center,
+													const double starting_longitude);
 
     /**
      * \brief Compute the signed difference between two longitudes.
@@ -220,6 +252,32 @@ namespace mgodpl
     void update_intersections(OngoingIntersections& intersections, const VertexEvent& event,
                               const std::vector<Triangle>& triangles, const math::Vec3d& center);
 
+	/**
+	 * \brief 	Run the sweepline algorithm, accumulating a vector of monotone ranges.
+	 *
+	 * Specifically, given a vector of triangles, a center, and a starting longitude,
+	 * will return a representation of a function from longitude to a vector of triangles
+	 * that are intersected by the sweep arc at that longitude.
+	 *
+	 * \param 	triangles 			The triangles to compute the intersections with.
+	 * \param 	center 				The center of the sphere.
+	 * \param 	starting_longitude 	The initial longitude of the sweep arc (default 0.0), in range [-pi, pi].
+	 */
+	std::vector<std::pair<double, OngoingIntersections>> run_sweepline(const std::vector<Triangle>& triangles,
+																	   const math::Vec3d& target,
+																	   double starting_longitude = 0.0);
+
+	/**
+	 * @brief Compute the positive angle between two longitudes.
+	 *
+	 * That is:  how much must the longitude angle increase to go from starting_longitude to longitude, possibly wrapping around?
+	 *
+	 * @param starting_longitude
+	 * @param longitude
+	 * @return
+	 */
+	double longitude_ahead_angle(const double starting_longitude, const double longitude);
+
     /**
      * Given a set of OngoingIntersections, compute the free latitude ranges.
      *
@@ -244,6 +302,7 @@ namespace mgodpl
      * \param center The center of the sphere.
      */
     OrderedPolarTriangle polar_triangle(const Triangle& triangle, const math::Vec3d& center);
+
 }
 
 #endif //LATITUDE_SWEEP_H

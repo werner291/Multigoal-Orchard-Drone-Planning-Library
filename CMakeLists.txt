@@ -303,6 +303,7 @@ add_executable(${PROJECT_NAME}_tests
         test/experiment_utils/voxel_visibility_test.cpp
         test/math/intersection_test.cpp
         test/math/lp_test.cpp
+        test/planning/latitude_sweep_test.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils gtest)

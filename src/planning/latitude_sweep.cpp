@@ -7,6 +7,7 @@
 #include <queue>
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/transform.hpp>
+#include <iostream>
 
 namespace mgodpl
 {
@@ -53,9 +54,14 @@ namespace mgodpl
         return vertex_indices;
     }
 
-    std::vector<VertexEvent> longitude_sweep_events(const std::vector<Triangle>& triangles, const math::Vec3d& center)
+	double longitude_ahead_angle(const double starting_longitude, const double longitude);
+
+	std::vector<VertexEvent> longitude_sweep_events(const std::vector<Triangle> &triangles,
+													const math::Vec3d &center,
+													const double starting_longitude)
     {
-        // Create a vector to store the events.
+
+		// Create a vector to store the events.
         std::vector<VertexEvent> vertex_events;
 
         // For each triangle...
@@ -89,16 +95,23 @@ namespace mgodpl
             });
         }
 
-        // sort by longitude
-        std::sort(vertex_events.begin(), vertex_events.end(), [](const VertexEvent& a, const VertexEvent& b)
+        // sort by longitude; be careful about wrapping.
+        std::sort(vertex_events.begin(), vertex_events.end(), [&](const VertexEvent& a, const VertexEvent& b)
         {
-            return a.longitude < b.longitude;
+			// Adjust the longitude so it's the angle of how far ahead it is.
+			double a_longitude = longitude_ahead_angle(starting_longitude, a.longitude);
+			double b_longitude = longitude_ahead_angle(starting_longitude, b.longitude);
+
+			return a_longitude < b_longitude;
+			
         });
 
         return vertex_events;
     }
 
-    double signed_longitude_difference(double first, double second)
+
+
+	double signed_longitude_difference(double first, double second)
     {
         // Compute the difference:
         double difference = first - second;
@@ -270,7 +283,7 @@ namespace mgodpl
                     .inflection_longitude = longitude(triangles[event.triangle_index].vertices[vertex_indices[1]],
                                                       center)
                 });
-            }
+			}
             break;
         case INTERNAL_TRIANGLE_VERTEX:
             {
@@ -286,7 +299,7 @@ namespace mgodpl
                 {
                     if (intersections.intersections[i].triangle_index == event.triangle_index)
                     {
-                        intersections.intersections.erase(intersections.intersections.begin() + (long)i);
+						intersections.intersections.erase(intersections.intersections.begin() + (long)i);
                         break;
                     }
                 }
@@ -392,4 +405,34 @@ namespace mgodpl
             .vertices = vertices
         };
     }
+
+	double longitude_ahead_angle(const double starting_longitude, const double longitude) {
+		double a_longitude = signed_longitude_difference(longitude, starting_longitude);
+		if (a_longitude < 0) a_longitude += 2 * M_PI;
+		return a_longitude;
+	}
+
+	std::vector<std::pair<double, OngoingIntersections>> run_sweepline(const std::vector<Triangle> &triangles, const math::Vec3d &target, double starting_longitude) {
+
+		std::vector<std::pair<double, OngoingIntersections>> ongoing_intersections_history {
+				{starting_longitude, triangle_intersections(triangles, target, starting_longitude)}
+		};
+
+		const auto& events = longitude_sweep_events(triangles, target, starting_longitude);
+
+		for (const auto& event : events) {
+
+			// If the longitude is the same, apply in-place; otherwise, make a new copy.
+			if (event.longitude == ongoing_intersections_history.back().first) {
+				update_intersections(ongoing_intersections_history.back().second, event, triangles, target);
+			} else {
+				OngoingIntersections new_intersections = ongoing_intersections_history.back().second;
+				update_intersections(new_intersections, event, triangles, target);
+				ongoing_intersections_history.emplace_back(event.longitude, new_intersections);
+			}
+		}
+
+		return ongoing_intersections_history;
+
+	}
 }
