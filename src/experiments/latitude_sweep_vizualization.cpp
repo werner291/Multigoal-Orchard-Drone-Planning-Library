@@ -8,6 +8,7 @@
 #include <fcl/narrowphase/collision-inl.h>
 #include <fcl/narrowphase/collision_object.h>
 #include <fcl/narrowphase/detail/traversal/collision_node-inl.h>
+#include <chrono>
 
 #include "../experiment_utils/TreeMeshes.h"
 #include "../visualization/quick_markers.h"
@@ -15,6 +16,7 @@
 #include "../visualization/VtkPolyLineVisualization.h"
 
 #include "../planning/latitude_sweep.h"
+#include "../planning/RobotState.h"
 #include "../visualization/VtkLineSegmentVizualization.h"
 #include "../visualization/VtkTriangleSetVisualization.h"
 #include "../experiment_utils/positioned_shape.h"
@@ -172,73 +174,38 @@ int main(int argc, char** argv)
 
     double longitude = STARTING_LONGITUDE;
 
-	const auto& ongoing_intersections_history = run_sweepline(triangles, target, longitude);
+	std::cout << "Sweepline starting..." << std::endl;
 
-	int counter = 10;
+	std::vector<RobotState> valid_states;
 
-	int n_cchecks = 0;
+	const auto start_time = std::chrono::high_resolution_clock::now();
+	LongitudeSweep sweepline_algorithm(triangles, target, STARTING_LONGITUDE);
 
-    viewer.addTimerCallback([&]()
-    {
+	for (size)
 
-        longitude += 0.01;
+		const auto& longitude_range = sweepline_algorithm.current_longitude_range();
 
-		if (longitude > 2.0 * M_PI) {
-			longitude -= 2.0 * M_PI;
-		}
+		double longitude_midpoint = (longitude_range[0] + longitude_range[1]) / 2.0;
 
-		// Look up the right set of intersections; that is, the first one with a longitude less than the current longitude (using longitude_ahead_angle).
-		auto iterator = std::find_if(ongoing_intersections_history.rbegin(), ongoing_intersections_history.rend(), [&](const auto& pair) {
-			return longitude_ahead_angle(STARTING_LONGITUDE, pair.first) <= longitude_ahead_angle(STARTING_LONGITUDE, longitude);
-		});
+		std::cout << "Longitude midpoint: " << longitude_midpoint << std::endl;
 
-        std::vector<math::Vec3d> points;
-        for (int lat_i = 0; lat_i <= 32; ++lat_i)
-        {
-            // Latitude from [-pi/2, pi/2]
-            double latitude = -M_PI / 2.0 + lat_i * M_PI / 32.0;
+		for (const auto& latitude_range : free_latitude_ranges(sweepline_algorithm.current_intersections(), target, longitude_midpoint, triangles, 0.25)) {
+			double latitude_midpoint = (latitude_range[0] + latitude_range[1]) / 2.0;
 
-            math::Vec3d ray(
-                cos(latitude) * cos(longitude),
-                cos(latitude) * sin(longitude),
-                sin(latitude)
-            );
+			std::vector<double> arm_angles { -latitude_midpoint };
 
-            points.push_back(target + ray * 1.0);
-        }
+			math::Transformd flying_base_tf {
+					.translation = math::Vec3d(0.0, 0.0, 0.0),
+					.orientation = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), longitude_midpoint + M_PI/2.0)
+			};
 
-        line_visualization.updateLine(points);
-
-		const auto& free_latitudes = free_latitude_ranges(iterator->second, target, longitude, triangles, 0.25);
-
-		update_free_latitude_ranges_visualization(target, intersections_visualization, longitude, free_latitudes);
-
-//		if (counter-- > 0) {
-//			return;
-//		}
-//		counter = 50;
-
-		math::Transformd base_tf {
-						.translation = math::Vec3d(0.0, 0.0, 0.0),
-						.orientation = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), longitude + M_PI/2.0)
-				};
-
-		// For all the midpoints, try placing the robot's arm.
-		for (const auto& latitudes : free_latitudes)
-		{
-			double amplitude = latitudes[1] - latitudes[0];
-
-			double mid_latitude = (latitudes[0] + latitudes[1]) / 2.0;
-
-			std::vector<double> arm_angles { -mid_latitude };
-
-			const auto& fk = mgodpl::robot_model::forwardKinematics(robot, arm_angles, flying_base, base_tf);
+			const auto& fk = mgodpl::robot_model::forwardKinematics(robot, arm_angles, flying_base, flying_base_tf);
 
 			math::Vec3d end_effector_position = fk.forLink(end_effector).translation;
 
-			base_tf.translation = base_tf.translation + target - end_effector_position;
+			flying_base_tf.translation = flying_base_tf.translation + target - end_effector_position;
 
-			const auto& fk2 = mgodpl::robot_model::forwardKinematics(robot, arm_angles, flying_base, base_tf);
+			const auto& fk2 = mgodpl::robot_model::forwardKinematics(robot, arm_angles, flying_base, flying_base_tf);
 
 			PositionedShape positioned_shape {
 					.shape = robot.getLinks()[stick].collision_geometry[0].shape,
@@ -247,13 +214,8 @@ int main(int argc, char** argv)
 
 			bool collision = check_link_collision(robot.getLinks()[stick], tree_trunk_object, fk2.forLink(stick));
 
-			if (collision) {
-				viewer.addPositionedShape(positioned_shape, {1.0, 0.0, 0.0});
-			} else {
-				viewer.addPositionedShape(positioned_shape, {0.0, 1.0, 0.0});
-
-				// Do that for the base link too:
-
+			if (!collision) {
+				// Check the base too.
 				PositionedShape positioned_shape2 {
 						.shape = robot.getLinks()[flying_base].collision_geometry[0].shape,
 						.transform = fk2.forLink(flying_base).then(robot.getLinks()[flying_base].collision_geometry[0].transform)
@@ -261,28 +223,63 @@ int main(int argc, char** argv)
 
 				bool collision2 = check_link_collision(robot.getLinks()[flying_base], tree_trunk_object, fk2.forLink(flying_base));
 
-				n_cchecks++;
-
-				std::cout << "n_cchecks: " << n_cchecks << std::endl;
-
-				if (collision2) {
-//				viewer.addPositionedShape(positioned_shape2, {1.0, 0.0, 0.0});
-				} else {
-
-					PositionedShape positioned_shape3 {
-							.shape = robot.getLinks()[flying_base].visual_geometry[0].shape,
-							.transform = fk2.forLink(flying_base).then(robot.getLinks()[flying_base].collision_geometry[0].transform)
-					};
-
-					viewer.addPositionedShape(positioned_shape2, {0.0, 1.0, 0.0}, 0.5);
-					viewer.addPositionedShape(positioned_shape3, {0.0, 1.0, 0.0});
+				if (!collision2) {
+					valid_states.push_back(
+							RobotState {
+								flying_base_tf,
+								arm_angles
+							});
 				}
 			}
-
-
 		}
 
-	});
+	} while (sweepline_algorithm.has_more_events());
+
+	// Now, we have a list of valid states. Vizualize them.
+	for (const auto& state : valid_states) {
+
+		// Use forward kinematics to find the position of the base and the arm.
+		const auto& fk = mgodpl::robot_model::forwardKinematics(robot, state.joint_values, flying_base, state.base_tf);
+
+		// Add the base.
+		PositionedShape positioned_shape {
+				.shape = robot.getLinks()[flying_base].visual_geometry[0].shape,
+				.transform = fk.forLink(flying_base).then(robot.getLinks()[flying_base].collision_geometry[0].transform)
+		};
+
+		viewer.addPositionedShape(positioned_shape, {0.0, 1.0, 0.0});
+
+		// Add the stick.
+		PositionedShape positioned_shape2 {
+				.shape = robot.getLinks()[stick].visual_geometry[0].shape,
+				.transform = fk.forLink(stick).then(robot.getLinks()[stick].collision_geometry[0].transform)
+		};
+
+		viewer.addPositionedShape(positioned_shape2, {0.0, 1.0, 0.0});
+
+	}
+
+//    viewer.addTimerCallback([&]()
+//    {
+//
+//        std::vector<math::Vec3d> points;
+//        for (int lat_i = 0; lat_i <= 32; ++lat_i)
+//        {
+//            // Latitude from [-pi/2, pi/2]
+//            double latitude = -M_PI / 2.0 + lat_i * M_PI / 32.0;
+//
+//            math::Vec3d ray(
+//                cos(latitude) * cos(longitude),
+//                cos(latitude) * sin(longitude),
+//                sin(latitude)
+//            );
+//
+//            points.push_back(target + ray * 1.0);
+//        }
+//
+//        line_visualization.updateLine(points);
+//
+//	});
 
     viewer.start();
 

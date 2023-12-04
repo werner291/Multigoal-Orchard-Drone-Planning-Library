@@ -184,6 +184,7 @@ add_library(planning
         src/planning/RobotModel.h
         src/planning/latitude_sweep.cpp
         src/planning/latitude_sweep.h
+        src/planning/RobotState.cpp
 
 )
 

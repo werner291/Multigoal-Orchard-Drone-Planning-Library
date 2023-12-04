@@ -7,7 +7,9 @@
 #include <queue>
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/transform.hpp>
+#include <range/v3/view/filter.hpp>
 #include <iostream>
+#include <optional>
 
 namespace mgodpl
 {
@@ -63,6 +65,7 @@ namespace mgodpl
 
 		// Create a vector to store the events.
         std::vector<VertexEvent> vertex_events;
+		vertex_events.reserve(triangles.size() * 3);
 
         // For each triangle...
         for (size_t triangle_index = 0; triangle_index < triangles.size(); ++triangle_index)
@@ -77,33 +80,31 @@ namespace mgodpl
                 .type = TRIANGLE_INTERSECTION_START,
                 .triangle_index = triangle_index,
                 .vertex_index = vertex_indices[0],
-                .longitude = longitude(triangle.vertices[vertex_indices[0]], center)
+                .longitude = longitude(triangle.vertices[vertex_indices[0]], center),
+				.relative_longitude = longitude_ahead_angle(starting_longitude, longitude(triangle.vertices[vertex_indices[0]], center))
             });
 
             vertex_events.push_back(VertexEvent{
                 .type = INTERNAL_TRIANGLE_VERTEX,
                 .triangle_index = triangle_index,
                 .vertex_index = vertex_indices[1],
-                .longitude = longitude(triangle.vertices[vertex_indices[1]], center)
+                .longitude = longitude(triangle.vertices[vertex_indices[1]], center),
+				.relative_longitude = longitude_ahead_angle(starting_longitude, longitude(triangle.vertices[vertex_indices[1]], center))
             });
 
             vertex_events.push_back(VertexEvent{
                 .type = TRIANGLE_INTERSECTION_END,
                 .triangle_index = triangle_index,
                 .vertex_index = vertex_indices[2],
-                .longitude = longitude(triangle.vertices[vertex_indices[2]], center)
+                .longitude = longitude(triangle.vertices[vertex_indices[2]], center),
+				.relative_longitude = longitude_ahead_angle(starting_longitude, longitude(triangle.vertices[vertex_indices[2]], center))
             });
         }
 
         // sort by longitude; be careful about wrapping.
         std::sort(vertex_events.begin(), vertex_events.end(), [&](const VertexEvent& a, const VertexEvent& b)
         {
-			// Adjust the longitude so it's the angle of how far ahead it is.
-			double a_longitude = longitude_ahead_angle(starting_longitude, a.longitude);
-			double b_longitude = longitude_ahead_angle(starting_longitude, b.longitude);
-
-			return a_longitude < b_longitude;
-			
+			return a.relative_longitude < b.relative_longitude;
         });
 
         return vertex_events;
@@ -324,7 +325,8 @@ namespace mgodpl
     OngoingIntersections triangle_intersections(const std::vector<Triangle>& triangles, const math::Vec3d& center,
                                                 const double sweep_longitude)
     {
-        std::vector<TriangleIntersection> intersections;
+		OngoingIntersections intersections;
+		intersections.intersections.resize(triangles.size(), std::nullopt);
 
         for (size_t triangle_index = 0; triangle_index < triangles.size(); ++triangle_index)
         {
@@ -344,7 +346,7 @@ namespace mgodpl
                 signed_longitude_difference(sweep_longitude, closing_longitude) <= 0)
             {
                 // Create an intersection.
-                intersections.push_back(TriangleIntersection{
+				intersections.intersections[triangle_index]= TriangleIntersection {
                     .triangle_index = triangle_index,
                     .opening_vertex_index = vertex_indices[0],
                     .closing_vertex_index = vertex_indices[2],
@@ -352,13 +354,11 @@ namespace mgodpl
                     .opening_longitude = opening_longitude,
                     .closing_longitude = closing_longitude,
                     .inflection_longitude = longitude(triangle.vertices[vertex_indices[1]], center)
-                });
+                };
             }
         }
 
-        return {
-            .intersections = intersections
-        };
+        return intersections;
     }
 
     void update_intersections(OngoingIntersections& intersections, const VertexEvent& event,
@@ -372,7 +372,7 @@ namespace mgodpl
                 std::array<size_t, 3> vertex_indices = triangle_vertices_by_longitude(triangles[event.triangle_index], center);
 
                 // A new triangle intersection starts; add it to the list.
-                intersections.intersections.push_back({
+                intersections.intersections[event.triangle_index] = {
                     .triangle_index = event.triangle_index,
                     .opening_vertex_index = vertex_indices[0],
                     .closing_vertex_index = vertex_indices[2],
@@ -381,7 +381,7 @@ namespace mgodpl
                     .closing_longitude = longitude(triangles[event.triangle_index].vertices[vertex_indices[2]], center),
                     .inflection_longitude = longitude(triangles[event.triangle_index].vertices[vertex_indices[1]],
                                                       center)
-                });
+                };
 			}
             break;
         case INTERNAL_TRIANGLE_VERTEX:
@@ -393,15 +393,7 @@ namespace mgodpl
         case TRIANGLE_INTERSECTION_END:
             {
                 // Find the intesection for the given triangle index and delete it.
-                // TODO: do better than linear search.
-                for (size_t i = 0; i < intersections.intersections.size(); ++i)
-                {
-                    if (intersections.intersections[i].triangle_index == event.triangle_index)
-                    {
-						intersections.intersections.erase(intersections.intersections.begin() + (long)i);
-                        break;
-                    }
-                }
+                intersections.intersections[event.triangle_index] = std::nullopt;
             }
             break;
         }
@@ -417,7 +409,11 @@ namespace mgodpl
 
 		// Step 1: compute the occupied list of latitude ranges.
         std::vector<std::array<double, 2>> occupied_latitude_ranges = intersections.intersections |
-            ranges::views::transform(
+				// Skip the tombstones.
+				ranges::views::filter([](const auto& intersection) { return intersection.has_value(); }) |
+				// Unwrap the optionals.
+				ranges::views::transform([](const auto& intersection) { return intersection.value(); }) |
+            	ranges::views::transform(
                 [&](const TriangleIntersection& intersection)
                 {
                     auto range = vertical_padded_latitude_range(intersection, sweep_longitude, vertical_padding, center, triangles);
@@ -509,27 +505,35 @@ namespace mgodpl
 		return a_longitude;
 	}
 
-	std::vector<std::pair<double, OngoingIntersections>> run_sweepline(const std::vector<Triangle> &triangles, const math::Vec3d &target, double starting_longitude) {
+	LongitudeSweep::LongitudeSweep(const std::vector<Triangle> &triangles,
+								   const math::Vec3d &target,
+								   double starting_longitude) :
+			triangles(triangles),
+			intersections(triangle_intersections(triangles, target, starting_longitude)),
+			events(longitude_sweep_events(triangles, target, starting_longitude)),
+			target(target),
+			starting_longitude(starting_longitude),
+			events_passed(0) {}
 
-		std::vector<std::pair<double, OngoingIntersections>> ongoing_intersections_history {
-				{starting_longitude, triangle_intersections(triangles, target, starting_longitude)}
-		};
-
-		const auto& events = longitude_sweep_events(triangles, target, starting_longitude);
-
-		for (const auto& event : events) {
-
-			// If the longitude is the same, apply in-place; otherwise, make a new copy.
-			if (event.longitude == ongoing_intersections_history.back().first) {
-				update_intersections(ongoing_intersections_history.back().second, event, triangles, target);
-			} else {
-				OngoingIntersections new_intersections = ongoing_intersections_history.back().second;
-				update_intersections(new_intersections, event, triangles, target);
-				ongoing_intersections_history.emplace_back(event.longitude, new_intersections);
-			}
+	std::array<double, 2> LongitudeSweep::current_longitude_range() {
+		if (events_passed == 0) {
+			return {starting_longitude, events[0].longitude};
+		} else if (events_passed == events.size()) {
+			return {events.back().longitude, starting_longitude + 2 * M_PI};
+		} else {
+			return {events[events_passed - 1].longitude, events[events_passed].longitude};
 		}
+	}
 
-		return ongoing_intersections_history;
+	const OngoingIntersections &LongitudeSweep::current_intersections() const {
+		return intersections;
+	}
 
+	size_t LongitudeSweep::number_of_ranges() const {
+		return events.size() + 1;
+	}
+
+	size_t LongitudeSweep::ranges_passed() const {
+		return events_passed;
 	}
 }

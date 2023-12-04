@@ -6,6 +6,7 @@
 #define LATITUDE_SWEEP_H
 
 #include <vector>
+#include <optional>
 
 #include "../math/Vec3.h"
 
@@ -115,6 +116,8 @@ namespace mgodpl
         size_t vertex_index;
         /// The longitude of the vertex involved in the event.
         double longitude;
+		/// The longitude of the vertex reletive to the start of the sweep.
+		double relative_longitude;
     };
 
     /**
@@ -275,7 +278,7 @@ namespace mgodpl
 
     struct OngoingIntersections
     {
-        std::vector<TriangleIntersection> intersections; // TODO: can we avoid O(n) every deletion? Via tombstones?
+        std::vector<std::optional<TriangleIntersection>> intersections;
     };
 
     /**
@@ -355,6 +358,72 @@ namespace mgodpl
      * \param center The center of the sphere.
      */
     OrderedPolarTriangle polar_triangle(const Triangle& triangle, const math::Vec3d& center);
+
+	/**
+	 * An encapsulation of the longitude sweep operation, tracking
+	 * the state of the sweep and related information across the operation.
+	 */
+	class LongitudeSweep {
+
+		/// A vector of triangles that serve as our obstacles.
+		const std::vector<Triangle> &triangles;
+		/// All intersections of the current sweep arc with the projections of the triangles.
+		OngoingIntersections intersections;
+		/// A vector of all VertexEvents, sorted by longitude, relative too the starting longitude.
+		std::vector<VertexEvent> events;
+		/// A counter for how many events have been passed (not counting passing the starting longitude).
+		size_t events_passed;
+		/// The center of the sphere being swept.
+		math::Vec3d target;
+		/// The initial longitude of the sweep arc at the start of the sweep.
+		double starting_longitude;
+
+	public:
+
+		/**
+		 * @brief Construct a new LongitudeSweep, in the initial state.
+		 *
+		 * @param triangles 				The triangles to compute the intersections with.
+		 * @param target 					The center of the swept sphere.
+		 * @param starting_longitude 		The initial longitude of the sweep arc (default 0.0), in range [-pi, pi].
+		 */
+		LongitudeSweep(const std::vector<Triangle> &triangles, const math::Vec3d &target, double starting_longitude = 0.0);
+
+		/**
+		 * Return the number of ranges. (That is, the number of events + 1.)
+		 */
+		[[nodiscard]] size_t number_of_ranges() const;
+
+		[[nodiscard]] size_t ranges_passed() const;
+
+		/**
+		 * Advance the sweep arc until it passes the longitude of the next event.
+		 *
+		 * \pre has_more_events() == true (checked by assertion).
+		 */
+		void advance() {
+			assert(has_more_events());
+			 do {
+				update_intersections(intersections, events[events_passed++], triangles, target);
+			} while (events_passed < events.size() && events[events_passed].relative_longitude == events[events_passed - 1].relative_longitude);
+		}
+
+		/**
+		 * @brief Get the longitude of the previous and the next event that the sweep arc will pass.
+		 *
+		 * That is, if the arc has to pass the first event, then this is [starting_longitude, first_event.longitude].
+		 * If it is in between two events, then this is [previous_event.longitude, next_event.longitude].
+		 * If it is past the last event, then this is [last_event.longitude, starting_longitude + 2 * pi].
+		 *
+		 * @return A pair of doubles, representing the longitude range.
+		 */
+		[[nodiscard]] std::array<double, 2> current_longitude_range();
+
+		/**
+		 * @brief Return the set of ongoing intersections during the current longitude range.
+		 */
+		[[nodiscard]] const OngoingIntersections& current_intersections() const;
+	};
 
 }
 
