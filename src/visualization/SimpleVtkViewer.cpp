@@ -13,6 +13,7 @@
 #include "SimpleVtkViewer.h"
 
 #include <vtkCubeSource.h>
+#include <vtkSphereSource.h>
 
 #include "VtkFunctionalCallback.h"
 #include "camera_controls.h"
@@ -26,12 +27,16 @@ namespace mgodpl {
 
 	using namespace math;
 
-	SimpleVtkViewer::SimpleVtkViewer() {
+	SimpleVtkViewer::SimpleVtkViewer(bool offscreen) {
 
 		// Set up the render window.
 		visualizerWindow->SetSize(800, 600);
 		visualizerWindow->SetWindowName("Robot Path Planning");
 		visualizerWindow->AddRenderer(viewerRenderer);
+
+		if (offscreen) {
+			visualizerWindow->OffScreenRenderingOn();
+		}
 
 		// Set up the render window interactor.
 		renderWindowInteractor->SetRenderWindow(visualizerWindow);
@@ -242,8 +247,6 @@ namespace mgodpl {
 	vtkSmartPointer<vtkImageData> SimpleVtkViewer::currentImage()
 	{
 
-		std::cout << "rendering" << std::endl;
-
 		visualizerWindow->Render();
 
 		vtkNew<vtkWindowToImageFilter> windowToImageFilter;
@@ -251,10 +254,8 @@ namespace mgodpl {
 		windowToImageFilter->SetInputBufferTypeToRGBA(); // Also record the alpha (transparency) channel
 		windowToImageFilter->ReadFrontBufferOff();
 		windowToImageFilter->Update();
-		//
-		// return windowToImageFilter->GetOutput();
 
-		return nullptr;
+		 return windowToImageFilter->GetOutput();
 	}
 
 
@@ -321,5 +322,40 @@ namespace mgodpl {
 	}
 
 	mgodpl::SimpleVtkViewer::~SimpleVtkViewer() {
+	}
+
+	vtkSmartPointer<vtkActor> SimpleVtkViewer::addSphere(double radius, const math::Vec3d &transform, const math::Vec3d &color, double d) {
+
+		vtkNew<vtkSphereSource> sphereSource;
+		sphereSource->SetRadius(radius);
+		sphereSource->SetCenter(transform.x(), transform.y(), transform.z());
+		sphereSource->Update();
+
+		vtkNew<vtkPolyDataMapper> mapper;
+		mapper->SetInputConnection(sphereSource->GetOutputPort());
+
+		vtkNew<vtkActor> actor;
+		actor->SetMapper(mapper);
+		actor->GetProperty()->SetColor(color.x(), color.y(), color.z());
+		actor->GetProperty()->SetOpacity(d);
+
+		this->addActor(actor);
+
+		return actor;
+
+	}
+
+	void SimpleVtkViewer::addTree(const tree_meshes::TreeMeshes &tree, bool show_leaves, bool show_fruit) {
+
+		addActor(createColoredMeshActor(tree.trunk_mesh, {0.5, 0.3, 0.1, 1.0}, true));
+		if (show_leaves) {
+			addActor(createColoredMeshActor(tree.leaves_mesh, {0.0, 0.5, 0.0, 1.0}, true));
+		}
+		if (show_fruit) {
+			for (const auto &fruit : computeFruitPositions(tree)) {
+				addSphere(0.03, fruit, {0.8, 0.0, 0.0}, 1.0);
+			}
+		}
+
 	}
 }

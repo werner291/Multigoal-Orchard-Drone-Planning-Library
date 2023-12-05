@@ -18,9 +18,10 @@
     {
       devShells.x86_64-linux.default = pkgs.mkShell {
         name = "My ROS Project Build Environment";
-        buildInputs = with pkgs; with pkgs.rosPackages.rolling; [
+        packages = with pkgs; with pkgs.rosPackages.rolling; [
             moveit-core
             ompl
+	    pkg-config
 #            moveit-planners-ompl
             (python3.withPackages(ps: with ps; [ matplotlib jupyterlab numpy pandas pybind11 seaborn ]))
             cmake
@@ -35,6 +36,7 @@
             glpk
             vtk
 	        eigen
+	        pandoc
         ];
       };
     };

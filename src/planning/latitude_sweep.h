@@ -362,6 +362,14 @@ namespace mgodpl
 	/**
 	 * An encapsulation of the longitude sweep operation, tracking
 	 * the state of the sweep and related information across the operation.
+	 *
+	 * The "events" are longitudes at which something discrete happens,
+	 * such as the sweep arc intersecting the starting or ending vertex
+	 * of a triangle.
+	 *
+	 * In between "events" (or before/after the first/last event), we get "longitude ranges",
+	 * which are the ranges of longitudes for which the sweep arc is intersecting
+	 * the same set of triangles.
 	 */
 	class LongitudeSweep {
 
@@ -396,17 +404,15 @@ namespace mgodpl
 
 		[[nodiscard]] size_t ranges_passed() const;
 
+		[[nodiscard]] bool has_more_ranges() const;
+
 		/**
-		 * Advance the sweep arc until it passes the longitude of the next event.
+		 * Advance the sweep arc until it passes the longitude of the next event,
+		 * changing the current longitude range.
 		 *
 		 * \pre has_more_events() == true (checked by assertion).
 		 */
-		void advance() {
-			assert(has_more_events());
-			 do {
-				update_intersections(intersections, events[events_passed++], triangles, target);
-			} while (events_passed < events.size() && events[events_passed].relative_longitude == events[events_passed - 1].relative_longitude);
-		}
+		void advance();
 
 		/**
 		 * @brief Get the longitude of the previous and the next event that the sweep arc will pass.

@@ -135,7 +135,7 @@ int main(int argc, char** argv)
 
     const math::Vec3d target(-0.195487, -0.769218, 1.34947);
 
-    SimpleVtkViewer viewer;
+    SimpleVtkViewer viewer(false);
     viewer.lockCameraUp();
     viewer.setCameraTransform(target + math::Vec3d{1.0, 0.0, 0.0}, target);
 

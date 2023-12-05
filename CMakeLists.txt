@@ -22,6 +22,19 @@ option(ENABLE_TESTS "Enable TESTS" OFF)
 # Add an option for Python byndings.
 option(ENABLE_PYTHON_BINDINGS "Enable PYTHON BINDINGS" OFF)
 
+if (DEBIAN_FOUND)
+    set(ORTOOLS_LIBRARIES ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so)
+else()
+    find_package(ortools REQUIRED)
+
+    if (ENABLE_PYTHON_BINDINGS)
+        # Weird bug where CLion seems too substitute its own Python3 version when called from its context.
+        # Here, I'm forcing it to use the flake.nix version.
+        find_package(Python3 3.10.12 EXACT REQUIRED COMPONENTS Interpreter Development)
+        find_package(pybind11 REQUIRED)
+    endif()
+endif()
+
 ## System dependencies are found with CMake's conventions
 #find_package(Eigen3 REQUIRED)
 find_package(fcl REQUIRED)
@@ -35,11 +48,7 @@ find_file (DEBIAN_FOUND debian_version debconf.conf
         PATHS /etc
 )
 
-if (DEBIAN_FOUND)
-    set(ORTOOLS_LIBRARIES ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so)
-else()
-    find_package(ortools REQUIRED)
-endif()
+
 
 set(CGAL_DATA_DIR "UNUSED_STOP_WARNING")
 find_package(CGAL REQUIRED)
@@ -312,11 +321,9 @@ gtest_discover_tests(${PROJECT_NAME}_tests)
 
 if (ENABLE_PYTHON_BINDINGS)
     message(STATUS "Building with Python bindings")
-
-    # Pybind11 stuff.
-    find_package(pybind11 REQUIRED)
-    find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
     pybind11_add_module(pymgodpl src/python_bindings.cpp)
     target_link_libraries(pymgodpl PRIVATE math_utils visibility planning experiment_utils ${PROJECT_NAME}_visualisation ${VTK_LIBRARIES})
     ament_target_dependencies(pymgodpl PUBLIC ${AMENT_DEPS})
 endif ()
+
+

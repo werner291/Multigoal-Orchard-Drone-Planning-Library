@@ -19,6 +19,7 @@
 #include "../experiment_utils/procedural_robot_models.h"
 #include "../experiment_utils/fcl_utils.h"
 #include "../planning/RobotModel.h"
+#include "../planning/RobotState.h"
 
 using namespace mgodpl;
 
@@ -76,55 +77,6 @@ bool check_link_collision(const mgodpl::robot_model::RobotModel::Link& link,
 
     return collision;
 }
-
-struct Array2d
-{
-    std::vector<double> data;
-    size_t width;
-    size_t height;
-
-    std::vector<double>::reference operator()(size_t x, size_t y)
-    {
-        return data[y * width + x];
-    }
-};
-
-//
-// /**
-//  * Generate a spherical "heighmap" around a given point.
-//  *
-//  * @param   center      The center of the heightmap.
-//  * @param   max_radius  The maximum radius of the heightmap.
-//  * @param   mesh        The mesh to wrap.
-//  * @param   n_segments  The number of segments to use for the heightmap.
-//  */
-// Array2d generateHeightmap(const math::Vec3d& center, double max_radius, const Mesh& mesh, size_t n_segments)
-// {
-//     Array2d result;
-//
-//     result.width = n_segments;
-//     result.height = n_segments;
-//
-//     result.data.resize(n_segments * n_segments, 0.0);
-//
-//     // For every vertex in the mesh (TODO: handle triangles properly), raise the heightmap to the height of the vertex.
-//
-//     for (const auto& vertex : mesh.vertices)
-//     {
-//         math::Vec3d delta = vertex - center;
-//
-//         // Convert to latitude and longitude.
-//         double longitude = std::atan2(delta.y(), delta.x());
-//         double latitude = std::atan2(delta.z(), std::sqrt(delta.x() * delta.x() + delta.y() * delta.y()));
-//
-//         // Remap to grid coordinates.
-//         size_t x = std::clamp(static_cast<size_t>((longitude / (2.0 * M_PI) + 0.5) * (double) n_segments), size_t(0), n_segments - 1);
-//         size_t y = std::clamp(static_cast<size_t>((latitude / M_PI + 0.5) * (double) n_segments), size_t(0), n_segments - 1);
-//
-//
-//     }
-//
-// }
 
 RobotState genUprightState(random_numbers::RandomNumberGenerator rng)
 {
@@ -217,36 +169,10 @@ void gen_color_coded_states(const mgodpl::robot_model::RobotModel& robot,
     }
 }
 
-struct Range
-{
-    double min, max;
-};
-
-struct SortedIntervals
-{
-
-};
-
 struct Triangle
 {
     math::Vec3d a, b, c;
 };
-
-
-
-/**
- * @brief   Assuming a completely fixed stick, compute the ranges of the base Z-rotation that would not cause a collision.
- *
- * Note: this is just a 1D problem!
- */
-std::vector<Range> fixed_stick_ranges(const mgodpl::robot_model::RobotModel& robot, const math::Vec3d& target, const Mesh& tree_mesh)
-{
-
-
-
-}
-
-
 
 std::vector<double> compute_collision_probabilities(const mgodpl::robot_model::RobotModel& robot,
                                                     robot_model::RobotModel::LinkId flying_base,
@@ -323,7 +249,7 @@ int main()
 
     random_numbers::RandomNumberGenerator rng(42);
 
-    mgodpl::SimpleVtkViewer viewer;
+    mgodpl::SimpleVtkViewer viewer(false);
     viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
     viewer.addMesh(createGroundPlane(5.0, 5.0), FLOOR_COLOR);
 

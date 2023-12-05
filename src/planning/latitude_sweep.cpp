@@ -536,4 +536,15 @@ namespace mgodpl
 	size_t LongitudeSweep::ranges_passed() const {
 		return events_passed;
 	}
+
+	void LongitudeSweep::advance() {
+		assert(has_more_ranges());
+		do {
+			update_intersections(intersections, events[events_passed++], triangles, target);
+		} while (events_passed < events.size() && events[events_passed].relative_longitude == events[events_passed - 1].relative_longitude);
+	}
+
+	bool LongitudeSweep::has_more_ranges() const {
+		return ranges_passed() < number_of_ranges();
+	}
 }

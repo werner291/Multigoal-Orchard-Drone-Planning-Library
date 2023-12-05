@@ -29,6 +29,8 @@ namespace mgodpl::math {
 
 		explicit Vec3(const Scalar data[3]) : components({data[0], data[1], data[2]}) {} // NOLINT(*-avoid-c-arrays)
 
+		explicit Vec3(const std::array<Scalar, 3> &components) : components(components) {}
+
 		/**
 		 * Add two vectors element-wise.
 		 * @param other 		The other vector.

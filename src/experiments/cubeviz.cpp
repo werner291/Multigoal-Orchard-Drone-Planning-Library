@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
 	sphereActor->SetMapper(sphereMapper);
 	sphereActor->GetProperty()->SetColor(colors->GetColor3d("Red").GetData());
 
-	SimpleVtkViewer viewer;
+	SimpleVtkViewer viewer(false);
 	viewer.addActor(actor);
 	viewer.addActor(sphereActor);
 

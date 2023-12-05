@@ -55,7 +55,7 @@ namespace mgodpl {
 		/**
 		 * Create a new VTK viewer.
 		 */
-		SimpleVtkViewer();
+		SimpleVtkViewer(bool offscreen=false);
 
 		~SimpleVtkViewer();;
 
@@ -120,6 +120,9 @@ namespace mgodpl {
 			const math::Transformd &transform,
 			const math::Vec3d &color,
 			double opacity = 1.0);
+
+		void addTree(const tree_meshes::TreeMeshes& tree, bool show_leaves, bool show_fruit);
+
 		void set_transform(const math::Transformd& transform, vtkActor* actor);
 
 		vtkSmartPointer<vtkActor> addPositionedShape(const PositionedShape& shape,
@@ -133,8 +136,17 @@ namespace mgodpl {
 		 * @param transform 	The transform of the box.
 		 * @param color			The color of the box.
 		 */
-		vtkSmartPointer<vtkActor>
-		addBox(const math::Vec3d &size, const math::Transformd &transform, const math::Vec3d &color, double d=1.0);
+		vtkSmartPointer<vtkActor> addBox(const math::Vec3d &size, const math::Transformd &transform, const math::Vec3d &color, double d=1.0);
+
+		/**
+		 * Add a sphere to the scene with a given size, transform and color.
+		 * @param radius
+		 * @param transform
+		 * @param color
+		 * @param d
+		 * @return
+		 */
+		vtkSmartPointer<vtkActor> addSphere(double radius, const math::Vec3d &transform, const math::Vec3d &color, double d);
 
 		/**
 		 * Add a callback that is called every time the simulation is rendered.

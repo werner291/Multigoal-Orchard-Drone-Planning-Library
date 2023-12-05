@@ -83,7 +83,7 @@ int main() {
 	// TODO test the determinism.
 	mgodpl::simulation::VoxelShroudedSimulation simulation(robot, tree_model, 0, STEP_SIZE);
 
-	SimpleVtkViewer viewer;
+	SimpleVtkViewer viewer(false);
 	viewer.lockCameraUp();
 
 	viewer.addMesh(tree_model.trunk_mesh, {0.5, 0.3, 0.1});
