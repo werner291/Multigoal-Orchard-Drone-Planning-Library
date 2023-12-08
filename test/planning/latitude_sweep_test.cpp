@@ -10,7 +10,7 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
 
-#include "../../src/planning/latitude_sweep.h"
+#include "..\..\src\planning\longitude_sweep.h"
 #include "../../src/experiment_utils/TreeMeshes.h"
 
 using namespace mgodpl;

@@ -22,15 +22,28 @@ option(ENABLE_TESTS "Enable TESTS" OFF)
 # Add an option for Python byndings.
 option(ENABLE_PYTHON_BINDINGS "Enable PYTHON BINDINGS" OFF)
 
-if (DEBIAN_FOUND)
-    set(ORTOOLS_LIBRARIES ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so)
+# Detect if we're on NixOS
+if (EXISTS /etc/NIXOS)
+    message(STATUS "NixOS detected")
+    set(NIXOS TRUE)
 else()
+    set(NIXOS FALSE)
+endif()
+
+if (NIXOS)
     find_package(ortools REQUIRED)
 
     if (ENABLE_PYTHON_BINDINGS)
         # Weird bug where CLion seems too substitute its own Python3 version when called from its context.
         # Here, I'm forcing it to use the flake.nix version.
         find_package(Python3 3.10.12 EXACT REQUIRED COMPONENTS Interpreter Development)
+        find_package(pybind11 REQUIRED)
+    endif()
+else()
+    set(ORTOOLS_LIBRARIES ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so)
+
+    if (ENABLE_PYTHON_BINDINGS)
+        find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
         find_package(pybind11 REQUIRED)
     endif()
 endif()
@@ -191,8 +204,8 @@ add_library(planning
         src/planning/ConvexHullSpace.h
         src/planning/RobotModel.cpp
         src/planning/RobotModel.h
-        src/planning/latitude_sweep.cpp
-        src/planning/latitude_sweep.h
+        src/planning/longitude_sweep.cpp
+        src/planning/longitude_sweep.h
         src/planning/RobotState.cpp
 
 )

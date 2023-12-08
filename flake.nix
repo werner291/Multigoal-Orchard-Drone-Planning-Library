@@ -4,7 +4,6 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
     nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay";
-
   };
 
   outputs = { self, nixpkgs, nix-ros-overlay }:
