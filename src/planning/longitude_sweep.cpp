@@ -225,6 +225,8 @@ namespace mgodpl
 
                 // Insert the range into the set.
                 ranges.insert(range);
+
+                // TODO: add/remove intersection events.
             }
             break;
         case 1: // EdgePairEnd
@@ -235,6 +237,8 @@ namespace mgodpl
 
                 // Remove the range from the set.
                 ranges.erase(range);
+
+                // TODO remove intersection events (if applicable? Those should have already triggered by now.) (Or add ones for neighbors that now get close)
             }
             break;
         case 2: // EdgePairSwap
@@ -314,8 +318,10 @@ namespace mgodpl
         // Now it's easy: get the direction of the intersection line.
         math::Vec3d direction = edge_normal.cross(lon_direction);
 
+        double dir_lon = longitude(direction, math::Vec3d(0, 0, 0));
+
         // Sanity check: make sure the longitude is the one we expect.
-        assert(std::abs(longitude(direction, math::Vec3d(0, 0, 0)) - at_longitude) < 1e-6);
+        assert(std::abs(dir_lon - at_longitude) < 1e-6);
 
         return latitude(direction, math::Vec3d(0, 0, 0));
     }
