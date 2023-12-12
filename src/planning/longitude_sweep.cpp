@@ -96,21 +96,22 @@ namespace mgodpl
         math::Vec3d nA = a.vertices[0].cross(a.vertices[1]);
         math::Vec3d nB = b.vertices[0].cross(b.vertices[1]);
 
+        math::Vec3d dir = nA.cross(nB).normalized();
+
+        // Take the dot product with the first vertex of a to see if this is the antipode of the intersection.
+        if (dir.dot(a.vertices[0]) < 0)
+        {
+            // Sanity check: dot product with the other 3 should also be negative.
+            assert(dir.dot(a.vertices[1]) < 0);
+            assert(dir.dot(b.vertices[0]) < 0);
+            assert(dir.dot(b.vertices[1]) < 0);
+
+            dir = -dir;
+        }
+
         // The direction vector of the intersection line is the cross product of the two plane normals.
-        math::Vec3d direction = nA.cross(nB).normalized();
-
-        // Get the longitude of the direction vector.
-        double intersection_longitude = longitude(direction, math::Vec3d(0, 0, 0));
-
-        // Sanity check: make sure it's in the longitude ranges of both segments.
-        assert(signed_longitude_difference(intersection_longitude, longitude(a.vertices[0], math::Vec3d(0, 0, 0))) >= 0);
-        assert(signed_longitude_difference(intersection_longitude, longitude(a.vertices[1], math::Vec3d(0, 0, 0))) <= 0);
-
-        assert(signed_longitude_difference(intersection_longitude, longitude(b.vertices[0], math::Vec3d(0, 0, 0))) >= 0);
-        assert(signed_longitude_difference(intersection_longitude, longitude(b.vertices[1], math::Vec3d(0, 0, 0))) <= 0);
-
         // Return the longitude.
-        return direction;
+        return dir;
     }
 
     LongitudeSweep::LongitudeSweep(const std::vector<Triangle>& triangles, double initial_longitude, const math::Vec3d& center):
@@ -314,6 +315,8 @@ namespace mgodpl
             sin(at_longitude),
             0
         );
+
+        assert(std::abs(longitude(lon_direction, math::Vec3d(0, 0, 0)) - at_longitude) < 1e-6);
 
         // Now it's easy: get the direction of the intersection line.
         math::Vec3d direction = edge_normal.cross(lon_direction);

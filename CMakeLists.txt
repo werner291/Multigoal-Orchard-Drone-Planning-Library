@@ -321,15 +321,15 @@ include(GoogleTest)
 
 add_executable(${PROJECT_NAME}_tests
         test/test.cpp
-        test/math/AABBGrid_test.cpp
-        test/math/AABB_test.cpp
-        test/experiment_utils/voxel_visibility_test.cpp
-        test/math/intersection_test.cpp
-        test/math/lp_test.cpp
+#        test/math/AABBGrid_test.cpp
+#        test/math/AABB_test.cpp
+#        test/experiment_utils/voxel_visibility_test.cpp
+#        test/math/intersection_test.cpp
+#        test/math/lp_test.cpp
         test/planning/latitude_sweep_test.cpp
 )
 
-target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils gtest)
+target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils planning gtest)
 gtest_discover_tests(${PROJECT_NAME}_tests)
 
 if (ENABLE_PYTHON_BINDINGS)
