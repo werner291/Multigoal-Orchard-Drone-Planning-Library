@@ -117,8 +117,7 @@ namespace mgodpl
     LongitudeSweep::LongitudeSweep(const std::vector<Triangle>& triangles, double initial_longitude, const math::Vec3d& center):
         current_longitude(initial_longitude),
         comparator {initial_longitude},
-        ranges(comparator),
-    event_queue()
+        ranges(comparator)
     {
 
         // Then, iterate over all triangles...
