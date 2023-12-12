@@ -16,6 +16,7 @@
 
 namespace mgodpl
 {
+    struct LongitudeSweep;
 
     /**
     * @brief   Compute the latitude of the given point, if projected onto a sphere centered at the given center.
@@ -51,6 +52,8 @@ namespace mgodpl
     struct Triangle
     {
         std::array<math::Vec3d, 3> vertices;
+
+        math::Vec3d normal() const;
     };
 
     struct Edge
@@ -126,7 +129,7 @@ namespace mgodpl
     * \param b		The second polar line segment.
     * \return
     */
-    math::Vec3d intersection_longitude(const Edge& a, const Edge& b);
+    math::Vec3d Edge_intersection(const Edge& a, const Edge& b);
 
     /**
     * \brief A triangle's edges, separated by short edge/long edge.
@@ -172,8 +175,9 @@ namespace mgodpl
     */
     struct SortByLatitudeAtLongitude
     {
-        double longitude;
+        LongitudeSweep* sweep;
 
+        [[nodiscard]] double latitudeAtCurrentLongitude(const LatitudeRangeBetweenEdges& a) const;
         bool operator()(const LatitudeRangeBetweenEdges& a, const LatitudeRangeBetweenEdges& b) const;
     };
 
@@ -218,13 +222,22 @@ namespace mgodpl
         /// The longitude of the event, relative to the starting longitude of the sweep.
         double relative_longitude;
 
-        /// The type of event.
-        std::variant<EdgePairStart, EdgePairEnd, EdgePairSwap> event;
+        /// The longitude of the event.
+        double longitude;
 
-        /// Compare two events by their longitude.
+        /// The type of event.
+        std::variant<EdgePairStart, EdgePairSwap, EdgePairEnd> event;
+
         bool operator<(const SweepEvent& other) const
         {
-            return relative_longitude < other.relative_longitude;
+            // First, use relative longitude.
+            if (relative_longitude != other.relative_longitude)
+            {
+                return relative_longitude > other.relative_longitude;
+            }
+
+            // Else, use event type; end events come first to avoid duplicate edges.
+            return other.event.index() > event.index();
         }
     };
 
@@ -233,6 +246,9 @@ namespace mgodpl
     */
     struct LongitudeSweep
     {
+
+const double starting_longitude;
+
         /// The longitude of the last-passed event, or the starting longitude if no events have been processed yet.
         double current_longitude;
 
@@ -245,6 +261,7 @@ namespace mgodpl
         /// The event queue, sorted by angle ahead of the current longitude. (between 0 and 2pi)
         std::priority_queue<SweepEvent> event_queue;
 
+        bool add_potential_edgecross(LatitudeRangeBetweenEdges range1, LatitudeRangeBetweenEdges range2);
         /**
         * \brief Initialize a longitude sweep in the initial state.
         * \param triangles The set of triangles that serve as obstacles.

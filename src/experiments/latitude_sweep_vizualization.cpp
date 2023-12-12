@@ -194,13 +194,13 @@ int main(int argc, char** argv)
 			double range_max = latitude(range.max_latitude_edge, longitude_midpoint);
 
 			if (min_free < range_min) {
-				std::cout << "Found a free range: [" << min_free << ", " << range_min << "]" << std::endl;
+				// std::cout << "Found a free range: [" << min_free << ", " << range_min << "]" << std::endl;
 			}
 			min_free = range_max;
 		}
 
 		if (min_free < M_PI/2.0) {
-			std::cout << "Found a free range: [" << min_free << ", " << M_PI/2.0 << "]" << std::endl;
+			// std::cout << "Found a free range: [" << min_free << ", " << M_PI/2.0 << "]" << std::endl;
 		}
 
 
