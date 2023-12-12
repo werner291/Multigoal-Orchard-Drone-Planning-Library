@@ -248,46 +248,7 @@ namespace mgodpl
         }
     };
 
-    std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> free_ranges_from_occupied_ranges(
-        const std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude>& occupied_ranges
-    );
+    void free_latitudes_divide_and_conquer(const std::vector<Triangle> &triangles, const math::Vec3d &center);
 
-    /**
-    * \brief A struct tracking the state of an ongoing longitude sweep.
-    */
-    struct LongitudeSweep
-    {
-
-const double starting_longitude;
-
-        /// The longitude of the last-passed event, or the starting longitude if no events have been processed yet.
-        double current_longitude;
-
-        double arm_half_height = 0.025;
-
-        SortByLatitudeAtLongitude comparator;
-
-        /// The ranges of latitudes between edges between `longitude` and the next event (or the end of the sweep).
-        /// Warning: this set has a *mutable comparator*; be very careful when changing it.
-        std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> free_ranges;
-
-        /// The event queue, sorted by angle ahead of the current longitude. (between 0 and 2pi)
-        std::priority_queue<SweepEvent> event_queue;
-
-        bool add_potential_edgecross(OccupiedRangeBetweenEdges range1, OccupiedRangeBetweenEdges range2);
-        /**
-        * \brief Initialize a longitude sweep in the initial state.
-        * \param triangles The set of triangles that serve as obstacles.
-        * \param longitude The starting longitude of the sweep.
-        * \param center The center of
-        */
-        LongitudeSweep(const std::vector<Triangle>& triangles,
-                       double longitude,
-                       const math::Vec3d& center);
-
-        void process_next_event();
-
-        bool has_more_events() const;
-    };
 }
 #endif //LATITUDE_SWEEP_H
