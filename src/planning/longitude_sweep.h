@@ -16,6 +16,7 @@
 
 namespace mgodpl
 {
+    struct LatitudeRangeBetweenEdges;
     struct LongitudeSweep;
 
     /**
@@ -45,6 +46,15 @@ namespace mgodpl
     * \return                    The relative longitude, as a double in the range [0, 2pi].
     */
     double longitude_ahead_angle(const double starting_longitude, const double longitude);
+
+    /**
+     * \brief Compute the signed difference between two longitudes.
+     *
+     * That is: compute the difference between the two longitudes, and put it into the range [-pi, pi].
+     *
+     * \return The signed difference between the two longitudes, as a double in the range [-pi, pi].
+     */
+    double signed_longitude_difference(double first, double second);
 
     /**
     * \brief A triangle in 3D space, with vertices in Cartesian coordinates.
@@ -83,17 +93,14 @@ namespace mgodpl
     *
     * Invariant: the min_latitude_edge has a lower latitude than the max_latitude_edge over the entire shared longitude range.
     */
-    struct OccupiedRangeBetweenEdges
+    struct PaddedOccupiedRangeBetweenEdges
     {
         Edge min_latitude_edge;
         Edge max_latitude_edge;
-        double latitude_padding;
-    };
-
-    struct FreeRangeBetweenEdges
-    {
-        std::optional<Edge> min_latitude_edge;
-        std::optional<Edge> max_latitude_edge;
+        double start_padding;
+        double end_padding;
+        double min_longitude;
+        double max_longitude;
     };
 
     /**
@@ -171,38 +178,99 @@ namespace mgodpl
     std::array<RelativeVertex, 3> sorted_relative_vertices(const Triangle& triangle, const math::Vec3d& center);
 
     /**
-    * \brief A comparator that takes a mutable (!) longitude and compares two edges by their latitude at that longitude.
-    *
-    * At first glance, one might think it ill-advised to use a mutable comparator. One might be right.
-    *
-    * That said, we are trying to maintain an order as the sweep arc moves, which means that
-    * the order of intersected edges will change as the sweep arc moves. As a result, we kinda *have* to do this,
-    * and carefully maintain the datastructure so that the order of elements *within* the datastructure is is always
-    * correct.
-    */
+     * \brief           Transform a set of triangles into a set of occupied latitude ranges.
+     * \param triangles The set of triangles, in absolute coordinates.
+     * \param center    The center of the sphere.
+     * \return          The occupied ranges between edges.
+     */
+    std::vector<PaddedOccupiedRangeBetweenEdges> occupied_ranges(
+        const std::vector<Triangle>& triangles,
+        const math::Vec3d& center,
+        double vertical_padding);
+
+    /**
+       * \brief A comparator that takes a mutable (!) longitude and compares two edges by their latitude at that longitude.
+       *
+       * At first glance, one might think it ill-advised to use a mutable comparator. One might be right.
+       *
+       * That said, we are trying to maintain an order as the sweep arc moves, which means that
+       * the order of intersected edges will change as the sweep arc moves. As a result, we kinda *have* to do this,
+       * and carefully maintain the datastructure so that the order of elements *within* the datastructure is is always
+       * correct.
+       */
     struct SortByLatitudeAtLongitude
     {
-        LongitudeSweep* sweep;
+        mutable double longitude;
 
-        [[nodiscard]] double latitudeAtCurrentLongitude(const OccupiedRangeBetweenEdges& a) const;
-        bool operator()(const OccupiedRangeBetweenEdges& a, const OccupiedRangeBetweenEdges& b) const;
+        [[nodiscard]] double latitudeAtCurrentLongitude(const PaddedOccupiedRangeBetweenEdges& a) const;
+
+        bool operator()(const PaddedOccupiedRangeBetweenEdges& a, const PaddedOccupiedRangeBetweenEdges& b) const;
     };
 
     /**
-    * \brief Compute the signed difference between two longitudes.
-    *
-    * That is: compute the difference between the two longitudes, and put it into the range [-pi, pi].
-    *
-    * \return The signed difference between the two longitudes, as a double in the range [-pi, pi].
-    */
-    double signed_longitude_difference(double first, double second);
+     * \brief Filter a set of occupied ranges, keeping only those that cross a given longitude,
+     * and sort the result by starting latitude at that longitude.
+     */
+    std::set<PaddedOccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> occupied_ranges_crossing_longitude(
+        const std::vector<PaddedOccupiedRangeBetweenEdges>& ranges,
+        double longitude);
+
+    struct LatitudeRangeBetweenEdges
+    {
+        Edge min_longitude_edge;
+        Edge max_longitude_edge;
+    };
+
+    double padding_from_edge(const Edge& edge, double padding);
+
+    /**
+     * \brief Merge overlapping ranges at the given longitude.
+     */
+    std::set<PaddedOccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> merge_overlapping_ranges(
+        const std::set<PaddedOccupiedRangeBetweenEdges, SortByLatitudeAtLongitude>& ranges);
+
+    enum StartEnd
+    {
+        START,
+        END
+    };
+
+    struct EdgePairStartEnd
+    {
+        const PaddedOccupiedRangeBetweenEdges& range;
+        StartEnd start_end;
+
+        [[nodiscard]] double longitude() const
+        {
+            return start_end == START ? range.min_longitude : range.max_longitude;
+        }
+    };
+
+    /**
+     * \brief Extract range start/end events from a set of occupied longitude ranges, sorted by longitude.
+     * \param ranges    The occupied longitude ranges.
+     * \return        The range start/end events.
+     */
+    std::vector<EdgePairStartEnd>
+    range_longitude_start_end_events(const std::vector<PaddedOccupiedRangeBetweenEdges>& ranges);
+
+    /**
+     * \brief Find all edgepairs whose longitude range overlaps with the given range.
+     */
+    void select_edgepairs_in_range(
+        const std::vector<PaddedOccupiedRangeBetweenEdges>& edgepairs,
+        std::vector<PaddedOccupiedRangeBetweenEdges> result_buffer,
+        std::vector<EdgePairStartEnd> endpoints_result_buffer,
+        double start_longitude,
+        double end_longitude
+    );
 
     /**
     * \brief A struct representing an event where the sweep arc passes the start of a LatitudeRangeBetweenEdges.
     */
     struct EdgePairStart
     {
-        OccupiedRangeBetweenEdges range;
+        PaddedOccupiedRangeBetweenEdges range;
     };
 
     /**
@@ -210,15 +278,7 @@ namespace mgodpl
     */
     struct EdgePairEnd
     {
-        OccupiedRangeBetweenEdges range;
-    };
-
-    /**
-    * \brief A struct representing an event where the sweep arc passes the point where two LatitudeRangeBetweenEdges swap in the order.
-    */
-    struct EdgePairSwap
-    {
-        OccupiedRangeBetweenEdges range1, range2;
+        PaddedOccupiedRangeBetweenEdges range;
     };
 
     /**
@@ -233,7 +293,7 @@ namespace mgodpl
         double longitude;
 
         /// The type of event.
-        std::variant<EdgePairStart, EdgePairSwap, EdgePairEnd> event;
+        std::variant<EdgePairStart, EdgePairEnd> event;
 
         bool operator<(const SweepEvent& other) const
         {
@@ -248,33 +308,19 @@ namespace mgodpl
         }
     };
 
-    std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> free_ranges_from_occupied_ranges(
-        const std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude>& occupied_ranges
-    );
-
     /**
-    * \brief A struct tracking the state of an ongoing longitude sweep.
+    * \brief A struct designed to work in an iterator-like fashion, to iterate over the ranges of longitude between triangle vertices.
     */
     struct LongitudeSweep
     {
-
-const double starting_longitude;
+        const double starting_longitude;
 
         /// The longitude of the last-passed event, or the starting longitude if no events have been processed yet.
         double current_longitude;
 
-        double arm_half_height = 0.025;
-
-        SortByLatitudeAtLongitude comparator;
-
-        /// The ranges of latitudes between edges between `longitude` and the next event (or the end of the sweep).
-        /// Warning: this set has a *mutable comparator*; be very careful when changing it.
-        std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> free_ranges;
-
         /// The event queue, sorted by angle ahead of the current longitude. (between 0 and 2pi)
         std::priority_queue<SweepEvent> event_queue;
 
-        bool add_potential_edgecross(OccupiedRangeBetweenEdges range1, OccupiedRangeBetweenEdges range2);
         /**
         * \brief Initialize a longitude sweep in the initial state.
         * \param triangles The set of triangles that serve as obstacles.

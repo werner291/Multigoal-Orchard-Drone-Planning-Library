@@ -207,8 +207,6 @@ add_library(planning
         src/planning/longitude_sweep.cpp
         src/planning/longitude_sweep.h
         src/planning/RobotState.cpp
-        src/planning/free_ranges_divide_and_conquer.cpp
-
 )
 
 target_link_libraries(planning math_utils)
