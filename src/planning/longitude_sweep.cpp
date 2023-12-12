@@ -64,13 +64,13 @@ namespace mgodpl
             signed_longitude_difference(longitude, vertices[2].longitude) <= 0;
     }
 
-    double SortByLatitudeAtLongitude::latitudeAtCurrentLongitude(const LatitudeRangeBetweenEdges& a) const
+    double SortByLatitudeAtLongitude::latitudeAtCurrentLongitude(const OccupiedRangeBetweenEdges& a) const
     {
         return latitude(a.min_latitude_edge, sweep->current_longitude);
     }
 
-    bool SortByLatitudeAtLongitude::operator()(const LatitudeRangeBetweenEdges& a,
-                                               const LatitudeRangeBetweenEdges& b) const
+    bool SortByLatitudeAtLongitude::operator()(const OccupiedRangeBetweenEdges& a,
+                                               const OccupiedRangeBetweenEdges& b) const
     {
         return latitudeAtCurrentLongitude(a) < latitudeAtCurrentLongitude(b);
     }
@@ -91,6 +91,31 @@ namespace mgodpl
         }
 
         return difference;
+    }
+
+    std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> free_ranges_from_occupied_ranges(
+        const std::set<FreeRangeBetweenEdges, SortByLatitudeAtLongitude>& occupied_ranges
+    )
+    {
+        double longitude = occupied_ranges.key_comp().sweep->current_longitude;
+
+        std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> free_ranges(occupied_ranges.key_comp());
+
+        double min_free_latitude = -M_PI / 2.0;
+
+        for (const auto& range : occupied_ranges)
+        {
+            // double min_latitude = latitude(range.min_latitude_edge, longitude) - range.latitude_padding;
+
+            if (min_latitude > min_free_latitude)
+            {
+                // Found a free range; add it to the set.
+
+            }
+        }
+
+        return free_ranges;
+
     }
 
     /**
@@ -140,8 +165,8 @@ namespace mgodpl
         return dir;
     }
 
-    bool LongitudeSweep::add_potential_edgecross(const LatitudeRangeBetweenEdges range1,
-                                                 const LatitudeRangeBetweenEdges range2)
+    bool LongitudeSweep::add_potential_edgecross(const OccupiedRangeBetweenEdges range1,
+                                                 const OccupiedRangeBetweenEdges range2)
     {
         if (edges_will_cross(range1.min_latitude_edge, range2.min_latitude_edge))
         {
@@ -175,8 +200,12 @@ namespace mgodpl
         starting_longitude(initial_longitude),
         current_longitude(initial_longitude),
         comparator{this},
-        ranges(comparator)
+        free_ranges(comparator)
     {
+
+        // a set of occupied latitude ranges, from which we will compute the free ranges.
+        std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> occupied_ranges(comparator);
+
         // Then, iterate over all triangles...
         for (const Triangle& triangle : triangles)
         {
@@ -204,12 +233,12 @@ namespace mgodpl
             // Sanity check: on_long_edge implies on_first_edge and on_second_edge.
             assert(!on_long_edge || (on_first_edge || on_second_edge));
 
-            LatitudeRangeBetweenEdges rg1{
+            OccupiedRangeBetweenEdges rg1{
                 .min_latitude_edge = edges.short_1,
                 .max_latitude_edge = edges.long_edge
             };
 
-            LatitudeRangeBetweenEdges rg2{
+            OccupiedRangeBetweenEdges rg2{
                 .min_latitude_edge = edges.short_2,
                 .max_latitude_edge = edges.long_edge
             };
@@ -225,7 +254,7 @@ namespace mgodpl
                 // Check to make sure we're on the longitude range:
                 assert(in_longitude_range(edges.short_1, current_longitude));
                 assert(in_longitude_range(edges.long_edge, current_longitude));
-                ranges.insert(rg1);
+                occupied_ranges.insert(rg1);
             }
 
             if (on_second_edge)
@@ -233,7 +262,7 @@ namespace mgodpl
                 // Check to make sure we're on the longitude range:
                 assert(in_longitude_range(edges.short_2, current_longitude));
                 assert(in_longitude_range(edges.long_edge, current_longitude));
-                ranges.insert(rg2);
+                occupied_ranges.insert(rg2);
             }
 
             // Start/end events:
@@ -261,6 +290,8 @@ namespace mgodpl
                 .event = EdgePairEnd{rg2}
             });
         }
+
+
 
         // Then, for all the ongoing latitude ranges, register any potential switching events.
         auto it = ranges.begin();
@@ -293,7 +324,7 @@ namespace mgodpl
         case 0: // EdgePairStart
             {
                 assert(std::get_if<EdgePairStart>(&event.event) != nullptr);
-                const LatitudeRangeBetweenEdges& range = std::get<EdgePairStart>(event.event).range;
+                const OccupiedRangeBetweenEdges& range = std::get<EdgePairStart>(event.event).range;
 
                 this->current_longitude = event.longitude + DOUBLE_EPSILON;
 
@@ -334,8 +365,8 @@ namespace mgodpl
         case 1: // EdgePairSwap
             {
                 assert(std::get_if<EdgePairSwap>(&event.event) != nullptr);
-                const LatitudeRangeBetweenEdges& range1 = std::get<EdgePairSwap>(event.event).range1;
-                const LatitudeRangeBetweenEdges& range2 = std::get<EdgePairSwap>(event.event).range2;
+                const OccupiedRangeBetweenEdges& range1 = std::get<EdgePairSwap>(event.event).range1;
+                const OccupiedRangeBetweenEdges& range2 = std::get<EdgePairSwap>(event.event).range2;
 
                 // Wow this is ugly... TODO Does that const value work properly? Do we need to do a dynamic epsilon?
                 this->current_longitude = event.longitude - DOUBLE_EPSILON;
@@ -438,7 +469,7 @@ std::cout << "Range 2: " << range2.min_latitude_edge.vertices[0] << " -> " << ra
         case 2: // EdgePairEnd
             {
                 assert(std::get_if<EdgePairEnd>(&event.event) != nullptr);
-                const LatitudeRangeBetweenEdges& range = std::get<EdgePairEnd>(event.event).range;
+                const OccupiedRangeBetweenEdges& range = std::get<EdgePairEnd>(event.event).range;
 
                 this->current_longitude = event.longitude - DOUBLE_EPSILON;
 
