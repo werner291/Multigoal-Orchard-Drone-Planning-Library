@@ -190,8 +190,8 @@ int main(int argc, char** argv)
 		const double longitude_midpoint = sweepline_algorithm.current_longitude;
 
 		for (const auto & range : sweepline_algorithm.ranges) {
-			double range_min = latitude(range.min_latitude_edge, longitude_midpoint);
-			double range_max = latitude(range.max_latitude_edge, longitude_midpoint);
+			double range_min = latitude(range.interior.min_latitude_edge, longitude_midpoint);
+			double range_max = latitude(range.interior.max_latitude_edge, longitude_midpoint);
 
 			if (min_free < range_min) {
 				// std::cout << "Found a free range: [" << min_free << ", " << range_min << "]" << std::endl;

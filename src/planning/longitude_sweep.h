@@ -5,9 +5,8 @@
 #ifndef LATITUDE_SWEEP_H
 #define LATITUDE_SWEEP_H
 
-#include <algorithm>
+#include <iostream>
 #include <vector>
-#include <optional>
 #include <queue>
 #include <set>
 #include <variant>
@@ -87,6 +86,12 @@ namespace mgodpl
     {
         Edge min_latitude_edge;
         Edge max_latitude_edge;
+
+        bool operator==(const LatitudeRangeBetweenEdges& other) const
+        {
+            return min_latitude_edge.vertices == other.min_latitude_edge.vertices
+                   && max_latitude_edge.vertices == other.max_latitude_edge.vertices;
+        }
     };
 
     /**
@@ -163,23 +168,7 @@ namespace mgodpl
     */
     std::array<RelativeVertex, 3> sorted_relative_vertices(const Triangle& triangle, const math::Vec3d& center);
 
-    /**
-    * \brief A comparator that takes a mutable (!) longitude and compares two edges by their latitude at that longitude.
-    *
-    * At first glance, one might think it ill-advised to use a mutable comparator. One might be right.
-    *
-    * That said, we are trying to maintain an order as the sweep arc moves, which means that
-    * the order of intersected edges will change as the sweep arc moves. As a result, we kinda *have* to do this,
-    * and carefully maintain the datastructure so that the order of elements *within* the datastructure is is always
-    * correct.
-    */
-    struct SortByLatitudeAtLongitude
-    {
-        LongitudeSweep* sweep;
 
-        [[nodiscard]] double latitudeAtCurrentLongitude(const LatitudeRangeBetweenEdges& a) const;
-        bool operator()(const LatitudeRangeBetweenEdges& a, const LatitudeRangeBetweenEdges& b) const;
-    };
 
     /**
     * \brief Compute the signed difference between two longitudes.
@@ -241,6 +230,36 @@ namespace mgodpl
         }
     };
 
+    template<typename T>
+    struct HackyMutable
+    {
+        mutable T interior;
+    };
+
+    /**
+     * \brief A comparator that takes a mutable (!) longitude and compares two edges by their latitude at that longitude.
+     *
+     * At first glance, one might think it ill-advised to use a mutable comparator. One might be right.
+     *
+     * That said, we are trying to maintain an order as the sweep arc moves, which means that
+     * the order of intersected edges will change as the sweep arc moves. As a result, we kinda *have* to do this,
+     * and carefully maintain the datastructure so that the order of elements *within* the datastructure is is always
+     * correct.
+     */
+    struct SortByLatitudeAtLongitude
+    {
+        LongitudeSweep* sweep;
+
+        [[nodiscard]] double latitudeAtCurrentLongitude(const LatitudeRangeBetweenEdges& a) const;
+
+        bool operator()(const LatitudeRangeBetweenEdges& a, const LatitudeRangeBetweenEdges& b) const;
+
+        bool operator()(const HackyMutable<LatitudeRangeBetweenEdges>& a, const HackyMutable<LatitudeRangeBetweenEdges>& b) const
+        {
+            return operator()(a.interior, b.interior);
+        }
+    };
+
     /**
     * \brief A struct tracking the state of an ongoing longitude sweep.
     */
@@ -256,7 +275,7 @@ const double starting_longitude;
 
         /// The ranges of latitudes between edges between `longitude` and the next event (or the end of the sweep).
         /// Warning: this set has a *mutable comparator*; be very careful when changing it.
-        std::set<LatitudeRangeBetweenEdges, SortByLatitudeAtLongitude> ranges;
+        std::set<HackyMutable<LatitudeRangeBetweenEdges>, SortByLatitudeAtLongitude> ranges;
 
         /// The event queue, sorted by angle ahead of the current longitude. (between 0 and 2pi)
         std::priority_queue<SweepEvent> event_queue;
