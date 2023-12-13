@@ -399,6 +399,23 @@ namespace mgodpl
         return false;
     }
 
+    struct AffectedRange {
+        LatitudeRangeBetweenEdges range;
+        bool deleted;
+
+        bool operator<(const AffectedRange& other) const
+        {
+            if (range.max_latitude_edge.vertices[0] == other.range.max_latitude_edge.vertices[0])
+            {
+                return range.max_latitude_edge.vertices[1] < other.range.max_latitude_edge.vertices[1];
+            }
+            else
+            {
+                return range.max_latitude_edge.vertices[0] < other.range.max_latitude_edge.vertices[0];
+            }
+        }
+    };
+
     void LongitudeSweep::process_next_event()
     {
 
@@ -406,8 +423,59 @@ namespace mgodpl
 
         std::cerr << "Made it to longitude " << current_longitude << std::endl;
 
-        delete_affected_ranges(events);
+        std::set<AffectedRange> temp_ranges;
 
+        // First, process all edge addition events:
+        for (const auto& event: events)
+        {
+            if (const auto start = std::get_if<EdgePairStart>(&event.event))
+            {
+                temp_ranges.insert(start->range);
+            }
+        }
+
+        // then deletions:
+        for (const auto& event: events)
+        {
+            if (const auto end = std::get_if<EdgePairEnd>(&event.event))
+            {
+                // Find where it would be inserted.
+                const LatitudeRangeBetweenEdges& range = end->range;
+
+                auto lower = ranges.lower_bound(range); // TODO: Double-check if these are the right ones.
+                auto upper = ranges.upper_bound(range);
+                if (lower != ranges.end() && upper != ranges.end())
+                {
+                    add_potential_edgecross(*lower, *upper);
+                }
+            }
+        }
+
+        // then, for swaps, delete, but only add to temp_ranges if it was actually found while deleting
+
+        // First pass: delete all affected ranges:
+        for (const auto& event : events)
+        {
+            switch (event.event.index())
+            {
+            case 0: // Range start.
+                ranges.erase(std::get<EdgePairStart>(event.event).range);
+                break;
+            case 1: // Range end.
+                // Just delete it.
+                ranges.erase(std::get<EdgePairEnd>(event.event).range);
+                break;
+            case 2: // Range swap.
+                // Also just delete them:
+                ranges.erase(std::get<EdgePairSwap>(event.event).range1);
+                ranges.erase(std::get<EdgePairSwap>(event.event).range2);
+                break;
+            default:
+                throw std::runtime_error("Invalid event type");
+            }
+        }
+
+        // Check to make sure the set is still in one piece.
         check_range_order_validity();
 
         // Then, push the current longitude a bit ahead of the event longitude.
