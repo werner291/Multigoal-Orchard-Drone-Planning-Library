@@ -90,7 +90,7 @@ namespace mgodpl
         bool operator==(const LatitudeRangeBetweenEdges& other) const
         {
             return min_latitude_edge.vertices == other.min_latitude_edge.vertices
-                   && max_latitude_edge.vertices == other.max_latitude_edge.vertices;
+                && max_latitude_edge.vertices == other.max_latitude_edge.vertices;
         }
     };
 
@@ -169,7 +169,6 @@ namespace mgodpl
     std::array<RelativeVertex, 3> sorted_relative_vertices(const Triangle& triangle, const math::Vec3d& center);
 
 
-
     /**
     * \brief Compute the signed difference between two longitudes.
     *
@@ -215,7 +214,7 @@ namespace mgodpl
         double longitude;
 
         /// The type of event.
-        std::variant<EdgePairStart, EdgePairSwap, EdgePairEnd> event;
+        std::variant<EdgePairStart, EdgePairEnd, EdgePairSwap> event;
 
         bool operator<(const SweepEvent& other) const
         {
@@ -226,11 +225,11 @@ namespace mgodpl
             }
 
             // Else, use event type; end events come first to avoid duplicate edges.
-            return other.event.index() > event.index();
+            return other.event.index() < event.index();
         }
     };
 
-    template<typename T>
+    template <typename T>
     struct HackyMutable
     {
         mutable T interior;
@@ -254,7 +253,8 @@ namespace mgodpl
 
         bool operator()(const LatitudeRangeBetweenEdges& a, const LatitudeRangeBetweenEdges& b) const;
 
-        bool operator()(const HackyMutable<LatitudeRangeBetweenEdges>& a, const HackyMutable<LatitudeRangeBetweenEdges>& b) const
+        bool operator()(const HackyMutable<LatitudeRangeBetweenEdges>& a,
+                        const HackyMutable<LatitudeRangeBetweenEdges>& b) const
         {
             return operator()(a.interior, b.interior);
         }
@@ -265,8 +265,7 @@ namespace mgodpl
     */
     struct LongitudeSweep
     {
-
-const double starting_longitude;
+        const double starting_longitude;
 
         /// The longitude of the last-passed event, or the starting longitude if no events have been processed yet.
         double current_longitude;
@@ -275,7 +274,7 @@ const double starting_longitude;
 
         /// The ranges of latitudes between edges between `longitude` and the next event (or the end of the sweep).
         /// Warning: this set has a *mutable comparator*; be very careful when changing it.
-        std::set<HackyMutable<LatitudeRangeBetweenEdges>, SortByLatitudeAtLongitude> ranges;
+        std::set<LatitudeRangeBetweenEdges, SortByLatitudeAtLongitude> ranges;
 
         /// The event queue, sorted by angle ahead of the current longitude. (between 0 and 2pi)
         std::priority_queue<SweepEvent> event_queue;
@@ -290,6 +289,11 @@ const double starting_longitude;
         LongitudeSweep(const std::vector<Triangle>& triangles,
                        double longitude,
                        const math::Vec3d& center);
+
+        std::vector<SweepEvent> pop_next_events();
+        void delete_affected_ranges(const std::vector<SweepEvent>& events);
+        void reinsert_nondeleted(const std::vector<SweepEvent>& events);
+        bool check_range_order_validity();
 
         void process_next_event();
 
