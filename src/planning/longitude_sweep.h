@@ -88,6 +88,10 @@ namespace mgodpl
         Edge min_latitude_edge;
         Edge max_latitude_edge;
         double latitude_padding;
+		double min_longitude;
+		double max_longitude;
+
+		std::array<OccupiedRangeBetweenEdges, 2> split(double split_longitude) const;
     };
 
     struct FreeRangeBetweenEdges
@@ -110,7 +114,7 @@ namespace mgodpl
     * \param b		The second edge.
     * \return		Whether the segments will cross.
     */
-    bool edges_will_cross(const Edge& a, const Edge& b);
+	bool edges_will_cross(const Edge &a, const Edge &b);
 
     /**
     * \brief A struct representing a vertex in a triangle, relative to some center, with the longitude of the vertex.
@@ -185,7 +189,10 @@ namespace mgodpl
         LongitudeSweep* sweep;
 
         [[nodiscard]] double latitudeAtCurrentLongitude(const OccupiedRangeBetweenEdges& a) const;
+
         bool operator()(const OccupiedRangeBetweenEdges& a, const OccupiedRangeBetweenEdges& b) const;
+
+		[[nodiscard]] bool before_at_longitude(const OccupiedRangeBetweenEdges &a, const OccupiedRangeBetweenEdges &b, const double longitude) const;
     };
 
     /**
@@ -196,30 +203,6 @@ namespace mgodpl
     * \return The signed difference between the two longitudes, as a double in the range [-pi, pi].
     */
     double signed_longitude_difference(double first, double second);
-
-    /**
-    * \brief A struct representing an event where the sweep arc passes the start of a LatitudeRangeBetweenEdges.
-    */
-    struct EdgePairStart
-    {
-        OccupiedRangeBetweenEdges range;
-    };
-
-    /**
-    * \brief A struct representing an event where the sweep arc passes the end of a LatitudeRangeBetweenEdges.
-    */
-    struct EdgePairEnd
-    {
-        OccupiedRangeBetweenEdges range;
-    };
-
-    /**
-    * \brief A struct representing an event where the sweep arc passes the point where two LatitudeRangeBetweenEdges swap in the order.
-    */
-    struct EdgePairSwap
-    {
-        OccupiedRangeBetweenEdges range1, range2;
-    };
 
     /**
     * \brief An event encountered during the longitude sweep.
@@ -233,18 +216,27 @@ namespace mgodpl
         double longitude;
 
         /// The type of event.
-        std::variant<EdgePairStart, EdgePairSwap, EdgePairEnd> event;
+		OccupiedRangeBetweenEdges range;
+
+		enum StartEnd {
+			START,
+			END,
+		} event_type;
+
+		/// Constructor.
+		SweepEvent(double relative_longitude, double longitude, OccupiedRangeBetweenEdges range, SweepEvent::StartEnd event_type) :
+			relative_longitude(relative_longitude), longitude(longitude), range(range), event_type(event_type) {}
 
         bool operator<(const SweepEvent& other) const
         {
             // First, use relative longitude.
             if (relative_longitude != other.relative_longitude)
             {
-                return relative_longitude > other.relative_longitude;
-            }
-
-            // Else, use event type; end events come first to avoid duplicate edges.
-            return other.event.index() > event.index();
+                return relative_longitude < other.relative_longitude;
+            } else {
+				// If the relative longitudes are equal, use the event type.
+				return event_type < other.event_type;
+			}
         }
     };
 
@@ -258,21 +250,19 @@ namespace mgodpl
     struct LongitudeSweep
     {
 
-const double starting_longitude;
+		const double starting_longitude;
 
         /// The longitude of the last-passed event, or the starting longitude if no events have been processed yet.
         double current_longitude;
 
         double arm_half_height = 0.025;
 
-        SortByLatitudeAtLongitude comparator;
-
         /// The ranges of latitudes between edges between `longitude` and the next event (or the end of the sweep).
         /// Warning: this set has a *mutable comparator*; be very careful when changing it.
-        std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> free_ranges;
+        std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> ranges;
 
         /// The event queue, sorted by angle ahead of the current longitude. (between 0 and 2pi)
-        std::priority_queue<SweepEvent> event_queue;
+        std::set<SweepEvent> event_queue;
 
         bool add_potential_edgecross(OccupiedRangeBetweenEdges range1, OccupiedRangeBetweenEdges range2);
         /**
@@ -285,9 +275,36 @@ const double starting_longitude;
                        double longitude,
                        const math::Vec3d& center);
 
-        void process_next_event();
+        void progress_to_next_longitude_range();
 
-        bool has_more_events() const;
-    };
+        [[nodiscard]] bool has_more_events() const;
+
+		std::vector<SweepEvent> pop_events_with_same_longitude();
+
+		void delete_latitude_range(const OccupiedRangeBetweenEdges &range);
+
+		void insert_latitude_range(const OccupiedRangeBetweenEdges &range);
+
+		const bool check_invariants() const;
+
+		bool
+		delete_potential_edgecross(const OccupiedRangeBetweenEdges &range1, const OccupiedRangeBetweenEdges &range2);
+
+		SweepEvent edgecross_event(const OccupiedRangeBetweenEdges &range1,
+								   const OccupiedRangeBetweenEdges &range2,
+								   double intersection_longitude) const;
+
+		bool check_longitude_change_is_safe(double from_longitude, double to_longitude) const;
+
+		void register_edge_pair(const OccupiedRangeBetweenEdges &range);
+
+		void register_future_range(const OccupiedRangeBetweenEdges &range);
+
+		bool range_is_ahead(const OccupiedRangeBetweenEdges &range) const;
+
+		bool current_sweepline_crosses_range(const OccupiedRangeBetweenEdges &range) const;
+
+		void register_ongoing_range(const OccupiedRangeBetweenEdges &before_split);
+	};
 }
 #endif //LATITUDE_SWEEP_H

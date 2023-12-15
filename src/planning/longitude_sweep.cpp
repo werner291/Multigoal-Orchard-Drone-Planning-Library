@@ -72,10 +72,29 @@ namespace mgodpl
     bool SortByLatitudeAtLongitude::operator()(const OccupiedRangeBetweenEdges& a,
                                                const OccupiedRangeBetweenEdges& b) const
     {
-        return latitudeAtCurrentLongitude(a) < latitudeAtCurrentLongitude(b);
+        return before_at_longitude(a, b, sweep->current_longitude);
     }
 
-    double signed_longitude_difference(double first, double second)
+	bool SortByLatitudeAtLongitude::before_at_longitude(const OccupiedRangeBetweenEdges &a,
+														const OccupiedRangeBetweenEdges &b,
+														const double longitude) const {
+
+		double l1 = latitude(a.min_latitude_edge, longitude);
+		double l2 = latitude(b.min_latitude_edge, longitude);
+
+		if (l1 != l2) {
+			return l1 < l2;
+		} else {
+			// Sort by end of shared longitude range:
+			double max_longitude = signed_longitude_difference(a.max_longitude, b.max_longitude) < 0 ? a.max_longitude : b.max_longitude;
+			double l1_max = latitude(a.min_latitude_edge, max_longitude);
+			double l2_max = latitude(b.min_latitude_edge, max_longitude);
+			return l1_max < l2_max;
+		}
+
+	}
+
+	double signed_longitude_difference(double first, double second)
     {
         // Compute the difference:
         double difference = first - second;
@@ -91,31 +110,6 @@ namespace mgodpl
         }
 
         return difference;
-    }
-
-    std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> free_ranges_from_occupied_ranges(
-        const std::set<FreeRangeBetweenEdges, SortByLatitudeAtLongitude>& occupied_ranges
-    )
-    {
-        double longitude = occupied_ranges.key_comp().sweep->current_longitude;
-
-        std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> free_ranges(occupied_ranges.key_comp());
-
-        double min_free_latitude = -M_PI / 2.0;
-
-        for (const auto& range : occupied_ranges)
-        {
-            // double min_latitude = latitude(range.min_latitude_edge, longitude) - range.latitude_padding;
-
-            if (min_latitude > min_free_latitude)
-            {
-                // Found a free range; add it to the set.
-
-            }
-        }
-
-        return free_ranges;
-
     }
 
     /**
@@ -165,46 +159,113 @@ namespace mgodpl
         return dir;
     }
 
-    bool LongitudeSweep::add_potential_edgecross(const OccupiedRangeBetweenEdges range1,
-                                                 const OccupiedRangeBetweenEdges range2)
-    {
-        if (edges_will_cross(range1.min_latitude_edge, range2.min_latitude_edge))
-        {
-            // Grab their intersection:
-            math::Vec3d intersection = Edge_intersection(range1.min_latitude_edge, range2.min_latitude_edge);
+	void LongitudeSweep::register_edge_pair(const OccupiedRangeBetweenEdges& range) {
 
-            // Extract lat/lon:
-            double intersection_longitude = longitude(intersection, math::Vec3d(0, 0, 0));
+		// Will we encounter the start of this edge in the future?
 
-            double l1 = latitude(range1.min_latitude_edge, intersection_longitude);
-            double l2 = latitude(range2.min_latitude_edge, intersection_longitude);
+		// If so, throw in a start event:
+		if (range_is_ahead(range)) {
+			register_future_range(range);
+		}
 
-            assert(std::abs(l1 - l2) <  DOUBLE_EPSILON);
+		// Are we before the end? (This can coincide with being before the start if the edge crosses the starting longitude)
+		// If so, insert it into the ongoing ranges:
+		if (current_sweepline_crosses_range(range)) {
 
-            event_queue.push(SweepEvent{
-                longitude_ahead_angle(this->starting_longitude, intersection_longitude),
-                .longitude = intersection_longitude,
-                EdgePairSwap{range1, range2}
-            });
+			auto lower_bound = ranges.lower_bound(range);
+			auto upper_bound = ranges.upper_bound(range);
 
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
+			// Check for intersections:
+			double max_longitude = range.max_longitude;
 
-    LongitudeSweep::LongitudeSweep(const std::vector<Triangle>& triangles, double initial_longitude,
+			// Find the first longitude at which an intersection occurs.
+
+			// First, check if there might be an intersection with the previous range:
+			if (lower_bound != ranges.end()) {
+				if (edges_will_cross(lower_bound->min_latitude_edge, range.min_latitude_edge)) {
+					// Grab their intersection:
+					math::Vec3d intersection = Edge_intersection(lower_bound->min_latitude_edge, range.min_latitude_edge);
+
+					// Extract lat/lon:
+					double intersection_longitude = longitude(intersection, math::Vec3d(0, 0, 0));
+
+					if (signed_longitude_difference(intersection_longitude, current_longitude) > 0.0) {
+						max_longitude = intersection_longitude;
+					}
+				}
+			}
+
+			// Then check if there might be an intersection with the next range:
+			if (upper_bound != ranges.end()) {
+				if (edges_will_cross(range.min_latitude_edge, upper_bound->min_latitude_edge)) {
+					// Grab their intersection:
+					math::Vec3d intersection = Edge_intersection(range.min_latitude_edge, upper_bound->min_latitude_edge);
+
+					// Extract lat/lon:
+					double intersection_longitude = longitude(intersection, math::Vec3d(0, 0, 0));
+
+					if (signed_longitude_difference(intersection_longitude, current_longitude) > 0.0) {
+						max_longitude = std::min(max_longitude, intersection_longitude);
+					}
+				}
+			}
+
+			// If there was, then we need to split the range:
+			if (max_longitude < range.max_longitude) {
+				// Split the range:
+				const auto& [before, after] = range.split(max_longitude);
+				register_ongoing_range(before);
+				register_future_range(after);
+			} else {
+				register_ongoing_range(range);
+			}
+		}
+	}
+
+	void LongitudeSweep::register_ongoing_range(const OccupiedRangeBetweenEdges &before_split) {
+
+		assert(current_sweepline_crosses_range(before_split));
+
+		ranges.insert(before_split);
+
+		// Insert an end event for the safe part:
+		event_queue.insert(SweepEvent(
+				longitude_ahead_angle(before_split.min_longitude, before_split.max_longitude),
+				before_split.max_longitude,
+				before_split,
+				SweepEvent::END
+		));
+	}
+
+	bool
+	LongitudeSweep::current_sweepline_crosses_range(const OccupiedRangeBetweenEdges &range) const {
+		return signed_longitude_difference(current_longitude, range.min_longitude) >= 0 &&
+			   signed_longitude_difference(current_longitude, range.max_longitude) <= 0;
+	}
+
+	bool LongitudeSweep::range_is_ahead(const OccupiedRangeBetweenEdges &range) const {
+		return longitude_ahead_angle(starting_longitude, range.min_longitude) >
+			   longitude_ahead_angle(starting_longitude, current_longitude);
+	}
+
+	void LongitudeSweep::register_future_range(const OccupiedRangeBetweenEdges &range) {
+
+		assert(range_is_ahead(range));
+
+		event_queue.insert(SweepEvent(
+						longitude_ahead_angle(starting_longitude, range.min_longitude),
+						range.min_longitude,
+						range,
+						SweepEvent::START
+					));
+	}
+
+	LongitudeSweep::LongitudeSweep(const std::vector<Triangle>& triangles, double initial_longitude,
                                    const math::Vec3d& center):
         starting_longitude(initial_longitude),
         current_longitude(initial_longitude),
-        comparator{this},
-        free_ranges(comparator)
+        ranges(SortByLatitudeAtLongitude{this})
     {
-
-        // a set of occupied latitude ranges, from which we will compute the free ranges.
-        std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude> occupied_ranges(comparator);
 
         // Then, iterate over all triangles...
         for (const Triangle& triangle : triangles)
@@ -220,27 +281,20 @@ namespace mgodpl
 
             TriangleEdges edges = triangle_edges(relative_vertices);
 
-            std::array<bool, 3> vertex_passed = {
-                signed_longitude_difference(current_longitude, relative_vertices[0].longitude) >= 0,
-                signed_longitude_difference(current_longitude, relative_vertices[1].longitude) >= 0,
-                signed_longitude_difference(current_longitude, relative_vertices[2].longitude) >= 0
-            };
-
-            bool on_first_edge = vertex_passed[0] && !vertex_passed[1];
-            bool on_second_edge = vertex_passed[1] && !vertex_passed[2];
-            bool on_long_edge = vertex_passed[0] && !vertex_passed[2];
-
-            // Sanity check: on_long_edge implies on_first_edge and on_second_edge.
-            assert(!on_long_edge || (on_first_edge || on_second_edge));
-
-            OccupiedRangeBetweenEdges rg1{
+			OccupiedRangeBetweenEdges rg1 {
                 .min_latitude_edge = edges.short_1,
-                .max_latitude_edge = edges.long_edge
+                .max_latitude_edge = edges.long_edge,
+				.latitude_padding = NAN, // TODO
+				.min_longitude = relative_vertices[0].longitude,
+				.max_longitude = relative_vertices[1].longitude
             };
 
             OccupiedRangeBetweenEdges rg2{
                 .min_latitude_edge = edges.short_2,
-                .max_latitude_edge = edges.long_edge
+                .max_latitude_edge = edges.long_edge,
+				.latitude_padding = NAN, // TODO
+				.min_longitude = relative_vertices[1].longitude,
+				.max_longitude = relative_vertices[2].longitude
             };
 
             if (vertex_is_above_long_edge(relative_vertices))
@@ -249,240 +303,121 @@ namespace mgodpl
                 std::swap(rg2.min_latitude_edge, rg2.max_latitude_edge);
             }
 
-            if (on_first_edge)
-            {
-                // Check to make sure we're on the longitude range:
-                assert(in_longitude_range(edges.short_1, current_longitude));
-                assert(in_longitude_range(edges.long_edge, current_longitude));
-                occupied_ranges.insert(rg1);
-            }
-
-            if (on_second_edge)
-            {
-                // Check to make sure we're on the longitude range:
-                assert(in_longitude_range(edges.short_2, current_longitude));
-                assert(in_longitude_range(edges.long_edge, current_longitude));
-                occupied_ranges.insert(rg2);
-            }
-
-            // Start/end events:
-            event_queue.push(SweepEvent{
-                .relative_longitude = longitude_ahead_angle(starting_longitude, relative_vertices[0].longitude),
-                .longitude = relative_vertices[0].longitude,
-                .event = EdgePairStart{rg1}
-            });
-
-            event_queue.push(SweepEvent{
-                .relative_longitude = longitude_ahead_angle(starting_longitude, relative_vertices[1].longitude),
-                .longitude = relative_vertices[1].longitude,
-                .event = EdgePairEnd{rg1}
-            });
-
-            event_queue.push(SweepEvent{
-                .relative_longitude = longitude_ahead_angle(starting_longitude, relative_vertices[1].longitude),
-                .longitude = relative_vertices[1].longitude,
-                .event = EdgePairStart{rg2}
-            });
-
-            event_queue.push(SweepEvent{
-                .relative_longitude = longitude_ahead_angle(starting_longitude, relative_vertices[2].longitude),
-                .longitude = relative_vertices[2].longitude,
-                .event = EdgePairEnd{rg2}
-            });
+			register_edge_pair(rg1);
+			register_edge_pair(rg2);
         }
 
-
-
-        // Then, for all the ongoing latitude ranges, register any potential switching events.
-        auto it = ranges.begin();
-
-        do
-        {
-            const auto range1 = *it;
-            ++it;
-            if (it == ranges.end())
-            {
-                break;
-            }
-            const auto range2 = *it;
-
-            add_potential_edgecross(range1, range2);
-        }
-        while (it != ranges.end());
     }
 
-    void LongitudeSweep::process_next_event()
+	const bool LongitudeSweep::check_invariants() const {
+
+		auto it = ranges.begin();
+		auto it2 = it;
+		++it2;
+
+		while (it2 != ranges.end()) {
+
+			const auto& range1 = *it;
+			const auto& range2 = *it2;
+
+			if (!ranges.key_comp()(range1, range2)) {
+				std::cerr << "Ranges are not sorted!" << std::endl;
+				return false;
+			}
+
+			++it;
+			++it2;
+		}
+
+		return true;
+
+	}
+
+	bool LongitudeSweep::check_longitude_change_is_safe(double from_longitude, double to_longitude) const
+	{
+
+		auto it = ranges.begin();
+		auto it2 = it;
+		++it2;
+
+		while (it2 != ranges.end()) {
+
+			const auto& range1 = *it;
+			const auto& range2 = *it2;
+
+			// Check that the latitude at the first and second longitude are ordered the same way:
+			double lat1pre = latitude(range1.min_latitude_edge, from_longitude);
+			double lat1post = latitude(range1.min_latitude_edge, to_longitude);
+
+			double lat2pre = latitude(range2.min_latitude_edge, from_longitude);
+			double lat2post = latitude(range2.min_latitude_edge, to_longitude);
+
+			if (!((lat1pre < lat2pre) && (lat1post < lat2post)) &&
+				!((lat1pre > lat2pre) && (lat1post > lat2post))) {
+				std::cerr << "Latitude order is not preserved!" << std::endl;
+				return false;
+			}
+
+			++it;
+			++it2;
+
+		}
+
+		return true;
+
+	}
+
+	std::vector<SweepEvent> LongitudeSweep::pop_events_with_same_longitude() {
+		assert(!event_queue.empty());
+
+		std::vector<SweepEvent> events { *event_queue.begin() };
+		event_queue.erase(event_queue.begin());
+
+		while (!event_queue.empty() && std::abs(event_queue.begin()->relative_longitude - events.front().relative_longitude) < DOUBLE_EPSILON) {
+			events.push_back(*event_queue.begin());
+			event_queue.erase(event_queue.begin());
+		}
+
+		return events;
+	}
+
+    void LongitudeSweep::progress_to_next_longitude_range()
     {
-        // Grab the next event:
-        const SweepEvent event = event_queue.top();
-        event_queue.pop();
+		// TODO: By carefully sorting the events, we should be able to avoid batching like this.
 
-        std::cout << "Rel lon: " << event.relative_longitude << " with " << event_queue.size() << " events remaining." << std::endl;
+		// Grab a batch of events with the same longitude:
+		std::vector<SweepEvent> events = pop_events_with_same_longitude();
 
-        switch (event.event.index())
-        {
-        case 0: // EdgePairStart
-            {
-                assert(std::get_if<EdgePairStart>(&event.event) != nullptr);
-                const OccupiedRangeBetweenEdges& range = std::get<EdgePairStart>(event.event).range;
+		double event_longitude = events.front().longitude;
 
-                this->current_longitude = event.longitude + DOUBLE_EPSILON;
+		// Delete all ranges that end here:
+		for (const SweepEvent& event: events) {
+			if (event.event_type == SweepEvent::END) {
+				ranges.erase(event.range);
+			}
+		}
 
-                auto it_already_in = ranges.find(range);
+		assert(check_invariants());
+		assert(check_longitude_change_is_safe(current_longitude, event_longitude + DOUBLE_EPSILON));
 
-                if (it_already_in != ranges.end())
-                {
-                    std::cout << "Already in!" << std::endl;
+		// Check invariants:
+		assert(check_invariants());
 
-                    std::cout << "New range: " << range.min_latitude_edge.vertices[0] << " -> " << range.min_latitude_edge.vertices[1] << " | " << range.max_latitude_edge.vertices[0] << " -> " << range.max_latitude_edge.vertices[1] << std::endl;
-                    std::cout << "Old range: " << it_already_in->min_latitude_edge.vertices[0] << " -> " << it_already_in->min_latitude_edge.vertices[1] << " | " << it_already_in->max_latitude_edge.vertices[0] << " -> " << it_already_in->max_latitude_edge.vertices[1] << std::endl;
-                }
+		// Then, insert all ranges that start here:
+		for (const SweepEvent& event: events) {
+			if (event.event_type == SweepEvent::START) {
+				register_edge_pair(event.range);
+			}
+		}
 
-                // Insert the range into the set.
-                const auto& [it, inserted] = ranges.insert(range);
+		assert(check_invariants());
 
-                assert(inserted);
+		// Put the longitude halfway to the next events:
+		if (!event_queue.empty()) {
+			current_longitude = (event_longitude + event_queue.begin()->longitude) / 2.0;
+		}
 
-                if (it != ranges.begin())
-                {
-                    // Check for potential intersection with the previous range.
-                    const auto& prev_range = *std::prev(it);
-
-                    add_potential_edgecross(prev_range, range);
-                }
-
-                if (std::next(it) != ranges.end())
-                {
-                    // Check for potential intersection with the next range.
-                    const auto& next_range = *std::next(it);
-
-                    add_potential_edgecross(range, next_range);
-                }
-
-                // TODO: add/remove intersection events.
-            }
-            break;
-        case 1: // EdgePairSwap
-            {
-                assert(std::get_if<EdgePairSwap>(&event.event) != nullptr);
-                const OccupiedRangeBetweenEdges& range1 = std::get<EdgePairSwap>(event.event).range1;
-                const OccupiedRangeBetweenEdges& range2 = std::get<EdgePairSwap>(event.event).range2;
-
-                // Wow this is ugly... TODO Does that const value work properly? Do we need to do a dynamic epsilon?
-                this->current_longitude = event.longitude - DOUBLE_EPSILON;
-
-                double l1pre = this->comparator.latitudeAtCurrentLongitude(range1);
-                double l2pre = this->comparator.latitudeAtCurrentLongitude(range2);
-
-                if (!this->comparator(range2, range1))
-                {
-                    std::cout << "Ranges out of order: " << std::endl;
-                    std::cout << "Range 1: " << range1.min_latitude_edge.vertices[0] << " -> " << range1.min_latitude_edge.vertices[1] << " | " << range1.max_latitude_edge.vertices[0] << " -> " << range1.max_latitude_edge.vertices[1] << std::endl;
-                    std::cout << "Range 2: " << range2.min_latitude_edge.vertices[0] << " -> " << range2.min_latitude_edge.vertices[1] << " | " << range2.max_latitude_edge.vertices[0] << " -> " << range2.max_latitude_edge.vertices[1] << std::endl;
-                }
-
-                assert(this->comparator(range2, range1));
-
-                {
-                    auto it1 = ranges.find(range1);
-                    auto it2 = ranges.find(range2);
-
-                    // Ensure that it2 is just after it1.
-                    if(std::next(it1) != it2)
-                    {
-                        // Event was stale.
-                        break;
-                    }
-                }
-
-                // Delete them from the set.
-                ranges.erase(range1);
-                ranges.erase(range2);
-
-                this->current_longitude = event.longitude + DOUBLE_EPSILON;
-
-                double l1 = this->comparator.latitudeAtCurrentLongitude(range1);
-                double l2 = this->comparator.latitudeAtCurrentLongitude(range2);
-                if (!this->comparator(range2, range1))
-                {
-
-                    std::cout << "L1: " << this->comparator.latitudeAtCurrentLongitude(range1) << std::endl;
-                    std::cout << "L2: " << this->comparator.latitudeAtCurrentLongitude(range2) << std::endl;
-                }
-
-                if (!this->comparator(range2, range1))
-                {
-                    std::cout << "Ranges out of order: " << std::endl;
-                    std::cout << "Range 1: " << range1.min_latitude_edge.vertices[0] << " -> " << range1.min_latitude_edge.vertices[1] << " | " << range1.max_latitude_edge.vertices[0] << " -> " << range1.max_latitude_edge.vertices[1] << std::endl;
-std::cout << "Range 2: " << range2.min_latitude_edge.vertices[0] << " -> " << range2.min_latitude_edge.vertices[1] << " | " << range2.max_latitude_edge.vertices[0] << " -> " << range2.max_latitude_edge.vertices[1] << std::endl;
-                }
-
-                // Check to make sure the comparator puts range2 after range1:
-                assert(this->comparator(range2, range1));
-
-                {
-                    // Note: do not use these iterators because the second insert invalidates the first one.
-                    const auto& [_it1, rg1_inserted] = ranges.insert(range1);
-                    const auto& [_it2, rg2_inserted] = ranges.insert(range2);
-
-                    assert(rg1_inserted);
-                    assert(rg2_inserted);
-                }
-
-                auto it1 = ranges.find(range1);
-                auto it2 = ranges.find(range2);
-
-                assert(ranges.key_comp().sweep->current_longitude == this->current_longitude);
-
-                // Make sure that the order is now flipped:
-                assert(std::next(it2) == it1);
-
-                // FIXME: only add swap events after currnet longitude; also, things might be swapped below this line...
-
-                this->current_longitude = event.longitude;
-
-
-                // TODO: The edges now have new neighbors. Check for intersections with those.
-
-                if (it2 != ranges.begin())
-                {
-                    // Check for potential intersection with the previous range.
-                    const auto& prev_range = *std::prev(it2);
-                    if (add_potential_edgecross(prev_range, range2))
-                    {
-                        std::cout << "Added intersection event!" << std::endl;
-                    }
-                }
-
-                if (std::next(it1) != ranges.end())
-                {
-                    // Check for potential intersection with the next range.
-                    const auto& next_range = *std::next(it1);
-                    if (add_potential_edgecross(range1, next_range))
-                    {
-                        std::cout << "Added intersection event!" << std::endl;
-                    }
-                }
-            }
-            break;
-
-        case 2: // EdgePairEnd
-            {
-                assert(std::get_if<EdgePairEnd>(&event.event) != nullptr);
-                const OccupiedRangeBetweenEdges& range = std::get<EdgePairEnd>(event.event).range;
-
-                this->current_longitude = event.longitude - DOUBLE_EPSILON;
-
-                // Remove the range from the set.
-                ranges.erase(range);
-
-                // TODO remove intersection events (if applicable? Those should have already triggered by now.) (Or add ones for neighbors that now get close)
-            }
-            break;
-
-        default:
-            throw std::runtime_error("Invalid event type");
-        }
+		assert(check_longitude_change_is_safe(event_longitude, current_longitude + DOUBLE_EPSILON));
     }
 
     bool LongitudeSweep::has_more_events() const
@@ -551,25 +486,61 @@ std::cout << "Range 2: " << range2.min_latitude_edge.vertices[0] << " -> " << ra
         return latitude(direction, math::Vec3d(0, 0, 0));
     }
 
-    bool edges_will_cross(const Edge& a, const Edge& b)
+    bool edges_will_cross(const Edge &a, const Edge &b)
     {
+
+//		double start_longitude_1 = longitude(a.vertices[0], math::Vec3d(0, 0, 0));
+//		double start_longitude_2 = longitude(b.vertices[0], math::Vec3d(0, 0, 0));
+
         double end_longitude_1 = longitude(a.vertices[1], math::Vec3d(0, 0, 0));
         double end_longitude_2 = longitude(b.vertices[1], math::Vec3d(0, 0, 0));
 
         double end_longitude = signed_longitude_difference(end_longitude_1, end_longitude_2) < 0
                                    ? end_longitude_1
                                    : end_longitude_2;
+		// Sanity check: make sure that the end longitude is in the longitude range of both edges:
+		assert(in_longitude_range(a, end_longitude));
+		assert(in_longitude_range(b, end_longitude));
 
-        // Sanity check: make sure that the end longitude is in the longitude range of both edges:
-        assert(in_longitude_range(a, end_longitude));
-        assert(in_longitude_range(b, end_longitude));
+//		double start_longitude = signed_longitude_difference(start_longitude_1, start_longitude_2) > 0
+//								   ? start_longitude_1
+//								   : start_longitude_2;
 
-        // Grab the latitude at that point:
-        double latitude_1 = latitude(a, end_longitude);
-        double latitude_2 = latitude(b, end_longitude);
+//		double start_latitude_1 = latitude(a, start_longitude);
+//		double start_latitude_2 = latitude(b, start_longitude);
 
-        bool will_cross = latitude_1 > latitude_2;
+
+		// Grab the latitude at that point:
+		double latitude_1 = latitude(a, end_longitude);
+		double latitude_2 = latitude(b, end_longitude);
+
+		bool will_cross = latitude_1 > latitude_2;
+//
+//		assert(start_latitude_1 < start_latitude_2);
+
+
+
+
 
         return will_cross;
     }
+
+	std::array<OccupiedRangeBetweenEdges, 2> OccupiedRangeBetweenEdges::split(double split_longitude) const {
+		return {
+				OccupiedRangeBetweenEdges {
+						min_latitude_edge,
+						max_latitude_edge,
+						latitude_padding,
+						min_longitude,
+						split_longitude
+				},
+				OccupiedRangeBetweenEdges {
+						min_latitude_edge,
+						max_latitude_edge,
+						latitude_padding,
+						split_longitude,
+						max_longitude
+				}
+		};
+	}
 }

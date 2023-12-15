@@ -183,7 +183,7 @@ int main(int argc, char** argv)
 	for (
 		LongitudeSweep sweepline_algorithm(triangles, STARTING_LONGITUDE, target);
 		sweepline_algorithm.has_more_events();
-		sweepline_algorithm.process_next_event())	{
+		sweepline_algorithm.progress_to_next_longitude_range())	{
 
 		double min_free = - M_PI/2.0;
 
