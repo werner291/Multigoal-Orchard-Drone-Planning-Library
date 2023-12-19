@@ -333,6 +333,8 @@ namespace mgodpl {
 			register_edge_pair(rg2);
 		}
 
+		assert(check_invariants());
+
 	}
 
 	bool LongitudeSweep::check_invariants() const {
@@ -359,7 +361,7 @@ namespace mgodpl {
 			}
 
 			// Check intersections:
-			if (edges_will_cross(range1, range2)) {
+			if (auto cross = edges_will_cross(range1, range2)) {
 				std::cerr << "Ranges intersect!" << std::endl;
 				return false;
 			}
@@ -428,6 +430,8 @@ namespace mgodpl {
 	}
 
 	void LongitudeSweep::progress_to_next_longitude_range() {
+		assert(check_invariants());
+
 		// TODO: By carefully sorting the events, we should be able to avoid batching like this.
 
 		// Grab a batch of events with the same longitude:
@@ -440,7 +444,7 @@ namespace mgodpl {
 		// Delete all ranges that end here:
 		for (const SweepEvent &event: events) {
 			if (event.event_type == SweepEvent::END) {
-				ranges.erase(event.range);
+				process_edge_end(); //TODO: This is wrong; need to check that this doesn't introduce intersections.
 			}
 		}
 
@@ -466,7 +470,7 @@ namespace mgodpl {
 			current_longitude = (event_longitude + event_queue.begin()->longitude) / 2.0;
 		}
 
-		assert(check_longitude_change_is_safe(event_longitude, current_longitude + DOUBLE_EPSILON));
+		assert(check_invariants());
 	}
 
 	bool LongitudeSweep::has_more_events() const {
@@ -500,10 +504,11 @@ namespace mgodpl {
 			double l1 = latitude(range1.min_latitude_edge, end_longitude);
 			double l2 = latitude(range2.min_latitude_edge, end_longitude);
 
-
 			std::cerr << "Rg1 min: " << range1.min_latitude_edge.vertices[0] << " - " << range1.min_latitude_edge.vertices[1] << std::endl;
 			std::cerr << "Rg2 min: " << range2.min_latitude_edge.vertices[0] << " - " << range2.min_latitude_edge.vertices[1] << std::endl;
 			std::cerr << "Ranges are equal?!" << std::endl;
+
+			return std::nullopt;
 		}
 		assert(ranges.key_comp().before_at_longitude(range2, range1, end_longitude));
 
