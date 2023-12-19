@@ -26,7 +26,7 @@ namespace mgodpl
     *
     * @return  The latitude, as a double in the range [-pi/2, pi/2].
     */
-    double latitude(const math::Vec3d& point, const math::Vec3d& center);
+    double latitude(const math::Vec3d& point, const math::Vec3d& center = {0, 0, 0});
 
     /**
     * \brief Compute the longitude of the projection of a point on a sphere (poles on the Z-axis).
@@ -36,7 +36,7 @@ namespace mgodpl
     *
     * \return          The longitude, as a double in the range [-pi, pi].
     */
-    double longitude(const math::Vec3d& point, const math::Vec3d& center);
+    double longitude(const math::Vec3d& point, const math::Vec3d& center = {0, 0, 0});
 
     /**
     * \brief  Compute the longitude of the given point, relative to the given starting longitude.
@@ -45,6 +45,15 @@ namespace mgodpl
     * \return                    The relative longitude, as a double in the range [0, 2pi].
     */
     double longitude_ahead_angle(const double starting_longitude, const double longitude);
+
+	/**
+	 * \brief Compute the signed difference between two longitudes.
+	 *
+	 * That is: compute the difference between the two longitudes, and put it into the range [-pi, pi].
+	 *
+	 * \return The signed difference between the two longitudes, as a double in the range [-pi, pi].
+	 */
+	double signed_longitude_difference(double first, double second);
 
     /**
     * \brief A triangle in 3D space, with vertices in Cartesian coordinates.
@@ -56,10 +65,21 @@ namespace mgodpl
         math::Vec3d normal() const;
     };
 
+	/**
+	 * \brief A line segment in 3D space, with vertices in Cartesian coordinates.
+	 */
     struct Edge
     {
         std::array<math::Vec3d, 2> vertices;
     };
+
+	/**
+     * \brief Given an edge, return the latitude of the intersection of the projection of the edge on the sphere with the longitude sweep arc at the given longitude.
+     * \param range		    The range of longitudes over which the latitude is valid.
+     * \param longitude	    The longitude at which to compute the latitude.
+     * \return		        The latitude of the intersection of the projection of the edge on the sphere with the given longitude.
+     */
+	double latitude(const Edge& edge, double longitude);
 
     /**
     * \brief A method that computes the angular padding to add to a given polar obstacle point.
@@ -76,6 +96,14 @@ namespace mgodpl
     */
     double angular_padding(double arm_radius, double obstacle_distance);
 
+	/**
+	 * Check that the longitude of the end of the egde is after the longitudeof the start.
+	 *
+	 * @param edge 			The edge.
+	 * @return 				Whether the edge is ordered.
+	 */
+	bool edge_is_ordered(const Edge& edge);
+
     /**
     * \brief A range of latitudes defined by two edges at the top and bottom.
     *
@@ -87,26 +115,48 @@ namespace mgodpl
     {
         Edge min_latitude_edge;
         Edge max_latitude_edge;
-        double latitude_padding;
 		double min_longitude;
 		double max_longitude;
 
-		std::array<OccupiedRangeBetweenEdges, 2> split(double split_longitude) const;
+		[[nodiscard]] std::array<OccupiedRangeBetweenEdges, 2> split(double split_longitude) const;
+
+		// Constructor that checks a few properties:
+		OccupiedRangeBetweenEdges(Edge min_latitude_edge, Edge max_latitude_edge);
+
+		// Constructor that restricts the longitude range between two longitudes.
+		OccupiedRangeBetweenEdges(Edge min_latitude_edge, Edge max_latitude_edge, double min_longitude, double max_longitude);
     };
 
-    struct FreeRangeBetweenEdges
-    {
-        std::optional<Edge> min_latitude_edge;
-        std::optional<Edge> max_latitude_edge;
-    };
+	/**
+	 * Given two OccupiedRangeBetweenEdges that are assumed to have some overlap,
+	 * compute the start and end longitudes of the overlap of the longitudes
+	 * of the two ranges.
+	 *
+	 * @return 	The start-and-end longitudes, as doubles.
+	 */
+	std::array<double, 2> shared_longitude_range(const Edge& edge1, const Edge& edge2);
 
-    /**
-    * \brief Given an edge, return the latitude of the intersection of the projection of the edge on the sphere with the longitude sweep arc at the given longitude.
-    * \param range		    The range of longitudes over which the latitude is valid.
-    * \param longitude	    The longitude at which to compute the latitude.
-    * \return		        The latitude of the intersection of the projection of the edge on the sphere with the given longitude.
-    */
-    double latitude(const Edge& edge, double longitude);
+	/**
+	 * Given two OccupiedRangeBetweenEdges that are assumed to have some overlap,
+	 * compute the start and end longitudes of the overlap of the longitudes
+	 * of the two ranges.
+	 *
+	 * @return 	The start-and-end longitudes, as doubles.
+	 */
+	std::array<double, 2> shared_longitude_range(const OccupiedRangeBetweenEdges& range1,
+												 const OccupiedRangeBetweenEdges& range2);
+
+	/**
+	 * Given two edges, compute a unit vector that is the intersection
+	 * of the two edges as projected onto the sphere.
+	 *
+	 * Precondition: This intersection is assumed to exist.
+	 *
+	 * @param a		The first edge.
+	 * @param b		The second edge.
+	 * @return	    The intersection vector.
+	 */
+	math::Vec3d Edge_intersection(const Edge& a, const Edge& b);
 
     /**
     * \brief	Finds whether, at the last common longitude of the two edges, whether the latitude of b is lower than the latitude of a. (Violating ascending order.)
@@ -196,15 +246,6 @@ namespace mgodpl
     };
 
     /**
-    * \brief Compute the signed difference between two longitudes.
-    *
-    * That is: compute the difference between the two longitudes, and put it into the range [-pi, pi].
-    *
-    * \return The signed difference between the two longitudes, as a double in the range [-pi, pi].
-    */
-    double signed_longitude_difference(double first, double second);
-
-    /**
     * \brief An event encountered during the longitude sweep.
     */
     struct SweepEvent
@@ -247,15 +288,12 @@ namespace mgodpl
     /**
     * \brief A struct tracking the state of an ongoing longitude sweep.
     */
-    struct LongitudeSweep
+    class LongitudeSweep
     {
-
 		const double starting_longitude;
 
         /// The longitude of the last-passed event, or the starting longitude if no events have been processed yet.
         double current_longitude;
-
-        double arm_half_height = 0.025;
 
         /// The ranges of latitudes between edges between `longitude` and the next event (or the end of the sweep).
         /// Warning: this set has a *mutable comparator*; be very careful when changing it.
@@ -264,7 +302,8 @@ namespace mgodpl
         /// The event queue, sorted by angle ahead of the current longitude. (between 0 and 2pi)
         std::set<SweepEvent> event_queue;
 
-        bool add_potential_edgecross(OccupiedRangeBetweenEdges range1, OccupiedRangeBetweenEdges range2);
+	public:
+
         /**
         * \brief Initialize a longitude sweep in the initial state.
         * \param triangles The set of triangles that serve as obstacles.
@@ -279,20 +318,19 @@ namespace mgodpl
 
         [[nodiscard]] bool has_more_events() const;
 
+		[[nodiscard]] inline double current_sweepline_longitude() const {
+			return current_longitude;
+		}
+
+		[[nodiscard]] inline const std::set<OccupiedRangeBetweenEdges, SortByLatitudeAtLongitude>& occupied_ranges() const {
+			return ranges;
+		}
+
+	private:
+
 		std::vector<SweepEvent> pop_events_with_same_longitude();
 
-		void delete_latitude_range(const OccupiedRangeBetweenEdges &range);
-
-		void insert_latitude_range(const OccupiedRangeBetweenEdges &range);
-
-		const bool check_invariants() const;
-
-		bool
-		delete_potential_edgecross(const OccupiedRangeBetweenEdges &range1, const OccupiedRangeBetweenEdges &range2);
-
-		SweepEvent edgecross_event(const OccupiedRangeBetweenEdges &range1,
-								   const OccupiedRangeBetweenEdges &range2,
-								   double intersection_longitude) const;
+		bool check_invariants() const;
 
 		bool check_longitude_change_is_safe(double from_longitude, double to_longitude) const;
 
@@ -304,7 +342,18 @@ namespace mgodpl
 
 		bool current_sweepline_crosses_range(const OccupiedRangeBetweenEdges &range) const;
 
-		void register_ongoing_range(const OccupiedRangeBetweenEdges &before_split);
+		void register_ongoing_range(const OccupiedRangeBetweenEdges &ongoing_range);
+
+		/**
+		 * Given two OccupiedRangeBetweenEdges, determine whether their min_latitude_edge
+		 * will intersect on the sphere within the shared longitude range.
+		 *
+		 * @param 		range1		The first range.
+		 * @param 		range2		The second range.
+		 * @return 		The intersection longitude, or nullopt if there is no intersection.
+		 */
+		std::optional<double> edges_will_cross(const OccupiedRangeBetweenEdges &range1,
+															 const OccupiedRangeBetweenEdges &range2) const;
 	};
 }
 #endif //LATITUDE_SWEEP_H

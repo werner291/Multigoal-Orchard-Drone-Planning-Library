@@ -187,9 +187,9 @@ int main(int argc, char** argv)
 
 		double min_free = - M_PI/2.0;
 
-		const double longitude_midpoint = sweepline_algorithm.current_longitude;
+		const double longitude_midpoint = sweepline_algorithm.current_sweepline_longitude();
 
-		for (const auto & range : sweepline_algorithm.ranges) {
+		for (const auto & range : sweepline_algorithm.occupied_ranges()) {
 			double range_min = latitude(range.min_latitude_edge, longitude_midpoint);
 			double range_max = latitude(range.max_latitude_edge, longitude_midpoint);
 
