@@ -221,7 +221,7 @@ namespace mgodpl
             // First, use relative longitude.
             if (relative_longitude != other.relative_longitude)
             {
-                return relative_longitude > other.relative_longitude;
+                return relative_longitude < other.relative_longitude;
             }
 
             // Else, use event type; end events come first to avoid duplicate edges.
@@ -253,12 +253,16 @@ namespace mgodpl
 
         bool operator()(const LatitudeRangeBetweenEdges& a, const LatitudeRangeBetweenEdges& b) const;
 
+		bool compare_at_longitude(const LatitudeRangeBetweenEdges& a, const LatitudeRangeBetweenEdges& b, double longitude) const;
+
         bool operator()(const HackyMutable<LatitudeRangeBetweenEdges>& a,
                         const HackyMutable<LatitudeRangeBetweenEdges>& b) const
         {
             return operator()(a.interior, b.interior);
         }
     };
+
+	bool cmp_ranges_holdbuffer(const LatitudeRangeBetweenEdges &a, const LatitudeRangeBetweenEdges &b);
 
     /**
     * \brief A struct tracking the state of an ongoing longitude sweep.
@@ -277,7 +281,7 @@ namespace mgodpl
         std::set<LatitudeRangeBetweenEdges, SortByLatitudeAtLongitude> ranges;
 
         /// The event queue, sorted by angle ahead of the current longitude. (between 0 and 2pi)
-        std::priority_queue<SweepEvent> event_queue;
+        std::set<SweepEvent> event_queue;
 
         bool add_potential_edgecross(LatitudeRangeBetweenEdges range1, LatitudeRangeBetweenEdges range2);
         /**
@@ -293,11 +297,26 @@ namespace mgodpl
         std::vector<SweepEvent> pop_next_events();
         void delete_affected_ranges(const std::vector<SweepEvent>& events);
         void reinsert_nondeleted(const std::vector<SweepEvent>& events);
-        bool check_range_order_validity();
 
         void process_next_event();
 
         bool has_more_events() const;
-    };
+
+		bool check_order_correctness();
+
+		bool check_events_complete();
+
+		bool check_events_consistent();
+
+		SweepEvent mkCrossEvent(const LatitudeRangeBetweenEdges &range1,
+								const LatitudeRangeBetweenEdges &range2) const;
+
+		SweepEvent mkStartEvent(const LatitudeRangeBetweenEdges &rg1,
+								double longitude) const;
+
+		SweepEvent mkEndEvent(const LatitudeRangeBetweenEdges &rg1) const;
+
+		bool jump_is_safe(double d);
+	};
 }
 #endif //LATITUDE_SWEEP_H
