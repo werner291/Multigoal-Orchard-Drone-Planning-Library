@@ -42,7 +42,18 @@ namespace mgodpl {
 	bool SortByLatitudeAtLongitude::compare_at_longitude(const OrderedArcEdge &a,
 														 const OrderedArcEdge &b,
 														 double longitude) const {
-		return a.latitudeAtLongitude(longitude) < b.latitudeAtLongitude(longitude);
+		double l1 = a.latitudeAtLongitude(longitude);
+		double l2 = b.latitudeAtLongitude(longitude);
+
+		if (l1 != l2) {
+			return l1 < l2;
+		} else {
+			// Compare at the end of the shared longitude range instead.
+			auto lon_range = a.longitude_range().overlap(b.longitude_range());
+			double l1_end = a.latitudeAtLongitude(lon_range.end);
+			double l2_end = b.latitudeAtLongitude(lon_range.end);
+			return l1_end < l2_end;
+		}
 	}
 
 	double signed_longitude_difference(double first, double second) {
@@ -376,6 +387,9 @@ namespace mgodpl {
 		assert(this->current_longitude > event_longitude);
 		assert(check_invariants());
 
+		this->events_passed += events.size();
+		std::cerr << "Events passed: " << this->events_passed << ", queue size: " << this->event_queue.size() << std::endl;
+
 	}
 
 	bool LongitudeSweep::has_more_events() const {
@@ -393,6 +407,14 @@ namespace mgodpl {
 			while (it2 != ranges.end()) {
 
 				if (!ranges.key_comp()(*it1, *it2)) {
+
+					double l1 = it1->interior.latitudeAtLongitude(current_longitude);
+					double l2 = it2->interior.latitudeAtLongitude(current_longitude);
+
+					auto lon_range = it1->interior.longitude_range().overlap(it2->interior.longitude_range());
+
+					double l1_end = it1->interior.latitudeAtLongitude(lon_range.end);
+					double l2_end = it2->interior.latitudeAtLongitude(lon_range.end);
 
 					std::cerr << "Not in order: " << it1->interior << " vs " << it2->interior << std::endl;
 					return false;

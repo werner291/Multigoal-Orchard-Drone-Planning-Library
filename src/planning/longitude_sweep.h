@@ -351,6 +351,8 @@ namespace mgodpl {
 		/// delete stale events.
 		std::set<SweepEvent> event_queue;
 
+		size_t events_passed = 0;
+
 		/// Given two edges, check if they cross and, if so, add a EdgePairSwap event to the event queue.
 		bool add_potential_edgecross(OrderedArcEdge edge1, OrderedArcEdge edge2);
 
