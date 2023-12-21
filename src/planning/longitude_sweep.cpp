@@ -306,10 +306,6 @@ namespace mgodpl {
 			}
 			std::cerr << std::endl;
 
-//			this->current_longitude = event_longitude + DOUBLE_EPSILON;
-
-			assert(check_invariants());
-
 		} else {
 
 			// Process deletions first:
@@ -382,6 +378,11 @@ namespace mgodpl {
 					}
 				}
 			}
+		}
+
+		// Move current longitude to halfway to the next event.
+		if (!event_queue.empty()) {
+			this->current_longitude = (event_longitude + event_queue.begin()->longitude) / 2.0;
 		}
 
 		assert(this->current_longitude > event_longitude);
