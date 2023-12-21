@@ -183,25 +183,25 @@ int main(int argc, char** argv)
 	for (
 		LongitudeSweep sweepline_algorithm(triangles, STARTING_LONGITUDE, target);
 		sweepline_algorithm.has_more_events();
-		sweepline_algorithm.process_next_event())	{
+		sweepline_algorithm.advance())	{
 
 		double min_free = - M_PI/2.0;
 
-		const double longitude_midpoint = sweepline_algorithm.current_longitude;
-
-		for (const auto & range : sweepline_algorithm.ranges) {
-			double range_min = latitude(range.min_latitude_edge, longitude_midpoint);
-			double range_max = latitude(range.max_latitude_edge, longitude_midpoint);
-
-			if (min_free < range_min) {
-				// std::cout << "Found a free range: [" << min_free << ", " << range_min << "]" << std::endl;
-			}
-			min_free = range_max;
-		}
-
-		if (min_free < M_PI/2.0) {
-			// std::cout << "Found a free range: [" << min_free << ", " << M_PI/2.0 << "]" << std::endl;
-		}
+//		const double longitude_midpoint = sweepline_algorithm.current_longitude;
+//
+//		for (const auto & range : sweepline_algorithm.ranges) {
+//			double range_min = latitude(range.min_latitude_edge, longitude_midpoint);
+//			double range_max = latitude(range.max_latitude_edge, longitude_midpoint);
+//
+//			if (min_free < range_min) {
+//				// std::cout << "Found a free range: [" << min_free << ", " << range_min << "]" << std::endl;
+//			}
+//			min_free = range_max;
+//		}
+//
+//		if (min_free < M_PI/2.0) {
+//			// std::cout << "Found a free range: [" << min_free << ", " << M_PI/2.0 << "]" << std::endl;
+//		}
 
 
 		// const auto& longitude_range = sweepline_algorithm.current_longitude_range();
