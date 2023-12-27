@@ -147,3 +147,39 @@ TEST(longitude_sweep_tests, sweepline_latitude_intersection_test)
     latitude(A1, a_lon);
 
 }
+
+TEST(longitude_sweep_tests, longitude_interpolation) {
+
+	// Pick two random longitudes in the [-pi,pi] range:
+	random_numbers::RandomNumberGenerator rng(42);
+
+	// Repeat 1000 times:
+	for (int i = 0; i < 1000; ++i) {
+
+		double lon1 = rng.uniformReal(-M_PI, M_PI);
+		double lon2 = rng.uniformReal(-M_PI, M_PI);
+		if (signed_longitude_difference(lon2, lon1) < 0) // It's always ordered; swap if necessary.
+			std::swap(lon1, lon2);
+
+		// Pick a random t in the [0,1] range:
+		double t = rng.uniformReal(0, 1);
+
+		// Compute the interpolated longitude:
+		double interpolated_lon = interpolate_longitude(lon1, lon2, t);
+
+		// Check that it's in the range [-pi,pi]:
+		ASSERT_GE(interpolated_lon, -M_PI);
+		ASSERT_LE(interpolated_lon, M_PI);
+
+		// Check that it falls in the signed longitude difference range:
+		double signed_diff = signed_longitude_difference(lon1, lon2);
+		double interpolated_signed_diff = signed_longitude_difference(lon1, interpolated_lon);
+
+		// Compute the t back:
+		double interpolated_t = (interpolated_signed_diff) / signed_diff;
+
+		// Check that it's the same:
+		ASSERT_NEAR(interpolated_t, t, 1e-6);
+	}
+
+}

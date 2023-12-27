@@ -54,6 +54,18 @@ namespace mgodpl {
 	double signed_longitude_difference(double first, double second);
 
 	/**
+	 * Perform a linear interpolation between two longitudes, taking angle wrapping into account.
+	 *
+	 * @pre	The two longitudes must be in order (signed_longitude_difference(second,first) >= 0).
+	 *
+	 * @param first 	The first longitude, in the range [-pi, pi].
+	 * @param second 	The second longitude, in the range [-pi, pi].
+	 * @param t 		The interpolation parameter, in the range [0, 1].
+	 * @return 			The interpolated longitude.
+	 */
+	double interpolate_longitude(double first, double second, double t);
+
+	/**
 	* \brief A triangle in 3D space, with vertices in Cartesian coordinates.
 	*/
 	struct Triangle {
@@ -80,6 +92,16 @@ namespace mgodpl {
 	 * That's just atan(arm_radius / r).
 	 */
 	double angular_padding(double arm_radius, double obstacle_distance);
+
+	/**
+	 * \brief Given an angle, wrap it into the range [-pi, pi].
+	 *
+	 * Precodition: the given angle must be in the range [-3pi, 3pi].
+	 *
+	 * @param angle 		The angle to wrap.
+	 * @return 				The wrapped angle.
+	 */
+	double wrap_angle(double angle);
 
 	/**
 	* \brief Given an edge, return the latitude of the intersection of the projection of the edge on the sphere with the longitude sweep arc at the given longitude.

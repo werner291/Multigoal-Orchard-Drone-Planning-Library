@@ -11,6 +11,10 @@
 
 constexpr double DOUBLE_EPSILON = 1e-14; // TODO: Double-check that events aren't this close together.
 
+#define LOG_TRACE_BEFORE_SWAP FALSE
+#define LOG_TRACE_AFTER_SWAP FALSE
+#define TRACE_SWAP_EVENTS TRUE
+
 namespace mgodpl {
 
 	std::array<RelativeVertex, 3> sorted_relative_vertices(const Triangle &triangle, const math::Vec3d &center) {
@@ -249,7 +253,9 @@ namespace mgodpl {
 
 			const auto &swap = std::get<EdgePairSwap>(events[0].event);
 
+#if TRACE_SWAP_EVENTS
 			std::cerr << "Swapping " << swap.edge1 << " and " << swap.edge2 << std::endl;
+#endif
 
 			std::optional<OrderedArcEdge> before, after;
 
@@ -267,19 +273,18 @@ namespace mgodpl {
 			// If they have previous/next neighbors, delete any potential edgecrosses with them:
 			if (it1 != ranges.begin()) {
 				before = std::prev(it1)->interior;
-				std::cerr << "Before is " << before.value() << std::endl;
 				if (std::prev(it1)->interior.crosses(it1->interior, current_longitude)) {
 					event_queue.erase(mkCrossEvent(std::prev(it1)->interior, it1->interior));
 				}
 			}
 			if (std::next(it2) != ranges.end()) {
 				after = std::next(it2)->interior;
-				std::cerr << "After is " << after.value() << std::endl;
 				if (it2->interior.crosses(std::next(it2)->interior, current_longitude)) {
 					event_queue.erase(mkCrossEvent(it2->interior, std::next(it2)->interior));
 				}
 			}
 
+#if LOG_TRACE_BEFORE_SWAP
 			std::cerr << "Before swap, ranges are :";
 			if (before) {
 				std::cerr << " B" << before->id;
@@ -290,7 +295,7 @@ namespace mgodpl {
 				std::cerr << " A" << after->id;
 			}
 			std::cerr << std::endl;
-
+#endif
 			// Swap:
 			std::swap(it1->interior, it2->interior);
 
@@ -307,6 +312,7 @@ namespace mgodpl {
 				add_potential_edgecross(it2->interior, *after);
 			}
 
+#if LOG_TRACE_AFTER_SWAP
 			std::cerr << "After swap, ranges are :";
 			if (before) {
 				std::cerr << " B" << before->id;
@@ -317,6 +323,7 @@ namespace mgodpl {
 				std::cerr << " A" << after->id;
 			}
 			std::cerr << std::endl;
+#endif
 
 		} else {
 
@@ -394,10 +401,14 @@ namespace mgodpl {
 					}
 				}
 			}
+
+			assert(check_invariants());
+
 		}
 
 		// Move current longitude to halfway to the next event.
 		if (!event_queue.empty()) {
+			assert(this->event_queue.begin()->longitude > current_longitude);
 			this->current_longitude = (event_longitude + event_queue.begin()->longitude) / 2.0;
 		}
 
@@ -579,6 +590,23 @@ namespace mgodpl {
 		}
 
 		return latitude(direction, math::Vec3d(0, 0, 0));
+	}
+
+	double interpolate_longitude(double first, double second, double t) {
+		double diff = signed_longitude_difference(second, first);
+		assert(diff >= 0);
+		return wrap_angle(first + t * diff);
+	}
+
+	double wrap_angle(double angle) {
+		assert(angle >= -3 * M_PI && angle <= 3 * M_PI);
+		if (angle > M_PI) {
+			return angle - 2 * M_PI;
+		} else if (angle < -M_PI) {
+			return angle + 2 * M_PI;
+		} else {
+			return angle;
+		}
 	}
 
 }
