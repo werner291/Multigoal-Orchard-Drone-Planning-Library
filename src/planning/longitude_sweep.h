@@ -192,7 +192,9 @@ namespace mgodpl {
 
 			assert(latitudeAtLongitude(after_longitude) <= other.latitudeAtLongitude(after_longitude));
 
-			return latitudeAtLongitude(overlap.end) > other.latitudeAtLongitude(overlap.end);
+			double l1_end = latitudeAtLongitude(overlap.end);
+			double l2_end = other.latitudeAtLongitude(overlap.end);
+			return l1_end > l2_end;
 		}
 
 		[[nodiscard]] RelativeVertex intersection(const OrderedArcEdge &other) const {

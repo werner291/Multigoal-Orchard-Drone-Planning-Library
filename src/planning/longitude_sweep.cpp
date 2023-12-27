@@ -105,8 +105,20 @@ namespace mgodpl {
 
 	bool LongitudeSweep::add_potential_edgecross(const OrderedArcEdge edge1, const OrderedArcEdge edge2) {
 		if (edge1.crosses(edge2, current_longitude)) {
+
 			std::cerr << "Adding edge cross event between " << edge1 << " and " << edge2 << std::endl;
-			this->event_queue.insert(mkCrossEvent(edge1, edge2));
+			auto evt = mkCrossEvent(edge1, edge2);
+
+			if (evt.longitude <= current_longitude) {
+				std::cerr << "Order at current: " << this->ranges.key_comp().compare_at_longitude(edge1, edge2, current_longitude) << std::endl;
+				double l1 = edge1.latitudeAtLongitude(current_longitude);
+				double l2 = edge2.latitudeAtLongitude(current_longitude);
+				std::cerr << "Order at current: " << this->ranges.key_comp().compare_at_longitude(edge1, edge2, current_longitude) << std::endl;
+				std::cerr << "Will cross: " << edge1.crosses(edge2, current_longitude) << std::endl;
+			}
+
+			assert(evt.longitude > current_longitude);
+			this->event_queue.insert(evt);
 			return true;
 		} else {
 			return false;
@@ -337,7 +349,7 @@ namespace mgodpl {
 			assert(check_order_correctness());
 
 			// Advance the longitude:
-			this->current_longitude = event_longitude + DOUBLE_EPSILON;
+			this->current_longitude = event_longitude;//9539 + DOUBLE_EPSILON;
 
 			// Check invariants:
 			assert(check_order_correctness());
@@ -354,11 +366,15 @@ namespace mgodpl {
 					if (inserted) {
 
 						if (it != ranges.begin()) {
+							assert(this->event_queue.begin()->longitude > current_longitude);
 							add_potential_edgecross(std::prev(it)->interior, it->interior);
+							assert(this->event_queue.begin()->longitude > current_longitude);
 						}
 
 						if (std::next(it) != ranges.end()) {
+							assert(this->event_queue.begin()->longitude > current_longitude);
 							add_potential_edgecross(it->interior, std::next(it)->interior);
+							assert(this->event_queue.begin()->longitude > current_longitude);
 						}
 
 						// Delete any edgecrosses with the previous/next ranges:
@@ -461,6 +477,12 @@ namespace mgodpl {
 	}
 
 	bool LongitudeSweep::check_events_consistent() {
+
+		if (event_queue.empty()) {
+			return true;
+		}
+
+		assert(event_queue.begin()->longitude >= current_longitude);
 
 		for (const auto &event: event_queue) {
 
