@@ -66,6 +66,19 @@ namespace mgodpl {
 	double interpolate_longitude(double first, double second, double t);
 
 	/**
+	 * Find the `t` such that `longitude = interpolate_longitude(first, second, t)`.
+	 *
+	 * @pre	The two longitudes must be in order (signed_longitude_difference(second,first) >= 0).
+	 * @pre The given longitude must be between the two longitudes.
+	 *
+	 * @param first 	The first longitude, in the range [-pi, pi].
+	 * @param second 	The second longitude, in the range [-pi, pi].
+	 * @param longitude The longitude to find.
+	 * @return 			The interpolation parameter, in the range [0, 1].
+	 */
+	double reverse_interpolate(double first, double second, double longitude);
+
+	/**
 	* \brief A triangle in 3D space, with vertices in Cartesian coordinates.
 	*/
 	struct Triangle {
@@ -110,14 +123,6 @@ namespace mgodpl {
 	* \return		        The latitude of the intersection of the projection of the edge on the sphere with the given longitude.
 	*/
 	double latitude(const Edge &edge, double longitude);
-
-	/**
-	* \brief	Finds whether, at the last common longitude of the two edges, whether the latitude of b is lower than the latitude of a. (Violating ascending order.)
-	* \param a		The first edge.
-	* \param b		The second edge.
-	* \return		Whether the segments will cross.
-	*/
-	bool edges_will_cross(const Edge &a, const Edge &b);
 
 	/**
 	* \brief A struct representing a vertex in a triangle, relative to some center, with the longitude of the vertex.
@@ -177,15 +182,17 @@ namespace mgodpl {
 		int id;
 		RelativeVertex start, end;
 
-		OrderedArcEdge(const RelativeVertex &start, const RelativeVertex &end) : start(start), end(end), id(next_id++) {
+		OrderedArcEdge(const RelativeVertex &start, const RelativeVertex &end) : id(next_id++), start(start), end(end) {
 			assert(signed_longitude_difference(start.longitude, end.longitude) <= 0);
 		}
 
-		double latitudeAtLongitude(double longitude) const {
+		[[nodiscard]] double latitudeAtLongitude(double longitude) const {
 			// TODO: This is a naive linear interpolation; this should work for now but isn't quite correct.
 			assert(signed_longitude_difference(longitude, start.longitude) >= 0);
 			assert(signed_longitude_difference(longitude, end.longitude) <= 0);
-			double t = (longitude - start.longitude) / (end.longitude - start.longitude); // TODO: This will go wrong when wrapping angles.
+
+			double t = reverse_interpolate(start.longitude, end.longitude, longitude);
+
 			return start.latitude * (1 - t) + end.latitude * t;
 		}
 
@@ -222,16 +229,41 @@ namespace mgodpl {
 		[[nodiscard]] RelativeVertex intersection(const OrderedArcEdge &other) const {
 			assert(crosses(other, this->longitude_range().overlap(other.longitude_range()).start));
 
-			double m1 = (end.latitude - start.latitude) / (end.longitude - start.longitude);
-			double p1 = start.latitude - m1 * start.longitude;
+			double lat1end = end.latitude;
+			double lat1start = start.latitude;
+			double lat2end = other.end.latitude;
+			double lat2start = other.start.latitude;
 
-			double m2 = (other.end.latitude - other.start.latitude) / (other.end.longitude - other.start.longitude);
-			double p2 = other.start.latitude - m2 * other.start.longitude;
+			double lon1end = end.longitude;
+			double lon1start = start.longitude;
+			double lon2end = other.end.longitude;
+			double lon2start = other.start.longitude;
+
+			double m1 = (lat1end - lat1start) / (lon1end - lon1start);
+			double p1 = lat1start - m1 * lon1start;
+
+			double m2 = (lat2end - lat2start) / (lon2end - lon2start);
+			double p2 = lat2start - m2 * lon2start;
 
 			double longitude = (p2 - p1) / (m1 - m2);
 			double latitude = m1 * longitude + p1;
 
 			return {longitude, latitude};
+		}
+
+		/**
+		 * \brief Check whether the given point is on this arc edge.
+		 *
+		 * @pre The point falls in the longitude range of this edge.
+		 *
+		 * @param v 			The point to check.
+		 * @param margin 		The margin to use for the check.
+		 * @return 				Whether the point is on the edge.
+		 */
+		[[nodiscard]] bool is_on_edge(const RelativeVertex v, const double margin = 1e-6) {
+			double t = reverse_interpolate(start.longitude, end.longitude, v.longitude);
+			double lat = start.latitude * (1 - t) + end.latitude * t;
+			return std::abs(lat - v.latitude) < margin;
 		}
 
 		// Stream output operator:

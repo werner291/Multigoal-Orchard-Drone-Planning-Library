@@ -609,4 +609,15 @@ namespace mgodpl {
 		}
 	}
 
+	double reverse_interpolate(double first, double second, double longitude) {
+		assert(signed_longitude_difference(second, first) >= 0);
+		assert(signed_longitude_difference(longitude, first) >= 0);
+		assert(signed_longitude_difference(longitude, second) <= 0);
+
+		double signed_diff = signed_longitude_difference(first, second);
+		double signed_diff_longitude = signed_longitude_difference(first, longitude);
+
+		return signed_diff_longitude / signed_diff;
+	}
+
 }

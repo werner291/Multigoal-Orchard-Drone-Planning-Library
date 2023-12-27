@@ -70,7 +70,7 @@ TEST(longitude_sweep_tests, intersection_longitude_test)
 
 }
 
-TEST(longitude_sweep_tests, signed_longitude_difference)
+TEST(longitude_sweep_tests, test_signed_longitude_difference)
 {
 
     random_numbers::RandomNumberGenerator rng(42);
@@ -148,6 +148,31 @@ TEST(longitude_sweep_tests, sweepline_latitude_intersection_test)
 
 }
 
+TEST(longitude_sweep_tests, signed_longitude_difference) {
+
+
+	random_numbers::RandomNumberGenerator rng(42);
+
+	// For 1000 iterations...
+	for (int i = 0; i < 1000; ++i) {
+		// Construct a random unit vector:
+		math::Vec3d a(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
+		a = a.normalized();
+
+		// Generate an angle.
+		double angle = rng.uniformReal(-M_PI, M_PI);
+
+		double signed_angle = rng.uniformReal(-M_PI, M_PI);
+
+		double angle2 = wrap_angle(angle + signed_angle);
+
+		double signed_diff = signed_longitude_difference(angle2, angle);
+
+		ASSERT_NEAR(signed_diff, signed_angle, 1e-6);
+	}
+
+}
+
 TEST(longitude_sweep_tests, longitude_interpolation) {
 
 	// Pick two random longitudes in the [-pi,pi] range:
@@ -171,15 +196,75 @@ TEST(longitude_sweep_tests, longitude_interpolation) {
 		ASSERT_GE(interpolated_lon, -M_PI);
 		ASSERT_LE(interpolated_lon, M_PI);
 
-		// Check that it falls in the signed longitude difference range:
-		double signed_diff = signed_longitude_difference(lon1, lon2);
-		double interpolated_signed_diff = signed_longitude_difference(lon1, interpolated_lon);
-
 		// Compute the t back:
-		double interpolated_t = (interpolated_signed_diff) / signed_diff;
+		double interpolated_t = reverse_interpolate(lon1, lon2, interpolated_lon);
 
 		// Check that it's the same:
 		ASSERT_NEAR(interpolated_t, t, 1e-6);
+	}
+
+}
+
+TEST(longitude_sweep_tests, intersection) {
+
+	// Generate four random points on the unit sphere:
+	random_numbers::RandomNumberGenerator rng(42);
+
+	for (int i = 0; i < 1000; ++i) {
+
+		RelativeVertex construction_center {
+			.longitude = rng.uniformReal(-M_PI, M_PI),
+			.latitude = rng.uniformReal(-M_PI / 2.0, M_PI / 2.0)
+		};
+
+		// Construct two edges that intersect at the expected intersection, with correct ordering:
+		RelativeVertex a1 {
+				wrap_angle(construction_center.longitude - rng.uniformReal(0.0, M_PI / 2.0)),
+			rng.uniformReal(-M_PI / 2.0, construction_center.latitude)
+		};
+
+		RelativeVertex a2 {
+				wrap_angle(construction_center.longitude + rng.uniformReal(0.0, M_PI / 2.0)),
+			rng.uniformReal(construction_center.latitude, M_PI / 2.0)
+		};
+
+		RelativeVertex b1 {
+				wrap_angle(construction_center.longitude - rng.uniformReal(0.0, M_PI / 2.0)),
+				rng.uniformReal(construction_center.latitude, M_PI / 2.0)
+		};
+
+		RelativeVertex b2 {
+				wrap_angle(construction_center.longitude + rng.uniformReal(0.0, M_PI / 2.0)),
+				rng.uniformReal(-M_PI / 2.0, construction_center.latitude)
+		};
+
+		// Construct the edges:
+		OrderedArcEdge A1 { a1, a2 };
+		OrderedArcEdge B1 { b1, b2 };
+
+		// Geogebra:
+		std::cerr << "C = (" << construction_center.longitude << "," << construction_center.latitude << ")" << std::endl;
+		std::cerr << "A = Segment((" << a1.longitude << "," << a1.latitude << "),(" << a2.longitude << "," << a2.latitude << "))" << std::endl;
+		std::cerr << "B = Segment((" << b1.longitude << "," << b1.latitude << "),(" << b2.longitude << "," << b2.latitude << "))" << std::endl;
+
+		auto overlap = A1.longitude_range().overlap(B1.longitude_range());
+
+		double lat1 = A1.latitudeAtLongitude(overlap.start);
+		double lat2 = B1.latitudeAtLongitude(overlap.start);
+
+		if (lat1 > lat2) {
+			std::swap(A1, B1);
+		}
+
+		if (A1.crosses(B1, A1.longitude_range().overlap(B1.longitude_range()).start)) {
+			// Compute the intersection:
+			RelativeVertex intersection = A1.intersection(B1);
+			std::cerr << "I = (" << intersection.longitude << "," << intersection.latitude << ")" << std::endl;
+
+			// Check that the intersection is on both edges:
+			ASSERT_TRUE(A1.is_on_edge(intersection));
+			ASSERT_TRUE(B1.is_on_edge(intersection));
+		}
 	}
 
 }
