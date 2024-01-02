@@ -12,6 +12,7 @@
 #include <variant>
 
 #include "../math/Vec3.h"
+#include "../experiment_utils/DualPriorityQueue.h"
 
 namespace mgodpl {
 	class LongitudeSweep;
@@ -51,8 +52,19 @@ namespace mgodpl {
 	 *
 	 * \return The signed difference between the two longitudes, as a double in the range [-pi, pi].
 	 */
-	double signed_longitude_difference(double first, double second);
+	inline double signed_longitude_difference(double first, double second) {
+		// Compute the difference:
+		double difference = first - second;
 
+		// Put it into the range [-pi, pi]
+		if (difference > M_PI) {
+			difference -= 2 * M_PI;
+		} else if (difference < -M_PI) {
+			difference += 2 * M_PI;
+		}
+
+		return difference;
+	}
 	/**
 	 * Perform a linear interpolation between two longitudes, taking angle wrapping into account.
 	 *
@@ -76,7 +88,16 @@ namespace mgodpl {
 	 * @param longitude The longitude to find.
 	 * @return 			The interpolation parameter, in the range [0, 1].
 	 */
-	double reverse_interpolate(double first, double second, double longitude);
+	inline double reverse_interpolate(double first, double second, double longitude) {
+		assert(signed_longitude_difference(second, first) >= 0);
+		assert(signed_longitude_difference(longitude, first) >= 0);
+		assert(signed_longitude_difference(longitude, second) <= 0);
+
+		double signed_diff = signed_longitude_difference(first, second);
+		double signed_diff_longitude = signed_longitude_difference(first, longitude);
+
+		return signed_diff_longitude / signed_diff;
+	}
 
 	/**
 	* \brief A triangle in 3D space, with vertices in Cartesian coordinates.
@@ -381,6 +402,10 @@ namespace mgodpl {
 					throw std::runtime_error("Invalid event type");
 			}
 		}
+
+		inline bool operator>(const SweepEvent &other) const {
+			return other < *this;
+		}
 	};
 
 	template<typename T>
@@ -401,11 +426,24 @@ namespace mgodpl {
 	struct SortByLatitudeAtLongitude {
 		LongitudeSweep *sweep;
 
-		bool operator()(const OrderedArcEdge &a, const OrderedArcEdge &b) const;
+		inline bool operator()(const OrderedArcEdge &a, const OrderedArcEdge &b) const;
 
-		bool compare_at_longitude(const OrderedArcEdge &a,
-								  const OrderedArcEdge &b,
-								  double longitude) const;
+		inline bool compare_at_longitude(const OrderedArcEdge &a,
+															 const OrderedArcEdge &b,
+															 double longitude) const {
+			double l1 = a.latitudeAtLongitude(longitude);
+			double l2 = b.latitudeAtLongitude(longitude);
+
+			if (l1 != l2) {
+				return l1 < l2;
+			} else {
+				// Compare at the end of the shared longitude range instead.
+				auto lon_range = a.longitude_range().overlap(b.longitude_range());
+				double l1_end = a.latitudeAtLongitude(lon_range.end);
+				double l2_end = b.latitudeAtLongitude(lon_range.end);
+				return l1_end < l2_end;
+			}
+		}
 
 		bool operator()(const HackyMutable<OrderedArcEdge> &a,
 						const HackyMutable<OrderedArcEdge> &b) const {
@@ -437,7 +475,7 @@ namespace mgodpl {
 		/// The event queue, sorted by angle ahead of the current longitude. (between 0 and 2pi)
 		/// Using a std::set rather than std::priority_queue to easily detect duplicates and
 		/// delete stale events.
-		std::set<SweepEvent> event_queue;
+		DualPriorityQueue<SweepEvent> event_queue;
 
 		size_t events_passed = 0;
 
@@ -512,5 +550,9 @@ namespace mgodpl {
 
 		void registerEdge(OrderedArcEdge edge);
 	};
+
+	inline bool SortByLatitudeAtLongitude::operator()(const OrderedArcEdge &a, const OrderedArcEdge &b) const {
+		return compare_at_longitude(a, b, sweep->current_longitude);
+	}
 }
 #endif //LATITUDE_SWEEP_H

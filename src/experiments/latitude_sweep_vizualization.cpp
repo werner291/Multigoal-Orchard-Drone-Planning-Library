@@ -180,6 +180,17 @@ int main(int argc, char** argv)
 
 	const auto start_time = std::chrono::high_resolution_clock::now();
 
+	for (int i = 0; i < 50; ++i) {
+		LongitudeSweep sweepline_algorithm(triangles, STARTING_LONGITUDE, target);
+		while (sweepline_algorithm.has_more_events())
+			sweepline_algorithm.advance();
+	}
+
+	const auto end_time = std::chrono::high_resolution_clock::now();
+
+	std::cout << "Average time in ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / 50.0 << std::endl;
+
+	abort();
 	for (
 		LongitudeSweep sweepline_algorithm(triangles, STARTING_LONGITUDE, target);
 		sweepline_algorithm.has_more_events();
@@ -257,8 +268,8 @@ int main(int argc, char** argv)
 	}
 
 	// End time.
-	const auto end_time = std::chrono::high_resolution_clock::now();
-	std::cout << "Sweepline finished in " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << " ms." << std::endl;
+//	const auto end_time = std::chrono::high_resolution_clock::now();
+//	std::cout << "Sweepline finished in " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << " ms." << std::endl;
 
 	// // Now, we have a list of valid states. Vizualize them.
 	// for (const auto& state : valid_states) {

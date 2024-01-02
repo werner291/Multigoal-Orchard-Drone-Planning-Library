@@ -11,9 +11,10 @@
 
 constexpr double DOUBLE_EPSILON = 1e-14; // TODO: Double-check that events aren't this close together.
 
-#define LOG_TRACE_BEFORE_SWAP FALSE
-#define LOG_TRACE_AFTER_SWAP FALSE
-#define TRACE_SWAP_EVENTS TRUE
+#define LOG_TRACE_BEFORE_SWAP 0 // NOLINT(*-macro-to-enum)
+#define LOG_TRACE_AFTER_SWAP 0 // NOLINT(*-macro-to-enum)
+#define TRACE_SWAP_EVENTS 0 // NOLINT(*-macro-to-enum)
+#define EXPENSIVE_CHECK_INVARIANTS 0 // NOLINT(*-macro-to-enum)
 
 namespace mgodpl {
 
@@ -36,42 +37,6 @@ namespace mgodpl {
 		});
 
 		return vertices;
-	}
-
-	bool SortByLatitudeAtLongitude::operator()(const OrderedArcEdge &a,
-											   const OrderedArcEdge &b) const {
-		return compare_at_longitude(a, b, sweep->current_longitude);
-	}
-
-	bool SortByLatitudeAtLongitude::compare_at_longitude(const OrderedArcEdge &a,
-														 const OrderedArcEdge &b,
-														 double longitude) const {
-		double l1 = a.latitudeAtLongitude(longitude);
-		double l2 = b.latitudeAtLongitude(longitude);
-
-		if (l1 != l2) {
-			return l1 < l2;
-		} else {
-			// Compare at the end of the shared longitude range instead.
-			auto lon_range = a.longitude_range().overlap(b.longitude_range());
-			double l1_end = a.latitudeAtLongitude(lon_range.end);
-			double l2_end = b.latitudeAtLongitude(lon_range.end);
-			return l1_end < l2_end;
-		}
-	}
-
-	double signed_longitude_difference(double first, double second) {
-		// Compute the difference:
-		double difference = first - second;
-
-		// Put it into the range [-pi, pi]
-		if (difference > M_PI) {
-			difference -= 2 * M_PI;
-		} else if (difference < -M_PI) {
-			difference += 2 * M_PI;
-		}
-
-		return difference;
 	}
 
 	math::Vec3d Edge_intersection(const Edge &a, const Edge &b) {
@@ -110,24 +75,27 @@ namespace mgodpl {
 	bool LongitudeSweep::add_potential_edgecross(const OrderedArcEdge edge1, const OrderedArcEdge edge2) {
 		if (edge1.crosses(edge2, current_longitude)) {
 
-			std::cerr << "Adding edge cross event between " << edge1 << " and " << edge2 << std::endl;
 			auto evt = mkCrossEvent(edge1, edge2);
 
-			if (signed_longitude_difference(evt.longitude, current_longitude) <= 0) {
-				std::cerr << "Order at current: " << this->ranges.key_comp().compare_at_longitude(edge1, edge2, current_longitude) << std::endl;
-				double l1 = edge1.latitudeAtLongitude(current_longitude);
-				double l2 = edge2.latitudeAtLongitude(current_longitude);
-				std::cerr << "Order at current: " << this->ranges.key_comp().compare_at_longitude(edge1, edge2, current_longitude) << std::endl;
-				std::cerr << "Will cross: " << edge1.crosses(edge2, current_longitude) << std::endl;
-				assert(signed_longitude_difference(evt.longitude, current_longitude) > 0);
-				assert(evt.relative_longitude > longitude_ahead_angle(starting_longitude, current_longitude));
-			}
+//			if (signed_longitude_difference(evt.longitude, current_longitude) <= 0) {
+//				std::cerr << "Order at current: "
+//						  << this->ranges.key_comp().compare_at_longitude(edge1, edge2, current_longitude) << std::endl;
+//				double l1 = edge1.latitudeAtLongitude(current_longitude);
+//				double l2 = edge2.latitudeAtLongitude(current_longitude);
+//				std::cerr << "Order at current: "
+//						  << this->ranges.key_comp().compare_at_longitude(edge1, edge2, current_longitude) << std::endl;
+//				std::cerr << "Will cross: " << edge1.crosses(edge2, current_longitude) << std::endl;
+//				assert(signed_longitude_difference(evt.longitude, current_longitude) > 0);
+//				assert(evt.relative_longitude > longitude_ahead_angle(starting_longitude, current_longitude));
+//			}
+			assert(signed_longitude_difference(evt.longitude, current_longitude) > 0);
 
 			if (evt.relative_longitude >= longitude_ahead_angle(starting_longitude, current_longitude)) {
-				this->event_queue.insert(evt);
+				this->event_queue.insert_refindable(evt);
 				return true;
 			} else {
-				std::cerr << "Not adding edge cross event, because it's past the end of the sweep." << std::endl;
+				// This edgecross is past the end of the sweep; don't add it.
+				return false;
 			}
 		} else {
 			return false;
@@ -169,10 +137,10 @@ namespace mgodpl {
 
 				if (edge.longitude_range().contains(current_longitude)) {
 					ranges.insert({edge});
-					event_queue.insert(mkEndEvent(edge));
+					event_queue.insert_non_refindable(mkEndEvent(edge));
 				}
 
-				event_queue.insert(mkStartEvent(edge));
+				event_queue.insert_non_refindable(mkStartEvent(edge));
 			}
 		}
 
@@ -215,12 +183,10 @@ namespace mgodpl {
 	std::vector<SweepEvent> LongitudeSweep::pop_next_events() {
 		assert(!event_queue.empty());
 
-		std::vector<SweepEvent> events{*event_queue.begin()};
-		event_queue.erase(event_queue.begin());
+		std::vector<SweepEvent> events{event_queue.pop_first()};
 
-		while (!event_queue.empty() && event_queue.begin()->relative_longitude == events[0].relative_longitude) {
-			events.push_back(*event_queue.begin());
-			event_queue.erase(event_queue.begin());
+		while (!event_queue.empty() && event_queue.peek_first().relative_longitude == events[0].relative_longitude) {
+			events.push_back(event_queue.pop_first());
 		}
 
 		return events;
@@ -228,15 +194,15 @@ namespace mgodpl {
 
 	void LongitudeSweep::advance() {
 
+#if EXPENSIVE_CHECK_INVARIANTS
 		assert(check_invariants());
+#endif
 
 		// Then, grab all events that occur at this longitude.
 		const auto events = pop_next_events();
 
 		// Extract the longitude of the events:
 		double event_longitude = events[0].longitude;
-
-		std::cerr << "Processing events at longitude " << event_longitude << std::endl;
 
 		bool additions = std::any_of(events.begin(), events.end(), [](const SweepEvent &evt) {
 			return std::get_if<EdgePairStart>(&evt.event) != nullptr;
@@ -279,13 +245,13 @@ namespace mgodpl {
 			if (it1 != ranges.begin()) {
 				before = std::prev(it1)->interior;
 				if (std::prev(it1)->interior.crosses(it1->interior, current_longitude)) {
-					event_queue.erase(mkCrossEvent(std::prev(it1)->interior, it1->interior));
+					event_queue.erase_refindable(mkCrossEvent(std::prev(it1)->interior, it1->interior));
 				}
 			}
 			if (std::next(it2) != ranges.end()) {
 				after = std::next(it2)->interior;
 				if (it2->interior.crosses(std::next(it2)->interior, current_longitude)) {
-					event_queue.erase(mkCrossEvent(it2->interior, std::next(it2)->interior));
+					event_queue.erase_refindable(mkCrossEvent(it2->interior, std::next(it2)->interior));
 				}
 			}
 
@@ -336,8 +302,6 @@ namespace mgodpl {
 			for (const auto &event: events) {
 				if (const auto end = std::get_if<EdgePairEnd>(&event.event)) {
 
-					std::cerr << "Deleting " << end->edge << std::endl;
-
 					// Find it.
 					auto it = ranges.find({end->edge});
 
@@ -352,25 +316,27 @@ namespace mgodpl {
 						// Erase it.
 						ranges.erase(it);
 					} else {
-						std::cerr << "Not found!" << std::endl;
+//						std::cerr << "Not found!" << std::endl;
 					}
 				}
 			}
 
+#if EXPENSIVE_CHECK_INVARIANTS
 			// Check invariants:
 			assert(check_order_correctness());
+#endif
 
 			// Advance the longitude:
 			this->current_longitude = event_longitude;//9539 + DOUBLE_EPSILON;
 
+#if EXPENSIVE_CHECK_INVARIANTS
 			// Check invariants:
 			assert(check_order_correctness());
+#endif
 
 			// Process insertions:
 			for (const auto &event: events) {
 				if (const auto start = std::get_if<EdgePairStart>(&event.event)) {
-
-					std::cerr << "Inserting " << start->edge << std::endl;
 
 					// Insert the range:
 					auto [it, inserted] = ranges.insert({start->edge});
@@ -378,55 +344,54 @@ namespace mgodpl {
 					if (inserted) {
 
 						if (it != ranges.begin()) {
-							assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
+							assert(signed_longitude_difference(this->event_queue.peek_first().longitude, current_longitude) > 0);
 							add_potential_edgecross(std::prev(it)->interior, it->interior);
-							assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
+							assert(signed_longitude_difference(this->event_queue.peek_first().longitude, current_longitude) > 0);
 						}
 
 						if (std::next(it) != ranges.end()) {
-							assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
+							assert(signed_longitude_difference(this->event_queue.peek_first().longitude, current_longitude) > 0);
 							add_potential_edgecross(it->interior, std::next(it)->interior);
-							assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
+							assert(signed_longitude_difference(this->event_queue.peek_first().longitude, current_longitude) > 0);
 						}
 
 						// Delete any edgecrosses with the previous/next ranges:
 						if (it != ranges.begin() && std::next(it) != ranges.end()) {
 							if (std::prev(it)->interior.crosses(std::next(it)->interior, current_longitude)) {
-								event_queue.erase(mkCrossEvent(std::prev(it)->interior, std::next(it)->interior));
+								event_queue.erase_refindable(mkCrossEvent(std::prev(it)->interior, std::next(it)->interior));
 							}
 						}
 
 						// Add an end event.
 						SweepEvent end_event = mkEndEvent(start->edge);
 
-						std::cerr << "End is at longitude " << end_event.longitude << std::endl;
-
 						// Don't enqueue events that are past the end of the sweep (we only cycle once)
 						if (end_event.relative_longitude >= longitude_ahead_angle(starting_longitude, current_longitude)) {
-							this->event_queue.insert(end_event);
-						} else {
-							std::cerr << "Not adding end event, because it's past the end of the sweep." << std::endl;
+							this->event_queue.insert_non_refindable(end_event);
 						}
-
 					}
 				}
 			}
 
+#if EXPENSIVE_CHECK_INVARIANTS
 			assert(check_invariants());
+#endif
 
 		}
 
 		// Move current longitude to halfway to the next event.
 		if (!event_queue.empty()) {
-			assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
-			this->current_longitude = interpolate_longitude(event_longitude, event_queue.begin()->longitude, 0.5);
+			assert(signed_longitude_difference(this->event_queue.peek_first().longitude, current_longitude) > 0);
+			this->current_longitude = interpolate_longitude(event_longitude, event_queue.peek_first().longitude, 0.5);
 		}
 
-		assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
+		assert(signed_longitude_difference(this->event_queue.peek_first().longitude, current_longitude) > 0);
+
+#if EXPENSIVE_CHECK_INVARIANTS
 		assert(check_invariants());
+#endif
 
 		this->events_passed += events.size();
-		std::cerr << "Events passed: " << this->events_passed << ", queue size: " << this->event_queue.size() << std::endl;
 
 	}
 
@@ -483,7 +448,7 @@ namespace mgodpl {
 				if (it1->interior.crosses(it2->interior, current_longitude)) {
 					auto evt = mkCrossEvent(it1->interior, it2->interior);
 
-					if (event_queue.find(evt) == event_queue.end() && evt.relative_longitude > longitude_ahead_angle(starting_longitude, current_longitude)) {
+					if (!event_queue.contains_refindable(evt) && evt.relative_longitude > longitude_ahead_angle(starting_longitude, current_longitude)) {
 						std::cerr << "Missing edge cross event between " << it1->interior << " and " << it2->interior << std::endl;
 						return false;
 					}
@@ -504,10 +469,10 @@ namespace mgodpl {
 			return true;
 		}
 
-		for (const auto &event: event_queue) {
+		for (const auto &event: event_queue.refindable()) {
 
 			// Event must be in the future:
-			assert(event.relative_longitude > longitude_ahead_angle(starting_longitude, current_longitude) > 0);
+			assert(event.relative_longitude > longitude_ahead_angle(starting_longitude, current_longitude));
 
 			// Check that the events are in the right order:
 			if (const auto swap = std::get_if<EdgePairSwap>(&event.event)) {
@@ -526,21 +491,24 @@ namespace mgodpl {
 					return false;
 				}
 
-				// There may be no coinciding deletions involving these ranges that occur before the swap.
-				SweepEvent bad_deletion1 = mkEndEvent(swap->edge1);
-				SweepEvent bad_deletion2 = mkEndEvent(swap->edge2);
-
-				if (bad_deletion1.relative_longitude <= event.relative_longitude &&
-					event_queue.find(bad_deletion1) != event_queue.end()) {
-					std::cerr << "Bad deletion 1!" << std::endl;
-					return false;
-				}
-
-				if (bad_deletion2.relative_longitude <= event.relative_longitude &&
-					event_queue.find(bad_deletion2) != event_queue.end()) {
-					std::cerr << "Bad deletion 2!" << std::endl;
-					return false;
-				}
+//				// There may be no coinciding deletions involving these ranges that occur before the swap.
+//				SweepEvent bad_deletion1 = mkEndEvent(swap->edge1);
+//				SweepEvent bad_deletion2 = mkEndEvent(swap->edge2);
+//
+//				if (bad_deletion1.relative_longitude <= event.relative_longitude &&
+//					event_queue.slow_contains_nonrefindable(bad_deletion1)) {
+//					std::cerr << "Bad deletion 1!" << std::endl;
+//					return false;
+//				}
+//
+//				if (bad_deletion2.relative_longitude <= event.relative_longitude &&
+//					event_queue.slow_contains_nonrefindable(bad_deletion2)) {
+//					std::cerr << "Bad deletion 2!" << std::endl;
+//					return false;
+//				}
+			} else {
+				// Wrong event type.
+				return false;
 			}
 		}
 		return true;
@@ -620,16 +588,4 @@ namespace mgodpl {
 			return angle;
 		}
 	}
-
-	double reverse_interpolate(double first, double second, double longitude) {
-		assert(signed_longitude_difference(second, first) >= 0);
-		assert(signed_longitude_difference(longitude, first) >= 0);
-		assert(signed_longitude_difference(longitude, second) <= 0);
-
-		double signed_diff = signed_longitude_difference(first, second);
-		double signed_diff_longitude = signed_longitude_difference(first, longitude);
-
-		return signed_diff_longitude / signed_diff;
-	}
-
 }
