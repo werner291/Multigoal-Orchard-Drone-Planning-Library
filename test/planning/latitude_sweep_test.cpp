@@ -210,7 +210,7 @@ TEST(longitude_sweep_tests, intersection) {
 	// Generate four random points on the unit sphere:
 	random_numbers::RandomNumberGenerator rng(42);
 
-	for (int i = 0; i < 1000; ++i) {
+	for (int i = 0; i < 10000; ++i) {
 
 		RelativeVertex construction_center {
 			.longitude = rng.uniformReal(-M_PI, M_PI),
@@ -243,7 +243,6 @@ TEST(longitude_sweep_tests, intersection) {
 		OrderedArcEdge B1 { b1, b2 };
 
 		// Geogebra:
-		std::cerr << "C = (" << construction_center.longitude << "," << construction_center.latitude << ")" << std::endl;
 		std::cerr << "A = Segment((" << a1.longitude << "," << a1.latitude << "),(" << a2.longitude << "," << a2.latitude << "))" << std::endl;
 		std::cerr << "B = Segment((" << b1.longitude << "," << b1.latitude << "),(" << b2.longitude << "," << b2.latitude << "))" << std::endl;
 

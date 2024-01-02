@@ -226,9 +226,20 @@ namespace mgodpl {
 			return l1_end > l2_end;
 		}
 
+		/**
+		 * \brief Compute the intersection of this edge with the given edge, assuming that they do cross.
+		 *
+		 * @pre The edges cross.
+		 *
+		 * @param other	The edge to compute the intersection with.
+		 * @return	    The intersection of the two edges.
+		 */
 		[[nodiscard]] RelativeVertex intersection(const OrderedArcEdge &other) const {
+
+			// Check the precondition that the edges cross:
 			assert(crosses(other, this->longitude_range().overlap(other.longitude_range()).start));
 
+			// Extract the longitudes and latitudes of the edges:
 			double lat1end = end.latitude;
 			double lat1start = start.latitude;
 			double lat2end = other.end.latitude;
@@ -239,16 +250,37 @@ namespace mgodpl {
 			double lon2end = other.end.longitude;
 			double lon2start = other.start.longitude;
 
+			// If the edges cross the pi/-pi boundary, we need to adjust the longitudes:
+			if (lon1end < lon1start) {
+				if (lon1start < lon2end) {
+					lon1end += 2 * M_PI;
+				} else {
+					lon1start -= 2 * M_PI;
+				}
+			}
+
+			// If the edges cross the pi/-pi boundary, we need to adjust the longitudes:
+			if (lon2end < lon2start) {
+				if (lon2start < lon1end) {
+					lon2end += 2 * M_PI;
+				} else {
+					lon2start -= 2 * M_PI;
+				}
+			}
+
+			// Compute the slopes and intercepts of the lines:
 			double m1 = (lat1end - lat1start) / (lon1end - lon1start);
 			double p1 = lat1start - m1 * lon1start;
 
 			double m2 = (lat2end - lat2start) / (lon2end - lon2start);
 			double p2 = lat2start - m2 * lon2start;
 
+			// Compute the intersection: (TODO: this is a naive linear interpolation; this should work for now but isn't quite correct.)
 			double longitude = (p2 - p1) / (m1 - m2);
 			double latitude = m1 * longitude + p1;
 
-			return {longitude, latitude};
+			// Wrap the longitude into the range [-pi, pi] and return the intersection:
+			return {wrap_angle(longitude), latitude};
 		}
 
 		/**
