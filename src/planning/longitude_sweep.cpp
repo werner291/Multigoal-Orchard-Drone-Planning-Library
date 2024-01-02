@@ -113,15 +113,15 @@ namespace mgodpl {
 			std::cerr << "Adding edge cross event between " << edge1 << " and " << edge2 << std::endl;
 			auto evt = mkCrossEvent(edge1, edge2);
 
-			if (evt.longitude <= current_longitude) {
+			if (signed_longitude_difference(evt.longitude, current_longitude) <= 0) {
 				std::cerr << "Order at current: " << this->ranges.key_comp().compare_at_longitude(edge1, edge2, current_longitude) << std::endl;
 				double l1 = edge1.latitudeAtLongitude(current_longitude);
 				double l2 = edge2.latitudeAtLongitude(current_longitude);
 				std::cerr << "Order at current: " << this->ranges.key_comp().compare_at_longitude(edge1, edge2, current_longitude) << std::endl;
 				std::cerr << "Will cross: " << edge1.crosses(edge2, current_longitude) << std::endl;
+				assert(signed_longitude_difference(evt.longitude, current_longitude) > 0);
 			}
 
-			assert(evt.longitude > current_longitude);
 			this->event_queue.insert(evt);
 			return true;
 		} else {
@@ -373,15 +373,15 @@ namespace mgodpl {
 					if (inserted) {
 
 						if (it != ranges.begin()) {
-							assert(this->event_queue.begin()->longitude > current_longitude);
+							assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
 							add_potential_edgecross(std::prev(it)->interior, it->interior);
-							assert(this->event_queue.begin()->longitude > current_longitude);
+							assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
 						}
 
 						if (std::next(it) != ranges.end()) {
-							assert(this->event_queue.begin()->longitude > current_longitude);
+							assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
 							add_potential_edgecross(it->interior, std::next(it)->interior);
-							assert(this->event_queue.begin()->longitude > current_longitude);
+							assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
 						}
 
 						// Delete any edgecrosses with the previous/next ranges:
@@ -408,11 +408,11 @@ namespace mgodpl {
 
 		// Move current longitude to halfway to the next event.
 		if (!event_queue.empty()) {
-			assert(this->event_queue.begin()->longitude > current_longitude);
-			this->current_longitude = (event_longitude + event_queue.begin()->longitude) / 2.0;
+			assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
+			this->current_longitude = interpolate_longitude(event_longitude, event_queue.begin()->longitude, 0.5);
 		}
 
-		assert(this->current_longitude > event_longitude);
+		assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
 		assert(check_invariants());
 
 		this->events_passed += events.size();
@@ -493,7 +493,7 @@ namespace mgodpl {
 			return true;
 		}
 
-		assert(event_queue.begin()->longitude >= current_longitude);
+		assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
 
 		for (const auto &event: event_queue) {
 
