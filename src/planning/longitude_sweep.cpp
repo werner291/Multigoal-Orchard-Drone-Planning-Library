@@ -120,10 +120,15 @@ namespace mgodpl {
 				std::cerr << "Order at current: " << this->ranges.key_comp().compare_at_longitude(edge1, edge2, current_longitude) << std::endl;
 				std::cerr << "Will cross: " << edge1.crosses(edge2, current_longitude) << std::endl;
 				assert(signed_longitude_difference(evt.longitude, current_longitude) > 0);
+				assert(evt.relative_longitude > longitude_ahead_angle(starting_longitude, current_longitude));
 			}
 
-			this->event_queue.insert(evt);
-			return true;
+			if (evt.relative_longitude >= longitude_ahead_angle(starting_longitude, current_longitude)) {
+				this->event_queue.insert(evt);
+				return true;
+			} else {
+				std::cerr << "Not adding edge cross event, because it's past the end of the sweep." << std::endl;
+			}
 		} else {
 			return false;
 		}
@@ -396,7 +401,12 @@ namespace mgodpl {
 
 						std::cerr << "End is at longitude " << end_event.longitude << std::endl;
 
-						this->event_queue.insert(end_event);
+						// Don't enqueue events that are past the end of the sweep (we only cycle once)
+						if (end_event.relative_longitude >= longitude_ahead_angle(starting_longitude, current_longitude)) {
+							this->event_queue.insert(end_event);
+						} else {
+							std::cerr << "Not adding end event, because it's past the end of the sweep." << std::endl;
+						}
 
 					}
 				}
@@ -472,7 +482,8 @@ namespace mgodpl {
 				// Also, whether, if there's an intersection between them, that there's an edge cross event too:
 				if (it1->interior.crosses(it2->interior, current_longitude)) {
 					auto evt = mkCrossEvent(it1->interior, it2->interior);
-					if (event_queue.find(evt) == event_queue.end()) {
+
+					if (event_queue.find(evt) == event_queue.end() && evt.relative_longitude > longitude_ahead_angle(starting_longitude, current_longitude)) {
 						std::cerr << "Missing edge cross event between " << it1->interior << " and " << it2->interior << std::endl;
 						return false;
 					}
@@ -493,9 +504,10 @@ namespace mgodpl {
 			return true;
 		}
 
-		assert(signed_longitude_difference(this->event_queue.begin()->longitude, current_longitude) > 0);
-
 		for (const auto &event: event_queue) {
+
+			// Event must be in the future:
+			assert(event.relative_longitude > longitude_ahead_angle(starting_longitude, current_longitude) > 0);
 
 			// Check that the events are in the right order:
 			if (const auto swap = std::get_if<EdgePairSwap>(&event.event)) {
