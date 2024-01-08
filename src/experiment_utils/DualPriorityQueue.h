@@ -24,12 +24,11 @@
 template <typename T>
 class DualPriorityQueue {
 
+public:
 	/// The set of events that can be found back relatively quickly.
 	std::set<T> _refindable;
 	/// The set of events that should only be used for inserting once and popping once.
 	std::priority_queue<T, std::vector<T>, std::greater<T>> _non_refindable;
-
-public:
 
 	/// Insert an element into the queue; it can be found back.
 	bool insert_refindable(const T& element) {

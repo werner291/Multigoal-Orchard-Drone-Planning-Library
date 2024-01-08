@@ -207,6 +207,11 @@ add_library(planning
         src/planning/longitude_sweep.cpp
         src/planning/longitude_sweep.h
         src/planning/RobotState.cpp
+        src/planning/LatitudeLongitudeGrid.h
+        src/planning/LatitudeLongitudeGrid.cpp
+        src/planning/scanline.cpp
+        src/planning/scanline.h
+        src/planning/spherical_geometry.cpp
 
 )
 
@@ -326,7 +331,7 @@ add_executable(${PROJECT_NAME}_tests
 #        test/experiment_utils/voxel_visibility_test.cpp
 #        test/math/intersection_test.cpp
 #        test/math/lp_test.cpp
-        test/planning/latitude_sweep_test.cpp
+        test/planning/spherical_geomety_test.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils planning gtest)
@@ -338,5 +343,3 @@ if (ENABLE_PYTHON_BINDINGS)
     target_link_libraries(pymgodpl PRIVATE math_utils visibility planning experiment_utils ${PROJECT_NAME}_visualisation ${VTK_LIBRARIES})
     ament_target_dependencies(pymgodpl PUBLIC ${AMENT_DEPS})
 endif ()
-
-

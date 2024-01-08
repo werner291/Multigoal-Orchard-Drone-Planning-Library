@@ -3,6 +3,7 @@
 //
 
 #include "longitude_sweep.h"
+#include "geometry.h"
 
 #include <iostream>
 #include <range/v3/view/transform.hpp>
@@ -17,27 +18,28 @@ constexpr double DOUBLE_EPSILON = 1e-14; // TODO: Double-check that events aren'
 #define EXPENSIVE_CHECK_INVARIANTS 0 // NOLINT(*-macro-to-enum)
 
 namespace mgodpl {
-
-	std::array<RelativeVertex, 3> sorted_relative_vertices(const Triangle &triangle, const math::Vec3d &center) {
-
-		std::array<RelativeVertex, 3> vertices{
-				RelativeVertex {
-						longitude(triangle.vertices[0], center), latitude(triangle.vertices[0], center),
-				},
-				RelativeVertex{
-						longitude(triangle.vertices[1], center), latitude(triangle.vertices[1], center),
-				},
-				RelativeVertex{
-						longitude(triangle.vertices[2], center), latitude(triangle.vertices[2], center),
-				}
-		};
-
-		std::sort(vertices.begin(), vertices.end(), [](const auto &a, const auto &b) {
-			return signed_longitude_difference(a.longitude, b.longitude) < 0;
-		});
-
-		return vertices;
-	}
+	using namespace spherical_geometry;
+//
+//	std::array<RelativeVertex, 3> sorted_relative_vertices(const Triangle &triangle, const math::Vec3d &center) {
+//
+//		std::array<RelativeVertex, 3> vertices{
+//				RelativeVertex {
+//						longitude(triangle.vertices[0], center), latitude(triangle.vertices[0], center),
+//				},
+//				RelativeVertex{
+//						longitude(triangle.vertices[1], center), latitude(triangle.vertices[1], center),
+//				},
+//				RelativeVertex{
+//						longitude(triangle.vertices[2], center), latitude(triangle.vertices[2], center),
+//				}
+//		};
+//
+//		std::sort(vertices.begin(), vertices.end(), [](const auto &a, const auto &b) {
+//			return signed_longitude_difference(a.longitude, b.longitude) < 0;
+//		});
+//
+//		return vertices;
+//	}
 
 	math::Vec3d Edge_intersection(const Edge &a, const Edge &b) {
 		// We can actually reduce this problem to linear algebra.
@@ -77,17 +79,6 @@ namespace mgodpl {
 
 			auto evt = mkCrossEvent(edge1, edge2);
 
-//			if (signed_longitude_difference(evt.longitude, current_longitude) <= 0) {
-//				std::cerr << "Order at current: "
-//						  << this->ranges.key_comp().compare_at_longitude(edge1, edge2, current_longitude) << std::endl;
-//				double l1 = edge1.latitudeAtLongitude(current_longitude);
-//				double l2 = edge2.latitudeAtLongitude(current_longitude);
-//				std::cerr << "Order at current: "
-//						  << this->ranges.key_comp().compare_at_longitude(edge1, edge2, current_longitude) << std::endl;
-//				std::cerr << "Will cross: " << edge1.crosses(edge2, current_longitude) << std::endl;
-//				assert(signed_longitude_difference(evt.longitude, current_longitude) > 0);
-//				assert(evt.relative_longitude > longitude_ahead_angle(starting_longitude, current_longitude));
-//			}
 			assert(signed_longitude_difference(evt.longitude, current_longitude) > 0);
 
 			if (evt.relative_longitude >= longitude_ahead_angle(starting_longitude, current_longitude)) {
@@ -102,7 +93,7 @@ namespace mgodpl {
 		}
 	}
 
-	SweepEvent LongitudeSweep::mkCrossEvent(const OrderedArcEdge &edge1,
+	inline SweepEvent LongitudeSweep::mkCrossEvent(const OrderedArcEdge &edge1,
 											const OrderedArcEdge &edge2) const {
 
 		// Grab their intersection:
@@ -180,19 +171,34 @@ namespace mgodpl {
 		};
 	}
 
-	std::vector<SweepEvent> LongitudeSweep::pop_next_events() {
+	const std::vector<SweepEvent> & LongitudeSweep::pop_next_events() {
 		assert(!event_queue.empty());
 
-		std::vector<SweepEvent> events{event_queue.pop_first()};
+		static std::vector<SweepEvent> events;
+		events.clear();
 
-		while (!event_queue.empty() && event_queue.peek_first().relative_longitude == events[0].relative_longitude) {
-			events.push_back(event_queue.pop_first());
+		auto rit1 = event_queue._refindable.begin();
+
+		double rlon_refindable = (rit1 == event_queue._refindable.end()) ? INFINITY : rit1->relative_longitude;
+		double rlon_non_refindable = (event_queue._non_refindable.empty()) ? INFINITY : event_queue._non_refindable.top().relative_longitude;
+
+		if (rlon_refindable < rlon_non_refindable) {
+			events.push_back(*rit1);
+			event_queue._refindable.erase(rit1);
+		} else {
+			// Grab all at the same.
+			while (!event_queue._non_refindable.empty() && event_queue._non_refindable.top().relative_longitude == rlon_non_refindable) {
+				events.push_back(event_queue._non_refindable.top());
+				event_queue._non_refindable.pop();
+			}
 		}
 
 		return events;
 	}
 
 	void LongitudeSweep::advance() {
+
+//		std::cout << this->current_longitude << "," << this->ranges.size() << std::endl;
 
 #if EXPENSIVE_CHECK_INVARIANTS
 		assert(check_invariants());
@@ -385,7 +391,7 @@ namespace mgodpl {
 			this->current_longitude = interpolate_longitude(event_longitude, event_queue.peek_first().longitude, 0.5);
 		}
 
-		assert(signed_longitude_difference(this->event_queue.peek_first().longitude, current_longitude) > 0);
+		assert(this->event_queue.empty() || signed_longitude_difference(this->event_queue.peek_first().longitude, current_longitude) > 0);
 
 #if EXPENSIVE_CHECK_INVARIANTS
 		assert(check_invariants());
@@ -516,76 +522,5 @@ namespace mgodpl {
 
 	bool LongitudeSweep::check_invariants() {
 		return check_order_correctness() && check_events_complete() && check_events_consistent();
-	}
-
-	double longitude_ahead_angle(const double starting_longitude, const double longitude) {
-		double a_longitude = signed_longitude_difference(longitude, starting_longitude);
-		if (a_longitude < 0) a_longitude += 2 * M_PI;
-		return a_longitude;
-	}
-
-	math::Vec3d Triangle::normal() const {
-		return (vertices[1] - vertices[0]).cross(vertices[2] - vertices[0]);
-	}
-
-	double latitude(const math::Vec3d &point, const math::Vec3d &center) {
-		math::Vec3d delta = point - center;
-
-		// Distance from the vertical axis through the center of the sphere.
-		const double distance_xy = std::sqrt(delta.x() * delta.x() + delta.y() * delta.y());
-
-		// Compute the latitude.
-		return std::atan2(delta.z(), distance_xy);
-	}
-
-	double longitude(const math::Vec3d &point, const math::Vec3d &center) {
-		math::Vec3d delta = point - center;
-
-		return std::atan2(delta.y(), delta.x());
-	}
-
-	double angular_padding(double arm_radius, double obstacle_distance) {
-		return atan(arm_radius / obstacle_distance);
-	}
-
-	double latitude(const Edge &edge, double at_longitude) {
-		// Just like intersection_longitude, we can reduce this problem to linear algebra.
-
-		// Compute the edge plane normal.
-		math::Vec3d edge_normal = edge.vertices[0].cross(edge.vertices[1]);
-
-		math::Vec3d lon_direction = math::Vec3d(
-				cos(at_longitude + M_PI / 2.0),
-				sin(at_longitude + M_PI / 2.0),
-				0
-		);
-
-		// Now it's easy: get the direction of the intersection line.
-		math::Vec3d direction = edge_normal.cross(lon_direction);
-
-		// If the dot product with the edge vertices is negative, flip the direction.
-		if (direction.dot(edge.vertices[0]) < 0) {
-			assert(direction.dot(edge.vertices[1]) < 0);
-			direction = -direction;
-		}
-
-		return latitude(direction, math::Vec3d(0, 0, 0));
-	}
-
-	double interpolate_longitude(double first, double second, double t) {
-		double diff = signed_longitude_difference(second, first);
-		assert(diff >= 0);
-		return wrap_angle(first + t * diff);
-	}
-
-	double wrap_angle(double angle) {
-		assert(angle >= -3 * M_PI && angle <= 3 * M_PI);
-		if (angle > M_PI) {
-			return angle - 2 * M_PI;
-		} else if (angle < -M_PI) {
-			return angle + 2 * M_PI;
-		} else {
-			return angle;
-		}
 	}
 }

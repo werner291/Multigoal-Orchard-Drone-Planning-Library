@@ -16,6 +16,7 @@
 #include "../../src/math/Quaternion.h"
 
 using namespace mgodpl;
+using namespace spherical_geometry;
 
 /**
  * Generates a random arc edge that contains a given point.
@@ -44,107 +45,108 @@ Edge randomEdgeContainingPoint(math::Vec3d a, random_numbers::RandomNumberGenera
 
 }
 
+
 TEST(longitude_sweep_tests, intersection_longitude_test)
 {
 
-    random_numbers::RandomNumberGenerator rng(42);
+	random_numbers::RandomNumberGenerator rng(42);
 
-    // For 1000 iterations...
-    for (int i = 0; i < 1000; ++i)
-    {
+	// For 1000 iterations...
+	for (int i = 0; i < 1000; ++i)
+	{
 
-        // Construct a random unit vector:
-        math::Vec3d a(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
-        a = a.normalized();
+		// Construct a random unit vector:
+		math::Vec3d a(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
+		a = a.normalized();
 
-        Edge A1 = randomEdgeContainingPoint(a, rng);
-        Edge B1 = randomEdgeContainingPoint(a, rng);
+		Edge A1 = randomEdgeContainingPoint(a, rng);
+		Edge B1 = randomEdgeContainingPoint(a, rng);
 
-        math::Vec3d intersection = Edge_intersection(A1, B1);
+		math::Vec3d intersection = Edge_intersection(A1, B1);
 
-        ASSERT_NEAR(intersection.x(), a.x(), 1e-6);
-        ASSERT_NEAR(intersection.y(), a.y(), 1e-6);
-        ASSERT_NEAR(intersection.z(), a.z(), 1e-6);
+		ASSERT_NEAR(intersection.x(), a.x(), 1e-6);
+		ASSERT_NEAR(intersection.y(), a.y(), 1e-6);
+		ASSERT_NEAR(intersection.z(), a.z(), 1e-6);
 
-    }
+	}
 
 }
 
 TEST(longitude_sweep_tests, test_signed_longitude_difference)
 {
 
-    random_numbers::RandomNumberGenerator rng(42);
+	random_numbers::RandomNumberGenerator rng(42);
 
-    // For 1000 iterations...
-    for (int i = 0; i < 1000; ++i)
-    {
-        // Construct a random unit vector:
-        math::Vec3d a(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
-        a = a.normalized();
+	// For 1000 iterations...
+	for (int i = 0; i < 1000; ++i)
+	{
+		// Construct a random unit vector:
+		math::Vec3d a(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
+		a = a.normalized();
 
-        // Generate an angle.
-        double angle = rng.uniformReal(-M_PI, M_PI);
+		// Generate an angle.
+		double angle = rng.uniformReal(-M_PI, M_PI);
 
-        // Rotate a around the vertical axis by the angle.
-        math::Vec3d b = math::Quaterniond::fromAxisAngle(math::Vec3d(0, 0, 1), angle).rotate(a);
+		// Rotate a around the vertical axis by the angle.
+		math::Vec3d b = math::Quaterniond::fromAxisAngle(math::Vec3d(0, 0, 1), angle).rotate(a);
 
-        // Grab the longitude of a and b.
-        double a_lon = longitude(a, math::Vec3d(0, 0, 0));
-        double b_lon = longitude(b, math::Vec3d(0, 0, 0));
+		// Grab the longitude of a and b.
+		double a_lon = longitude(a, math::Vec3d(0, 0, 0));
+		double b_lon = longitude(b, math::Vec3d(0, 0, 0));
 
-        // compute the signed difference.
-        double signed_diff = signed_longitude_difference(b_lon, a_lon);
+		// compute the signed difference.
+		double signed_diff = signed_longitude_difference(b_lon, a_lon);
 
-        ASSERT_NEAR(signed_diff, angle, 1e-6);
-    }
+		ASSERT_NEAR(signed_diff, angle, 1e-6);
+	}
 
 }
 
 TEST(longitude_sweep_tests, sweepline_latitude_intersection_test)
 {
-    random_numbers::RandomNumberGenerator rng(42);
+	random_numbers::RandomNumberGenerator rng(42);
 
-    // For 1000 iterations...
-    for (int i = 0; i < 1000; ++i)
-    {
-        // Construct a random unit vector:
-        math::Vec3d a(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
-        a = a.normalized();
+	// For 1000 iterations...
+	for (int i = 0; i < 1000; ++i)
+	{
+		// Construct a random unit vector:
+		math::Vec3d a(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
+		a = a.normalized();
 
-        Edge A1 = randomEdgeContainingPoint(a, rng);
+		Edge A1 = randomEdgeContainingPoint(a, rng);
 
-        double a_lon = longitude(a, math::Vec3d(0, 0, 0));
+		double a_lon = longitude(a, math::Vec3d(0, 0, 0));
 
-        double lat = latitude(A1, a_lon);
+		double lat = latitude(A1, a_lon);
 
-        // Reconstruct the point from the latitude and longitude:
-        math::Vec3d reconstructed_point(
-            std::cos(lat) * std::cos(a_lon),
-            std::cos(lat) * std::sin(a_lon),
-            std::sin(lat)
-        );
+		// Reconstruct the point from the latitude and longitude:
+		math::Vec3d reconstructed_point(
+				std::cos(lat) * std::cos(a_lon),
+				std::cos(lat) * std::sin(a_lon),
+				std::sin(lat)
+		);
 
-        ASSERT_NEAR(reconstructed_point.x(), a.x(), 1e-6);
-        ASSERT_NEAR(reconstructed_point.y(), a.y(), 1e-6);
-        ASSERT_NEAR(reconstructed_point.z(), a.z(), 1e-6);
+		ASSERT_NEAR(reconstructed_point.x(), a.x(), 1e-6);
+		ASSERT_NEAR(reconstructed_point.y(), a.y(), 1e-6);
+		ASSERT_NEAR(reconstructed_point.z(), a.z(), 1e-6);
 
-    }
+	}
 
-    // Regressions:
+	// Regressions:
 
-    // Edge: (0.115449, -0.214643, -0.00318132) -> (0.129188, -0.238531, 0.0697457)
-    // At longitude: -1.56451
+	// Edge: (0.115449, -0.214643, -0.00318132) -> (0.129188, -0.238531, 0.0697457)
+	// At longitude: -1.56451
 
-    Edge A1 {
-        {
-            math::Vec3d(0.115449, -0.214643, -0.00318132),
-            math::Vec3d(0.129188, -0.238531, 0.0697457)
-        }
-    };
+	Edge A1 {
+			{
+					math::Vec3d(0.115449, -0.214643, -0.00318132),
+					math::Vec3d(0.129188, -0.238531, 0.0697457)
+			}
+	};
 
-    double a_lon = -1.56451;
+	double a_lon = -1.56451;
 
-    latitude(A1, a_lon);
+	latitude(A1, a_lon);
 
 }
 
@@ -213,19 +215,19 @@ TEST(longitude_sweep_tests, intersection) {
 	for (int i = 0; i < 10000; ++i) {
 
 		RelativeVertex construction_center {
-			.longitude = rng.uniformReal(-M_PI, M_PI),
-			.latitude = rng.uniformReal(-M_PI / 2.0, M_PI / 2.0)
+				.longitude = rng.uniformReal(-M_PI, M_PI),
+				.latitude = rng.uniformReal(-M_PI / 2.0, M_PI / 2.0)
 		};
 
 		// Construct two edges that intersect at the expected intersection, with correct ordering:
 		RelativeVertex a1 {
 				wrap_angle(construction_center.longitude - rng.uniformReal(0.0, M_PI / 2.0)),
-			rng.uniformReal(-M_PI / 2.0, construction_center.latitude)
+				rng.uniformReal(-M_PI / 2.0, construction_center.latitude)
 		};
 
 		RelativeVertex a2 {
 				wrap_angle(construction_center.longitude + rng.uniformReal(0.0, M_PI / 2.0)),
-			rng.uniformReal(construction_center.latitude, M_PI / 2.0)
+				rng.uniformReal(construction_center.latitude, M_PI / 2.0)
 		};
 
 		RelativeVertex b1 {
@@ -243,6 +245,7 @@ TEST(longitude_sweep_tests, intersection) {
 		OrderedArcEdge B1 { b1, b2 };
 
 		// Geogebra:
+//		std::cerr << "C = (" << construction_center.longitude << "," << construction_center.latitude << ")" << std::endl;
 		std::cerr << "A = Segment((" << a1.longitude << "," << a1.latitude << "),(" << a2.longitude << "," << a2.latitude << "))" << std::endl;
 		std::cerr << "B = Segment((" << b1.longitude << "," << b1.latitude << "),(" << b2.longitude << "," << b2.latitude << "))" << std::endl;
 
@@ -266,4 +269,38 @@ TEST(longitude_sweep_tests, intersection) {
 		}
 	}
 
+}
+
+TEST(spherical_geometry_test, test_longitude_range) {
+
+	// Get an rng
+	random_numbers::RandomNumberGenerator rng(42);
+
+	for (int i = 0; i < 100; ++i) {
+
+		double lon_start = rng.uniformReal(-M_PI, M_PI);
+		double range_size = rng.uniformReal(0.0, 2.0 * M_PI);
+
+		LongitudeRange range(lon_start, wrap_angle(lon_start + range_size));
+
+		// Generate a bunch of longitudes and test whether contains works.
+		for (int i = 0; i < 10; ++i) {
+			double t = rng.uniformReal(0.0, 1.0);
+
+			double lon = wrap_angle(lon_start + t * range_size);
+
+			ASSERT_TRUE(range.contains(lon));
+		}
+
+		double remaining_size = 2.0 * M_PI - range_size;
+
+		// And some angles outside:
+		for (int i = 0; i < 10; ++i) {
+			double t = rng.uniformReal(0.0, 1.0);
+
+			double lon = wrap_angle(range.end + t * remaining_size);
+
+			ASSERT_FALSE(range.contains(lon));
+		}
+	}
 }

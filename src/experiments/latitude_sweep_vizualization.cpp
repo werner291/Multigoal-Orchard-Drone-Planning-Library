@@ -24,6 +24,9 @@
 #include "../planning/RobotModel.h"
 #include "../experiment_utils/procedural_robot_models.h"
 #include "../experiment_utils/fcl_utils.h"
+//#include "../visibility/convex_hull.h"
+#include "../planning/spherical_geometry.h"
+#include "../planning/LatitudeLongitudeGrid.h"
 
 using namespace mgodpl;
 
@@ -176,21 +179,38 @@ int main(int argc, char** argv)
 
 	std::cout << "Sweepline starting..." << std::endl;
 
-	std::vector<RobotState> valid_states;
-
+	// Start time.
 	const auto start_time = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < 10; ++i) {
+		LatLonGrid grid = LatLonGrid::from_triangles(triangles, target, 0.025, 20, 20);
+	}
+	const auto elapsed_time = std::chrono::high_resolution_clock::now() - start_time;
 
-	for (int i = 0; i < 50; ++i) {
-		LongitudeSweep sweepline_algorithm(triangles, STARTING_LONGITUDE, target);
-		while (sweepline_algorithm.has_more_events())
-			sweepline_algorithm.advance();
+	std::cout << "Sweepline finished in average " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time).count() / 10.0 << " ms." << std::endl;
+
+	LatLonGrid grid = LatLonGrid::from_triangles(triangles, target, 0.025, 20, 20);
+
+	std::cout
+		<< "Stats: n_count=" << grid.count_all()
+		<< " n_empty=" << grid.count_empty()
+		<< " n_blocked=" << grid.count_fully_blocked()
+		<< std::endl;
+
+	// Let's try that for all apples?
+	for (const auto& apple : computeFruitPositions(model))
+	{
+		LatLonGrid grid = LatLonGrid::from_triangles(triangles, apple, 0.025, 20, 20);
+
+		std::cout
+				<< "Stats: n_count=" << grid.count_all()
+				<< " n_empty=" << grid.count_empty()
+				<< " n_blocked=" << grid.count_fully_blocked()
+				<< " n_total=" << grid.cells.size()
+				<< std::endl;
 	}
 
-	const auto end_time = std::chrono::high_resolution_clock::now();
+	return 0;
 
-	std::cout << "Average time in ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / 50.0 << std::endl;
-
-	abort();
 	for (
 		LongitudeSweep sweepline_algorithm(triangles, STARTING_LONGITUDE, target);
 		sweepline_algorithm.has_more_events();
