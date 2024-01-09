@@ -45,32 +45,32 @@ Edge randomEdgeContainingPoint(math::Vec3d a, random_numbers::RandomNumberGenera
 
 }
 
-
-TEST(longitude_sweep_tests, intersection_longitude_test)
-{
-
-	random_numbers::RandomNumberGenerator rng(42);
-
-	// For 1000 iterations...
-	for (int i = 0; i < 1000; ++i)
-	{
-
-		// Construct a random unit vector:
-		math::Vec3d a(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
-		a = a.normalized();
-
-		Edge A1 = randomEdgeContainingPoint(a, rng);
-		Edge B1 = randomEdgeContainingPoint(a, rng);
-
-		math::Vec3d intersection = Edge_intersection(A1, B1);
-
-		ASSERT_NEAR(intersection.x(), a.x(), 1e-6);
-		ASSERT_NEAR(intersection.y(), a.y(), 1e-6);
-		ASSERT_NEAR(intersection.z(), a.z(), 1e-6);
-
-	}
-
-}
+//
+//TEST(longitude_sweep_tests, intersection_longitude_test)
+//{
+//
+//	random_numbers::RandomNumberGenerator rng(42);
+//
+//	// For 1000 iterations...
+//	for (int i = 0; i < 1000; ++i)
+//	{
+//
+//		// Construct a random unit vector:
+//		math::Vec3d a(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
+//		a = a.normalized();
+//
+//		Edge A1 = randomEdgeContainingPoint(a, rng);
+//		Edge B1 = randomEdgeContainingPoint(a, rng);
+//
+//		math::Vec3d intersection = Edge_intersection(A1, B1);
+//
+//		ASSERT_NEAR(intersection.x(), a.x(), 1e-6);
+//		ASSERT_NEAR(intersection.y(), a.y(), 1e-6);
+//		ASSERT_NEAR(intersection.z(), a.z(), 1e-6);
+//
+//	}
+//
+//}
 
 TEST(longitude_sweep_tests, test_signed_longitude_difference)
 {
@@ -99,54 +99,6 @@ TEST(longitude_sweep_tests, test_signed_longitude_difference)
 
 		ASSERT_NEAR(signed_diff, angle, 1e-6);
 	}
-
-}
-
-TEST(longitude_sweep_tests, sweepline_latitude_intersection_test)
-{
-	random_numbers::RandomNumberGenerator rng(42);
-
-	// For 1000 iterations...
-	for (int i = 0; i < 1000; ++i)
-	{
-		// Construct a random unit vector:
-		math::Vec3d a(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
-		a = a.normalized();
-
-		Edge A1 = randomEdgeContainingPoint(a, rng);
-
-		double a_lon = longitude(a, math::Vec3d(0, 0, 0));
-
-		double lat = latitude(A1, a_lon);
-
-		// Reconstruct the point from the latitude and longitude:
-		math::Vec3d reconstructed_point(
-				std::cos(lat) * std::cos(a_lon),
-				std::cos(lat) * std::sin(a_lon),
-				std::sin(lat)
-		);
-
-		ASSERT_NEAR(reconstructed_point.x(), a.x(), 1e-6);
-		ASSERT_NEAR(reconstructed_point.y(), a.y(), 1e-6);
-		ASSERT_NEAR(reconstructed_point.z(), a.z(), 1e-6);
-
-	}
-
-	// Regressions:
-
-	// Edge: (0.115449, -0.214643, -0.00318132) -> (0.129188, -0.238531, 0.0697457)
-	// At longitude: -1.56451
-
-	Edge A1 {
-			{
-					math::Vec3d(0.115449, -0.214643, -0.00318132),
-					math::Vec3d(0.129188, -0.238531, 0.0697457)
-			}
-	};
-
-	double a_lon = -1.56451;
-
-	latitude(A1, a_lon);
 
 }
 
@@ -185,24 +137,20 @@ TEST(longitude_sweep_tests, longitude_interpolation) {
 
 		double lon1 = rng.uniformReal(-M_PI, M_PI);
 		double lon2 = rng.uniformReal(-M_PI, M_PI);
-		if (signed_longitude_difference(lon2, lon1) < 0) // It's always ordered; swap if necessary.
-			std::swap(lon1, lon2);
 
 		// Pick a random t in the [0,1] range:
 		double t = rng.uniformReal(0, 1);
 
 		// Compute the interpolated longitude:
-		double interpolated_lon = interpolate_longitude(lon1, lon2, t);
+		LongitudeRange range(lon1, lon2);
 
-		// Check that it's in the range [-pi,pi]:
-		ASSERT_GE(interpolated_lon, -M_PI);
-		ASSERT_LE(interpolated_lon, M_PI);
+		double lon = range.interpolate(t).longitude;
 
-		// Compute the t back:
-		double interpolated_t = reverse_interpolate(lon1, lon2, interpolated_lon);
+		ASSERT_LE(-M_PI, lon);
+		ASSERT_LE(lon, M_PI);
 
-		// Check that it's the same:
-		ASSERT_NEAR(interpolated_t, t, 1e-6);
+		// Do reverse-interpolation to see if we get t back.
+		ASSERT_NEAR(range.reverse_interpolate(lon), t, 1e-6);
 	}
 
 }
@@ -287,9 +235,11 @@ TEST(spherical_geometry_test, test_longitude_range) {
 		for (int i = 0; i < 10; ++i) {
 			double t = rng.uniformReal(0.0, 1.0);
 
-			double lon = wrap_angle(lon_start + t * range_size);
+			double lon = range.interpolate(t).longitude;
 
 			ASSERT_TRUE(range.contains(lon));
+
+			ASSERT_NEAR(range.reverse_interpolate(lon), t, 1e-6);
 		}
 
 		double remaining_size = 2.0 * M_PI - range_size;

@@ -204,8 +204,8 @@ add_library(planning
         src/planning/ConvexHullSpace.h
         src/planning/RobotModel.cpp
         src/planning/RobotModel.h
-        src/planning/longitude_sweep.cpp
-        src/planning/longitude_sweep.h
+#        src/planning/longitude_sweep.cpp
+#        src/planning/longitude_sweep.h
         src/planning/RobotState.cpp
         src/planning/LatitudeLongitudeGrid.h
         src/planning/LatitudeLongitudeGrid.cpp
@@ -332,6 +332,7 @@ add_executable(${PROJECT_NAME}_tests
 #        test/math/intersection_test.cpp
 #        test/math/lp_test.cpp
         test/planning/spherical_geomety_test.cpp
+        test/planning/LatitudeLongitudeGridTests.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils planning gtest)

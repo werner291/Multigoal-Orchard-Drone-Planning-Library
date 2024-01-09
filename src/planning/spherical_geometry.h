@@ -139,7 +139,7 @@ namespace mgodpl::spherical_geometry {
 	 *
 	 * @return  The latitude, as a double in the range [-pi/2, pi/2].
 	 */
-	inline double latitude(const math::Vec3d &point, const math::Vec3d &center) {
+	inline double latitude(const math::Vec3d &point, const math::Vec3d &center = {0,0,0}) {
 		math::Vec3d delta = point - center;
 
 		// Distance from the vertical axis through the center of the sphere.
@@ -157,19 +157,19 @@ namespace mgodpl::spherical_geometry {
 	 *
 	 * \return          The longitude, as a double in the range [-pi, pi].
 	 */
-	inline double longitude(const math::Vec3d &point, const math::Vec3d &center) {
+	inline double longitude(const math::Vec3d &point, const math::Vec3d &center = {0,0,0}) {
 		math::Vec3d delta = point - center;
 
 		return std::atan2(delta.y(), delta.x());
 	}
 
-	/**
-	* \brief Given an edge, return the latitude of the intersection of the projection of the edge on the sphere with the longitude sweep arc at the given longitude.
-	* \param range		    The range of longitudes over which the latitude is valid.
-	* \param longitude	    The longitude at which to compute the latitude.
-	* \return		        The latitude of the intersection of the projection of the edge on the sphere with the given longitude.
-	*/
-	double latitude(const mgodpl::Edge &edge, double longitude);
+//	/**
+//	* \brief Given an edge, return the latitude of the intersection of the projection of the edge on the sphere with the longitude sweep arc at the given longitude.
+//	* \param range		    The range of longitudes over which the latitude is valid.
+//	* \param longitude	    The longitude at which to compute the latitude.
+//	* \return		        The latitude of the intersection of the projection of the edge on the sphere with the given longitude.
+//	*/
+//	double latitude(const mgodpl::Edge &edge, double longitude);
 
 	/**
 	 * \brief Compute the signed difference between two longitudes.
@@ -203,46 +203,6 @@ namespace mgodpl::spherical_geometry {
 		double a_longitude = signed_longitude_difference(longitude, starting_longitude);
 		if (a_longitude < 0) a_longitude += 2 * M_PI;
 		return a_longitude;
-	}
-
-	/**
-	 * Perform a linear interpolation between two longitudes, taking angle wrapping into account.
-	 *
-	 * @pre	The two longitudes must be in order (signed_longitude_difference(second,first) >= 0).
-	 *
-	 * @param first 	The first longitude, in the range [-pi, pi].
-	 * @param second 	The second longitude, in the range [-pi, pi].
-	 * @param t 		The interpolation parameter, in the range [0, 1].
-	 * @return 			The interpolated longitude.
-	 */
-	inline double interpolate_longitude(double first, double second, double t) {
-		assert(signed_longitude_difference(second, first) >= 0);
-
-		double signed_diff = signed_longitude_difference(first, second);
-
-		return wrap_angle(first + t * signed_diff);
-	}
-
-	/**
-	 * Find the `t` such that `longitude = interpolate_longitude(first, second, t)`.
-	 *
-	 * @pre	The two longitudes must be in order (signed_longitude_difference(second,first) >= 0).
-	 * @pre The given longitude must be between the two longitudes.
-	 *
-	 * @param first 	The first longitude, in the range [-pi, pi].
-	 * @param second 	The second longitude, in the range [-pi, pi].
-	 * @param longitude The longitude to find.
-	 * @return 			The interpolation parameter, in the range [0, 1].
-	 */
-	inline double reverse_interpolate(double first, double second, double longitude) {
-		assert(signed_longitude_difference(second, first) >= 0);
-		assert(signed_longitude_difference(longitude, first) >= 0);
-		assert(signed_longitude_difference(longitude, second) <= 0);
-
-		double signed_diff = signed_longitude_difference(first, second);
-		double signed_diff_longitude = signed_longitude_difference(first, longitude);
-
-		return signed_diff_longitude / signed_diff;
 	}
 
 	/**
@@ -282,6 +242,11 @@ namespace mgodpl::spherical_geometry {
 		[[nodiscard]] inline bool contains(double latitude) const {
 			return latitude >= min && latitude <= max;
 		}
+
+		[[nodiscard]] inline double interpolate(double t) const {
+			assert(t >= 0 && t <= 1);
+			return min + t * (max - min);
+		}
 	};
 
 	struct LongitudeRange {
@@ -301,8 +266,30 @@ namespace mgodpl::spherical_geometry {
 			}
 		}
 
+		[[nodiscard]] bool contains(const Longitude& longitude) const {
+			return contains(longitude.longitude);
+		}
+
 		[[nodiscard]] bool overlaps(const LongitudeRange &other) const {
 			return contains(other.start) || contains(other.end) || other.contains(start) || other.contains(end);
+		}
+
+		[[nodiscard]] double clamp(double a) const {
+
+			if (contains(a)) {
+				return a;
+			} else {
+				// Return either start or end, whichever is closer to a.
+				double angle_from_end = signed_longitude_difference(a, end);
+				double angle_to_start = signed_longitude_difference(start, a);
+
+				if (angle_from_end < angle_to_start) { // TODO: Check correctness
+					return end;
+				} else {
+					return start;
+				}
+			}
+
 		}
 
 		[[nodiscard]] LongitudeRange overlap(const LongitudeRange &other) const {
@@ -328,6 +315,20 @@ namespace mgodpl::spherical_geometry {
 			assert(t >= 0 && t <= 1);
 			return {wrap_angle(start + t * length())};
 		}
+
+		[[nodiscard]] double reverse_interpolate(const double d) const {
+			assert(contains(d));
+
+			if (start <= end) {
+				return (d - start) / length();
+			} else {
+				if (d >= start) {
+					return (d - start) / length();
+				} else {
+					return (d + 2 * M_PI - start) / length();
+				}
+			}
+		}
 	};
 
 	static int next_id = 0;
@@ -348,10 +349,9 @@ namespace mgodpl::spherical_geometry {
 
 		[[nodiscard]] double latitudeAtLongitude(double longitude) const {
 			// TODO: This is a naive linear interpolation; this should work for now but isn't quite correct.
-			assert(signed_longitude_difference(longitude, start.longitude) >= 0);
-			assert(signed_longitude_difference(longitude, end.longitude) <= 0);
+			assert(longitude_range().contains(longitude));
 
-			double t = reverse_interpolate(start.longitude, end.longitude, longitude);
+			double t = longitude_range().reverse_interpolate(longitude);
 
 			return start.latitude * (1 - t) + end.latitude * t;
 		}
@@ -457,7 +457,7 @@ namespace mgodpl::spherical_geometry {
 		 * @return 				Whether the point is on the edge.
 		 */
 		[[nodiscard]] bool is_on_edge(const RelativeVertex v, const double margin = 1e-6) const {
-			double t = reverse_interpolate(start.longitude, end.longitude, v.longitude);
+			double t = LongitudeRange(start.longitude, end.longitude).reverse_interpolate(v.longitude);
 			double lat = start.latitude * (1 - t) + end.latitude * t;
 			return std::abs(lat - v.latitude) < margin;
 		}
@@ -540,16 +540,49 @@ namespace mgodpl::spherical_geometry {
 		}
 
 		[[nodiscard]] std::pair<LatitudeRange, LongitudeRange> bounding_rectangle() const {
+			return { latitude_range(), longitude_range() };
+		}
+
+		[[nodiscard]] spherical_geometry::LatitudeRange latitude_range() const {
 			return {
-				{
-					std::min(std::min(vertices[0].latitude, vertices[1].latitude), vertices[2].latitude) - angular_padding,
-					std::max(std::max(vertices[0].latitude, vertices[1].latitude), vertices[2].latitude) + angular_padding
-				},
-				{
-					std::min(std::min(vertices[0].longitude, vertices[1].longitude), vertices[2].longitude) - angular_padding,
-					std::max(std::max(vertices[0].longitude, vertices[1].longitude), vertices[2].longitude) + angular_padding
-				}
+					std::min(std::min(vertices[0].latitude, vertices[1].latitude), vertices[2].latitude) -
+					angular_padding,
+					std::max(std::max(vertices[0].latitude, vertices[1].latitude), vertices[2].latitude) +
+					angular_padding
+							};
+		}
+
+		[[nodiscard]] spherical_geometry::LongitudeRange longitude_range() const {
+			return {
+					vertices[0].longitude -
+					angular_padding,
+					vertices[2].longitude +
+					angular_padding
 			};
+		}
+
+		[[nodiscard]] spherical_geometry::LatitudeRange latitude_range_at_longitude(const Longitude& longitude) const {
+			assert(this->longitude_range().contains(longitude));
+
+			double lat1 = OrderedArcEdge(vertices[0], vertices[2]).latitudeAtLongitude(longitude.longitude);
+
+			// The two other egdes.
+			OrderedArcEdge e1(vertices[0], vertices[1]);
+			OrderedArcEdge e2(vertices[1], vertices[2]);
+
+			double lat2;
+
+			if (e1.longitude_range().contains(longitude)) {
+				lat2 = e1.latitudeAtLongitude(longitude.longitude);
+			} else {
+				lat2 = e2.latitudeAtLongitude(longitude.longitude);
+			}
+
+			if (lat1 < lat2) {
+				return {lat1, lat2};
+			} else {
+				return {lat2, lat1};
+			}
 		}
 
 		/**

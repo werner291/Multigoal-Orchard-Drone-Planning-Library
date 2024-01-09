@@ -12,29 +12,29 @@
 
 namespace mgodpl::spherical_geometry {
 
-	double latitude(const Edge &edge, double longitude)  {
-		// Just like intersection_longitude, we can reduce this problem to linear algebra.
-
-		// Compute the edge plane normal.
-		math::Vec3d edge_normal = edge.vertices[0].cross(edge.vertices[1]);
-
-		math::Vec3d lon_direction = math::Vec3d(
-				cos(longitude + M_PI / 2.0),
-				sin(longitude + M_PI / 2.0),
-				0
-		);
-
-		// Now it's easy: get the direction of the intersection line.
-		math::Vec3d direction = edge_normal.cross(lon_direction);
-
-		// If the dot product with the edge vertices is negative, flip the direction.
-		if (direction.dot(edge.vertices[0]) < 0) {
-			assert(direction.dot(edge.vertices[1]) < 0);
-			direction = -direction;
-		}
-
-		return latitude(direction, math::Vec3d(0, 0, 0));
-	}
+//	double latitude(const Edge &edge, double longitude)  {
+//		// Just like intersection_longitude, we can reduce this problem to linear algebra.
+//
+//		// Compute the edge plane normal.
+//		math::Vec3d edge_normal = edge.vertices[0].cross(edge.vertices[1]);
+//
+//		math::Vec3d lon_direction = math::Vec3d(
+//				cos(longitude + M_PI / 2.0),
+//				sin(longitude + M_PI / 2.0),
+//				0
+//		);
+//
+//		// Now it's easy: get the direction of the intersection line.
+//		math::Vec3d direction = edge_normal.cross(lon_direction);
+//
+//		// If the dot product with the edge vertices is negative, flip the direction.
+//		if (direction.dot(edge.vertices[0]) < 0) {
+//			assert(direction.dot(edge.vertices[1]) < 0);
+//			direction = -direction;
+//		}
+//
+//		return latitude(direction, math::Vec3d(0, 0, 0));
+//	}
 
 	std::array<RelativeVertex, 3> sorted_relative_vertices(const Triangle &triangle, const math::Vec3d &center) {
 
