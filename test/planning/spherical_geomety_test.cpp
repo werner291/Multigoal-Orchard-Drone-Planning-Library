@@ -317,3 +317,42 @@ TEST(spherical_geometry_test, longitude_range_overlap_negative) {
 	}
 
 }
+
+TEST(spherical_geometry_test, longitude_range_clamp) {
+
+	random_numbers::RandomNumberGenerator rng(42);
+
+	for (int i = 0; i < 100; ++i) {
+
+		double range_start = rng.uniformReal(-M_PI, M_PI);
+		double range_size = rng.uniformReal(0.0, 2.0 * M_PI);
+
+		LongitudeRange range(range_start, wrap_angle(range_start + range_size));
+
+		// Pick a random longitude in the range:
+		double lon = range.interpolate(rng.uniform01()).longitude;
+
+		// Clamping should yield it right back:
+		ASSERT_NEAR(range.clamp(lon), lon, 1e-6);
+
+		double remaining = 2.0 * M_PI - range_size;
+
+		// Pick something before halfway inside the remaining:
+		double lon_before = wrap_angle(range.end + rng.uniformReal(0.0, remaining / 2.0));
+
+		std::cout << "Lon before: " << lon_before << std::endl;
+		std::cout << "Range: " << range.start << " -> " << range.end << std::endl;
+		std::cout << "Clamped: " << range.clamp(lon_before) << std::endl;
+
+		// Check that it clamps to the end:
+		ASSERT_EQ(range.clamp(lon_before), range.end);
+
+		// After halfway:
+		double lon_after = wrap_angle(range.start - rng.uniformReal(0.0, remaining / 2.0));
+
+		// Check that it clamps to the start:
+		ASSERT_EQ(range.clamp(lon_after), range.start);
+
+	}
+
+}

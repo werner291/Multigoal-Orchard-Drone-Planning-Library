@@ -279,17 +279,26 @@ namespace mgodpl::spherical_geometry {
 			if (contains(a)) {
 				return a;
 			} else {
-				// Return either start or end, whichever is closer to a.
-				double angle_from_end = signed_longitude_difference(a, end);
-				double angle_to_start = signed_longitude_difference(start, a);
+				double compl_t = complement().reverse_interpolate(a);
+				assert(compl_t >= 0 && compl_t <= 1);
 
-				if (angle_from_end < angle_to_start) { // TODO: Check correctness
-					return end;
-				} else {
+				if (compl_t > 0.5) {
 					return start;
+				} else {
+					return end;
 				}
 			}
 
+		}
+
+		[[nodiscard]] LongitudeRange complement() const {
+			LongitudeRange to_return = *this;
+			std::swap(to_return.start, to_return.end);
+			return to_return;
+		}
+
+		[[nodiscard]] LongitudeRange restrict(const LongitudeRange &other) const {
+			return LongitudeRange(std::max(start, other.start), std::min(end, other.end));
 		}
 
 		[[nodiscard]] LongitudeRange overlap(const LongitudeRange &other) const {
