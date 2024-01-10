@@ -254,3 +254,66 @@ TEST(spherical_geometry_test, test_longitude_range) {
 		}
 	}
 }
+
+TEST(spherical_geometry_test, longitude_range_overlap) {
+
+	// Generate a bunch of overlapping longitude ranges and check that the overlap test returns true.
+
+	random_numbers::RandomNumberGenerator rng(42);
+
+	for (int i = 0; i < 100; ++i) {
+
+		double lon_start = rng.uniformReal(-M_PI, M_PI);
+		double range_size = rng.uniformReal(0.0, 2.0 * M_PI);
+
+		LongitudeRange range1(lon_start, wrap_angle(lon_start + range_size));
+
+		double t = rng.uniform01();
+
+		double lon2_start = range1.interpolate(t).longitude;
+		double rg2_size = rng.uniformReal(0.0, 2.0 * M_PI);
+
+		LongitudeRange range2(lon2_start, wrap_angle(lon2_start + rg2_size));
+
+		// Make sure they do overlap.
+		ASSERT_TRUE(range1.overlaps(range2));
+
+		// Swap them and test again.
+		ASSERT_TRUE(range2.overlaps(range1));
+	}
+
+}
+
+TEST(spherical_geometry_test, longitude_range_overlap_negative) {
+
+	random_numbers::RandomNumberGenerator rng(42);
+
+	// Generate non-overlapping ranges and test that their overlap test returns false.
+	for (int i = 0; i < 100; ++i) {
+
+		double lon_start = rng.uniformReal(-M_PI, M_PI);
+		double range_size = rng.uniformReal(0.0, 2.0 * M_PI);
+
+		LongitudeRange range1(lon_start, wrap_angle(lon_start + range_size));
+
+		double remaining = 2.0 * M_PI - range_size;
+
+		double range2_size = rng.uniformReal(0.0, remaining);
+
+		remaining -= range2_size;
+
+		// Put the range2 start in the remaining space somewhere
+
+		double range2_start = wrap_angle(range1.end + rng.uniformReal(0.0, remaining));
+
+		LongitudeRange range2(range2_start, wrap_angle(range2_start + range2_size));
+
+		// Make sure they do not overlap.
+		ASSERT_FALSE(range1.overlaps(range2));
+
+		// Swap them and test again.
+		ASSERT_FALSE(range2.overlaps(range1));
+
+	}
+
+}
