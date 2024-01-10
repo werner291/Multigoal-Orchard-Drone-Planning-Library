@@ -108,12 +108,12 @@ namespace mgodpl {
 	};
 
 	/**
-	 * \brief A comparator that takes a mutable (!) longitude and compares two edges by their latitude at that longitude.
+	 * \brief A comparator that takes a mutable (!) longitude and compares two edges_padded by their latitude at that longitude.
 	 *
 	 * At first glance, one might think it ill-advised to use a mutable comparator. One might be right.
 	 *
 	 * That said, we are trying to maintain an order as the sweep arc moves, which means that
-	 * the order of intersected edges will change as the sweep arc moves. As a result, we kinda *have* to do this,
+	 * the order of intersected edges_padded will change as the sweep arc moves. As a result, we kinda *have* to do this,
 	 * and carefully maintain the datastructure so that the order of elements *within* the datastructure is is always
 	 * correct.
 	 */
@@ -159,7 +159,7 @@ namespace mgodpl {
 		/// or the starting longitude if no events have been processed yet. (In range [-pi, pi])
 		double current_longitude;
 
-		/// The ranges of latitudes between edges between `longitude` and the next event (or the end of the sweep).
+		/// The ranges of latitudes between edges_padded between `longitude` and the next event (or the end of the sweep).
 		/// Warning: this set has a *mutable comparator* that uses `current_longitude`; be very careful when changing it.
 		///
 		/// The core trick is to make sure that, whenever the longitude changes, the outcome of the comparator
@@ -173,7 +173,7 @@ namespace mgodpl {
 
 		size_t events_passed = 0;
 
-		/// Given two edges, check if they cross and, if so, add a EdgePairSwap event to the event queue.
+		/// Given two edges_padded, check if they cross and, if so, add a EdgePairSwap event to the event queue.
 		bool add_potential_edgecross(spherical_geometry::OrderedArcEdge edge1, spherical_geometry::OrderedArcEdge edge2);
 
 		/// Due to the unstable nature of the comparator, this method will ierate through the set
@@ -187,8 +187,8 @@ namespace mgodpl {
 		/// Check whether all events that should be in the event queue are in the event queue.
 		///
 		/// That is:
-		/// - For all ongoing edges, there is an EdgePairEnd event in the queue.
-		/// - For all neighboring edges, there is an EdgePairSwap event in the queue if they cross.
+		/// - For all ongoing edges_padded, there is an EdgePairEnd event in the queue.
+		/// - For all neighboring edges_padded, there is an EdgePairSwap event in the queue if they cross.
 		///
 		/// This operation runs in O(n) time and should only be used while debugging.
 		///
@@ -199,7 +199,7 @@ namespace mgodpl {
 		///
 		/// That is:
 		///  - For all EdgePairEnd events, the edge is in the set of ranges.
-		///  - For all EdgePairSwap events, the edges are in the set of ranges, and are neighbors in order.
+		///  - For all EdgePairSwap events, the edges_padded are in the set of ranges, and are neighbors in order.
 		///    Also, an edge may not end before a swap.
 		[[nodiscard]] bool check_events_consistent();
 

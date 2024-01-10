@@ -60,6 +60,8 @@ namespace mgodpl {
 				  longitude_range(longitude_range),
 				  latitude_cells(latitude_steps),
 				  longitude_cells(longitude_steps) {
+			assert(longitude_cells > 0);
+			assert(latitude_cells > 0);
 			cells.resize(latitude_steps * longitude_steps);
 		}
 
@@ -106,13 +108,17 @@ namespace mgodpl {
 			double lon_rescaled = longitude_range.reverse_interpolate(longitude);
 
 			// Floor it to get the cell index.
-			auto cell_idx = std::floor(lon_rescaled * (double) longitude_cells);
+			auto cell_idx = static_cast<size_t>(std::floor(lon_rescaled * (double) longitude_cells));
 
 			// Check that it's in the valid range. (TODO: When might it not be?)
-			assert(cell_idx >= 0 && cell_idx < longitude_cells);
+			assert(cell_idx >= 0 && cell_idx <= longitude_cells);
+
+			if (cell_idx == longitude_cells) {
+				cell_idx = longitude_cells-1;
+			}
 
 			// Convert to size_t and return.
-			return static_cast<size_t>(cell_idx);
+			return cell_idx;
 		}
 
 		[[nodiscard]] GridIndex to_grid_index(const spherical_geometry::RelativeVertex &vertex) const {

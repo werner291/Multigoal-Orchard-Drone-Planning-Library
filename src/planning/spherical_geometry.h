@@ -10,6 +10,7 @@
 #define MGODPL_SPHERICAL_GEOMETRY_H
 
 #include <array>
+#include <algorithm>
 #include "geometry.h"
 
 //
@@ -247,6 +248,14 @@ namespace mgodpl::spherical_geometry {
 			assert(t >= 0 && t <= 1);
 			return min + t * (max - min);
 		}
+
+		[[nodiscard]] inline bool overlaps(const LatitudeRange &other) const {
+			return contains(other.min) || contains(other.max) || other.contains(min) || other.contains(max);
+		}
+
+		const double clamp(double d) {
+			return std::clamp(d, min, max);
+		}
 	};
 
 	struct LongitudeRange {
@@ -378,13 +387,13 @@ namespace mgodpl::spherical_geometry {
 		 *
 		 * That is, the latitude of `other` is below the latitude of this edge at the end of their shared longitude range.
 		 *
-		 * @pre 	The longitude ranges of the two edges overlap.
+		 * @pre 	The longitude ranges of the two edges_padded overlap.
 		 * @pre     The latitude at `after_longitude` is below `other`.
-		 * @pre     The given `after_longitude` is in the longitude range of both edges.
+		 * @pre     The given `after_longitude` is in the longitude range of both edges_padded.
 		 *
 		 * @param other			  The edge to check for crossing.
 		 * @param after_longitude The longitude after which to check for crossing.
-		 * @return 		          Whether the edges cross.
+		 * @return 		          Whether the edges_padded cross.
 		 */
 		[[nodiscard]] bool crosses(const OrderedArcEdge &other, double after_longitude) const {
 			assert(longitude_range().overlaps(other.longitude_range()));
@@ -402,10 +411,10 @@ namespace mgodpl::spherical_geometry {
 		/**
 		 * \brief Compute the intersection of this edge with the given edge, assuming that they do cross.
 		 *
-		 * @pre The edges cross.
+		 * @pre The edges_padded cross.
 		 *
 		 * @param other	The edge to compute the intersection with.
-		 * @return	    The intersection of the two edges.
+		 * @return	    The intersection of the two edges_padded.
 		 */
 		[[nodiscard]] RelativeVertex intersection(const OrderedArcEdge &other) const {
 
@@ -538,12 +547,28 @@ namespace mgodpl::spherical_geometry {
 			double min_lat = std::numeric_limits<double>::max();
 			double max_lat = std::numeric_limits<double>::lowest();
 
-			for (const auto &vertex : vertices) {
-				if (range.contains(vertex.longitude)) {
-					min_lat = std::min(min_lat, vertex.latitude);
-					max_lat = std::max(max_lat, vertex.latitude);
-				}
+			auto edges = edges_padded();
+
+			assert(edges.e_long.longitude_range().overlaps(range));
+
+			auto lats_1 = edges.e_long.restrict(range);
+			min_lat = std::min(min_lat, lats_1.latitude_range().min);
+			max_lat = std::max(max_lat, lats_1.latitude_range().max);
+
+			if (edges.e_short1.longitude_range().overlaps(range)) {
+				auto lats_2 = edges.e_short1.restrict(range);
+				min_lat = std::min(min_lat, lats_2.latitude_range().min);
+				max_lat = std::max(max_lat, lats_2.latitude_range().max);
 			}
+
+			if (edges.e_short2.longitude_range().overlaps(range)) {
+				auto lats_3 = edges.e_short2.restrict(range);
+				min_lat = std::min(min_lat, lats_3.latitude_range().min);
+				max_lat = std::max(max_lat, lats_3.latitude_range().max);
+			}
+
+			// Make sure we actually found a range:
+			assert(min_lat <= max_lat);
 
 			return {min_lat, max_lat};
 		}
@@ -563,28 +588,73 @@ namespace mgodpl::spherical_geometry {
 
 		[[nodiscard]] spherical_geometry::LongitudeRange longitude_range() const {
 			return {
-					vertices[0].longitude -
-					angular_padding,
-					vertices[2].longitude +
-					angular_padding
+					wrap_angle(vertices[0].longitude - angular_padding),
+					wrap_angle(vertices[2].longitude + angular_padding)
 			};
+		}
+
+		struct TriangleEdges {
+			OrderedArcEdge e_long, e_short1, e_short2;
+		};
+
+		/**
+		 * Return whether the middle vertex lies above the long edge in terms of latitude.
+		 */
+		[[nodiscard]] bool middle_is_above() const {
+			OrderedArcEdge long_edge { vertices[0], vertices[2] };
+
+			double longedge_latitude = long_edge.latitudeAtLongitude(vertices[1].longitude);
+
+			return longedge_latitude > vertices[1].latitude;
+		}
+
+		[[nodiscard]] TriangleEdges edges_padded() const {
+
+			OrderedArcEdge long_edge(
+					{wrap_angle(vertices[0].longitude - angular_padding), vertices[0].latitude},
+					{wrap_angle(vertices[2].longitude + angular_padding), vertices[2].latitude});
+
+			OrderedArcEdge short_edge1(
+					{wrap_angle(vertices[0].longitude - angular_padding), vertices[0].latitude},
+					{vertices[1].longitude, vertices[1].latitude});
+
+			OrderedArcEdge short_edge2(
+					{vertices[1].longitude, vertices[1].latitude},
+					{wrap_angle(vertices[2].longitude + angular_padding), vertices[2].latitude});
+
+			if (middle_is_above())
+			{
+				long_edge.start.latitude -= angular_padding;
+				long_edge.end.latitude -= angular_padding;
+				short_edge1.start.latitude += angular_padding;
+				short_edge1.end.latitude += angular_padding;
+				short_edge2.start.latitude += angular_padding;
+				short_edge2.end.latitude += angular_padding;
+			} else {
+				long_edge.start.latitude += angular_padding;
+				long_edge.end.latitude += angular_padding;
+				short_edge1.start.latitude -= angular_padding;
+				short_edge1.end.latitude -= angular_padding;
+				short_edge2.start.latitude -= angular_padding;
+				short_edge2.end.latitude -= angular_padding;
+			}
+
+			return {long_edge, short_edge1, short_edge2};
 		}
 
 		[[nodiscard]] spherical_geometry::LatitudeRange latitude_range_at_longitude(const Longitude& longitude) const {
 			assert(this->longitude_range().contains(longitude));
 
-			double lat1 = OrderedArcEdge(vertices[0], vertices[2]).latitudeAtLongitude(longitude.longitude);
+			TriangleEdges edges = this->edges_padded();
 
-			// The two other egdes.
-			OrderedArcEdge e1(vertices[0], vertices[1]);
-			OrderedArcEdge e2(vertices[1], vertices[2]);
+			double lat1 = edges.e_long.latitudeAtLongitude(longitude.longitude);
 
 			double lat2;
 
-			if (e1.longitude_range().contains(longitude)) {
-				lat2 = e1.latitudeAtLongitude(longitude.longitude);
+			if (edges.e_short1.longitude_range().contains(longitude)) {
+				lat2 = edges.e_short1.latitudeAtLongitude(longitude.longitude);
 			} else {
-				lat2 = e2.latitudeAtLongitude(longitude.longitude);
+				lat2 = edges.e_short2.latitudeAtLongitude(longitude.longitude);
 			}
 
 			if (lat1 < lat2) {

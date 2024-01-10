@@ -38,41 +38,33 @@ namespace mgodpl {
 
 	void LatLonGrid::insert_triangle(const spherical_geometry::PaddedSphereTriangle &triangle) {
 
-		GridIndex ga = {
-				to_grid_longitude(triangle.vertices[0].longitude),
-				to_grid_latitude(triangle.vertices[0].latitude)
-		};
-		GridIndex gb = {
-				to_grid_longitude(triangle.vertices[1].longitude),
-				to_grid_latitude(triangle.vertices[1].latitude)
-		};
-		GridIndex gc = {
-				to_grid_longitude(triangle.vertices[2].longitude),
-				to_grid_latitude(triangle.vertices[2].latitude)
-		};
+		if (!triangle.longitude_range().overlaps(longitude_range) ||
+			!triangle.latitude_range().overlaps(latitude_range)) {
+			return;
+		}
 
 		int min_lat = std::min({
-			to_grid_latitude(std::clamp(triangle.vertices[0].latitude - triangle.angular_padding, -M_PI/2.0, M_PI/2.0)),
-			to_grid_latitude(std::clamp(triangle.vertices[1].latitude - triangle.angular_padding, -M_PI/2.0, M_PI/2.0)),
-			to_grid_latitude(std::clamp(triangle.vertices[2].latitude - triangle.angular_padding, -M_PI/2.0, M_PI/2.0))
+			to_grid_latitude(std::clamp(triangle.vertices[0].latitude - triangle.angular_padding, latitude_range.min, latitude_range.max)),
+			to_grid_latitude(std::clamp(triangle.vertices[1].latitude - triangle.angular_padding, latitude_range.min, latitude_range.max)),
+			to_grid_latitude(std::clamp(triangle.vertices[2].latitude - triangle.angular_padding, latitude_range.min, latitude_range.max))
 		});
 
 		int max_lat = std::max({
-			to_grid_latitude(std::clamp(triangle.vertices[0].latitude + triangle.angular_padding, -M_PI/2.0, M_PI/2.0)),
-			to_grid_latitude(std::clamp(triangle.vertices[1].latitude + triangle.angular_padding, -M_PI/2.0, M_PI/2.0)),
-			to_grid_latitude(std::clamp(triangle.vertices[2].latitude + triangle.angular_padding, -M_PI/2.0, M_PI/2.0))
+			to_grid_latitude(std::clamp(triangle.vertices[0].latitude + triangle.angular_padding, latitude_range.min, latitude_range.max)),
+			to_grid_latitude(std::clamp(triangle.vertices[1].latitude + triangle.angular_padding, latitude_range.min, latitude_range.max)),
+			to_grid_latitude(std::clamp(triangle.vertices[2].latitude + triangle.angular_padding, latitude_range.min, latitude_range.max))
 		});
 
 		int min_lon = std::min({
-			to_grid_longitude(spherical_geometry::wrap_angle(triangle.vertices[0].longitude - triangle.angular_padding)),
-			to_grid_longitude(spherical_geometry::wrap_angle(triangle.vertices[1].longitude - triangle.angular_padding)),
-			to_grid_longitude(spherical_geometry::wrap_angle(triangle.vertices[2].longitude - triangle.angular_padding))
+			to_grid_longitude(longitude_range.clamp(spherical_geometry::wrap_angle(triangle.vertices[0].longitude - triangle.angular_padding))),
+			to_grid_longitude(longitude_range.clamp(spherical_geometry::wrap_angle(triangle.vertices[1].longitude - triangle.angular_padding))),
+			to_grid_longitude(longitude_range.clamp(spherical_geometry::wrap_angle(triangle.vertices[2].longitude - triangle.angular_padding)))
 		});
 
 		int max_lon = std::max({
-			to_grid_longitude(spherical_geometry::wrap_angle(triangle.vertices[0].longitude + triangle.angular_padding)),
-			to_grid_longitude(spherical_geometry::wrap_angle(triangle.vertices[1].longitude + triangle.angular_padding)),
-			to_grid_longitude(spherical_geometry::wrap_angle(triangle.vertices[2].longitude + triangle.angular_padding))
+			to_grid_longitude(longitude_range.clamp(spherical_geometry::wrap_angle(triangle.vertices[0].longitude + triangle.angular_padding))),
+			to_grid_longitude(longitude_range.clamp(spherical_geometry::wrap_angle(triangle.vertices[1].longitude + triangle.angular_padding))),
+			to_grid_longitude(longitude_range.clamp(spherical_geometry::wrap_angle(triangle.vertices[2].longitude + triangle.angular_padding)))
 		});
 
 		if (min_lat == max_lat && min_lon == max_lon) {
@@ -102,56 +94,48 @@ namespace mgodpl {
 		// go latitude-by-latitude.
 
 		// Since triangles have ordered vertices in longitude,
-		double lon_min = spherical_geometry::wrap_angle(triangle.vertices[0].longitude - triangle.angular_padding);
-		double lon_max = spherical_geometry::wrap_angle(triangle.vertices[2].longitude + triangle.angular_padding);
+		auto padded_edges = triangle.edges_padded();
 
-		size_t lon_cell_min = to_grid_longitude(lon_min);
-		size_t lon_cell_max = to_grid_longitude(lon_max);
+		const auto& lon_range = triangle.longitude_range();
+
+		size_t lon_cell_min = to_grid_longitude(longitude_range.clamp(lon_range.start));
+		size_t lon_cell_max = to_grid_longitude(longitude_range.clamp(lon_range.end));
 
 		int middle_point_cell = to_grid_longitude(triangle.vertices[1].longitude);
 		bool middle_passed = false;
 
-		spherical_geometry::OrderedArcEdge edge_short1(triangle.vertices[0], triangle.vertices[1]);
-		spherical_geometry::OrderedArcEdge edge_short2(triangle.vertices[1], triangle.vertices[2]);
-		spherical_geometry::OrderedArcEdge edge_long(triangle.vertices[0], triangle.vertices[2]);
-
-		// Adjust the edges to add padding. (TODO: This is a bit rough.)
 		// Iterate over all cells touched by the padded triangle.
 		size_t longitude_cell = lon_cell_min;
 
 		while(true) {
 
 			spherical_geometry::LongitudeRange longitude_range_of_cell(
-					edge_long.longitude_range().clamp(meridian(longitude_cell).longitude),
-					edge_long.longitude_range().clamp(meridian(longitude_cell + 1).longitude)
+					padded_edges.e_long.longitude_range().clamp(meridian(longitude_cell).longitude),
+					padded_edges.e_long.longitude_range().clamp(meridian(longitude_cell + 1).longitude)
 			);
 
-			auto long_restricted = edge_long.restrict(longitude_range_of_cell);
+			auto long_restricted = padded_edges.e_long.restrict(longitude_range_of_cell);
 
 			spherical_geometry::LatitudeRange latitude_range_of_cell = long_restricted.latitude_range();
 
-//			if (longitude_range_of_cell.contains(triangle.vertices[1].longitude)) {
-//				middle_passed = true;
-//				latitude_range_of_cell.min = std::min(latitude_range_of_cell.min, triangle.vertices[1].latitude);
-//				latitude_range_of_cell.max = std::max(latitude_range_of_cell.max, triangle.vertices[1].latitude);
-//			} else {
-				if (edge_short1.longitude_range().overlaps(longitude_range_of_cell)) {
-					auto lat_range = edge_short1.restrict(longitude_range_of_cell).latitude_range();
-					latitude_range_of_cell.min = std::min(latitude_range_of_cell.min, lat_range.min);
-					latitude_range_of_cell.max = std::max(latitude_range_of_cell.max, lat_range.max);
-				}
+			if (padded_edges.e_short1.longitude_range().overlaps(longitude_range_of_cell)) {
+				std::cout << "Short 1" << std::endl;
+				auto lat_range = padded_edges.e_short1.restrict(longitude_range_of_cell).latitude_range();
+				latitude_range_of_cell.min = std::min(latitude_range_of_cell.min, lat_range.min);
+				latitude_range_of_cell.max = std::max(latitude_range_of_cell.max, lat_range.max);
+			}
 
-				if (edge_short2.longitude_range().overlaps(longitude_range_of_cell)) {
-					auto lat_range = edge_short2.restrict(longitude_range_of_cell).latitude_range();
-					latitude_range_of_cell.min = std::min(latitude_range_of_cell.min, lat_range.min);
-					latitude_range_of_cell.max = std::max(latitude_range_of_cell.max, lat_range.max);
-				}
-//			}
+			if (padded_edges.e_short2.longitude_range().overlaps(longitude_range_of_cell)) {
+				std::cout << "Short 2" << std::endl;
+				auto lat_range = padded_edges.e_short2.restrict(longitude_range_of_cell).latitude_range();
+				latitude_range_of_cell.min = std::min(latitude_range_of_cell.min, lat_range.min);
+				latitude_range_of_cell.max = std::max(latitude_range_of_cell.max, lat_range.max);
+			}
 
-			size_t lat_cell_min = to_grid_latitude(std::clamp(latitude_range_of_cell.min - triangle.angular_padding,
-															 -M_PI / 2.0, M_PI / 2.0));
-			size_t lat_cell_max = to_grid_latitude(std::clamp(latitude_range_of_cell.max + triangle.angular_padding,
-															 -M_PI / 2.0, M_PI / 2.0));
+			size_t lat_cell_min = to_grid_latitude(std::clamp(latitude_range_of_cell.min,latitude_range.min, latitude_range.max));
+			size_t lat_cell_max = to_grid_latitude(std::clamp(latitude_range_of_cell.max,latitude_range.min, latitude_range.max));
+
+			std::cout << "Cell: " << longitude_cell << " X|X " << lat_cell_min << " -> " << lat_cell_max << std::endl;
 
 			if (lat_cell_min == lat_cell_max) {
 				// Single cell
@@ -162,7 +146,7 @@ namespace mgodpl {
 				cells[lat_cell_max * longitude_cells + longitude_cell].triangles.push_back(triangle);
 
 				// If there are between steps, mark them fully-occupied.
-				for (int lat_cell = lat_cell_min + 1; lat_cell < lat_cell_max; lat_cell++) {
+				for (size_t lat_cell = lat_cell_min + 1; lat_cell < lat_cell_max; lat_cell++) {
 					cells[lat_cell * longitude_cells + longitude_cell].triangles.push_back(triangle);
 					if (longitude_cell != lon_cell_min && longitude_cell != lon_cell_max) {
 						cells[lat_cell * longitude_cells + longitude_cell].fully_blocked = true;
@@ -179,9 +163,9 @@ namespace mgodpl {
 	}
 
 	spherical_geometry::LatitudeRange LatLonGrid::latitude_range_of_cell(size_t i) {
-		return spherical_geometry::LatitudeRange(
-				latitude_range.interpolate(static_cast<double>(i) / latitude_cells),
-				latitude_range.interpolate(static_cast<double>(i + 1) / latitude_cells)
-		);
+		return {
+				latitude_range.interpolate(static_cast<double>(i) / (double) latitude_cells),
+				latitude_range.interpolate(static_cast<double>(i + 1) / (double) latitude_cells)
+		};
 	}
 }

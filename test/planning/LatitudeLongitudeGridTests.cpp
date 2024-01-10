@@ -108,35 +108,28 @@ TEST(LatitudeLongitudeGridTests, test_coordinates) {
 
 }
 
-TEST(LatitudeLongitudeGridTests, test_insertion_unpadded) {
+TEST(LatitudeLongitudeGridTests, test_insertion) {
 
 	random_numbers::RandomNumberGenerator rng(42);
 
 	for (int repeat = 0; repeat < 100; ++repeat) {
 
-		random_numbers::RandomNumberGenerator &rng1 = rng;
-//		auto grid = LatLonGrid {
-//				gen_latitude_range(rng1),
-//				gen_longitude_range(rng1),
-//				static_cast<size_t>(rng1.uniformInteger(5, 20)),
-//				static_cast<size_t>(rng1.uniformInteger(5, 20))
-//		};
-
 		double long_start = rng.uniformReal(-M_PI, M_PI);
 		double long_length = rng.uniformReal(0.0, M_PI);
+		double lat_radius = rng.uniformReal(0.5, M_PI / 2.0);
 
 		LatLonGrid grid {
-				{-M_PI / 2.0, M_PI / 2.0},
+				{-lat_radius, lat_radius},
 				{long_start, wrap_angle(long_start + long_length)},
-				10,
-				10
+				static_cast<size_t>(rng.uniformInteger(5, 20)),
+				static_cast<size_t>(rng.uniformInteger(5, 20))
 		};
 
 		// Generate a random spherical triangle.
 		std::array<RelativeVertex, 3> vertices {
-			gen_relative_vertex_in_ranges(rng, grid.longitude_range, grid.latitude_range),
-			gen_relative_vertex_in_ranges(rng, grid.longitude_range, grid.latitude_range),
-			gen_relative_vertex_in_ranges(rng, grid.longitude_range, grid.latitude_range)
+				gen_relative_vertex_in_ranges(rng, grid.longitude_range, grid.latitude_range),
+				gen_relative_vertex_in_ranges(rng, grid.longitude_range, grid.latitude_range),
+				gen_relative_vertex_in_ranges(rng, grid.longitude_range, grid.latitude_range)
 		};
 
 		// Sort by longitude; use signed_longitude_difference for stuff that crosses the 180 meridian.
@@ -146,7 +139,7 @@ TEST(LatitudeLongitudeGridTests, test_insertion_unpadded) {
 
 		PaddedSphereTriangle triangle {
 				vertices,
-				0.0
+				rng.uniform01() < 0.5 ? 0.0 : rng.uniformReal(0.0, 0.1)
 		};
 
 		// Insert it.
@@ -157,18 +150,66 @@ TEST(LatitudeLongitudeGridTests, test_insertion_unpadded) {
 			RelativeVertex point = random_point_in_triangle(rng, triangle);
 			assert(triangle.longitude_range().contains(point.longitude));
 
-			auto grid_cell = grid.to_grid_index(point);
+			if (grid.longitude_range.contains(point.longitude) && grid.latitude_range.contains(point.latitude)) {
+				auto grid_cell = grid.to_grid_index(point);
+				ASSERT_EQ(grid.cells[grid.cell_index(grid_cell)].triangles.size(), 1);
+			}
+		}
 
-			std::cerr << "Triangle: (" << triangle.vertices[0].longitude << "," << triangle.vertices[0].latitude << "),"
-					  << "(" << triangle.vertices[1].longitude << "," << triangle.vertices[1].latitude << "),"
-					  << "(" << triangle.vertices[2].longitude << "," << triangle.vertices[2].latitude << ")" << std::endl;
+		// Also check the longitude columns before and after:
+		size_t lon_min = grid.to_grid_longitude(grid.longitude_range.clamp(triangle.longitude_range().start));
+		size_t lon_max = grid.to_grid_longitude(grid.longitude_range.clamp(triangle.longitude_range().end));
+		size_t lon_cell = lon_min;
 
-			std::cerr << "Point: (" << point.longitude << "," << point.latitude << ")" << std::endl;
-			std::cerr << "Grid cell: (" << grid_cell.lon_i << "," << grid_cell.lat_i << ")" << std::endl;
-			std::cerr << "Grid longs: (" << grid.longitude_range_of_cell(grid_cell.lon_i).start << "," << grid.longitude_range_of_cell(grid_cell.lon_i).end << ")" << std::endl;
-			std::cerr << "Grid lats: (" << grid.latitude_range_of_cell(grid_cell.lat_i).min << "," << grid.latitude_range_of_cell(grid_cell.lat_i).max << ")" << std::endl;
+		// Check that the cells surrounding the triangle are empty:
+		while (true) {
 
-			ASSERT_EQ(grid.cells[grid.cell_index(grid_cell)].triangles.size(), 1);
+			auto lats = triangle.latitude_range_over_longitude_range(grid.longitude_range_of_cell(lon_cell));
+
+			size_t lat_min = grid.to_grid_latitude(grid.latitude_range.clamp(lats.min));
+			size_t lat_max = grid.to_grid_latitude(grid.latitude_range.clamp(lats.max));
+
+			// Look at the cells above and below the triangle.
+			if (lat_min > 0) {
+				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i=static_cast<size_t>(lat_min - 1), .lon_i=lon_cell })].triangles.size(), 0);
+			}
+
+			if (lat_max + 1 < grid.latitude_cells) {
+				auto lat_range = grid.latitude_range_of_cell(lat_max + 1);
+				auto lon_range = grid.longitude_range_of_cell(lon_cell);
+				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i=static_cast<size_t>(lat_max + 1), .lon_i=lon_cell })].triangles.size(), 0);
+			}
+
+			if (lon_cell == lon_max) {
+				break;
+			} else {
+				lon_cell = (lon_cell + 1) % grid.longitude_cells;
+			}
+
+		}
+
+		for (size_t lat = 0; lat < grid.latitude_cells; lat++) {
+			if (lon_min > 0) {
+				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i= static_cast<size_t>(lat), .lon_i= static_cast<size_t>(lon_min - 1)})].triangles.size(),
+													  0);
+			}
+
+			if (lon_max + 1 < grid.longitude_cells) {
+				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i= static_cast<size_t>(lat),
+															 .lon_i= static_cast<size_t>(lon_max + 1)})].triangles.size(), 0);
+			}
+		}
+
+		// For all grid cells, if the four neighboring cells are full, they should be marked as fully blocked.
+		for (size_t lat = 1; lat+1 < grid.latitude_cells; lat++) {
+			for (size_t lon = 1; lon+1 < grid.longitude_cells; lon++) {
+				if (grid.cells[grid.cell_index({.lat_i=lat-1, .lon_i=lon})].triangles.size() > 0 &&
+					grid.cells[grid.cell_index({.lat_i=lat+1, .lon_i=lon})].triangles.size() > 0 &&
+					grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon+1})].triangles.size() > 0 &&
+					grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon-1})].triangles.size() > 0) {
+					ASSERT_TRUE(grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon})].fully_blocked);
+				}
+			}
 		}
 
 	}
