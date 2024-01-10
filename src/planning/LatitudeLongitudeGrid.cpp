@@ -119,14 +119,12 @@ namespace mgodpl {
 			spherical_geometry::LatitudeRange latitude_range_of_cell = long_restricted.latitude_range();
 
 			if (padded_edges.e_short1.longitude_range().overlaps(longitude_range_of_cell)) {
-				std::cout << "Short 1" << std::endl;
 				auto lat_range = padded_edges.e_short1.restrict(longitude_range_of_cell).latitude_range();
 				latitude_range_of_cell.min = std::min(latitude_range_of_cell.min, lat_range.min);
 				latitude_range_of_cell.max = std::max(latitude_range_of_cell.max, lat_range.max);
 			}
 
 			if (padded_edges.e_short2.longitude_range().overlaps(longitude_range_of_cell)) {
-				std::cout << "Short 2" << std::endl;
 				auto lat_range = padded_edges.e_short2.restrict(longitude_range_of_cell).latitude_range();
 				latitude_range_of_cell.min = std::min(latitude_range_of_cell.min, lat_range.min);
 				latitude_range_of_cell.max = std::max(latitude_range_of_cell.max, lat_range.max);
@@ -134,8 +132,6 @@ namespace mgodpl {
 
 			size_t lat_cell_min = to_grid_latitude(std::clamp(latitude_range_of_cell.min,latitude_range.min, latitude_range.max));
 			size_t lat_cell_max = to_grid_latitude(std::clamp(latitude_range_of_cell.max,latitude_range.min, latitude_range.max));
-
-			std::cout << "Cell: " << longitude_cell << " X|X " << lat_cell_min << " -> " << lat_cell_max << std::endl;
 
 			if (lat_cell_min == lat_cell_max) {
 				// Single cell
