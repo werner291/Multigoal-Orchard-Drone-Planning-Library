@@ -171,17 +171,17 @@ TEST(LatitudeLongitudeGridTests, test_insertion) {
 
 			// Look at the cells above and below the triangle.
 			if (lat_min > 0) {
-				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i=static_cast<size_t>(lat_min -
-																				 1), .lon_i=lon_cell})].triangles.size(),
-						  0);
+				ASSERT_EQ(grid.cells[grid.cell_index({
+															 .lat_i=static_cast<size_t>(lat_min - 1),
+															 .lon_i=lon_cell
+													 })].triangles.size(), 0);
 			}
 
 			if (lat_max + 1 < grid.latitude_cells) {
-				auto lat_range = grid.latitude_range_of_cell(lat_max + 1);
-				auto lon_range = grid.longitude_range_of_cell(lon_cell);
-				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i=static_cast<size_t>(lat_max +
-																				 1), .lon_i=lon_cell})].triangles.size(),
-						  0);
+				ASSERT_EQ(grid.cells[grid.cell_index({
+															 .lat_i=static_cast<size_t>(lat_max + 1),
+															 .lon_i=lon_cell
+													 })].triangles.size(), 0);
 			}
 
 			if (lon_cell == lon_max) {
