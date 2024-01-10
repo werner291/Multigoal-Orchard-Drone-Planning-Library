@@ -58,8 +58,8 @@ RelativeVertex gen_relative_vertex_in_ranges(random_numbers::RandomNumberGenerat
 											 LongitudeRange longitude_range,
 											 LatitudeRange latitude_range) {
 	return {
-		.longitude = longitude_range.interpolate(rng.uniform01()).longitude,
-		.latitude = latitude_range.interpolate(rng.uniform01())
+			.longitude = longitude_range.interpolate(rng.uniform01()).longitude,
+			.latitude = latitude_range.interpolate(rng.uniform01())
 	};
 }
 
@@ -118,7 +118,7 @@ TEST(LatitudeLongitudeGridTests, test_insertion) {
 		double long_length = rng.uniformReal(0.0, M_PI);
 		double lat_radius = rng.uniformReal(0.5, M_PI / 2.0);
 
-		LatLonGrid grid {
+		LatLonGrid grid{
 				{-lat_radius, lat_radius},
 				{long_start, wrap_angle(long_start + long_length)},
 				static_cast<size_t>(rng.uniformInteger(5, 20)),
@@ -126,7 +126,7 @@ TEST(LatitudeLongitudeGridTests, test_insertion) {
 		};
 
 		// Generate a random spherical triangle.
-		std::array<RelativeVertex, 3> vertices {
+		std::array<RelativeVertex, 3> vertices{
 				gen_relative_vertex_in_ranges(rng, grid.longitude_range, grid.latitude_range),
 				gen_relative_vertex_in_ranges(rng, grid.longitude_range, grid.latitude_range),
 				gen_relative_vertex_in_ranges(rng, grid.longitude_range, grid.latitude_range)
@@ -137,7 +137,7 @@ TEST(LatitudeLongitudeGridTests, test_insertion) {
 			return signed_longitude_difference(a.longitude, b.longitude) < 0;
 		});
 
-		PaddedSphereTriangle triangle {
+		PaddedSphereTriangle triangle{
 				vertices,
 				rng.uniform01() < 0.5 ? 0.0 : rng.uniformReal(0.0, 0.1)
 		};
@@ -171,13 +171,17 @@ TEST(LatitudeLongitudeGridTests, test_insertion) {
 
 			// Look at the cells above and below the triangle.
 			if (lat_min > 0) {
-				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i=static_cast<size_t>(lat_min - 1), .lon_i=lon_cell })].triangles.size(), 0);
+				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i=static_cast<size_t>(lat_min -
+																				 1), .lon_i=lon_cell})].triangles.size(),
+						  0);
 			}
 
 			if (lat_max + 1 < grid.latitude_cells) {
 				auto lat_range = grid.latitude_range_of_cell(lat_max + 1);
 				auto lon_range = grid.longitude_range_of_cell(lon_cell);
-				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i=static_cast<size_t>(lat_max + 1), .lon_i=lon_cell })].triangles.size(), 0);
+				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i=static_cast<size_t>(lat_max +
+																				 1), .lon_i=lon_cell})].triangles.size(),
+						  0);
 			}
 
 			if (lon_cell == lon_max) {
@@ -190,23 +194,25 @@ TEST(LatitudeLongitudeGridTests, test_insertion) {
 
 		for (size_t lat = 0; lat < grid.latitude_cells; lat++) {
 			if (lon_min > 0) {
-				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i= static_cast<size_t>(lat), .lon_i= static_cast<size_t>(lon_min - 1)})].triangles.size(),
-													  0);
+				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i= static_cast<size_t>(lat), .lon_i= static_cast<size_t>(
+						lon_min - 1)})].triangles.size(),
+						  0);
 			}
 
 			if (lon_max + 1 < grid.longitude_cells) {
 				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i= static_cast<size_t>(lat),
-															 .lon_i= static_cast<size_t>(lon_max + 1)})].triangles.size(), 0);
+															 .lon_i= static_cast<size_t>(lon_max +
+																						 1)})].triangles.size(), 0);
 			}
 		}
 
 		// For all grid cells, if the four neighboring cells are full, they should be marked as fully blocked.
-		for (size_t lat = 1; lat+1 < grid.latitude_cells; lat++) {
-			for (size_t lon = 1; lon+1 < grid.longitude_cells; lon++) {
-				if (grid.cells[grid.cell_index({.lat_i=lat-1, .lon_i=lon})].triangles.size() > 0 &&
-					grid.cells[grid.cell_index({.lat_i=lat+1, .lon_i=lon})].triangles.size() > 0 &&
-					grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon+1})].triangles.size() > 0 &&
-					grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon-1})].triangles.size() > 0) {
+		for (size_t lat = 1; lat + 1 < grid.latitude_cells; lat++) {
+			for (size_t lon = 1; lon + 1 < grid.longitude_cells; lon++) {
+				if (!grid.cells[grid.cell_index({.lat_i=lat - 1, .lon_i=lon})].triangles.empty() &&
+					!grid.cells[grid.cell_index({.lat_i=lat + 1, .lon_i=lon})].triangles.empty() &&
+					!grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon + 1})].triangles.empty() &&
+					!grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon - 1})].triangles.empty()) {
 					ASSERT_TRUE(grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon})].fully_blocked);
 				}
 			}
