@@ -221,3 +221,16 @@ TEST(LatitudeLongitudeGridTests, test_insertion) {
 	}
 
 }
+
+//TEST(LatitudeLongitudeGridTests, OBBdComparisonTest) {
+//
+//	random_numbers::RandomNumberGenerator rng(42);
+//
+//	// Grab a tree from the test data.
+//	const auto& model = mgodpl::tree_meshes::loadTreeMeshes("appletree");
+//
+//	// Extract the branches.
+//	model.trunk_mesh.
+//
+//
+//}

@@ -10,10 +10,18 @@
 #include <random_numbers/random_numbers.h>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
+#include <fcl/math/geometry.h>
+#include <fcl/geometry/shape/cylinder.h>
+#include <fcl/geometry/shape/triangle_p.h>
+#include <fcl/narrowphase/collision_request.h>
+#include <fcl/narrowphase/collision_result.h>
+#include <fcl/narrowphase/collision.h>
+
 
 #include "../../src/planning/longitude_sweep.h"
 #include "../../src/experiment_utils/TreeMeshes.h"
 #include "../../src/math/Quaternion.h"
+#include "../../src/math/Ray.h"
 
 using namespace mgodpl;
 using namespace spherical_geometry;
@@ -353,6 +361,116 @@ TEST(spherical_geometry_test, longitude_range_clamp) {
 		// Check that it clamps to the start:
 		ASSERT_EQ(range.clamp(lon_after), range.start);
 
+	}
+
+}
+
+TEST(spherical_geometry_test, padding_correctness) {
+
+	// Get an rng
+	random_numbers::RandomNumberGenerator rng(42);
+
+	const double arm_radius = 0.25;
+
+	for (int i = 0; i < 100; ++i) {
+
+		// Construct a random sphere center.
+		math::Vec3d center(rng.uniformReal(-10.0, 10.0),
+						   rng.uniformReal(-10.0, 10.0),
+						   rng.uniformReal(-10.0, 10.0));
+
+		// Construct a random triangle.
+		math::Vec3d a(rng.uniformReal(-10.0, 10.0),
+					  rng.uniformReal(-10.0, 10.0),
+					  rng.uniformReal(-10.0, 10.0));
+
+		math::Vec3d b(rng.uniformReal(-10.0, 10.0),
+					  rng.uniformReal(-10.0, 10.0),
+					  rng.uniformReal(-10.0, 10.0));
+
+		math::Vec3d c(rng.uniformReal(-10.0, 10.0),
+					  rng.uniformReal(-10.0, 10.0),
+					  rng.uniformReal(-10.0, 10.0));
+
+		std::cout << "C = (" << center.x() << "," << center.y() << "," << center.z() << ")" << std::endl;
+
+		std::cout << "Polygon({(" << a.x() << "," << a.y() << "," << a.z() << "),(" << b.x() << "," << b.y() << "," << b.z() << "),(" << c.x() << "," << c.y() << "," << c.z() << ")})" << std::endl;
+
+		PaddedSphereTriangle triangle = PaddedSphereTriangle::from_triangle({a, b, c}, center, arm_radius);
+
+		std::cout << "Polyline({";
+		for (int i = 0; i <= 10; ++i) {
+			double t = i / 10.0;
+			double lon = triangle.longitude_range().interpolate(t).longitude;
+			assert(triangle.longitude_range().contains(lon));
+			double lat = triangle.latitude_range_at_longitude(lon).max;
+			math::Vec3d dir(
+					center.x() + std::cos(lon) * std::cos(lat),
+					center.y() + std::sin(lon) * std::cos(lat),
+					center.z() + std::sin(lat)
+			);
+			std::cout << "(" << dir.x() << "," << dir.y() << "," << dir.z() << "),";
+		}
+		for (int i = 0; i <= 10; ++i) {
+			double t = 1.0 - i / 10.0;
+			double lon = triangle.longitude_range().interpolate(t).longitude;
+			double lat = triangle.latitude_range_at_longitude(lon).min;
+			math::Vec3d dir(
+					center.x() + std::cos(lon) * std::cos(lat),
+					center.y() + std::sin(lon) * std::cos(lat),
+					center.z() + std::sin(lat)
+			);
+			std::cout << "(" << dir.x() << "," << dir.y() << "," << dir.z() << ")";
+
+			if (i < 10) {
+				std::cout << ",";
+			}
+		}
+		std::cout << "})" << std::endl;
+
+		auto lon = triangle.longitude_range().interpolate(rng.uniform01());
+		auto lat = triangle.latitude_range_at_longitude(lon).interpolate(rng.uniformInteger(0,1));
+
+		// Translate that to a ray and see if the distance from the Euclidean triangle is at least the arm radius.
+		math::Vec3d dir(
+				std::cos(lon.longitude) * std::cos(lat),
+				std::sin(lon.longitude) * std::cos(lat),
+				std::sin(lat)
+				);
+
+		math::Ray ray(center, dir);
+
+		fcl::Vector3d fcl_a(a.x(), a.y(), a.z()), fcl_b(b.x(), b.y(), b.z()), fcl_c(c.x(), c.y(), c.z());
+
+		fcl::Cylinderd fcl_cylinder(arm_radius, 10.0);
+
+		fcl::Transform3d fcl_transform;
+		fcl_transform.setIdentity();
+		fcl_transform.translate(fcl::Vector3d(
+				center.x(),// + dir.x() * (fcl_cylinder.lz/2.0),
+				center.y(),// + dir.y() * (fcl_cylinder.lz/2.0),
+				center.z()// + dir.z() * (fcl_cylinder.lz/2.0)
+				));
+		fcl_transform.rotate(fcl::Quaterniond::FromTwoVectors(fcl::Vector3d(0, 0, 1), fcl::Vector3d(dir.x(), dir.y(), dir.z())));
+
+		fcl::Vector3d cap_middle = fcl_transform * fcl::Vector3d(0, 0, 0);
+		fcl::Vector3d cap_top = fcl_transform * fcl::Vector3d(0, 0, fcl_cylinder.lz);
+
+		// Geogebra cylinder.
+		std::cout << "Cylinder((" << cap_middle.x() << "," << cap_middle.y() << "," << cap_middle.z() << "),(" << cap_top.x() << "," << cap_top.y() << "," << cap_top.z() << ")," << arm_radius << ")" << std::endl;
+
+		fcl::BVHModel<fcl::OBBd> fcl_obb;
+		fcl_obb.beginModel();
+		fcl_obb.addTriangle(fcl_a, fcl_b, fcl_c);
+		fcl_obb.endModel();
+
+		// Do the collision test.
+		fcl::CollisionRequestd request;
+		fcl::CollisionResultd result;
+
+		fcl::collide(&fcl_cylinder, fcl_transform, &fcl_obb, fcl::Transform3d::Identity(), request, result);
+
+		ASSERT_FALSE(result.isCollision());
 	}
 
 }

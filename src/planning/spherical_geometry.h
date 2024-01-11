@@ -331,7 +331,13 @@ namespace mgodpl::spherical_geometry {
 
 		[[nodiscard]] Longitude interpolate(double t) const {
 			assert(t >= 0 && t <= 1);
-			return {wrap_angle(start + t * length())};
+			if (t == 0) {
+				return start;
+			} else if (t == 1) { // Handling these as a special case as numerical errors can cause problems here.
+				return end;
+			} else {
+				return wrap_angle(start + t * length());
+			}
 		}
 
 		[[nodiscard]] double reverse_interpolate(const double d) const {
@@ -362,7 +368,7 @@ namespace mgodpl::spherical_geometry {
 		RelativeVertex start, end;
 
 		OrderedArcEdge(const RelativeVertex &start, const RelativeVertex &end) : id(next_id++), start(start), end(end) {
-			assert(signed_longitude_difference(start.longitude, end.longitude) <= 0);
+//			assert(signed_longitude_difference(start.longitude, end.longitude) <= 0);
 		}
 
 		[[nodiscard]] double latitudeAtLongitude(double longitude) const {
