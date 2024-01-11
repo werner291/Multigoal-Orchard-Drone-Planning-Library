@@ -399,8 +399,8 @@ TEST(spherical_geometry_test, padding_correctness) {
 		PaddedSphereTriangle triangle = PaddedSphereTriangle::from_triangle({a, b, c}, center, arm_radius);
 
 		std::cout << "Polyline({";
-		for (int i = 0; i <= 10; ++i) {
-			double t = i / 10.0;
+		for (int i = 0; i <= 20; ++i) {
+			double t = i / 20.0;
 			double lon = triangle.longitude_range().interpolate(t).longitude;
 			assert(triangle.longitude_range().contains(lon));
 			double lat = triangle.latitude_range_at_longitude(lon).max;
@@ -411,8 +411,8 @@ TEST(spherical_geometry_test, padding_correctness) {
 			);
 			std::cout << "(" << dir.x() << "," << dir.y() << "," << dir.z() << "),";
 		}
-		for (int i = 0; i <= 10; ++i) {
-			double t = 1.0 - i / 10.0;
+		for (int i = 0; i <= 20; ++i) {
+			double t = 1.0 - i / 20.0;
 			double lon = triangle.longitude_range().interpolate(t).longitude;
 			double lat = triangle.latitude_range_at_longitude(lon).min;
 			math::Vec3d dir(
@@ -473,4 +473,39 @@ TEST(spherical_geometry_test, padding_correctness) {
 		ASSERT_FALSE(result.isCollision());
 	}
 
+}
+
+TEST(spherical_geometry_test, test_latitude_from_longitude) {
+
+	random_numbers::RandomNumberGenerator rng(42);
+
+	for (int i = 0; i < 100; ++i) {
+
+		// Generate a latitude and longitude range:
+		OrderedArcEdge edge {
+				{
+						.longitude = rng.uniformReal(-M_PI, M_PI),
+						.latitude = rng.uniformReal(-M_PI / 2.0, M_PI / 2.0)
+				},
+				{
+						.longitude = rng.uniformReal(-M_PI, M_PI),
+						.latitude = rng.uniformReal(-M_PI / 2.0, M_PI / 2.0)
+				}
+		};
+
+		// Pick a random longitude in the range:
+		double lon = edge.longitude_range().interpolate(rng.uniform01()).longitude;
+
+		// Look up the corresponding latitude:
+		double lat = edge.latitudeAtLongitude(lon);
+
+		// Check that it lies in the plane of the edge:
+		math::Vec3d a = edge.start.to_cartesian();
+		math::Vec3d b = edge.end.to_cartesian();
+		math::Vec3d c = RelativeVertex{lon, lat}.to_cartesian();
+
+		math::Vec3d n = a.cross(b);
+
+		ASSERT_NEAR(n.dot(c), 0.0, 1e-6);
+	}
 }

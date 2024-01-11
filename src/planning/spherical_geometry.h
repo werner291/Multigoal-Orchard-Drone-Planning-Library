@@ -218,6 +218,14 @@ namespace mgodpl::spherical_geometry {
 			os << "RelativeVertex(longitude=" << vertex.longitude << ", latitude=" << vertex.latitude << ")";
 			return os;
 		}
+
+		[[nodiscard]] math::Vec3d to_cartesian() const {
+			return {
+					cos(latitude) * cos(longitude),
+					cos(latitude) * sin(longitude),
+					sin(latitude)
+			};
+		}
 	};
 
 	/**
@@ -366,9 +374,16 @@ namespace mgodpl::spherical_geometry {
 
 		int id;
 		RelativeVertex start, end;
+		math::Vec3d start_cartesian, end_cartesian;
+		double angle;
 
-		OrderedArcEdge(const RelativeVertex &start, const RelativeVertex &end) : id(next_id++), start(start), end(end) {
-//			assert(signed_longitude_difference(start.longitude, end.longitude) <= 0);
+		OrderedArcEdge(const RelativeVertex &start, const RelativeVertex &end) :
+			id(next_id++),
+			start(start),
+			end(end),
+			start_cartesian(start.to_cartesian()),
+			end_cartesian(end.to_cartesian()),
+			angle(acos(start_cartesian.dot(end_cartesian))) {
 		}
 
 		[[nodiscard]] double latitudeAtLongitude(double longitude) const {
@@ -377,7 +392,11 @@ namespace mgodpl::spherical_geometry {
 
 			double t = longitude_range().reverse_interpolate(longitude);
 
-			return start.latitude * (1 - t) + end.latitude * t;
+			// Apply slerp correction:
+			double t1 = sin((1.0-t)*angle)/sin(angle);
+			double t2 = sin(t*angle)/sin(angle);
+
+			return start.latitude * t1 + end.latitude * t2;
 		}
 
 		[[nodiscard]] LongitudeRange longitude_range() const {

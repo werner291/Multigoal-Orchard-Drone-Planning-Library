@@ -28,7 +28,7 @@ namespace mgodpl {
 		/// A single cell in the grid.
 		struct Cell {
 			/// A vector of all triangle whose padded area intersects the vector.
-			std::vector<spherical_geometry::PaddedSphereTriangle> triangles;
+			std::vector<Triangle> triangles;
 			/// Whether the cell is fully blocked by any triangle.
 			bool fully_blocked = false;
 		};
@@ -43,6 +43,8 @@ namespace mgodpl {
 		size_t longitude_cells;
 		/// The cells in the grid.
 		std::vector<Cell> cells;
+		/// The radius of the probe arm.
+		double arm_radius = 0.0;
 
 		/**
 		 * Construct an empty latitude/longitude grid.
@@ -54,10 +56,12 @@ namespace mgodpl {
 		 */
 		LatLonGrid(spherical_geometry::LatitudeRange latitude_range,
 				   spherical_geometry::LongitudeRange longitude_range,
+				   double arm_radius,
 				   size_t latitude_steps,
 				   size_t longitude_steps)
 				: latitude_range(latitude_range),
 				  longitude_range(longitude_range),
+				  arm_radius(arm_radius),
 				  latitude_cells(latitude_steps),
 				  longitude_cells(longitude_steps) {
 			assert(longitude_cells > 0);
@@ -152,11 +156,8 @@ namespace mgodpl {
 										 size_t latitude_steps,
 										 size_t longitude_steps);
 
-		/// Insert a single triangle into the grid.
-		void insert_triangle(const spherical_geometry::PaddedSphereTriangle &triangle);
-
 		/// Insert a single triangle, the hard way (if it is assumed to span multiple rows and columns of cells).
-		void insert_triangle_expensive(const spherical_geometry::PaddedSphereTriangle &triangle);
+		void insert_triangle(const Triangle &triangle);
 
 		/// Compute the longitude of the left meridian/edge of a cell.
 		[[nodiscard]] inline spherical_geometry::Longitude meridian(size_t x) const {
