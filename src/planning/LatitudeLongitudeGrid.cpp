@@ -11,6 +11,8 @@
 
 namespace mgodpl {
 
+	using namespace spherical_geometry;
+
 	math::Vec3d slerp(const math::Vec3d &a, const math::Vec3d &b, double t) {
 		double theta = acos(a.dot(b));
 		return (a * sin((1 - t) * theta) + b * sin(t * theta)) / sin(theta);
@@ -47,7 +49,13 @@ namespace mgodpl {
 		};
 
 		for (const auto &triangle: triangles) {
-			grid.insert_triangle(triangle);
+			grid.insert_triangle(mgodpl::Triangle {
+					{
+						triangle.vertices[0] - center,
+						triangle.vertices[1] - center,
+						triangle.vertices[2] - center
+					}
+			});
 		}
 
 		return grid;
@@ -80,9 +88,9 @@ namespace mgodpl {
 		};
 
 		std::array<double, 3> paddings {
-				spherical_geometry::angular_padding(radii[0], radii[1]),
-				spherical_geometry::angular_padding(radii[1], radii[2]),
-				spherical_geometry::angular_padding(radii[2], radii[0])
+				spherical_geometry::angular_padding(arm_radius, radii[0]),
+				spherical_geometry::angular_padding(arm_radius, radii[1]),
+				spherical_geometry::angular_padding(arm_radius, radii[2])
 		};
 
 		// Then, index by the signed longitude.
@@ -92,8 +100,8 @@ namespace mgodpl {
 		});
 
 		// Find the longitude range of the triangle.
-		double leftmost_longitude = longitudes[lon_ordering[0]] - paddings[lon_ordering[0]];
-		double rightmost_longitude = longitudes[lon_ordering[2]] + paddings[lon_ordering[2]];
+		double leftmost_longitude = wrap_angle(longitudes[lon_ordering[0]] - paddings[lon_ordering[0]]);
+		double rightmost_longitude = wrap_angle(longitudes[lon_ordering[2]] + paddings[lon_ordering[2]]);
 
 		Edge short_edge1 = {
 				triangle.vertices[lon_ordering[0]],

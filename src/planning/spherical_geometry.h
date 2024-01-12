@@ -106,11 +106,10 @@ namespace mgodpl::spherical_geometry {
 	 * Effectively, we have a right-angled triangle with the hypotenuse r, and the other leg of length arm_radius;
 	 * we're looking for the angle between the hypotenuse and the leg of length r.
 	 *
-	 * That's just asin(arm_radius / r).
+	 * That's just atan(arm_radius / r).
 	 */
 	inline double angular_padding(double arm_radius, double obstacle_distance) {
-		assert(std::abs(obstacle_distance) > std::abs(arm_radius));
-		return asin(arm_radius / obstacle_distance);
+		return atan(arm_radius / obstacle_distance);
 	}
 
 	/**
