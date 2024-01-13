@@ -199,7 +199,7 @@ namespace mgodpl {
 			return count;
 		}
 
-		spherical_geometry::LatitudeRange latitude_range_of_cell(size_t i);
+		spherical_geometry::LatitudeRange latitude_range_of_cell(size_t i) const;
 	};
 }
 

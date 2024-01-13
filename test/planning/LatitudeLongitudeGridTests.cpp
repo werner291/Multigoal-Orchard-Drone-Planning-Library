@@ -109,111 +109,195 @@ TEST(LatitudeLongitudeGridTests, test_coordinates) {
 	}
 
 }
-//
-//TEST(LatitudeLongitudeGridTests, test_insertion) {
-//
-//	random_numbers::RandomNumberGenerator rng(42);
-//
-//	for (int repeat = 0; repeat < 100; ++repeat) {
-//
-//		double long_start = rng.uniformReal(-M_PI, M_PI);
-//		double long_length = rng.uniformReal(0.0, M_PI);
-//		double lat_radius = rng.uniformReal(0.5, M_PI / 2.0);
-//
-//		LatLonGrid grid{
-//				{-lat_radius, lat_radius},
-//				{long_start, wrap_angle(long_start + long_length)},
-//				rng.uniformReal(0,0.1),
-//				static_cast<size_t>(rng.uniformInteger(5, 20)),
-//				static_cast<size_t>(rng.uniformInteger(5, 20))
-//		};
-//
-//		// Generate a random triangle
-//		Triangle triangle {
-//				math::Vec3d {rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)},
-//				math::Vec3d {rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)},
-//				math::Vec3d {rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)}
-//		};
-//
-//		// Insert it.
-//		grid.insert_triangle(triangle);
-//
-//		// Generate a few random points in the triangle and check that the corresponding grid cell is occupied.
-//		for (int i = 0; i < 100; i++) {
-//			RelativeVertex point = random_point_in_triangle(rng, triangle);
-//			assert(triangle.longitude_range().contains(point.longitude));
-//
-//			if (grid.longitude_range.contains(point.longitude) && grid.latitude_range.contains(point.latitude)) {
-//				auto grid_cell = grid.to_grid_index(point);
-//				ASSERT_EQ(grid.cells[grid.cell_index(grid_cell)].triangles.size(), 1);
-//			}
-//		}
-//
-//		// Also check the longitude columns before and after:
-//		size_t lon_min = grid.to_grid_longitude(grid.longitude_range.clamp(triangle.longitude_range().start));
-//		size_t lon_max = grid.to_grid_longitude(grid.longitude_range.clamp(triangle.longitude_range().end));
-//		size_t lon_cell = lon_min;
-//
-//		// Check that the cells surrounding the triangle are empty:
-//		while (true) {
-//
-//			auto lats = triangle.latitude_range_over_longitude_range(grid.longitude_range_of_cell(lon_cell));
-//
-//			size_t lat_min = grid.to_grid_latitude(grid.latitude_range.clamp(lats.min));
-//			size_t lat_max = grid.to_grid_latitude(grid.latitude_range.clamp(lats.max));
-//
-//			// Look at the cells above and below the triangle.
-//			if (lat_min > 0) {
-//				ASSERT_EQ(grid.cells[grid.cell_index({
-//															 .lat_i=static_cast<size_t>(lat_min - 1),
-//															 .lon_i=lon_cell
-//													 })].triangles.size(), 0);
-//			}
-//
-//			if (lat_max + 1 < grid.latitude_cells) {
-//				ASSERT_EQ(grid.cells[grid.cell_index({
-//															 .lat_i=static_cast<size_t>(lat_max + 1),
-//															 .lon_i=lon_cell
-//													 })].triangles.size(), 0);
-//			}
-//
-//			if (lon_cell == lon_max) {
-//				break;
-//			} else {
-//				lon_cell = (lon_cell + 1) % grid.longitude_cells;
-//			}
-//
-//		}
-//
-//		for (size_t lat = 0; lat < grid.latitude_cells; lat++) {
-//			if (lon_min > 0) {
-//				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i= static_cast<size_t>(lat), .lon_i= static_cast<size_t>(
-//						lon_min - 1)})].triangles.size(),
-//						  0);
-//			}
-//
-//			if (lon_max + 1 < grid.longitude_cells) {
-//				ASSERT_EQ(grid.cells[grid.cell_index({.lat_i= static_cast<size_t>(lat),
-//															 .lon_i= static_cast<size_t>(lon_max +
-//																						 1)})].triangles.size(), 0);
-//			}
-//		}
-//
-//		// For all grid cells, if the four neighboring cells are full, they should be marked as fully blocked.
-//		for (size_t lat = 1; lat + 1 < grid.latitude_cells; lat++) {
-//			for (size_t lon = 1; lon + 1 < grid.longitude_cells; lon++) {
-//				if (!grid.cells[grid.cell_index({.lat_i=lat - 1, .lon_i=lon})].triangles.empty() &&
-//					!grid.cells[grid.cell_index({.lat_i=lat + 1, .lon_i=lon})].triangles.empty() &&
-//					!grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon + 1})].triangles.empty() &&
-//					!grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon - 1})].triangles.empty()) {
-//					ASSERT_TRUE(grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon})].fully_blocked);
-//				}
-//			}
-//		}
-//
-//	}
-//
-//}
+
+TEST(LatitudeLongitudeGridTests, test_single_fullcells) {
+
+	random_numbers::RandomNumberGenerator rng(42);
+
+	for (int repeat = 0; repeat < 100; ++repeat) {
+
+		double long_start = rng.uniformReal(-M_PI, M_PI);
+		double long_length = rng.uniformReal(0.0, M_PI);
+		double lat_radius = rng.uniformReal(0.5, M_PI / 2.0);
+
+		LatLonGrid grid{
+				{-lat_radius, lat_radius},
+				{long_start, wrap_angle(long_start + long_length)},
+				rng.uniformReal(0,0.1),
+				static_cast<size_t>(rng.uniformInteger(5, 20)),
+				static_cast<size_t>(rng.uniformInteger(5, 20))
+		};
+
+		// Generate a random triangle
+		Triangle triangle {
+				math::Vec3d {rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)},
+				math::Vec3d {rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)},
+				math::Vec3d {rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)}
+		};
+
+		// Insert it.
+		grid.insert_triangle(triangle);
+
+		// For all grid cells, if the four neighboring cells are full, they should be marked as fully blocked.
+		for (size_t lat = 1; lat + 1 < grid.latitude_cells; lat++) {
+			for (size_t lon = 1; lon + 1 < grid.longitude_cells; lon++) {
+				if (!grid.cells[grid.cell_index({.lat_i=lat - 1, .lon_i=lon})].triangles.empty() &&
+					!grid.cells[grid.cell_index({.lat_i=lat + 1, .lon_i=lon})].triangles.empty() &&
+					!grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon + 1})].triangles.empty() &&
+					!grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon - 1})].triangles.empty()) {
+					ASSERT_TRUE(grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon})].fully_blocked);
+				}
+			}
+		}
+	}
+}
+
+fcl::Transform3d probe_insert_tf(const math::Vec3d& center, const RelativeVertex& vertex, double cylinder_height) {
+
+	math::Vec3d dir = vertex.to_cartesian();
+
+	fcl::Transform3d fcl_transform;
+	fcl_transform.setIdentity();
+	fcl_transform.translate(fcl::Vector3d(center.x(),center.y(),center.z()));
+	fcl_transform.rotate(fcl::Quaterniond::FromTwoVectors(fcl::Vector3d(0, 0, 1), fcl::Vector3d(dir.x(), dir.y(), dir.z())));
+	fcl_transform.translate(fcl::Vector3d(0.0, 0.0, cylinder_height / 2.0));
+
+	return fcl_transform;
+}
+
+TEST(LatitudeLongitudeGridTests, test_single_bvhcomparison) {
+
+	random_numbers::RandomNumberGenerator rng(42);
+
+	for (int repeat = 0; repeat < 100; ++repeat) {
+
+		double long_start = -M_PI/2.0; //rng.uniformReal(-M_PI, M_PI);
+		double long_length = M_PI;//rng.uniformReal(0.0, M_PI);
+		double lat_radius = M_PI / 4.0; //rng.uniformReal(0.5, M_PI / 2.0);
+
+		double arm_radius = 0.01;//rng.uniformReal(0.01, 0.1);
+
+		LatLonGrid grid{
+				{-lat_radius, lat_radius},
+				{long_start, wrap_angle(long_start + long_length)},
+				arm_radius,
+				20,//static_cast<size_t>(rng.uniformInteger(5, 20)),
+				20//static_cast<size_t>(rng.uniformInteger(5, 20))
+		};
+
+		std::cout << "Grid lats: " << grid.latitude_range.min << " - " << grid.latitude_range.max << std::endl;
+		std::cout << "Grid longs: " << grid.longitude_range.start << " - " << grid.longitude_range.end << std::endl;
+
+		// Generate a random triangle
+		Triangle triangle {
+				math::Vec3d {rng.uniformReal(2.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)},
+				math::Vec3d {rng.uniformReal(2.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)},
+				math::Vec3d {rng.uniformReal(2.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)}
+		};
+
+		std::cout << "Polygon({"
+			<< "(" << triangle.vertices[0].x() << ", " << triangle.vertices[0].y() << ", " << triangle.vertices[0].z() << "), "
+			<< "(" << triangle.vertices[1].x() << ", " << triangle.vertices[1].y() << ", " << triangle.vertices[1].z() << "), "
+			<< "(" << triangle.vertices[2].x() << ", " << triangle.vertices[2].y() << ", " << triangle.vertices[2].z() << ")"
+			<< "})" << std::endl;
+
+		// Insert it.
+		grid.insert_triangle(triangle);
+
+		std::cout << "{";
+
+		// First, print the lat-lon grid in a way that Geogebra understands.
+		for (size_t lat = 0; lat < grid.latitude_cells; lat++) {
+			for (size_t lon = 0; lon < grid.longitude_cells; lon++) {
+				if (!grid.cells[grid.cell_index({.lat_i=lat, .lon_i=lon})].triangles.empty()) {
+					auto lon_range = grid.longitude_range_of_cell(lon);
+					auto lat_range = grid.latitude_range_of_cell(lat);
+
+					math::Vec3d top_left = RelativeVertex {
+						.longitude = lon_range.start,
+						.latitude = lat_range.max
+					}.to_cartesian();
+
+					math::Vec3d top_right = RelativeVertex {
+						.longitude = lon_range.end,
+						.latitude = lat_range.max
+					}.to_cartesian();
+
+					math::Vec3d bottom_left = RelativeVertex {
+						.longitude = lon_range.start,
+						.latitude = lat_range.min
+					}.to_cartesian();
+
+					math::Vec3d bottom_right = RelativeVertex {
+						.longitude = lon_range.end,
+						.latitude = lat_range.min
+					}.to_cartesian();
+
+					std::cout << "Polyline({"
+						<< "(" << top_left.x() << ", " << top_left.y() << ", " << top_left.z() << "), "
+						<< "(" << top_right.x() << ", " << top_right.y() << ", " << top_right.z() << "), "
+						<< "(" << bottom_right.x() << ", " << bottom_right.y() << ", " << bottom_right.z() << "), "
+						<< "(" << bottom_left.x() << ", " << bottom_left.y() << ", " << bottom_left.z() << "),"
+						<< "(" << top_left.x() << ", " << top_left.y() << ", " << top_left.z() << ")"
+						<< "})";
+
+					// If not last, emit a comma:
+					if (lat != grid.latitude_cells - 1 || lon != grid.longitude_cells - 1) {
+						std::cout << ", ";
+					}
+
+				}
+			}
+		}
+		// End of list:
+		std::cout << "}" << std::endl;
+
+		fcl::Cylinderd fcl_cylinder(arm_radius, 10.0);
+
+		// Build a BVHModel with that single triangle in it:
+		fcl::BVHModel<fcl::OBBd> model;
+		model.beginModel();
+		model.addTriangle(
+				fcl::Vector3d(triangle.vertices[0].x(), triangle.vertices[0].y(), triangle.vertices[0].z()),
+				fcl::Vector3d(triangle.vertices[1].x(), triangle.vertices[1].y(), triangle.vertices[1].z()),
+				fcl::Vector3d(triangle.vertices[2].x(), triangle.vertices[2].y(), triangle.vertices[2].z())
+		);
+		model.endModel();
+
+		// Generate 100 latitude/longitude tests:
+		for (int i = 0; i < 100; i++) {
+			double lon = grid.longitude_range.interpolate(rng.uniform01()).longitude;
+			double lat = grid.latitude_range.interpolate(rng.uniform01());
+
+			auto probe_tf = probe_insert_tf(math::Vec3d(0, 0, 0), RelativeVertex{lon, lat}, fcl_cylinder.lz);
+
+			// Do the collision check
+			fcl::CollisionRequestd request;
+			fcl::CollisionResultd result;
+			fcl::collide(&fcl_cylinder, probe_tf, &model, fcl::Transform3d::Identity(), request, result);
+
+			// Some debug prints to vizualize in Geogebra.
+
+			fcl::Vector3d probe_base = probe_tf * fcl::Vector3d(0, 0, -fcl_cylinder.lz/2.0);
+			fcl::Vector3d probe_tip = probe_tf * fcl::Vector3d(0, 0, fcl_cylinder.lz/2.0);
+
+			std::cout << "Cylinder((" << probe_base.x() << ", " << probe_base.y() << ", " << probe_base.z() << "), (" << probe_tip.x() << ", " << probe_tip.y() << ", " << probe_tip.z() << "), " << fcl_cylinder.radius << ")" << std::endl;
+
+			bool grid_cell_is_empty = grid.cells[grid.cell_index({.lat_i=grid.to_grid_latitude(lat), .lon_i=grid.to_grid_longitude(lon)})].triangles.empty();
+
+			// If the cell is empty, there must be no collision.
+			if (grid_cell_is_empty) {
+				ASSERT_FALSE(result.isCollision());
+			}
+
+			// If there is a collision, the cell must be non-empty.
+			if (result.isCollision()) {
+				ASSERT_FALSE(grid_cell_is_empty);
+			}
+
+		}
+	}
+}
 
 TEST(LatitudeLongitudeGridTests, OBBdComparisonTest) {
 

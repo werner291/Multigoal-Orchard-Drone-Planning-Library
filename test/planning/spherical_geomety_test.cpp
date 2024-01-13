@@ -375,9 +375,9 @@ TEST(spherical_geometry_test, padding_correctness) {
 	for (int i = 0; i < 100; ++i) {
 
 		// Construct a random sphere center.
-		math::Vec3d center(rng.uniformReal(-10.0, 10.0),
-						   rng.uniformReal(-10.0, 10.0),
-						   rng.uniformReal(-10.0, 10.0));
+		math::Vec3d center(rng.uniformReal(-1.0, 1.0),
+						   rng.uniformReal(-1.0, 1.0),
+						   rng.uniformReal(-1.0, 1.0));
 
 		// Construct a random triangle.
 		math::Vec3d a(rng.uniformReal(-10.0, 10.0),

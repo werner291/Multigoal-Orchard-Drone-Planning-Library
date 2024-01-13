@@ -212,7 +212,8 @@ add_library(planning
         src/planning/scanline.cpp
         src/planning/scanline.h
         src/planning/spherical_geometry.cpp
-
+#        src/planning/PyramidGrid.cpp
+#        src/planning/PyramidGrid.h
 )
 
 target_link_libraries(planning math_utils)

@@ -722,6 +722,7 @@ namespace mgodpl::spherical_geometry {
 		}
 
 		[[nodiscard]] LatitudeRange occupied_latitudes(const LongitudeRange& lon);
+
 	};
 
 }

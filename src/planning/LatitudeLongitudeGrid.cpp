@@ -23,13 +23,16 @@ namespace mgodpl {
 
 		// First, we generate a normal for the plane that cuts through the given longitude.
 		math::Vec3d lon_direction = math::Vec3d(
-				cos(longitude + M_PI / 2.0),
-				sin(longitude + M_PI / 2.0),
+				cos(longitude - M_PI / 2.0),
+				sin(longitude - M_PI / 2.0),
 				0
 		);
 
 		// Now, get the intersection point of the edge with the plane.
 		math::Vec3d intersection = edge.vertices[0].cross(edge.vertices[1]).cross(lon_direction);
+
+		double res_long = spherical_geometry::longitude(intersection);
+		assert(std::abs(spherical_geometry::longitude(intersection) - longitude) < 1e-6);
 
 		return spherical_geometry::latitude(intersection);
 	}
@@ -149,7 +152,7 @@ namespace mgodpl {
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "ArgumentSelectionDefects"
-		std::array<spherical_geometry::LongitudeRange, 3> edge_padding_ranges {
+		std::array<spherical_geometry::LongitudeRange, 3> vertex_padding_ranges {
 				spherical_geometry::LongitudeRange {leftmost_longitude, short_edge1_long_range.start},
 				spherical_geometry::LongitudeRange {short_edge1_long_range.end, short_edge2_long_range.start},
 
@@ -157,9 +160,15 @@ namespace mgodpl {
 		};
 #pragma clang diagnostic pop
 
+		if (!LongitudeRange(leftmost_longitude, rightmost_longitude).overlaps(longitude_range)) {
+			// No overlap; this triangle falls completely outside.
+			std::cout << "No overlap" << std::endl;
+			return;
+		}
+
 		// Iterate over all cells touched by the padded triangle.
-		size_t longitude_cell = to_grid_longitude(leftmost_longitude);
-		size_t lon_cell_max = to_grid_longitude(rightmost_longitude);
+		size_t longitude_cell = to_grid_longitude(longitude_range.clamp(leftmost_longitude));
+		size_t lon_cell_max = to_grid_longitude(longitude_range.clamp(rightmost_longitude));
 
 		while(true) {
 
@@ -175,10 +184,12 @@ namespace mgodpl {
 			// of the cell to include that portion of the padding.
 
 			for (size_t i = 0; i < 3; i++) {
-				if (longitude_range_of_cell.overlaps(edge_padding_ranges[i])) {
+				if (longitude_range_of_cell.overlaps(vertex_padding_ranges[i])) {
 					// The edge is in this cell.
 					lat_min = std::min(lat_min, latitudes[lon_ordering[i]] - paddings[lon_ordering[i]]);
 					lat_max = std::max(lat_max, latitudes[lon_ordering[i]] + paddings[lon_ordering[i]]);
+					std::cout << "Edge " << i << " in cell " << longitude_cell << std::endl;
+					std::cout << "lat: " << latitudes[lon_ordering[i]] << " | " << paddings[lon_ordering[i]] << std::endl;
 				}
 			}
 
@@ -186,26 +197,36 @@ namespace mgodpl {
 
 				if (short_edge1_long_range.contains(meridian_longitude)) {
 					double lat = latitude_at_longitude(short_edge1, meridian_longitude);
-					lat_min = std::min(lat_min, lat - paddings[lon_ordering[0]]);
-					lat_max = std::max(lat_max, lat + paddings[lon_ordering[1]]);
+					lat_min = std::min(lat_min, lat);
+					lat_max = std::max(lat_max, lat);
+					std::cout << "lats1: " << lat << std::endl;
 				}
 
 				if (short_edge2_long_range.contains(meridian_longitude)) {
 					double lat = latitude_at_longitude(short_edge2, meridian_longitude);
-					lat_min = std::min(lat_min, lat - paddings[lon_ordering[1]]);
-					lat_max = std::max(lat_max, lat + paddings[lon_ordering[2]]);
+					lat_min = std::min(lat_min, lat);
+					lat_max = std::max(lat_max, lat);
+					std::cout << "lats2: " << lat << std::endl;
 				}
 
 				if (long_edge_long_range.contains(meridian_longitude)) {
 					double lat = latitude_at_longitude(long_edge, meridian_longitude);
-					lat_min = std::min(lat_min, lat - paddings[lon_ordering[0]]);
-					lat_max = std::max(lat_max, lat + paddings[lon_ordering[2]]);
+					lat_min = std::min(lat_min, lat);
+					lat_max = std::max(lat_max, lat);
+					std::cout << "lats3: " << lat << std::endl;
 				}
 
 			}
 
+			std::cout << "lats, unclamped: " << lat_min << " - " << lat_max << std::endl;
+			std::cout << "Clamp to: " << latitude_range.min << " - " << latitude_range.max << std::endl;
+
 			size_t lat_cell_min = to_grid_latitude(std::clamp(lat_min, latitude_range.min, latitude_range.max));
 			size_t lat_cell_max = to_grid_latitude(std::clamp(lat_max, latitude_range.min, latitude_range.max));
+
+			std::cout << "lon: " << longitude_cell << " | " << lat_cell_min << " - " << lat_cell_max << std::endl;
+			std::cout << "long: " << longitude_range_of_cell.start << " - " << longitude_range_of_cell.end << std::endl;
+			std::cout << "lats: " << lat_min << " - " << lat_max << std::endl;
 
 			if (lat_cell_min == lat_cell_max) {
 				// Single cell
@@ -232,7 +253,7 @@ namespace mgodpl {
 		}
 	}
 
-	spherical_geometry::LatitudeRange LatLonGrid::latitude_range_of_cell(size_t i) {
+	spherical_geometry::LatitudeRange LatLonGrid::latitude_range_of_cell(size_t i) const {
 		return {
 				latitude_range.interpolate(static_cast<double>(i) / (double) latitude_cells),
 				latitude_range.interpolate(static_cast<double>(i + 1) / (double) latitude_cells)
