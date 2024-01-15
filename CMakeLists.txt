@@ -212,7 +212,9 @@ add_library(planning
         src/planning/scanline.cpp
         src/planning/scanline.h
         src/planning/spherical_geometry.cpp
-#        src/planning/PyramidGrid.cpp
+        src/planning/collision_detection.cpp
+        src/planning/collision_detection.h
+        #        src/planning/PyramidGrid.cpp
 #        src/planning/PyramidGrid.h
 )
 
