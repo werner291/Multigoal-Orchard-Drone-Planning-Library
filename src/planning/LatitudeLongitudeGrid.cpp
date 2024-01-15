@@ -32,6 +32,12 @@ namespace mgodpl {
 		math::Vec3d intersection = edge.vertices[0].cross(edge.vertices[1]).cross(lon_direction);
 
 		double res_long = spherical_geometry::longitude(intersection);
+
+		if (std::abs(res_long - longitude) > 1e-6) {
+			// invert the direction
+			intersection = -intersection;
+		}
+
 		assert(std::abs(spherical_geometry::longitude(intersection) - longitude) < 1e-6);
 
 		return spherical_geometry::latitude(intersection);
@@ -66,6 +72,11 @@ namespace mgodpl {
 	}
 
 	void LatLonGrid::insert_triangle(const Triangle &triangle) {
+
+		// Discard triangles with 0 area:
+		if (triangle.normal().norm() < 1e-6) {
+			return;
+		}
 
 		// Use scanline rasterization to find all grid cells affected by the triangle.
 		// We will go longitude-row-by-longitude-row, and for each longitude row, we will
@@ -162,7 +173,6 @@ namespace mgodpl {
 
 		if (!LongitudeRange(leftmost_longitude, rightmost_longitude).overlaps(longitude_range)) {
 			// No overlap; this triangle falls completely outside.
-			std::cout << "No overlap" << std::endl;
 			return;
 		}
 
@@ -188,8 +198,6 @@ namespace mgodpl {
 					// The edge is in this cell.
 					lat_min = std::min(lat_min, latitudes[lon_ordering[i]] - paddings[lon_ordering[i]]);
 					lat_max = std::max(lat_max, latitudes[lon_ordering[i]] + paddings[lon_ordering[i]]);
-					std::cout << "Edge " << i << " in cell " << longitude_cell << std::endl;
-					std::cout << "lat: " << latitudes[lon_ordering[i]] << " | " << paddings[lon_ordering[i]] << std::endl;
 				}
 			}
 
@@ -199,34 +207,24 @@ namespace mgodpl {
 					double lat = latitude_at_longitude(short_edge1, meridian_longitude);
 					lat_min = std::min(lat_min, lat);
 					lat_max = std::max(lat_max, lat);
-					std::cout << "lats1: " << lat << std::endl;
 				}
 
 				if (short_edge2_long_range.contains(meridian_longitude)) {
 					double lat = latitude_at_longitude(short_edge2, meridian_longitude);
 					lat_min = std::min(lat_min, lat);
 					lat_max = std::max(lat_max, lat);
-					std::cout << "lats2: " << lat << std::endl;
 				}
 
 				if (long_edge_long_range.contains(meridian_longitude)) {
 					double lat = latitude_at_longitude(long_edge, meridian_longitude);
 					lat_min = std::min(lat_min, lat);
 					lat_max = std::max(lat_max, lat);
-					std::cout << "lats3: " << lat << std::endl;
 				}
 
 			}
 
-			std::cout << "lats, unclamped: " << lat_min << " - " << lat_max << std::endl;
-			std::cout << "Clamp to: " << latitude_range.min << " - " << latitude_range.max << std::endl;
-
 			size_t lat_cell_min = to_grid_latitude(std::clamp(lat_min, latitude_range.min, latitude_range.max));
 			size_t lat_cell_max = to_grid_latitude(std::clamp(lat_max, latitude_range.min, latitude_range.max));
-
-			std::cout << "lon: " << longitude_cell << " | " << lat_cell_min << " - " << lat_cell_max << std::endl;
-			std::cout << "long: " << longitude_range_of_cell.start << " - " << longitude_range_of_cell.end << std::endl;
-			std::cout << "lats: " << lat_min << " - " << lat_max << std::endl;
 
 			if (lat_cell_min == lat_cell_max) {
 				// Single cell

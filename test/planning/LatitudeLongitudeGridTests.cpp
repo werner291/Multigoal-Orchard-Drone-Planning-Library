@@ -190,9 +190,9 @@ TEST(LatitudeLongitudeGridTests, test_single_bvhcomparison) {
 
 		// Generate a random triangle
 		Triangle triangle {
-				math::Vec3d {rng.uniformReal(2.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)},
-				math::Vec3d {rng.uniformReal(2.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)},
-				math::Vec3d {rng.uniformReal(2.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)}
+				math::Vec3d {rng.uniformReal(0.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)},
+				math::Vec3d {rng.uniformReal(0.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)},
+				math::Vec3d {rng.uniformReal(0.0, 5.0), rng.uniformReal(-5.0, 5.0), rng.uniformReal(-5.0, 5.0)}
 		};
 
 		std::cout << "Polygon({"

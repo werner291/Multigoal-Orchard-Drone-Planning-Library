@@ -314,6 +314,10 @@ if (ENABLE_VISUALIZATION)
     target_link_libraries(goal_construction math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(goal_construction shape_msgs moveit_core)
 
+    add_executable(latlongrid_vs_sampling src/experiments/latlongrid_vs_sampling.cpp)
+    target_link_libraries(latlongrid_vs_sampling math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(latlongrid_vs_sampling shape_msgs moveit_core)
+
     add_executable(collision_detection_mwe src/experiments/collision_detection_mwe.cpp)
     ament_target_dependencies(collision_detection_mwe shape_msgs moveit_core random_numbers)
 
