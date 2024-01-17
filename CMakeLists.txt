@@ -204,11 +204,18 @@ add_library(planning
         src/planning/ConvexHullSpace.h
         src/planning/RobotModel.cpp
         src/planning/RobotModel.h
-        src/planning/longitude_sweep.cpp
-        src/planning/longitude_sweep.h
+#        src/planning/longitude_sweep.cpp
+#        src/planning/longitude_sweep.h
         src/planning/RobotState.cpp
-        src/planning/free_ranges_divide_and_conquer.cpp
-
+        src/planning/LatitudeLongitudeGrid.h
+        src/planning/LatitudeLongitudeGrid.cpp
+        src/planning/scanline.cpp
+        src/planning/scanline.h
+        src/planning/spherical_geometry.cpp
+        src/planning/collision_detection.cpp
+        src/planning/collision_detection.h
+        #        src/planning/PyramidGrid.cpp
+#        src/planning/PyramidGrid.h
 )
 
 target_link_libraries(planning math_utils)
@@ -309,6 +316,10 @@ if (ENABLE_VISUALIZATION)
     target_link_libraries(goal_construction math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(goal_construction shape_msgs moveit_core)
 
+    add_executable(latlongrid_vs_sampling src/experiments/latlongrid_vs_sampling.cpp)
+    target_link_libraries(latlongrid_vs_sampling math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(latlongrid_vs_sampling shape_msgs moveit_core)
+
     add_executable(collision_detection_mwe src/experiments/collision_detection_mwe.cpp)
     ament_target_dependencies(collision_detection_mwe shape_msgs moveit_core random_numbers)
 
@@ -327,7 +338,8 @@ add_executable(${PROJECT_NAME}_tests
 #        test/experiment_utils/voxel_visibility_test.cpp
 #        test/math/intersection_test.cpp
 #        test/math/lp_test.cpp
-        test/planning/latitude_sweep_test.cpp
+        test/planning/spherical_geomety_test.cpp
+        test/planning/LatitudeLongitudeGridTests.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils planning gtest)
@@ -339,5 +351,3 @@ if (ENABLE_PYTHON_BINDINGS)
     target_link_libraries(pymgodpl PRIVATE math_utils visibility planning experiment_utils ${PROJECT_NAME}_visualisation ${VTK_LIBRARIES})
     ament_target_dependencies(pymgodpl PUBLIC ${AMENT_DEPS})
 endif ()
-
-

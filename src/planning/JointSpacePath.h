@@ -20,7 +20,7 @@ namespace mgodpl::moveit_facade {
 
 	/**
 	 * Check whether the given point p is on the motion between the two given points
-	 * a,b by checking the distances of the edges of the triangle (a,b,p).
+	 * a,b by checking the distances of the edges_padded of the triangle (a,b,p).
 	 *
 	 * To qualify, |ap| + |pb| = |ab| must hold.
 	 *

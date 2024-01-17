@@ -24,6 +24,9 @@
 #include "../planning/RobotModel.h"
 #include "../experiment_utils/procedural_robot_models.h"
 #include "../experiment_utils/fcl_utils.h"
+//#include "../visibility/convex_hull.h"
+#include "../planning/spherical_geometry.h"
+#include "../planning/LatitudeLongitudeGrid.h"
 
 using namespace mgodpl;
 
@@ -176,32 +179,60 @@ int main(int argc, char** argv)
 
 	std::cout << "Sweepline starting..." << std::endl;
 
-	std::vector<RobotState> valid_states;
-
+	// Start time.
 	const auto start_time = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < 10; ++i) {
+		LatLonGrid grid = LatLonGrid::from_triangles(triangles, target, 0.025, 20, 20);
+	}
+	const auto elapsed_time = std::chrono::high_resolution_clock::now() - start_time;
+
+	std::cout << "Sweepline finished in average " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time).count() / 10.0 << " ms." << std::endl;
+
+	LatLonGrid grid = LatLonGrid::from_triangles(triangles, target, 0.025, 20, 20);
+
+	std::cout
+		<< "Stats: n_count=" << grid.count_all()
+		<< " n_empty=" << grid.count_empty()
+		<< " n_blocked=" << grid.count_fully_blocked()
+		<< std::endl;
+
+	// Let's try that for all apples?
+	for (const auto& apple : computeFruitPositions(model))
+	{
+		LatLonGrid grid = LatLonGrid::from_triangles(triangles, apple, 0.025, 20, 20);
+
+		std::cout
+				<< "Stats: n_count=" << grid.count_all()
+				<< " n_empty=" << grid.count_empty()
+				<< " n_blocked=" << grid.count_fully_blocked()
+				<< " n_total=" << grid.cells.size()
+				<< std::endl;
+	}
+
+	return 0;
 
 	for (
 		LongitudeSweep sweepline_algorithm(triangles, STARTING_LONGITUDE, target);
 		sweepline_algorithm.has_more_events();
-		sweepline_algorithm.process_next_event())	{
+		sweepline_algorithm.advance())	{
 
 		double min_free = - M_PI/2.0;
 
-		const double longitude_midpoint = sweepline_algorithm.current_longitude;
-
-		for (const auto & range : sweepline_algorithm.ranges) {
-			double range_min = latitude(range.min_latitude_edge, longitude_midpoint);
-			double range_max = latitude(range.max_latitude_edge, longitude_midpoint);
-
-			if (min_free < range_min) {
-				// std::cout << "Found a free range: [" << min_free << ", " << range_min << "]" << std::endl;
-			}
-			min_free = range_max;
-		}
-
-		if (min_free < M_PI/2.0) {
-			// std::cout << "Found a free range: [" << min_free << ", " << M_PI/2.0 << "]" << std::endl;
-		}
+//		const double longitude_midpoint = sweepline_algorithm.current_longitude;
+//
+//		for (const auto & range : sweepline_algorithm.ranges) {
+//			double range_min = latitude(range.min_latitude_edge, longitude_midpoint);
+//			double range_max = latitude(range.max_latitude_edge, longitude_midpoint);
+//
+//			if (min_free < range_min) {
+//				// std::cout << "Found a free range: [" << min_free << ", " << range_min << "]" << std::endl;
+//			}
+//			min_free = range_max;
+//		}
+//
+//		if (min_free < M_PI/2.0) {
+//			// std::cout << "Found a free range: [" << min_free << ", " << M_PI/2.0 << "]" << std::endl;
+//		}
 
 
 		// const auto& longitude_range = sweepline_algorithm.current_longitude_range();
@@ -257,8 +288,8 @@ int main(int argc, char** argv)
 	}
 
 	// End time.
-	const auto end_time = std::chrono::high_resolution_clock::now();
-	std::cout << "Sweepline finished in " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << " ms." << std::endl;
+//	const auto end_time = std::chrono::high_resolution_clock::now();
+//	std::cout << "Sweepline finished in " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << " ms." << std::endl;
 
 	// // Now, we have a list of valid states. Vizualize them.
 	// for (const auto& state : valid_states) {
