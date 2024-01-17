@@ -16,9 +16,10 @@ namespace mgodpl
     using namespace experiments;
     using namespace robot_model;
 
+
     robot_model::RobotModel mgodpl::experiments::createProceduralRobotModel()
     {
-        double stick_length = 0.5;
+        double stick_length = STICK_LENGTH;
 
         RobotModel model;
 

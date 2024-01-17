@@ -35,11 +35,9 @@ namespace mgodpl {
 		return mesh;
 	}
 
-	ConvexHullShellSpace::ConvexHullShellSpace(const std::vector<math::Vec3d> &points,
-											   const moveit::core::RobotModelConstPtr &robotModel) :
+	ConvexHullShellSpace::ConvexHullShellSpace(const std::vector<math::Vec3d> &points) :
 											   mesh(make_chull(points)),
-											   mesh_path(mesh), tree(),
-											   robot_model(robotModel) {
+											   mesh_path(mesh) {
 		mesh_path.build_aabb_tree(tree);
 	}
 
@@ -47,14 +45,17 @@ namespace mgodpl {
 		return mesh_path.locate(Point_3(point.x(), point.y(), point.z()), tree);
 	}
 
-	JointSpacePoint ConvexHullShellSpace::shell_state(const ConvexHullShellSpace::ShellPoint &sp) const {
+	ConvexHullShellSpace::CarthesianShellPoint ConvexHullShellSpace::shell_state(const ConvexHullShellSpace::ShellPoint &sp) const {
 		const auto &pt = mesh_path.point(sp.first, sp.second);
 		const auto &nm = CGAL::Polygon_mesh_processing::compute_face_normal(sp.first, mesh);
 
 		math::Vec3d pt_vec(pt.x(), pt.y(), pt.z());
 		math::Vec3d nm_vec(nm.x(), nm.y(), nm.z());
 
-		return robotStateFromPointAndArmvec(*robot_model, pt_vec + nm_vec.normalized(), -nm_vec);
+		return {
+			.normal = nm_vec,
+			.point = pt_vec
+		};
 	}
 
 	std::vector<double> ConvexHullShellSpace::distances_to_many(const ConvexHullShellSpace::ShellPoint &sp,

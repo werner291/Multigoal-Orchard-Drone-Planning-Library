@@ -179,8 +179,8 @@ target_link_libraries(visibility math_utils)
 
 add_library(planning
     src/planning/RobotAlgorithm.h
-    src/planning/BlindlyMoveToNextFruit.h
-    src/planning/BlindlyMoveToNextFruit.cpp
+#    src/planning/BlindlyMoveToNextFruit.h
+#    src/planning/BlindlyMoveToNextFruit.cpp
     src/planning/JointSpacePoint.h
     src/planning/JointSpacePoint.cpp
     src/planning/moveit_state_tools.h
@@ -214,6 +214,11 @@ add_library(planning
         src/planning/spherical_geometry.cpp
         src/planning/collision_detection.cpp
         src/planning/collision_detection.h
+        src/planning/RelativeLatLonGrid.cpp
+        src/planning/RelativeLatLonGrid.h
+        src/planning/goal_sampling.cpp
+        src/planning/goal_sampling.h
+        src/planning/goal_sampling.h
         #        src/planning/PyramidGrid.cpp
 #        src/planning/PyramidGrid.h
 )
@@ -327,6 +332,10 @@ if (ENABLE_VISUALIZATION)
     target_link_libraries(latitude_sweep_vizualization math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(latitude_sweep_vizualization shape_msgs moveit_core)
 
+    add_executable(new_static_integration src/experiments/new_static_integration.cpp)
+    target_link_libraries(new_static_integration math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(new_static_integration shape_msgs moveit_core)
+
 endif ()
 
 include(GoogleTest)
@@ -340,6 +349,7 @@ add_executable(${PROJECT_NAME}_tests
 #        test/math/lp_test.cpp
         test/planning/spherical_geomety_test.cpp
         test/planning/LatitudeLongitudeGridTests.cpp
+        test/math/Transform_test.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils planning gtest)

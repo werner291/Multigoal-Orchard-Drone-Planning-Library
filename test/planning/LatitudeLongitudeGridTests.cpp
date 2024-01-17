@@ -6,6 +6,7 @@
 // Created by werner on 1/9/24.
 //
 
+#include <chrono>
 #include <gtest/gtest.h>
 #include <random_numbers/random_numbers.h>
 #include <fcl/math/bv/OBB.h>

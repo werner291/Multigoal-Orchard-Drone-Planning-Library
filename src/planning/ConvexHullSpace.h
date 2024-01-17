@@ -31,20 +31,22 @@ namespace mgodpl {
 		/// The AABB tree for the mesh.
 		CGAL::AABB_tree<mgodpl::cgal::AABBTraits> tree;
 
-		/// The robot model.
-		moveit::core::RobotModelConstPtr robot_model;
-
 	public:
 
 		using ShellPoint = cgal::Surface_mesh_shortest_path::Face_location;
+
+		struct CarthesianShellPoint
+		{
+			math::Vec3d normal;
+			math::Vec3d point;
+		};
 
 		/**
 		 * Buidl a shell space based on the convex hull around the given set of points.
 		 *
 		 * @param points 	The points to build the convex hull around.
 		 */
-		ConvexHullShellSpace(const std::vector<math::Vec3d> &points,
-							 const moveit::core::RobotModelConstPtr &robotModel);
+		ConvexHullShellSpace(const std::vector<math::Vec3d> &points);
 
 		/**
 		 * Find the closest point on the convex hull to the given point.
@@ -65,7 +67,7 @@ namespace mgodpl {
 		 * @param sp 		The point on the convex hull to get the robot state for.
 		 * @return 			The robot state corresponding to the given point on the convex hull.
 		 */
-		moveit_facade::JointSpacePoint shell_state(const ShellPoint &sp) const;
+		CarthesianShellPoint shell_state(const ShellPoint &sp) const;
 
 		/**
 		 * Get the distances from the given point on the convex hull to many other points on the convex hull.
@@ -90,6 +92,11 @@ namespace mgodpl {
 		std::vector <ShellPoint> path_along_shell(const ShellPoint &start, const ShellPoint &end) const;
 
 		math::Vec3d to_carthesian(const ShellPoint &sp) const;
+
+		const mgodpl::cgal::Surface_mesh &get_mesh() const
+		{
+			return this->mesh;
+		}
 
 	};
 }

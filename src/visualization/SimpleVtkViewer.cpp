@@ -324,11 +324,10 @@ namespace mgodpl {
 	mgodpl::SimpleVtkViewer::~SimpleVtkViewer() {
 	}
 
-	vtkSmartPointer<vtkActor> SimpleVtkViewer::addSphere(double radius, const math::Vec3d &transform, const math::Vec3d &color, double d) {
+	vtkSmartPointer<vtkActor> SimpleVtkViewer::addSphere(double radius, const math::Vec3d &center, const math::Vec3d &color, double opacity) {
 
 		vtkNew<vtkSphereSource> sphereSource;
 		sphereSource->SetRadius(radius);
-		sphereSource->SetCenter(transform.x(), transform.y(), transform.z());
 		sphereSource->Update();
 
 		vtkNew<vtkPolyDataMapper> mapper;
@@ -337,7 +336,8 @@ namespace mgodpl {
 		vtkNew<vtkActor> actor;
 		actor->SetMapper(mapper);
 		actor->GetProperty()->SetColor(color.x(), color.y(), color.z());
-		actor->GetProperty()->SetOpacity(d);
+		actor->GetProperty()->SetOpacity(opacity);
+		actor->SetPosition(center.x(), center.y(), center.z());
 
 		this->addActor(actor);
 

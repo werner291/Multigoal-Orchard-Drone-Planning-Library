@@ -50,12 +50,16 @@ namespace mgodpl::math {
 			};
 		}
 
-		inline Transformd inverse() const {
+		[[nodiscard]] inline Transformd inverse() const {
 			Quaterniond inv_orientation = orientation.inverse();
 			return {
 					.translation = inv_orientation.rotate(-translation),
 					.orientation = inv_orientation
 			};
+		}
+
+		[[nodiscard]] inline math::Vec3d apply(const math::Vec3d& v) const {
+			return orientation.rotate(v) + translation;
 		}
 	};
 

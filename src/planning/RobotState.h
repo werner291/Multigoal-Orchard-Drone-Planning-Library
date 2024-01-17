@@ -6,6 +6,8 @@
 // Created by werner on 12/4/23.
 //
 
+#pragma once
+
 #include <vector>
 #include "../math/Transform.h"
 

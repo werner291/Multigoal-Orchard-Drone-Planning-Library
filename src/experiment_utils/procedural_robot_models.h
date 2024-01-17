@@ -8,6 +8,7 @@
 #include "../planning/RobotModel.h"
 
 namespace mgodpl::experiments {
+	const double STICK_LENGTH = 0.75;
 
 	mgodpl::robot_model::RobotModel createProceduralRobotModel();
 

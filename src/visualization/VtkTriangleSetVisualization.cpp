@@ -11,10 +11,11 @@
 #include <vtkActor.h>
 #include <vtkProperty.h>
 
-VtkTriangleSetVisualization::VtkTriangleSetVisualization(float r, float g, float b) {
+VtkTriangleSetVisualization::VtkTriangleSetVisualization(float r, float g, float b, float opacity) {
     mapper->SetInputData(data);
     actor->SetMapper(mapper);
     actor->GetProperty()->SetColor(r, g, b);
+    actor->GetProperty()->SetOpacity(opacity);
     actor->GetProperty()->SetLineWidth(2);
 }
 
