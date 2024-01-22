@@ -560,6 +560,8 @@ std::vector<bool> visited_by_path(const std::vector<math::Vec3d> targets, const 
 
 }
 
+// TODO: Idea: Can plan to 5 nearest and optimize *that*!
+
 int main() {
 
 	const auto &robot = experiments::createProceduralRobotModel();
