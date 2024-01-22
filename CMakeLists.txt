@@ -214,6 +214,10 @@ add_library(planning
         src/planning/spherical_geometry.cpp
         src/planning/collision_detection.cpp
         src/planning/collision_detection.h
+        src/planning/state_tools.cpp
+        src/planning/state_tools.h
+        src/planning/goal_sampling.cpp
+        src/planning/goal_sampling.h
         #        src/planning/PyramidGrid.cpp
 #        src/planning/PyramidGrid.h
 )
@@ -326,6 +330,10 @@ if (ENABLE_VISUALIZATION)
     add_executable(latitude_sweep_vizualization src/experiments/latitude_sweep_vizualization.cpp)
     target_link_libraries(latitude_sweep_vizualization math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(latitude_sweep_vizualization shape_msgs moveit_core)
+
+    add_executable(new_integration src/experiments/new_integration.cpp)
+    target_link_libraries(new_integration math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(new_integration shape_msgs moveit_core)
 
 endif ()
 

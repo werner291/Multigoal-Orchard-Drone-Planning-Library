@@ -175,6 +175,7 @@ namespace mgodpl {
 
 		const auto& axisangle = transform.orientation.toAxisAngle();
 
+		actor->SetOrientation(0, 0, 0);
 		actor->RotateWXYZ(axisangle.angle / M_PI * 180.0,
 		                  axisangle.axis.x(),
 		                  axisangle.axis.y(),

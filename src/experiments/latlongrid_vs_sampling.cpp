@@ -16,94 +16,72 @@
 #include "../experiment_utils/fcl_utils.h"
 #include "../planning/LatitudeLongitudeGrid.h"
 #include "../planning/collision_detection.h"
+#include "../visualization/SimpleVtkViewer.h"
+#include "../visualization/VtkTriangleSetVisualization.h"
+#include "../visualization/VtkLineSegmentVizualization.h"
 
 using namespace mgodpl;
 
 const math::Vec3d WOOD_COLOR{0.5, 0.3, 0.1};
 const math::Vec3d FLOOR_COLOR{0.3, 0.6, 0.3};
 
-/**
- * Generate an upright robot state, without checking for collisions.
- * @param rng 		The random number generator to use.
- * @return 			The generated robot state.
- */
-RobotState genUprightState(random_numbers::RandomNumberGenerator rng)
-{
-    RobotState state = {
-        .base_tf = math::Transformd{
-            .translation = math::Vec3d(0.0, 0.0, 0.0),
-            .orientation = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), rng.uniformReal(-M_PI, M_PI))
-        },
-        .joint_values = {rng.uniformReal(-M_PI / 2.0, M_PI / 2.0)}
-    };
+struct RotatedLatLonGrid {
+	LatLonGrid grid;
+	Eigen::Matrix3d rot;
+	Eigen::Matrix3d inv_rot;
+	math::Vec3d center;
+};
 
-    return state;
+RotatedLatLonGrid mk_rotated_lat_lon_grid(const math::Vec3d& ideal_vector, const math::Vec3d& center) {
+	// Build the lat/lon grid.
+	LatLonGrid grid{
+			{-M_PI/2.0, M_PI/2.0},
+			{-M_PI/2.0, M_PI/2.0},
+			0.025,
+			50,
+			50
+	};
+
+	// Put the triangles in:
+	// Compute a rotation matrix such that the ideal vector is the unit X axis.
+	Eigen::Matrix3d rot = Eigen::Quaterniond::FromTwoVectors(
+			Eigen::Vector3d(ideal_vector.x(), ideal_vector.y(), ideal_vector.z()),
+			Eigen::Vector3d(1.0, 0.0, 0.0)
+			).toRotationMatrix();
+
+	Eigen::Matrix3d inv_rot = rot.inverse();
+
+	return RotatedLatLonGrid {
+		.grid = grid,
+		.rot = rot,
+		.inv_rot = inv_rot,
+		.center = center
+	};
 }
 
-/**
- * Generate a state where the end effector is at the given target, not checking for collisions.
- *
- * @param rng 					The random number generator to use.
- * @param target 				The target position.
- * @param robot 				The robot model.
- * @param flying_base 			The link ID of the flying base.
- * @param end_effector 			The link ID of the end effector.
- * @return 						The generated robot state.
- */
-RobotState genGoalStateUniform(
-    random_numbers::RandomNumberGenerator rng,
-    const math::Vec3d& target,
-    const robot_model::RobotModel& robot,
-    const robot_model::RobotModel::LinkId& flying_base,
-    const robot_model::RobotModel::LinkId& end_effector)
-{
-    RobotState state = genUprightState(rng);
+void insert_triangle_into_grid(RotatedLatLonGrid& grid, const mgodpl::Triangle& triangle) {
+	// Rotate the triangle:
+	Eigen::Vector3d a(triangle.vertices[0].x(), triangle.vertices[0].y(), triangle.vertices[0].z());
+	Eigen::Vector3d b(triangle.vertices[1].x(), triangle.vertices[1].y(), triangle.vertices[1].z());
+	Eigen::Vector3d c(triangle.vertices[2].x(), triangle.vertices[2].y(), triangle.vertices[2].z());
 
-    const auto& fk = robot_model::forwardKinematics(
-        robot,
-        state.joint_values,
-        flying_base,
-        state.base_tf
-    );
+	a -= Eigen::Vector3d(grid.center.x(), grid.center.y(), grid.center.z());
+	b -= Eigen::Vector3d(grid.center.x(), grid.center.y(), grid.center.z());
+	c -= Eigen::Vector3d(grid.center.x(), grid.center.y(), grid.center.z());
 
-    math::Vec3d target_delta = target - fk.forLink(end_effector).translation;
+	a = grid.rot * a;
+	b = grid.rot * b;
+	c = grid.rot * c;
 
-    state.base_tf.translation = state.base_tf.translation + target_delta;
-
-    return state;
-}
-
-/**
- * Attempt to find a collision-free goal state by uniform sampling.
- *
- * @param target 					The target position that the end-effector should be near.
- * @param robot 					The robot model.
- * @param flying_base 				The link ID of the flying base.
- * @param end_effector 				The link ID of the end effector.
- * @param tree_trunk_object 		The collision object of the tree trunk.
- * @param rng 						The random number generator to use.
- * @param max_attempts 				The maximum number of attempts to make.
- * @return 							The generated robot state, or nullopt if no state was found.
- */
-std::optional<RobotState> findGoalStateByUniformSampling(
-			const math::Vec3d& target,
-	const robot_model::RobotModel& robot,
-	const robot_model::RobotModel::LinkId& flying_base,
-	const robot_model::RobotModel::LinkId& end_effector,
-	const fcl::CollisionObjectd& tree_trunk_object,
-	random_numbers::RandomNumberGenerator rng,
-	size_t max_attempts) {
-
-	for (size_t i = 0; i < max_attempts; ++i) {
-		RobotState state = genGoalStateUniform(rng, target, robot, flying_base, end_effector);
-
-		if (!check_robot_collision(robot, tree_trunk_object, state)) {
-			return state;
+	mgodpl::Triangle tri {
+		.vertices = {
+			math::Vec3d {a.x(), a.y(), a.z()},
+			math::Vec3d {b.x(), b.y(), b.z()},
+			math::Vec3d {c.x(), c.y(), c.z()}
 		}
-	}
+	};
 
-	return std::nullopt;
-
+	grid.grid.insert_triangle(tri);
 }
 
 std::optional<RobotState> findGoalStateThroughLatLonGrid(
@@ -119,66 +97,32 @@ std::optional<RobotState> findGoalStateThroughLatLonGrid(
 		) {
 
 	// Build the lat/lon grid.
-	LatLonGrid grid{
-			{-M_PI/2.0, M_PI/2.0},
-			{-M_PI, M_PI},
-			0.025,
-			20,
-			20
-	};
+	RotatedLatLonGrid grid = mk_rotated_lat_lon_grid(target - canopy_middle, target);
 
 	// Put the triangles in:
-	math::Vec3d ideal_vector = target - canopy_middle;
-
-	// Compute a rotation matrix such that the ideal vector is the unit X axis.
-	Eigen::Matrix3d rot = Eigen::Quaterniond::FromTwoVectors(
-			Eigen::Vector3d(ideal_vector.x(), ideal_vector.y(), ideal_vector.z()),
-			Eigen::Vector3d(1.0, 0.0, 0.0)
-			).toRotationMatrix();
-
-	Eigen::Matrix3d inv_rot = rot.inverse();
-
 	for (const auto& triangle : triangles) {
-
-		Eigen::Vector3d a(triangle.vertices[0].x(), triangle.vertices[0].y(), triangle.vertices[0].z());
-		Eigen::Vector3d b(triangle.vertices[1].x(), triangle.vertices[1].y(), triangle.vertices[1].z());
-		Eigen::Vector3d c(triangle.vertices[2].x(), triangle.vertices[2].y(), triangle.vertices[2].z());
-
-		// Rotate them.
-		a = rot * a;
-		b = rot * b;
-		c = rot * c;
-
-		mgodpl::Triangle tri {
-			.vertices = {
-				math::Vec3d {a.x(), a.y(), a.z()} - target,
-				math::Vec3d {b.x(), b.y(), b.z()} - target,
-				math::Vec3d {c.x(), c.y(), c.z()} - target
-			}
-		};
-
-		grid.insert_triangle(tri);
+		insert_triangle_into_grid(grid, triangle);
 	}
 
 	// Go find the empty cells:
-	for (size_t lat_i = 0; lat_i < grid.latitude_cells; ++lat_i) {
-		for (size_t lon_i = 0; lon_i < grid.longitude_cells; ++lon_i) {
-			auto cell = grid.cells[grid.cell_index({lat_i, lon_i})];
+	for (size_t lat_i = 0; lat_i < grid.grid.latitude_cells; ++lat_i) {
+		for (size_t lon_i = 0; lon_i < grid.grid.longitude_cells; ++lon_i) {
+			auto cell = grid.grid.cells[grid.grid.cell_index({lat_i, lon_i})];
 
 			if (cell.triangles.empty()) {
 				// Generate a Lat/lon inside the cell.
-				auto lats = grid.latitude_range_of_cell(lat_i);
-				auto lons = grid.longitude_range_of_cell(lon_i);
+				auto lats = grid.grid.latitude_range_of_cell(lat_i);
+				auto lons = grid.grid.longitude_range_of_cell(lon_i);
 
 				double lat = lats.interpolate(rng.uniform01());
 				double lon = lons.interpolate(rng.uniform01()).longitude;
 
 				// Convert to a vector
-				mgodpl::math::Vec3d vec = spherical_geometry::RelativeVertex{lat, lon}.to_cartesian();
+				mgodpl::math::Vec3d vec = spherical_geometry::RelativeVertex{lon, lat}.to_cartesian();
 
 				// Un-rotate it.
 				Eigen::Vector3d vec_eigen(vec.x(), vec.y(), vec.z());
-				vec_eigen = inv_rot * vec_eigen;
+				vec_eigen = grid.inv_rot * vec_eigen;
 
 				// Generate a state.
 				std::vector<double> arm_angles { -spherical_geometry::latitude(vec) };
@@ -319,21 +263,120 @@ int main()
 	std::cout << "Uniform sampling successes: " << uniform_successes << std::endl;
 	std::cout << "Grid sampling successes: " << grid_successes << std::endl;
 
-//    std::cout
-//        << "Hardest target is " << hardest_target
-//		<< " at coords " << targets[hardest_target]
-//		<< " with collision probability " << collision_probabilities[hardest_target] << std::endl;
-//
-//    {
-//        gen_color_coded_states(robot, flying_base, end_effector, tree_trunk_object, rng, viewer, targets,
-//                               hardest_target);
-//
-//        viewer.addTimerCallback([&]()
-//        {
-//        });
-//
-//        viewer.start();
-//
-//        std::cout << "Done." << std::endl;
-//    }
+	SimpleVtkViewer viewer;
+
+	viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
+
+	for (const auto& target : targets) {
+		viewer.addSphere(0.05, target, {1.0, 0.0, 0.0}, 1.0);
+
+		// Make the rotated grid:
+		RotatedLatLonGrid grid = mk_rotated_lat_lon_grid(target - canopy_middle, target);
+
+		for (const auto& triangle : triangles) {
+			insert_triangle_into_grid(grid, triangle);
+		}
+
+		// Then, vizualise it as a wireframe:
+		VtkTriangleSetVisualization viz(0.0, 1.0, 0.5);
+		VtkTriangleSetVisualization viz_occu(1.0, 0.0, 0.5);
+		VtkLineSegmentsVisualization assoc_triangles(0.0, 0.0, 0.0);
+
+		std::vector<std::array<math::Vec3d, 3>> triangles;
+		std::vector<std::array<math::Vec3d, 3>> triangles_occu;
+		std::vector<std::pair<math::Vec3d, math::Vec3d>> assoc_lines;
+
+		for (size_t lat_i = 0; lat_i < grid.grid.latitude_cells; ++lat_i) {
+			for (size_t lon_i = 0; lon_i < grid.grid.longitude_cells; ++lon_i) {
+				auto cell = grid.grid.cells[grid.grid.cell_index({lat_i, lon_i})];
+
+				// Generate a Lat/lon inside the cell.
+				auto lats = grid.grid.latitude_range_of_cell(lat_i);
+				auto lons = grid.grid.longitude_range_of_cell(lon_i);
+
+				auto a = spherical_geometry::RelativeVertex{lons.start, lats.min}.to_cartesian() * 0.1;
+				auto b = spherical_geometry::RelativeVertex{lons.end, lats.min}.to_cartesian() * 0.1;
+				auto c = spherical_geometry::RelativeVertex{lons.end, lats.max}.to_cartesian() * 0.1;
+				auto d = spherical_geometry::RelativeVertex{lons.start, lats.max}.to_cartesian() * 0.1;
+
+				// Un-rotate them:
+				Eigen::Vector3d a_eigen(a.x(), a.y(), a.z());
+				Eigen::Vector3d b_eigen(b.x(), b.y(), b.z());
+				Eigen::Vector3d c_eigen(c.x(), c.y(), c.z());
+				Eigen::Vector3d d_eigen(d.x(), d.y(), d.z());
+
+				a_eigen = grid.inv_rot * a_eigen;
+				b_eigen = grid.inv_rot * b_eigen;
+				c_eigen = grid.inv_rot * c_eigen;
+				d_eigen = grid.inv_rot * d_eigen;
+
+				// Add them to the center:
+				a_eigen = a_eigen + Eigen::Vector3d(grid.center.x(), grid.center.y(), grid.center.z());
+				b_eigen = b_eigen + Eigen::Vector3d(grid.center.x(), grid.center.y(), grid.center.z());
+				c_eigen = c_eigen + Eigen::Vector3d(grid.center.x(), grid.center.y(), grid.center.z());
+				d_eigen = d_eigen + Eigen::Vector3d(grid.center.x(), grid.center.y(), grid.center.z());
+
+				if (cell.triangles.empty()) {
+					// Draw a square:
+					triangles.push_back({
+												math::Vec3d{a_eigen.x(), a_eigen.y(), a_eigen.z()},
+												math::Vec3d{b_eigen.x(), b_eigen.y(), b_eigen.z()},
+												math::Vec3d{c_eigen.x(), c_eigen.y(), c_eigen.z()}
+										});
+
+					triangles.push_back({
+												math::Vec3d{a_eigen.x(), a_eigen.y(), a_eigen.z()},
+												math::Vec3d{c_eigen.x(), c_eigen.y(), c_eigen.z()},
+												math::Vec3d{d_eigen.x(), d_eigen.y(), d_eigen.z()}
+										});
+				} else {
+					// Draw a square:
+					triangles_occu.push_back({
+													 math::Vec3d{a_eigen.x(), a_eigen.y(), a_eigen.z()},
+													 math::Vec3d{b_eigen.x(), b_eigen.y(), b_eigen.z()},
+													 math::Vec3d{c_eigen.x(), c_eigen.y(), c_eigen.z()}
+											 });
+
+					triangles_occu.push_back({
+													 math::Vec3d{a_eigen.x(), a_eigen.y(), a_eigen.z()},
+													 math::Vec3d{c_eigen.x(), c_eigen.y(), c_eigen.z()},
+													 math::Vec3d{d_eigen.x(), d_eigen.y(), d_eigen.z()}
+											 });
+
+					// Draw a line from the center of the cell to the center of the triangle that occupies it.
+					auto center = (a_eigen + b_eigen + c_eigen + d_eigen) / 4.0;
+
+					for (const auto& triangle : cell.triangles) {
+						auto center2 = (triangle.vertices[0] + triangle.vertices[1] + triangle.vertices[2]) / 3.0;
+
+						// Un-rotate them:
+						Eigen::Vector3d center2_eigen(center2.x(), center2.y(), center2.z());
+
+						center2_eigen = grid.inv_rot * center2_eigen;
+
+						// Add them to the center:
+						center2_eigen = center2_eigen + Eigen::Vector3d(grid.center.x(), grid.center.y(), grid.center.z());
+
+						assoc_lines.push_back({
+							math::Vec3d{center.x(), center.y(), center.z()},
+							math::Vec3d{center2_eigen.x(), center2_eigen.y(), center2_eigen.z()}
+						});
+					}
+				}
+
+			}
+		}
+
+		viz.updateTriangles(triangles);
+		viz_occu.updateTriangles(triangles_occu);
+		assoc_triangles.updateLine(assoc_lines);
+
+		viewer.addActor(viz.getActor());
+		viewer.addActor(viz_occu.getActor());
+		viewer.addActor(assoc_triangles.getActor());
+
+		break;
+	}
+
+	viewer.start();
 }

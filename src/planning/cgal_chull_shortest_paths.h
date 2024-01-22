@@ -23,6 +23,8 @@ namespace mgodpl::cgal {
 	// Make a CGAL convex hull.
 	using K = CGAL::Exact_predicates_inexact_constructions_kernel;
 	using Point_3 = K::Point_3;
+	using Ray_3 = K::Ray_3;
+	using Direction_3 = K::Direction_3;
 	using Surface_mesh = CGAL::Surface_mesh<Point_3>;
 	using Traits = CGAL::Surface_mesh_shortest_path_traits<K, Surface_mesh>;
 	using Surface_mesh_shortest_path = CGAL::Surface_mesh_shortest_path<Traits>;
