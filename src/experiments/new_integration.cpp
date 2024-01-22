@@ -21,6 +21,9 @@
 #include "../planning/collision_detection.h"
 #include "../planning/goal_sampling.h"
 #include "../visualization/VtkTriangleSetVisualization.h"
+#include "../planning/visitation_order.h"
+#include "../planning/RobotPath.h"
+#include "../planning/shell_path.h"
 #include <vtkActor.h>
 
 using namespace mgodpl;
@@ -28,118 +31,6 @@ using namespace mgodpl::cgal;
 
 const math::Vec3d WOOD_COLOR{0.5, 0.3, 0.1};
 const math::Vec3d FLOOR_COLOR{0.3, 0.6, 0.3};
-
-struct RobotPath {
-	std::vector<RobotState> states;
-};
-
-struct ApproachPath {
-	RobotPath path;
-	Surface_mesh_shortest_path::Face_location shell_point;
-};
-
-/**
- * Compute a one-to-many set of distances from one source point to the shell point of a vector of approach paths.
- *
- * Note: for algorithmic reasons, it is far more efficient to do this in a one-to-many fashion than to compute distances/paths
- * one-to-one n^2 times.
- *
- * @param from		The source point.
- * @param paths		The approach paths.
- * @param mesh		The mesh.
- * @return			A vector of distances.
- */
-std::vector<double> shell_distances(const Surface_mesh_shortest_path::Face_location &from,
-									const std::vector<ApproachPath> &paths,
-									const Surface_mesh &mesh) {
-	Surface_mesh_shortest_path mesh_path(mesh);
-
-	mesh_path.add_source_point(from.first, from.second);
-
-	std::vector<double> distances;
-	distances.reserve(paths.size());
-
-	for (const auto &path: paths) {
-		const auto &[face, barycentric] = path.shell_point;
-		distances.push_back(mesh_path.shortest_distance_to_source_points(face, barycentric).first);
-	}
-
-	return distances;
-}
-
-/**
- * Greedily compute a visitation order given a vector of distances from the initial point, and a matrix of distances between the target points.
- *
- * This function is a greedy method that always picks the closest target point that hasn't been visited yet.
- *
- * @param target_to_target_distances 	The matrix of distances between the target points.
- * @param initial_state_distances 		The distances from the initial point to the target points.
- * @return 								The visitation order, as target indices matching the order of the target_to_target_distances matrix.
- */
-std::vector<size_t> visitation_order_greedy(const std::vector<std::vector<double>> &target_to_target_distances,
-											const std::vector<double> &initial_state_distances) {
-	std::vector<bool> used(target_to_target_distances.size(), false);
-
-	std::vector<size_t> order;
-	order.reserve(target_to_target_distances.size());
-	for (size_t i = 0; i < target_to_target_distances.size(); ++i) {
-		// First one uses initial_state_distances; the rest uses target_to_target_distances.
-		const auto &distances = i == 0 ? initial_state_distances : target_to_target_distances[order.back()];
-
-		// Find the closest one that hasn't been used yet.
-		size_t closest = 0;
-		double closest_distance = std::numeric_limits<double>::infinity();
-		for (size_t j = 0; j < distances.size(); ++j) {
-			if (!used[j] && distances[j] < closest_distance) {
-				closest = j;
-				closest_distance = distances[j];
-			}
-		}
-
-		// Mark it as used.
-		used[closest] = true;
-		order.push_back(closest);
-	}
-	return order;
-}
-
-/**
- * Compute a RobotPath from one state on the convex hull shell to another.
- * @param from 				The origin shellpoint.
- * @param to 				The destination shellpoint.
- * @param mesh 				The mesh.
- * @param robot 			The robot model.
- * @return 					The shell path.
- */
-RobotPath shell_path(const Surface_mesh_shortest_path::Face_location &from,
-					 const Surface_mesh_shortest_path::Face_location &to,
-					 const Surface_mesh &mesh,
-					 const robot_model::RobotModel &robot) {
-
-	Surface_mesh_shortest_path mesh_path(mesh);
-
-	mesh_path.add_source_point(from.first, from.second);
-
-	std::vector<Surface_mesh_shortest_path::Face_location> path;
-
-	PathVisitor path_visitor{.mesh = mesh, .path_algo = mesh_path, .states = path};
-
-	mesh_path.shortest_path_sequence_to_source_points(to.first, to.second, path_visitor);
-
-	RobotPath shell_path;
-
-	for (const auto &[face, barycentric]: path) {
-		auto pt = mesh_path.point(face, barycentric);
-		auto face_normal = CGAL::Polygon_mesh_processing::compute_face_normal(face, mesh);
-		auto robot_state = fromEndEffectorAndVector(robot,
-													{pt.x(), pt.y(), pt.z()},
-													{face_normal.x(), face_normal.y(), face_normal.z()});
-		shell_path.states.push_back(robot_state);
-	}
-
-	return shell_path;
-
-}
 
 ApproachPath plan_initial_approach_path(const robot_model::RobotModel &robot,
 										const RobotState &initial_state,
@@ -550,7 +441,7 @@ std::vector<bool> visited_by_path(const std::vector<math::Vec3d> targets, const 
 		auto ee_pose = fk.forLink(end_effector).translation;
 
 		for (size_t i = 0; i < targets.size(); ++i) {
-			if ((targets[i] - ee_pose).norm() < 0.1) {
+			if ((targets[i] - ee_pose).norm() < 0.01) {
 				visited[i] = true;
 			}
 		}

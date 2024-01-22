@@ -19,7 +19,6 @@
 
 namespace mgodpl::cgal {
 
-
 	// Make a CGAL convex hull.
 	using K = CGAL::Exact_predicates_inexact_constructions_kernel;
 	using Point_3 = K::Point_3;

@@ -218,8 +218,14 @@ add_library(planning
         src/planning/state_tools.h
         src/planning/goal_sampling.cpp
         src/planning/goal_sampling.h
+        src/planning/shell_path.cpp
+        src/planning/shell_path.h
+        src/planning/RobotPath.h
         #        src/planning/PyramidGrid.cpp
 #        src/planning/PyramidGrid.h
+        src/planning/visitation_order.h
+        src/planning/visitation_order.cpp
+        src/planning/ApproachPath.h
 )
 
 target_link_libraries(planning math_utils)
