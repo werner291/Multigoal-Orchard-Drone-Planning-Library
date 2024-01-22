@@ -97,6 +97,29 @@ ApproachPath straight_in_motion(const robot_model::RobotModel &robot,
 	return path;
 }
 
+RobotPath retreat_move_probe(const robot_model::RobotModel &robot,
+							 const Surface_mesh &convex_hull,
+							 const ApproachPath &retreat_path,
+							 const ApproachPath &probe_path) {
+
+	RobotPath final_path;
+
+	final_path.states.insert(final_path.states.end(),
+							 retreat_path.path.states.rbegin(),
+							 retreat_path.path.states.rend());
+
+	auto move_path = shell_path(retreat_path.shell_point, probe_path.shell_point, convex_hull, robot);
+
+	final_path.states.insert(final_path.states.end(), move_path.states.begin(), move_path.states.end());
+
+	final_path.states.insert(final_path.states.end(),
+							 probe_path.path.states.begin(),
+							 probe_path.path.states.end());
+
+	return final_path;
+
+}
+
 RobotPath assemble_final_path(const robot_model::RobotModel &robot,
 							  const Surface_mesh &convex_hull,
 							  const std::vector<ApproachPath> &approach_paths,
@@ -110,20 +133,15 @@ RobotPath assemble_final_path(const robot_model::RobotModel &robot,
 		// We're going to do retreat-move-probe paths: backing away from one path, moving to the start of next, and then probing.
 		for (size_t i = 0; i < approach_paths.size(); ++i) {
 
-			final_path.states.insert(final_path.states.end(),
-									 last_path->path.states.rbegin(),
-									 last_path->path.states.rend());
+			const ApproachPath *next_path = &approach_paths[order[i]];
 
-			const auto &next_path = approach_paths[order[i]];
-
-			auto between_paths = shell_path(last_path->shell_point, next_path.shell_point, convex_hull, robot);
-			final_path.states.insert(final_path.states.end(), between_paths.states.begin(), between_paths.states.end());
+			auto goal_to_goal = retreat_move_probe(robot, convex_hull, *last_path, *next_path);
 
 			final_path.states.insert(final_path.states.end(),
-									 next_path.path.states.begin(),
-									 next_path.path.states.end());
+									 goal_to_goal.states.begin(),
+									 goal_to_goal.states.end());
 
-			last_path = &next_path;
+			last_path = next_path;
 
 		}
 	}
