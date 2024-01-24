@@ -221,6 +221,22 @@ add_library(planning
         src/planning/goal_sampling.h
         #        src/planning/PyramidGrid.cpp
 #        src/planning/PyramidGrid.h
+    src/planning/NextTargetSelector.cpp
+    src/planning/NextTargetSelector.h
+    src/planning/CollisionPrediction.cpp
+    src/planning/CollisionPrediction.h
+    src/planning/MonadicBehavior.h
+    src/planning/JointSpacePath.h
+    src/planning/JointSpacePath.cpp
+    src/planning/cgal_chull_shortest_paths.cpp
+    src/planning/cgal_chull_shortest_paths.h
+    src/planning/ConvexHullSpace.cpp
+    src/planning/ConvexHullSpace.h
+    src/planning/RobotModel.cpp
+    src/planning/RobotModel.h
+    src/planning/longitude_sweep.cpp
+    src/planning/longitude_sweep.h
+    src/planning/RobotState.cpp
 )
 
 target_link_libraries(planning math_utils)
