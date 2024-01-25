@@ -191,22 +191,41 @@ add_library(planning
     src/planning/MyCollisionEnv.cpp
     src/planning/moveit_motion_velocity.h
     src/planning/moveit_motion_velocity.cpp
-    src/planning/NextTargetSelector.cpp
-    src/planning/NextTargetSelector.h
-    src/planning/CollisionPrediction.cpp
-    src/planning/CollisionPrediction.h
-    src/planning/MonadicBehavior.h
-    src/planning/JointSpacePath.h
-    src/planning/JointSpacePath.cpp
-    src/planning/cgal_chull_shortest_paths.cpp
-    src/planning/cgal_chull_shortest_paths.h
-    src/planning/ConvexHullSpace.cpp
-    src/planning/ConvexHullSpace.h
-    src/planning/RobotModel.cpp
-    src/planning/RobotModel.h
-    src/planning/longitude_sweep.cpp
-    src/planning/longitude_sweep.h
-    src/planning/RobotState.cpp
+        src/planning/NextTargetSelector.cpp
+        src/planning/NextTargetSelector.h
+        src/planning/CollisionPrediction.cpp
+        src/planning/CollisionPrediction.h
+        src/planning/MonadicBehavior.h
+        src/planning/JointSpacePath.h
+        src/planning/JointSpacePath.cpp
+        src/planning/cgal_chull_shortest_paths.cpp
+        src/planning/cgal_chull_shortest_paths.h
+        src/planning/ConvexHullSpace.cpp
+        src/planning/ConvexHullSpace.h
+        src/planning/RobotModel.cpp
+        src/planning/RobotModel.h
+#        src/planning/longitude_sweep.cpp
+#        src/planning/longitude_sweep.h
+        src/planning/RobotState.cpp
+        src/planning/LatitudeLongitudeGrid.h
+        src/planning/LatitudeLongitudeGrid.cpp
+        src/planning/scanline.cpp
+        src/planning/scanline.h
+        src/planning/spherical_geometry.cpp
+        src/planning/collision_detection.cpp
+        src/planning/collision_detection.h
+        src/planning/state_tools.cpp
+        src/planning/state_tools.h
+        src/planning/goal_sampling.cpp
+        src/planning/goal_sampling.h
+        src/planning/shell_path.cpp
+        src/planning/shell_path.h
+        src/planning/RobotPath.h
+        #        src/planning/PyramidGrid.cpp
+#        src/planning/PyramidGrid.h
+        src/planning/visitation_order.h
+        src/planning/visitation_order.cpp
+        src/planning/ApproachPath.h
 )
 
 target_link_libraries(planning math_utils)
@@ -307,12 +326,20 @@ if (ENABLE_VISUALIZATION)
     target_link_libraries(goal_construction math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(goal_construction shape_msgs moveit_core)
 
+    add_executable(latlongrid_vs_sampling src/experiments/latlongrid_vs_sampling.cpp)
+    target_link_libraries(latlongrid_vs_sampling math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(latlongrid_vs_sampling shape_msgs moveit_core)
+
     add_executable(collision_detection_mwe src/experiments/collision_detection_mwe.cpp)
     ament_target_dependencies(collision_detection_mwe shape_msgs moveit_core random_numbers)
 
     add_executable(latitude_sweep_vizualization src/experiments/latitude_sweep_vizualization.cpp)
     target_link_libraries(latitude_sweep_vizualization math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(latitude_sweep_vizualization shape_msgs moveit_core)
+
+    add_executable(new_integration src/experiments/new_integration.cpp)
+    target_link_libraries(new_integration math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(new_integration shape_msgs moveit_core)
 
 endif ()
 
@@ -325,7 +352,8 @@ add_executable(${PROJECT_NAME}_tests
 #        test/experiment_utils/voxel_visibility_test.cpp
 #        test/math/intersection_test.cpp
 #        test/math/lp_test.cpp
-        test/planning/latitude_sweep_test.cpp
+        test/planning/spherical_geomety_test.cpp
+        test/planning/LatitudeLongitudeGridTests.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils planning gtest)
@@ -337,5 +365,3 @@ if (ENABLE_PYTHON_BINDINGS)
     target_link_libraries(pymgodpl PRIVATE math_utils visibility planning experiment_utils ${PROJECT_NAME}_visualisation ${VTK_LIBRARIES})
     ament_target_dependencies(pymgodpl PUBLIC ${AMENT_DEPS})
 endif ()
-
-

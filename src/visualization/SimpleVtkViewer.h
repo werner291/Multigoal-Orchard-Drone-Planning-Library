@@ -123,7 +123,7 @@ namespace mgodpl {
 
 		void addTree(const tree_meshes::TreeMeshes& tree, bool show_leaves, bool show_fruit);
 
-		void set_transform(const math::Transformd& transform, vtkActor* actor);
+		static void set_transform(const math::Transformd& transform, vtkActor* actor);
 
 		vtkSmartPointer<vtkActor> addPositionedShape(const PositionedShape& shape,
 													 const math::Vec3d& color,
