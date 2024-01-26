@@ -22,130 +22,147 @@ using Primitive = CGAL::AABB_triangle_primitive<K, Iterator>;
 using AABB_triangle_traits = CGAL::AABB_traits<K, Primitive>;
 using AABB_Tree = CGAL::AABB_tree<AABB_triangle_traits>;
 
-/**
- * @brief Converts a ROS shape_msgs::Mesh into a vector of CGAL Triangles.
- *
- * This function iterates over the triangles in the given mesh, and for each triangle,
- * it retrieves the corresponding vertices and creates a CGAL Triangle. All the triangles
- * are stored in a vector which is returned by the function.
- *
- * @param mesh The ROS shape_msgs::Mesh to convert.
- * @return A vector of CGAL Triangles representing the given mesh.
- */
-std::vector<Triangle> createTrianglesFromMesh(const shape_msgs::msg::Mesh& mesh) {
-    std::vector<Triangle> triangles;
-    for (const auto& face : mesh.triangles) {
-        const auto& vertex1 = mesh.vertices[face.vertex_indices[0]];
-        const auto& vertex2 = mesh.vertices[face.vertex_indices[1]];
-        const auto& vertex3 = mesh.vertices[face.vertex_indices[2]];
-        triangles.emplace_back(Point(vertex1.x, vertex1.y, vertex1.z),
-                               Point(vertex2.x, vertex2.y, vertex2.z),
-                               Point(vertex3.x, vertex3.y, vertex3.z));
-    }
-    return triangles;
-}
+namespace mgodpl {
 
-/**
- * @brief Builds an AABB tree from a given mesh.
- *
- * This function first converts the given mesh into a vector of CGAL Triangles using the createTrianglesFromMesh function.
- * Then, it creates an AABB tree from the vector of triangles and builds the tree.
- *
- * @param mesh The ROS shape_msgs::Mesh to convert into an AABB tree.
- * @return An AABB tree representing the given mesh.
- */
-AABB_Tree buildAABBTree(const shape_msgs::msg::Mesh& mesh) {
-    std::vector<Triangle> triangles = createTrianglesFromMesh(mesh);
-    AABB_Tree tree(triangles.begin(), triangles.end());
-    tree.build();
-    return tree;
-}
-
-/**
- * @brief Finds the leaf closest to the trunk for each connected component.
- *
- * This function iterates over each leaf in the given component and calculates the distance from the leaf to the trunk.
- * The leaf with the smallest distance is considered the closest leaf.
- *
- * @param tree The AABB tree representing the trunk.
- * @param component The connected component to find the closest leaf for.
- * @param leaves_mesh The mesh representing the leaves.
- * @return The index of the leaf closest to the trunk.
- */
-size_t findClosestLeaf(const AABB_Tree& tree, const std::vector<size_t>& component, const shape_msgs::msg::Mesh& leaves_mesh) {
-    size_t closest_leaf_index = 0;
-    double closest_leaf_distance = std::numeric_limits<double>::infinity();
-
-    for (const auto& leaf_index : component){
-        const auto& leaf_vertex = leaves_mesh.vertices[leaf_index];
-        Point query_point(leaf_vertex.x, leaf_vertex.y, leaf_vertex.z);
-        auto result = tree.closest_point_and_primitive(query_point);
-        double distance = CGAL::squared_distance(query_point, result.first);
-        if (distance < closest_leaf_distance){
-            closest_leaf_distance = distance;
-            closest_leaf_index = leaf_index;
-        }
-    }
-
-    return closest_leaf_index;
-}
-
-/**
- * @brief Assigns the closest leaf to all vertices in the connected component.
- *
- * This function iterates over each leaf in the given component and assigns the index of the closest leaf to the leaf.
- *
- * @param leaf_root_vertex The vector to store the index of the closest leaf for each leaf in the component.
- * @param component The connected component to assign the closest leaf for.
- * @param closest_leaf_index The index of the leaf closest to the trunk.
- */
-void assignClosestLeafToComponent(std::vector<size_t>& leaf_root_vertex, const std::vector<size_t>& component, size_t closest_leaf_index) {
-    for (const auto& leaf_index : component){
-        leaf_root_vertex[leaf_index] = closest_leaf_index;
-    }
-}
-
-
-std::vector<size_t> mgodpl::leaf_root_vertex(const mgodpl::tree_meshes::TreeMeshes &tree_meshes) {
-	AABB_Tree tree = buildAABBTree(tree_meshes.trunk_mesh);
-
-	std::vector<size_t> leaf_root_vertex(tree_meshes.leaves_mesh.vertices.size());
-
-	for (const auto& component : connected_vertex_components(tree_meshes.leaves_mesh)) {
-		size_t closest_leaf_index = findClosestLeaf(tree, component, tree_meshes.leaves_mesh);
-		assignClosestLeafToComponent(leaf_root_vertex, component, closest_leaf_index);
+	/**
+	 * @brief Converts a ROS shape_msgs::Mesh into a vector of CGAL Triangles.
+	 *
+	 * This function iterates over the triangles in the given mesh, and for each triangle,
+	 * it retrieves the corresponding vertices and creates a CGAL Triangle. All the triangles
+	 * are stored in a vector which is returned by the function.
+	 *
+	 * @param mesh The ROS shape_msgs::Mesh to convert.
+	 * @return A vector of CGAL Triangles representing the given mesh.
+	 */
+	std::vector<Triangle> createTrianglesFromMesh(const shape_msgs::msg::Mesh &mesh) {
+		std::vector<Triangle> triangles;
+		for (const auto &face: mesh.triangles) {
+			const auto &vertex1 = mesh.vertices[face.vertex_indices[0]];
+			const auto &vertex2 = mesh.vertices[face.vertex_indices[1]];
+			const auto &vertex3 = mesh.vertices[face.vertex_indices[2]];
+			triangles.emplace_back(Point(vertex1.x, vertex1.y, vertex1.z),
+								   Point(vertex2.x, vertex2.y, vertex2.z),
+								   Point(vertex3.x, vertex3.y, vertex3.z));
+		}
+		return triangles;
 	}
 
-	return leaf_root_vertex;
-}
+	/**
+	 * @brief Builds an AABB tree from a given mesh.
+	 *
+	 * This function first converts the given mesh into a vector of CGAL Triangles using the createTrianglesFromMesh function.
+	 * Then, it creates an AABB tree from the vector of triangles and builds the tree.
+	 *
+	 * @param mesh The ROS shape_msgs::Mesh to convert into an AABB tree.
+	 * @return An AABB tree representing the given mesh.
+	 */
+	AABB_Tree buildAABBTree(const shape_msgs::msg::Mesh &mesh) {
+		std::vector<Triangle> triangles = createTrianglesFromMesh(mesh);
+		AABB_Tree tree(triangles.begin(), triangles.end());
+		tree.build();
+		return tree;
+	}
 
-shape_msgs::msg::Mesh mgodpl::scale_leaves(const mgodpl::tree_meshes::TreeMeshes &tree_meshes,
-        const std::vector<size_t> &leaf_root_vertex,
-        double scale_factor) {
-    // Create a copy of the leaves mesh
-    shape_msgs::msg::Mesh leaves_mesh_copy = tree_meshes.leaves_mesh;
+	/**
+	 * @brief Finds the leaf vertex that is closest to the trunk and the corresponding closest point on the trunk.
+	 *
+	 * This function iterates over all the leaf vertices in the given component. For each leaf vertex, it queries the AABB tree
+	 * to find the closest point on the trunk. It keeps track of the leaf vertex that is closest to the trunk and the corresponding
+	 * closest point on the trunk.
+	 *
+	 * @param tree The AABB tree representing the trunk.
+	 * @param component The connected component of leaf vertices to consider.
+	 * @param leaves_mesh The mesh representing the leaves.
+	 * @return A pair consisting of the index of the leaf vertex that is closest to the trunk and a math::Vec3d representing the
+	 * closest point on the trunk.
+	 */
+	std::pair<size_t, math::Vec3d> findLeafVertexClosestToTrunk(const AABB_Tree &tree,
+																const std::vector<size_t> &component,
+																const shape_msgs::msg::Mesh &leaves_mesh) {
+		// Initialize the index of the closest leaf vertex and the minimum distance to infinity.
+		size_t closest_leaf_index = 0;
+		double closest_leaf_distance = std::numeric_limits<double>::infinity();
+		Point closest_point;
 
-    for (size_t i = 0; i < leaves_mesh_copy.vertices.size(); ++i) {
-        // Retrieve the root vertex for the current leaf vertex
-        const auto& root_vertex = tree_meshes.leaves_mesh.vertices[leaf_root_vertex[i]];
+		// Iterate over all the leaf vertices in the component.
+		for (const auto &leaf_index: component) {
+			// Get the current leaf vertex.
+			const auto &leaf_vertex = leaves_mesh.vertices[leaf_index];
+			Point query_point(leaf_vertex.x, leaf_vertex.y, leaf_vertex.z);
 
-        // Calculate the vector from the root vertex to the current leaf vertex
-        auto& leaf_vertex = leaves_mesh_copy.vertices[i];
-        double dx = leaf_vertex.x - root_vertex.x;
-        double dy = leaf_vertex.y - root_vertex.y;
-        double dz = leaf_vertex.z - root_vertex.z;
+			// Query the AABB tree to find the closest point on the trunk to the current leaf vertex.
+			auto result = tree.closest_point_and_primitive(query_point);
+			double distance = CGAL::squared_distance(query_point, result.first);
 
-        // Scale the vector by the scale factor
-        dx *= scale_factor;
-        dy *= scale_factor;
-        dz *= scale_factor;
+			// If the current leaf vertex is closer to the trunk than the previous closest leaf vertex, update the closest leaf vertex and the minimum distance.
+			if (distance < closest_leaf_distance) {
+				closest_leaf_distance = distance;
+				closest_leaf_index = leaf_index;
+				closest_point = result.first;
+			}
+		}
 
-        // Calculate the new coordinates of the leaf vertex
-        leaf_vertex.x = root_vertex.x + dx;
-        leaf_vertex.y = root_vertex.y + dy;
-        leaf_vertex.z = root_vertex.z + dz;
-    }
+		// Return the index of the closest leaf vertex and the closest point on the trunk.
+		return {closest_leaf_index, math::Vec3d(closest_point.x(), closest_point.y(), closest_point.z())};
+	}
 
-    // Return the modified leaves mesh
-    return leaves_mesh_copy;
+	/**
+	 * @brief Calculates the root point for each leaf in the tree.
+	 *
+	 * This function finds, for each leaf, the closest point on the trunk and assigns it
+	 * as the root point for all the leaf vertices in the same connected component.
+	 *
+	 * @param tree_meshes The tree meshes which include the trunk mesh and the leaves mesh.
+	 * @return A vector of math::Vec3d objects representing the root point for each leaf.
+	 */
+	std::vector<math::Vec3d> leaf_root_points(const mgodpl::tree_meshes::TreeMeshes &tree_meshes) {
+		// Build an AABB tree from the trunk mesh
+		AABB_Tree tree = buildAABBTree(tree_meshes.trunk_mesh);
+
+		// Initialize a vector to store the root point for each leaf
+		std::vector<math::Vec3d> leaf_root_vertex(tree_meshes.leaves_mesh.vertices.size(), math::Vec3d(0, 0, 0));
+
+		// Iterate over all the connected components of the leaves mesh
+		for (const auto &component: connected_vertex_components(tree_meshes.leaves_mesh)) {
+			// Find the leaf vertex that is closest to the trunk and the corresponding closest point on the trunk
+			auto [closest_leaf_index, closest_point] = findLeafVertexClosestToTrunk(tree, component, tree_meshes.leaves_mesh);
+
+			// Assign the closest point as the root point for all the leaf vertices in the current component
+			for (const auto &leaf_index: component) {
+				leaf_root_vertex[leaf_index] = closest_point;
+			}
+		}
+
+		// Return the vector of root points
+		return leaf_root_vertex;
+	}
+
+	shape_msgs::msg::Mesh scale_leaves(const mgodpl::tree_meshes::TreeMeshes &tree_meshes,
+											   const std::vector<math::Vec3d> &leaf_root_vertex,
+											   double scale_factor) {
+		// Create a copy of the leaves mesh
+		shape_msgs::msg::Mesh leaves_mesh_copy = tree_meshes.leaves_mesh;
+
+		// Iterate over all the vertices in the mesh
+		for (size_t i = 0; i < leaves_mesh_copy.vertices.size(); ++i) {
+			// Retrieve the root vertex for the current leaf vertex
+			const auto &scale_center = leaf_root_vertex[i];
+
+			// Create a math::Vec3d object representing the current leaf vertex
+			math::Vec3d leaf_vertex(leaves_mesh_copy.vertices[i].x,
+									leaves_mesh_copy.vertices[i].y,
+									leaves_mesh_copy.vertices[i].z);
+
+			// Scale the leaf vertex around the root point by the given scale factor
+			leaf_vertex = scale_center + (leaf_vertex - scale_center) * scale_factor;
+
+			// Write the scaled vertex back to the mesh
+			leaves_mesh_copy.vertices[i].x = leaf_vertex.x();
+			leaves_mesh_copy.vertices[i].y = leaf_vertex.y();
+			leaves_mesh_copy.vertices[i].z = leaf_vertex.z();
+		}
+
+		// Return the modified leaves mesh
+		return leaves_mesh_copy;
+	}
 }

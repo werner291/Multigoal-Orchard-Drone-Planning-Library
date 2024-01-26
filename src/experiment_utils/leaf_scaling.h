@@ -17,24 +17,27 @@
 namespace mgodpl {
 
 	/**
-	 * @brief Finds the closest point on the trunk for every leaf of the tree and assigns the index of that vertex to every other vertex of the leaf.
-	 *
-	 * This function first builds an AABB tree from the trunk mesh. Then, for each connected component in the leaves mesh,
-	 * it finds the leaf closest to the trunk and assigns the index of the closest leaf to all vertices in the component.
-	 *
-	 * @param tree_meshes The tree meshes for one tree.
-	 * @return A vector of indices, one for every vertex of the leaves mesh.
+	 * @brief finds the closest point on the trunk for every leaf of the tree and assigns a Vec3d with the coordinates of that root point to every other vertex of the leaf.
 	 */
-	std::vector<size_t> leaf_root_vertex(const mgodpl::tree_meshes::TreeMeshes &tree_meshes);
+	std::vector<math::Vec3d> leaf_root_points(const mgodpl::tree_meshes::TreeMeshes &tree_meshes);
 
 	/**
-	 * @brief Scales the leaves of the tree based on the distance to the trunk, using the result of leaf_root_vertex.
+	 * @brief Scales the leaves of a tree around their root points.
 	 *
-	 * @param tree_meshes The tree meshes for one tree.
-	 * @param leaf_root_vertex The vector of indices, one for every vertex of the leaves mesh.
-	 * @param scale_factor The factor to scale the leaves with.
+	 * This function takes as input the tree meshes, the root points for each leaf, and a scale factor. It creates a copy of the leaves mesh and then iterates over all the vertices in the mesh.
+	 * For each vertex, it retrieves the corresponding root point and scales the vertex around this root point by the given scale factor. The scaled vertex is then written back to the mesh.
+	 * The function finally returns the modified leaves mesh.
+	 *
+	 * @param tree_meshes The tree meshes which include the trunk mesh and the leaves mesh.
+	 * @param leaf_root_vertex A vector of math::Vec3d objects representing the root point for each leaf.
+	 * @param scale_factor The factor by which to scale the leaves.
+	 * @return A shape_msgs::msg::Mesh object representing the leaves mesh after scaling.
 	 */
-	shape_msgs::msg::Mesh scale_leaves(const mgodpl::tree_meshes::TreeMeshes &tree_meshes, const std::vector<size_t> &leaf_root_vertex, double scale_factor);
+	shape_msgs::msg::Mesh scale_leaves(
+			const mgodpl::tree_meshes::TreeMeshes &tree_meshes,
+			const std::vector<math::Vec3d> &leaf_root_vertex,
+			double scale_factor
+			);
 
 }
 
