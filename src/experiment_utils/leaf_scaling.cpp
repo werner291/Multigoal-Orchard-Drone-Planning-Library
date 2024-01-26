@@ -127,7 +127,7 @@ shape_msgs::msg::Mesh mgodpl::scale_leaves(const mgodpl::tree_meshes::TreeMeshes
 
     for (size_t i = 0; i < leaves_mesh_copy.vertices.size(); ++i) {
         // Retrieve the root vertex for the current leaf vertex
-        const auto& root_vertex = tree_meshes.trunk_mesh.vertices[leaf_root_vertex[i]];
+        const auto& root_vertex = tree_meshes.leaves_mesh.vertices[leaf_root_vertex[i]];
 
         // Calculate the vector from the root vertex to the current leaf vertex
         auto& leaf_vertex = leaves_mesh_copy.vertices[i];
