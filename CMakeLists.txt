@@ -179,8 +179,8 @@ target_link_libraries(visibility math_utils)
 
 add_library(planning
     src/planning/RobotAlgorithm.h
-    src/planning/BlindlyMoveToNextFruit.h
-    src/planning/BlindlyMoveToNextFruit.cpp
+#    src/planning/BlindlyMoveToNextFruit.h
+#    src/planning/BlindlyMoveToNextFruit.cpp
     src/planning/JointSpacePoint.h
     src/planning/JointSpacePoint.cpp
     src/planning/moveit_state_tools.h
@@ -342,6 +342,10 @@ if (ENABLE_VISUALIZATION)
     add_executable(new_integration src/experiments/new_integration.cpp)
     target_link_libraries(new_integration math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(new_integration shape_msgs moveit_core)
+
+    add_executable(point_scanning src/experiments/point_scanning.cpp)
+    target_link_libraries(point_scanning math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(point_scanning shape_msgs moveit_core)
 
 endif ()
 
