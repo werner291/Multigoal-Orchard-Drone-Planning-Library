@@ -118,3 +118,34 @@ std::vector<size_t> mgodpl::leaf_root_vertex(const mgodpl::tree_meshes::TreeMesh
 
 	return leaf_root_vertex;
 }
+
+shape_msgs::msg::Mesh mgodpl::scale_leaves(const mgodpl::tree_meshes::TreeMeshes &tree_meshes,
+        const std::vector<size_t> &leaf_root_vertex,
+        double scale_factor) {
+    // Create a copy of the leaves mesh
+    shape_msgs::msg::Mesh leaves_mesh_copy = tree_meshes.leaves_mesh;
+
+    for (size_t i = 0; i < leaves_mesh_copy.vertices.size(); ++i) {
+        // Retrieve the root vertex for the current leaf vertex
+        const auto& root_vertex = tree_meshes.trunk_mesh.vertices[leaf_root_vertex[i]];
+
+        // Calculate the vector from the root vertex to the current leaf vertex
+        auto& leaf_vertex = leaves_mesh_copy.vertices[i];
+        double dx = leaf_vertex.x - root_vertex.x;
+        double dy = leaf_vertex.y - root_vertex.y;
+        double dz = leaf_vertex.z - root_vertex.z;
+
+        // Scale the vector by the scale factor
+        dx *= scale_factor;
+        dy *= scale_factor;
+        dz *= scale_factor;
+
+        // Calculate the new coordinates of the leaf vertex
+        leaf_vertex.x = root_vertex.x + dx;
+        leaf_vertex.y = root_vertex.y + dy;
+        leaf_vertex.z = root_vertex.z + dz;
+    }
+
+    // Return the modified leaves mesh
+    return leaves_mesh_copy;
+}

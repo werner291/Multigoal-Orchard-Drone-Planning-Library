@@ -27,6 +27,15 @@ namespace mgodpl {
 	 */
 	std::vector<size_t> leaf_root_vertex(const mgodpl::tree_meshes::TreeMeshes &tree_meshes);
 
+	/**
+	 * @brief Scales the leaves of the tree based on the distance to the trunk, using the result of leaf_root_vertex.
+	 *
+	 * @param tree_meshes The tree meshes for one tree.
+	 * @param leaf_root_vertex The vector of indices, one for every vertex of the leaves mesh.
+	 * @param scale_factor The factor to scale the leaves with.
+	 */
+	shape_msgs::msg::Mesh scale_leaves(const mgodpl::tree_meshes::TreeMeshes &tree_meshes, const std::vector<size_t> &leaf_root_vertex, double scale_factor);
+
 }
 
 #endif //MGODPL_LEAF_SCALING_H
