@@ -263,6 +263,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/shapes.h
             src/experiment_utils/positioned_shape.cpp
             src/experiment_utils/positioned_shape.h
+            src/experiment_utils/leaf_scaling.cpp
+            src/experiment_utils/leaf_scaling.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
