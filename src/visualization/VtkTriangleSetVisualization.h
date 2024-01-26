@@ -10,8 +10,11 @@
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
-
 #include "../math/Vec3.h"
+
+//class vtkActor;
+//class vtkPolyDataMapper;
+//class vtkPolyData;
 
 class VtkTriangleSetVisualization {
     vtkNew<vtkPolyData> data;
@@ -19,7 +22,7 @@ class VtkTriangleSetVisualization {
     vtkNew<vtkActor> actor;
 
 public:
-    VtkTriangleSetVisualization(float r, float g, float b, float opacity=1.0);
+    VtkTriangleSetVisualization(float r, float g, float b, float opacity = 1.0);
 
     vtkActor* getActor();
 

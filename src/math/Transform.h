@@ -63,6 +63,17 @@ namespace mgodpl::math {
 		}
 	};
 
+	inline Transformd interpolate(const Transformd& a, const Transformd& b, double t) {
+		return {
+				.translation = {
+						(1.0 - t) * a.translation.x() + t * b.translation.x(),
+						(1.0 - t) * a.translation.y() + t * b.translation.y(),
+						(1.0 - t) * a.translation.z() + t * b.translation.z()
+				},
+				.orientation = slerp(a.orientation, b.orientation, t)
+		};
+	}
+
 }
 
 

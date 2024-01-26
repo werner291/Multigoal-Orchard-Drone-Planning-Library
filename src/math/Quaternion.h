@@ -11,6 +11,8 @@
 
 #include "Vec3.h"
 
+#include <algorithm>
+
 namespace mgodpl::math {
 
 	struct AxisAngled {
@@ -72,9 +74,19 @@ namespace mgodpl::math {
 			};
 		}
 
-
 	};
 
+	inline double angular_distance(const Quaterniond& a, const Quaterniond& b) {
+
+		double cos = a.w * b.w + a.x * b.x + a.y * b.y + a.z * b.z;
+
+		// Small numerical errors can cause cos to be slightly outside [-1, 1]; clamp to prevent NaN.
+		cos = std::clamp(cos, -1.0, 1.0);
+
+		return acos(2.0 * cos * cos - 1.0);
+	}
+
+	Quaterniond slerp(const Quaterniond& a, const Quaterniond& b, double t);
 }
 
 #endif //MGODPL_QUATERNION_H

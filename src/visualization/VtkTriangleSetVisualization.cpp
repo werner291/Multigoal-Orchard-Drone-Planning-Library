@@ -17,6 +17,7 @@ VtkTriangleSetVisualization::VtkTriangleSetVisualization(float r, float g, float
     actor->GetProperty()->SetColor(r, g, b);
     actor->GetProperty()->SetOpacity(opacity);
     actor->GetProperty()->SetLineWidth(2);
+	actor->GetProperty()->SetOpacity(opacity);
 }
 
 vtkActor *VtkTriangleSetVisualization::getActor() {
