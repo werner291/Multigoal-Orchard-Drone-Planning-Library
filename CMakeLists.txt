@@ -265,6 +265,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/positioned_shape.h
             src/experiment_utils/leaf_scaling.cpp
             src/experiment_utils/leaf_scaling.h
+            src/experiment_utils/surface_points.cpp
+            src/experiment_utils/surface_points.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
@@ -346,6 +348,10 @@ if (ENABLE_VISUALIZATION)
     add_executable(leaf_density_rescaling src/visualizations/leaf_density_rescaling.cpp)
     target_link_libraries(leaf_density_rescaling math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(leaf_density_rescaling shape_msgs moveit_core)
+
+    add_executable(fruit_scan_points src/visualizations/fruit_scan_points.cpp)
+    target_link_libraries(fruit_scan_points math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(fruit_scan_points shape_msgs moveit_core)
 
 endif ()
 
