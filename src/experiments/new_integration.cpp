@@ -427,7 +427,7 @@ VtkTriangleSetVisualization convex_hull_viz(const Surface_mesh &convex_hull) {
 	return viz;
 }
 
-std::vector<bool> visited_by_path(const std::vector<math::Vec3d> targets, const RobotPath &path, const robot_model::RobotModel& robot) {
+std::vector<bool> visited_by_path(const std::vector<math::Vec3d>& targets, const RobotPath &path, const robot_model::RobotModel& robot) {
 
 	std::vector<bool> visited(targets.size(), false);
 
