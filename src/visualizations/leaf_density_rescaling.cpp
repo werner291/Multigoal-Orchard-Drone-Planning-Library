@@ -17,13 +17,8 @@
 using namespace mgodpl;
 
 int main() {
-	const auto &robot = experiments::createProceduralRobotModel();
 
-	robot_model::RobotModel::LinkId flying_base = robot.findLinkByName("flying_base");
-	robot_model::RobotModel::LinkId end_effector = robot.findLinkByName("end_effector");
-	robot_model::RobotModel::LinkId stick = robot.findLinkByName("stick");
-
-	const auto &tree_model = tree_meshes::loadTreeMeshes("appletree");
+	auto tree_model = tree_meshes::loadTreeMeshes("appletree");
 
 	SimpleVtkViewer viewer;
 

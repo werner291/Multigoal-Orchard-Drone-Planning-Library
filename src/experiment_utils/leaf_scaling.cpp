@@ -48,22 +48,6 @@ namespace mgodpl {
 	}
 
 	/**
-	 * @brief Builds an AABB tree from a given mesh.
-	 *
-	 * This function first converts the given mesh into a vector of CGAL Triangles using the createTrianglesFromMesh function.
-	 * Then, it creates an AABB tree from the vector of triangles and builds the tree.
-	 *
-	 * @param mesh The ROS shape_msgs::Mesh to convert into an AABB tree.
-	 * @return An AABB tree representing the given mesh.
-	 */
-	AABB_Tree buildAABBTree(const shape_msgs::msg::Mesh &mesh) {
-		std::vector<Triangle> triangles = createTrianglesFromMesh(mesh);
-		AABB_Tree tree(triangles.begin(), triangles.end());
-		tree.build();
-		return tree;
-	}
-
-	/**
 	 * @brief Finds the leaf vertex that is closest to the trunk and the corresponding closest point on the trunk.
 	 *
 	 * This function iterates over all the leaf vertices in the given component. For each leaf vertex, it queries the AABB tree
@@ -116,8 +100,11 @@ namespace mgodpl {
 	 * @return A vector of math::Vec3d objects representing the root point for each leaf.
 	 */
 	std::vector<math::Vec3d> leaf_root_points(const mgodpl::tree_meshes::TreeMeshes &tree_meshes) {
+
 		// Build an AABB tree from the trunk mesh
-		AABB_Tree tree = buildAABBTree(tree_meshes.trunk_mesh);
+		std::vector<Triangle> triangles = createTrianglesFromMesh(tree_meshes.trunk_mesh);
+		AABB_Tree tree(triangles.begin(), triangles.end());
+		tree.build();
 
 		// Initialize a vector to store the root point for each leaf
 		std::vector<math::Vec3d> leaf_root_vertex(tree_meshes.leaves_mesh.vertices.size(), math::Vec3d(0, 0, 0));
