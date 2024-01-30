@@ -56,32 +56,32 @@ bool is_visible(const SurfacePoint &point, const math::Vec3d &eye_position, cons
 }
 
 /**
- * @brief Computes the visibility of a set of points from a given eye position.
+ * @brief Updates the visibility status of a set of points from a given eye position.
  *
- * This function takes a vector of SurfacePoint objects and a Vec3d object representing the eye position.
- * It computes the visibility of each point in the vector from the eye position. A point is considered visible
+ * This function takes a vector of SurfacePoint objects, a Vec3d object representing the eye position,
+ * and a vector of booleans representing whether each point has ever been seen.
+ * It updates the visibility status of each point in the vector. A point is considered visible
  * if the dot product of the point's normal and the vector from the point to the eye is negative.
  *
  * @param fruit_points 	A vector of SurfacePoint objects. Each SurfacePoint object represents a point in 3D space
  * 						and has a position and a normal.
- * 						
  * @param max_distance 	The maximum distance from the eye position to consider a point visible.
  * @param max_angle     The maximum angle between the normal of a point and the vector from the point to the eye
- * 						
  * @param eye_position 	A Vec3d object representing the position of the eye in 3D space.
- * @return 				A vector of boolean values. Each value corresponds to a point in the input vector. If the value is true,
- * 						the point is visible from the eye position. If the value is false, the point is not visible.
+ * @param ever_seen     A vector of boolean values. Each value corresponds to a point in the input vector. If the value is true,
+ * 						the point has ever been seen from the eye position. If the value is false, the point has never been seen.
  */
-std::vector<bool> compute_visibility(const std::vector<SurfacePoint> &fruit_points,
-									 const double max_distance,
-									 const double max_angle,
-									 const math::Vec3d &eye_position) {
+void update_visibility(const std::vector<SurfacePoint> &fruit_points,
+          const double max_distance,
+          const double max_angle,
+          const math::Vec3d &eye_position,
+          std::vector<bool> &ever_seen) {
 
-	std::vector<bool> visible(fruit_points.size(), true);
-	for (size_t i = 0; i < fruit_points.size(); ++i) {
-		visible[i] = is_visible(fruit_points[i], eye_position, max_distance, max_angle);
-	}
-	return visible;
+ for (size_t i = 0; i < fruit_points.size(); ++i) {
+  if (is_visible(fruit_points[i], eye_position, max_distance, max_angle)) {
+   ever_seen[i] = true;
+  }
+ }
 }
 
 int main(int argc, char **argv) {
@@ -117,8 +117,9 @@ int main(int argc, char **argv) {
 
 	auto eye_sphere = viewer.addSphere(0.02, {0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, 1.0);
 
-
 	viewer.addActor(fruit_points_visualization.getActor());
+
+	std::vector<bool> ever_seen(fruit_points.size(), false);
 
 	viewer.addTimerCallback([&]() {
 		static double t = 0.0;
@@ -130,11 +131,15 @@ int main(int argc, char **argv) {
 		const double MAX_DISTANCE = INFINITY;
 		const double MAX_ANGLE = M_PI / 3.0;
 
-		// For every point, check if the eye is in front of it or behind it:
-		std::vector<bool> visible = compute_visibility(fruit_points, MAX_DISTANCE, MAX_ANGLE, eye_position);
+		update_visibility(fruit_points, MAX_DISTANCE, MAX_ANGLE, eye_position, ever_seen);
+
+		// Print some stats:
+		size_t num_visible = std::count(ever_seen.begin(), ever_seen.end(), true);
+		double percent = round(100.0 * num_visible / ever_seen.size());
+		std::cout << "Seen: " << num_visible << " / " << ever_seen.size() << " (" << percent << "%)" << std::endl;
 
 		std::vector<math::Vec3d> vis_colors;
-		for (const auto &v: visible) {
+		for (const auto &v: ever_seen) {
 			if (v) {
 				vis_colors.emplace_back(0.0, 1.0, 0.0);
 			} else {
@@ -143,7 +148,13 @@ int main(int argc, char **argv) {
 		}
 
 		fruit_points_visualization.setColors(vis_colors);
+
+		if (t > 2.0 * M_PI) {
+			viewer.stop();
+		}
 	});
+
+	viewer.startRecording("fruit_scan_points.ogv");
 
 	viewer.setCameraTransform(fruit_center + math::Vec3d{1.5, 0.0, 1.0}, fruit_center);
 
