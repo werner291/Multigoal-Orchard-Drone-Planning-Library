@@ -29,6 +29,8 @@ public:
 	vtkActor* getActor();
 
 	void updateLine(const std::vector<std::pair<mgodpl::math::Vec3d,mgodpl::math::Vec3d>>& points);
+
+	void setColors(const std::vector<mgodpl::math::Vec3d>& colors);
 };
 
 #endif //MGODPL_VTKLINESEGMENTVIZUALIZATION_H

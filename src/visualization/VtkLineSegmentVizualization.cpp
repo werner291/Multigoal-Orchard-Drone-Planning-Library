@@ -9,6 +9,8 @@
 #include "VtkLineSegmentVizualization.h"
 
 #include <vtkProperty.h>
+#include <vtkUnsignedCharArray.h>
+#include <vtkCellData.h>
 
 VtkLineSegmentsVisualization::VtkLineSegmentsVisualization(float r, float g, float b) {
 	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
@@ -34,6 +36,22 @@ void VtkLineSegmentsVisualization::updateLine(const std::vector<std::pair<mgodpl
 
 	visitOrderVisualizationData->SetPoints(pointsVtk);
 	visitOrderVisualizationData->SetLines(cells);
+
+	visitOrderVisualizationData->Modified();
+
+}
+
+void VtkLineSegmentsVisualization::setColors(const std::vector<mgodpl::math::Vec3d> &colors) {
+
+	vtkNew<vtkUnsignedCharArray> colorsVtk;
+	colorsVtk->SetNumberOfComponents(3);
+	colorsVtk->SetName("Colors");
+
+	for (const auto& color : colors) {
+		colorsVtk->InsertNextTuple3(color.x() * 255, color.y() * 255, color.z() * 255);
+	}
+
+	visitOrderVisualizationData->GetCellData()->SetScalars(colorsVtk);
 
 	visitOrderVisualizationData->Modified();
 
