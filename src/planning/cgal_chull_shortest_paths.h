@@ -16,6 +16,7 @@
 #include <CGAL/Surface_mesh_shortest_path.h>
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/AABB_traits.h>
+#include <shape_msgs/msg/mesh.hpp>
 
 namespace mgodpl::cgal {
 
@@ -60,6 +61,41 @@ namespace mgodpl::cgal {
 		 */
 		void operator()(Surface_mesh_shortest_path::face_descriptor f,
 						Surface_mesh_shortest_path::Barycentric_coordinates location);
+	};
+
+	/**
+	 * @brief Computes the convex hull around the leaves of a tree using CGAL.
+	 *
+	 * This function takes a mesh representing the leaves of a tree and computes the convex hull around them.
+	 * The convex hull is represented as a CGAL Surface_mesh.
+	 *
+	 * @param leaves_mesh The mesh representing the leaves of the tree.
+	 * @return The convex hull around the leaves as a CGAL Surface_mesh.
+	 */
+	mgodpl::cgal::Surface_mesh cgal_convex_hull_around_leaves(const shape_msgs::msg::Mesh &leaves_mesh);
+
+	/**
+	 * @struct CgalMeshData
+	 * @brief A struct that encapsulates the CGAL mesh data of a tree.
+	 *
+	 * This struct contains a convex hull, a shortest path algorithm on the mesh, and an AABB tree.
+	 * These are computed from a given tree model. The constructor takes a tree model
+	 * and computes the convex hull, initializes the shortest path algorithm, and the AABB tree.
+	 */
+	struct CgalMeshData {
+		mgodpl::cgal::Surface_mesh convex_hull; ///< The convex hull around the leaves of the tree.
+		mgodpl::cgal::Surface_mesh_shortest_path mesh_path; ///< The shortest path algorithm on the surface mesh of the convex hull.
+		CGAL::AABB_tree<AABBTraits> tree; ///< The AABB tree built from the surface mesh.
+
+		/**
+		 * @brief Constructor for the CgalMeshData struct.
+		 *
+		 * This constructor takes a tree model and computes the convex hull,
+		 * initializes the shortest path algorithm, and the AABB tree.
+		 *
+		 * @param tree_model The tree model from which to compute the mesh data.
+		 */
+		explicit CgalMeshData(const shape_msgs::msg::Mesh &leaves_mesh);
 	};
 
 }

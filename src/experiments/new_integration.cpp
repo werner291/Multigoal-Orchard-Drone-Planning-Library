@@ -35,9 +35,7 @@ const math::Vec3d FLOOR_COLOR{0.3, 0.6, 0.3};
 ApproachPath plan_initial_approach_path(const robot_model::RobotModel &robot,
 										const RobotState &initial_state,
 										const robot_model::RobotModel::LinkId flying_base,
-										const Surface_mesh &convex_hull,
-										const Surface_mesh_shortest_path &mesh_path,
-										const CGAL::AABB_tree<mgodpl::cgal::AABBTraits> &tree) {
+										const CgalMeshData &mesh_data) {
 
 
 	ApproachPath initial_approach_path;
@@ -47,10 +45,10 @@ ApproachPath plan_initial_approach_path(const robot_model::RobotModel &robot,
 
 	// The convex hull point closest to the initial state.
 	const math::Vec3d &ee_pose = initial_fk.forLink(flying_base).translation;
-	const auto &[initial_face, initial_bary] = mesh_path.locate(Point_3(ee_pose.x(), ee_pose.y(), ee_pose.z()),
-																tree);
-	auto face_normal = CGAL::Polygon_mesh_processing::compute_face_normal(initial_face, convex_hull);
-	auto pt = mesh_path.point(initial_face, initial_bary);
+	const auto &[initial_face, initial_bary] = mesh_data.mesh_path.locate(Point_3(ee_pose.x(), ee_pose.y(), ee_pose.z()),
+																		  mesh_data.tree);
+	auto face_normal = CGAL::Polygon_mesh_processing::compute_face_normal(initial_face, mesh_data.convex_hull);
+	auto pt = mesh_data.mesh_path.point(initial_face, initial_bary);
 
 	// Put the robot state outside the tree in that point:
 	auto robot_state = fromEndEffectorAndVector(robot,
@@ -64,19 +62,17 @@ ApproachPath plan_initial_approach_path(const robot_model::RobotModel &robot,
 }
 
 ApproachPath straight_in_motion(const robot_model::RobotModel &robot,
-								const Surface_mesh &convex_hull,
-								const Surface_mesh_shortest_path &mesh_path,
-								const CGAL::AABB_tree<mgodpl::cgal::AABBTraits> &tree,
+								const CgalMeshData &mesh_data,
 								const math::Vec3d &tgt) {
 
 	// Find the nearest point on the hull.
-	const auto &[face, barycentric] = mesh_path.locate(Point_3(tgt.x(), tgt.y(), tgt.z()), tree);
+	const auto &[face, barycentric] = mesh_data.mesh_path.locate(Point_3(tgt.x(), tgt.y(), tgt.z()), mesh_data.tree);
 
 	// Find the normal vector:
-	auto face_normal = CGAL::Polygon_mesh_processing::compute_face_normal(face, convex_hull);
+	auto face_normal = CGAL::Polygon_mesh_processing::compute_face_normal(face, mesh_data.convex_hull);
 
 	// Find the Cartesian coordinates of the point on the hull.
-	const auto &pt = mesh_path.point(face, barycentric);
+	const auto &pt = mesh_data.mesh_path.point(face, barycentric);
 
 	// Put the robot state outside the tree in that point:
 	auto robot_state = fromEndEffectorAndVector(robot,
@@ -219,17 +215,6 @@ void update_robot_state(const robot_model::RobotModel &robot,
 	}
 }
 
-mgodpl::cgal::Surface_mesh cgal_convex_hull_around_leaves(const tree_meshes::TreeMeshes &tree_model) {
-	Surface_mesh convex_hull;
-	{
-		std::vector<Point_3> cgal_points;
-		for (const auto &point: tree_model.leaves_mesh.vertices) {
-			cgal_points.emplace_back(point.x, point.y, point.z);
-		}
-		CGAL::convex_hull_3(cgal_points.begin(), cgal_points.end(), convex_hull);
-	}
-	return convex_hull;
-}
 
 
 bool check_motion_collides(const robot_model::RobotModel &robot,
@@ -337,8 +322,7 @@ bool check_path_collides(const robot_model::RobotModel &robot,
 std::optional<ApproachPath> uniform_straightout_approach(const mgodpl::math::Vec3d &target,
 													  const mgodpl::robot_model::RobotModel &robot,
 													  const fcl::CollisionObjectd &tree_trunk_object,
-													  const CGAL::AABB_tree<AABBTraits>& tree,
-													  const Surface_mesh_shortest_path &mesh_path,
+													  const CgalMeshData &mesh_data,
 													  random_numbers::RandomNumberGenerator& rng,
 													  size_t max_attempts
 													  ) {
@@ -360,7 +344,7 @@ std::optional<ApproachPath> uniform_straightout_approach(const mgodpl::math::Vec
 	}
 
 	// Then, try the straight-out motion:
-	auto path = straightout(robot, *sample, tree, mesh_path);
+	auto path = straightout(robot, *sample, mesh_data.tree, mesh_data.mesh_path);
 
 	PathPoint collision_point {};
 	if (!check_path_collides(robot, tree_trunk_object, path.path, collision_point)) {
@@ -384,23 +368,18 @@ RobotPath plan_multigoal_path(const robot_model::RobotModel &robot,
 	random_numbers::RandomNumberGenerator rng(42);
 
 	// First, create the convex hull.
-	Surface_mesh convex_hull = cgal_convex_hull_around_leaves(tree_model);
-	Surface_mesh_shortest_path mesh_path(convex_hull);
-	CGAL::AABB_tree<AABBTraits> tree;
-	mesh_path.build_aabb_tree(tree);
+	CgalMeshData mesh_data(tree_model.leaves_mesh);
 
 	ApproachPath initial_approach_path = plan_initial_approach_path(robot,
 																	initial_state,
 																	flying_base,
-																	convex_hull,
-																	mesh_path,
-																	tree);
+																	mesh_data);
 
 	std::vector<ApproachPath> approach_paths;
 
 	// For every fruit position...
 	for (const auto &tgt: computeFruitPositions(tree_model)) {
-		auto straightout = uniform_straightout_approach(tgt, robot, tree_trunk_object, tree, mesh_path, rng, 1000);
+		auto straightout = uniform_straightout_approach(tgt, robot, tree_trunk_object, mesh_data, rng, 1000);
 
 		if (straightout) {
 			approach_paths.push_back(*straightout);
@@ -410,18 +389,18 @@ RobotPath plan_multigoal_path(const robot_model::RobotModel &robot,
 	// And one for the initial state:
 	const std::vector<double>& initial_state_distances = shell_distances(initial_approach_path.shell_point,
 																		 approach_paths,
-																		 convex_hull);
+																		 mesh_data.convex_hull);
 
 	// Now, compute the distance matrix.
 	std::vector<std::vector<double>> target_to_target_distances;
 	target_to_target_distances.reserve(approach_paths.size());
 	for (const ApproachPath &path1: approach_paths) {
-		target_to_target_distances.emplace_back(shell_distances(path1.shell_point, approach_paths, convex_hull));
+		target_to_target_distances.emplace_back(shell_distances(path1.shell_point, approach_paths, mesh_data.convex_hull));
 	}
 
 	const std::vector<size_t>& order = visitation_order_greedy(target_to_target_distances,initial_state_distances);
 
-	const RobotPath& final_path = assemble_final_path(robot, convex_hull, approach_paths, initial_approach_path, order);
+	const RobotPath& final_path = assemble_final_path(robot, mesh_data.convex_hull, approach_paths, initial_approach_path, order);
 	return final_path;
 }
 
@@ -469,6 +448,7 @@ std::vector<bool> visited_by_path(const std::vector<math::Vec3d> targets, const 
 
 }
 
+
 // TODO: Idea: Can plan to 5 nearest and optimize *that*!
 
 int main() {
@@ -487,17 +467,14 @@ int main() {
 	const auto &tree_trunk_bvh = fcl_utils::meshToFclBVH(tree_model.trunk_mesh);
 	fcl::CollisionObjectd tree_trunk_object(tree_trunk_bvh);
 
-	Surface_mesh convex_hull = cgal_convex_hull_around_leaves(tree_model);
-	Surface_mesh_shortest_path mesh_path(convex_hull);
-	CGAL::AABB_tree<AABBTraits> tree;
-	mesh_path.build_aabb_tree(tree);
+	CgalMeshData mesh_data(tree_model.leaves_mesh);
 
 	// First, get some stats on how many straight-in motions we can do.
 	const std::vector<math::Vec3d> &targets = computeFruitPositions(tree_model);
 	{
 		size_t successes = 0;
 		for (const auto &tgt: targets) {
-			auto path = straight_in_motion(robot, convex_hull, mesh_path, tree, tgt);
+			auto path = straight_in_motion(robot, mesh_data, tgt);
 
 			PathPoint collision_point {};
 			if (!check_path_collides(robot, tree_trunk_object, path.path, collision_point)) {
@@ -539,8 +516,7 @@ int main() {
 			auto sample = uniform_straightout_approach(tgt,
 														 robot,
 														 tree_trunk_object,
-														 tree,
-													   	mesh_path,
+														 mesh_data,
 														 rng,
 														 1000);
 
@@ -585,7 +561,7 @@ int main() {
 		}
 
 
-		VtkTriangleSetVisualization chull_viz = convex_hull_viz(convex_hull);
+		VtkTriangleSetVisualization chull_viz = convex_hull_viz(mesh_data.convex_hull);
 		viewer.addActor(chull_viz.getActor());
 
 		// Visualize the initial state:
@@ -597,6 +573,13 @@ int main() {
 
 			size_t segment_i = std::floor(segment_t);
 			double segment_t_frac = segment_t - (double) segment_i;
+
+			if (segment_i + 1 >= final_path.states.size()) {
+				viewer.stop();
+				return;
+			} else {
+				std::cout << "Segment " << segment_i << " / " << final_path.states.size() << std::endl;
+			}
 
 			const auto &state1 = final_path.states[segment_i];
 			const auto &state2 = final_path.states[segment_i + 1];
@@ -632,6 +615,9 @@ int main() {
 				segment_t = 0.0;
 			}
 		});
+
+		viewer.setCameraTransform({8, 0, 2}, {0, 0, 2});
+		viewer.startRecording("probing.ogv");
 
 		viewer.start();
 	}
