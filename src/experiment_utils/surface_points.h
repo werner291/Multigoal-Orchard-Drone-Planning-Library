@@ -14,9 +14,41 @@
 #include "../math/Vec3.h"
 
 namespace mgodpl {
+
+	/**
+	 * @brief A struct representing a point on a surface.
+	 *
+	 * This struct encapsulates the position and normal vector of a point on a surface.
+	 */
 	struct SurfacePoint {
-		math::Vec3d position;
-		math::Vec3d normal;
+	    math::Vec3d position; ///< The position of the point on the surface.
+	    math::Vec3d normal; ///< The normal vector at the point on the surface.
+	};
+
+	/**
+	 * @brief A struct encapsulating scannable points parameters.
+	 *
+	 * This struct encapsulates the maximum distance, minimum distance, and maximum angle for scanning checks,
+	 * as well as a vector of SurfacePoint objects for which scanning is to be performed.
+	 */
+	struct ScannablePoints {
+	    double max_distance; ///< The maximum distance for scanning checks.
+	    double min_distance; ///< The minimum distance for scanning checks.
+	    double max_angle; ///< The maximum angle for scanning checks.
+	    std::vector<SurfacePoint> surface_points; ///< The vector of SurfacePoint objects for which scanning is to be performed.
+
+	    /**
+	     * @brief Constructor for the ScannablePoints struct.
+	     *
+	     * This constructor initializes the max_distance, min_distance, max_angle, and surface_points members.
+	     *
+	     * @param max_distance The maximum distance for scanning checks.
+	     * @param min_distance The minimum distance for scanning checks.
+	     * @param max_angle The maximum angle for scanning checks.
+	     * @param surface_points The vector of SurfacePoint objects for which scanning is to be performed.
+	     */
+	    ScannablePoints(double max_distance, double min_distance, double max_angle, const std::vector<SurfacePoint>& surface_points)
+	        : max_distance(max_distance), min_distance(min_distance), max_angle(max_angle), surface_points(surface_points) {}
 	};
 
 	/**
