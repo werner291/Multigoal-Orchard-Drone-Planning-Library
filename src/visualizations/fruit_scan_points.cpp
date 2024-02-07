@@ -15,23 +15,25 @@ using namespace mgodpl;
 /**
  * @brief Checks if a point is visible from a given position.
  *
- * This function takes a SurfacePoint object and a Vec3d object representing the eye position.
+ * This function takes a ScannablePoints object, a point index, and a Vec3d object representing the eye position.
  * It computes the visibility of the point from the eye position based on the distance and angle.
  * A point is considered visible if it is within the maximum distance and the angle between the point's normal
  * and the vector from the point to the eye is less than the maximum angle.
  *
  * Note: This function does not account for occlusions. It only checks the visibility based on distance and angle.
  *
- * @param point         A SurfacePoint object representing a point in 3D space with a position and a normal.
- * @param eye_position  A Vec3d object representing the position of the eye in 3D space.
- * @param max_distance  The maximum distance from the eye position to consider a point visible.
- * @param max_angle     The maximum angle between the normal of a point and the vector from the point to the eye
- *                      to consider a point visible.
- * @return              A boolean value. If true, the point is visible from the eye position. If false, the point is not visible.
+ * @param scannable_points A ScannablePoints object. Each SurfacePoint object in ScannablePoints represents a point in 3D space
+ *                         and has a position and a normal. The ScannablePoints object also contains the maximum distance and
+ *                         maximum angle to consider a point visible.
+ * @param point_index      The index of the point in the ScannablePoints object to check for visibility.
+ * @param eye_position     A Vec3d object representing the position of the eye in 3D space.
+ * @return                 A boolean value. If true, the point is visible from the eye position. If false, the point is not visible.
  */
-bool is_visible(const SurfacePoint& point, const math::Vec3d& eye_position, const double max_distance,
-                const double max_angle)
+bool is_visible(const ScannablePoints& scannable_points, size_t point_index, const math::Vec3d& eye_position)
 {
+    // Get the point from the ScannablePoints object
+    const SurfacePoint& point = scannable_points.surface_points[point_index];
+
     // Calculate the vector from the point to the eye position
     auto delta = eye_position - point.position;
 
@@ -39,7 +41,7 @@ bool is_visible(const SurfacePoint& point, const math::Vec3d& eye_position, cons
     double distance = delta.norm();
 
     // If the distance is greater than the maximum distance, the point is not visible
-    if (distance > max_distance)
+    if (distance > scannable_points.max_distance)
     {
         return false;
     }
@@ -48,7 +50,7 @@ bool is_visible(const SurfacePoint& point, const math::Vec3d& eye_position, cons
     double angle = std::acos(point.normal.dot(delta) / distance);
 
     // If the angle is greater than the maximum angle, the point is not visible
-    if (angle > max_angle)
+    if (angle > scannable_points.max_angle)
     {
         return false;
     }
@@ -60,28 +62,25 @@ bool is_visible(const SurfacePoint& point, const math::Vec3d& eye_position, cons
 /**
  * @brief Updates the visibility status of a set of points from a given eye position.
  *
- * This function takes a vector of SurfacePoint objects, a Vec3d object representing the eye position,
+ * This function takes a ScannablePoints object, a Vec3d object representing the eye position,
  * and a vector of booleans representing whether each point has ever been seen.
  * It updates the visibility status of each point in the vector. A point is considered visible
  * if the dot product of the point's normal and the vector from the point to the eye is negative.
  *
- * @param fruit_points 	A vector of SurfacePoint objects. Each SurfacePoint object represents a point in 3D space
- * 						and has a position and a normal.
- * @param max_distance 	The maximum distance from the eye position to consider a point visible.
- * @param max_angle     The maximum angle between the normal of a point and the vector from the point to the eye
- * @param eye_position 	A Vec3d object representing the position of the eye in 3D space.
- * @param ever_seen     A vector of boolean values. Each value corresponds to a point in the input vector. If the value is true,
- * 						the point has ever been seen from the eye position. If the value is false, the point has never been seen.
+ * @param scannable_points A ScannablePoints object. Each SurfacePoint object in ScannablePoints represents a point in 3D space
+ *                         and has a position and a normal. The ScannablePoints object also contains the maximum distance and
+ *                         maximum angle to consider a point visible.
+ * @param eye_position     A Vec3d object representing the position of the eye in 3D space.
+ * @param ever_seen        A vector of boolean values. Each value corresponds to a point in the input vector. If the value is true,
+ *                         the point has ever been seen from the eye position. If the value is false, the point has never been seen.
  */
-void update_visibility(const std::vector<SurfacePoint>& fruit_points,
-                       const double max_distance,
-                       const double max_angle,
+void update_visibility(const ScannablePoints& scannable_points,
                        const math::Vec3d& eye_position,
                        std::vector<bool>& ever_seen)
 {
-    for (size_t i = 0; i < fruit_points.size(); ++i)
+    for (size_t i = 0; i < scannable_points.surface_points.size(); ++i)
     {
-        if (is_visible(fruit_points[i], eye_position, max_distance, max_angle))
+        if (is_visible(scannable_points, i, eye_position))
         {
             ever_seen[i] = true;
         }
@@ -99,16 +98,20 @@ int main(int argc, char** argv)
 
     random_numbers::RandomNumberGenerator rng;
 
-    std::vector<SurfacePoint> fruit_points = sample_points_on_mesh(rng, fruit_mesh, 200);
+    const size_t NUM_POINTS = 200;
+    const double MAX_DISTANCE = INFINITY;
+    const double MIN_DISTANCE = 0;
+    const double MAX_ANGLE = M_PI / 3.0;
 
+    ScannablePoints scannable_points = createScannablePoints(rng, fruit_mesh, NUM_POINTS, MAX_DISTANCE, MIN_DISTANCE, MAX_ANGLE);
     VtkLineSegmentsVisualization fruit_points_visualization(1, 1, 1);
 
     std::vector<std::pair<math::Vec3d, math::Vec3d>> fruit_lines;
 
-    fruit_lines.reserve(fruit_points.size());
-    for (const auto& fruit_point : fruit_points)
+    fruit_lines.reserve(scannable_points.surface_points.size());
+    for (const auto& [position, normal] : scannable_points.surface_points)
     {
-        fruit_lines.emplace_back(fruit_point.position, fruit_point.position + fruit_point.normal * 0.05);
+        fruit_lines.emplace_back(position, position + normal * 0.05);
     }
     fruit_points_visualization.updateLine(fruit_lines);
 
@@ -124,7 +127,7 @@ int main(int argc, char** argv)
 
     viewer.addActor(fruit_points_visualization.getActor());
 
-    std::vector<bool> ever_seen(fruit_points.size(), false);
+    std::vector<bool> ever_seen(scannable_points.surface_points.size(), false);
 
     viewer.addTimerCallback([&]()
     {
@@ -137,7 +140,7 @@ int main(int argc, char** argv)
         const double MAX_DISTANCE = INFINITY;
         const double MAX_ANGLE = M_PI / 3.0;
 
-        update_visibility(fruit_points, MAX_DISTANCE, MAX_ANGLE, eye_position, ever_seen);
+        update_visibility(scannable_points, eye_position, ever_seen);
 
         // Print some stats:
         size_t num_visible = std::count(ever_seen.begin(), ever_seen.end(), true);
@@ -165,7 +168,7 @@ int main(int argc, char** argv)
         }
     });
 
-    viewer.startRecording("fruit_scan_points.ogv");
+    // viewer.startRecording("fruit_scan_points.ogv");
 
     viewer.setCameraTransform(fruit_center + math::Vec3d{1.5, 0.0, 1.0}, fruit_center);
 
