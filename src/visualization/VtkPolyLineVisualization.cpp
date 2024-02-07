@@ -10,16 +10,15 @@
 #include <vtkProperty.h>
 
 VtkPolyLineVisualization::VtkPolyLineVisualization(float r, float g, float b) {
-	visitOrderVisualizationMapper->SetInputData(visitOrderVisualizationData);
-	visitOrderVisualizationActor->SetMapper(visitOrderVisualizationMapper);
-	visitOrderVisualizationActor->GetProperty()->SetColor(r,g,b);
-	visitOrderVisualizationActor->GetProperty()->SetLineWidth(5);
-	visitOrderVisualizationActor->GetProperty()->SetPointSize(8);
-
+	mapper->SetInputData(polyData);
+	actor->SetMapper(mapper);
+	actor->GetProperty()->SetColor(r,g,b);
+	actor->GetProperty()->SetLineWidth(5);
+	actor->GetProperty()->SetPointSize(8);
 }
 
 vtkActor *VtkPolyLineVisualization::getActor() {
-	return visitOrderVisualizationActor;
+	return actor;
 }
 
 void VtkPolyLineVisualization::updateLine(const std::vector<mgodpl::math::Vec3d> &points) {
@@ -45,9 +44,9 @@ void VtkPolyLineVisualization::updateLine(const std::vector<mgodpl::math::Vec3d>
 		}
 	}
 
-	visitOrderVisualizationData->SetPoints(pointsVtk);
-	visitOrderVisualizationData->SetLines(cells);
-	visitOrderVisualizationData->SetVerts(pointsCells);
+	polyData->SetPoints(pointsVtk);
+	polyData->SetLines(cells);
+	polyData->SetVerts(pointsCells);
 
-	visitOrderVisualizationData->Modified();
+	polyData->Modified();
 }
