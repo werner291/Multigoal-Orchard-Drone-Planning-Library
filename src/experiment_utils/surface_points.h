@@ -73,6 +73,28 @@ namespace mgodpl {
 	std::vector<SurfacePoint> sample_points_on_mesh(random_numbers::RandomNumberGenerator &rng,
 													const shape_msgs::msg::Mesh &mesh,
 													size_t num_points);
+
+    /**
+	 * @brief Creates a ScannablePoints object.
+	 *
+	 * This function encapsulates the `sample_points_on_mesh` function and returns a `ScannablePoints` object.
+	 * The `ScannablePoints` object contains the maximum distance, minimum distance, and maximum angle for scanning checks,
+	 * as well as a vector of SurfacePoint objects for which scanning is to be performed.
+	 *
+	 * @param rng A reference to a random number generator.
+	 * @param mesh A reference to the mesh from which points are to be sampled.
+	 * @param num_points The number of points to be sampled from the mesh.
+	 * @param max_distance The maximum distance for scanning checks.
+	 * @param min_distance The minimum distance for scanning checks.
+	 * @param max_angle The maximum angle for scanning checks.
+	 * @return A ScannablePoints object.
+	 */
+	ScannablePoints createScannablePoints(random_numbers::RandomNumberGenerator &rng,
+	                                      const shape_msgs::msg::Mesh &mesh,
+	                                      size_t num_points,
+	                                      double max_distance,
+	                                      double min_distance,
+	                                      double max_angle);
 }
 
 #endif //MGODPL_SURFACE_POINTS_H

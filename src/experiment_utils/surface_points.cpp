@@ -87,4 +87,9 @@ namespace mgodpl {
 		return points;
 	}
 
+	ScannablePoints createScannablePoints(random_numbers::RandomNumberGenerator& rng, const shape_msgs::msg::Mesh& mesh,
+		size_t num_points, double max_distance, double min_distance, double max_angle)
+	{
+		return ScannablePoints(max_distance, min_distance, max_angle, sample_points_on_mesh(rng, mesh, num_points));
+	}
 }
