@@ -353,6 +353,9 @@ if (ENABLE_VISUALIZATION)
     target_link_libraries(fruit_scan_points math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(fruit_scan_points shape_msgs moveit_core)
 
+    add_executable(sphere_scannable_points_orbit src/experiments/sphere_scannable_points_orbit.cpp)
+    target_link_libraries(sphere_scannable_points_orbit math_utils experiment_utils planning)
+    ament_target_dependencies(sphere_scannable_points_orbit shape_msgs)
 endif ()
 
 include(GoogleTest)
