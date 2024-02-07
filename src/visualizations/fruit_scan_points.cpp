@@ -11,22 +11,9 @@
 #include "../experiment_utils/mesh_utils.h"
 #include "../experiment_utils/scan_paths.h"
 #include "../visualization/VtkPolyLineVisualization.h"
+#include "../visualization/visualization_function_macros.h"
 
 using namespace mgodpl;
-
-// A top-level function that can be called to visualize something.
-using VisFn = std::function<void()>;
-
-// A static map that maps a name to a visualization function.
-static std::map<std::string, VisFn> visualizations;
-
-#define REGISTER_VISUALIZATION(name) \
-    void name(); \
-    static bool is_##name##_registered = [](){ \
-        visualizations[#name] = name; \
-        return true; \
-    }(); \
-    void name()
 
 REGISTER_VISUALIZATION(scan_single_orbit)
 {
@@ -56,8 +43,6 @@ REGISTER_VISUALIZATION(scan_single_orbit)
         fruit_lines.emplace_back(position, position + normal * 0.05);
     }
     fruit_points_visualization.updateLine(fruit_lines);
-
-    SimpleVtkViewer viewer;
 
     viewer.addMesh(tree_model.fruit_meshes[0], {1.0, 0.0, 0.0}, 1.0);
     auto eye_sphere = viewer.addSphere(0.02, {0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, 1.0);
@@ -124,30 +109,72 @@ REGISTER_VISUALIZATION(scan_single_orbit)
     viewer.start();
 }
 
-int main(int argc, char** argv)
+REGISTER_VISUALIZATION(visualize_several_orbits)
 {
-    // Print a list of visualizations with a number:
-    std::cout << "Available visualizations:" << std::endl;
-    int i = 0;
-    std::vector<std::string> visualization_names;
-    for (const auto& [name, _] : visualizations)
-    {
-        std::cout << i << ": " << name << std::endl;
-        visualization_names.push_back(name);
-        i++;
+    auto tree_model = tree_meshes::loadTreeMeshes("appletree");
+
+    // Grab the fruit mesh
+    shape_msgs::msg::Mesh fruit_mesh = tree_model.fruit_meshes[0];
+
+    math::Vec3d fruit_center = mesh_aabb(fruit_mesh).center();
+
+    random_numbers::RandomNumberGenerator rng;
+
+    const size_t NUM_POINTS = 200;
+    const double MAX_DISTANCE = INFINITY;
+    const double MIN_DISTANCE = 0;
+    const double MAX_ANGLE = M_PI / 3.0;
+
+    ScannablePoints scannable_points = createScannablePoints(rng, fruit_mesh, NUM_POINTS, MAX_DISTANCE, MIN_DISTANCE,
+                                                             MAX_ANGLE);
+    VtkLineSegmentsVisualization fruit_points_visualization(1, 1, 1);
+
+    viewer.addMesh(tree_model.fruit_meshes[0], {1.0, 0.0, 0.0}, 1.0);
+
+    viewer.addActor(fruit_points_visualization.getActor());
+
+    const double EYE_ORBIT_RADIUS = 0.5;
+
+    // Create several orbit functions
+    std::vector<ParametricPath> orbits;
+    for (int i = 0; i < 5; ++i) {
+        orbits.push_back(fixed_radius_equatorial_orbit(fruit_center, EYE_ORBIT_RADIUS + i * 0.1));
     }
 
-    // Wait for a numbered input
-    int choice;
-    std::cin >> choice;
+    // Declare a vector to store the eye positions for each orbit
+    std::vector<std::vector<mgodpl::math::Vec3d>> eye_positions(orbits.size());
 
-    // Make sure that the choice is valid
-    if (choice < 0 || choice >= visualization_names.size())
-    {
-        std::cerr << "Invalid choice" << std::endl;
-        return 1;
+    // Create several instances of VtkPolyLineVisualization
+    std::vector<VtkPolyLineVisualization> eye_positions_visualizations;
+    for (int i = 0; i < orbits.size(); ++i) {
+        eye_positions_visualizations.emplace_back(1, 0, 0); // Red color
+        viewer.addActor(eye_positions_visualizations.back().getActor());
     }
 
-    // Run that visualization
-    visualizations[visualization_names[choice]]();
+    viewer.addTimerCallback([&]()
+    {
+        static double t = 0.0;
+        t += 0.01;
+
+        for (int i = 0; i < orbits.size(); ++i) {
+            math::Vec3d eye_position = orbits[i](t); // Use the orbit function to set the eye_position
+
+            // Update the vector with the new eye position
+            eye_positions[i].push_back(eye_position);
+
+            // Update the polyline with the new set of eye positions
+            eye_positions_visualizations[i].updateLine(eye_positions[i]);
+        }
+
+        if (t > 1.0)
+        {
+            viewer.stop();
+        }
+    });
+
+    // viewer.startRecording("fruit_scan_points.ogv");
+
+    viewer.setCameraTransform(fruit_center + math::Vec3d{1.5, 0.0, 1.0}, fruit_center);
+
+    viewer.start();
 }
