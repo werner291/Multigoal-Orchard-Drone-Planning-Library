@@ -29,6 +29,66 @@ ParametricPath fixed_radius_equatorial_orbit(const math::Vec3d& center, double r
     };
 }
 
+/**
+ * @brief A struct to hold the result of a path evaluation.
+ *
+ * This struct encapsulates the number of points seen and the total distance traveled
+ * during the evaluation of a parametric path.
+ */
+struct PathEvaluationResult {
+    /**
+     * @brief The number of points seen during the path evaluation.
+     */
+    size_t num_points_seen;
+
+    /**
+     * @brief The total distance traveled during the path evaluation.
+     */
+    double total_distance_traveled;
+};
+
+/**
+ * @brief Evaluates a given path.
+ *
+ * This function takes a ParametricPath and evaluates it by calculating the number of points seen
+ * and the total distance traveled. The function also updates the visibility status of each point
+ * in the SeenPoints object.
+ *
+ * @param path The ParametricPath to evaluate.
+ * @param scannable_points The ScannablePoints object containing the points to check for visibility.
+ * @param ever_seen The SeenPoints object to update with the visibility status of each point.
+ * @param num_segments The number of segments in the path.
+ * @return A PathEvaluationResult struct containing the number of points seen and the total distance traveled.
+ */
+PathEvaluationResult evaluatePath(const ParametricPath& path, const ScannablePoints& scannable_points, SeenPoints& ever_seen, int num_segments) {
+    // Variable to keep track of the total distance traversed
+    double total_distance = 0.0;
+    // Store the previous eye position
+    math::Vec3d previous_eye_position = path(0.0);
+
+    // Loop over each segment
+    for (int i = 0; i <= num_segments; ++i) {
+        // Calculate t for the current segment
+        double t = static_cast<double>(i) / num_segments;
+        // Calculate the new eye position using the path function
+        math::Vec3d eye_position = path(t);
+
+        // Calculate the distance traversed
+        total_distance += (eye_position - previous_eye_position).norm();
+        // Update the previous eye position
+        previous_eye_position = eye_position;
+
+        // Update the visibility of the points
+        update_visibility(scannable_points, eye_position, ever_seen);
+    }
+
+    // Calculate the number of points seen
+    size_t num_seen = ever_seen.count_seen();
+
+    // Return the number of points seen and the total distance traversed
+    return {num_seen, total_distance};
+}
+
 int main(int argc, char** argv)
 {
     // Load the tree meshes
@@ -61,37 +121,15 @@ int main(int argc, char** argv)
     // Initialize all points as unseen
     SeenPoints ever_seen = SeenPoints::create_all_unseen(scannable_points);
 
-    // Variable to keep track of the total distance traversed
-    double total_distance = 0.0;
-    // Store the previous eye position
-    math::Vec3d previous_eye_position = orbit(0.0);
-
     // Number of segments in the orbit
     const int NUM_SEGMENTS = 100;
 
-    // Loop over each segment
-    for (int i = 0; i <= NUM_SEGMENTS; ++i) {
-        // Calculate t for the current segment
-        double t = static_cast<double>(i) / NUM_SEGMENTS;
-        // Calculate the new eye position using the orbit function
-        math::Vec3d eye_position = orbit(t);
+    // Evaluate the path
+    PathEvaluationResult result = evaluatePath(orbit, scannable_points, ever_seen, NUM_SEGMENTS);
 
-        // Calculate the distance traversed
-        total_distance += (eye_position - previous_eye_position).norm();
-        // Update the previous eye position
-        previous_eye_position = eye_position;
-
-        // Update the visibility of the points
-        update_visibility(scannable_points, eye_position, ever_seen);
-
-        // Print some stats:
-        const size_t num_seen = ever_seen.count_seen();
-        const double percent = round(100.0 * static_cast<double>(num_seen) / static_cast<double>(ever_seen.ever_seen.size()));
-        std::cout << "Seen: " << num_seen << " / " << ever_seen.ever_seen.size() << " (" << percent << "%)" << std::endl;
-    }
-
-    // Print the total distance traversed
-    std::cout << "Total distance traversed: " << total_distance << std::endl;
+    // Print the results
+    std::cout << "Number of points seen: " << result.num_points_seen << std::endl;
+    std::cout << "Total distance traveled: " << result.total_distance_traveled << std::endl;
 
     return 0;
 }
