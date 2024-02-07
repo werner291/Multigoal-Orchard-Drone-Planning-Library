@@ -92,4 +92,46 @@ namespace mgodpl {
 	{
 		return ScannablePoints(max_distance, min_distance, max_angle, sample_points_on_mesh(rng, mesh, num_points));
 	}
+
+	bool is_visible(const ScannablePoints& scannable_points, size_t point_index, const math::Vec3d& eye_position)
+	{
+		// Get the point from the ScannablePoints object
+		const SurfacePoint& point = scannable_points.surface_points[point_index];
+
+		// Calculate the vector from the point to the eye position
+		auto delta = eye_position - point.position;
+
+		// Calculate the distance from the point to the eye position
+		double distance = delta.norm();
+
+		// If the distance is greater than the maximum distance, the point is not visible
+		if (distance > scannable_points.max_distance)
+		{
+			return false;
+		}
+
+		// Calculate the angle between the point's normal and the vector from the point to the eye
+		double angle = std::acos(point.normal.dot(delta) / distance);
+
+		// If the angle is greater than the maximum angle, the point is not visible
+		if (angle > scannable_points.max_angle)
+		{
+			return false;
+		}
+
+		// If the point passed both the distance and angle checks, it is visible
+		return true;
+	}
+
+	void update_visibility(const ScannablePoints& scannable_points, const math::Vec3d& eye_position,
+		std::vector<bool>& ever_seen)
+	{
+		for (size_t i = 0; i < scannable_points.surface_points.size(); ++i)
+		{
+			if (is_visible(scannable_points, i, eye_position))
+			{
+				ever_seen[i] = true;
+			}
+		}
+	}
 }
