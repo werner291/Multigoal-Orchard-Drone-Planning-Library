@@ -2,11 +2,11 @@
 //
 // All rights reserved.
 
+#include <map>
 #include <random_numbers/random_numbers.h>
 #include "../visualization/SimpleVtkViewer.h"
 #include "../visualization/VtkLineSegmentVizualization.h"
 #include "../experiment_utils/TreeMeshes.h"
-#include "../math/Triangle.h"
 #include "../experiment_utils/surface_points.h"
 #include "../experiment_utils/mesh_utils.h"
 #include "../experiment_utils/scan_paths.h"
@@ -14,7 +14,21 @@
 
 using namespace mgodpl;
 
-int main(int argc, char** argv)
+// A top-level function that can be called to visualize something.
+using VisFn = std::function<void()>;
+
+// A static map that maps a name to a visualization function.
+static std::map<std::string, VisFn> visualizations;
+
+#define REGISTER_VISUALIZATION(name) \
+    void name(); \
+    static bool is_##name##_registered = [](){ \
+        visualizations[#name] = name; \
+        return true; \
+    }(); \
+    void name()
+
+REGISTER_VISUALIZATION(scan_single_orbit)
 {
     auto tree_model = tree_meshes::loadTreeMeshes("appletree");
 
@@ -30,7 +44,8 @@ int main(int argc, char** argv)
     const double MIN_DISTANCE = 0;
     const double MAX_ANGLE = M_PI / 3.0;
 
-    ScannablePoints scannable_points = createScannablePoints(rng, fruit_mesh, NUM_POINTS, MAX_DISTANCE, MIN_DISTANCE, MAX_ANGLE);
+    ScannablePoints scannable_points = createScannablePoints(rng, fruit_mesh, NUM_POINTS, MAX_DISTANCE, MIN_DISTANCE,
+                                                             MAX_ANGLE);
     VtkLineSegmentsVisualization fruit_points_visualization(1, 1, 1);
 
     std::vector<std::pair<math::Vec3d, math::Vec3d>> fruit_lines;
@@ -45,17 +60,14 @@ int main(int argc, char** argv)
     SimpleVtkViewer viewer;
 
     viewer.addMesh(tree_model.fruit_meshes[0], {1.0, 0.0, 0.0}, 1.0);
-
-    const double EYE_ORBIT_RADIUS = 0.5;
-
-    math::Vec3d eye_position = fruit_center + math::Vec3d{1.0, 0.0, 0.0} * EYE_ORBIT_RADIUS;
-
     auto eye_sphere = viewer.addSphere(0.02, {0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, 1.0);
 
     viewer.addActor(fruit_points_visualization.getActor());
 
     // Initialize all points as unseen
     SeenPoints ever_seen = SeenPoints::create_all_unseen(scannable_points);
+
+    const double EYE_ORBIT_RADIUS = 0.5;
 
     // Create the orbit function
     ParametricPath orbit = fixed_radius_equatorial_orbit(fruit_center, EYE_ORBIT_RADIUS);
@@ -66,10 +78,11 @@ int main(int argc, char** argv)
     // Create an instance of VtkPolyLineVisualization
     VtkPolyLineVisualization eye_positions_visualization(1, 0, 0); // Red color
 
-    viewer.addTimerCallback([&](){
+    viewer.addTimerCallback([&]()
+    {
         static double t = 0.0;
         t += 0.01;
-        eye_position = orbit(t); // Use the orbit function to set the eye_position
+        math::Vec3d eye_position = orbit(t); // Use the orbit function to set the eye_position
 
         // Update the vector with the new eye position
         eye_positions.push_back(eye_position);
@@ -109,4 +122,32 @@ int main(int argc, char** argv)
     viewer.setCameraTransform(fruit_center + math::Vec3d{1.5, 0.0, 1.0}, fruit_center);
 
     viewer.start();
+}
+
+int main(int argc, char** argv)
+{
+    // Print a list of visualizations with a number:
+    std::cout << "Available visualizations:" << std::endl;
+    int i = 0;
+    std::vector<std::string> visualization_names;
+    for (const auto& [name, _] : visualizations)
+    {
+        std::cout << i << ": " << name << std::endl;
+        visualization_names.push_back(name);
+        i++;
+    }
+
+    // Wait for a numbered input
+    int choice;
+    std::cin >> choice;
+
+    // Make sure that the choice is valid
+    if (choice < 0 || choice >= visualization_names.size())
+    {
+        std::cerr << "Invalid choice" << std::endl;
+        return 1;
+    }
+
+    // Run that visualization
+    visualizations[visualization_names[choice]]();
 }
