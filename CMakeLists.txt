@@ -267,6 +267,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/leaf_scaling.h
             src/experiment_utils/surface_points.cpp
             src/experiment_utils/surface_points.h
+            src/experiment_utils/scan_paths.cpp
+            src/experiment_utils/scan_paths.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
