@@ -131,11 +131,11 @@ REGISTER_VISUALIZATION(visualize_several_orbits)
 
     viewer.addActor(fruit_points_visualization.getActor());
 
-    const double EYE_ORBIT_RADIUS = 0.5;
+    const double EYE_ORBIT_RADIUS = 0.1;
 
     // Create several orbit functions
     std::vector<ParametricPath> orbits;
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 20; ++i) {
         orbits.push_back(fixed_radius_equatorial_orbit(fruit_center, EYE_ORBIT_RADIUS + i * 0.1));
     }
 
