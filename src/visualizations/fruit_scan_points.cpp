@@ -9,7 +9,8 @@
 #include "../math/Triangle.h"
 #include "../experiment_utils/surface_points.h"
 #include "../experiment_utils/mesh_utils.h"
-#include "../experiment_utils/scan_paths.h" // Include the scan_paths.h header file
+#include "../experiment_utils/scan_paths.h"
+#include "../visualization/VtkPolyLineVisualization.h"
 
 using namespace mgodpl;
 
@@ -59,10 +60,22 @@ int main(int argc, char** argv)
     // Create the orbit function
     ParametricPath orbit = fixed_radius_equatorial_orbit(fruit_center, EYE_ORBIT_RADIUS);
 
+    // Declare a vector to store the eye positions
+    std::vector<mgodpl::math::Vec3d> eye_positions;
+
+    // Create an instance of VtkPolyLineVisualization
+    VtkPolyLineVisualization eye_positions_visualization(1, 0, 0); // Red color
+
     viewer.addTimerCallback([&](){
         static double t = 0.0;
         t += 0.01;
         eye_position = orbit(t); // Use the orbit function to set the eye_position
+
+        // Update the vector with the new eye position
+        eye_positions.push_back(eye_position);
+
+        // Update the polyline with the new set of eye positions
+        eye_positions_visualization.updateLine(eye_positions);
 
         eye_sphere->SetPosition(eye_position.x(), eye_position.y(), eye_position.z());
         update_visibility(scannable_points, eye_position, ever_seen);
@@ -87,6 +100,9 @@ int main(int argc, char** argv)
             viewer.stop();
         }
     });
+
+    // Add the polyline visualization to the viewer
+    viewer.addActor(eye_positions_visualization.getActor());
 
     // viewer.startRecording("fruit_scan_points.ogv");
 
