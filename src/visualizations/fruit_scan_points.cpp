@@ -53,7 +53,7 @@ int main(int argc, char** argv)
 
     viewer.addActor(fruit_points_visualization.getActor());
 
-    std::vector<bool> ever_seen(scannable_points.surface_points.size(), false);
+    SeenPoints ever_seen = SeenPoints::create_all_unseen(scannable_points);
 
     viewer.addTimerCallback([&]()
     {
@@ -63,18 +63,15 @@ int main(int argc, char** argv)
 
         eye_sphere->SetPosition(eye_position.x(), eye_position.y(), eye_position.z());
 
-        const double MAX_DISTANCE = INFINITY;
-        const double MAX_ANGLE = M_PI / 3.0;
-
         update_visibility(scannable_points, eye_position, ever_seen);
 
         // Print some stats:
-        size_t num_visible = std::count(ever_seen.begin(), ever_seen.end(), true);
-        double percent = round(100.0 * num_visible / ever_seen.size());
-        std::cout << "Seen: " << num_visible << " / " << ever_seen.size() << " (" << percent << "%)" << std::endl;
+        const size_t num_seen = ever_seen.count_seen();
+        const double percent = round(100.0 * static_cast<double>(num_seen) / static_cast<double>(ever_seen.ever_seen.size()));
+        std::cout << "Seen: " << num_seen << " / " << ever_seen.ever_seen.size() << " (" << percent << "%)" << std::endl;
 
         std::vector<math::Vec3d> vis_colors;
-        for (const auto& v : ever_seen)
+        for (const auto& v : ever_seen.ever_seen)
         {
             if (v)
             {

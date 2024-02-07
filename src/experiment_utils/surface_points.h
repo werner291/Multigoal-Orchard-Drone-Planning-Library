@@ -37,6 +37,8 @@ namespace mgodpl {
 	    double max_angle; ///< The maximum angle for scanning checks.
 	    std::vector<SurfacePoint> surface_points; ///< The vector of SurfacePoint objects for which scanning is to be performed.
 
+		using PointId = size_t; ///< An identifier for a point in ScannablePoints.
+
 	    /**
 	     * @brief Constructor for the ScannablePoints struct.
 	     *
@@ -49,6 +51,43 @@ namespace mgodpl {
 	     */
 	    ScannablePoints(double max_distance, double min_distance, double max_angle, const std::vector<SurfacePoint>& surface_points)
 	        : max_distance(max_distance), min_distance(min_distance), max_angle(max_angle), surface_points(surface_points) {}
+	};
+
+	/**
+	 * @brief A struct encapsulating the visibility status of points.
+	 *
+	 * This struct encapsulates a vector of booleans representing the visibility status of points.
+	 * Each boolean value in the vector corresponds to a point in a ScannablePoints object.
+	 * If the value is true, the point has ever been seen. If the value is false, the point has never been seen.
+	 */
+	struct SeenPoints {
+	    std::vector<bool> ever_seen; ///< The vector of booleans representing the visibility status of points.
+
+	    /**
+	     * @brief Creates a SeenPoints object with all points initially set to unseen.
+	     *
+	     * This static function creates a SeenPoints object with all points initially set to unseen (false).
+	     * It initializes the ever_seen vector with a size equal to the number of points in the ScannablePoints object.
+	     *
+	     * @param scannable_points A ScannablePoints object. Each SurfacePoint object in ScannablePoints
+	     *                         represents a point in 3D space and has a position and a normal.
+	     * @return A SeenPoints object with all points initially set to unseen.
+	     */
+	    static SeenPoints create_all_unseen(const ScannablePoints& scannable_points) {
+	        SeenPoints seen_points;
+	        seen_points.ever_seen.resize(scannable_points.surface_points.size(), false);
+	        return seen_points;
+	    }
+		/**
+		 * @brief Counts the number of points that have been seen.
+		 *
+		 * This function counts the number of points that have been seen by checking the `ever_seen` vector.
+		 * Each value in the `ever_seen` vector corresponds to a point in the `ScannablePoints` object.
+		 * If the value is true, the point has ever been seen. If the value is false, the point has never been seen.
+		 *
+		 * @return The number of points that have been seen.
+		 */
+		[[nodiscard]] size_t count_seen() const;
 	};
 
 	/**
@@ -114,26 +153,27 @@ namespace mgodpl {
 	 * @param eye_position     A Vec3d object representing the position of the eye in 3D space.
 	 * @return                 A boolean value. If true, the point is visible from the eye position. If false, the point is not visible.
 	 */
-	bool is_visible(const ScannablePoints& scannable_points, size_t point_index, const math::Vec3d& eye_position);
+	bool is_visible(const ScannablePoints& scannable_points, ScannablePoints::PointId point_index, const math::Vec3d& eye_position);
 
 	/**
 	 * @brief Updates the visibility status of a set of points from a given eye position.
 	 *
 	 * This function takes a ScannablePoints object, a Vec3d object representing the eye position,
-	 * and a vector of booleans representing whether each point has ever been seen.
-	 * It updates the visibility status of each point in the vector. A point is considered visible
-	 * if the dot product of the point's normal and the vector from the point to the eye is negative.
+	 * and a SeenPoints object representing whether each point has ever been seen.
+	 * It updates the visibility status of each point in the SeenPoints object. A point is considered visible
+	 * if it is within the maximum distance and the angle between the point's normal
+	 * and the vector from the point to the eye is less than the maximum angle.
 	 *
 	 * @param scannable_points A ScannablePoints object. Each SurfacePoint object in ScannablePoints represents a point in 3D space
 	 *                         and has a position and a normal. The ScannablePoints object also contains the maximum distance and
 	 *                         maximum angle to consider a point visible.
 	 * @param eye_position     A Vec3d object representing the position of the eye in 3D space.
-	 * @param ever_seen        A vector of boolean values. Each value corresponds to a point in the input vector. If the value is true,
-	 *                         the point has ever been seen from the eye position. If the value is false, the point has never been seen.
+	 * @param seen_points      A SeenPoints object. Each value in the SeenPoints object corresponds to a point in the ScannablePoints object.
+	 *                         If the value is true, the point has ever been seen from the eye position. If the value is false, the point has never been seen.
 	 */
 	void update_visibility(const ScannablePoints& scannable_points,
 	                       const math::Vec3d& eye_position,
-	                       std::vector<bool>& ever_seen);
+	                       SeenPoints& seen_points);
 }
 
 #endif //MGODPL_SURFACE_POINTS_H

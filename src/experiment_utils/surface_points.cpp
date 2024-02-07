@@ -10,6 +10,12 @@
 #include "../math/Triangle.h"
 
 namespace mgodpl {
+
+	size_t SeenPoints::count_seen() const
+	{
+		return std::count(ever_seen.begin(), ever_seen.end(), true);
+	}
+
 	math::Vec3d random_barycentric(random_numbers::RandomNumberGenerator &rng) {
 
 		double r1 = rng.uniform01();
@@ -124,13 +130,13 @@ namespace mgodpl {
 	}
 
 	void update_visibility(const ScannablePoints& scannable_points, const math::Vec3d& eye_position,
-		std::vector<bool>& ever_seen)
+		SeenPoints& seen_points)
 	{
 		for (size_t i = 0; i < scannable_points.surface_points.size(); ++i)
 		{
 			if (is_visible(scannable_points, i, eye_position))
 			{
-				ever_seen[i] = true;
+				seen_points.ever_seen[i] = true;
 			}
 		}
 	}
