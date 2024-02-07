@@ -9,9 +9,9 @@
 #include "../math/Triangle.h"
 #include "../experiment_utils/surface_points.h"
 #include "../experiment_utils/mesh_utils.h"
+#include "../experiment_utils/scan_paths.h" // Include the scan_paths.h header file
 
 using namespace mgodpl;
-
 
 int main(int argc, char** argv)
 {
@@ -53,22 +53,19 @@ int main(int argc, char** argv)
 
     viewer.addActor(fruit_points_visualization.getActor());
 
+    // Initialize all points as unseen
     SeenPoints ever_seen = SeenPoints::create_all_unseen(scannable_points);
 
-    viewer.addTimerCallback([&]()
-    {
+    // Create the orbit function
+    ParametricPath orbit = fixed_radius_equatorial_orbit(fruit_center, EYE_ORBIT_RADIUS);
+
+    viewer.addTimerCallback([&](){
         static double t = 0.0;
-        t += 0.02;
-        eye_position = fruit_center + math::Vec3d{std::cos(t), std::sin(t), 0.0} * EYE_ORBIT_RADIUS;
+        t += 0.01;
+        eye_position = orbit(t); // Use the orbit function to set the eye_position
 
         eye_sphere->SetPosition(eye_position.x(), eye_position.y(), eye_position.z());
-
         update_visibility(scannable_points, eye_position, ever_seen);
-
-        // Print some stats:
-        const size_t num_seen = ever_seen.count_seen();
-        const double percent = round(100.0 * static_cast<double>(num_seen) / static_cast<double>(ever_seen.ever_seen.size()));
-        std::cout << "Seen: " << num_seen << " / " << ever_seen.ever_seen.size() << " (" << percent << "%)" << std::endl;
 
         std::vector<math::Vec3d> vis_colors;
         for (const auto& v : ever_seen.ever_seen)
@@ -85,7 +82,7 @@ int main(int argc, char** argv)
 
         fruit_points_visualization.setColors(vis_colors);
 
-        if (t > 2.0 * M_PI)
+        if (t > 1.0)
         {
             viewer.stop();
         }
