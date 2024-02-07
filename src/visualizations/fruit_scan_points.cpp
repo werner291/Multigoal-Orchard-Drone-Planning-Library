@@ -102,8 +102,6 @@ REGISTER_VISUALIZATION(scan_single_orbit)
     // Add the polyline visualization to the viewer
     viewer.addActor(eye_positions_visualization.getActor());
 
-    // viewer.startRecording("fruit_scan_points.ogv");
-
     viewer.setCameraTransform(fruit_center + math::Vec3d{1.5, 0.0, 1.0}, fruit_center);
 
     viewer.start();
@@ -171,8 +169,6 @@ REGISTER_VISUALIZATION(visualize_several_orbits)
             viewer.stop();
         }
     });
-
-    // viewer.startRecording("fruit_scan_points.ogv");
 
     viewer.setCameraTransform(fruit_center + math::Vec3d{1.5, 0.0, 1.0}, fruit_center);
 
