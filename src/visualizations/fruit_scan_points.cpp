@@ -213,31 +213,35 @@ REGISTER_VISUALIZATION(scan_progressive_orbit)
     // Add the polyline visualization to the viewer
     viewer.addActor(eye_positions_visualization.getActor());
 
+    // Create a vector of ParametricPath objects
+    const auto& orbits = createConcentricEquatorialOrbits(fruit_center, EYE_ORBIT_RADIUS);
+
     // Add a timer callback to the viewer
     viewer.addTimerCallback([&]()
     {
         // Define a static variable for the timer
         static double t = 0.0;
+        // Define a static variable for the current orbit index
+        static size_t current_orbit_index = 0;
+
         t += 0.01;
 
-        // If the timer exceeds 1.0, reset it and increase the orbit radius
+        // If the timer exceeds 1.0, reset it and move to the next orbit
         if (t > 1.0)
         {
             t = 0.0;
-            EYE_ORBIT_RADIUS += 0.1;
+            // Increment the current orbit index, modulo the number of orbits
+            current_orbit_index = (current_orbit_index + 1) % orbits.size();
 
             // Clear the eye positions vector
             eye_positions.clear();
 
-            // If the orbit radius exceeds 2.0, stop the viewer
-            if (EYE_ORBIT_RADIUS > 2.0)
-            {
-                viewer.stop();
-            }
+            // Reset the scanned points
+            ever_seen = SeenPoints::create_all_unseen(scannable_points);
         }
 
         // Use the orbit function to set the eye_position
-        math::Vec3d eye_position = fixed_radius_equatorial_orbit(fruit_center, EYE_ORBIT_RADIUS)(t);
+        math::Vec3d eye_position = orbits[current_orbit_index](t);
 
         // Update the vector with the new eye position
         eye_positions.push_back(eye_position);
