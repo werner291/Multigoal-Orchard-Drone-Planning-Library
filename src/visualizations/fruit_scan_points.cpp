@@ -67,6 +67,29 @@ std::vector<math::Vec3d> generateVisualizationColors(const SeenPoints& ever_seen
     return vis_colors;
 }
 
+/**
+ * @brief Creates a vector of ParametricPath objects representing equatorial orbits.
+ *
+ * This function creates a vector of ParametricPath objects, each representing an equatorial orbit with a different radius.
+ * An equatorial orbit is a non-inclined orbit with respect to the fruit's equator (i.e., the orbit has zero inclination to the fruit's equator),
+ * and it lies in the fruit's equatorial plane.
+ * The radii are calculated as EYE_ORBIT_RADIUS + i * 0.1, where i ranges from 0 to 20.
+ *
+ * @param fruit_center The center of the fruit mesh.
+ * @param EYE_ORBIT_RADIUS The initial orbit radius.
+ * @return A vector of ParametricPath objects representing equatorial orbits.
+ */
+std::vector<ParametricPath> createConcentricEquatorialOrbits(const math::Vec3d& fruit_center, double EYE_ORBIT_RADIUS)
+{
+    std::vector<ParametricPath> orbits;
+    for (int i = 0; i <= 20; ++i)
+    {
+        double radius = EYE_ORBIT_RADIUS + i * 0.1;
+        orbits.push_back(fixed_radius_equatorial_orbit(fruit_center, radius));
+    }
+    return orbits;
+}
+
 REGISTER_VISUALIZATION(visualize_several_orbits_simultaneously)
 {
     // Load the tree meshes
