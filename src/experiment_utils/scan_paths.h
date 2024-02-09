@@ -84,6 +84,38 @@ namespace mgodpl
     mgodpl::ParametricPath helical_path(const mgodpl::math::Vec3d& center, double radius, int turns, double height);
 
     /**
+     * @brief Creates a parametric path that oscillates vertically around a given center point.
+     *
+     * This function generates a path that oscillates vertically around a center point in the form of a parametric path.
+     * The path is defined in 3D space and is parameterized by a time parameter `t` between 0 and 1.
+     * The position on the path at time `t` is calculated using the cosine and sine of `t * 2.0 * M_PI` to generate the x and y coordinates,
+     * and the sine of `t * 2.0 * M_PI * cycles` multiplied by the amplitude to generate the z coordinate.
+     *
+     * @param center The center point of the oscillation.
+     * @param radius The radius of the oscillation.
+     * @param amplitude The amplitude of the vertical oscillation.
+     * @param cycles The number of cycles of the vertical oscillation.
+     * @return A function that takes a time parameter `t` between 0 and 1 and returns a `math::Vec3d` representing the position on the path at that time.
+     */
+    mgodpl::ParametricPath vertical_oscillation_path(const mgodpl::math::Vec3d& center, double radius, double amplitude, int cycles);
+
+    /**
+     * @brief Creates a parametric path that oscillates in latitude around a given center point.
+     *
+     * This function generates a path that oscillates in latitude around a center point in the form of a parametric path.
+     * The path is defined in 3D space and is parameterized by a time parameter `t` between 0 and 1.
+     * The position on the path at time `t` is calculated using the cosine and sine of `t * 2.0 * M_PI` to generate the x and y coordinates on a sphere,
+     * and the sine of `t * 2.0 * M_PI * cycles` multiplied by the amplitude to generate the latitude.
+     *
+     * @param center The center point of the oscillation.
+     * @param radius The radius of the oscillation.
+     * @param amplitude The amplitude of the latitude oscillation.
+     * @param cycles The number of cycles of the latitude oscillation.
+     * @return A function that takes a time parameter `t` between 0 and 1 and returns a `math::Vec3d` representing the position on the path at that time.
+     */
+    mgodpl::ParametricPath latitude_oscillation_path(const mgodpl::math::Vec3d& center, double radius, double amplitude, int cycles);
+
+    /**
      * @brief A struct to hold the result of a path evaluation.
      *
      * This struct encapsulates the number of points seen and the total distance traveled

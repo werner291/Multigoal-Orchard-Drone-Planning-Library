@@ -73,6 +73,58 @@ namespace mgodpl
             orbit_types.emplace_back("helical_orbits", orbits);
         }
 
+        {
+            std::vector<JsonMeta<ParametricPath>> orbits;
+            for (int i = 0; i <= 2; ++i)
+            {
+                double radius = target_radius + i * 0.5;
+                for (int j = 1; j <= 3; ++j)
+                {
+                    double amplitude = j * 0.1;
+                    for (int k = 2; k <= 4; ++k)
+                    {
+                        int cycles = k;
+                        Json::Value meta;
+                        meta["radius"] = radius;
+                        meta["amplitude"] = amplitude;
+                        meta["cycles"] = cycles;
+
+                        orbits.push_back(JsonMeta<ParametricPath>{
+                            .meta = meta,
+                            .data = vertical_oscillation_path(fruit_center, radius, amplitude, cycles)
+                        });
+                    }
+                }
+            }
+            orbit_types.emplace_back("vertical_oscillation_paths", orbits);
+        }
+
+        {
+            std::vector<JsonMeta<ParametricPath>> orbits;
+            for (int i = 0; i <= 2; ++i)
+            {
+                double radius = target_radius + i * 0.2;
+                for (int j = 1; j <= 5; ++j)
+                {
+                    double amplitude = j * 0.2;
+                    for (int k = 1; k <= 5; ++k)
+                    {
+                        int cycles = k;
+                        Json::Value meta;
+                        meta["radius"] = radius;
+                        meta["amplitude"] = amplitude;
+                        meta["cycles"] = cycles;
+
+                        orbits.push_back(JsonMeta<ParametricPath>{
+                            .meta = meta,
+                            .data = latitude_oscillation_path(fruit_center, radius, amplitude, cycles)
+                        });
+                    }
+                }
+            }
+            orbit_types.emplace_back("latitude_oscillation_paths", orbits);
+        }
+
         return orbit_types;
     }
 }

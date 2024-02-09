@@ -55,6 +55,29 @@ namespace mgodpl
         };
     }
 
+    mgodpl::ParametricPath vertical_oscillation_path(const mgodpl::math::Vec3d& center, double radius, double amplitude,
+        int cycles)
+    {
+        return [center, radius, amplitude, cycles](double t) {
+            const double angle = t * 2.0 * M_PI;
+            const double z = std::sin(angle * cycles) * amplitude;
+            return center + mgodpl::math::Vec3d{std::cos(angle) * radius, std::sin(angle) * radius, z};
+        };
+    }
+
+    mgodpl::ParametricPath latitude_oscillation_path(const mgodpl::math::Vec3d& center, double radius, double amplitude,
+        int cycles)
+    {
+        return [center, radius, amplitude, cycles](double t) {
+            const double angle = t * 2.0 * M_PI;
+            const double latitude = std::sin(angle * cycles) * amplitude * M_PI / 2.0;
+            const double x = std::cos(angle) * radius * std::cos(latitude);
+            const double y = std::sin(angle) * radius * std::cos(latitude);
+            const double z = radius * std::sin(latitude);
+            return center + mgodpl::math::Vec3d{x, y, z};
+        };
+    }
+
     PathEvaluationResult evaluatePath(const ParametricPath& path, const ScannablePoints& scannable_points,
                                       SeenPoints& ever_seen, int num_segments)
     {
