@@ -269,6 +269,9 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/surface_points.h
             src/experiment_utils/scan_paths.cpp
             src/experiment_utils/scan_paths.h
+            src/experiment_utils/scan_path_generators.cpp
+            src/experiment_utils/scan_path_generators.h
+            src/experiment_utils/JsonMetadata.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")

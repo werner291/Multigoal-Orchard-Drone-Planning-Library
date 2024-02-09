@@ -3,6 +3,7 @@
 #include "../experiment_utils/surface_points.h"
 #include "../experiment_utils/mesh_utils.h"
 #include "../experiment_utils/scan_paths.h"
+#include "../experiment_utils/scan_path_generators.h"
 #include <json/json.h>
 #include <fstream>
 #include <filesystem>
@@ -39,25 +40,25 @@ int main(int argc, char** argv)
     // Create a Json::Value to store the results
     Json::Value results;
 
-    // Iterate over the orbit radii from 0.1 to 2.0 in steps of 0.1
-    for (int i = 0; i <= 20; ++i) {
-        double radius = i * 0.1;
+    // Get all the orbits
+    auto all_orbits = gen_orbits(fruit_center, 1.0); // Assuming 1.0 as target radius
 
-        // Create the orbit function for the current radius
-        ParametricPath orbit = fixed_radius_equatorial_orbit(fruit_center, radius);
+    // Iterate over each orbit
+    for (const auto& orbit_pair : all_orbits) {
+        for (const auto& orbit : orbit_pair.second) {
+            // Initialize all points as unseen
+            SeenPoints ever_seen = SeenPoints::create_all_unseen(scannable_points);
 
-        // Initialize all points as unseen
-        SeenPoints ever_seen = SeenPoints::create_all_unseen(scannable_points);
+            // Evaluate the path
+            PathEvaluationResult result = evaluatePath(orbit.data, scannable_points, ever_seen, NUM_SEGMENTS);
 
-        // Evaluate the path
-        PathEvaluationResult result = evaluatePath(orbit, scannable_points, ever_seen, NUM_SEGMENTS);
-
-        // Add the results to the Json::Value
-        Json::Value resultJson;
-        resultJson["radius"] = radius;
-        resultJson["num_points_seen"] = result.num_points_seen;
-        resultJson["total_distance_traveled"] = result.total_distance_traveled;
-        results.append(resultJson);
+            // Add the results to the Json::Value
+            Json::Value resultJson;
+            resultJson["path_meta"] = orbit.meta;
+            resultJson["num_points_seen"] = result.num_points_seen;
+            resultJson["total_distance_traveled"] = result.total_distance_traveled;
+            results[orbit_pair.first].append(resultJson);
+        }
     }
 
     // Filename:

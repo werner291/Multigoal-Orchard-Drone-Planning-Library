@@ -11,7 +11,7 @@
 
 namespace mgodpl
 {
-    ParametricPath fixed_radius_equatorial_orbit(const math::Vec3d& center, double radius)
+    ParametricPath fixed_radius_equatorial_orbit(const math::Vec3d center, double radius)
     {
         return [center, radius](double t) {
             const double angle = t * 2.0 * M_PI;
@@ -19,8 +19,8 @@ namespace mgodpl
         };
     }
 
-    ParametricPath polar_orbit(const math::Vec3d& center, double radius,
-        double ascending_node_longitude)
+    ParametricPath polar_orbit(const math::Vec3d center, double radius,
+                               double ascending_node_longitude)
     {
         return [center, radius, ascending_node_longitude](double t) {
             const double angle = t * 2 * M_PI; // angle from -PI (North Pole) to PI (South Pole) and back to -PI (North Pole)
@@ -56,7 +56,7 @@ namespace mgodpl
     }
 
     PathEvaluationResult evaluatePath(const ParametricPath& path, const ScannablePoints& scannable_points,
-                                                      SeenPoints& ever_seen, int num_segments)
+                                      SeenPoints& ever_seen, int num_segments)
     {
         // Variable to keep track of the total distance traversed
         double total_distance = 0.0;

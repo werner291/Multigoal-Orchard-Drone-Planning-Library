@@ -12,19 +12,20 @@
 #include "../experiment_utils/scan_paths.h"
 #include "../visualization/VtkPolyLineVisualization.h"
 #include "../visualization/visualization_function_macros.h"
+#include "../experiment_utils/scan_path_generators.h"
 
 using namespace mgodpl;
 
 /**
- * @brief Creates a VtkLineSegmentsVisualization object for fruit points.
- *
- * This function creates a VtkLineSegmentsVisualization object that represents
- * the fruit points in the 3D space. Each point is represented as a line segment
- * that starts at the point's position and extends in the direction of the point's normal.
- *
- * @param scannable_points The scannable points on the fruit surface.
- * @return A VtkLineSegmentsVisualization object that can be used to visualize the fruit points.
- */
+   * @brief Creates a VtkLineSegmentsVisualization object for fruit points.
+   *
+   * This function creates a VtkLineSegmentsVisualization object that represents
+   * the fruit points in the 3D space. Each point is represented as a line segment
+   * that starts at the point's position and extends in the direction of the point's normal.
+   *
+   * @param scannable_points The scannable points on the fruit surface.
+   * @return A VtkLineSegmentsVisualization object that can be used to visualize the fruit points.
+   */
 VtkLineSegmentsVisualization createFruitLinesVisualization(const ScannablePoints& scannable_points)
 {
     VtkLineSegmentsVisualization fruit_points_visualization(1, 1, 1);
@@ -33,7 +34,7 @@ VtkLineSegmentsVisualization createFruitLinesVisualization(const ScannablePoints
     fruit_lines.reserve(scannable_points.surface_points.size());
     for (const auto& [position, normal] : scannable_points.surface_points)
     {
-        fruit_lines.emplace_back(position, position + normal * 0.05);
+        fruit_lines.emplace_back(position, position + normal * 0.01);
     }
     fruit_points_visualization.updateLine(fruit_lines);
 
@@ -67,26 +68,45 @@ std::vector<math::Vec3d> generateVisualizationColors(const SeenPoints& ever_seen
     return vis_colors;
 }
 
-/**
- * @brief Creates a vector of ParametricPath objects representing equatorial orbits.
- *
- * This function creates a vector of ParametricPath objects, each representing an equatorial orbit with a different radius.
- * An equatorial orbit is a non-inclined orbit with respect to the fruit's equator (i.e., the orbit has zero inclination to the fruit's equator),
- * and it lies in the fruit's equatorial plane.
- * The radii are calculated as EYE_ORBIT_RADIUS + i * 0.1, where i ranges from 0 to 20.
- *
- * @param fruit_center The center of the fruit mesh.
- * @param EYE_ORBIT_RADIUS The initial orbit radius.
- * @return A vector of ParametricPath objects representing equatorial orbits.
- */
-std::vector<ParametricPath> createConcentricEquatorialOrbits(const math::Vec3d& fruit_center, double EYE_ORBIT_RADIUS)
+std::vector<JsonMeta<ParametricPath>> getOrbits(const mgodpl::math::Vec3d& fruit_center, double EYE_ORBIT_RADIUS)
 {
-    std::vector<ParametricPath> orbits;
-    for (int i = 0; i <= 20; ++i)
+    const auto orbit_types = mgodpl::gen_orbits(fruit_center, EYE_ORBIT_RADIUS);
+
+    std::cout << "Choose orbit type: " << std::endl;
+    for (int i = 0; i < orbit_types.size(); i++)
     {
-        double radius = EYE_ORBIT_RADIUS + i * 0.1;
-        orbits.push_back(fixed_radius_equatorial_orbit(fruit_center, radius));
+        std::cout << i << ": " << orbit_types[i].first << std::endl;
     }
+
+    std::cout << (orbit_types.size()) << ": All" << std::endl;
+
+    int orbitType;
+    std::cin >> orbitType;
+
+    if (orbitType < 0 || orbitType > orbit_types.size())
+    {
+        std::cout << "Invalid orbit type. Exiting..." << std::endl;
+        return {};
+    }
+
+    std::vector<JsonMeta<ParametricPath>> orbits;
+
+    if (orbitType == orbit_types.size())
+    {
+        std::cout << "All orbits" << std::endl;
+        // All of them.
+        for (const auto& orbit_type : orbit_types)
+        {
+            auto orbit = orbit_type.second;
+            orbits.insert(orbits.end(), orbit.begin(), orbit.end());
+        }
+    }
+    else
+    {
+        std::cout << "Orbit type: " << orbit_types[orbitType].first << std::endl;
+        orbits = orbit_types[orbitType].second;
+    }
+
     return orbits;
 }
 
@@ -122,6 +142,7 @@ REGISTER_VISUALIZATION(visualize_several_orbits_simultaneously)
 
     // Create several orbit functions
     std::vector<ParametricPath> orbits;
+    orbits.reserve(20);
     for (int i = 0; i < 20; ++i)
     {
         // Create an orbit function for each radius and add it to the orbits vector
@@ -187,7 +208,7 @@ REGISTER_VISUALIZATION(scan_progressive_orbit)
     random_numbers::RandomNumberGenerator rng;
 
     // Create the scannable points
-    ScannablePoints scannable_points = createScannablePoints(rng, fruit_mesh, 200, INFINITY, 0, M_PI / 3.0);
+    ScannablePoints scannable_points = createScannablePoints(rng, fruit_mesh, 1000, INFINITY, 0, M_PI / 3.0);
 
     // Initialize all points as unseen
     SeenPoints ever_seen = SeenPoints::create_all_unseen(scannable_points);
@@ -199,7 +220,7 @@ REGISTER_VISUALIZATION(scan_progressive_orbit)
     viewer.addActor(fruit_points_visualization.getActor());
 
     // Add the fruit mesh to the viewer
-    viewer.addMesh(tree_model.fruit_meshes[0], {1.0, 0.0, 0.0}, 1.0);
+    viewer.addMesh(tree_model.fruit_meshes[0], {0.8,0.8,0.8}, 1.0);
 
     // Define the initial orbit radius
     double EYE_ORBIT_RADIUS = 0.1;
@@ -213,8 +234,9 @@ REGISTER_VISUALIZATION(scan_progressive_orbit)
     // Add the polyline visualization to the viewer
     viewer.addActor(eye_positions_visualization.getActor());
 
-    // Create a vector of ParametricPath objects
-    const auto& orbits = createConcentricEquatorialOrbits(fruit_center, EYE_ORBIT_RADIUS);
+    std::vector<JsonMeta<ParametricPath>> orbits = getOrbits(fruit_center, EYE_ORBIT_RADIUS);
+
+    const bool LOOP_ANIMATION = false;
 
     // Add a timer callback to the viewer
     viewer.addTimerCallback([&]()
@@ -233,6 +255,11 @@ REGISTER_VISUALIZATION(scan_progressive_orbit)
             // Increment the current orbit index, modulo the number of orbits
             current_orbit_index = (current_orbit_index + 1) % orbits.size();
 
+            if (current_orbit_index == 0 && !LOOP_ANIMATION)
+            {
+                viewer.stop();
+            }
+
             // Clear the eye positions vector
             eye_positions.clear();
 
@@ -241,7 +268,7 @@ REGISTER_VISUALIZATION(scan_progressive_orbit)
         }
 
         // Use the orbit function to set the eye_position
-        math::Vec3d eye_position = orbits[current_orbit_index](t);
+        math::Vec3d eye_position = orbits[current_orbit_index].data(t);
 
         // Update the vector with the new eye position
         eye_positions.push_back(eye_position);
@@ -257,7 +284,7 @@ REGISTER_VISUALIZATION(scan_progressive_orbit)
     });
 
     // Set the camera transform for the viewer
-    viewer.setCameraTransform(fruit_center + math::Vec3d{1.5, 0.0, 1.0}, fruit_center);
+    viewer.setCameraTransform(fruit_center + math::Vec3d{2.0, 1.0, 1.0}, fruit_center);
 
     // Start the viewer
     viewer.start();

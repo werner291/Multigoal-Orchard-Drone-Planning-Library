@@ -15,12 +15,12 @@
 
 namespace mgodpl
 {
- namespace math
- {
-  struct Ray;
- }
+    namespace math
+    {
+        struct Ray;
+    }
 
- // Type alias for a function that takes a double and returns a Vec3d.
+    // Type alias for a function that takes a double and returns a Vec3d.
     // The interpretation is that of a parametric path in 3D space,
     // where the input parameter is abstract time (between 0 and 1).
     using ParametricPath = std::function<math::Vec3d(double)>;
@@ -36,7 +36,7 @@ namespace mgodpl
      * @param radius The radius of the orbit.
      * @return A function that takes a time parameter `t` between 0 and 1 and returns a `math::Vec3d` representing the position on the orbit at that time.
      */
-    ParametricPath fixed_radius_equatorial_orbit(const math::Vec3d& center, double radius);
+    ParametricPath fixed_radius_equatorial_orbit(const math::Vec3d center, double radius);
 
     /**
      * @brief Creates a parametric path representing a full polar orbit around a given center point.
@@ -51,7 +51,8 @@ namespace mgodpl
      * @param ascending_node_longitude The longitude of the ascending node, in radians.
      * @return A function that takes a time parameter `t` between 0 and 1 and returns a `math::Vec3d` representing the position on the orbit at that time.
      */
-    mgodpl::ParametricPath polar_orbit(const mgodpl::math::Vec3d& center, double radius, double ascending_node_longitude);
+    mgodpl::ParametricPath polar_orbit(const math::Vec3d center, double radius,
+                                       double ascending_node_longitude);
 
     /**
      * @brief Creates a parametric path representing a ray that passes through a given point.
@@ -88,7 +89,8 @@ namespace mgodpl
      * This struct encapsulates the number of points seen and the total distance traveled
      * during the evaluation of a parametric path.
      */
-    struct PathEvaluationResult {
+    struct PathEvaluationResult
+    {
         /**
          * @brief The number of points seen during the path evaluation.
          */
