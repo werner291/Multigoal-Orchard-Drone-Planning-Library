@@ -14,6 +14,8 @@
 #include <string>
 #include <filesystem>
 
+#include "SimpleVtkViewer.h"
+
 // A top-level function that can be called to visualize something.
 using VisFn = std::function<void(mgodpl::SimpleVtkViewer& viewer)>;
 
