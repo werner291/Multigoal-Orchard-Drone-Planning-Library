@@ -313,6 +313,8 @@ if (ENABLE_VISUALIZATION)
             src/visualization/VtkEndAndBaseTraceVisualization.h
             src/visualization/quick_markers.h
             src/visualization/quick_markers.cpp
+            src/visualization/scannable_points.cpp
+            src/visualization/scannable_points.h
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
