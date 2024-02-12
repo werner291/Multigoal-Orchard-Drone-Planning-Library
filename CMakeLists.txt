@@ -320,6 +320,8 @@ if (ENABLE_VISUALIZATION)
             src/visualization/quick_markers.cpp
             src/visualization/scannable_points.cpp
             src/visualization/scannable_points.h
+            src/visualization/robot_state.cpp
+            src/visualization/robot_state.h
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})

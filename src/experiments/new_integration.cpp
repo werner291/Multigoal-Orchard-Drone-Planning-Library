@@ -21,6 +21,7 @@
 #include "../planning/collision_detection.h"
 #include "../planning/goal_sampling.h"
 #include "../visualization/VtkTriangleSetVisualization.h"
+#include "../visualization/robot_state.h"
 #include "../planning/visitation_order.h"
 #include "../planning/RobotPath.h"
 #include "../planning/shell_path.h"
@@ -36,78 +37,6 @@ using namespace mgodpl::shell_path_planning;
 
 const math::Vec3d WOOD_COLOR{0.5, 0.3, 0.1};
 const math::Vec3d FLOOR_COLOR{0.3, 0.6, 0.3};
-
-
-struct RobotActors {
-	std::vector<vtkSmartPointer<vtkActor>> actors;
-};
-
-RobotActors vizualize_robot_state(SimpleVtkViewer &viewer,
-								  const robot_model::RobotModel &robot,
-								  const robot_model::ForwardKinematicsResult &fk,
-								  const math::Vec3d& color = {0.8,0.8,0.8}) {
-
-	std::vector<vtkSmartPointer<vtkActor>> actors;
-
-	for (size_t link_id = 0; link_id < robot.getLinks().size(); ++link_id) {
-		auto link_tf = fk.forLink(link_id);
-
-		// If it has visual shapes, add them.
-		if (const auto &visual_geometry = robot.getLinks()[link_id].visual_geometry; !visual_geometry.empty()) {
-			for (const auto &shape: visual_geometry) {
-				PositionedShape global{
-						.shape = shape.shape,
-						.transform = link_tf.then(shape.transform)
-				};
-				actors.push_back(viewer.addPositionedShape(global, color, 1.0));
-			}
-		} else {
-			// Use the collision geometry as a fallback.
-			for (const auto &shape: robot.getLinks()[link_id].collision_geometry) {
-				PositionedShape global{
-						.shape = shape.shape,
-						.transform = link_tf.then(shape.transform)
-				};
-				actors.push_back(viewer.addPositionedShape(global, color, 1.0));
-			}
-		}
-	}
-
-	return RobotActors{.actors = actors};
-}
-
-void update_robot_state(const robot_model::RobotModel &robot,
-						const robot_model::ForwardKinematicsResult &fk,
-						RobotActors &actors) {
-
-	auto actor_it = actors.actors.begin();
-
-	for (size_t link_id = 0; link_id < robot.getLinks().size(); ++link_id) {
-		auto link_tf = fk.forLink(link_id);
-
-		// If it has visual shapes, add them.
-		if (const auto &visual_geometry = robot.getLinks()[link_id].visual_geometry; !visual_geometry.empty()) {
-			for (const auto &shape: visual_geometry) {
-				PositionedShape global{
-						.shape = shape.shape,
-						.transform = link_tf.then(shape.transform)
-				};
-				SimpleVtkViewer::set_transform(global.transform, actor_it->Get());
-				++actor_it;
-			}
-		} else {
-			// Use the collision geometry as a fallback.
-			for (const auto &shape: robot.getLinks()[link_id].collision_geometry) {
-				PositionedShape global{
-						.shape = shape.shape,
-						.transform = link_tf.then(shape.transform)
-				};
-				SimpleVtkViewer::set_transform(global.transform, actor_it->Get());
-				++actor_it;
-			}
-		}
-	}
-}
 
 VtkTriangleSetVisualization convex_hull_viz(const Surface_mesh &convex_hull) {
 	VtkTriangleSetVisualization viz(0.8, 0.8, 0.8, 0.5);
@@ -270,7 +199,7 @@ int main() {
 		viewer.addActor(chull_viz.getActor());
 
 		// Visualize the initial state:
-		auto robot_viz = vizualize_robot_state(viewer, robot, robot_model::forwardKinematics(robot, initial_state.joint_values, flying_base, initial_state.base_tf));
+		auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot, robot_model::forwardKinematics(robot, initial_state.joint_values, flying_base, initial_state.base_tf));
 
 		double segment_t = 0.0;
 
