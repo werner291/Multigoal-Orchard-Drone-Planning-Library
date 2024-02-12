@@ -13,60 +13,9 @@
 #include "../visualization/VtkPolyLineVisualization.h"
 #include "../visualization/visualization_function_macros.h"
 #include "../experiment_utils/scan_path_generators.h"
+#include "../visualization/scannable_points.h"
 
 using namespace mgodpl;
-
-/**
-   * @brief Creates a VtkLineSegmentsVisualization object for fruit points.
-   *
-   * This function creates a VtkLineSegmentsVisualization object that represents
-   * the fruit points in the 3D space. Each point is represented as a line segment
-   * that starts at the point's position and extends in the direction of the point's normal.
-   *
-   * @param scannable_points The scannable points on the fruit surface.
-   * @return A VtkLineSegmentsVisualization object that can be used to visualize the fruit points.
-   */
-VtkLineSegmentsVisualization createFruitLinesVisualization(const ScannablePoints& scannable_points)
-{
-    VtkLineSegmentsVisualization fruit_points_visualization(1, 1, 1);
-
-    std::vector<std::pair<math::Vec3d, math::Vec3d>> fruit_lines;
-    fruit_lines.reserve(scannable_points.surface_points.size());
-    for (const auto& [position, normal] : scannable_points.surface_points)
-    {
-        fruit_lines.emplace_back(position, position + normal * 0.01);
-    }
-    fruit_points_visualization.updateLine(fruit_lines);
-
-    return fruit_points_visualization;
-}
-
-/**
- * @brief Generates colors for the visualization based on visibility of points.
- *
- * This function generates a vector of colors (represented as math::Vec3d objects)
- * for the visualization. Each color corresponds to a point. If the point has been seen,
- * the color is green (0.0, 1.0, 0.0). If the point has not been seen, the color is red (1.0, 0.0, 0.0).
- *
- * @param ever_seen The visibility status of each point.
- * @return A vector of colors for the visualization.
- */
-std::vector<math::Vec3d> generateVisualizationColors(const SeenPoints& ever_seen)
-{
-    std::vector<math::Vec3d> vis_colors;
-    for (const auto& v : ever_seen.ever_seen)
-    {
-        if (v)
-        {
-            vis_colors.emplace_back(0.0, 1.0, 0.0);
-        }
-        else
-        {
-            vis_colors.emplace_back(1.0, 0.0, 0.0);
-        }
-    }
-    return vis_colors;
-}
 
 std::vector<JsonMeta<ParametricPath>> getOrbits(const mgodpl::math::Vec3d& fruit_center, double EYE_ORBIT_RADIUS)
 {
