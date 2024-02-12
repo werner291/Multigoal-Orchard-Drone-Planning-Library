@@ -14,6 +14,7 @@
 #include "../math/Transform.h"
 #include "RobotModel.h"
 #include "RobotState.h"
+#include "RobotPath.h"
 
 namespace mgodpl {
 
@@ -40,6 +41,49 @@ namespace mgodpl {
 	bool check_robot_collision(const mgodpl::robot_model::RobotModel &robot,
 							   const fcl::CollisionObjectd &tree_trunk_object,
 							   const mgodpl::RobotState &state);
+
+	/**
+	 * Check whether a motion from one state to another (assuming linear interpolation in the configuration space)
+	 * collides with the given CollisionObjectd.
+	 *
+	 * TODO: This function uses samples, and is not a full CCD function.
+	 *
+	 * @param robot 				The robot model.
+	 * @param tree_trunk_object 	The tree trunk that the robot must not collide with.
+	 * @param state1 				The state to start from.
+	 * @param state2 				The state to end at.
+	 * @param toi 					The linear interpolation parameter of the last known state to not collide. (Undefined if the function returns false.)
+	 * @return 						True if the motion collides, false otherwise.
+	 */
+	bool check_motion_collides(const robot_model::RobotModel &robot,
+							   const fcl::CollisionObjectd &tree_trunk_object,
+							   const RobotState &state1,
+							   const RobotState &state2,
+							   double &toi);
+
+	/**
+	 * A point on a path if such a path is defined based on states and the interpolated motions between them.
+	 */
+	struct PathPoint {
+		/// The segment of the path between states segment_i and segment_i+1 (0-indexed)
+		size_t segment_i;
+		///
+		double segment_t;
+	};
+
+	/**
+	 * Check whether the given path collides.
+	 *
+	 * @param robot 				The robot model.
+	 * @param tree_trunk_object		The tree trunk that the robot must not collide with.
+	 * @param path					The path to check for collisions.
+	 * @param collision_point		Return param for the point along the path that was last-known to be valid.
+	 * @return						True if the path collides, false otherwise.
+	 */
+	bool check_path_collides(const robot_model::RobotModel &robot,
+							 const fcl::CollisionObjectd &tree_trunk_object,
+							 const RobotPath &path,
+							 PathPoint& collision_point);
 }
 
 #endif //MGODPL_COLLISION_DETECTION_H

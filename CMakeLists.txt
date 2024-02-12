@@ -226,6 +226,12 @@ add_library(planning
         src/planning/visitation_order.h
         src/planning/visitation_order.cpp
         src/planning/ApproachPath.h
+        src/planning/approach_path_planning.cpp
+        src/planning/approach_path_planning.h
+        src/planning/shell_path_assembly.cpp
+        src/planning/shell_path_assembly.h
+        src/planning/probing_motions.cpp
+        src/planning/probing_motions.h
 )
 
 target_link_libraries(planning math_utils)
@@ -271,7 +277,6 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/scan_paths.h
             src/experiment_utils/scan_path_generators.cpp
             src/experiment_utils/scan_path_generators.h
-            src/experiment_utils/JsonMetadata.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
@@ -352,6 +357,10 @@ if (ENABLE_VISUALIZATION)
     target_link_libraries(new_integration math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(new_integration shape_msgs moveit_core)
 
+    add_executable(fruit_scan_fullpath src/visualizations/fruit_scan_fullpath.cpp)
+    target_link_libraries(fruit_scan_fullpath math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(fruit_scan_fullpath shape_msgs)
+
     add_executable(leaf_density_rescaling src/visualizations/leaf_density_rescaling.cpp)
     target_link_libraries(leaf_density_rescaling math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(leaf_density_rescaling shape_msgs moveit_core)
@@ -363,6 +372,10 @@ if (ENABLE_VISUALIZATION)
     add_executable(sphere_scannable_points_orbit src/experiments/sphere_scannable_points_orbit.cpp)
     target_link_libraries(sphere_scannable_points_orbit math_utils experiment_utils planning)
     ament_target_dependencies(sphere_scannable_points_orbit shape_msgs)
+
+    add_executable(creases src/visualizations/creases.cpp)
+    target_link_libraries(creases math_utils ${PROJECT_NAME}_visualisation experiment_utils)
+    ament_target_dependencies(creases shape_msgs)
 endif ()
 
 include(GoogleTest)

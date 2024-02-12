@@ -77,3 +77,45 @@ bool mgodpl::check_robot_collision(const mgodpl::robot_model::RobotModel &robot,
 
 	return collision;
 }
+
+bool mgodpl::check_motion_collides(const mgodpl::robot_model::RobotModel &robot,
+								   const fcl::CollisionObjectd &tree_trunk_object,
+								   const mgodpl::RobotState &state1,
+								   const mgodpl::RobotState &state2,
+								   double &toi) {
+
+	// Compute the distance between the two.
+	double distance = equal_weights_distance(state1, state2);
+	const double MAX_STEP = 0.1;
+
+	size_t n_steps = std::ceil(distance / MAX_STEP);
+
+	for (size_t step_i = 0; step_i < n_steps; ++step_i) {
+		double t = (double) step_i / (double) n_steps;
+		auto interpolated_state = interpolate(state1, state2, t);
+
+		// Check if the robot is in collision at the interpolated state.
+		if (check_robot_collision(robot, tree_trunk_object, interpolated_state)) {
+			toi = t;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool mgodpl::check_path_collides(const mgodpl::robot_model::RobotModel &robot,
+								 const fcl::CollisionObjectd &tree_trunk_object,
+								 const mgodpl::RobotPath &path,
+								 mgodpl::PathPoint &collision_point) {
+	for (size_t segment_i = 0; segment_i + 1 < path.states.size(); ++segment_i) {
+		const auto &state1 = path.states[segment_i];
+		const auto &state2 = path.states[segment_i + 1];
+
+		double toi;
+		if (check_motion_collides(robot, tree_trunk_object, state1, state2, toi)) {
+			collision_point.segment_i = segment_i;
+			return true;
+		}
+	}
+	return false;
+}

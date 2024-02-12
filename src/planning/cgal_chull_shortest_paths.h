@@ -18,6 +18,8 @@
 #include <CGAL/AABB_traits.h>
 #include <shape_msgs/msg/mesh.hpp>
 
+#include "../math/Vec3.h"
+
 namespace mgodpl::cgal {
 
 	// Make a CGAL convex hull.
@@ -30,6 +32,14 @@ namespace mgodpl::cgal {
 	using Surface_mesh_shortest_path = CGAL::Surface_mesh_shortest_path<Traits>;
 	using Primitive = CGAL::AABB_face_graph_triangle_primitive<Surface_mesh>;
 	using AABBTraits = CGAL::AABB_traits<K, Primitive>;
+
+	inline mgodpl::cgal::Point_3 to_cgal_point(const mgodpl::math::Vec3<double> &v) {
+		return {v.x(), v.y(), v.z()};
+	}
+
+	inline mgodpl::cgal::Direction_3 to_cgal_direction(const mgodpl::math::Vec3<double> &v) {
+		return {v.x(), v.y(), v.z()};
+	}
 
 	/**
 	 * @struct PathVisitor

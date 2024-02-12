@@ -11,6 +11,7 @@
 
 #include <CGAL/Surface_mesh_shortest_path.h>
 #include <CGAL/Surface_mesh_shortest_path/Surface_mesh_shortest_path.h>
+#include "cgal_chull_shortest_paths.h"
 #include "RobotPath.h"
 
 namespace mgodpl {
