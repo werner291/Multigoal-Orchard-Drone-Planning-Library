@@ -62,16 +62,6 @@ namespace mgodpl {
 							   double &toi);
 
 	/**
-	 * A point on a path if such a path is defined based on states and the interpolated motions between them.
-	 */
-	struct PathPoint {
-		/// The segment of the path between states segment_i and segment_i+1 (0-indexed)
-		size_t segment_i;
-		///
-		double segment_t;
-	};
-
-	/**
 	 * Check whether the given path collides.
 	 *
 	 * @param robot 				The robot model.
