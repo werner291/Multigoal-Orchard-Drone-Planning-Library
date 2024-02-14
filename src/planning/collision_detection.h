@@ -26,7 +26,7 @@ namespace mgodpl {
 	 * @param link_tf 				The transform of the link.
 	 * @return 						True if there is a collision, false otherwise.
 	 */
-	bool check_link_collision(const mgodpl::robot_model::RobotModel::Link &link,
+	bool check_link_collision(const robot_model::RobotModel::Link &link,
 							  const fcl::CollisionObjectd &tree_trunk_object,
 							  const math::Transformd &link_tf);
 
@@ -38,9 +38,9 @@ namespace mgodpl {
 	 * @param state 					The state of the robot.
 	 * @return 							True if there is a collision, false otherwise.
 	 */
-	bool check_robot_collision(const mgodpl::robot_model::RobotModel &robot,
+	bool check_robot_collision(const robot_model::RobotModel &robot,
 							   const fcl::CollisionObjectd &tree_trunk_object,
-							   const mgodpl::RobotState &state);
+							   const RobotState &state);
 
 	/**
 	 * Check whether a motion from one state to another (assuming linear interpolation in the configuration space)

@@ -232,6 +232,7 @@ add_library(planning
         src/planning/shell_path_assembly.h
         src/planning/probing_motions.cpp
         src/planning/probing_motions.h
+        src/planning/RobotPath.cpp
 )
 
 target_link_libraries(planning math_utils)
