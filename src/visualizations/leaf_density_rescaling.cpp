@@ -13,58 +13,52 @@
 #include "../visualization/VtkTriangleSetVisualization.h"
 #include "../experiment_utils/default_colors.h"
 #include "../experiment_utils/leaf_scaling.h"
+#include "../visualization/visualization_function_macros.h"
 
 using namespace mgodpl;
 
-int main() {
+REGISTER_VISUALIZATION(leaf_density_rescaling) {
+    auto tree_model = tree_meshes::loadTreeMeshes("appletree");
 
-	auto tree_model = tree_meshes::loadTreeMeshes("appletree");
+    viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
 
-	SimpleVtkViewer viewer;
+    auto leaf_roots = leaf_root_points(tree_model);
 
-	viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
+    VtkTriangleSetVisualization leaves_visualization(LEAF_COLOR[0], LEAF_COLOR[1], LEAF_COLOR[2], 1);
 
-	auto leaf_roots = leaf_root_points(tree_model);
+    std::vector<std::array<math::Vec3d, 3>> leaf_triangles;
+    viewer.addActor(leaves_visualization.getActor());
+    viewer.setCameraTransform({8, 0, 2}, {0, 0, 2});
 
-	VtkTriangleSetVisualization leaves_visualization(LEAF_COLOR[0], LEAF_COLOR[1], LEAF_COLOR[2], 1);
+    double t = 0.0;
 
-	std::vector<std::array<math::Vec3d, 3>> leaf_triangles;
-	viewer.addActor(leaves_visualization.getActor());
-	viewer.setCameraTransform({8, 0, 2}, {0, 0, 2});
+    viewer.addTimerCallback([&]() {
+        t += 0.1;
+        auto leaves_mesh = scale_leaves(tree_model, leaf_roots, 1.0 + 0.5 * std::sin(t));
 
-	double t = 0.0;
+        leaf_triangles.clear();
 
-	viewer.addTimerCallback([&]() {
-		t += 0.1;
-		auto leaves_mesh = scale_leaves(tree_model, leaf_roots, 1.0 + 0.5 * std::sin(t));
+        for (const auto &triangle: leaves_mesh.triangles) {
+            leaf_triangles.push_back({
+                math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[0]].x,
+                    leaves_mesh.vertices[triangle.vertex_indices[0]].y,
+                    leaves_mesh.vertices[triangle.vertex_indices[0]].z},
+                math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[1]].x,
+                    leaves_mesh.vertices[triangle.vertex_indices[1]].y,
+                    leaves_mesh.vertices[triangle.vertex_indices[1]].z},
+                math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[2]].x,
+                    leaves_mesh.vertices[triangle.vertex_indices[2]].y,
+                    leaves_mesh.vertices[triangle.vertex_indices[2]].z}
+            });
+        }
 
-		leaf_triangles.clear();
+        leaves_visualization.updateTriangles(leaf_triangles);
 
-		for (const auto &triangle: leaves_mesh.triangles) {
-			leaf_triangles.push_back({
-											 math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[0]].x,
-														 leaves_mesh.vertices[triangle.vertex_indices[0]].y,
-														 leaves_mesh.vertices[triangle.vertex_indices[0]].z},
-											 math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[1]].x,
-														 leaves_mesh.vertices[triangle.vertex_indices[1]].y,
-														 leaves_mesh.vertices[triangle.vertex_indices[1]].z},
-											 math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[2]].x,
-														 leaves_mesh.vertices[triangle.vertex_indices[2]].y,
-														 leaves_mesh.vertices[triangle.vertex_indices[2]].z}
-									 });
-		}
+        if (t > 6.0 * M_PI) {
+            viewer.stop();
+        }
 
-		leaves_visualization.updateTriangles(leaf_triangles);
+    });
 
-		if (t > 6.0 * M_PI) {
-			viewer.stop();
-		}
-
-	});
-
-//	viewer.startRecording("leaf_scaling.ogv");
-
-	viewer.start();
-
-	return 0;
+    viewer.start();
 }

@@ -359,25 +359,22 @@ if (ENABLE_VISUALIZATION)
     target_link_libraries(new_integration math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
     ament_target_dependencies(new_integration shape_msgs moveit_core)
 
-    add_executable(fruit_scan_fullpath src/visualizations/fruit_scan_fullpath.cpp)
-    target_link_libraries(fruit_scan_fullpath math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-    ament_target_dependencies(fruit_scan_fullpath shape_msgs)
-
-    add_executable(leaf_density_rescaling src/visualizations/leaf_density_rescaling.cpp)
-    target_link_libraries(leaf_density_rescaling math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-    ament_target_dependencies(leaf_density_rescaling shape_msgs moveit_core)
-
-    add_executable(fruit_scan_points src/visualizations/fruit_scan_points.cpp)
-    target_link_libraries(fruit_scan_points math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-    ament_target_dependencies(fruit_scan_points shape_msgs moveit_core)
-
     add_executable(sphere_scannable_points_orbit src/experiments/sphere_scannable_points_orbit.cpp)
     target_link_libraries(sphere_scannable_points_orbit math_utils experiment_utils planning)
     ament_target_dependencies(sphere_scannable_points_orbit shape_msgs)
 
-    add_executable(creases src/visualizations/creases.cpp)
-    target_link_libraries(creases math_utils ${PROJECT_NAME}_visualisation experiment_utils)
-    ament_target_dependencies(creases shape_msgs)
+    add_executable(visualizations
+            src/visualizations/viz_main.cpp
+            src/visualizations/creases.cpp
+            src/visualizations/fruit_scan_fullpath.cpp
+            src/visualizations/fruit_scan_points.cpp
+            src/visualizations/leaf_density_rescaling.cpp
+    )
+
+    target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(visualizations shape_msgs)
+
+
 endif ()
 
 include(GoogleTest)

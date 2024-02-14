@@ -6,8 +6,9 @@
 // Created by werner on 2/12/24.
 //
 
-int main(int argc, char** argv) {
+#include "../visualization/visualization_function_macros.h"
 
-
+REGISTER_VISUALIZATION(fruit_scan_fullpath)
+{
 
 }
