@@ -23,8 +23,6 @@ REGISTER_VISUALIZATION(creases)
 
 	VtkTriangleSetVisualization chull_viz(0.8,0.8,0.8,0.5);
 
-
-
 	// Add a timer callback to the viewer
 	viewer.addTimerCallback([&](){
 

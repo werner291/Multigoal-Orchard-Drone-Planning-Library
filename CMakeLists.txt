@@ -370,6 +370,7 @@ if (ENABLE_VISUALIZATION)
             src/visualizations/fruit_scan_fullpath.cpp
             src/visualizations/fruit_scan_points.cpp
             src/visualizations/leaf_density_rescaling.cpp
+            src/visualizations/probing.cpp
     )
 
     target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
