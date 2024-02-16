@@ -52,6 +52,81 @@ namespace mgodpl
      * @return The interpolated RobotState at the given point on the path.
      */
     RobotState interpolate(const mgodpl::PathPoint& path_point, const mgodpl::RobotPath& robot_path);
+
+    /// Define a function pointer type for distance calculation functions
+    using DistanceFn = double (*)(const RobotState&, const RobotState&);
+
+    /**
+     * @brief Calculate the length of a segment in a robot path.
+     *
+     * This function calculates the length of the segment at the given point on the path.
+     * The length is calculated using the provided distance function.
+     *
+     * @param robot_path The robot path.
+     * @param path_point The point on the path.
+     * @param distanceFunc The function to use for calculating the distance between two states.
+     * @return The length of the segment.
+     */
+    double calculateSegmentLength(const mgodpl::RobotPath& robot_path, const mgodpl::PathPoint& path_point,
+                                  DistanceFn distanceFunc);
+
+    /**
+     * @brief Clamp a path point to the end of a robot path.
+     *
+     * This function modifies a path point so that it does not exceed the end of the robot path.
+     * If the path point is at or beyond the end of the path, it is set to the last state of the path.
+     *
+     * @param robot_path The robot path.
+     * @param path_point The path point to clamp (this is an output parameter).
+     *
+     * @return  True if the path point was clamped, and false otherwise.
+     */
+    bool clampPathPoint(const mgodpl::RobotPath& robot_path, mgodpl::PathPoint& path_point);
+
+    /**
+     * @brief Wrap a path point to the start of a robot path.
+     *
+     * This function modifies a path point so that it wraps around to the start of the robot path
+     * when it reaches the end of the path.
+     *
+     * @param robot_path The robot path.
+     * @param path_point The path point to wrap (this is an output parameter).
+     *
+     * @return True if the path point was wrapped, and false otherwise.
+     */
+    bool wrapPathPoint(const mgodpl::RobotPath& robot_path, mgodpl::PathPoint& path_point);
+
+    /**
+     * @brief Advance a path point along a robot path, clamping at the end.
+     *
+     * This function advances a path point along a robot path by a given amount.
+     * The path point is clamped to the end of the path if it would otherwise exceed it.
+     * The function returns true if the path point was clamped, and false otherwise.
+     *
+     * @param robot_path The robot path.
+     * @param path_point The path point to advance.
+     * @param advancement The amount to advance the path point.
+     * @param distanceFunc The function to use for calculating the distance between two states.
+     * @return True if the path point was clamped, false otherwise.
+     */
+    bool advancePathPointClamp(const mgodpl::RobotPath& robot_path, mgodpl::PathPoint& path_point, double advancement,
+                               DistanceFn distanceFunc);
+
+    /**
+     * @brief Advance a path point along a robot path, wrapping at the end.
+     *
+     * This function advances a path point along a robot path by a given amount.
+     * The path point wraps around to the start of the path if it reaches the end of the path.
+     * The function returns true if the path point was wrapped, and false otherwise.
+     *
+     * @param robot_path The robot path.
+     * @param path_point The path point to advance.
+     * @param advancement The amount to advance the path point.
+     * @param distanceFunc The function to use for calculating the distance between two states.
+     * @return True if the path point was wrapped, false otherwise.
+     */
+    bool advancePathPointWrap(const mgodpl::RobotPath& robot_path, mgodpl::PathPoint& path_point, double advancement,
+                              DistanceFn distanceFunc);
 }
 
 

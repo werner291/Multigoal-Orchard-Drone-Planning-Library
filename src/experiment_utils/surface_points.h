@@ -171,9 +171,9 @@ namespace mgodpl {
 	 * @param seen_points      A SeenPoints object. Each value in the SeenPoints object corresponds to a point in the ScannablePoints object.
 	 *                         If the value is true, the point has ever been seen from the eye position. If the value is false, the point has never been seen.
 	 */
-	void update_visibility(const ScannablePoints& scannable_points,
-	                       const math::Vec3d& eye_position,
-	                       SeenPoints& seen_points);
+	size_t update_visibility(const ScannablePoints& scannable_points,
+	                         const math::Vec3d& eye_position,
+	                         SeenPoints& seen_points);
 }
 
 #endif //MGODPL_SURFACE_POINTS_H

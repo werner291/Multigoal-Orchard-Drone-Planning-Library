@@ -15,6 +15,7 @@
 #include "../experiment_utils/mesh_utils.h"
 #include "../visualization/VtkPolyLineVisualization.h"
 #include "../visualization/visualization_function_macros.h"
+#include "../visualization/robot_state.h"
 #include "../experiment_utils/scan_path_generators.h"
 #include "../visualization/scannable_points.h"
 #include "../planning/RobotPath.h"
@@ -34,7 +35,7 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath)
 
     // Define constants for the scannable points
     const size_t NUM_POINTS = 200;
-    const double MAX_DISTANCE = INFINITY;
+    const double MAX_DISTANCE = 0.3;
     const double MIN_DISTANCE = 0;
     const double MAX_ANGLE = M_PI / 3.0;
 
@@ -62,7 +63,7 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath)
         viewer.addActor(fruit_points_visualization.getActor());
 
         // Add the fruit mesh to the viewer
-        viewer.addMesh(fruit_mesh, {1.0, 0.0, 0.0}, 1.0);
+        viewer.addMesh(fruit_mesh, {0.8, 0.8, 0.8}, 1.0);
 
         fruit_points_visualizations.push_back(std::move(fruit_points_visualization));
     }
@@ -71,6 +72,8 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath)
     viewer.setCameraTransform({2.0, 1.0, 1.0}, {0.0, 0.0, 0.0});
 
     const auto& robot = experiments::createProceduralRobotModel();
+
+    robot_model::RobotModel::LinkId flying_base = robot.findLinkByName("flying_base");
 
     // Create a state outside the tree model.
     RobotState initial_state = fromEndEffectorAndVector(robot, {0, 5, 5}, {0, 1, 1});
@@ -85,11 +88,10 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath)
     // Plan the final path as a whole:
     RobotPath final_path = plan_multigoal_path(robot, tree_model, initial_state);
 
-    size_t segment_i = 0;
-    size_t i = 0;
+    PathPoint path_point = {0, 0.0};
 
     // Create an instance of VtkPolyLineVisualization
-    VtkPolyLineVisualization end_effector_positions_visualization(1, 0, 0); // Red color
+    VtkPolyLineVisualization end_effector_positions_visualization(1, 0.5, 1); // Red color
 
     // Add the polyline visualization to the viewer
     viewer.addActor(end_effector_positions_visualization.getActor());
@@ -97,12 +99,23 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath)
     // Declare a vector to store the end-effector positions
     std::vector<mgodpl::math::Vec3d> end_effector_positions;
 
+    auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot,
+                                                              robot_model::forwardKinematics(
+                                                                  robot, initial_state.joint_values,
+                                                                  flying_base, initial_state.base_tf));
+
     auto timerCallback = [&]()
     {
-        const auto& start_state = final_path.states[segment_i];
-        const auto& end_state = final_path.states[segment_i + 1];
+        const auto& start_state = final_path.states[path_point.segment_i];
+        const auto& end_state = final_path.states[path_point.segment_i + 1];
 
-        auto interpolated_state = interpolate(start_state, end_state, i / 10.0);
+        // Segment length:
+        double segment_length = equal_weights_max_distance(start_state, end_state);
+
+        // Advance the path point
+        bool finished = advancePathPointClamp(final_path, path_point, 0.01, equal_weights_max_distance);
+
+        auto interpolated_state = interpolate(start_state, end_state, path_point.segment_t);
 
         auto fk = robot_model::forwardKinematics(robot, interpolated_state.joint_values,
                                                  robot.findLinkByName("flying_base"), interpolated_state.base_tf);
@@ -114,28 +127,36 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath)
         // Update the polyline with the new set of end-effector positions
         end_effector_positions_visualization.updateLine(end_effector_positions);
 
+        // Update the robot's state in the visualization
+        update_robot_state(robot, fk, robot_viz);
+
+        size_t newly_seen = 0;
+
         for (size_t fruit_i = 0; fruit_i < all_scannable_points.size(); ++fruit_i)
         {
-            update_visibility(all_scannable_points[fruit_i], ee_pos, ever_seen[fruit_i]);
+            newly_seen += update_visibility(all_scannable_points[fruit_i], ee_pos, ever_seen[fruit_i]);
 
             // Update the colors of the fruit points visualization
             fruit_points_visualizations[fruit_i].setColors(generateVisualizationColors(ever_seen[fruit_i]));
         }
 
-        i++;
-
-        if (i >= 10)
+        if (finished)
         {
-            i = 0;
-            segment_i++;
+            viewer.stop();
+
+            size_t points_seen = 0;
+            size_t points_total = 0;
+            for (size_t fruit_i = 0; fruit_i < all_scannable_points.size(); ++fruit_i)
+            {
+                points_seen += ever_seen[fruit_i].count_seen();
+                points_total += all_scannable_points[fruit_i].surface_points.size();
+            }
+            std::cout << "Seen " << points_seen << " out of " << points_total << " points" << std::endl;
         }
     };
 
+    viewer.setCameraTransform({5.0, 5.0, 2.0}, {0.0, 0.0, 2.5});
+
     viewer.addTimerCallback(timerCallback);
-    viewer.start();
-
-    viewer.setCameraTransform({2.0, 1.0, 1.0}, {0.0, 0.0, 1.0});
-
-    // Start the viewer
     viewer.start();
 }

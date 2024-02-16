@@ -129,15 +129,18 @@ namespace mgodpl {
 		return true;
 	}
 
-	void update_visibility(const ScannablePoints& scannable_points, const math::Vec3d& eye_position,
-		SeenPoints& seen_points)
+	size_t update_visibility(const ScannablePoints& scannable_points, const math::Vec3d& eye_position,
+	                         SeenPoints& seen_points)
 	{
+		size_t n_seen = 0;
 		for (size_t i = 0; i < scannable_points.surface_points.size(); ++i)
 		{
-			if (is_visible(scannable_points, i, eye_position))
+			if (!seen_points.ever_seen[i] && is_visible(scannable_points, i, eye_position))
 			{
 				seen_points.ever_seen[i] = true;
+				++n_seen;
 			}
 		}
+		return n_seen;
 	}
 }
