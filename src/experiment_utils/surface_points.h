@@ -99,6 +99,25 @@ namespace mgodpl {
 	math::Vec3d random_barycentric(random_numbers::RandomNumberGenerator &rng);
 
 	/**
+	 * Compute the cumulative areas of the triangles in a mesh, for uniform sampling.
+	 * @param mesh 			The mesh to compute the cumulative areas for.
+	 * @return 				A vector of cumulative areas, of the same size as the number of triangles in the mesh.
+	 */
+	std::vector<double> triangle_cumulative_areas(const shape_msgs::msg::Mesh &mesh);
+
+	/**
+	 * @brief Uniformly sample a point on a mesh.
+	 *
+	 * @param rng 					Random number generator
+	 * @param mesh 					Mesh to sample from
+	 * @param cumulative_areas 		Cumulative areas of the triangles in the mesh (see triangle_cumulative_areas)
+	 * @return 						A point on the mesh including position and normal
+	 */
+	SurfacePoint sample_point_on_mesh(random_numbers::RandomNumberGenerator &rng,
+									  const shape_msgs::msg::Mesh &mesh,
+									  const std::vector<double> &cumulative_areas);
+
+	/**
 	 * This function samples points on a mesh surface. It first calculates the cumulative areas of all triangles in the mesh.
 	 * Then, it generates random points on the mesh surface by selecting a triangle based on its area and generating a random
 	 * point within it.
