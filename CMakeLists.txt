@@ -233,6 +233,8 @@ add_library(planning
         src/planning/probing_motions.cpp
         src/planning/probing_motions.h
         src/planning/RobotPath.cpp
+        src/planning/swept_volume_ccd.cpp
+        src/planning/swept_volume_ccd.h
 )
 
 target_link_libraries(planning math_utils)
@@ -373,6 +375,7 @@ if (ENABLE_VISUALIZATION)
             src/visualizations/fruit_scan_points.cpp
             src/visualizations/tree_variations.cpp
             src/visualizations/probing.cpp
+            src/visualizations/swept_volume.cpp
     )
 
     target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
