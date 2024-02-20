@@ -278,6 +278,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/scan_paths.h
             src/experiment_utils/scan_path_generators.cpp
             src/experiment_utils/scan_path_generators.h
+            src/experiment_utils/procedural_fruit_placement.cpp
+            src/experiment_utils/procedural_fruit_placement.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
@@ -369,7 +371,7 @@ if (ENABLE_VISUALIZATION)
             src/visualizations/creases.cpp
             src/visualizations/fruit_scan_fullpath.cpp
             src/visualizations/fruit_scan_points.cpp
-            src/visualizations/leaf_density_rescaling.cpp
+            src/visualizations/tree_variations.cpp
             src/visualizations/probing.cpp
     )
 
