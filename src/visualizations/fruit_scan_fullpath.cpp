@@ -339,7 +339,8 @@ math::Vec3d calculateFruitToEEVector(const robot_model::RobotModel& robot,
                                      const RobotState& last_approach_state)
 {
     const auto flying_base = robot.findLinkByName("flying_base");
-    const auto fk = forwardKinematics(robot, last_approach_state.joint_values, flying_base, last_approach_state.base_tf);
+    const auto fk = forwardKinematics(robot, last_approach_state.joint_values, flying_base,
+                                      last_approach_state.base_tf);
     const math::Vec3d ee_pos = fk.forLink(robot.findLinkByName("end_effector")).translation;
     const math::Vec3d fruit_to_ee = ee_pos - fruit_center;
     return fruit_to_ee;
@@ -387,9 +388,9 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples)
 
     // First, create the initial approach path:
     ApproachPath initial_approach_path = approach_planning::plan_initial_approach_path(robot,
-                                                                                       fromEndEffectorAndVector(robot, {0, 5, 5}, {0, 1, 1}),
-                                                                                       flying_base,
-                                                                                       mesh_data);
+        fromEndEffectorAndVector(robot, {0, 5, 5}, {0, 1, 1}),
+        flying_base,
+        mesh_data);
 
     // Try to plan an approach path for all the fruit meshes:
     std::vector<ApproachPath> approach_paths;
@@ -409,43 +410,39 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples)
 
         targets_planned_to++;
 
-        std::cout << "Seen " << targets_planned_to << " out of " << tree_model.fruit_meshes.size() << " targets" << std::endl;
+        std::cout << "Seen " << targets_planned_to << " out of " << tree_model.fruit_meshes.size() << " targets" <<
+            std::endl;
     }
 
     RobotState initial_state = fromEndEffectorAndVector(robot, {0, 5, 5}, {0, 1, 1});
 
     // And one for the initial state:
-    const std::vector<double> &initial_state_distances = shell_distances(initial_approach_path.shell_point,
+    const std::vector<double>& initial_state_distances = shell_distances(initial_approach_path.shell_point,
                                                                          approach_paths,
                                                                          mesh_data.convex_hull);
 
     // Now, compute the distance matrix.
-    std::vector <std::vector<double>> target_to_target_distances;
+    std::vector<std::vector<double>> target_to_target_distances;
     target_to_target_distances.reserve(approach_paths.size());
-    for (const ApproachPath &path1: approach_paths) {
+    for (const ApproachPath& path1 : approach_paths)
+    {
         target_to_target_distances.emplace_back(shell_distances(path1.shell_point,
                                                                 approach_paths,
                                                                 mesh_data.convex_hull));
     }
 
-    const std::vector <size_t> &order = visitation_order_greedy(target_to_target_distances, initial_state_distances);
+    const std::vector<size_t>& order = visitation_order_greedy(target_to_target_distances, initial_state_distances);
 
     RobotPath final_path;
 
-    // First, the initial approach path to get to the shell space:
-    final_path.states.insert(
-        final_path.states.end(),
-        initial_approach_path.path.states.rbegin(),
-        initial_approach_path.path.states.rend());
+    /// Use retreat_move_probe to replace the selected code:
+    auto retreat_probe_move_path = shell_path_planning::retreat_move_probe(robot, mesh_data.convex_hull,
+                                                                           initial_approach_path,
+                                                                           approach_paths[order[0]]);
 
-    // Then, the shell path:
-    shell_path(initial_approach_path.shell_point, approach_paths[order[0]].shell_point, mesh_data.convex_hull, robot);
-
-    // Then, the approach path to the first fruit:
-    final_path.states.insert(
-        final_path.states.end(),
-        approach_paths[order[0]].path.states.begin(),
-        approach_paths[order[0]].path.states.end());
+    final_path.states.insert(final_path.states.end(),
+                             retreat_probe_move_path.states.begin(),
+                             retreat_probe_move_path.states.end());
 
     const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot, reachable_fruit_positions[order[0]], initial_state);
 
@@ -467,35 +464,17 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples)
 
     for (size_t i = 1; i < approach_paths.size(); ++i)
     {
+        // Use retreat_move_probe to replace the selected code:
+        auto retreat_probe_move_path = shell_path_planning::retreat_move_probe(robot, mesh_data.convex_hull,
+                                                                               approach_paths[order[i - 1]],
+                                                                               approach_paths[order[i]]);
 
-        const RobotPath& last_approach_path = approach_paths[order[i - 1]].path;
-        const RobotPath& current_approach_path = approach_paths[order[i]].path;
+        final_path.states.insert(final_path.states.end(),
+                                 retreat_probe_move_path.states.begin(),
+                                 retreat_probe_move_path.states.end());
 
-        // Append the reverse of the last approach path to the final path:
-        final_path.states.insert(
-            final_path.states.end(),
-            last_approach_path.states.rbegin(),
-            last_approach_path.states.rend());
-
-        // Then the shell path:
-        auto shell = shell_path(
-            approach_paths[order[i - 1]].shell_point,
-            approach_paths[order[i]].shell_point,
-            mesh_data.convex_hull,
-            robot);
-
-        final_path.states.insert(
-            final_path.states.end(),
-            shell.states.begin(),
-            shell.states.end());
-
-        // Then, the approach path to the next fruit:
-        final_path.states.insert(
-            final_path.states.end(),
-            current_approach_path.states.begin(),
-            current_approach_path.states.end());
-
-        const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot, reachable_fruit_positions[order[i]], initial_state);
+        const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot, reachable_fruit_positions[order[i]],
+                                                                 initial_state);
 
         // Then, the scanning motion:
         RobotPath sideways_scan = createLeftRightScanningMotion(
