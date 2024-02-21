@@ -235,6 +235,8 @@ add_library(planning
         src/planning/RobotPath.cpp
         src/planning/swept_volume_ccd.cpp
         src/planning/swept_volume_ccd.h
+        src/planning/scanning_motions.cpp
+        src/planning/scanning_motions.h
 )
 
 target_link_libraries(planning math_utils)

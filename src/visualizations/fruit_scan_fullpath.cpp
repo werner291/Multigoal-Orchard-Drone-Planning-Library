@@ -30,6 +30,7 @@
 
 #include "../planning/collision_detection.h"
 #include "../planning/goal_sampling.h"
+#include "../planning/scanning_motions.h"
 #include "../planning/shell_path_assembly.h"
 #include "../planning/spherical_geometry.h"
 
@@ -171,76 +172,6 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath)
     viewer.start();
 }
 
-/**
- * @enum Direction
- * @brief An enumeration to represent the direction of scanning motion.
- */
-enum class Direction {
-    LEFT,   ///< Represents the left direction.
-    RIGHT   ///< Represents the right direction.
-};
-
-/**
- * @fn RobotPath generateSidewaysScanningMotion(const robot_model::RobotModel& robot, const fcl::CollisionObjectd& treeTrunkObject, const mgodpl::math::Vec3d& fruitCenter, double initialLongitude, double initialLatitude, double scanDistance, Direction direction)
- * @brief Generates a sideways scanning motion for a robot.
- *
- * This function generates a sideways scanning motion for a robot. The motion is generated based on the provided parameters.
- * The direction of the motion can be either left or right, as specified by the Direction enum parameter.
- *
- * The motion is at most half a circle, or until the first collision is detected.
- *
- * @param robot The robot model.
- * @param treeTrunkObject The tree trunk object used for collision detection.
- * @param fruitCenter The center of the fruit to be scanned.
- * @param initialLongitude The initial longitude for the scanning motion.
- * @param initialLatitude The initial latitude for the scanning motion.
- * @param scanDistance The distance to scan from the fruit center.
- * @param direction The direction of the scanning motion (either LEFT or RIGHT).
- *
- * @return A RobotPath object representing the generated scanning motion.
- */
-RobotPath generateSidewaysScanningMotion(const robot_model::RobotModel& robot,
-                                         const fcl::CollisionObjectd& treeTrunkObject,
-                                         const mgodpl::math::Vec3d& fruitCenter,
-                                         double initialLongitude,
-                                         double initialLatitude,
-                                         double scanDistance,
-                                         Direction direction)
-{
-    const int MAX_ITERATIONS = 32;  ///< The maximum number of iterations for the scanning motion.
-    double STEP_SIZE = M_PI / (double)MAX_ITERATIONS;  ///< The step size for each iteration of the scanning motion.
-
-    // Adjust the step size based on the direction
-    if (direction == Direction::LEFT) {
-        STEP_SIZE = -STEP_SIZE;
-    }
-
-    std::vector<RobotState> scanningMotionStates;  ///< A vector to store the states of the robot during the scanning motion.
-    for (int i = 1; i < MAX_ITERATIONS; ++i)
-    {
-        auto relativeVertex = spherical_geometry::RelativeVertex{
-            .longitude = initialLongitude + i * STEP_SIZE, .latitude = initialLatitude
-        }.to_cartesian();
-
-        // If collision-free, add to the list:
-        if (!check_robot_collision(robot, treeTrunkObject, fromEndEffectorAndVector(robot,
-                                       fruitCenter + relativeVertex.normalized() * scanDistance,
-                                       relativeVertex)))
-        {
-            scanningMotionStates.push_back(fromEndEffectorAndVector(robot,
-                                                                    fruitCenter + relativeVertex.normalized() *
-                                                                    scanDistance,
-                                                                    relativeVertex));
-        }
-        else
-        {
-            // Stop generating states after the first collision
-            break;
-        }
-    }
-    return RobotPath{scanningMotionStates};  ///< Return the generated scanning motion as a RobotPath object.
-}
-
 REGISTER_VISUALIZATION(single_fruit_scan)
 {
     // Load the tree meshes
@@ -303,17 +234,6 @@ REGISTER_VISUALIZATION(single_fruit_scan)
     double lat_angle = spherical_geometry::latitude(fruit_to_ee);
     double long_angle = spherical_geometry::longitude(fruit_to_ee);
 
-    // Generate a few additional samples by increasing the long angle:
-    RobotPath scan_motion = generateSidewaysScanningMotion(
-        robot,
-        tree_trunk_object,
-        fruit_center,
-        long_angle,
-        lat_angle,
-        EE_SCAN_DISTANCE,
-        Direction::LEFT
-    );
-
     // Then, try the straight-out motion:
     auto approach_path = straightout(robot, *sample, mesh_data.tree, mesh_data.mesh_path);
 
@@ -325,24 +245,18 @@ REGISTER_VISUALIZATION(single_fruit_scan)
 
     RobotPath path = approach_path.path;
 
-    // Append the scan motion to the path.
-    path.states.insert(path.states.end(), scan_motion.states.begin(), scan_motion.states.end());
-    // And back:
-    path.states.insert(path.states.end(), scan_motion.states.rbegin(), scan_motion.states.rend());
-
-    // Same but to the right now:
-    RobotPath scan_motion_right = generateSidewaysScanningMotion(
+    RobotPath sideways_scan = createLeftRightScanningMotion(
         robot,
         tree_trunk_object,
         fruit_center,
         long_angle,
         lat_angle,
-        EE_SCAN_DISTANCE,
-        Direction::RIGHT
+        EE_SCAN_DISTANCE
     );
 
-    path.states.insert(path.states.end(), scan_motion_right.states.begin(), scan_motion_right.states.end());
-    path.states.insert(path.states.end(), scan_motion_right.states.rbegin(), scan_motion_right.states.rend());
+    path.states.insert(path.states.end(),
+                       sideways_scan.states.begin(),
+                       sideways_scan.states.end());
 
     // Define the current position on the path
     PathPoint path_point = {0, 0.0};
