@@ -172,7 +172,7 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath)
     viewer.start();
 }
 
-REGISTER_VISUALIZATION(single_fruit_scan)
+REGISTER_VISUALIZATION(right_left_scanning_motion)
 {
     // Load the tree meshes
     auto tree_model = tree_meshes::loadTreeMeshes("appletree");
@@ -294,7 +294,10 @@ REGISTER_VISUALIZATION(single_fruit_scan)
     viewer.addTimerCallback([&]()
     {
         // Advance the path point along the path
-        advancePathPointClamp(path, path_point, interpolation_speed, equal_weights_max_distance);
+        if (advancePathPointClamp(path, path_point, interpolation_speed, equal_weights_max_distance))
+        {
+            viewer.stop();
+        }
 
         // Interpolate the robot's state
         auto interpolated_state = interpolate(path_point, path);
@@ -313,7 +316,8 @@ REGISTER_VISUALIZATION(single_fruit_scan)
         // Update the colors of the fruit points visualization
         fruit_points_visualization.setColors(generateVisualizationColors(points_seen));
     });
-    viewer.setCameraTransform(fruit_center + math::Vec3d{1.5, 0.0, 1.0}, fruit_center);
+
+    viewer.setCameraTransform(fruit_center + math::Vec3d{2.5, 0.0, -1.5}, fruit_center);
 
     // Start the viewer
     viewer.start();
