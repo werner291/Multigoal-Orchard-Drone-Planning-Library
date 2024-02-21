@@ -435,52 +435,43 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples)
 
     RobotPath final_path;
 
-    /// Use retreat_move_probe to replace the selected code:
-    auto retreat_probe_move_path = shell_path_planning::retreat_move_probe(robot, mesh_data.convex_hull,
-                                                                           initial_approach_path,
-                                                                           approach_paths[order[0]]);
-
-    final_path.append(retreat_probe_move_path);
+    // Append the probe-retreat-move to the first goal.
+    final_path.append(shell_path_planning::retreat_move_probe(robot, mesh_data.convex_hull,
+                                                              initial_approach_path,
+                                                              approach_paths[order[0]]));
 
     const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot, reachable_fruit_positions[order[0]], initial_state);
 
     // Then, the scanning motion:
-    RobotPath sideways_scan = createLeftRightScanningMotion(
+    final_path.append(createLeftRightScanningMotion(
         robot,
         tree_trunk_object,
         reachable_fruit_positions[order[0]],
         spherical_geometry::longitude(fruit_to_ee),
         spherical_geometry::latitude(fruit_to_ee),
         EE_SCAN_DISTANCE
-    );
-
-    // Append the scanning motion to the path
-    final_path.append(sideways_scan);
+    ));
 
     for (size_t i = 1; i < approach_paths.size(); ++i)
     {
         // Use retreat_move_probe to replace the selected code:
-        auto retreat_probe_move_path = shell_path_planning::retreat_move_probe(robot, mesh_data.convex_hull,
-                                                                               approach_paths[order[i - 1]],
-                                                                               approach_paths[order[i]]);
 
-        final_path.append(retreat_probe_move_path);
+        final_path.append(shell_path_planning::retreat_move_probe(robot, mesh_data.convex_hull,
+                                                                  approach_paths[order[i - 1]],
+                                                                  approach_paths[order[i]]));
 
         const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot, reachable_fruit_positions[order[i]],
                                                                  initial_state);
 
         // Then, the scanning motion:
-        RobotPath sideways_scan = createLeftRightScanningMotion(
+        final_path.append(createLeftRightScanningMotion(
             robot,
             tree_trunk_object,
             reachable_fruit_positions[order[i]],
             spherical_geometry::longitude(fruit_to_ee),
             spherical_geometry::latitude(fruit_to_ee),
             EE_SCAN_DISTANCE
-        );
-
-        // Append the scanning motion to the path
-        final_path.append(sideways_scan);
+        ));
     }
 
     // Define the current position on the path
