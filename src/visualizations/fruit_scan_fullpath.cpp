@@ -440,9 +440,7 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples)
                                                                            initial_approach_path,
                                                                            approach_paths[order[0]]);
 
-    final_path.states.insert(final_path.states.end(),
-                             retreat_probe_move_path.states.begin(),
-                             retreat_probe_move_path.states.end());
+    final_path.append(retreat_probe_move_path);
 
     const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot, reachable_fruit_positions[order[0]], initial_state);
 
@@ -457,10 +455,7 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples)
     );
 
     // Append the scanning motion to the path
-    final_path.states.insert(
-        final_path.states.end(),
-        sideways_scan.states.begin(),
-        sideways_scan.states.end());
+    final_path.append(sideways_scan);
 
     for (size_t i = 1; i < approach_paths.size(); ++i)
     {
@@ -469,9 +464,7 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples)
                                                                                approach_paths[order[i - 1]],
                                                                                approach_paths[order[i]]);
 
-        final_path.states.insert(final_path.states.end(),
-                                 retreat_probe_move_path.states.begin(),
-                                 retreat_probe_move_path.states.end());
+        final_path.append(retreat_probe_move_path);
 
         const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot, reachable_fruit_positions[order[i]],
                                                                  initial_state);
@@ -487,10 +480,7 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples)
         );
 
         // Append the scanning motion to the path
-        final_path.states.insert(
-            final_path.states.end(),
-            sideways_scan.states.begin(),
-            sideways_scan.states.end());
+        final_path.append(sideways_scan);
     }
 
     // Define the current position on the path
