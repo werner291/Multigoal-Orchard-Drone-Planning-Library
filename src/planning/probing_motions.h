@@ -33,15 +33,16 @@ namespace mgodpl {
 							 const CGAL::AABB_tree<cgal::AABBTraits> &tree,
 							 const cgal::Surface_mesh_shortest_path &algo);
 
-/**
- * A method that combined straightout with uniform random sampling.
- */
+	/**
+	 * A method that combined straightout with uniform random sampling.
+	 */
 	std::optional<ApproachPath> uniform_straightout_approach(const mgodpl::math::Vec3d &target,
 															 const mgodpl::robot_model::RobotModel &robot,
 															 const fcl::CollisionObjectd &tree_trunk_object,
 															 const cgal::CgalMeshData &mesh_data,
 															 random_numbers::RandomNumberGenerator &rng,
-															 size_t max_attempts
+															 size_t max_attempts,
+															 double ee_distance = 0.0
 	);
 
 	RobotPath plan_multigoal_path(const robot_model::RobotModel &robot,

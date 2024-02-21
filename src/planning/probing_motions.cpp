@@ -37,7 +37,14 @@ mgodpl::ApproachPath mgodpl::straightout(const mgodpl::robot_model::RobotModel &
 	auto isect = tree.first_intersection(mgodpl::cgal::Ray_3(to_cgal_point(end_effector_position),
 															 to_cgal_direction(exit_vector)));
 
-	assert(isect.has_value());
+	if (!isect.has_value()) {
+		// We're out of the tree; try the opposite direction.
+		exit_vector = -exit_vector;
+		isect = tree.first_intersection(mgodpl::cgal::Ray_3(to_cgal_point(end_effector_position),
+															to_cgal_direction(exit_vector)));
+
+		assert(isect.has_value());
+	}
 
 	Point_3 intersection = boost::get<Point_3>(isect->first);
 
@@ -118,19 +125,22 @@ std::optional<ApproachPath> mgodpl::uniform_straightout_approach(const math::Vec
 														 const fcl::CollisionObjectd &tree_trunk_object,
 														 const CgalMeshData &mesh_data,
 														 random_numbers::RandomNumberGenerator &rng,
-														 size_t max_attempts) {
+														 size_t max_attempts,
+														 double ee_distance) {
 
 
 	const auto flying_base = robot.findLinkByName("flying_base");
 	const auto end_effector = robot.findLinkByName("end_effector");
 
-	auto sample = findGoalStateByUniformSampling(target,
-												 robot,
-												 flying_base,
-												 end_effector,
-												 tree_trunk_object,
-												 rng,
-												 max_attempts);
+	// auto sample = findGoalStateByUniformSampling(target,
+	// 											 robot,
+	// 											 flying_base,
+	// 											 end_effector,
+	// 											 tree_trunk_object,
+	// 											 rng,
+	// 											 max_attempts);
+
+	auto sample = generateUniformRandomArmVectorState(robot, tree_trunk_object, target, rng, max_attempts, ee_distance);
 
 	if (!sample) {
 		return std::nullopt;
