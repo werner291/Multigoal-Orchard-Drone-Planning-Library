@@ -61,3 +61,16 @@ std::vector<double> mgodpl::shell_distances(const cgal::Surface_mesh_shortest_pa
 
 	return distances;
 }
+
+std::vector<std::vector<double>> mgodpl::shell_distances(const std::vector<ApproachPath>& approach_paths,
+	const cgal::CgalMeshData& mesh_data)
+{
+	std::vector<std::vector<double>> target_to_target_distances;
+	target_to_target_distances.reserve(approach_paths.size());
+	for (const ApproachPath& path : approach_paths) {
+		target_to_target_distances.emplace_back(shell_distances(path.shell_point,
+		                                                        approach_paths,
+		                                                        mesh_data.convex_hull));
+	}
+	return target_to_target_distances;
+}

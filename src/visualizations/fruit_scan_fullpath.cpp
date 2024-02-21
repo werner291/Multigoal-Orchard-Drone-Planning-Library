@@ -416,20 +416,9 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples)
 
     RobotState initial_state = fromEndEffectorAndVector(robot, {0, 5, 5}, {0, 1, 1});
 
-    // And one for the initial state:
-    const std::vector<double>& initial_state_distances = shell_distances(initial_approach_path.shell_point,
-                                                                         approach_paths,
-                                                                         mesh_data.convex_hull);
-
-    // Now, compute the distance matrix.
-    std::vector<std::vector<double>> target_to_target_distances;
-    target_to_target_distances.reserve(approach_paths.size());
-    for (const ApproachPath& path1 : approach_paths)
-    {
-        target_to_target_distances.emplace_back(shell_distances(path1.shell_point,
-                                                                approach_paths,
-                                                                mesh_data.convex_hull));
-    }
+    // compute the shell distances:
+    const auto& initial_state_distances = shell_distances(initial_approach_path.shell_point, approach_paths, mesh_data.convex_hull);
+    const auto& target_to_target_distances = shell_distances(approach_paths, mesh_data);
 
     const std::vector<size_t>& order = visitation_order_greedy(target_to_target_distances, initial_state_distances);
 

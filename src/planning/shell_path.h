@@ -44,6 +44,20 @@ namespace mgodpl {
 	std::vector<double> shell_distances(const cgal::Surface_mesh_shortest_path::Face_location &from,
 										const std::vector<ApproachPath> &paths, // TODO: this should be a vector of shell points, not approach paths.
 										const cgal::Surface_mesh &mesh);
+
+	/**
+	 * @brief Computes a distance matrix for a set of approach paths.
+	 *
+	 * This function computes a distance matrix for a set of approach paths. The distance matrix is a 2D vector where each element
+	 * represents the distance from one approach path to all other approach paths. The distances are computed using the shell_distances
+	 * function, which calculates the distances from one source point to the shell point of a vector of approach paths.
+	 *
+	 * @param approach_paths A vector of ApproachPath objects. Each ApproachPath object represents a path that the robot can take.
+	 * @param mesh_data A CgalMeshData object that represents the mesh data of the robot's environment.
+	 * @return A 2D vector of doubles. Each element in the vector represents the distance from one approach path to all other approach paths.
+	 */
+	std::vector<std::vector<double>> shell_distances(const std::vector<ApproachPath>& approach_paths,
+	                                                       const cgal::CgalMeshData& mesh_data);
 }
 
 #endif //MGODPL_SHELL_PATH_H
