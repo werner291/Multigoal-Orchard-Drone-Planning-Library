@@ -325,6 +325,26 @@ REGISTER_VISUALIZATION(right_left_scanning_motion)
     viewer.start();
 }
 
+/**
+ * @brief This function calculates the vector from the fruit to the end effector based on the last approach state.
+ * It uses the forward kinematics of the robot to get the position of the end effector and then subtracts the fruit center position from it.
+ *
+ * @param robot The robot model.
+ * @param fruit_center The center position of the fruit.
+ * @param last_approach_state The last approach state of the robot.
+ * @return math::Vec3d The vector from the fruit to the end effector.
+ */
+math::Vec3d calculateFruitToEEVector(const robot_model::RobotModel& robot,
+                                     const math::Vec3d& fruit_center,
+                                     const RobotState& last_approach_state)
+{
+    const auto flying_base = robot.findLinkByName("flying_base");
+    const auto fk = forwardKinematics(robot, last_approach_state.joint_values, flying_base, last_approach_state.base_tf);
+    const math::Vec3d ee_pos = fk.forLink(robot.findLinkByName("end_effector")).translation;
+    const math::Vec3d fruit_to_ee = ee_pos - fruit_center;
+    return fruit_to_ee;
+}
+
 REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples)
 {
     // Load the tree meshes
@@ -352,11 +372,9 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples)
         all_scannable_points.push_back(scannable_points);
     }
 
-
     // Create a robot model
     const auto& robot = experiments::createProceduralRobotModel();
     const robot_model::RobotModel::LinkId flying_base = robot.findLinkByName("flying_base");
-    const robot_model::RobotModel::LinkId end_effector = robot.findLinkByName("end_effector");
 
     // Allocate a BVH convex_hull for the tree trunk.
     const auto& tree_trunk_bvh = fcl_utils::meshToFclBVH(tree_model.trunk_mesh);
@@ -429,12 +447,7 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples)
         approach_paths[order[0]].path.states.begin(),
         approach_paths[order[0]].path.states.end());
 
-    // From the last state of the approach path, extract the end-effector position relative to the fruit:
-    const auto& last_approach_state = approach_paths[order[0]].path.states.back();
-    const auto fk = forwardKinematics(robot, last_approach_state.joint_values, flying_base, last_approach_state.base_tf);
-    const math::Vec3d ee_pos = fk.forLink(robot.findLinkByName("end_effector")).translation;
-    const math::Vec3d fruit_center = reachable_fruit_positions[order[0]];
-    const math::Vec3d fruit_to_ee = ee_pos - fruit_center;
+    const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot, reachable_fruit_positions[order[0]], initial_state);
 
     // Then, the scanning motion:
     RobotPath sideways_scan = createLeftRightScanningMotion(
@@ -482,12 +495,7 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples)
             current_approach_path.states.begin(),
             current_approach_path.states.end());
 
-        // From the last state of the approach path, extract the end-effector position relative to the fruit:
-        const auto& last_approach_state = current_approach_path.states.back();
-        const auto fk = forwardKinematics(robot, last_approach_state.joint_values, flying_base, last_approach_state.base_tf);
-        const math::Vec3d ee_pos = fk.forLink(robot.findLinkByName("end_effector")).translation;
-        const math::Vec3d fruit_center = reachable_fruit_positions[order[i]];
-        const math::Vec3d fruit_to_ee = ee_pos - fruit_center;
+        const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot, reachable_fruit_positions[order[i]], initial_state);
 
         // Then, the scanning motion:
         RobotPath sideways_scan = createLeftRightScanningMotion(
