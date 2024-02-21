@@ -20,13 +20,14 @@ mgodpl::RobotPath mgodpl::shell_path(const CGAL::Surface_mesh_shortest_path<mgod
 
 	Surface_mesh_shortest_path mesh_path(mesh);
 
-	mesh_path.add_source_point(from.first, from.second);
+	// Swapping the "to" and the "from" points here, because the algorithm backtracks to the source point.
+	mesh_path.add_source_point(to.first, to.second);
 
 	std::vector<Surface_mesh_shortest_path::Face_location> path;
 
 	PathVisitor path_visitor{.mesh = mesh, .path_algo = mesh_path, .states = path};
 
-	mesh_path.shortest_path_sequence_to_source_points(to.first, to.second, path_visitor);
+	mesh_path.shortest_path_sequence_to_source_points(from.first, from.second, path_visitor);
 
 	RobotPath shell_path;
 
