@@ -77,3 +77,19 @@ bool mgodpl::advancePathPointWrap(const mgodpl::RobotPath& robot_path, mgodpl::P
     advance_naive(path_point, advancement, segment_length);
     return wrapPathPoint(robot_path, path_point);
 }
+
+mgodpl::RobotPath mgodpl::concatenate(const RobotPath& path1, const RobotPath& path2)
+{
+    RobotPath result;
+    result.states = path1.states;
+    result.states.insert(result.states.end(), path2.states.begin(), path2.states.end());
+    return result;
+}
+
+mgodpl::RobotPath mgodpl::reverse(const RobotPath& path)
+{
+    RobotPath result;
+    result.states = path.states;
+    std::reverse(result.states.begin(), result.states.end());
+    return result;
+}

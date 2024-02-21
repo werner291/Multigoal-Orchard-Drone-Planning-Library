@@ -31,6 +31,7 @@
 #include "../planning/collision_detection.h"
 #include "../planning/goal_sampling.h"
 #include "../planning/shell_path_assembly.h"
+#include "../planning/spherical_geometry.h"
 
 using namespace mgodpl;
 
@@ -170,6 +171,76 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath)
     viewer.start();
 }
 
+/**
+ * @enum Direction
+ * @brief An enumeration to represent the direction of scanning motion.
+ */
+enum class Direction {
+    LEFT,   ///< Represents the left direction.
+    RIGHT   ///< Represents the right direction.
+};
+
+/**
+ * @fn RobotPath generateSidewaysScanningMotion(const robot_model::RobotModel& robot, const fcl::CollisionObjectd& treeTrunkObject, const mgodpl::math::Vec3d& fruitCenter, double initialLongitude, double initialLatitude, double scanDistance, Direction direction)
+ * @brief Generates a sideways scanning motion for a robot.
+ *
+ * This function generates a sideways scanning motion for a robot. The motion is generated based on the provided parameters.
+ * The direction of the motion can be either left or right, as specified by the Direction enum parameter.
+ *
+ * The motion is at most half a circle, or until the first collision is detected.
+ *
+ * @param robot The robot model.
+ * @param treeTrunkObject The tree trunk object used for collision detection.
+ * @param fruitCenter The center of the fruit to be scanned.
+ * @param initialLongitude The initial longitude for the scanning motion.
+ * @param initialLatitude The initial latitude for the scanning motion.
+ * @param scanDistance The distance to scan from the fruit center.
+ * @param direction The direction of the scanning motion (either LEFT or RIGHT).
+ *
+ * @return A RobotPath object representing the generated scanning motion.
+ */
+RobotPath generateSidewaysScanningMotion(const robot_model::RobotModel& robot,
+                                         const fcl::CollisionObjectd& treeTrunkObject,
+                                         const mgodpl::math::Vec3d& fruitCenter,
+                                         double initialLongitude,
+                                         double initialLatitude,
+                                         double scanDistance,
+                                         Direction direction)
+{
+    const int MAX_ITERATIONS = 32;  ///< The maximum number of iterations for the scanning motion.
+    double STEP_SIZE = M_PI / (double)MAX_ITERATIONS;  ///< The step size for each iteration of the scanning motion.
+
+    // Adjust the step size based on the direction
+    if (direction == Direction::LEFT) {
+        STEP_SIZE = -STEP_SIZE;
+    }
+
+    std::vector<RobotState> scanningMotionStates;  ///< A vector to store the states of the robot during the scanning motion.
+    for (int i = 1; i < MAX_ITERATIONS; ++i)
+    {
+        auto relativeVertex = spherical_geometry::RelativeVertex{
+            .longitude = initialLongitude + i * STEP_SIZE, .latitude = initialLatitude
+        }.to_cartesian();
+
+        // If collision-free, add to the list:
+        if (!check_robot_collision(robot, treeTrunkObject, fromEndEffectorAndVector(robot,
+                                       fruitCenter + relativeVertex.normalized() * scanDistance,
+                                       relativeVertex)))
+        {
+            scanningMotionStates.push_back(fromEndEffectorAndVector(robot,
+                                                                    fruitCenter + relativeVertex.normalized() *
+                                                                    scanDistance,
+                                                                    relativeVertex));
+        }
+        else
+        {
+            // Stop generating states after the first collision
+            break;
+        }
+    }
+    return RobotPath{scanningMotionStates};  ///< Return the generated scanning motion as a RobotPath object.
+}
+
 REGISTER_VISUALIZATION(single_fruit_scan)
 {
     // Load the tree meshes
@@ -194,52 +265,12 @@ REGISTER_VISUALIZATION(single_fruit_scan)
         fruit_mesh, NUM_POINTS, MAX_DISTANCE, MIN_DISTANCE,
         MAX_ANGLE);
 
-    // Create the fruit points visualization
-    VtkLineSegmentsVisualization fruit_points_visualization = createFruitLinesVisualization(scannable_points);
-
-    // Add the fruit points visualization to the viewer
-    viewer.addActor(fruit_points_visualization.getActor());
-
-    // Add the fruit mesh to the viewer
-    viewer.addMesh(fruit_mesh, {0.8, 0.8, 0.8}, 1.0);
-
-    // Add the tree trunk mesh to the viewer
-    viewer.addMesh(tree_model.trunk_mesh, {0.5, 0.3, 0.1}, 1.0);
-
     // Create a robot model
     const auto& robot = experiments::createProceduralRobotModel();
     const robot_model::RobotModel::LinkId flying_base = robot.findLinkByName("flying_base");
     const robot_model::RobotModel::LinkId end_effector = robot.findLinkByName("end_effector");
 
-    math::Vec3d initial_ee_position = {0, 4, 4};
-
-    // Create a state outside the tree model
-    RobotState initial_state =
-        fromEndEffectorAndVector(
-            robot,
-            initial_ee_position,
-            {0, 1, 1}
-        );
-
-
-    // Visualize the robot state
-    auto robot_viz = vizualisation::vizualize_robot_state(viewer, robot,
-                                                          forwardKinematics(
-                                                              robot, initial_state.joint_values,
-                                                              flying_base, initial_state.base_tf));
-
-    // Set the camera transform for the viewer
-    viewer.setCameraTransform({2.0, 1.0, 1.0}, {0.0, 0.0, 0.0});
-
     math::Vec3d fruit_center = mesh_aabb(fruit_mesh).center();
-
-    math::Vec3d delta = fruit_center - initial_ee_position;
-
-    RobotState near_fruit = fromEndEffectorAndVector(
-        robot,
-        fruit_center - delta.normalized() * 0.1,
-        -delta
-    );
 
     // Allocate a BVH convex_hull for the tree trunk.
     const auto& tree_trunk_bvh = fcl_utils::meshToFclBVH(tree_model.trunk_mesh);
@@ -247,11 +278,6 @@ REGISTER_VISUALIZATION(single_fruit_scan)
 
     // First, create the convex hull.
     cgal::CgalMeshData mesh_data(tree_model.leaves_mesh);
-
-    ApproachPath initial_approach_path = approach_planning::plan_initial_approach_path(robot,
-        initial_state,
-        flying_base,
-        mesh_data);
 
     const double EE_SCAN_DISTANCE = 0.1;
 
@@ -269,6 +295,25 @@ REGISTER_VISUALIZATION(single_fruit_scan)
         throw std::runtime_error("Failed to find a collision-free state");
     }
 
+    // Get the arm vector from the sample:
+    auto sample_fk = forwardKinematics(robot, sample->joint_values, flying_base, sample->base_tf);
+    auto fruit_to_ee = sample_fk.forLink(end_effector).translation - fruit_center;
+
+    // Get the lat/long angles of the arm vector:
+    double lat_angle = spherical_geometry::latitude(fruit_to_ee);
+    double long_angle = spherical_geometry::longitude(fruit_to_ee);
+
+    // Generate a few additional samples by increasing the long angle:
+    RobotPath scan_motion = generateSidewaysScanningMotion(
+        robot,
+        tree_trunk_object,
+        fruit_center,
+        long_angle,
+        lat_angle,
+        EE_SCAN_DISTANCE,
+        Direction::LEFT
+    );
+
     // Then, try the straight-out motion:
     auto approach_path = straightout(robot, *sample, mesh_data.tree, mesh_data.mesh_path);
 
@@ -278,14 +323,58 @@ REGISTER_VISUALIZATION(single_fruit_scan)
         throw std::runtime_error("Straight-out motion collides");
     }
 
-    RobotPath path = shell_path_planning::retreat_move_probe(robot, mesh_data.convex_hull, initial_approach_path,
-                                                             approach_path);
+    RobotPath path = approach_path.path;
+
+    // Append the scan motion to the path.
+    path.states.insert(path.states.end(), scan_motion.states.begin(), scan_motion.states.end());
+    // And back:
+    path.states.insert(path.states.end(), scan_motion.states.rbegin(), scan_motion.states.rend());
+
+    // Same but to the right now:
+    RobotPath scan_motion_right = generateSidewaysScanningMotion(
+        robot,
+        tree_trunk_object,
+        fruit_center,
+        long_angle,
+        lat_angle,
+        EE_SCAN_DISTANCE,
+        Direction::RIGHT
+    );
+
+    path.states.insert(path.states.end(), scan_motion_right.states.begin(), scan_motion_right.states.end());
+    path.states.insert(path.states.end(), scan_motion_right.states.rbegin(), scan_motion_right.states.rend());
 
     // Define the current position on the path
     PathPoint path_point = {0, 0.0};
 
     // Define the speed of interpolation
     double interpolation_speed = 0.02;
+
+    RobotState initial_state = path.states[0];
+
+    // Create the fruit points visualization
+    VtkLineSegmentsVisualization fruit_points_visualization = createFruitLinesVisualization(scannable_points);
+
+    // Add the fruit points visualization to the viewer
+    viewer.addActor(fruit_points_visualization.getActor());
+
+    // Add the fruit mesh to the viewer
+    viewer.addMesh(fruit_mesh, {0.8, 0.8, 0.8}, 1.0);
+
+    // Add the tree trunk mesh to the viewer
+    viewer.addMesh(tree_model.trunk_mesh, {0.5, 0.3, 0.1}, 1.0);
+
+    // Set the camera transform for the viewer
+    viewer.setCameraTransform({2.0, 1.0, 1.0}, {0.0, 0.0, 0.0});
+
+    // Visualize the robot state
+    auto robot_viz = vizualisation::vizualize_robot_state(viewer, robot,
+                                                          forwardKinematics(
+                                                              robot, initial_state.joint_values,
+                                                              flying_base, initial_state.base_tf));
+
+    // Initialize a vector to keep track of which points have been seen
+    SeenPoints points_seen = SeenPoints::create_all_unseen(scannable_points);
 
     // Register the timer callback function to be called at regular intervals
     viewer.addTimerCallback([&]()
@@ -302,12 +391,14 @@ REGISTER_VISUALIZATION(single_fruit_scan)
 
         update_robot_state(robot, fk, robot_viz);
 
-        // if (finished)
-        // {
-        //     viewer.stop();
-        // }
-    });
+        // Get the position of the robot's end effector
+        const auto& end_effector_position = fk.forLink(robot.findLinkByName("end_effector")).translation;
 
+        update_visibility(scannable_points, end_effector_position, points_seen);
+
+        // Update the colors of the fruit points visualization
+        fruit_points_visualization.setColors(generateVisualizationColors(points_seen));
+    });
     viewer.setCameraTransform(fruit_center + math::Vec3d{1.5, 0.0, 1.0}, fruit_center);
 
     // Start the viewer

@@ -127,6 +127,29 @@ namespace mgodpl
      */
     bool advancePathPointWrap(const mgodpl::RobotPath& robot_path, mgodpl::PathPoint& path_point, double advancement,
                               DistanceFn distanceFunc);
+
+    /**
+     * @brief Concatenates two RobotPaths.
+     *
+     * This function takes two RobotPath objects as input and returns a new RobotPath that is the concatenation of the two input paths.
+     * The states of the second path are appended to the states of the first path in the resulting RobotPath.
+     *
+     * @param path1 The first RobotPath.
+     * @param path2 The second RobotPath.
+     * @return A new RobotPath that is the concatenation of path1 and path2.
+     */
+    RobotPath concatenate(const RobotPath& path1, const RobotPath& path2);
+
+    /**
+     * @brief Reverses a RobotPath.
+     *
+     * This function takes a RobotPath object as input and returns a new RobotPath that is the reverse of the input path.
+     * The states in the resulting RobotPath are in the reverse order of the states in the input path.
+     *
+     * @param path The RobotPath to reverse.
+     * @return A new RobotPath that is the reverse of the input path.
+     */
+    RobotPath reverse(const RobotPath& path);
 }
 
 
