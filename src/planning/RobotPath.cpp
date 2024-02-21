@@ -42,7 +42,7 @@ bool mgodpl::clampPathPoint(const mgodpl::RobotPath& robot_path, mgodpl::PathPoi
 
 bool mgodpl::wrapPathPoint(const mgodpl::RobotPath& robot_path, mgodpl::PathPoint& path_point)
 {
-    if (path_point.segment_i >= robot_path.states.size())
+    if (path_point.segment_i + 1 >= robot_path.states.size())
     {
         path_point.segment_i = 0;
         return true;
