@@ -62,6 +62,25 @@ namespace mgodpl {
 			const fcl::CollisionObjectd& tree_trunk_object,
 			random_numbers::RandomNumberGenerator& rng,
 			size_t max_attempts);
+
+	/**
+	 * @brief Attempts to generate a collision-free RobotState by uniformly sampling random arm vectors.
+	 *
+	 * @param robot					The robot model.
+	 * @param tree_trunk_object		The collision object of the tree trunk.
+	 * @param fruit_center			The center of the fruit.
+	 * @param rng The random number generator to use.
+	 * @param max_attempts The maximum number of attempts to make.
+	 * @param ee_distance The distance from the end effector to the center of the fruit.
+	 * @return A collision-free RobotState, or std::nullopt if no state was found.
+	 */
+	std::optional<RobotState> generateUniformRandomArmVectorState(
+	    const robot_model::RobotModel& robot,
+	    const fcl::CollisionObjectd& tree_trunk_object,
+	    const math::Vec3d& fruit_center,
+	    random_numbers::RandomNumberGenerator& rng,
+	    int max_attempts,
+	    double ee_distance);
 }
 
 #endif //MGODPL_GOAL_SAMPLING_H

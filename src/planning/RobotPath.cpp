@@ -31,9 +31,10 @@ double mgodpl::calculateSegmentLength(const mgodpl::RobotPath& robot_path, const
 
 bool mgodpl::clampPathPoint(const mgodpl::RobotPath& robot_path, mgodpl::PathPoint& path_point)
 {
-    if (path_point.segment_i >= robot_path.states.size())
+    assert(robot_path.states.size() >= 2 && "Robot path must have at least two states to clamp");
+    if (path_point.segment_i + 1 >= robot_path.states.size())
     {
-        path_point.segment_i = robot_path.states.size() - 1;
+        path_point.segment_i = robot_path.states.size() - 2;
         path_point.segment_t = 1.0;
         return true;
     }
