@@ -26,6 +26,16 @@ namespace mgodpl
     {
         /// @brief A vector of RobotState objects representing the states of the robot along the path.
         std::vector<RobotState> states;
+
+        void append(const RobotState& state)
+        {
+            states.push_back(state);
+        }
+
+        void append(const RobotPath& path)
+        {
+            states.insert(states.end(), path.states.begin(), path.states.end());
+        }
     };
 
     /**
