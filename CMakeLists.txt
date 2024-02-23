@@ -284,6 +284,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/scan_path_generators.h
             src/experiment_utils/procedural_fruit_placement.cpp
             src/experiment_utils/procedural_fruit_placement.h
+            src/experiment_utils/prompting.cpp
+            src/experiment_utils/prompting.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")

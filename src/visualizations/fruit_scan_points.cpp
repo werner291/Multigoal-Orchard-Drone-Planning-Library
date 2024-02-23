@@ -17,48 +17,6 @@
 
 using namespace mgodpl;
 
-std::vector<JsonMeta<ParametricPath>> getOrbits(const mgodpl::math::Vec3d& fruit_center, double EYE_ORBIT_RADIUS)
-{
-    const auto orbit_types = mgodpl::gen_orbits(fruit_center, EYE_ORBIT_RADIUS);
-
-    std::cout << "Choose orbit type: " << std::endl;
-    for (int i = 0; i < orbit_types.size(); i++)
-    {
-        std::cout << i << ": " << orbit_types[i].first << std::endl;
-    }
-
-    std::cout << (orbit_types.size()) << ": All" << std::endl;
-
-    int orbitType;
-    std::cin >> orbitType;
-
-    if (orbitType < 0 || orbitType > orbit_types.size())
-    {
-        std::cout << "Invalid orbit type. Exiting..." << std::endl;
-        return {};
-    }
-
-    std::vector<JsonMeta<ParametricPath>> orbits;
-
-    if (orbitType == orbit_types.size())
-    {
-        std::cout << "All orbits" << std::endl;
-        // All of them.
-        for (const auto& orbit_type : orbit_types)
-        {
-            auto orbit = orbit_type.second;
-            orbits.insert(orbits.end(), orbit.begin(), orbit.end());
-        }
-    }
-    else
-    {
-        std::cout << "Orbit type: " << orbit_types[orbitType].first << std::endl;
-        orbits = orbit_types[orbitType].second;
-    }
-
-    return orbits;
-}
-
 REGISTER_VISUALIZATION(visualize_several_orbits_simultaneously)
 {
     // Load the tree meshes
