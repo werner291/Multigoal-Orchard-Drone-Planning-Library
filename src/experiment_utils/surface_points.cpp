@@ -133,6 +133,11 @@ namespace mgodpl {
 			return false;
 		}
 
+		// Saving the most expensive calculation for last: the occlusion check
+		if (scannable_points.occlusion_model.has_value()) {
+			return !scannable_points.occlusion_model->checkOcclusion(point.position, eye_position);
+		}
+
 		// If the point passed both the distance and angle checks, it is visible
 		return true;
 	}

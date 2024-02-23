@@ -66,9 +66,6 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath) {
 				fruit_mesh, NUM_POINTS, MAX_DISTANCE, MIN_DISTANCE,
 				MAX_ANGLE);
 
-		// Add the created scannable points to the vector
-		all_scannable_points.push_back(scannable_points);
-
 		// Create the fruit points visualization
 		VtkLineSegmentsVisualization fruit_points_visualization = createFruitLinesVisualization(scannable_points);
 
@@ -79,6 +76,10 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath) {
 		viewer.addMesh(fruit_mesh, {0.8, 0.8, 0.8}, 1.0);
 
 		fruit_points_visualizations.push_back(std::move(fruit_points_visualization));
+
+		// Add the created scannable points to the vector
+		all_scannable_points.push_back(std::move(scannable_points));
+
 	}
 
 	// Set the camera transform for the viewer
@@ -352,12 +353,10 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples) {
 	std::vector<ScannablePoints> all_scannable_points;
 
 	for (const auto &fruit_mesh: tree_model.fruit_meshes) {
-		ScannablePoints scannable_points = createScannablePoints(
+		all_scannable_points.push_back(createScannablePoints(
 				rng,
 				fruit_mesh, NUM_POINTS, MAX_DISTANCE, MIN_DISTANCE,
-				MAX_ANGLE);
-
-		all_scannable_points.push_back(scannable_points);
+				MAX_ANGLE));
 	}
 
 	// Create a robot model
@@ -627,6 +626,8 @@ REGISTER_VISUALIZATION(orbit_tree) {
 	for (const auto &scannable_points: all_scannable_points) {
 		ever_seen.push_back(SeenPoints::create_all_unseen(scannable_points));
 	}
+
+	MeshOcclusionModel mesh_occlusion_model(tree_model.trunk_mesh, 0.0);
 
 	// Register the timer callback function to be called at regular intervals
 	viewer.addTimerCallback([&]() {

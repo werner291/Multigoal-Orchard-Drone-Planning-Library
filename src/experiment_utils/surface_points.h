@@ -12,6 +12,7 @@
 #include <random_numbers/random_numbers.h>
 #include <shape_msgs/msg/mesh.hpp>
 #include "../math/Vec3.h"
+#include "MeshOcclusionModel.h"
 
 namespace mgodpl {
 
@@ -35,6 +36,7 @@ namespace mgodpl {
 	    double max_distance; ///< The maximum distance for scanning checks.
 	    double min_distance; ///< The minimum distance for scanning checks.
 	    double max_angle; ///< The maximum angle for scanning checks.
+	    std::optional<MeshOcclusionModel> occlusion_model; ///< The occlusion mesh to use for visibility checks.
 	    std::vector<SurfacePoint> surface_points; ///< The vector of SurfacePoint objects for which scanning is to be performed.
 
 		using PointId = size_t; ///< An identifier for a point in ScannablePoints.
@@ -49,8 +51,18 @@ namespace mgodpl {
 	     * @param max_angle The maximum angle for scanning checks.
 	     * @param surface_points The vector of SurfacePoint objects for which scanning is to be performed.
 	     */
-	    ScannablePoints(double max_distance, double min_distance, double max_angle, const std::vector<SurfacePoint>& surface_points)
-	        : max_distance(max_distance), min_distance(min_distance), max_angle(max_angle), surface_points(surface_points) {}
+	    ScannablePoints(
+				double max_distance,
+				double min_distance,
+				double max_angle,
+				std::vector<SurfacePoint> surface_points,
+				std::optional<MeshOcclusionModel> occlusion_model = std::nullopt
+				)
+	        : 	max_distance(max_distance),
+				min_distance(min_distance),
+				max_angle(max_angle),
+				occlusion_model(std::move(occlusion_model)),
+				surface_points(std::move(surface_points)) {}
 	};
 
 	/**
