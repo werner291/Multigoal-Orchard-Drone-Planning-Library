@@ -27,6 +27,8 @@
 #include "../experiment_utils/fcl_utils.h"
 
 #include <fcl/narrowphase/collision.h>
+#include <vtkTextActor.h>
+#include <vtkProperty2D.h>
 
 #include "../planning/collision_detection.h"
 #include "../planning/goal_sampling.h"
@@ -583,7 +585,7 @@ REGISTER_VISUALIZATION(orbit_tree) {
 	PathPoint path_point = {0, 0.0};
 
 	// Define the speed of interpolation
-	double interpolation_speed = 0.1;
+	double interpolation_speed = 0.01;
 
 	// Add the tree trunk mesh to the viewer
 	viewer.addMesh(tree_model.trunk_mesh, {0.5, 0.3, 0.1}, 1.0);
@@ -600,6 +602,8 @@ REGISTER_VISUALIZATION(orbit_tree) {
 
 	viewer.addMesh(leaves, {0.1, 0.5, 0.1}, 1.0);
 
+	auto mesh_occlusion_model = std::make_shared<MeshOcclusionModel>(tree_model.leaves_mesh, 0.0);
+
 	// Create the scannable points
 	std::vector<ScannablePoints> all_scannable_points;
 	for (const auto &fruit_mesh: tree_model.fruit_meshes) {
@@ -609,10 +613,14 @@ REGISTER_VISUALIZATION(orbit_tree) {
 				NUM_POINTS,
 				MAX_DISTANCE,
 				MIN_DISTANCE,
-				MAX_ANGLE
+				MAX_ANGLE,
+				mesh_occlusion_model
 		));
 		viewer.addMesh(fruit_mesh, {0.8, 0.8, 0.8}, 1.0);
 	}
+
+	VtkLineSegmentsVisualization sightlines(1,0,1);
+	viewer.addActor(sightlines.getActor());
 
 	// Create the fruit points visualization
 	std::vector<VtkLineSegmentsVisualization> fruit_points_visualizations;
@@ -621,13 +629,18 @@ REGISTER_VISUALIZATION(orbit_tree) {
 		viewer.addActor(fruit_points_visualizations.back().getActor());
 	}
 
+
 	std::vector<SeenPoints> ever_seen;
 	ever_seen.reserve(all_scannable_points.size());
 	for (const auto &scannable_points: all_scannable_points) {
 		ever_seen.push_back(SeenPoints::create_all_unseen(scannable_points));
 	}
 
-	MeshOcclusionModel mesh_occlusion_model(tree_model.trunk_mesh, 0.0);
+	vtkNew<vtkTextActor> textActor;
+	textActor->GetProperty()->SetColor(0.0, 0.0, 0.0);
+	textActor->SetPosition(10, 0);
+	textActor->SetInput("Orbiting the tree");
+	viewer.addActor((vtkActor*)textActor.Get());
 
 	// Register the timer callback function to be called at regular intervals
 	viewer.addTimerCallback([&]() {
@@ -649,15 +662,51 @@ REGISTER_VISUALIZATION(orbit_tree) {
 		// Get the position of the robot's end effector
 		const auto &end_effector_position = fk.forLink(robot.findLinkByName("end_effector")).translation;
 
+		std::vector<std::pair<math::Vec3d, math::Vec3d>> sightlines_data;
+
 		// Update the visibility of the scannable points
 		for (size_t fruit_i = 0; fruit_i < all_scannable_points.size(); ++fruit_i) {
-			update_visibility(all_scannable_points[fruit_i], end_effector_position, ever_seen[fruit_i]);
-			fruit_points_visualizations[fruit_i].setColors(generateVisualizationColors(ever_seen[fruit_i]));
+		  for (size_t i = 0; i < all_scannable_points[fruit_i].surface_points.size(); ++i) {
+			if (!ever_seen[fruit_i].ever_seen[i] &&
+				is_visible(all_scannable_points[fruit_i], i, end_effector_position)) {
+			  ever_seen[fruit_i].ever_seen[i] = true;
+
+			  // Add the sightline to the sightlines_data vector
+			  sightlines_data.push_back({end_effector_position, all_scannable_points[fruit_i].surface_points[i].position});
+			}
+		  }
+		  fruit_points_visualizations[fruit_i].setColors(generateVisualizationColors(ever_seen[fruit_i]));
 		}
+
+		size_t seen_total = 0;
+		size_t unique_total = 0;
+
+		for (size_t fruit_i = 0; fruit_i < all_scannable_points.size(); ++fruit_i) {
+			seen_total += std::count(ever_seen[fruit_i].ever_seen.begin(), ever_seen[fruit_i].ever_seen.end(), true);
+			unique_total += std::any_of(ever_seen[fruit_i].ever_seen.begin(), ever_seen[fruit_i].ever_seen.end(), [](bool b) { return b; });
+		}
+
+		// Calculate metrics
+		double percent_surface_points_seen = 100.0 * static_cast<double>(seen_total) / static_cast<double>(NUM_POINTS * all_scannable_points.size());
+		// Round it:
+		percent_surface_points_seen = std::round(percent_surface_points_seen * 100) / 100;
+
+		std::stringstream ss;
+		ss << "Percent of surface points seen: " << percent_surface_points_seen << "%" << std::endl;
+		ss << "Number of fruits seen: " << unique_total << " out of " << all_scannable_points.size() << std::endl;
+
+		textActor->SetInput(ss.str().c_str());
+
+		// Update the sightlines visualization
+		sightlines.updateLine(sightlines_data);
 
 	});
 
-	viewer.setCameraTransform({5.0, 5.0, 3.5}, {0.0, 0.0, 2.5});
+
+
+	viewer.setCameraTransform({4.0, 4.0, 3.5}, {0.0, 0.0, 2.5});
+
+	viewer.lockCameraUp();
 
 	// Start the viewer
 	viewer.start();

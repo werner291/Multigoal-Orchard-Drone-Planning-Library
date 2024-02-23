@@ -16,7 +16,16 @@ namespace mgodpl {
 			const auto &p2 = mesh.vertices[triangle.vertex_indices[1]];
 			const auto &p3 = mesh.vertices[triangle.vertex_indices[2]];
 
-			triangles.emplace_back(Point(p1.x, p1.y, p1.z), Point(p2.x, p2.y, p2.z), Point(p3.x, p3.y, p3.z));
+			// Skip degenerate triangles:
+			Point a(p1.x, p1.y, p1.z);
+			Point b(p2.x, p2.y, p2.z);
+			Point c(p3.x, p3.y, p3.z);
+
+			Triangle t(a, b, c);
+
+			if (!t.is_degenerate()) {
+				triangles.push_back(t);
+			}
 		}
 
 		tree.insert(triangles.begin(), triangles.end());

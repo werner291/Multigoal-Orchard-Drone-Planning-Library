@@ -96,9 +96,9 @@ namespace mgodpl {
 	}
 
 	ScannablePoints createScannablePoints(random_numbers::RandomNumberGenerator& rng, const shape_msgs::msg::Mesh& mesh,
-		size_t num_points, double max_distance, double min_distance, double max_angle)
+		size_t num_points, double max_distance, double min_distance, double max_angle, std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model)
 	{
-		return ScannablePoints(max_distance, min_distance, max_angle, sample_points_on_mesh(rng, mesh, num_points));
+		return {max_distance, min_distance, max_angle, sample_points_on_mesh(rng, mesh, num_points), occlusion_model};
 	}
 
 	bool is_visible(const ScannablePoints& scannable_points, size_t point_index, const math::Vec3d& eye_position)
@@ -135,7 +135,7 @@ namespace mgodpl {
 
 		// Saving the most expensive calculation for last: the occlusion check
 		if (scannable_points.occlusion_model.has_value()) {
-			return !scannable_points.occlusion_model->checkOcclusion(point.position, eye_position);
+			return !(*scannable_points.occlusion_model)->checkOcclusion(point.position, eye_position);
 		}
 
 		// If the point passed both the distance and angle checks, it is visible

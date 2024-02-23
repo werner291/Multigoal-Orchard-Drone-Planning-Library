@@ -36,7 +36,7 @@ namespace mgodpl {
 	    double max_distance; ///< The maximum distance for scanning checks.
 	    double min_distance; ///< The minimum distance for scanning checks.
 	    double max_angle; ///< The maximum angle for scanning checks.
-	    std::optional<MeshOcclusionModel> occlusion_model; ///< The occlusion mesh to use for visibility checks.
+	    std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model; ///< The occlusion mesh to use for visibility checks.
 	    std::vector<SurfacePoint> surface_points; ///< The vector of SurfacePoint objects for which scanning is to be performed.
 
 		using PointId = size_t; ///< An identifier for a point in ScannablePoints.
@@ -56,7 +56,7 @@ namespace mgodpl {
 				double min_distance,
 				double max_angle,
 				std::vector<SurfacePoint> surface_points,
-				std::optional<MeshOcclusionModel> occlusion_model = std::nullopt
+				std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model = std::nullopt
 				)
 	        : 	max_distance(max_distance),
 				min_distance(min_distance),
@@ -157,6 +157,7 @@ namespace mgodpl {
 	 * @param max_distance The maximum distance for scanning checks.
 	 * @param min_distance The minimum distance for scanning checks.
 	 * @param max_angle The maximum angle for scanning checks.
+     * @param occlusion_model The occlusion model to use for visibility checks.
 	 * @return A ScannablePoints object.
 	 */
 	ScannablePoints createScannablePoints(random_numbers::RandomNumberGenerator &rng,
@@ -164,7 +165,8 @@ namespace mgodpl {
 	                                      size_t num_points,
 	                                      double max_distance,
 	                                      double min_distance,
-	                                      double max_angle);
+	                                      double max_angle,
+										  std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model = std::nullopt);
 
 
 	/**

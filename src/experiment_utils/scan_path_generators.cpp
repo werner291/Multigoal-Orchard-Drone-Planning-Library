@@ -269,7 +269,7 @@ namespace mgodpl {
 				std::cout << "Enter the number of cycles: ";
 				std::cin >> cycles;
 
-				return latitude_oscillation_path(fruit_center, radius * base_radius, amplitude * base_radius, cycles);
+				return latitude_oscillation_path(fruit_center, radius * base_radius, amplitude, cycles);
 			}
 				break;
 
