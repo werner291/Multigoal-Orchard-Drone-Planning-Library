@@ -118,6 +118,12 @@ namespace mgodpl {
 			return false;
 		}
 
+		// If the distance is smaller than the minimum distance, the point is not visible
+		if (distance < scannable_points.min_distance)
+		{
+			return false;
+		}
+
 		// Calculate the angle between the point's normal and the vector from the point to the eye
 		double angle = std::acos(point.normal.dot(delta) / distance);
 
