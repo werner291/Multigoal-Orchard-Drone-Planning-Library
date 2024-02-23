@@ -374,6 +374,10 @@ if (ENABLE_VISUALIZATION)
     target_link_libraries(sphere_scannable_points_orbit math_utils experiment_utils planning)
     ament_target_dependencies(sphere_scannable_points_orbit shape_msgs)
 
+    add_executable(point_scanning src/experiments/point_scanning.cpp)
+    target_link_libraries(point_scanning math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    ament_target_dependencies(point_scanning shape_msgs)
+
     add_executable(visualizations
             src/visualizations/viz_main.cpp
             src/visualizations/creases.cpp
