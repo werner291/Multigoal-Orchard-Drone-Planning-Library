@@ -263,6 +263,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/VoxelShroudedSceneInfo.h
             src/experiment_utils/VoxelShroudedSimulation.cpp
             src/experiment_utils/VoxelShroudedSimulation.h
+            src/experiment_utils/MeshOcclusionModel.cpp
+            src/experiment_utils/MeshOcclusionModel.h
             src/experiment_utils/fcl_utils.cpp
             src/experiment_utils/fcl_utils.h
             src/planning/IncrementalGoalStateGenerator.cpp
