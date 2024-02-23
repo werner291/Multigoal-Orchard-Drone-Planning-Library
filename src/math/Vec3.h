@@ -175,21 +175,21 @@ namespace mgodpl::math {
 		/**
 		 * Scalar division.
 		 */
-		Vec3 operator/(const Scalar &scalar) const {
+		[[nodiscard]] Vec3 operator/(const Scalar &scalar) const {
 			return {x() / scalar, y() / scalar, z() / scalar};
 		}
 
 		/**
 		 * Element-wise min.
 		 */
-		Vec3 min(const Vec3 &other) const {
+		[[nodiscard]] Vec3 min(const Vec3 &other) const {
 			return {std::min(x(), other.x()), std::min(y(), other.y()), std::min(z(), other.z())};
 		}
 
 		/**
 		 * Element-wise max.
 		 */
-		Vec3 max(const Vec3 &other) const {
+		[[nodiscard]] Vec3 max(const Vec3 &other) const {
 			return {std::max(x(), other.x()), std::max(y(), other.y()), std::max(z(), other.z())};
 		}
 
@@ -203,22 +203,22 @@ namespace mgodpl::math {
 		/**
 		 * Element access by index.
 		 */
-		Scalar &operator[](size_t index) {
+		[[nodiscard]] Scalar &operator[](size_t index) {
 			return components[index];
 		}
 
-		Scalar squaredNorm() const {
+		[[nodiscard]] Scalar squaredNorm() const {
 			return x() * x() + y() * y() + z() * z();
 		}
 
-		Scalar norm() const {
+		[[nodiscard]] Scalar norm() const {
 			return std::sqrt(squaredNorm());
 		}
 
 		/**
 		 * Find the unit vector closest to this vector.
 		 */
-		Vec3 nearestUnit() const {
+		[[nodiscard]] Vec3 nearestUnit() const {
 
 			assert(squaredNorm() > 0.0);
 
@@ -234,18 +234,18 @@ namespace mgodpl::math {
 		/**
 		 * Get a pointer to the start of the underlying array.
 		 */
-		const Scalar *data() const {
+		[[nodiscard]] const Scalar *data() const {
 			return components.data();
 		}
 
-		Scalar dot(Vec3 vec3) const {
+		[[nodiscard]] Scalar dot(Vec3 vec3) const {
 			return x() * vec3.x() + y() * vec3.y() + z() * vec3.z();
 		}
 
 		/**
 		 * Unary minus.
 		 */
-		Vec3 operator-() const {
+		[[nodiscard]] Vec3 operator-() const {
 			return {-x(), -y(), -z()};
 		}
 
@@ -261,7 +261,11 @@ namespace mgodpl::math {
 			return *this / norm();
 		}
 
-		Vec3 cross(Vec3 other) const {
+		void normalize() {
+			*this /= norm();
+		}
+
+		[[nodiscard]] Vec3 cross(Vec3 other) const {
 			return {
 				y() * other.z() - z() * other.y(),
 				z() * other.x() - x() * other.z(),
@@ -269,7 +273,7 @@ namespace mgodpl::math {
 			};
 		}
 
-		Vec3 round() const {
+		[[nodiscard]] Vec3 rounded() const {
 			return {std::round(x()), std::round(y()), std::round(z())};
 		}
 
@@ -277,15 +281,15 @@ namespace mgodpl::math {
 			return x() == other.x() && y() == other.y() && z() == other.z();
 		}
 
-		double getX() const {
+		[[nodiscard]] double getX() const {
 			return x();
 		}
 
-		double getY() const {
+		[[nodiscard]] double getY() const {
 			return y();
 		}
 
-		double getZ() const {
+		[[nodiscard]] double getZ() const {
 			return z();
 		}
 
