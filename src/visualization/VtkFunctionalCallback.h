@@ -11,6 +11,8 @@
 
 #include <vtkCommand.h>
 #include <functional>
+#include <vtkNew.h>
+#include <vtkSmartPointer.h>
 
 /**
  * A vtkTimerCommand that calls the given callback when the timer fires, to allow the use of lambdas as callbacks in vtk.
@@ -43,5 +45,18 @@ public:
 		vtkFunctionalCallback::callback = cb;
 	}
 };
+
+inline vtkSmartPointer<vtkFunctionalCallback> lambaCb(std::function<void()> cb) {
+
+	// This is a bit hacky, but we need to keep the callbacks alive, so we store them in a static vector.
+	static std::vector<vtkSmartPointer<vtkFunctionalCallback>> callbacks;
+
+	vtkNew<vtkFunctionalCallback> cb_;
+	cb_->setCallback(cb);
+
+	callbacks.push_back(cb_);
+
+	return cb_;
+}
 
 #endif //MGODPL_VTKFUNCTIONALCALLBACK_H

@@ -29,6 +29,11 @@
 #include <fcl/narrowphase/collision.h>
 #include <vtkTextActor.h>
 #include <vtkProperty2D.h>
+#include <vtkSphereSource.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
+#include <vtkSliderWidget.h>
+#include <vtkSliderRepresentation2D.h>
 
 #include "../planning/collision_detection.h"
 #include "../planning/goal_sampling.h"
@@ -39,6 +44,7 @@
 #include "../planning/visitation_order.h"
 #include "../experiment_utils/prompting.h"
 #include "../experiment_utils/leaf_scaling.h"
+#include "../visualization/VtkFunctionalCallback.h"
 
 using namespace mgodpl;
 
@@ -619,7 +625,7 @@ REGISTER_VISUALIZATION(orbit_tree) {
 		viewer.addMesh(fruit_mesh, {0.8, 0.8, 0.8}, 1.0);
 	}
 
-	VtkLineSegmentsVisualization sightlines(1,0,1);
+	VtkLineSegmentsVisualization sightlines(1, 0, 1);
 	viewer.addActor(sightlines.getActor());
 
 	// Create the fruit points visualization
@@ -640,7 +646,7 @@ REGISTER_VISUALIZATION(orbit_tree) {
 	textActor->GetProperty()->SetColor(0.0, 0.0, 0.0);
 	textActor->SetPosition(10, 0);
 	textActor->SetInput("Orbiting the tree");
-	viewer.addActor((vtkActor*)textActor.Get());
+	viewer.addActor((vtkActor *) textActor.Get());
 
 	// Register the timer callback function to be called at regular intervals
 	viewer.addTimerCallback([&]() {
@@ -666,16 +672,17 @@ REGISTER_VISUALIZATION(orbit_tree) {
 
 		// Update the visibility of the scannable points
 		for (size_t fruit_i = 0; fruit_i < all_scannable_points.size(); ++fruit_i) {
-		  for (size_t i = 0; i < all_scannable_points[fruit_i].surface_points.size(); ++i) {
-			if (!ever_seen[fruit_i].ever_seen[i] &&
-				is_visible(all_scannable_points[fruit_i], i, end_effector_position)) {
-			  ever_seen[fruit_i].ever_seen[i] = true;
+			for (size_t i = 0; i < all_scannable_points[fruit_i].surface_points.size(); ++i) {
+				if (!ever_seen[fruit_i].ever_seen[i] &&
+					is_visible(all_scannable_points[fruit_i], i, end_effector_position)) {
+					ever_seen[fruit_i].ever_seen[i] = true;
 
-			  // Add the sightline to the sightlines_data vector
-			  sightlines_data.push_back({end_effector_position, all_scannable_points[fruit_i].surface_points[i].position});
+					// Add the sightline to the sightlines_data vector
+					sightlines_data.push_back({end_effector_position,
+											   all_scannable_points[fruit_i].surface_points[i].position});
+				}
 			}
-		  }
-		  fruit_points_visualizations[fruit_i].setColors(generateVisualizationColors(ever_seen[fruit_i]));
+			fruit_points_visualizations[fruit_i].setColors(generateVisualizationColors(ever_seen[fruit_i]));
 		}
 
 		size_t seen_total = 0;
@@ -683,11 +690,14 @@ REGISTER_VISUALIZATION(orbit_tree) {
 
 		for (size_t fruit_i = 0; fruit_i < all_scannable_points.size(); ++fruit_i) {
 			seen_total += std::count(ever_seen[fruit_i].ever_seen.begin(), ever_seen[fruit_i].ever_seen.end(), true);
-			unique_total += std::any_of(ever_seen[fruit_i].ever_seen.begin(), ever_seen[fruit_i].ever_seen.end(), [](bool b) { return b; });
+			unique_total += std::any_of(ever_seen[fruit_i].ever_seen.begin(),
+										ever_seen[fruit_i].ever_seen.end(),
+										[](bool b) { return b; });
 		}
 
 		// Calculate metrics
-		double percent_surface_points_seen = 100.0 * static_cast<double>(seen_total) / static_cast<double>(NUM_POINTS * all_scannable_points.size());
+		double percent_surface_points_seen =
+				100.0 * static_cast<double>(seen_total) / static_cast<double>(NUM_POINTS * all_scannable_points.size());
 		// Round it:
 		percent_surface_points_seen = std::round(percent_surface_points_seen * 100) / 100;
 
@@ -703,8 +713,172 @@ REGISTER_VISUALIZATION(orbit_tree) {
 	});
 
 
-
 	viewer.setCameraTransform({4.0, 4.0, 3.5}, {0.0, 0.0, 2.5});
+
+	viewer.lockCameraUp();
+
+	// Start the viewer
+	viewer.start();
+}
+
+#define CREATE_SLIDER(widget, rep, minValue, maxValue, initValue, title, posY) \
+    vtkNew<vtkSliderRepresentation2D> rep##_rep; \
+    rep##_rep->SetMinimumValue(minValue); \
+    rep##_rep->SetMaximumValue(maxValue); \
+    rep##_rep->SetValue(initValue); \
+    rep##_rep->SetTitleText(title); \
+    rep##_rep->GetPoint1Coordinate()->SetCoordinateSystemToNormalizedDisplay(); \
+    rep##_rep->GetPoint1Coordinate()->SetValue(0.2, posY); \
+    rep##_rep->GetPoint2Coordinate()->SetCoordinateSystemToNormalizedDisplay(); \
+    rep##_rep->GetPoint2Coordinate()->SetValue(0.8, posY); \
+    vtkNew<vtkSliderWidget> widget; \
+    widget->SetInteractor(viewer.renderWindowInteractor); \
+    widget->SetRepresentation(rep##_rep); \
+    widget->EnabledOn();
+
+REGISTER_VISUALIZATION(max_distance) {
+
+	// Load the tree meshes
+	auto tree_model = tree_meshes::loadTreeMeshes("appletree");
+
+	// Initialize a random number generator
+	random_numbers::RandomNumberGenerator rng;
+
+	// Create a robot model
+	const auto &robot = experiments::createProceduralRobotModel();
+	const robot_model::RobotModel::LinkId flying_base = robot.findLinkByName("flying_base");
+
+	// Define the center of the tree
+	const auto leaves_aabb = mesh_aabb(tree_model.leaves_mesh);
+	math::Vec3d tree_center = leaves_aabb.center();
+	double tree_radius = leaves_aabb.size().x() / 2.0;
+
+	math::Vec3d approach_direction = {0, 1, 0};
+
+	// Create a RobotPath that approaches the tree center.
+	RobotPath path;
+	path.states.push_back(fromEndEffectorAndVector(robot,
+												   tree_center + approach_direction * tree_radius * 3.0,
+												   approach_direction));
+	path.states.push_back(fromEndEffectorAndVector(robot,
+												   tree_center + approach_direction * tree_radius,
+												   approach_direction));
+
+	// Visualize the robot's path
+	auto robot_viz = vizualisation::vizualize_robot_state(
+			viewer,
+			robot,
+			forwardKinematics(
+					robot, path.states[0].joint_values,
+					flying_base,
+					path.states[0].base_tf
+			)
+	);
+
+	// Define the current position on the path
+	PathPoint path_point = {0, 0.0};
+
+	// Define the speed of interpolation
+	double interpolation_speed = 0.02;
+
+	// Add the tree trunk mesh to the viewer
+	viewer.addMesh(tree_model.trunk_mesh, {0.5, 0.3, 0.1}, 1.0);
+
+	// Define constants for the scannable points
+	const size_t NUM_POINTS = 200;
+	const double MAX_DISTANCE = 3.0;
+	const double MIN_DISTANCE = 0;
+	const double MAX_ANGLE = M_PI;
+
+//	viewer.addMesh(tree_model.leaves_mesh, {0.1, 0.5, 0.1}, 1.0);
+//	auto mesh_occlusion_model = std::make_shared<MeshOcclusionModel>(tree_model.leaves_mesh, 0.0);
+
+	// Create the scannable points
+	std::vector<ScannablePoints> all_scannable_points;
+	for (const auto &fruit_mesh: tree_model.fruit_meshes) {
+		all_scannable_points.push_back(createScannablePoints(
+				rng,
+				fruit_mesh,
+				NUM_POINTS,
+				MAX_DISTANCE,
+				MIN_DISTANCE,
+				MAX_ANGLE,
+				std::nullopt
+		));
+		viewer.addMesh(fruit_mesh, {0.8, 0.8, 0.8}, 1.0);
+	}
+	vtkNew<vtkSphereSource> view_distance_source;
+	view_distance_source->SetRadius(MAX_DISTANCE);
+
+	vtkNew<vtkPolyDataMapper> view_distance_mapper;
+	view_distance_mapper->SetInputConnection(view_distance_source->GetOutputPort());
+
+	vtkNew<vtkActor> view_distance_actor;
+	view_distance_actor->SetMapper(view_distance_mapper);
+	view_distance_actor->GetProperty()->SetColor(0.0, 0.0, 1.0);
+	view_distance_actor->GetProperty()->SetOpacity(0.1);
+	viewer.addActor(view_distance_actor);
+
+	CREATE_SLIDER(radius_slider, radius, 0.0, 3.0, MAX_DISTANCE, "Max distance", 0.1);
+	CREATE_SLIDER(path_slider, path, 0.0, 1.0, 0.0, "Path", 0.2);
+
+	VtkLineSegmentsVisualization sightlines(1, 0, 1);
+	viewer.addActor(sightlines.getActor());
+
+	// Create the fruit points visualization
+	std::vector<VtkLineSegmentsVisualization> fruit_points_visualizations;
+	for (const auto &scannable_points: all_scannable_points) {
+		fruit_points_visualizations.push_back(createFruitLinesVisualization(scannable_points));
+		viewer.addActor(fruit_points_visualizations.back().getActor());
+	}
+
+	// Register the timer callback function to be called at regular intervals
+	viewer.addTimerCallback([&]() {
+
+		// Get the max distance from the slider
+		double max_distance = radius_rep->GetValue();
+		view_distance_source->SetRadius(max_distance);
+		for (auto &scannable_points: all_scannable_points) {
+			scannable_points.max_distance = max_distance;
+		}
+
+//		advancePathPointWrap(path, path_point, interpolation_speed, equal_weights_max_distance);
+		path_point.segment_i = 0;
+		path_point.segment_t = path_rep->GetValue();
+
+		// Interpolate the robot's state
+		auto interpolated_state = interpolate(path_point, path);
+
+		// Update the robot's state in the visualization
+		const auto fk = forwardKinematics(robot, interpolated_state.joint_values,
+										  robot.findLinkByName("flying_base"), interpolated_state.base_tf);
+
+		update_robot_state(robot, fk, robot_viz);
+
+		// Get the position of the robot's end effector
+		const auto &end_effector_position = fk.forLink(robot.findLinkByName("end_effector")).translation;
+
+		std::vector<std::pair<math::Vec3d, math::Vec3d>> sightlines_data;
+
+		// Update the visibility of the scannable points
+		for (auto &all_scannable_point: all_scannable_points) {
+			for (size_t i = 0; i < all_scannable_point.surface_points.size(); ++i) {
+				if (is_visible(all_scannable_point, i, end_effector_position)) {
+					// Add the sightline to the sightlines_data vector
+					sightlines_data.push_back({end_effector_position, all_scannable_point.surface_points[i].position});
+				}
+			}
+		}
+
+		// Update the sightlines visualization
+		sightlines.updateLine(sightlines_data);
+
+		// Set the view distance actor to the end-effector position
+		view_distance_actor->SetPosition(end_effector_position[0], end_effector_position[1], end_effector_position[2]);
+
+	});
+
+	viewer.setCameraTransform({4.0, 4.0, 3.5}, {2.0, 0.0, 2.5});
 
 	viewer.lockCameraUp();
 

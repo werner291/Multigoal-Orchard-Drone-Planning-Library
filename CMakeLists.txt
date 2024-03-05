@@ -386,6 +386,7 @@ if (ENABLE_VISUALIZATION)
             src/visualizations/tree_variations.cpp
             src/visualizations/probing.cpp
             src/visualizations/swept_volume.cpp
+            src/visualizations/robot_variations.cpp
     )
 
     target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
