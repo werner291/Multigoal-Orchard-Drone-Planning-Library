@@ -396,75 +396,75 @@ REGISTER_VISUALIZATION(local_scangraph) {
 	}
 
 	// The GraphNode struct represents a node in the graph. Each node corresponds to a robot state.
-struct GraphNode {
-    RobotState state; // The robot state corresponding to this node.
+	struct GraphNode {
+		RobotState state; // The robot state corresponding to this node.
 
-    // The Neighbor struct represents a neighbor of a node in the graph.
-    struct Neighbor {
-        size_t neighbor_i; // The index of the neighbor node in the graph.
-        double distance; // The distance from this node to the neighbor node.
-    };
+		// The Neighbor struct represents a neighbor of a node in the graph.
+		struct Neighbor {
+			size_t neighbor_i; // The index of the neighbor node in the graph.
+			double distance; // The distance from this node to the neighbor node.
+		};
 
-    std::vector<Neighbor> accessible_neighbors; // The list of neighbors of this node.
-};
+		std::vector<Neighbor> accessible_neighbors; // The list of neighbors of this node.
+	};
 
-std::vector<GraphNode> graph; // The graph of robot states.
+	std::vector<GraphNode> graph; // The graph of robot states.
 
-graph.push_back({*sample, {}}); // Add the initial sample to the graph.
+	graph.push_back({*sample, {}}); // Add the initial sample to the graph.
 
 // Generate 100 samples and add them to the graph.
-for (size_t sample_i = 0; sample_i < 100; ++sample_i) {
+	for (size_t sample_i = 0; sample_i < 100; ++sample_i) {
 
-    // Generate a random spherical vector.
-    auto sample = generateUniformRandomArmVectorState(
-        robot,
-        tree_trunk_object,
-        fruit_center,
-        rng,
-        1000,
-        EE_SCAN_DISTANCE
-    );
+		// Generate a random spherical vector.
+		auto sample = generateUniformRandomArmVectorState(
+				robot,
+				tree_trunk_object,
+				fruit_center,
+				rng,
+				1000,
+				EE_SCAN_DISTANCE
+		);
 
-    // If the sample is not collision-free, skip it.
-    if (!sample.has_value()) {
-        continue;
-    }
+		// If the sample is not collision-free, skip it.
+		if (!sample.has_value()) {
+			continue;
+		}
 
-    // Add the sample to the graph.
-    graph.push_back({*sample, {}});
+		// Add the sample to the graph.
+		graph.push_back({*sample, {}});
 
-    // Check if the motion to the other samples is collision-free; if so, add it to the graph.
-    for (size_t other_i = 0; other_i < graph.size(); ++other_i) {
+		// Check if the motion to the other samples is collision-free; if so, add it to the graph.
+		for (size_t other_i = 0; other_i < graph.size(); ++other_i) {
 
-        double toi = 0.0;
+			double toi = 0.0;
 
-        // Check if the motion is collision-free.
-        if (check_motion_collides(robot, tree_trunk_object, *sample, graph[other_i].state, toi)) {
-            continue;
-        }
+			// Check if the motion is collision-free.
+			if (check_motion_collides(robot, tree_trunk_object, *sample, graph[other_i].state, toi)) {
+				continue;
+			}
 
-        double distance = equal_weights_distance(*sample, graph[other_i].state);
+			double distance = equal_weights_distance(*sample, graph[other_i].state);
 
-        // Add the edge to the graph.
-        graph[graph.size()-1].accessible_neighbors.push_back({other_i, distance});
-        graph[other_i].accessible_neighbors.push_back({graph.size()-1, distance});
-    }
-}
+			// Add the edge to the graph.
+			graph[graph.size() - 1].accessible_neighbors.push_back({other_i, distance});
+			graph[other_i].accessible_neighbors.push_back({graph.size() - 1, distance});
+		}
+	}
 
-std::cout << "Graph has " << graph.size() << " nodes" << std::endl;
+	std::cout << "Graph has " << graph.size() << " nodes" << std::endl;
 
 // Sort the neighbor lists of all graph nodes by distance and truncate to the nearest 10.
-for (auto& node : graph) {
-    // Sort by distance key.
-    std::sort(node.accessible_neighbors.begin(), node.accessible_neighbors.end(), [](const auto& a, const auto& b) {
-        return a.distance < b.distance;
-    });
+	for (auto &node: graph) {
+		// Sort by distance key.
+		std::sort(node.accessible_neighbors.begin(), node.accessible_neighbors.end(), [](const auto &a, const auto &b) {
+			return a.distance < b.distance;
+		});
 
-    // Truncate to 10.
-    if (node.accessible_neighbors.size() > 10) {
-        node.accessible_neighbors.resize(10);
-    }
-}
+		// Truncate to 10.
+		if (node.accessible_neighbors.size() > 10) {
+			node.accessible_neighbors.resize(10);
+		}
+	}
 
 	VtkLineSegmentsVisualization graph_visualization(1.0, 0.5, 0.5);
 	viewer.addActor(graph_visualization.getActor());
@@ -473,28 +473,21 @@ for (auto& node : graph) {
 	std::vector<std::pair<math::Vec3d, math::Vec3d>> edges;
 
 	for (size_t sample_i = 0; sample_i < graph.size(); ++sample_i) {
-		auto fk_i = forwardKinematics(robot, graph[sample_i].state.joint_values, flying_base, graph[sample_i].state.base_tf);
-		for (const auto neighbor_i : graph[sample_i].accessible_neighbors) {
-			auto fk_j = forwardKinematics(robot, graph[neighbor_i.neighbor_i].state.joint_values, flying_base, graph[neighbor_i.neighbor_i].state.base_tf);
+		auto fk_i = forwardKinematics(robot,
+									  graph[sample_i].state.joint_values,
+									  flying_base,
+									  graph[sample_i].state.base_tf);
+		for (const auto neighbor_i: graph[sample_i].accessible_neighbors) {
+			auto fk_j = forwardKinematics(robot,
+										  graph[neighbor_i.neighbor_i].state.joint_values,
+										  flying_base,
+										  graph[neighbor_i.neighbor_i].state.base_tf);
 			edges.push_back({fk_i.forLink(end_effector).translation, fk_j.forLink(end_effector).translation});
 		}
 	}
 	graph_visualization.updateLine(edges);
 
 	RobotPath path = approach_path.path;
-
-	RobotPath sideways_scan = createLeftRightScanningMotion(
-			robot,
-			tree_trunk_object,
-			fruit_center,
-			long_angle,
-			lat_angle,
-			EE_SCAN_DISTANCE
-	);
-
-	path.states.insert(path.states.end(),
-					   sideways_scan.states.begin(),
-					   sideways_scan.states.end());
 
 	// Define the current position on the path
 	PathPoint path_point = {0, 0.0};
@@ -528,8 +521,27 @@ for (auto& node : graph) {
 	// Initialize a vector to keep track of which points have been seen
 	SeenPoints points_seen = SeenPoints::create_all_unseen(scannable_points);
 
+	size_t last_node = 0;
+
 	// Register the timer callback function to be called at regular intervals
 	viewer.addTimerCallback([&]() {
+
+		if (advancePathPointClamp(path, path_point, interpolation_speed, equal_weights_max_distance)) {
+			// Extend the path with a random motion to a neighbor.
+			size_t next_node = graph[last_node].accessible_neighbors[rng.uniformInteger(0, graph[last_node].accessible_neighbors.size() - 1)].neighbor_i;
+
+			path.append(graph[next_node].state);
+
+			last_node = next_node;
+		}
+
+		// Update visuals:
+		auto interpolated_state = interpolate(path_point, path);
+
+		const auto fk = forwardKinematics(robot, interpolated_state.joint_values,
+										  robot.findLinkByName("flying_base"), interpolated_state.base_tf);
+
+		update_robot_state(robot, fk, robot_viz);
 
 	});
 
