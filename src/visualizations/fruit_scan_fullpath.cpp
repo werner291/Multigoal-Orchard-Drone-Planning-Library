@@ -875,6 +875,8 @@ REGISTER_VISUALIZATION(max_distance) {
 		// Get the position of the robot's end effector
 		const auto &end_effector_position = fk.forLink(robot.findLinkByName("end_effector")).translation;
 
+		math::Vec3d forward = fk.forLink(robot.findLinkByName("end_effector")).orientation.rotate({0, 1, 0});
+
 		std::vector<std::pair<math::Vec3d, math::Vec3d>> sightlines_data;
 
 		if (leaf_scale_rep->GetValue() != last_leaf_scale) {
@@ -917,10 +919,13 @@ REGISTER_VISUALIZATION(max_distance) {
 				// Calculate the angle between the point's normal and the vector from the point to the end effector
 				double scan_angle = std::acos(point.normal.dot(delta) / distance);
 
+				double in_view_angle = std::acos(forward.dot(-delta) / distance);
+
 				// If the distance is greater than the maximum distance, the point is not visible
 				if (distance <= radius_rep->GetValue() &&
 					distance >= min_distance_rep->GetValue() &&
 					scan_angle <= max_scan_angle_rep->GetValue() &&
+					in_view_angle <= fov_angle_rep->GetValue() &&
 					!mesh_occlusion_model->checkOcclusion(point.position, end_effector_position)) {
 					// Add the sightline to the sightlines_data vector
 					sightlines_data.push_back({end_effector_position, point.position});
