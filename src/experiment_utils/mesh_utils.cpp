@@ -150,6 +150,35 @@ std::vector<std::array<mgodpl::math::Vec3d, 3>> triangles_from_mesh(const shape_
 	return vertices;
 }
 
+shape_msgs::msg::Mesh ground_plane(const double size) {
+	shape_msgs::msg::Mesh mesh;
+
+	mesh.vertices.resize(4);
+	mesh.vertices[0].x = -size;
+	mesh.vertices[0].y = -size;
+	mesh.vertices[0].z = 0;
+	mesh.vertices[1].x = size;
+	mesh.vertices[1].y = -size;
+	mesh.vertices[1].z = 0;
+	mesh.vertices[2].x = size;
+	mesh.vertices[2].y = size;
+	mesh.vertices[2].z = 0;
+	mesh.vertices[3].x = -size;
+	mesh.vertices[3].y = size;
+	mesh.vertices[3].z = 0;
+
+	mesh.triangles.resize(2);
+	mesh.triangles[0].vertex_indices[0] = 0;
+	mesh.triangles[0].vertex_indices[1] = 1;
+	mesh.triangles[0].vertex_indices[2] = 2;
+
+	mesh.triangles[1].vertex_indices[0] = 0;
+	mesh.triangles[1].vertex_indices[1] = 2;
+	mesh.triangles[1].vertex_indices[2] = 3;
+
+	return mesh;
+}
+
 //shape_msgs::msg::Mesh translate_mesh(shape_msgs::msg::Mesh mesh, const Eigen::Vector3d &translation) {
 //
 //	for (auto &vertex : mesh.vertices) {

@@ -30,4 +30,20 @@ extern std::map<std::string, VisFn> visualizations;
     }(); \
     void name(mgodpl::SimpleVtkViewer& viewer)
 
+#define CREATE_SLIDER(widget, rep, minValue, maxValue, initValue, title, posY) \
+    vtkNew<vtkSliderRepresentation2D> rep##_rep; \
+    rep##_rep->SetMinimumValue(minValue); \
+    rep##_rep->SetMaximumValue(maxValue); \
+    rep##_rep->SetValue(initValue); \
+    rep##_rep->SetTitleText(title); \
+    rep##_rep->GetPoint1Coordinate()->SetCoordinateSystemToNormalizedDisplay(); \
+    rep##_rep->GetPoint1Coordinate()->SetValue(0.05, posY); \
+    rep##_rep->GetPoint2Coordinate()->SetCoordinateSystemToNormalizedDisplay(); \
+    rep##_rep->GetPoint2Coordinate()->SetValue(0.25, posY);                     \
+    rep##_rep->GetTitleProperty()->SetColor(0,0,0);\
+    vtkNew<vtkSliderWidget> widget; \
+    widget->SetInteractor(viewer.renderWindowInteractor); \
+    widget->SetRepresentation(rep##_rep); \
+    widget->EnabledOn();
+
 #endif //VISUALIZATION_FUNCTION_MACROS_H

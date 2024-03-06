@@ -625,6 +625,9 @@ REGISTER_VISUALIZATION(orbit_tree) {
 				MAX_ANGLE,
 				mesh_occlusion_model
 		));
+	}
+
+	for (const auto &fruit_mesh: tree_model.fruit_meshes) {
 		viewer.addMesh(fruit_mesh, {0.8, 0.8, 0.8}, 1.0);
 	}
 
@@ -724,23 +727,9 @@ REGISTER_VISUALIZATION(orbit_tree) {
 	viewer.start();
 }
 
-#define CREATE_SLIDER(widget, rep, minValue, maxValue, initValue, title, posY) \
-    vtkNew<vtkSliderRepresentation2D> rep##_rep; \
-    rep##_rep->SetMinimumValue(minValue); \
-    rep##_rep->SetMaximumValue(maxValue); \
-    rep##_rep->SetValue(initValue); \
-    rep##_rep->SetTitleText(title); \
-    rep##_rep->GetPoint1Coordinate()->SetCoordinateSystemToNormalizedDisplay(); \
-    rep##_rep->GetPoint1Coordinate()->SetValue(0.05, posY); \
-    rep##_rep->GetPoint2Coordinate()->SetCoordinateSystemToNormalizedDisplay(); \
-    rep##_rep->GetPoint2Coordinate()->SetValue(0.25, posY);                     \
-    rep##_rep->GetTitleProperty()->SetColor(0,0,0);\
-    vtkNew<vtkSliderWidget> widget; \
-    widget->SetInteractor(viewer.renderWindowInteractor); \
-    widget->SetRepresentation(rep##_rep); \
-    widget->EnabledOn();
-
 REGISTER_VISUALIZATION(max_distance) {
+
+	viewer.addMesh(ground_plane(10), {0.5, 0.8, 0.5}, 1.0);
 
 	// Initialize a random number generator
 	random_numbers::RandomNumberGenerator rng;
@@ -824,17 +813,17 @@ REGISTER_VISUALIZATION(max_distance) {
 	viewer.addActor(view_distance_actor);
 
 	double slider_y = 0.1;
-	CREATE_SLIDER(radius_slider, radius, 0.0, 5.0, MAX_DISTANCE, "Max distance", slider_y);
+	CREATE_SLIDER(radius_slider, radius, 0.0, 5.0, MAX_DISTANCE, "Max distance", slider_y)
 	slider_y += 0.15;
-	CREATE_SLIDER(min_distance_slider, min_distance, 0.0, 1.0, 0.0, "Min distance", slider_y);
+	CREATE_SLIDER(min_distance_slider, min_distance, 0.0, 1.0, 0.0, "Min distance", slider_y)
 	slider_y += 0.15;
 	CREATE_SLIDER(path_slider, path, 0.0, 1.0, 0.0, "Path", slider_y);
 	slider_y += 0.15;
-	CREATE_SLIDER(leaf_scale_slider, leaf_scale, 0.0, 2.0, 1.0, "Leaf Scale", slider_y);
+	CREATE_SLIDER(leaf_scale_slider, leaf_scale, 0.0, 2.0, 1.0, "Leaf Scale", slider_y)
 	slider_y += 0.15;
-	CREATE_SLIDER(fov_angle_slider, fov_angle, 0.0, M_PI, M_PI / 2, "FoV Angle", slider_y);
+	CREATE_SLIDER(fov_angle_slider, fov_angle, 0.0, M_PI, M_PI / 2, "FoV Angle", slider_y)
 	slider_y += 0.15;
-	CREATE_SLIDER(max_scan_angle_slider, max_scan_angle, 0.0, M_PI / 2, M_PI / 4, "Max Scanning Angle", slider_y);
+	CREATE_SLIDER(max_scan_angle_slider, max_scan_angle, 0.0, M_PI / 2, M_PI / 4, "Max Scanning Angle", slider_y)
 	slider_y += 0.15;
 
 	VtkLineSegmentsVisualization sightlines(1, 0, 1);
@@ -897,9 +886,8 @@ REGISTER_VISUALIZATION(max_distance) {
 
 		// Update the visibility of the scannable points
 		for (auto &all_scannable_point: all_scannable_points) {
-			for (size_t i = 0; i < all_scannable_point.surface_points.size(); ++i) {
+			for (const auto &point: all_scannable_point.surface_points) {
 				// Get the point from the ScannablePoints object
-				const SurfacePoint &point = all_scannable_point.surface_points[i];
 				if (is_visible(point,
 							   ee_pos, ee_fwd,
 							   max_distance, min_distance_rep->GetValue(),
@@ -915,7 +903,6 @@ REGISTER_VISUALIZATION(max_distance) {
 
 		// Set the view distance actor to the end-effector position
 		view_distance_actor->SetPosition(ee_pos[0], ee_pos[1], ee_pos[2]);
-
 	});
 
 	viewer.setCameraTransform({4.0, 4.0, 3.5}, {2.0, 0.0, 2.5});

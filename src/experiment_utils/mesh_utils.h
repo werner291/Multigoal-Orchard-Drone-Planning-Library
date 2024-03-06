@@ -74,4 +74,11 @@ void append_mesh(shape_msgs::msg::Mesh &left_mesh, const shape_msgs::msg::Mesh &
  */
 std::vector<std::array<mgodpl::math::Vec3d,3>> triangles_from_mesh(const shape_msgs::msg::Mesh& leaves_mesh);
 
+/**
+ * @brief Create a mesh representing a flat ground plane.
+ * @param size 		The size of the ground plane, in half-width and half-height.
+ * @return 			A mesh representing a flat ground plane.
+ */
+shape_msgs::msg::Mesh ground_plane(const double size);
+
 #endif //NEW_PLANNERS_MESH_UTILS_H
