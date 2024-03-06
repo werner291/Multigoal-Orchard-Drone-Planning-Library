@@ -727,6 +727,50 @@ REGISTER_VISUALIZATION(orbit_tree) {
 	viewer.start();
 }
 
+/**
+ * @brief This function computes the sightlines from the sensor to the visible points on the fruits.
+ *
+ * @param allFruitPoints A vector of vectors containing the surface points of all fruits; one sub-vector for each fruit.
+ * @param maxViewDistance The maximum distance from the sensor a point can be to be considered visible.
+ * @param minViewDistance The minimum distance from the sensor a point can be to be considered visible.
+ * @param fieldOfViewAngle The field of view angle of the sensor.
+ * @param maxScanAngle The maximum angle a point can be from the forward direction of the sensor to be considered visible.
+ * @param occlusionModel A shared pointer to the mesh occlusion model.
+ * @param sensorPosition The position of the sensor.
+ * @param sensorForward The forward direction of the sensor.
+ * @return A vector of pairs of Vec3d. Each pair contains the position of the sensor and the position of a visible point.
+ */
+std::vector<std::pair<math::Vec3d, math::Vec3d>> computeVisibleSightlines(
+		const std::vector<std::vector<SurfacePoint>> &allFruitPoints,
+		const double maxViewDistance,
+		const double minViewDistance,
+		const double fieldOfViewAngle,
+		const double maxScanAngle,
+		const std::shared_ptr<MeshOcclusionModel> &occlusionModel,
+		const math::Vec3d &sensorPosition,
+		const math::Vec3d &sensorForward) {
+
+	std::vector<std::pair<math::Vec3d, math::Vec3d>> sightlinesData;
+
+	// Iterate over all fruits
+	for (auto &fruitPoints: allFruitPoints) {
+		// Iterate over all points on the current fruit
+		for (const auto &point: fruitPoints) {
+			// Check if the point is visible from the sensor
+			if (is_visible(point,
+						   sensorPosition, sensorForward,
+						   maxViewDistance, minViewDistance,
+						   maxScanAngle, fieldOfViewAngle,
+						   occlusionModel)) {
+				// If the point is visible, add a sightline from the sensor to the point
+				sightlinesData.push_back({sensorPosition, point.position});
+			}
+		}
+	}
+
+	return sightlinesData;
+}
+
 REGISTER_VISUALIZATION(max_distance) {
 
 	viewer.addMesh(ground_plane(10), {0.5, 0.8, 0.5}, 1.0);
@@ -786,17 +830,9 @@ REGISTER_VISUALIZATION(max_distance) {
 	const double MAX_ANGLE = M_PI;
 
 	// Create the scannable points
-	std::vector<ScannablePoints> all_scannable_points;
+	std::vector<std::vector<SurfacePoint>> all_scannable_points;
 	for (const auto &fruit_mesh: tree_model.fruit_meshes) {
-		all_scannable_points.push_back(createScannablePoints(
-				rng,
-				fruit_mesh,
-				NUM_POINTS,
-				MAX_DISTANCE,
-				MIN_DISTANCE,
-				MAX_ANGLE,
-				std::nullopt
-		));
+		all_scannable_points.push_back(sample_points_on_mesh(rng, fruit_mesh, NUM_POINTS));
 		viewer.addMesh(fruit_mesh, {0.8, 0.8, 0.8}, 1.0);
 	}
 
@@ -870,8 +906,6 @@ REGISTER_VISUALIZATION(max_distance) {
 		const auto &ee_pos = ee_tf.translation;
 		math::Vec3d ee_fwd = ee_tf.orientation.rotate({0, 1, 0});
 
-		std::vector<std::pair<math::Vec3d, math::Vec3d>> sightlines_data;
-
 		if (leaf_scale_rep->GetValue() != last_leaf_scale) {
 			last_leaf_scale = leaf_scale_rep->GetValue();
 
@@ -884,22 +918,16 @@ REGISTER_VISUALIZATION(max_distance) {
 			leaves_visualization.updateTriangles(leaf_triangles);
 		}
 
-		// Update the visibility of the scannable points
-		for (auto &all_scannable_point: all_scannable_points) {
-			for (const auto &point: all_scannable_point.surface_points) {
-				// Get the point from the ScannablePoints object
-				if (is_visible(point,
-							   ee_pos, ee_fwd,
-							   max_distance, min_distance_rep->GetValue(),
-							   max_scan_angle_rep->GetValue(), fov_angle_rep->GetValue(),
-							   mesh_occlusion_model)) {
-					sightlines_data.push_back({ee_pos, point.position});
-				}
-			}
-		}
-
 		// Update the sightlines visualization
-		sightlines.updateLine(sightlines_data);
+		sightlines.updateLine(computeVisibleSightlines(
+				all_scannable_points,
+				max_distance,
+				min_distance_rep->GetValue(),
+				fov_angle_rep->GetValue(),
+				max_scan_angle_rep->GetValue(),
+				mesh_occlusion_model,
+				ee_pos,
+				ee_fwd));
 
 		// Set the view distance actor to the end-effector position
 		view_distance_actor->SetPosition(ee_pos[0], ee_pos[1], ee_pos[2]);
