@@ -34,6 +34,7 @@
 #include <vtkProperty.h>
 #include <vtkSliderWidget.h>
 #include <vtkSliderRepresentation2D.h>
+#include <vtkTextProperty.h>
 
 #include "../planning/collision_detection.h"
 #include "../planning/goal_sampling.h"
@@ -45,6 +46,8 @@
 #include "../experiment_utils/prompting.h"
 #include "../experiment_utils/leaf_scaling.h"
 #include "../visualization/VtkFunctionalCallback.h"
+#include "../visualization/VtkTriangleSetVisualization.h"
+#include "../experiment_utils/default_colors.h"
 
 using namespace mgodpl;
 
@@ -728,9 +731,10 @@ REGISTER_VISUALIZATION(orbit_tree) {
     rep##_rep->SetValue(initValue); \
     rep##_rep->SetTitleText(title); \
     rep##_rep->GetPoint1Coordinate()->SetCoordinateSystemToNormalizedDisplay(); \
-    rep##_rep->GetPoint1Coordinate()->SetValue(0.2, posY); \
+    rep##_rep->GetPoint1Coordinate()->SetValue(0.05, posY); \
     rep##_rep->GetPoint2Coordinate()->SetCoordinateSystemToNormalizedDisplay(); \
-    rep##_rep->GetPoint2Coordinate()->SetValue(0.8, posY); \
+    rep##_rep->GetPoint2Coordinate()->SetValue(0.25, posY);                     \
+    rep##_rep->GetTitleProperty()->SetColor(0,0,0);\
     vtkNew<vtkSliderWidget> widget; \
     widget->SetInteractor(viewer.renderWindowInteractor); \
     widget->SetRepresentation(rep##_rep); \
@@ -819,8 +823,13 @@ REGISTER_VISUALIZATION(max_distance) {
 	view_distance_actor->GetProperty()->SetOpacity(0.1);
 	viewer.addActor(view_distance_actor);
 
-	CREATE_SLIDER(radius_slider, radius, 0.0, 3.0, MAX_DISTANCE, "Max distance", 0.1);
-	CREATE_SLIDER(path_slider, path, 0.0, 1.0, 0.0, "Path", 0.2);
+	double slider_y = 0.1;
+	CREATE_SLIDER(radius_slider, radius, 0.0, 5.0, MAX_DISTANCE, "Max distance", slider_y); slider_y += 0.15;
+	CREATE_SLIDER(min_distance_slider, min_distance, 0.0, 1.0, 0.0, "Min distance", slider_y); slider_y += 0.15;
+	CREATE_SLIDER(path_slider, path, 0.0, 1.0, 0.0, "Path", slider_y); slider_y += 0.15;
+	CREATE_SLIDER(leaf_scale_slider, leaf_scale, 0.0, 2.0, 1.0, "Leaf Scale", slider_y); slider_y += 0.15;
+	CREATE_SLIDER(fov_angle_slider, fov_angle, 0.0, M_PI, M_PI / 2, "FoV Angle", slider_y); slider_y += 0.15;
+	CREATE_SLIDER(max_scan_angle_slider, max_scan_angle, 0.0, M_PI / 2, M_PI / 4, "Max Scanning Angle", slider_y); slider_y += 0.15;
 
 	VtkLineSegmentsVisualization sightlines(1, 0, 1);
 	viewer.addActor(sightlines.getActor());
@@ -832,15 +841,23 @@ REGISTER_VISUALIZATION(max_distance) {
 		viewer.addActor(fruit_points_visualizations.back().getActor());
 	}
 
+	// Scaled leaves:
+	const auto &root_points = leaf_root_points(tree_model);
+
+	VtkTriangleSetVisualization leaves_visualization(LEAF_COLOR[0], LEAF_COLOR[1], LEAF_COLOR[2], 1);
+
+	std::vector<std::array<math::Vec3d, 3>> leaf_triangles;
+	viewer.addActor(leaves_visualization.getActor());
+
+	double last_leaf_scale = 1.0;
+	auto mesh_occlusion_model = std::make_shared<MeshOcclusionModel>(tree_model.leaves_mesh, 0.0);
+
 	// Register the timer callback function to be called at regular intervals
 	viewer.addTimerCallback([&]() {
 
 		// Get the max distance from the slider
 		double max_distance = radius_rep->GetValue();
 		view_distance_source->SetRadius(max_distance);
-		for (auto &scannable_points: all_scannable_points) {
-			scannable_points.max_distance = max_distance;
-		}
 
 //		advancePathPointWrap(path, path_point, interpolation_speed, equal_weights_max_distance);
 		path_point.segment_i = 0;
@@ -860,12 +877,53 @@ REGISTER_VISUALIZATION(max_distance) {
 
 		std::vector<std::pair<math::Vec3d, math::Vec3d>> sightlines_data;
 
+		if (leaf_scale_rep->GetValue() != last_leaf_scale) {
+			last_leaf_scale = leaf_scale_rep->GetValue();
+			leaf_triangles.clear();
+
+			auto leaves_mesh = scale_leaves(tree_model, root_points, leaf_scale_rep->GetValue());
+
+			for (const auto &triangle: leaves_mesh.triangles) {
+				leaf_triangles.push_back({
+												 math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[0]].x,
+															 leaves_mesh.vertices[triangle.vertex_indices[0]].y,
+															 leaves_mesh.vertices[triangle.vertex_indices[0]].z},
+												 math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[1]].x,
+															 leaves_mesh.vertices[triangle.vertex_indices[1]].y,
+															 leaves_mesh.vertices[triangle.vertex_indices[1]].z},
+												 math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[2]].x,
+															 leaves_mesh.vertices[triangle.vertex_indices[2]].y,
+															 leaves_mesh.vertices[triangle.vertex_indices[2]].z}
+										 });
+			}
+
+			mesh_occlusion_model = std::make_shared<MeshOcclusionModel>(leaves_mesh, 0.0);
+
+			leaves_visualization.updateTriangles(leaf_triangles);
+		}
+
 		// Update the visibility of the scannable points
 		for (auto &all_scannable_point: all_scannable_points) {
 			for (size_t i = 0; i < all_scannable_point.surface_points.size(); ++i) {
-				if (is_visible(all_scannable_point, i, end_effector_position)) {
+				// Get the point from the ScannablePoints object
+				const SurfacePoint &point = all_scannable_point.surface_points[i];
+
+				// Calculate the vector from the point to the end effector position
+				auto delta = end_effector_position - point.position;
+
+				// Calculate the distance from the point to the end effector position
+				double distance = delta.norm();
+
+				// Calculate the angle between the point's normal and the vector from the point to the end effector
+				double scan_angle = std::acos(point.normal.dot(delta) / distance);
+
+				// If the distance is greater than the maximum distance, the point is not visible
+				if (distance <= radius_rep->GetValue() &&
+					distance >= min_distance_rep->GetValue() &&
+					scan_angle <= max_scan_angle_rep->GetValue() &&
+					!mesh_occlusion_model->checkOcclusion(point.position, end_effector_position)) {
 					// Add the sightline to the sightlines_data vector
-					sightlines_data.push_back({end_effector_position, all_scannable_point.surface_points[i].position});
+					sightlines_data.push_back({end_effector_position, point.position});
 				}
 			}
 		}
