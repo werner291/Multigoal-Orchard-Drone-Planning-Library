@@ -742,15 +742,14 @@ REGISTER_VISUALIZATION(orbit_tree) {
 
 REGISTER_VISUALIZATION(max_distance) {
 
-	// Load the tree meshes
-	auto tree_model = tree_meshes::loadTreeMeshes("appletree");
-
 	// Initialize a random number generator
 	random_numbers::RandomNumberGenerator rng;
 
+	// Load the tree meshes
+	auto tree_model = tree_meshes::loadTreeMeshes("appletree");
+
 	// Create a robot model
 	const auto &robot = experiments::createProceduralRobotModel();
-	const robot_model::RobotModel::LinkId flying_base = robot.findLinkByName("flying_base");
 
 	// Define the center of the tree
 	const auto leaves_aabb = mesh_aabb(tree_model.leaves_mesh);
@@ -774,7 +773,7 @@ REGISTER_VISUALIZATION(max_distance) {
 			robot,
 			forwardKinematics(
 					robot, path.states[0].joint_values,
-					flying_base,
+					robot.findLinkByName("flying_base"),
 					path.states[0].base_tf
 			)
 	);
@@ -794,9 +793,6 @@ REGISTER_VISUALIZATION(max_distance) {
 	const double MIN_DISTANCE = 0;
 	const double MAX_ANGLE = M_PI;
 
-//	viewer.addMesh(tree_model.leaves_mesh, {0.1, 0.5, 0.1}, 1.0);
-//	auto mesh_occlusion_model = std::make_shared<MeshOcclusionModel>(tree_model.leaves_mesh, 0.0);
-
 	// Create the scannable points
 	std::vector<ScannablePoints> all_scannable_points;
 	for (const auto &fruit_mesh: tree_model.fruit_meshes) {
@@ -811,6 +807,7 @@ REGISTER_VISUALIZATION(max_distance) {
 		));
 		viewer.addMesh(fruit_mesh, {0.8, 0.8, 0.8}, 1.0);
 	}
+
 	vtkNew<vtkSphereSource> view_distance_source;
 	view_distance_source->SetRadius(MAX_DISTANCE);
 
@@ -824,12 +821,18 @@ REGISTER_VISUALIZATION(max_distance) {
 	viewer.addActor(view_distance_actor);
 
 	double slider_y = 0.1;
-	CREATE_SLIDER(radius_slider, radius, 0.0, 5.0, MAX_DISTANCE, "Max distance", slider_y); slider_y += 0.15;
-	CREATE_SLIDER(min_distance_slider, min_distance, 0.0, 1.0, 0.0, "Min distance", slider_y); slider_y += 0.15;
-	CREATE_SLIDER(path_slider, path, 0.0, 1.0, 0.0, "Path", slider_y); slider_y += 0.15;
-	CREATE_SLIDER(leaf_scale_slider, leaf_scale, 0.0, 2.0, 1.0, "Leaf Scale", slider_y); slider_y += 0.15;
-	CREATE_SLIDER(fov_angle_slider, fov_angle, 0.0, M_PI, M_PI / 2, "FoV Angle", slider_y); slider_y += 0.15;
-	CREATE_SLIDER(max_scan_angle_slider, max_scan_angle, 0.0, M_PI / 2, M_PI / 4, "Max Scanning Angle", slider_y); slider_y += 0.15;
+	CREATE_SLIDER(radius_slider, radius, 0.0, 5.0, MAX_DISTANCE, "Max distance", slider_y);
+	slider_y += 0.15;
+	CREATE_SLIDER(min_distance_slider, min_distance, 0.0, 1.0, 0.0, "Min distance", slider_y);
+	slider_y += 0.15;
+	CREATE_SLIDER(path_slider, path, 0.0, 1.0, 0.0, "Path", slider_y);
+	slider_y += 0.15;
+	CREATE_SLIDER(leaf_scale_slider, leaf_scale, 0.0, 2.0, 1.0, "Leaf Scale", slider_y);
+	slider_y += 0.15;
+	CREATE_SLIDER(fov_angle_slider, fov_angle, 0.0, M_PI, M_PI / 2, "FoV Angle", slider_y);
+	slider_y += 0.15;
+	CREATE_SLIDER(max_scan_angle_slider, max_scan_angle, 0.0, M_PI / 2, M_PI / 4, "Max Scanning Angle", slider_y);
+	slider_y += 0.15;
 
 	VtkLineSegmentsVisualization sightlines(1, 0, 1);
 	viewer.addActor(sightlines.getActor());
@@ -859,7 +862,6 @@ REGISTER_VISUALIZATION(max_distance) {
 		double max_distance = radius_rep->GetValue();
 		view_distance_source->SetRadius(max_distance);
 
-//		advancePathPointWrap(path, path_point, interpolation_speed, equal_weights_max_distance);
 		path_point.segment_i = 0;
 		path_point.segment_t = path_rep->GetValue();
 
@@ -873,9 +875,9 @@ REGISTER_VISUALIZATION(max_distance) {
 		update_robot_state(robot, fk, robot_viz);
 
 		// Get the position of the robot's end effector
-		const auto &end_effector_position = fk.forLink(robot.findLinkByName("end_effector")).translation;
-
-		math::Vec3d forward = fk.forLink(robot.findLinkByName("end_effector")).orientation.rotate({0, 1, 0});
+		const auto ee_tf = fk.forLink(robot.findLinkByName("end_effector"));
+		const auto &ee_pos = ee_tf.translation;
+		math::Vec3d ee_fwd = ee_tf.orientation.rotate({0, 1, 0});
 
 		std::vector<std::pair<math::Vec3d, math::Vec3d>> sightlines_data;
 
@@ -898,7 +900,7 @@ REGISTER_VISUALIZATION(max_distance) {
 				const SurfacePoint &point = all_scannable_point.surface_points[i];
 
 				// Calculate the vector from the point to the end effector position
-				auto delta = end_effector_position - point.position;
+				auto delta = ee_pos - point.position;
 
 				// Calculate the distance from the point to the end effector position
 				double distance = delta.norm();
@@ -906,16 +908,16 @@ REGISTER_VISUALIZATION(max_distance) {
 				// Calculate the angle between the point's normal and the vector from the point to the end effector
 				double scan_angle = std::acos(point.normal.dot(delta) / distance);
 
-				double in_view_angle = std::acos(forward.dot(-delta) / distance);
+				double in_view_angle = std::acos(ee_fwd.dot(-delta) / distance);
 
 				// If the distance is greater than the maximum distance, the point is not visible
 				if (distance <= radius_rep->GetValue() &&
 					distance >= min_distance_rep->GetValue() &&
 					scan_angle <= max_scan_angle_rep->GetValue() &&
 					in_view_angle <= fov_angle_rep->GetValue() &&
-					!mesh_occlusion_model->checkOcclusion(point.position, end_effector_position)) {
+					!mesh_occlusion_model->checkOcclusion(point.position, ee_pos)) {
 					// Add the sightline to the sightlines_data vector
-					sightlines_data.push_back({end_effector_position, point.position});
+					sightlines_data.push_back({ee_pos, point.position});
 				}
 			}
 		}
@@ -924,7 +926,7 @@ REGISTER_VISUALIZATION(max_distance) {
 		sightlines.updateLine(sightlines_data);
 
 		// Set the view distance actor to the end-effector position
-		view_distance_actor->SetPosition(end_effector_position[0], end_effector_position[1], end_effector_position[2]);
+		view_distance_actor->SetPosition(ee_pos[0], ee_pos[1], ee_pos[2]);
 
 	});
 
