@@ -189,6 +189,32 @@ namespace mgodpl {
 	bool is_visible(const ScannablePoints& scannable_points, ScannablePoints::PointId point_index, const math::Vec3d& eye_position);
 
 	/**
+	 * @brief Checks if a point is visible from a given position and direction.
+	 *
+	 * This function checks if a point is visible from a given position and direction,
+	 * considering a maximum and minimum distance, a maximum scan angle, a field of view angle,
+	 * and a mesh occlusion model.
+	 *
+	 * @param point The point to check visibility for.
+	 * @param eye_pos The position from which to check visibility.
+	 * @param eye_forward The eye direction to use for field-of-view checks.
+	 * @param max_distance The maximum distance for the point to be considered visible.
+	 * @param min_distance The minimum distance for the point to be considered visible.
+	 * @param max_scan_angle The maximum angle between the point's normal and the vector from the point to the position for the point to be considered visible.
+	 * @param fov_angle The field of view angle.
+	 * @param mesh_occlusion_model The mesh occlusion model to use for visibility checks.
+	 * @return true if the point is visible, false otherwise.
+	 */
+	bool is_visible(const SurfacePoint &point,
+					const math::Vec3d &eye_pos,
+					const math::Vec3d &eye_forward,
+					double max_distance,
+					double min_distance,
+					double max_scan_angle,
+					double fov_angle,
+					const std::shared_ptr<MeshOcclusionModel> &mesh_occlusion_model);
+
+	/**
 	 * @brief Updates the visibility status of a set of points from a given eye position.
 	 *
 	 * This function takes a ScannablePoints object, a Vec3d object representing the eye position,

@@ -759,15 +759,15 @@ REGISTER_VISUALIZATION(max_distance) {
 	math::Vec3d approach_direction = {0, 1, 0};
 
 	// Create a RobotPath that approaches the tree center.
-	RobotPath path {
-		.states = {
-			fromEndEffectorAndVector(robot,
-									 tree_center + approach_direction * tree_radius * 3.0,
-									 approach_direction),
-			fromEndEffectorAndVector(robot,
-									 tree_center + approach_direction * tree_radius,
-									 approach_direction)
-		}
+	RobotPath path{
+			.states = {
+					fromEndEffectorAndVector(robot,
+											 tree_center + approach_direction * tree_radius * 3.0,
+											 approach_direction),
+					fromEndEffectorAndVector(robot,
+											 tree_center + approach_direction * tree_radius,
+											 approach_direction)
+			}
 	};
 
 	// Visualize the robot's path
@@ -900,25 +900,11 @@ REGISTER_VISUALIZATION(max_distance) {
 			for (size_t i = 0; i < all_scannable_point.surface_points.size(); ++i) {
 				// Get the point from the ScannablePoints object
 				const SurfacePoint &point = all_scannable_point.surface_points[i];
-
-				// Calculate the vector from the point to the end effector position
-				auto delta = ee_pos - point.position;
-
-				// Calculate the distance from the point to the end effector position
-				double distance = delta.norm();
-
-				// Calculate the angle between the point's normal and the vector from the point to the end effector
-				double scan_angle = std::acos(point.normal.dot(delta) / distance);
-
-				double in_view_angle = std::acos(ee_fwd.dot(-delta) / distance);
-
-				// If the distance is greater than the maximum distance, the point is not visible
-				if (distance <= radius_rep->GetValue() &&
-					distance >= min_distance_rep->GetValue() &&
-					scan_angle <= max_scan_angle_rep->GetValue() &&
-					in_view_angle <= fov_angle_rep->GetValue() &&
-					!mesh_occlusion_model->checkOcclusion(point.position, ee_pos)) {
-					// Add the sightline to the sightlines_data vector
+				if (is_visible(point,
+							   ee_pos, ee_fwd,
+							   max_distance, min_distance_rep->GetValue(),
+							   max_scan_angle_rep->GetValue(), fov_angle_rep->GetValue(),
+							   mesh_occlusion_model)) {
 					sightlines_data.push_back({ee_pos, point.position});
 				}
 			}

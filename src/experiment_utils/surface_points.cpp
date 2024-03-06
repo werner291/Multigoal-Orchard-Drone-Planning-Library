@@ -172,4 +172,30 @@ namespace mgodpl {
 		}
 		return cumulative_areas;
 	}
+
+	bool is_visible(const SurfacePoint &point,
+					const math::Vec3d &eye_pos,
+					const math::Vec3d &eye_forward,
+					double max_distance,
+					double min_distance,
+					double max_scan_angle,
+					double fov_angle,
+					const std::shared_ptr<MeshOcclusionModel> &mesh_occlusion_model) {
+		// Calculate the vector from the point to the eye position
+		auto delta = eye_pos - point.position;
+
+		// Calculate the distance from the point to the eye position
+		double distance = delta.norm();
+
+		// Check if the point is visible based on the following conditions:
+		// 1. The distance from the point to the eye position is within the specified range (min_distance to max_distance).
+		// 2. The angle between the point's normal and the vector from the point to the eye position is less than or equal to the maximum scan angle.
+		// 3. The angle between the eye forward direction and the vector from the point to the eye position is less than or equal to the field of view angle.
+		// 4. The point is not occluded according to the mesh occlusion model. (most expensive, so last)
+		return distance <= max_distance &&
+			   distance >= min_distance &&
+			   std::acos(point.normal.dot(delta) / distance) <= max_scan_angle &&
+			   std::acos(eye_forward.dot(-delta) / distance) <= fov_angle &&
+			   !mesh_occlusion_model->checkOcclusion(point.position, eye_pos);
+	}
 }
