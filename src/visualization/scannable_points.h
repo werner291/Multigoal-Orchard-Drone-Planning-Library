@@ -25,6 +25,18 @@
 VtkLineSegmentsVisualization createFruitLinesVisualization(const mgodpl::ScannablePoints& scannable_points);
 
 /**
+   * @brief Creates a VtkLineSegmentsVisualization object for fruit points.
+   *
+   * This function creates a VtkLineSegmentsVisualization object that represents
+   * the fruit points in the 3D space. Each point is represented as a line segment
+   * that starts at the point's position and extends in the direction of the point's normal.
+   *
+   * @param scannable_points The scannable points on the fruit surface.
+   * @return A VtkLineSegmentsVisualization object that can be used to visualize the fruit points.
+   */
+VtkLineSegmentsVisualization createFruitLinesVisualization(const std::vector<mgodpl::SurfacePoint>& scannable_points);
+
+/**
  * @brief Generates colors for the visualization based on visibility of points.
  *
  * This function generates a vector of colors (represented as math::Vec3d objects)
