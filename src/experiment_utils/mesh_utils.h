@@ -66,14 +66,12 @@ shape_msgs::msg::Mesh createGroundPlane(double width, double height);
  */
 void append_mesh(shape_msgs::msg::Mesh &left_mesh, const shape_msgs::msg::Mesh &right_mesh);
 
-///**
-// * Applies a translation to the vertices of the given mesh.
-// *
-// * @param mesh 		The mesh to translate.
-// * @param translation 	The translation to apply to the vertices of the mesh.
-// *
-// * @return 			The translated mesh.
-// */
-//shape_msgs::msg::Mesh translate_mesh(shape_msgs::msg::Mesh mesh, const Eigen::Vector3d &translation);
+/**
+ * @brief Extracts vertices from a given mesh and returns them as a vector of 3-length arrays of Vec3d.
+ *
+ * @param leaves_mesh The mesh from which to extract the vertices. It is of type shape_msgs::msg::Mesh.
+ * @return A vector of 3-length arrays, each representing a triangle in the mesh.
+ */
+std::vector<std::array<mgodpl::math::Vec3d,3>> triangles_from_mesh(const shape_msgs::msg::Mesh& leaves_mesh);
 
 #endif //NEW_PLANNERS_MESH_UTILS_H

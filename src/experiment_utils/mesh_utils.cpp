@@ -119,6 +119,37 @@ void append_mesh(shape_msgs::msg::Mesh &left_mesh, const shape_msgs::msg::Mesh &
 	}
 }
 
+std::vector<std::array<mgodpl::math::Vec3d, 3>> triangles_from_mesh(const shape_msgs::msg::Mesh &leaves_mesh) {
+
+	// Initialize a vector to store the vertices
+	std::vector<std::array<mgodpl::math::Vec3d,3>> vertices;
+
+	// Iterate over the triangles in the mesh
+	for (const auto& triangle : leaves_mesh.triangles) {
+
+		// Extract the first vertex of the triangle and store it in a mgodpl::math::Vec3d
+		mgodpl::math::Vec3d vertex1 = {leaves_mesh.vertices[triangle.vertex_indices[0]].x,
+									   leaves_mesh.vertices[triangle.vertex_indices[0]].y,
+									   leaves_mesh.vertices[triangle.vertex_indices[0]].z};
+
+		// Extract the second vertex of the triangle and store it in a mgodpl::math::Vec3d
+		mgodpl::math::Vec3d vertex2 = {leaves_mesh.vertices[triangle.vertex_indices[1]].x,
+									   leaves_mesh.vertices[triangle.vertex_indices[1]].y,
+									   leaves_mesh.vertices[triangle.vertex_indices[1]].z};
+
+		// Extract the third vertex of the triangle and store it in a mgodpl::math::Vec3d
+		mgodpl::math::Vec3d vertex3 = {leaves_mesh.vertices[triangle.vertex_indices[2]].x,
+									   leaves_mesh.vertices[triangle.vertex_indices[2]].y,
+									   leaves_mesh.vertices[triangle.vertex_indices[2]].z};
+
+		// Add the vertices to the vector
+		vertices.push_back({vertex1, vertex2, vertex3});
+	}
+
+	// Return the vector of vertices
+	return vertices;
+}
+
 //shape_msgs::msg::Mesh translate_mesh(shape_msgs::msg::Mesh mesh, const Eigen::Vector3d &translation) {
 //
 //	for (auto &vertex : mesh.vertices) {
