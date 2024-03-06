@@ -19,6 +19,7 @@
 #include "../visualization/visualization_function_macros.h"
 #include "../experiment_utils/surface_points.h"
 #include "../experiment_utils/procedural_fruit_placement.h"
+#include "../experiment_utils/mesh_utils.h"
 
 using namespace mgodpl;
 
@@ -41,23 +42,7 @@ REGISTER_VISUALIZATION(leaf_density_rescaling) {
 		t += 0.1;
 		auto leaves_mesh = scale_leaves(tree_model, leaf_roots, 1.0 + 0.5 * std::sin(t));
 
-		leaf_triangles.clear();
-
-		for (const auto &triangle: leaves_mesh.triangles) {
-			leaf_triangles.push_back({
-											 math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[0]].x,
-														 leaves_mesh.vertices[triangle.vertex_indices[0]].y,
-														 leaves_mesh.vertices[triangle.vertex_indices[0]].z},
-											 math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[1]].x,
-														 leaves_mesh.vertices[triangle.vertex_indices[1]].y,
-														 leaves_mesh.vertices[triangle.vertex_indices[1]].z},
-											 math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[2]].x,
-														 leaves_mesh.vertices[triangle.vertex_indices[2]].y,
-														 leaves_mesh.vertices[triangle.vertex_indices[2]].z}
-									 });
-		}
-
-		leaves_visualization.updateTriangles(leaf_triangles);
+		leaf_triangles = triangles_from_mesh(leaves_mesh);
 
 		if (t > 3.0 * M_PI) {
 			viewer.stop();

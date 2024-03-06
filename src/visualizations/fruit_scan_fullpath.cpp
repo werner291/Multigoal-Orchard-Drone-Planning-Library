@@ -881,23 +881,10 @@ REGISTER_VISUALIZATION(max_distance) {
 
 		if (leaf_scale_rep->GetValue() != last_leaf_scale) {
 			last_leaf_scale = leaf_scale_rep->GetValue();
-			leaf_triangles.clear();
 
 			auto leaves_mesh = scale_leaves(tree_model, root_points, leaf_scale_rep->GetValue());
 
-			for (const auto &triangle: leaves_mesh.triangles) {
-				leaf_triangles.push_back({
-												 math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[0]].x,
-															 leaves_mesh.vertices[triangle.vertex_indices[0]].y,
-															 leaves_mesh.vertices[triangle.vertex_indices[0]].z},
-												 math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[1]].x,
-															 leaves_mesh.vertices[triangle.vertex_indices[1]].y,
-															 leaves_mesh.vertices[triangle.vertex_indices[1]].z},
-												 math::Vec3d{leaves_mesh.vertices[triangle.vertex_indices[2]].x,
-															 leaves_mesh.vertices[triangle.vertex_indices[2]].y,
-															 leaves_mesh.vertices[triangle.vertex_indices[2]].z}
-										 });
-			}
+			leaf_triangles = triangles_from_mesh(leaves_mesh);
 
 			mesh_occlusion_model = std::make_shared<MeshOcclusionModel>(leaves_mesh, 0.0);
 
