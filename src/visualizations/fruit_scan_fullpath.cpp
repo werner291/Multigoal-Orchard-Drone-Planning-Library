@@ -759,13 +759,16 @@ REGISTER_VISUALIZATION(max_distance) {
 	math::Vec3d approach_direction = {0, 1, 0};
 
 	// Create a RobotPath that approaches the tree center.
-	RobotPath path;
-	path.states.push_back(fromEndEffectorAndVector(robot,
-												   tree_center + approach_direction * tree_radius * 3.0,
-												   approach_direction));
-	path.states.push_back(fromEndEffectorAndVector(robot,
-												   tree_center + approach_direction * tree_radius,
-												   approach_direction));
+	RobotPath path {
+		.states = {
+			fromEndEffectorAndVector(robot,
+									 tree_center + approach_direction * tree_radius * 3.0,
+									 approach_direction),
+			fromEndEffectorAndVector(robot,
+									 tree_center + approach_direction * tree_radius,
+									 approach_direction)
+		}
+	};
 
 	// Visualize the robot's path
 	auto robot_viz = vizualisation::vizualize_robot_state(
@@ -862,8 +865,7 @@ REGISTER_VISUALIZATION(max_distance) {
 		double max_distance = radius_rep->GetValue();
 		view_distance_source->SetRadius(max_distance);
 
-		path_point.segment_i = 0;
-		path_point.segment_t = path_rep->GetValue();
+		path_point = PathPoint::fromScalar(path_rep->GetValue(), path);
 
 		// Interpolate the robot's state
 		auto interpolated_state = interpolate(path_point, path);

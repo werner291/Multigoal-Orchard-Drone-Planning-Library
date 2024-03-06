@@ -51,8 +51,27 @@ namespace mgodpl
 
         /// @brief The time at which the robot is at this point on the segment.
         double segment_t;
-    };
 
+		/**
+		 * @brief Converts a scalar value to a PathPoint.
+		 *
+		 * This function takes a scalar value and a RobotPath as input and returns a PathPoint, using the integer part of
+		 * the scalar value as the segment index and the fractional part as the time along the segment.
+		 *
+		 * The segment index is clamped to the range [0, path.states.size() - 2].
+		 *
+		 * @param d The scalar value to convert to a PathPoint.
+		 * @param path The RobotPath to use for determining the segment index.
+		 * @return A PathPoint with the segment index and time determined from the scalar value and the RobotPath.
+		 */
+		static PathPoint fromScalar(double d, const mgodpl::RobotPath& path) {
+			PathPoint path_point;
+			path_point.segment_i = (size_t) std::floor(d);
+			path_point.segment_i = std::min(path_point.segment_i, path.states.size() - 2);
+			path_point.segment_t = d - (double) path_point.segment_i;
+			return path_point;
+		}
+    };
 
     /**
      * @brief Interpolates between two states of a robot path at a given point.
