@@ -48,6 +48,7 @@
 #include "../visualization/VtkFunctionalCallback.h"
 #include "../visualization/VtkTriangleSetVisualization.h"
 #include "../experiment_utils/default_colors.h"
+#include "../experiment_utils/SensorParameters.h"
 
 using namespace mgodpl;
 
@@ -952,17 +953,6 @@ REGISTER_VISUALIZATION(orbit_tree) {
 }
 
 /**
- * @struct SensorScalarParameters
- * @brief A structure to hold the scalar parameters related to a sensor.
- */
-struct SensorScalarParameters {
-	double maxViewDistance; //< The maximum distance from the sensor a point can be to be considered visible.
-	double minViewDistance; //< The minimum distance from the sensor a point can be to be considered visible.
-	double fieldOfViewAngle; //< The field of view angle of the sensor (from the center to the edge).
-	double maxScanAngle; //< The maximum angle a point can be from the forward direction of the sensor to be considered visible.
-};
-
-/**
  * @brief This function computes the sightlines from the sensor to the visible points on the fruits.
  *
  * @param allFruitPoints A vector of vectors containing the surface points of all fruits; one sub-vector for each fruit.
@@ -1062,6 +1052,9 @@ REGISTER_VISUALIZATION(max_distance) {
 	std::vector<std::vector<SurfacePoint>> all_scannable_points;
 	for (const auto &fruit_mesh: tree_model.fruit_meshes) {
 		all_scannable_points.push_back(sample_points_on_mesh(rng, fruit_mesh, NUM_POINTS));
+	}
+
+	for (const auto &fruit_mesh: tree_model.fruit_meshes) {
 		viewer.addMesh(fruit_mesh, {0.8, 0.8, 0.8}, 1.0);
 	}
 

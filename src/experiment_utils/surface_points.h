@@ -212,7 +212,7 @@ namespace mgodpl {
 					double min_distance,
 					double max_scan_angle,
 					double fov_angle,
-					const std::shared_ptr<MeshOcclusionModel> &mesh_occlusion_model);
+					const MeshOcclusionModel &mesh_occlusion_model);
 
 	/**
 	 * @brief Updates the visibility status of a set of points from a given eye position.

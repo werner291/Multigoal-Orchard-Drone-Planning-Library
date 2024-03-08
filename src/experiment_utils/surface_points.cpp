@@ -180,7 +180,7 @@ namespace mgodpl {
 					double min_distance,
 					double max_scan_angle,
 					double fov_angle,
-					const std::shared_ptr<MeshOcclusionModel> &mesh_occlusion_model) {
+					const MeshOcclusionModel &mesh_occlusion_model) {
 		// Calculate the vector from the point to the eye position
 		auto delta = eye_pos - point.position;
 
@@ -196,6 +196,6 @@ namespace mgodpl {
 			   distance >= min_distance &&
 			   std::acos(point.normal.dot(delta) / distance) <= max_scan_angle &&
 			   std::acos(eye_forward.dot(-delta) / distance) <= fov_angle &&
-			   !mesh_occlusion_model->checkOcclusion(point.position, eye_pos);
+			   !mesh_occlusion_model.checkOcclusion(point.position, eye_pos);
 	}
 }
