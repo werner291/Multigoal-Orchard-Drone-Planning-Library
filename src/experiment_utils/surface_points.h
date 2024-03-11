@@ -13,6 +13,7 @@
 #include <shape_msgs/msg/mesh.hpp>
 #include "../math/Vec3.h"
 #include "MeshOcclusionModel.h"
+#include "SensorParameters.h"
 
 namespace mgodpl {
 
@@ -233,6 +234,32 @@ namespace mgodpl {
 	size_t update_visibility(const ScannablePoints& scannable_points,
 	                         const math::Vec3d& eye_position,
 	                         SeenPoints& seen_points);
+
+	/**
+	 * Creates a seen/unseen status for each scannable point, initialized to false.
+	 * @param all_scannable_points 		The scannable points for each fruit.
+	 * @return 							A vector of vectors booleans, same structure as all_scannable_points, initialized to false.
+	 */
+	std::vector<std::vector<bool>> init_seen_status(const std::vector<std::vector<SurfacePoint>> &all_scannable_points);
+
+	/**
+	 * Set the seen/unseen status for each scannable point to true if it is visible from the current end effector position.
+	 *
+	 * Points that are already seen are not updated nor re-evaluated.
+	 *
+	 * @param sensor_params 				The scalar parameters for the sensor model.
+	 * @param mesh_occlusion_model 			The datastructure to use to check for clear sightlines.
+	 * @param eye_position 					The position of the sensor/eye.
+	 * @param eye_forward 					The forward vector of the sensor/eye.
+	 * @param all_scannable_points 			The scannable points for each fruit.
+	 * @param ever_seen 					The seen/unseen status for each scannable point.
+	 */
+	void update_seen(const SensorScalarParameters &sensor_params,
+					 const std::shared_ptr<const MeshOcclusionModel> &mesh_occlusion_model,
+					 const math::Vec3d &eye_position,
+					 const math::Vec3d &eye_forward,
+					 const std::vector<std::vector<SurfacePoint>> &all_scannable_points,
+					 std::vector<std::vector<bool>> &ever_seen);
 }
 
 #endif //MGODPL_SURFACE_POINTS_H
