@@ -105,12 +105,23 @@ struct TreeModelParameters {
 	const std::string name; //< A model name; corresponds to one of the models in the `3d-models` directory.
 	const double leaf_scale; //< The scaling factor for the leaves; 1.0 skips the rescaling.
 	const std::variant<Unchanged, RandomSubset, Replace> fruit_subset; //< The subset of fruits to use in the experiment.
+	const int seed; //< The seed for randomizing the tree model.
 };
 
 Json::Value toJson(const TreeModelParameters& treeModelParameters) {
 	Json::Value json;
 	json["name"] = treeModelParameters.name;
 	json["leaf_scale"] = treeModelParameters.leaf_scale;
+	if (auto unchanged = std::get_if<Unchanged>(&treeModelParameters.fruit_subset)) {
+		json["fruit_subset"] = "unchanged";
+	} else if (auto randomSubset = std::get_if<RandomSubset>(&treeModelParameters.fruit_subset)) {
+		json["fruit_subset"] = "random_subset";
+		json["count"] = randomSubset->count;
+	} else if (auto replace = std::get_if<Replace>(&treeModelParameters.fruit_subset)) {
+		json["fruit_subset"] = "replace";
+		json["count"] = replace->count;
+	}
+	json["seed"] = treeModelParameters.seed;
 	return json;
 }
 

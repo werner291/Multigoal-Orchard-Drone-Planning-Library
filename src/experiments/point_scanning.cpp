@@ -1,6 +1,10 @@
 #include <json/json.h>
 #include <fstream>
 #include <random_numbers/random_numbers.h>
+#include <algorithm>
+#include <mutex>
+#include <execution>
+#include <random>
 #include "../experiment_utils/TreeMeshes.h"
 #include "../experiment_utils/procedural_robot_models.h"
 #include "../experiment_utils/mesh_utils.h"
@@ -10,6 +14,7 @@
 #include "../planning/state_tools.h"
 #include "../experiment_utils/leaf_scaling.h"
 #include "../experiment_utils/SensorParameters.h"
+#include "../experiment_utils/procedural_fruit_placement.h"
 
 using namespace mgodpl;
 
@@ -345,7 +350,7 @@ struct PointScanEnvironment {
 struct EnvironmentInstanceCache {
 
 	/// A mutex to protect the cache from concurrent access.
-	std::mutex mutex;
+	std::mutex mutex {};
 
 	/// The robot model to use.
 	const robot_model::RobotModel &robot;
@@ -375,7 +380,23 @@ struct EnvironmentInstanceCache {
 		return tree_models.find(tree_name)->second;
 	}
 
-	/**
+	std::vector<shape_msgs::msg::Mesh> random_subset_of_meshes(random_numbers::RandomNumberGenerator &rng,
+															   const std::shared_ptr<const LoadedTreeModel> &tree_model,
+															   const RandomSubset &subset_params) const {
+		std::vector<shape_msgs::msg::Mesh> fruit_meshes = tree_model->meshes.fruit_meshes;
+
+		if (subset_params.count > fruit_meshes.size()) {
+			throw std::runtime_error("Requested more fruit than available in the tree model");
+		}
+
+		// Using rng to shuffle the fruit meshes; we draw the seed from the rng to ensure reproducibility.
+		std::mt19937 stdrng(rng.uniformInteger(0, std::numeric_limits<int>::max()));
+
+		std::sample(fruit_meshes.begin(), fruit_meshes.end(), std::back_inserter(fruit_meshes), subset_params.count, stdrng);
+		return fruit_meshes;
+	}
+
+/**
 	 * Obtain an environment instance for a given set of parameters.
 	 *
 	 * Parts of it will be retrieved from the cache if it already exists, or created and stored in the cache if it does not.
@@ -388,16 +409,47 @@ struct EnvironmentInstanceCache {
 	 * @param rng 			A random number generator to use for sampling points.
 	 * @return 				A PointScanEnvironment instance for the given parameters.
 	 */
-	PointScanEnvironment create_environment(const PointScanEvalParameters &params,
-											random_numbers::RandomNumberGenerator &rng) {
+	PointScanEnvironment create_environment(const PointScanEvalParameters &params) {
+
+		random_numbers::RandomNumberGenerator rng(params.tree_params.seed);
 
 		// Load the tree model
 		std::shared_ptr<const LoadedTreeModel> tree_model = obtain_tree_model(params.tree_params.name);
 
 		// Create the scannable points
 		std::vector<std::vector<SurfacePoint>> all_scannable_points;
-		for (const auto &fruit_mesh: tree_model->meshes.fruit_meshes) {
-			all_scannable_points.push_back(sample_points_on_mesh(rng, fruit_mesh, params.n_scannable_points_per_fruit));
+
+		if (std::holds_alternative<Unchanged>(params.tree_params.fruit_subset)) {
+			for (const auto &fruit_mesh: tree_model->meshes.fruit_meshes) {
+				all_scannable_points.push_back(sample_points_on_mesh(rng, fruit_mesh, params.n_scannable_points_per_fruit));
+			}
+		} else if (const auto& subset_params = std::get_if<RandomSubset>(&params.tree_params.fruit_subset)) {
+
+			// Pick a random subset without replacement of the fruit meshes.
+			for (const auto &fruit_mesh: random_subset_of_meshes(rng, tree_model, *subset_params)) {
+				all_scannable_points.push_back(sample_points_on_mesh(rng, fruit_mesh, params.n_scannable_points_per_fruit));
+			}
+
+		} else if (const auto& fruit_subset = std::get_if<Replace>(&params.tree_params.fruit_subset)) {
+			auto fruit_locations = generate_fruit_locations(tree_model->meshes, fruit_subset->count, rng);
+
+			all_scannable_points.reserve(fruit_locations.size());
+
+			const double FRUIT_RADIUS = 0.05;
+
+			std::vector<SurfacePoint> fruit_points;
+
+			for (const auto &fruit_location: fruit_locations) {
+				for (size_t i = 0; i < params.n_scannable_points_per_fruit; ++i)
+				{
+					math::Vec3d random_direction(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
+					random_direction.normalize();
+					math::Vec3d random_position = fruit_location + random_direction * FRUIT_RADIUS;
+					fruit_points.push_back({random_position, random_direction});
+				}
+			}
+
+			all_scannable_points.push_back(fruit_points);
 		}
 
 		// Scale the leaves
@@ -416,12 +468,26 @@ struct EnvironmentInstanceCache {
 	}
 };
 
+struct MetaParameters {
+	/// The number of scenarios to evaluate.
+	size_t n_repeat = 1;
+	int seed = 42; //< The seed to use for random number generation.
+};
+
+Json::Value toJson(const MetaParameters &params) {
+	Json::Value json;
+	json["n_repeat"] = params.n_repeat;
+	return json;
+}
+
 /**
  * Generate a set of evaluation parameters to use for the point scanning experiment.
  *
  * TODO: maybe we can add some meta-parameters to control which set of parameters to generate?
  */
-std::vector<PointScanEvalParameters> gen_eval_params() {
+std::vector<PointScanEvalParameters> gen_eval_params(const MetaParameters &meta_params) {
+
+	random_numbers::RandomNumberGenerator rng(meta_params.seed);
 
 	// Define the sensor parameters
 	SensorScalarParameters sensor_params {
@@ -435,15 +501,12 @@ std::vector<PointScanEvalParameters> gen_eval_params() {
 	std::vector<TreeModelParameters> tree_params;
 
 	for (const double leaf_scale: {0.0, 0.5, 1.0, 1.5, 2.0}) {
-
-		TreeModelParameters params{
+		tree_params.push_back(TreeModelParameters {
 				.name = "appletree",
 				.leaf_scale = leaf_scale,
-				.fruit_subset = Unchanged{}
-		};
-
-		tree_params.push_back(params);
-
+				.fruit_subset = Unchanged {},
+				.seed = rng.uniformInteger(0, std::numeric_limits<int>::max())
+		});
 	}
 
 	// Take the cartesian product of the tree and sensor parameters
@@ -462,14 +525,32 @@ std::vector<PointScanEvalParameters> gen_eval_params() {
 
 int main() {
 
+	const MetaParameters meta_params = {
+			.n_repeat = 1,
+			.seed = 42,
+	};
+
 	// Generate our environmental parameter space to evaluate/test.
-	const auto &eval_params = gen_eval_params();
+	const auto &eval_params = gen_eval_params(meta_params);
+
+	std::cout << "Will run experiment with meta-parameters:" << std::endl;
+	std::cout << toJson(meta_params) << std::endl;
+
+	std::cout << "Will test the following " << eval_params.size() << " scenarios:" << std::endl;
+	for (const auto &params: eval_params) {
+		std::cout << toJson(params) << std::endl;
+	}
 
 	// Get a set of orbits to serve as potential paths to evaluate.
 	const std::vector<OrbitPathParameters> orbits{
 			{.parameters = CircularOrbitParameters{.radius = 1.0}},
 			{.parameters = SphericalOscillationParameters{.radius = 1.0, .amplitude = 0.5, .cycles = 4}}
 	};
+
+	std::cout << "with the following " << orbits.size() << " orbits:" << std::endl;
+	for (const auto &orbit: orbits) {
+		std::cout << toJson(orbit) << std::endl;
+	}
 
 	// Initialize a random number generator
 	random_numbers::RandomNumberGenerator rng;
@@ -485,12 +566,31 @@ int main() {
 			.robot = robot,
 	};
 
+	std::cout << "Starting evaluation" << std::endl;
+	std::cout << "Will test " << eval_params.size() << " scenarios with " << orbits.size() << " orbits each, for total of " << eval_params.size() * orbits.size() << " evaluations." << std::endl;
+
+	std::mutex results_mutex;
+
+	size_t scenarios_completed = 0;
+	std::atomic_int in_flight = 0;
+
 	// Iterate over every combination of environment and solution. (TODO: parallelize these loops.)
-	for (const auto &scenario_params: eval_params) {
-		for (const auto &orbit: orbits) {
+    std::for_each(std::execution::par, eval_params.begin(), eval_params.end(), [&](const auto &scenario_params) {
+
+		std::cout << "Starting scenario " << (scenarios_completed+1) << " of " << eval_params.size() << std::endl;
+
+		Json::Value scenario_stats;
+		scenario_stats["parameters"] = toJson(scenario_params);
+
+		size_t orbits_completed = 0;
+
+		std::for_each(std::execution::par, orbits.begin(), orbits.end(), [&](const auto &orbit) {
+
+			std::cout << "Starting orbit " << (orbits_completed+1) << " of " << orbits.size() << " for scenario " << (scenarios_completed+1) << " of " << eval_params.size() << std::endl;
+			std::cout << "In flight: " << (++in_flight) << std::endl;
 
 			// Instantiate the environment for this scenario
-			const auto &env = environment_cache.create_environment(scenario_params, rng);
+			const auto &env = environment_cache.create_environment(scenario_params);
 
 			// Define the speed of interpolation
 			double interpolation_speed = 0.01;
@@ -509,18 +609,35 @@ int main() {
 			Json::Value run;
 
 			// Store the parameters alongside the results for easier analysis
-			run["parameters"] = toJson(scenario_params);
 			run["orbit"] = toJson(orbit);
 			run["result"] = result;
 
 			// Store this run in the overall results
-			stats.append(run);
+			{
+				std::lock_guard<std::mutex> lock(results_mutex);
+				scenario_stats["attempts"].append(run);
+
+				orbits_completed++;
+				std::cout << "Completed " << orbits_completed << " of " << orbits.size() << " orbits. (Scenario " << (scenarios_completed+1) << " of " << eval_params.size() << ")" << std::endl;
+				std::cout << "In flight: " << (--in_flight) << std::endl;
+			}
+		});
+
+		{
+			std::lock_guard<std::mutex> lock(results_mutex);
+			stats.append(scenario_stats);
+
+			scenarios_completed++;
+			std::cout << "Completed " << scenarios_completed << " of " << eval_params.size() << " scenarios." << std::endl;
 		}
-	}
+	});
 
 	// Write the JSON object to a file
 	Json::StreamWriterBuilder writer;
 	std::ofstream file("../analysis/data/point_scanning.json");
 	file << Json::writeString(writer, stats);
+
+	std::cout << "All runs completed and written to file." << std::endl;
+	std::cout << "Results written to ../analysis/data/point_scanning.json" << std::endl;
 
 }

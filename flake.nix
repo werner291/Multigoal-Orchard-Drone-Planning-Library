@@ -34,8 +34,9 @@
             CoinMP
             glpk
             vtk
-	        eigen
-	        pandoc
+	    eigen
+	    pandoc
+	    tbb # For the parallel for_each
         ];
       };
     };

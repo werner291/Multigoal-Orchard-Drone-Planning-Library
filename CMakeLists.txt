@@ -61,8 +61,6 @@ find_file (DEBIAN_FOUND debian_version debconf.conf
         PATHS /etc
 )
 
-
-
 set(CGAL_DATA_DIR "UNUSED_STOP_WARNING")
 find_package(CGAL REQUIRED)
 
@@ -98,6 +96,7 @@ include_directories(
 
 
 link_libraries(
+        tbb
 #        ${EIGEN_LIBRARIES}
         ${FCL_LIBRARIES}
         ${Boost_LIBRARIES}
@@ -126,6 +125,8 @@ set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" )# "ompl")
+
+add_compile_definitions(PARALLEL) # Enable parallelism in some parts of the code.
 
 # A small library featuring some vector math (not depending on Eigen)
 # and some general-purpose geometry utilities.
