@@ -15,50 +15,9 @@
 #include "../experiment_utils/leaf_scaling.h"
 #include "../experiment_utils/SensorParameters.h"
 #include "../experiment_utils/procedural_fruit_placement.h"
+#include "../experiment_utils/joint_distances.h"
 
 using namespace mgodpl;
-
-/**
- * A struct of the distances between two robot states on a per-joint basis.
- */
-struct JointDistances {
-	/// The distance between the base translations
-	double translation_distance;
-	/// The distance between the base rotations (in ra
-	double rotation_distance;
-	/// The distance between the angular positions of each joint (absolute value)
-	std::vector<double> joint_distances;
-};
-
-/**
- * Calculate the distances between two robot states.
- * @param state1 	The first robot state.
- * @param state2 	The second robot state.
- * @return A struct containing the distances between the two states.
- */
-[[nodiscard]] JointDistances calculateJointDistances(const RobotState &state1, const RobotState &state2) {
-	JointDistances distances;
-
-	distances.translation_distance = (state2.base_tf.translation - state1.base_tf.translation).norm();
-	distances.rotation_distance = angular_distance(state2.base_tf.orientation, state1.base_tf.orientation);
-
-	for (size_t i = 0; i < state1.joint_values.size(); ++i) {
-		distances.joint_distances.push_back(std::abs(state2.joint_values[i] - state1.joint_values[i]));
-	}
-
-	return distances;
-}
-
-[[nodiscard]] Json::Value toJson(const JointDistances &distances) {
-	Json::Value json;
-	json["translation_distance"] = distances.translation_distance;
-	json["rotation_distance"] = distances.rotation_distance;
-	json["joint_distances"] = Json::arrayValue;
-	for (const auto &joint_distance: distances.joint_distances) {
-		json["joint_distances"].append(joint_distance);
-	}
-	return json;
-}
 
 /**
  * Creates a seen/unseen status for each scannable point, initialized to false.
