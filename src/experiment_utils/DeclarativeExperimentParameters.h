@@ -6,10 +6,11 @@
 // Created by werner on 3/8/24.
 //
 
-#ifndef MGODPL_SENSORPARAMETERS_H
-#define MGODPL_SENSORPARAMETERS_H
+#ifndef MGODPL_DECLARATIVEEXPERIMENTPARAMETERS_H
+#define MGODPL_DECLARATIVEEXPERIMENTPARAMETERS_H
 
 #include <json/value.h>
+#include "scan_paths.h"
 
 /**
  * @struct SensorScalarParameters
@@ -22,7 +23,7 @@ struct SensorScalarParameters {
 	double maxScanAngle; //< The maximum angle a point can be from the forward direction of the sensor to be considered visible.
 };
 
-Json::Value toJson(const SensorScalarParameters& sensorParameters);
+Json::Value toJson(const SensorScalarParameters &sensorParameters);
 
 /**
  * @struct CircularOrbitParameters
@@ -35,7 +36,7 @@ struct CircularOrbitParameters {
 	double ascendingNodeLongitude = 0.0; //< The longitude of the ascending node, in radians.
 };
 
-Json::Value toJson(const CircularOrbitParameters& orbitParameters);
+Json::Value toJson(const CircularOrbitParameters &orbitParameters);
 
 /**
  * @struct SphericalOscillationParameters.
@@ -46,16 +47,31 @@ struct SphericalOscillationParameters {
 	unsigned int cycles = 1; //< The number of cycles of the oscillation.
 };
 
-Json::Value toJson(const SphericalOscillationParameters& oscillationParameters);
+Json::Value toJson(const SphericalOscillationParameters &oscillationParameters);
 
 struct OrbitPathParameters {
 	const std::variant<CircularOrbitParameters, SphericalOscillationParameters> parameters; //< The parameters for the orbit path.
 };
 
-Json::Value toJson(const OrbitPathParameters& orbitPathParameters);
+namespace mgodpl {
+	/**
+	 * Instantiate a ParametricPath from an OrbitPathParameters.
+	 *
+	 * @param orbit 			The orbit parameters to use.
+	 * @param tree_center 		The center of the tree that these paths are centered around.
+	 * @param canopy_radius 	The radius of the tree's canopy.
+	 * @return 					A ParametricPath that represents the given orbit with the given parameters.
+	 */
+	ParametricPath instantiatePath(const OrbitPathParameters &orbit,
+								   const math::Vec3d &tree_center,
+								   const double canopy_radius);
+}
+
+Json::Value toJson(const OrbitPathParameters &orbitPathParameters);
 
 /// Use the original set of fruit.
-struct Unchanged {};
+struct Unchanged {
+};
 
 /// Select a random subset of the fruit.
 struct RandomSubset {
@@ -79,6 +95,6 @@ struct TreeModelParameters {
 	const int seed; //< The seed for randomizing the tree model.
 };
 
-Json::Value toJson(const TreeModelParameters& treeModelParameters);
+Json::Value toJson(const TreeModelParameters &treeModelParameters);
 
-#endif //MGODPL_SENSORPARAMETERS_H
+#endif //MGODPL_DECLARATIVEEXPERIMENTPARAMETERS_H

@@ -8,6 +8,8 @@
 
 #include "point_scanning_evaluation.h"
 
+using namespace mgodpl;
+
 mgodpl::EvaluationTrace mgodpl::eval_static_path(const mgodpl::RobotPath &path,
 												 double interpolation_speed,
 												 const std::vector<std::vector<SurfacePoint>> &all_scannable_points,
@@ -73,4 +75,36 @@ Json::Value mgodpl::toJson(const mgodpl::EvaluationTrace &trace) {
 		json["frames"].append(frame_json);
 	}
 	return json;
+}
+
+std::vector<std::vector<bool>> mgodpl::init_seen_status(const std::vector<std::vector<SurfacePoint>> &all_scannable_points) {
+	std::vector<std::vector<bool>> ever_seen;
+	ever_seen.reserve(all_scannable_points.size());
+	for (const auto &scannable_points: all_scannable_points) {
+		ever_seen.emplace_back(scannable_points.size(), false);
+	}
+	return ever_seen;
+}
+
+void mgodpl::update_seen(const SensorScalarParameters &sensor_params,
+				 const std::shared_ptr<const MeshOcclusionModel> &mesh_occlusion_model,
+				 const math::Vec3d &eye_position,
+				 const math::Vec3d &eye_forward,
+				 const std::vector<std::vector<SurfacePoint>> &all_scannable_points,
+				 std::vector<std::vector<bool>> &ever_seen) {
+	for (size_t fruit_i = 0; fruit_i < all_scannable_points.size(); ++fruit_i) {
+		for (size_t i = 0; i < all_scannable_points[fruit_i].size(); ++i) {
+			if (!ever_seen[fruit_i][i] &&
+				is_visible(all_scannable_points[fruit_i][i],
+						   eye_position,
+						   eye_forward,
+						   sensor_params.maxViewDistance,
+						   sensor_params.minViewDistance,
+						   sensor_params.maxScanAngle,
+						   sensor_params.fieldOfViewAngle,
+						   *mesh_occlusion_model)) {
+				ever_seen[fruit_i][i] = true;
+			}
+		}
+	}
 }

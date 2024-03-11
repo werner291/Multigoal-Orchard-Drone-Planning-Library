@@ -12,6 +12,8 @@
 #include <functional>
 #include "../math/Vec3.h"
 #include "surface_points.h"
+#include "../planning/RobotPath.h"
+#include "../planning/RobotModel.h"
 
 namespace mgodpl
 {
@@ -149,6 +151,21 @@ namespace mgodpl
      */
     PathEvaluationResult evaluatePath(const ParametricPath& path, const ScannablePoints& scannable_points,
                                       SeenPoints& ever_seen, int num_segments);
+
+	/**
+	 * Convert a ParametricPath to a RobotPath, by sliding the end-effector of the robot along the path,
+	 * making it always face the center of the tree.
+	 *
+	 * @param robot 			The robot model to use.
+	 * @param tree_center 		The center of the tree.
+	 * @param euclidean_path 	The parametric path in Euclidean space.
+	 * @param n_steps 			The number of steps to use to discretize the path.
+	 * @return 					A RobotPath that follows the given path.
+	 */
+	RobotPath parametricPathToRobotPath(const robot_model::RobotModel &robot,
+										const math::Vec3d &tree_center,
+										const ParametricPath &euclidean_path,
+										size_t n_steps);
 }
 
 #endif //SCAN_PATHS_H

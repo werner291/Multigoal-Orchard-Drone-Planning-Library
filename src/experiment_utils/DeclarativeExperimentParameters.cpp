@@ -7,7 +7,7 @@
 //
 
 #include <variant>
-#include "SensorParameters.h"
+#include "DeclarativeExperimentParameters.h"
 
 Json::Value toJson(const SensorScalarParameters &sensorParameters) {
 	Json::Value json;
@@ -63,4 +63,31 @@ Json::Value toJson(const CircularOrbitParameters &orbitParameters) {
 	json["inclination"] = orbitParameters.inclination;
 	json["ascendingNodeLongitude"] = orbitParameters.ascendingNodeLongitude;
 	return json;
+}
+
+mgodpl::ParametricPath mgodpl::instantiatePath(const OrbitPathParameters &orbit,
+											   const mgodpl::math::Vec3d &tree_center,
+											   const double canopy_radius) {
+
+	// Go by the type of orbit
+	if (auto circularOrbitParameters = std::get_if<CircularOrbitParameters>(&orbit.parameters)) {
+
+		assert(circularOrbitParameters->inclination == 0.0); // We don't support inclined orbits yet.
+		assert(circularOrbitParameters->ascendingNodeLongitude == 0.0); // We don't support inclined orbits yet.
+
+		// Create a circular orbit
+		return fixed_radius_equatorial_orbit(tree_center, circularOrbitParameters->radius * canopy_radius);
+
+	} else if (auto sphericalOscillationParameters = std::get_if<SphericalOscillationParameters>(&orbit.parameters)) {
+
+		// Create a spherical oscillation orbit
+		return latitude_oscillation_path(tree_center,
+										 sphericalOscillationParameters->radius * canopy_radius,
+										 sphericalOscillationParameters->amplitude,
+										 sphericalOscillationParameters->cycles);
+
+	}
+
+	// Should not reach here unless we forgot to implement a new orbit type
+	throw std::runtime_error("Unimplemented orbit type");
 }

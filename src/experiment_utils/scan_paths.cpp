@@ -8,6 +8,7 @@
 
 #include "scan_paths.h"
 #include "../math/Ray.h"
+#include "../planning/state_tools.h"
 
 namespace mgodpl
 {
@@ -108,4 +109,32 @@ namespace mgodpl
         // Return the number of points seen and the total distance traversed
         return {num_seen, total_distance};
     }
+
+	RobotPath parametricPathToRobotPath(const robot_model::RobotModel &robot,
+										const math::Vec3d &tree_center,
+										const ParametricPath &euclidean_path,
+										size_t n_steps) {
+
+		// Create a RobotPath from these states
+		RobotPath path;
+
+		// Generate a sequence of time values between 0 and 1
+		for (size_t i = 0; i <= n_steps; ++i) {
+
+			// Calculate the time parameter in range [0, 1] (inclusive)
+			double t = static_cast<double>(i) / static_cast<double>(n_steps);
+
+			// Call the ParametricPath function to get the position at time t
+			math::Vec3d position = euclidean_path(t);
+
+			// Calculate the relative vector from the tree center
+			math::Vec3d relative_vector = position - tree_center;
+
+			// Add the state to the path
+			path.states.push_back(fromEndEffectorAndVector(robot, position, relative_vector));
+		}
+
+		// Return the path
+		return path;
+	}
 }
