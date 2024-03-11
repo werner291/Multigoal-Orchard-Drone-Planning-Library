@@ -289,16 +289,18 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/procedural_fruit_placement.h
             src/experiment_utils/prompting.cpp
             src/experiment_utils/prompting.h
-            src/experiment_utils/DeclarativeExperimentParameters.h
+            src/experiment_utils/declarative/DeclarativeExperimentParameters.h
             src/experiment_utils/joint_distances.cpp
             src/experiment_utils/joint_distances.h
             src/experiment_utils/point_scanning_evaluation.cpp
             src/experiment_utils/point_scanning_evaluation.h
-            src/experiment_utils/DeclarativeExperimentParameters.cpp
-            src/experiment_utils/declarative_environment.cpp
-            src/experiment_utils/declarative_environment.h
-            src/experiment_utils/parameter_space.cpp
-            src/experiment_utils/parameter_space.h
+            src/experiment_utils/declarative/DeclarativeExperimentParameters.cpp
+            src/experiment_utils/declarative/declarative_environment.cpp
+            src/experiment_utils/declarative/declarative_environment.h
+            src/experiment_utils/declarative/parameter_space.cpp
+            src/experiment_utils/declarative/parameter_space.h
+            src/experiment_utils/declarative/parametric_paths.cpp
+            src/experiment_utils/declarative/parametric_paths.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
@@ -398,6 +400,7 @@ if (ENABLE_VISUALIZATION)
             src/visualizations/probing.cpp
             src/visualizations/swept_volume.cpp
             src/visualizations/robot_variations.cpp
+            src/visualizations/declarative.cpp
     )
 
     target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)

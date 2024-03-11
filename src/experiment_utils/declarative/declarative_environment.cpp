@@ -8,9 +8,9 @@
 
 #include <random>
 #include "declarative_environment.h"
-#include "leaf_scaling.h"
-#include "mesh_utils.h"
-#include "procedural_fruit_placement.h"
+#include "../leaf_scaling.h"
+#include "../mesh_utils.h"
+#include "../procedural_fruit_placement.h"
 
 mgodpl::declarative::LoadedTreeModel mgodpl::declarative::LoadedTreeModel::from_name(const std::string &name) {
 	const auto meshes = mgodpl::tree_meshes::loadTreeMeshes(name);

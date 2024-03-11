@@ -15,20 +15,22 @@
 
 namespace mgodpl::declarative {
 
-	struct MetaParameters {
+	/**
+	 * Parameters for the point scanning experiment for declaring
+	 * the problem parameter space over which to evaluate the planners.
+	 */
+	struct StaticPointScanMetaParameters {
 		/// The number of scenarios to evaluate.
 		size_t n_repeat = 1;
 		int seed = 42; //< The seed to use for random number generation.
 	};
 
-	Json::Value toJson(const MetaParameters &params);
+	Json::Value toJson(const StaticPointScanMetaParameters &params);
 
 	/**
-	 * Generate a set of evaluation parameters to use for the point scanning experiment.
-	 *
-	 * TODO: maybe we can add some meta-parameters to control which set of parameters to generate?
+	 * Translate a StaticPointScanMetaParameters into a set of parameter combinations.
 	 */
-	std::vector<PointScanEvalParameters> gen_eval_params(const MetaParameters &meta_params);
+	std::vector<PointScanEvalParameters> gen_eval_params(const StaticPointScanMetaParameters &meta_params);
 }
 
 #endif //MGODPL_PARAMETER_SPACE_H

@@ -11,10 +11,10 @@
 
 #include <vector>
 #include <json/value.h>
-#include "TreeMeshes.h"
-#include "../math/AABB.h"
+#include "../TreeMeshes.h"
+#include "../../math/AABB.h"
 #include "DeclarativeExperimentParameters.h"
-#include "../planning/RobotModel.h"
+#include "../../planning/RobotModel.h"
 
 namespace mgodpl::declarative {
 

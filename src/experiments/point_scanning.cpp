@@ -10,15 +10,16 @@
 #include "../experiment_utils/scan_paths.h"
 #include "../experiment_utils/joint_distances.h"
 #include "../experiment_utils/point_scanning_evaluation.h"
-#include "../experiment_utils/declarative_environment.h"
-#include "../experiment_utils/parameter_space.h"
+#include "../experiment_utils/declarative/declarative_environment.h"
+#include "../experiment_utils/declarative/parameter_space.h"
+#include "../experiment_utils/declarative/parametric_paths.h"
 
 using namespace mgodpl;
 using namespace mgodpl::declarative;
 
 int main() {
 
-	const MetaParameters meta_params = {
+	const StaticPointScanMetaParameters meta_params = {
 			.n_repeat = 1,
 			.seed = 42,
 	};

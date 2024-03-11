@@ -12,7 +12,7 @@
 #include <json/value.h>
 #include "../planning/RobotPath.h"
 #include "surface_points.h"
-#include "DeclarativeExperimentParameters.h"
+#include "declarative/DeclarativeExperimentParameters.h"
 #include "MeshOcclusionModel.h"
 #include "joint_distances.h"
 

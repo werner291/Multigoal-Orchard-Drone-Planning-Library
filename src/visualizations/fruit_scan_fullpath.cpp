@@ -48,7 +48,7 @@
 #include "../visualization/VtkFunctionalCallback.h"
 #include "../visualization/VtkTriangleSetVisualization.h"
 #include "../experiment_utils/default_colors.h"
-#include "../experiment_utils/DeclarativeExperimentParameters.h"
+#include "../experiment_utils/declarative/DeclarativeExperimentParameters.h"
 
 using namespace mgodpl;
 

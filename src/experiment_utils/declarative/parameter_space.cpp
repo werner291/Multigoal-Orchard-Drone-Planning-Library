@@ -8,14 +8,14 @@
 
 #include "parameter_space.h"
 
-Json::Value mgodpl::declarative::toJson(const mgodpl::declarative::MetaParameters &params) {
+Json::Value mgodpl::declarative::toJson(const mgodpl::declarative::StaticPointScanMetaParameters &params) {
 	Json::Value json;
 	json["n_repeat"] = params.n_repeat;
 	return json;
 }
 
-std::vector<PointScanEvalParameters>
-mgodpl::declarative::gen_eval_params(const mgodpl::declarative::MetaParameters &meta_params) {
+std::vector<mgodpl::declarative::PointScanEvalParameters>
+mgodpl::declarative::gen_eval_params(const mgodpl::declarative::StaticPointScanMetaParameters &meta_params) {
 
 	random_numbers::RandomNumberGenerator rng(meta_params.seed);
 
