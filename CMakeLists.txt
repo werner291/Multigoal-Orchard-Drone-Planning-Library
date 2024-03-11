@@ -292,6 +292,9 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/SensorParameters.h
             src/experiment_utils/joint_distances.cpp
             src/experiment_utils/joint_distances.h
+            src/experiment_utils/point_scanning_evaluation.cpp
+            src/experiment_utils/point_scanning_evaluation.h
+            src/experiment_utils/SensorParameters.cpp
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")

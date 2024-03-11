@@ -16,81 +16,9 @@
 #include "../experiment_utils/SensorParameters.h"
 #include "../experiment_utils/procedural_fruit_placement.h"
 #include "../experiment_utils/joint_distances.h"
+#include "../experiment_utils/point_scanning_evaluation.h"
 
 using namespace mgodpl;
-
-/**
- * Evaluate a (static) path by simulating a robot moving along it and scanning the environment.
- *
- * At regular intervals, the robot is stopped and the number of scannable points that have been seen is recorded.
- *
- * @param path 							The path to evaluate.
- * @param interpolation_speed 			The step size to use when moving along the path and evaluating the seen points.
- * @param all_scannable_points 			The scannable points for each fruit.
- * @param sensor_params 				The parameters for the sensor.
- * @param mesh_occlusion_model 			The occlusion model for the mesh.
- * @return 								A JSON object containing the results of the evaluation.
- */
-Json::Value eval_path(const RobotPath &path,
-					  double interpolation_speed,
-					  const std::vector<std::vector<SurfacePoint>> &all_scannable_points,
-					  const SensorScalarParameters &sensor_params,
-					  const std::shared_ptr<const MeshOcclusionModel> &mesh_occlusion_model) {
-
-	// Define the current position on the path
-	PathPoint path_point = {0, 0.0};
-
-	std::vector<std::vector<bool>> ever_seen = init_seen_status(all_scannable_points);
-
-	// Initialize an empty JSON object to store the statistics
-	Json::Value stats;
-
-	// Put the robot at the current point (the start of the path)
-	RobotState last_state = interpolate(path_point, path);
-
-	// Loop until the path is completed; function will return true when the path is completed.
-	while (!advancePathPointClamp(path, path_point, interpolation_speed, equal_weights_max_distance)) {
-
-		// Create a JSON object to store the statistics for this frame
-		Json::Value frame_stats;
-
-		// Interpolate the robot's state
-		auto interpolated_state = interpolate(path_point, path);
-
-		// Record inter-joint distances
-		frame_stats["distance_from_last"] = toJson(calculateJointDistances(last_state, interpolated_state));
-
-		// Get the position/forward of the robot's end effector
-		const auto &end_effector_position = interpolated_state.base_tf.translation;
-		math::Vec3d end_effector_forward = interpolated_state.base_tf.orientation.rotate(math::Vec3d(0, 1, 0));
-
-		// Update the visibility of the scannable points
-		update_seen(
-				sensor_params,
-				mesh_occlusion_model,
-				end_effector_position,
-				end_effector_forward, all_scannable_points,
-				ever_seen);
-
-		// Count the number of points seen for each fruit so far.
-		std::vector<size_t> seen_counts;
-		for (size_t fruit_i = 0; fruit_i < all_scannable_points.size(); ++fruit_i) {
-			seen_counts.push_back(std::count(ever_seen[fruit_i].begin(), ever_seen[fruit_i].end(), true));
-		}
-
-		// Add the metrics to the JSON object
-		frame_stats["pts_seen"] = Json::arrayValue;
-		for (size_t seen_count: seen_counts) {
-			frame_stats["pts_seen"].append(seen_count);
-		}
-
-		// Add the frame stats to the JSON object
-		stats.append(frame_stats);
-	}
-
-	// After we're done, return the full trace.
-	return stats;
-}
 
 /**
  * Convert a ParametricPath to a RobotPath, by sliding the end-effector of the robot along the path,
@@ -513,14 +441,18 @@ int main() {
 																	  env.tree_model->canopy_radius), 1000);
 
 			// Evaluate it.
-			Json::Value result = eval_path(path, interpolation_speed, env.scannable_points, scenario_params.sensor_params, env.mesh_occlusion_model);
+			const auto& result = eval_static_path(path,
+												  interpolation_speed,
+												  env.scannable_points,
+												  scenario_params.sensor_params,
+												  env.mesh_occlusion_model);
 
 			// Create a results JSON object for this run
 			Json::Value run;
 
 			// Store the parameters alongside the results for easier analysis
 			run["orbit"] = toJson(orbit);
-			run["result"] = result;
+			run["result"] = toJson(result);
 
 			// Store this run in the overall results
 			{
