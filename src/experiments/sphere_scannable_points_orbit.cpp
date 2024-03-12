@@ -4,7 +4,7 @@
 #include "../experiment_utils/mesh_utils.h"
 #include "../experiment_utils/scan_paths.h"
 #include "../experiment_utils/scan_path_generators.h"
-#include "../experiment_utils/declarative/DeclarativeExperimentParameters.h"
+#include "../experiment_utils/declarative/SensorModelParameters.h"
 #include <json/json.h>
 #include <fstream>
 #include <filesystem>

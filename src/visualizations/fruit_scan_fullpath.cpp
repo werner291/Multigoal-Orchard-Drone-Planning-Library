@@ -48,7 +48,7 @@
 #include "../visualization/VtkFunctionalCallback.h"
 #include "../visualization/VtkTriangleSetVisualization.h"
 #include "../experiment_utils/default_colors.h"
-#include "../experiment_utils/declarative/DeclarativeExperimentParameters.h"
+#include "../experiment_utils/declarative/SensorModelParameters.h"
 
 using namespace mgodpl;
 
@@ -964,7 +964,7 @@ REGISTER_VISUALIZATION(orbit_tree) {
  */
 std::vector<std::pair<math::Vec3d, math::Vec3d>> computeVisibleSightlines(
 		const std::vector<std::vector<SurfacePoint>> &allFruitPoints,
-		const SensorScalarParameters &sensorParams,
+		const declarative::SensorScalarParameters &sensorParams,
 		const std::shared_ptr<MeshOcclusionModel> &occlusionModel,
 		const math::Vec3d &sensorPosition,
 		const math::Vec3d &sensorForward) {
@@ -980,7 +980,7 @@ std::vector<std::pair<math::Vec3d, math::Vec3d>> computeVisibleSightlines(
 						   sensorPosition, sensorForward,
 						   sensorParams.maxViewDistance, sensorParams.minViewDistance,
 						   sensorParams.maxScanAngle, sensorParams.fieldOfViewAngle,
-						   occlusionModel)) {
+						   *occlusionModel)) {
 				// If the point is visible, add a sightline from the sensor to the point
 				sightlinesData.push_back({sensorPosition, point.position});
 			}
@@ -1084,7 +1084,7 @@ REGISTER_VISUALIZATION(max_distance) {
 	CREATE_SLIDER(path_slider, path, 0.0, 1.0, 0.0, "Path", slider_y);
 	slider_y += 0.15;
 
-	SensorScalarParameters sensorParams = {
+	declarative::SensorScalarParameters sensorParams = {
 			.maxViewDistance = MAX_DISTANCE,
 			.minViewDistance = MIN_DISTANCE,
 			.fieldOfViewAngle = M_PI / 2,

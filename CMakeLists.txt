@@ -289,18 +289,23 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/procedural_fruit_placement.h
             src/experiment_utils/prompting.cpp
             src/experiment_utils/prompting.h
-            src/experiment_utils/declarative/DeclarativeExperimentParameters.h
+            src/experiment_utils/declarative/SensorModelParameters.h
             src/experiment_utils/joint_distances.cpp
             src/experiment_utils/joint_distances.h
             src/experiment_utils/point_scanning_evaluation.cpp
             src/experiment_utils/point_scanning_evaluation.h
-            src/experiment_utils/declarative/DeclarativeExperimentParameters.cpp
-            src/experiment_utils/declarative/declarative_environment.cpp
-            src/experiment_utils/declarative/declarative_environment.h
-            src/experiment_utils/declarative/parameter_space.cpp
-            src/experiment_utils/declarative/parameter_space.h
-            src/experiment_utils/declarative/parametric_paths.cpp
-            src/experiment_utils/declarative/parametric_paths.h
+            src/experiment_utils/declarative_environment.cpp
+            src/experiment_utils/declarative_environment.h
+            src/experiment_utils/parameter_space.cpp
+            src/experiment_utils/parameter_space.h
+            src/experiment_utils/parametric_paths.cpp
+            src/experiment_utils/parametric_paths.h
+            src/experiment_utils/tree_models.cpp
+            src/experiment_utils/tree_models.h
+            src/experiment_utils/LoadedTreeModel.cpp
+            src/experiment_utils/LoadedTreeModel.h
+            src/experiment_utils/declarative/to_json.cpp
+            src/experiment_utils/declarative/fruit_models.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
@@ -346,6 +351,7 @@ if (ENABLE_VISUALIZATION)
             src/visualization/scannable_points.h
             src/visualization/robot_state.cpp
             src/visualization/robot_state.h
+            src/visualization/declarative.cpp
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
@@ -420,6 +426,10 @@ add_executable(${PROJECT_NAME}_tests
 #        test/math/lp_test.cpp
         test/planning/spherical_geomety_test.cpp
         test/planning/LatitudeLongitudeGridTests.cpp
+        src/experiment_utils/declarative/PointScanExperiment.h
+        src/experiment_utils/declarative/to_json.cpp
+        src/visualization/declarative.cpp
+        src/visualization/declarative.h
 )
 
 target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils planning gtest)

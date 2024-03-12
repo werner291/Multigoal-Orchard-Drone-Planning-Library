@@ -40,8 +40,8 @@ namespace mgodpl::declarative {
 	}
 
 	mgodpl::ParametricPath instantiatePath(const OrbitPathParameters &orbit,
-												   const mgodpl::math::Vec3d &tree_center,
-												   const double canopy_radius) {
+										   const mgodpl::math::Vec3d &tree_center,
+										   const double canopy_radius) {
 
 		// Go by the type of orbit
 		if (auto circularOrbitParameters = std::get_if<CircularOrbitParameters>(&orbit.parameters)) {
@@ -64,5 +64,9 @@ namespace mgodpl::declarative {
 
 		// Should not reach here unless we forgot to implement a new orbit type
 		throw std::runtime_error("Unimplemented orbit type");
+	}
+
+	ParametricPath instantiatePath(const OrbitPathParameters &orbit, const experiments::LoadedTreeModel &treeModel) {
+		return instantiatePath(orbit, treeModel.leaves_aabb.center(), treeModel.canopy_radius);
 	}
 }

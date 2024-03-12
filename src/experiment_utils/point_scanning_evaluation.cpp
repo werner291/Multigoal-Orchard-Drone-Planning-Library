@@ -13,7 +13,7 @@ using namespace mgodpl;
 mgodpl::EvaluationTrace mgodpl::eval_static_path(const mgodpl::RobotPath &path,
 												 double interpolation_speed,
 												 const std::vector<std::vector<SurfacePoint>> &all_scannable_points,
-												 const SensorScalarParameters &sensor_params,
+												 const declarative::SensorScalarParameters &sensor_params,
 												 const std::shared_ptr<const MeshOcclusionModel> &mesh_occlusion_model) {
 
 	// Define the current position on the path
@@ -86,7 +86,7 @@ std::vector<std::vector<bool>> mgodpl::init_seen_status(const std::vector<std::v
 	return ever_seen;
 }
 
-void mgodpl::update_seen(const SensorScalarParameters &sensor_params,
+void mgodpl::update_seen(const declarative::SensorScalarParameters &sensor_params,
 				 const std::shared_ptr<const MeshOcclusionModel> &mesh_occlusion_model,
 				 const math::Vec3d &eye_position,
 				 const math::Vec3d &eye_forward,

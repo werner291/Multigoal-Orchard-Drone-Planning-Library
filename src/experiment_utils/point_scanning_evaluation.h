@@ -12,7 +12,7 @@
 #include <json/value.h>
 #include "../planning/RobotPath.h"
 #include "surface_points.h"
-#include "declarative/DeclarativeExperimentParameters.h"
+#include "declarative/SensorModelParameters.h"
 #include "MeshOcclusionModel.h"
 #include "joint_distances.h"
 
@@ -45,9 +45,8 @@ namespace mgodpl {
 	EvaluationTrace eval_static_path(const RobotPath &path,
 								 double interpolation_speed,
 								 const std::vector<std::vector<SurfacePoint>> &all_scannable_points,
-								 const SensorScalarParameters &sensor_params,
+								 const declarative::SensorScalarParameters &sensor_params,
 								 const std::shared_ptr<const MeshOcclusionModel> &mesh_occlusion_model);
-
 
 	/**
 	 * Creates a seen/unseen status for each scannable point, initialized to false.
@@ -68,7 +67,7 @@ namespace mgodpl {
 	 * @param all_scannable_points 			The scannable points for each fruit.
 	 * @param ever_seen 					The seen/unseen status for each scannable point.
 	 */
-	void update_seen(const SensorScalarParameters &sensor_params,
+	void update_seen(const declarative::SensorScalarParameters &sensor_params,
 					 const std::shared_ptr<const MeshOcclusionModel> &mesh_occlusion_model,
 					 const math::Vec3d &eye_position,
 					 const math::Vec3d &eye_forward,

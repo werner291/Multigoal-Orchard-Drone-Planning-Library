@@ -11,14 +11,13 @@
 
 #include <variant>
 #include <json/value.h>
-#include "../scan_paths.h"
+#include "scan_paths.h"
+#include "LoadedTreeModel.h"
 
 namespace mgodpl::declarative {
 
 	/**
-	 * @struct CircularOrbitParameters
-	 *
-	 * @brief A structure to hold the parameters related to a circular orbit.
+	 * A structure to hold the parameters related to a circular orbit.
 	 */
 	struct CircularOrbitParameters {
 		double radius = 1.0; //< The radius of the orbit, in radii of the tree canopy.
@@ -27,7 +26,9 @@ namespace mgodpl::declarative {
 	};
 
 	/**
-	 * @struct SphericalOscillationParameters.
+	 * A structure describing a spherical oscillation orbit.
+	 *
+	 * See `mgodpl::latitude_oscillation_path` for more information about the parameters.
 	 */
 	struct SphericalOscillationParameters {
 		double radius = 1.0; //< The radius of the oscillation, in radii of the tree canopy.
@@ -35,7 +36,9 @@ namespace mgodpl::declarative {
 		unsigned int cycles = 1; //< The number of cycles of the oscillation.
 	};
 
-
+	/**
+	 * Parameters relating to an outside-of-the-tree orbit path.
+	 */
 	struct OrbitPathParameters {
 		const std::variant<CircularOrbitParameters, SphericalOscillationParameters> parameters; //< The parameters for the orbit path.
 	};
@@ -52,8 +55,13 @@ namespace mgodpl::declarative {
 								   const math::Vec3d &tree_center,
 								   const double canopy_radius);
 
+	ParametricPath instantiatePath(const OrbitPathParameters &orbit,
+								   const experiments::LoadedTreeModel &treeModel);
+
 	Json::Value toJson(const CircularOrbitParameters &orbitParameters);
+
 	Json::Value toJson(const SphericalOscillationParameters &oscillationParameters);
+
 	Json::Value toJson(const OrbitPathParameters &orbitPathParameters);
 
 }

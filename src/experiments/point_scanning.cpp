@@ -10,12 +10,14 @@
 #include "../experiment_utils/scan_paths.h"
 #include "../experiment_utils/joint_distances.h"
 #include "../experiment_utils/point_scanning_evaluation.h"
-#include "../experiment_utils/declarative/declarative_environment.h"
-#include "../experiment_utils/declarative/parameter_space.h"
-#include "../experiment_utils/declarative/parametric_paths.h"
+#include "../experiment_utils/declarative_environment.h"
+#include "../experiment_utils/parameter_space.h"
+#include "../experiment_utils/parametric_paths.h"
+#include "../experiment_utils/LoadedTreeModel.h"
 
 using namespace mgodpl;
-using namespace mgodpl::declarative;
+using namespace declarative;
+using namespace experiments;
 
 int main() {
 
@@ -49,16 +51,11 @@ int main() {
 	// Initialize a random number generator
 	random_numbers::RandomNumberGenerator rng;
 
-	// Create a robot model
-	const auto &robot = experiments::createProceduralRobotModel();
-
 	// A JSON object to store the results
 	Json::Value stats;
 
 	// Create an environment cache to store the non-POD environments we create
-	EnvironmentInstanceCache environment_cache = {
-			.robot = robot,
-	};
+	mgodpl::experiments::TreeModelCache environment_cache {};
 
 	std::cout << "Starting evaluation" << std::endl;
 	std::cout << "Will test " << eval_params.size() << " scenarios with " << orbits.size() << " orbits each, for total of " << eval_params.size() * orbits.size() << " evaluations." << std::endl;
@@ -68,7 +65,7 @@ int main() {
 	size_t scenarios_completed = 0;
 	std::atomic_int in_flight = 0;
 
-	// Iterate over every combination of environment and solution. (TODO: parallelize these loops.)
+	// Iterate over every combination of environment and solution.
     std::for_each(std::execution::par, eval_params.begin(), eval_params.end(), [&](const auto &scenario_params) {
 
 		std::cout << "Starting scenario " << (scenarios_completed+1) << " of " << eval_params.size() << std::endl;
@@ -84,13 +81,13 @@ int main() {
 			std::cout << "In flight: " << (++in_flight) << std::endl;
 
 			// Instantiate the environment for this scenario
-			const auto &env = environment_cache.create_environment(scenario_params);
+			const auto &env = create_environment(scenario_params, environment_cache);
 
 			// Define the speed of interpolation
 			double interpolation_speed = 0.01;
 
 			// Generate the path to evaluate.
-			const RobotPath &path = parametricPathToRobotPath(robot,
+			const RobotPath &path = parametricPathToRobotPath(env.robot,
 															  env.tree_model->leaves_aabb.center(),
 															  instantiatePath(
 																	  orbit, env.tree_model->leaves_aabb.center(),

@@ -14,6 +14,7 @@
 namespace mgodpl {
 	const math::Vec3d WOOD_COLOR {0.5, 0.3, 0.1};
 	const math::Vec3d LEAF_COLOR {0.1, 0.5, 0.1};
+	const math::Vec3d FRUIT_COLOR {0.8, 0.1, 0.1};
 	const math::Vec3d FLOOR_COLOR {0.3, 0.6, 0.3};
 }
 

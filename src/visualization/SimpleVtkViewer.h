@@ -146,7 +146,7 @@ namespace mgodpl {
 		 * @param opacity
 		 * @return
 		 */
-		vtkSmartPointer<vtkActor> addSphere(double radius, const math::Vec3d &center, const math::Vec3d &color, double opacity);
+		vtkSmartPointer<vtkActor> addSphere(double radius, const math::Vec3d &center, const math::Vec3d &color, double opacity = 1.0);
 
 		/**
 		 * Add a callback that is called every time the simulation is rendered.
