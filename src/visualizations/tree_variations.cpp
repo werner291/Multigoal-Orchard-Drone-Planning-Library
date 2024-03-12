@@ -59,8 +59,6 @@ REGISTER_VISUALIZATION(procedural_fruit) {
 
 	viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
 
-	auto leaf_roots = leaf_root_points(tree_model);
-
 	size_t num_fruits = 100;
 
 	random_numbers::RandomNumberGenerator rng(42);
@@ -89,8 +87,6 @@ REGISTER_VISUALIZATION(procedural_fruit) {
 				viewer.stop();
 			}
 		}
-
-
 	});
 
 	viewer.setCameraTransform({6, 0, 2}, {0, 0, 2});
