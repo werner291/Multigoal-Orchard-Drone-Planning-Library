@@ -11,6 +11,11 @@
 Json::Value mgodpl::declarative::toJson(const mgodpl::declarative::StaticPointScanMetaParameters &params) {
 	Json::Value json;
 	json["n_repeat"] = params.n_repeat;
+	json["leaf_scales"] = Json::Value(Json::arrayValue);
+	for (const double leaf_scale: params.leaf_scales) {
+		json["leaf_scales"].append(leaf_scale);
+	}
+	json["seed"] = params.seed;
 	return json;
 }
 
@@ -30,7 +35,7 @@ mgodpl::declarative::gen_eval_params(const mgodpl::declarative::StaticPointScanM
 	// Create a set of trees with different leaf scaling factors
 	std::vector<TreeModelParameters> tree_params;
 
-	for (const double leaf_scale: {0.0, 0.5, 1.0, 1.5, 2.0}) {
+	for (const double leaf_scale: meta_params.leaf_scales) {
 		tree_params.push_back(TreeModelParameters {
 				.name = "appletree",
 				.leaf_scale = leaf_scale,
