@@ -990,7 +990,7 @@ std::vector<std::pair<math::Vec3d, math::Vec3d>> computeVisibleSightlines(
 	return sightlinesData;
 }
 
-REGISTER_VISUALIZATION(max_distance) {
+REGISTER_VISUALIZATION(sensor_model_demonstration) {
 
 	viewer.addMesh(ground_plane(10), {0.5, 0.8, 0.5}, 1.0);
 
@@ -1044,7 +1044,7 @@ REGISTER_VISUALIZATION(max_distance) {
 
 	// Define constants for the scannable points
 	const size_t NUM_POINTS = 200;
-	const double MAX_DISTANCE = 3.0;
+	const double MAX_DISTANCE = 1.0;
 	const double MIN_DISTANCE = 0;
 	const double MAX_ANGLE = M_PI;
 
@@ -1073,7 +1073,7 @@ REGISTER_VISUALIZATION(max_distance) {
 	double slider_y = 0.1;
 	CREATE_SLIDER(radius_slider, radius, 0.0, 5.0, MAX_DISTANCE, "Max distance", slider_y)
 	slider_y += 0.15;
-	CREATE_SLIDER(min_distance_slider, min_distance, 0.0, 1.0, 0.0, "Min distance", slider_y)
+	CREATE_SLIDER(min_distance_slider, min_distance, 0.0, 3.0, 0.0, "Min distance", slider_y)
 	slider_y += 0.15;
 	CREATE_SLIDER(leaf_scale_slider, leaf_scale, 0.0, 2.0, 1.0, "Leaf Scale", slider_y)
 	slider_y += 0.15;
