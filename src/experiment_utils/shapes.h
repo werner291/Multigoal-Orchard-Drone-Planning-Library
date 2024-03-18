@@ -9,21 +9,16 @@
 #ifndef MGODPL_SHAPES_H
 #define MGODPL_SHAPES_H
 
-
 #include <vector>
 #include <variant>
 
 #include "../math/Vec3.h"
+#include "../planning/Mesh.h"
 
 namespace mgodpl {
 
 	struct Box {
 		math::Vec3d size;
-	};
-
-	struct Mesh {
-		std::vector<math::Vec3d> vertices;
-		std::vector<std::array<size_t, 3>> triangles;
 	};
 
 	enum class ShapeType {

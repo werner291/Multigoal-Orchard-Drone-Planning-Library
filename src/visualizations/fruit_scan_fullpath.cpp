@@ -7,13 +7,11 @@
 //
 
 #include <vector>
-#include <random_numbers/random_numbers.h>
 
 #include "../visualization/SimpleVtkViewer.h"
 #include "../visualization/VtkLineSegmentVizualization.h"
 #include "../experiment_utils/TreeMeshes.h"
 #include "../experiment_utils/surface_points.h"
-#include "../experiment_utils/mesh_utils.h"
 #include "../visualization/VtkPolyLineVisualization.h"
 #include "../visualization/visualization_function_macros.h"
 #include "../visualization/robot_state.h"
@@ -988,6 +986,21 @@ std::vector<std::pair<math::Vec3d, math::Vec3d>> computeVisibleSightlines(
 	}
 
 	return sightlinesData;
+}
+
+mgodpl::Mesh ground_plane(double size) {
+	mgodpl::Mesh ground;
+	ground.vertices = {
+			{-size, -size, 0},
+			{size, -size, 0},
+			{size, size, 0},
+			{-size, size, 0}
+	};
+	ground.triangles = {
+			{0, 1, 2},
+			{0, 2, 3}
+	};
+	return ground;
 }
 
 REGISTER_VISUALIZATION(sensor_model_demonstration) {

@@ -9,6 +9,7 @@
 #ifndef MGODPL_LOADEDTREEMODEL_H
 #define MGODPL_LOADEDTREEMODEL_H
 
+#include <memory>
 #include <unordered_map>
 #include <mutex>
 #include "TreeMeshes.h"

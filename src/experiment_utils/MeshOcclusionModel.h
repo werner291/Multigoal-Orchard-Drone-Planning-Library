@@ -5,7 +5,6 @@
 #ifndef NEW_PLANNERS_MESHOCCLUSIONMODEL_H
 #define NEW_PLANNERS_MESHOCCLUSIONMODEL_H
 
-#include <shape_msgs/msg/mesh.hpp>
 #include <Eigen/Core>
 
 #include <CGAL/Simple_cartesian.h>
@@ -14,6 +13,7 @@
 #include <CGAL/AABB_triangle_primitive.h>
 
 #include "../math/Vec3.h"
+#include "../planning/Mesh.h"
 
 namespace mgodpl {
 	class MeshOcclusionModel {
@@ -41,7 +41,7 @@ namespace mgodpl {
 		 *
 		 * @param mesh The mesh to create the occlusion model from
 		 */
-		MeshOcclusionModel(const shape_msgs::msg::Mesh &mesh, double margin);
+		MeshOcclusionModel(const Mesh &mesh, double margin);
 
 		/**
 		 * Checks whether a point is occluded by the mesh, from a given viewpoint.

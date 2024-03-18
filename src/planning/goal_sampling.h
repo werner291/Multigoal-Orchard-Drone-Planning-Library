@@ -9,12 +9,11 @@
 #ifndef MGODPL_GOAL_SAMPLING_H
 #define MGODPL_GOAL_SAMPLING_H
 
-
-#include <random_numbers/random_numbers.h>
 #include <optional>
 #include "RobotState.h"
 #include "RobotModel.h"
 #include "fcl_forward_declarations.h"
+#include "RandomNumberGenerator.h"
 
 namespace mgodpl {
 

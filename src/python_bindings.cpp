@@ -99,10 +99,10 @@ PYBIND11_MODULE(pymgodpl, m) {
 
 	// I'm sure this is actually supposed to be in the ROS libraries but I don't feel like digging right now.
 	// I'll just treat is as an opaque type.
-	py::class_<shape_msgs::msg::Mesh>(m, "Mesh");
+	py::class_<Mesh>(m, "Mesh");
 
 	py::class_<mgodpl::moveit_facade::CollisionDetection>(m, "CollisionDetection")
-			.def(py::init<const std::vector<shape_msgs::msg::Mesh> &, const moveit::core::RobotModelConstPtr>())
+			.def(py::init<const std::vector<Mesh> &, const moveit::core::RobotModelConstPtr>())
 			.def("collides", &mgodpl::moveit_facade::CollisionDetection::collides)
 			.def("collides_ccd", &mgodpl::moveit_facade::CollisionDetection::collides_ccd)
 			.def("path_collides", &mgodpl::moveit_facade::CollisionDetection::path_collides)
@@ -141,7 +141,7 @@ PYBIND11_MODULE(pymgodpl, m) {
 			.def(py::init<bool>())
 			.def("position_camera", &SimpleVtkViewer::setCameraTransform, "Set the camera position and focal point.")
 			.def("add_mesh",
-				 [](SimpleVtkViewer &viewer, const shape_msgs::msg::Mesh &mesh, const std::array<float, 3> &color) {
+				 [](SimpleVtkViewer &viewer, const Mesh &mesh, const std::array<float, 3> &color) {
 					 viewer.addMesh(mesh, math::Vec3d(color[0], color[1], color[2]));
 				 },
 				 "Add a mesh to the viewer.")

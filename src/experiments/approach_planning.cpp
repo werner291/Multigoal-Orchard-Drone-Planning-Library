@@ -57,7 +57,7 @@ void check_collision_custom(const moveit::core::RobotModelPtr& robot, fcl::Colli
     }
 }
 
-std::vector<int> mksamples(const moveit::core::RobotModelPtr& robot, const shape_msgs::msg::Mesh& shape,
+std::vector<int> mksamples(const moveit::core::RobotModelPtr& robot, const Mesh& shape,
 						   const std::vector<math::Vec3d>& fruit, const size_t N_SAMPLES)
 {
     std::vector<int> success_counts;

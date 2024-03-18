@@ -12,13 +12,13 @@
 #include <vector>
 #include <variant>
 #include <json/value.h>
-#include <random_numbers/random_numbers.h>
 #include <unordered_map>
 
 #include "TreeMeshes.h"
 #include "../math/AABB.h"
 #include "LoadedTreeModel.h"
 #include "declarative/fruit_models.h"
+#include "../planning/RandomNumberGenerator.h"
 
 namespace mgodpl::declarative {
 
@@ -36,7 +36,7 @@ namespace mgodpl::declarative {
 
 	Json::Value toJson(const TreeModelParameters &treeModelParameters);
 
-	std::vector<shape_msgs::msg::Mesh> random_subset_of_meshes(random_numbers::RandomNumberGenerator &rng,
+	std::vector<Mesh> random_subset_of_meshes(random_numbers::RandomNumberGenerator &rng,
 															   const experiments::LoadedTreeModel &tree_model,
 															   const RandomSubset &subset_params);
 
@@ -52,7 +52,7 @@ namespace mgodpl::declarative {
 	struct FullTreeModel {
 		const std::shared_ptr<const experiments::LoadedTreeModel> tree_model;
 		const FruitModels fruit_models;
-		const shape_msgs::msg::Mesh scaled_leaves;
+		const Mesh scaled_leaves;
 	};
 
 	FullTreeModel instantiate_tree_model(const TreeModelParameters &tree_params,

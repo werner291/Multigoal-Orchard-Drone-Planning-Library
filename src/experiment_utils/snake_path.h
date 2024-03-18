@@ -11,13 +11,13 @@
 
 #include <functional>
 #include "../math/Vec3.h"
-#include "../planning/moveit_forward_declarations.h"
-
-namespace mgodpl::moveit_state_tools {
-
-	using ParametricPath = std::function<math::Vec3d(double)>;
-
-	moveit::core::RobotState put_on_path(const moveit::core::RobotState &state, const ParametricPath &path, double t);
-}
+//#include "../planning/moveit_forward_declarations.h"
+//
+//namespace mgodpl::moveit_state_tools {
+//
+//	using ParametricPath = std::function<math::Vec3d(double)>;
+//
+//	moveit::core::RobotState put_on_path(const moveit::core::RobotState &state, const ParametricPath &path, double t);
+//}
 
 #endif //MGODPL_SNAKE_PATH_H

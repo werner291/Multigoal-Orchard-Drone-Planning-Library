@@ -10,7 +10,6 @@
 #define MGODPL_PROBING_MOTIONS_H
 
 #include <CGAL/AABB_tree.h>
-#include <random_numbers/random_numbers.h>
 #include "../math/Vec3.h"
 #include "RobotModel.h"
 #include "ApproachPath.h"
@@ -18,6 +17,7 @@
 #include "cgal_chull_shortest_paths.h"
 #include "fcl_forward_declarations.h"
 #include "../experiment_utils/TreeMeshes.h"
+#include "RandomNumberGenerator.h"
 
 namespace mgodpl {
 	inline math::Vec3d arm_axis(const robot_model::RobotModel &robot, const robot_model::ForwardKinematicsResult &fk) {

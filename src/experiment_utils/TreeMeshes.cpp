@@ -7,11 +7,11 @@
 #include <iostream>
 
 #include "TreeMeshes.h"
-#include "load_mesh_ros.h"
 #include "mesh_connected_components.h"
-#include "mesh_utils.h"
+#include "mesh_from_dae.h"
 
 namespace mgodpl::tree_meshes {
+
 	/**
 	 * Loads the tree meshes for the tree with the given name.
 	 *
@@ -31,10 +31,9 @@ namespace mgodpl::tree_meshes {
 
 		meshes.tree_name = treeName;
 
-		meshes.leaves_mesh = loadMesh(treeName + "_leaves.dae");
-		meshes.trunk_mesh = loadMesh(treeName + "_trunk.dae");
-
-		auto fruit_meshes = loadMesh(treeName + "_fruit.dae");
+		meshes.leaves_mesh = from_dae(treeName + "_leaves.dae");
+		meshes.trunk_mesh = from_dae(treeName + "_trunk.dae");
+		auto fruit_meshes = from_dae(treeName + "_fruit.dae");
 
 		meshes.fruit_meshes = break_down_to_connected_components(fruit_meshes);
 
@@ -222,4 +221,3 @@ namespace mgodpl::tree_meshes {
 		return fruit_positions;
 	}
 }
-

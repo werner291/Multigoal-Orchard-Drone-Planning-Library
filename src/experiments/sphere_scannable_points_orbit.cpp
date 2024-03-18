@@ -18,7 +18,7 @@ int main(int argc, char** argv)
     auto tree_model = tree_meshes::loadTreeMeshes("appletree");
 
     // Grab the fruit mesh from the tree model
-    shape_msgs::msg::Mesh fruit_mesh = tree_model.fruit_meshes[0];
+    Mesh fruit_mesh = tree_model.fruit_meshes[0];
 
     // Calculate the center of the fruit mesh
     math::Vec3d fruit_center = mesh_aabb(fruit_mesh).center();

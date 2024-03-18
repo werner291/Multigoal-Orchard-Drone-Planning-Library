@@ -8,8 +8,8 @@
 
 #include "../planning/RobotModel.h"
 
-#include "load_mesh_ros.h"
 #include "procedural_robot_models.h"
+#include "mesh_from_dae.h"
 
 namespace mgodpl
 {
@@ -41,8 +41,7 @@ namespace mgodpl
                 },
                 .visual_geometry = {
                     {
-                        .shape = loadMesh(
-                            "test_robots/meshes/drone.dae"),
+                        .shape = from_dae("test_robots/meshes/drone.dae"),
                         .transform = math::Transformd::identity()
                     }
                 }

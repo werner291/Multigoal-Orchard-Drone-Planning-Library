@@ -14,7 +14,7 @@
 using namespace mgodpl;
 using namespace fcl;
 
-std::shared_ptr<BVHModel<fcl::OBBd>> mgodpl::fcl_utils::meshToFclBVH(const shape_msgs::msg::Mesh &shape) {
+std::shared_ptr<BVHModel<fcl::OBBd>> mgodpl::fcl_utils::meshToFclBVH(const mgodpl::Mesh &shape) {
 	// Create a shared pointer to the BVHModel
 	auto g = std::make_shared<fcl::BVHModel<fcl::OBBd>>();
 
@@ -23,9 +23,9 @@ std::shared_ptr<BVHModel<fcl::OBBd>> mgodpl::fcl_utils::meshToFclBVH(const shape
 	for (unsigned int i = 0; i < shape.triangles.size(); ++i) {
 		// Populate FCL Triangle indices from the Mesh message
 		tri_indices[i] = fcl::Triangle(
-				shape.triangles[i].vertex_indices[0],
-				shape.triangles[i].vertex_indices[1],
-				shape.triangles[i].vertex_indices[2]
+				shape.triangles[i][0],
+				shape.triangles[i][1],
+				shape.triangles[i][2]
 		);
 	}
 
@@ -33,7 +33,7 @@ std::shared_ptr<BVHModel<fcl::OBBd>> mgodpl::fcl_utils::meshToFclBVH(const shape
 	std::vector<fcl::Vector3d> points(shape.vertices.size());
 	for (unsigned int i = 0; i < shape.vertices.size(); ++i) {
 		// Populate FCL Vector3d points from the Mesh message
-		points[i] = fcl::Vector3d(shape.vertices[i].x, shape.vertices[i].y, shape.vertices[i].z);
+		points[i] = fcl::Vector3d(shape.vertices[i].x(), shape.vertices[i].y(), shape.vertices[i].z());
 	}
 
 	// Begin the construction of the BVHModel

@@ -12,13 +12,13 @@ namespace mgodpl::experiments {
 	using namespace math;
 	using namespace tree_meshes;
 
-	shape_msgs::msg::Mesh filterMesh(const shape_msgs::msg::Mesh& mesh,
+	Mesh filterMesh(const Mesh& mesh,
 									 const AABBGrid& grid_coords,
 									 const Grid3D<bool>& seen_space) {
 
 		std::vector<size_t> index_translation(mesh.vertices.size(), std::numeric_limits<size_t>::max());
 
-		shape_msgs::msg::Mesh filtered_mesh;
+		Mesh filtered_mesh;
 
 		for (const auto& triangle : mesh.triangles) {
 
@@ -52,7 +52,7 @@ namespace mgodpl::experiments {
 
 				}
 
-				shape_msgs::msg::MeshTriangle filtered_triangle;
+				MeshTriangle filtered_triangle;
 				filtered_triangle.vertex_indices[0] = index_translation[triangle.vertex_indices[0]];
 				filtered_triangle.vertex_indices[1] = index_translation[triangle.vertex_indices[1]];
 				filtered_triangle.vertex_indices[2] = index_translation[triangle.vertex_indices[2]];

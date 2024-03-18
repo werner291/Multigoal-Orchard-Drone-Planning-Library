@@ -35,7 +35,7 @@ namespace mgodpl {
 		std::vector<size_t> genRootNode();
 
 		GoalStateAlgorithm(const moveit::core::RobotModelConstPtr &robot,
-						   const shape_msgs::msg::Mesh &tree_model,
+						   const Mesh &tree_model,
 						   const math::Vec3d &target,
 						   const random_numbers::RandomNumberGenerator &rng);
 

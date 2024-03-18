@@ -9,7 +9,6 @@
 #include <vtkNew.h>
 #include <functional>
 #include <optional>
-#include <shape_msgs/msg/mesh.hpp>
 
 #include "../math/Vec3.h"
 
@@ -102,7 +101,7 @@ namespace mgodpl {
 		 * @param mesh 			The mesh to add.
 		 * @param color 		The color of the mesh.
 		 */
-		vtkSmartPointer<vtkActor> addMesh(const shape_msgs::msg::Mesh &mesh,
+		vtkSmartPointer<vtkActor> addMesh(const Mesh &mesh,
 										  const math::Vec3d &color,
 										  double opacity = 1.0,
 										  const math::Vec3d &position = math::Vec3d::Zero());

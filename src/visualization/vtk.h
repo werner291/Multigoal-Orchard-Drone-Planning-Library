@@ -10,11 +10,8 @@
 #include <vtkDepthImageToPointCloud.h>
 #include <vtkRenderWindowInteractor.h>
 
-#include <moveit/robot_model/link_model.h>
-
-#include <shape_msgs/msg/mesh.hpp>
-
 #include "../experiment_utils/TreeMeshes.h"
+#include "../planning/Mesh.h"
 
 /**
  * Build a pure white ambient light, to bring out the ambient color of the objects without modification (and preserve the color encoding).
@@ -32,15 +29,15 @@ vtkNew<vtkLight> mkWhiteAmbientLight();
 void addActorCollectionToRenderer(vtkActorCollection *orchard_actors, vtkRenderer *sensorRenderer);
 
 /**
- * Convert a ROS shape_msgs::msg::Mesh to a vtkPolyData.
+ * Convert a ROS Mesh to a vtkPolyData.
  * @param mesh 		The ROS mesh to convert.
  * @return 			The converted vtkPolyData.
  */
-vtkNew<vtkPolyData> rosMeshToVtkPolyData(const shape_msgs::msg::Mesh &mesh);
+vtkNew<vtkPolyData> rosMeshToVtkPolyData(const mgodpl::Mesh &mesh);
 
-vtkNew<vtkCellArray> meshTrianglesToVtkCells(const shape_msgs::msg::Mesh &mesh);
+vtkNew<vtkCellArray> meshTrianglesToVtkCells(const mgodpl::Mesh &mesh);
 
-vtkNew<vtkPoints> meshVerticesToVtkPoints(const shape_msgs::msg::Mesh &mesh);
+vtkNew<vtkPoints> meshVerticesToVtkPoints(const mgodpl::Mesh &mesh);
 
 /**
  * Create a vtkActor with the given ROS mesh message.
@@ -48,16 +45,18 @@ vtkNew<vtkPoints> meshVerticesToVtkPoints(const shape_msgs::msg::Mesh &mesh);
  * @param mesh 		The ROS mesh message to create the actor for.
  * @return 			The created vtkActor.
  */
-vtkNew<vtkActor> createActorFromMesh(const shape_msgs::msg::Mesh &mesh);
+vtkNew<vtkActor> createActorFromMesh(const mgodpl::Mesh &mesh);
 
-vtkSmartPointer<vtkActor> addColoredMeshActor(const shape_msgs::msg::Mesh &mesh,
+vtkSmartPointer<vtkActor> addColoredMeshActor(const mgodpl::Mesh &mesh,
 											  const std::array<double, 4> &color_rgba,
 											  vtkRenderer *renderer,
 											  bool visible = true);
 
-vtkSmartPointer<vtkActor> createColoredMeshActor(const shape_msgs::msg::Mesh &mesh, const std::array<double, 4> &color_rgba, bool visible = true);
+vtkSmartPointer<vtkActor> createColoredMeshActor(const mgodpl::Mesh &mesh,
+												 const std::array<double, 4> &color_rgba,
+												 bool visible = true);
 
-std::vector<vtkSmartPointer<vtkActor>> createColoredMeshActors(const std::vector<shape_msgs::msg::Mesh> &meshes,
+std::vector<vtkSmartPointer<vtkActor>> createColoredMeshActors(const std::vector<mgodpl::Mesh> &meshes,
 															   const std::array<double, 4> &color_rgba,
 															   bool visible = true);
 

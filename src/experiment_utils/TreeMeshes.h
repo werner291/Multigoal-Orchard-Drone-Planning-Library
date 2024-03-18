@@ -5,8 +5,7 @@
 #ifndef NEW_PLANNERS_TREEMESHES_H
 #define NEW_PLANNERS_TREEMESHES_H
 
-#include <shape_msgs/msg/mesh.hpp>
-#include "../math/Vec3.h"
+#include "../planning/Mesh.h"
 
 namespace mgodpl::tree_meshes {
 
@@ -19,9 +18,9 @@ namespace mgodpl::tree_meshes {
 	 */
 	struct TreeMeshes {
 		std::string tree_name;
-		shape_msgs::msg::Mesh leaves_mesh;
-		shape_msgs::msg::Mesh trunk_mesh;
-		std::vector<shape_msgs::msg::Mesh> fruit_meshes;
+		Mesh leaves_mesh;
+		Mesh trunk_mesh;
+		std::vector<Mesh> fruit_meshes;
 	};
 
 	/**

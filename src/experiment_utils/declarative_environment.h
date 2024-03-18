@@ -33,7 +33,7 @@ namespace mgodpl::declarative {
 		/// The tree model to use, including the meshes and pre-computed properties.
 		const std::shared_ptr<const experiments::LoadedTreeModel> tree_model;
 		/// The mesh of the leaves, possibly re-scaled to simulate different canopy densities.
-		const shape_msgs::msg::Mesh scaled_leaves;
+		const Mesh scaled_leaves;
 		/// The centers of all the fruits.
 		const FruitModels fruit_models;
 		/// The scannable points per fruit, including surface normal. One vector per fruit mesh, corresponding to tree_model.

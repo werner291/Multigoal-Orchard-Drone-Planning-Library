@@ -10,9 +10,9 @@
 #define MGODPL_PROCEDURAL_FRUIT_PLACEMENT_H
 
 #include <vector>
-#include <random_numbers/random_numbers.h>
 #include "../math/Vec3.h"
 #include "TreeMeshes.h"
+#include "../planning/RandomNumberGenerator.h"
 
 namespace mgodpl {
 

@@ -9,7 +9,6 @@
 #include <random>
 #include "declarative_environment.h"
 #include "leaf_scaling.h"
-#include "mesh_utils.h"
 #include "procedural_fruit_placement.h"
 #include "procedural_robot_models.h"
 #include "LoadedTreeModel.h"
@@ -36,11 +35,11 @@ Json::Value mgodpl::declarative::toJson(const mgodpl::declarative::PointScanEval
 	return json;
 }
 
-std::vector<shape_msgs::msg::Mesh>
+std::vector<mgodpl::Mesh>
 mgodpl::declarative::random_subset_of_meshes(random_numbers::RandomNumberGenerator &rng,
 											 const experiments::LoadedTreeModel& tree_model,
 											 const RandomSubset &subset_params) {
-	std::vector<shape_msgs::msg::Mesh> fruit_meshes = tree_model.meshes.fruit_meshes;
+	std::vector<Mesh> fruit_meshes = tree_model.meshes.fruit_meshes;
 
 	if (subset_params.count > fruit_meshes.size()) {
 		throw std::runtime_error("Requested more fruit than available in the tree model");

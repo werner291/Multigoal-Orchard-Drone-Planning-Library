@@ -6,7 +6,6 @@
 // Created by werner on 2/20/24.
 //
 
-#include <random_numbers/random_numbers.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Surface_mesh.h>
@@ -19,6 +18,7 @@
 #include "../planning/state_tools.h"
 #include "../visualization/VtkTriangleSetVisualization.h"
 #include "../planning/swept_volume_ccd.h"
+#include "../planning/RandomNumberGenerator.h"
 
 using namespace mgodpl;
 

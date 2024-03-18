@@ -10,7 +10,7 @@
 #define MGODPL_FCL_UTILS_H
 
 #include <memory>
-#include <shape_msgs/msg/mesh.hpp>
+#include "../planning/Mesh.h"
 
 namespace fcl {
 	template <typename S>
@@ -28,10 +28,10 @@ namespace mgodpl::fcl_utils {
 	 * This function takes a Mesh message from ROS2, extracts its vertices and triangles,
 	 * and constructs a BVHModel<fcl::OBBd> using the FCL library.
 	 *
-	 * @param shape The input mesh in ROS2 message format (shape_msgs::msg::Mesh).
+	 * @param shape The input mesh in ROS2 message format (Mesh).
 	 * @return A shared pointer to the constructed BVHModel<fcl::OBBd>.
 	 */
-	std::shared_ptr<fcl::BVHModel<fcl::OBBd> > meshToFclBVH(const shape_msgs::msg::Mesh &shape);
+	std::shared_ptr<fcl::BVHModel<fcl::OBBd> > meshToFclBVH(const Mesh &shape);
 
 }
 

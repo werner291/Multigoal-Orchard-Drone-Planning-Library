@@ -10,8 +10,8 @@
 #define MGODPL_FRUIT_MODELS_H
 
 #include <variant>
-#include <shape_msgs/msg/mesh.hpp>
 #include "../../math/Vec3.h"
+#include "../../planning/Mesh.h"
 
 namespace mgodpl::declarative {
 
@@ -43,7 +43,7 @@ namespace mgodpl::declarative {
 	 * A mesh fruit, defined by a mesh and a center.
 	 */
 	struct MeshFruit {
-		shape_msgs::msg::Mesh mesh; //< The mesh of the fruit.
+		Mesh mesh; //< The mesh of the fruit.
 		math::Vec3d center; //< The center of the fruit.
 	};
 
