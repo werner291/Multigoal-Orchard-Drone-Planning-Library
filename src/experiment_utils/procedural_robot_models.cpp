@@ -41,7 +41,7 @@ namespace mgodpl
                 },
                 .visual_geometry = {
                     {
-                        .shape = from_dae("test_robots/meshes/drone.dae"),
+                        .shape = from_dae("../test_robots/meshes/drone.dae"),
                         .transform = math::Transformd::identity()
                     }
                 }

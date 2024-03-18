@@ -22,21 +22,27 @@ mgodpl::Mesh mgodpl::from_dae(const std::string &dae_file) {
 
 	Mesh mesh;
 
+
 	for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
 		const aiMesh *ai_mesh = scene->mMeshes[i];
+		size_t index_offset = mesh.vertices.size();
 		for (unsigned int j = 0; j < ai_mesh->mNumVertices; ++j) {
 			const aiVector3D &vertex = ai_mesh->mVertices[j];
-			mesh.vertices.emplace_back(vertex.x, vertex.y, vertex.z);
+			mesh.vertices.emplace_back(
+					vertex.x/10.0, // There appears to me some sort of cm/mm conversion going on with DAE, hence the division by 10
+					vertex.z/10.0, // Z and Y are swapped intentionally
+					vertex.y/10.0
+									   );
 		}
 		for (unsigned int j = 0; j < ai_mesh->mNumFaces; ++j) {
 			const aiFace &face = ai_mesh->mFaces[j];
 			if (face.mNumIndices != 3) {
 				throw std::runtime_error("Only triangular faces are supported");
 			}
-			mesh.triangles.push_back({face.mIndices[0], face.mIndices[1], face.mIndices[2]});
+			mesh.triangles.push_back({face.mIndices[0] + index_offset,
+									  face.mIndices[1] + index_offset,
+									  face.mIndices[2] + index_offset});
 		}
-
-		break; // Only one mesh is supported
 	}
 
 	return mesh;

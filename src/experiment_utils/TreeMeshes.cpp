@@ -31,9 +31,9 @@ namespace mgodpl::tree_meshes {
 
 		meshes.tree_name = treeName;
 
-		meshes.leaves_mesh = from_dae(treeName + "_leaves.dae");
-		meshes.trunk_mesh = from_dae(treeName + "_trunk.dae");
-		auto fruit_meshes = from_dae(treeName + "_fruit.dae");
+		meshes.leaves_mesh = from_dae("../3d-models/" + treeName + "_leaves.dae");
+		meshes.trunk_mesh = from_dae("../3d-models/" + treeName + "_trunk.dae");
+		auto fruit_meshes = from_dae("../3d-models/" + treeName + "_fruit.dae");
 
 		meshes.fruit_meshes = break_down_to_connected_components(fruit_meshes);
 
