@@ -12,6 +12,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+const double CENTIMETERS_PER_INCH = 2.54;
+
 mgodpl::Mesh mgodpl::from_dae(const std::string &dae_file) {
 
 	Assimp::Importer importer;
@@ -22,6 +24,18 @@ mgodpl::Mesh mgodpl::from_dae(const std::string &dae_file) {
 
 	Mesh mesh;
 
+	// This is a tree mesh if it contains the word "fruit", "leaves", or "trunk"
+	bool is_tree_mesh = dae_file.find("fruit") != std::string::npos ||
+						dae_file.find("leaves") != std::string::npos ||
+						dae_file.find("trunk") != std::string::npos;
+
+	// We divide all coordinates by this due to a cm/mm conversion in the DAE files
+	double MESH_SCALE_FACTOR = 10.0;
+
+	// Something weird happened with a cm/inch conversion in the tree models, so we correct for that here
+	if (is_tree_mesh) {
+		MESH_SCALE_FACTOR *= CENTIMETERS_PER_INCH;
+	}
 
 	for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
 		const aiMesh *ai_mesh = scene->mMeshes[i];
@@ -29,9 +43,9 @@ mgodpl::Mesh mgodpl::from_dae(const std::string &dae_file) {
 		for (unsigned int j = 0; j < ai_mesh->mNumVertices; ++j) {
 			const aiVector3D &vertex = ai_mesh->mVertices[j];
 			mesh.vertices.emplace_back(
-					vertex.x/10.0, // There appears to me some sort of cm/mm conversion going on with DAE, hence the division by 10
-					vertex.z/10.0, // Z and Y are swapped intentionally
-					vertex.y/10.0
+					vertex.x/MESH_SCALE_FACTOR, // There appears to me some sort of cm/mm conversion going on with DAE, hence the division by 10
+					vertex.z/MESH_SCALE_FACTOR, // Z and Y are swapped intentionally
+					vertex.y/MESH_SCALE_FACTOR
 									   );
 		}
 		for (unsigned int j = 0; j < ai_mesh->mNumFaces; ++j) {

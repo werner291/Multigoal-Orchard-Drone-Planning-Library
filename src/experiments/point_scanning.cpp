@@ -1,12 +1,10 @@
 #include <json/json.h>
 #include <fstream>
-#include <random_numbers/random_numbers.h>
 #include <algorithm>
 #include <mutex>
 #include <execution>
 #include "../experiment_utils/TreeMeshes.h"
 #include "../experiment_utils/procedural_robot_models.h"
-#include "../experiment_utils/mesh_utils.h"
 #include "../experiment_utils/scan_paths.h"
 #include "../experiment_utils/joint_distances.h"
 #include "../experiment_utils/point_scanning_evaluation.h"
@@ -14,16 +12,47 @@
 #include "../experiment_utils/parameter_space.h"
 #include "../experiment_utils/parametric_paths.h"
 #include "../experiment_utils/LoadedTreeModel.h"
+#include "../planning/RandomNumberGenerator.h"
+#include "../planning/probing_motions.h"
+#include "../planning/state_tools.h"
 
 using namespace mgodpl;
 using namespace declarative;
 using namespace experiments;
+
+struct OrbitFacingTree {
+	OrbitPathParameters params;
+};
+
+struct ProbingMotionsMethod {
+
+};
+
+using SolutionMethod = std::variant<OrbitFacingTree, ProbingMotionsMethod>;
+
+Json::Value toJson(const OrbitFacingTree &orbit) {
+	Json::Value json;
+	json["type"] = "orbit";
+	json["parameters"] = toJson(orbit.params);
+	return json;
+}
+
+Json::Value toJson(const ProbingMotionsMethod &_method) {
+	Json::Value json;
+	json["type"] = "probing";
+	return json;
+}
+
+Json::Value toJson(const SolutionMethod &method) {
+	return std::visit([](const auto &m) { return toJson(m); }, method);
+}
 
 int main() {
 
 	const StaticPointScanMetaParameters meta_params = {
 			.n_repeat = 1,
 			.seed = 42,
+			.leaf_sizes = {/*0.0, 0.5, 1.0,*/ 1.5 /* , 2.0 */}
 	};
 
 	// Generate our environmental parameter space to evaluate/test.
@@ -38,10 +67,19 @@ int main() {
 	}
 
 	// Get a set of orbits to serve as potential paths to evaluate.
-	const std::vector<OrbitPathParameters> orbits{
-			{.parameters = CircularOrbitParameters{.radius = 1.0}},
-			{.parameters = SphericalOscillationParameters{.radius = 1.0, .amplitude = 0.5, .cycles = 4}}
-	};
+	std::vector<SolutionMethod> orbits;
+
+	for (double radius : {1.0, 1.5, 2.0}) {
+		orbits.emplace_back(OrbitFacingTree{OrbitPathParameters{CircularOrbitParameters{.radius = radius}}});
+	}
+
+//	for (double radius : {1.0, 1.5, 2.0}) {
+//		for (double amplitude : {0.25, 0.5, 0.75}) {
+//			for (unsigned int cycles : {4, 8}) {
+//				orbits.emplace_back(OrbitFacingTree{OrbitPathParameters{SphericalOscillationParameters{.radius = radius, .amplitude = amplitude, .cycles = cycles}}});
+//			}
+//		}
+//	}
 
 	std::cout << "with the following " << orbits.size() << " orbits:" << std::endl;
 	for (const auto &orbit: orbits) {
@@ -64,6 +102,9 @@ int main() {
 
 	size_t scenarios_completed = 0;
 	std::atomic_int in_flight = 0;
+	size_t total_completed = 0;
+
+	// RobotPath final_path = plan_multigoal_path(robot, tree_model, initial_state);
 
 	// Iterate over every combination of environment and solution.
     std::for_each(std::execution::par, eval_params.begin(), eval_params.end(), [&](const auto &scenario_params) {
@@ -81,24 +122,30 @@ int main() {
 			std::cout << "In flight: " << (++in_flight) << std::endl;
 
 			// Instantiate the environment for this scenario
-			const auto &env = create_environment(scenario_params, environment_cache);
+			const PointScanEnvironment &env = create_environment(scenario_params, environment_cache);
 
 			// Define the speed of interpolation
-			double interpolation_speed = 0.01;
+			double interpolation_speed = 0.02;
+
+			RobotState initial_state = fromEndEffectorAndVector(env.robot, {0, 5, 5}, {0, 1, 1});
 
 			// Generate the path to evaluate.
-			const RobotPath &path = parametricPathToRobotPath(env.robot,
-															  env.tree_model->leaves_aabb.center(),
-															  instantiatePath(
-																	  orbit, env.tree_model->leaves_aabb.center(),
-																	  env.tree_model->canopy_radius), 1000);
+			RobotPath path;
+
+			if (auto facing_tree = std::get_if<OrbitFacingTree>(&orbit)) {
+
+				path = parametricPathToRobotPath(env.robot,
+												  env.tree_model->leaves_aabb.center(),
+												  instantiatePath(
+														  facing_tree->params, env.tree_model->leaves_aabb.center(),
+														  env.tree_model->canopy_radius), 1000);
+
+			} else if (std::get_if<ProbingMotionsMethod>(&orbit)) {
+				 path = plan_multigoal_path(env.robot, env.tree_model->meshes, initial_state);
+			}
 
 			// Evaluate it.
-			const auto& result = eval_static_path(path,
-												  interpolation_speed,
-												  env.scannable_points,
-												  scenario_params.sensor_params,
-												  env.mesh_occlusion_model);
+			const auto& result = eval_static_path(path, interpolation_speed, scenario_params, env);
 
 			// Create a results JSON object for this run
 			Json::Value run;
@@ -115,6 +162,7 @@ int main() {
 				orbits_completed++;
 				std::cout << "Completed " << orbits_completed << " of " << orbits.size() << " orbits. (Scenario " << (scenarios_completed+1) << " of " << eval_params.size() << ")" << std::endl;
 				std::cout << "In flight: " << (--in_flight) << std::endl;
+				std::cout << "Total: " << (++total_completed) << " of " << (eval_params.size() * orbits.size()) << " evaluations completed." << std::endl;
 			}
 		});
 
@@ -129,6 +177,7 @@ int main() {
 
 	// Write the JSON object to a file
 	Json::StreamWriterBuilder writer;
+	writer.settings_["indentation"] = ""; // No indentation.
 	std::ofstream file("../analysis/data/point_scanning.json");
 	file << Json::writeString(writer, stats);
 

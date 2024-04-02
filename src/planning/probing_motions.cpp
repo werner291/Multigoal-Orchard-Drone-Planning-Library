@@ -9,7 +9,7 @@
 #include <fcl/narrowphase/collision_object.h>
 #include <fcl/narrowphase/collision.h>
 #include "probing_motions.h"
-#include "../experiment_utils/fcl_utils.h"
+#include "fcl_utils.h"
 #include "collision_detection.h"
 #include "shell_path_assembly.h"
 #include "approach_path_planning.h"
@@ -73,6 +73,7 @@ RobotPath mgodpl::plan_multigoal_path(const robot_model::RobotModel &robot,
 
 	// Allocate a BVH convex_hull for the tree trunk.
 	const auto &tree_trunk_bvh = fcl_utils::meshToFclBVH(tree_model.trunk_mesh);
+
 	fcl::CollisionObjectd tree_trunk_object(tree_trunk_bvh);
 
 	random_numbers::RandomNumberGenerator rng(42);

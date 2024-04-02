@@ -22,7 +22,7 @@
 #include "../experiment_utils/procedural_robot_models.h"
 #include "../planning/state_tools.h"
 #include "../planning/approach_path_planning.h"
-#include "../experiment_utils/fcl_utils.h"
+#include "../planning/fcl_utils.h"
 
 #include <fcl/narrowphase/collision.h>
 #include <vtkTextActor.h>

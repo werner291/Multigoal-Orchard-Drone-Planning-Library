@@ -18,7 +18,7 @@
 #include "../visualization/quick_markers.h"
 #include "../experiment_utils/TreeMeshes.h"
 #include "../experiment_utils/procedural_robot_models.h"
-#include "../experiment_utils/fcl_utils.h"
+#include "../planning/fcl_utils.h"
 #include "../planning/RobotModel.h"
 #include "../planning/RobotState.h"
 #include "../planning/LatitudeLongitudeGrid.h"

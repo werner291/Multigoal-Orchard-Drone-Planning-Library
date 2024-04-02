@@ -17,7 +17,7 @@
 #include "../experiment_utils/load_robot_model.h"
 #include "../planning/CollisionDetection.h"
 #include "../planning/moveit_state_tools.h"
-#include "../experiment_utils/fcl_utils.h"
+#include "../planning/fcl_utils.h"
 
 using namespace mgodpl;
 using namespace tree_meshes;

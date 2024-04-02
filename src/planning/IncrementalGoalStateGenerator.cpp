@@ -19,7 +19,7 @@
 #include "IncrementalGoalStateGenerator.h"
 #include "JointSpacePoint.h"
 #include "moveit_state_tools.h"
-#include "../experiment_utils/fcl_utils.h"
+#include "fcl_utils.h"
 
 
 bool

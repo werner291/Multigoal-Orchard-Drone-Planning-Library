@@ -30,7 +30,7 @@ mgodpl::declarative::gen_eval_params(const mgodpl::declarative::StaticPointScanM
 	// Create a set of trees with different leaf scaling factors
 	std::vector<TreeModelParameters> tree_params;
 
-	for (const double leaf_scale: {0.0, 0.5, 1.0, 1.5, 2.0}) {
+	for (const double leaf_scale: meta_params.leaf_sizes) {
 		tree_params.push_back(TreeModelParameters {
 				.name = "appletree",
 				.leaf_scale = leaf_scale,

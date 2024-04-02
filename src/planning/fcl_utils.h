@@ -10,7 +10,7 @@
 #define MGODPL_FCL_UTILS_H
 
 #include <memory>
-#include "../planning/Mesh.h"
+#include "Mesh.h"
 
 namespace fcl {
 	template <typename S>
@@ -31,7 +31,7 @@ namespace mgodpl::fcl_utils {
 	 * @param shape The input mesh in ROS2 message format (Mesh).
 	 * @return A shared pointer to the constructed BVHModel<fcl::OBBd>.
 	 */
-	std::shared_ptr<fcl::BVHModel<fcl::OBBd> > meshToFclBVH(const Mesh &shape);
+	std::shared_ptr<fcl::BVHModel<fcl::OBBd> > meshToFclBVH(const mgodpl::Mesh &shape);
 
 }
 

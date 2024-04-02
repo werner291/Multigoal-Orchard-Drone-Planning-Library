@@ -23,6 +23,7 @@ namespace mgodpl::declarative {
 		/// The number of scenarios to evaluate.
 		size_t n_repeat = 1;
 		int seed = 42; //< The seed to use for random number generation.
+		const std::vector<double> leaf_sizes; //< The leaf sizes to use for the trees.
 	};
 
 	Json::Value toJson(const StaticPointScanMetaParameters &params);

@@ -36,7 +36,7 @@ if (NIXOS)
     if (ENABLE_PYTHON_BINDINGS)
         # Weird bug where CLion seems too substitute its own Python3 version when called from its context.
         # Here, I'm forcing it to use the flake.nix version.
-        find_package(Python3 3.10.12 EXACT REQUIRED COMPONENTS Interpreter Development)
+        find_package(Python3 3.11.8 EXACT REQUIRED COMPONENTS Interpreter Development)
         find_package(pybind11 REQUIRED)
     endif()
 else()
@@ -206,6 +206,8 @@ add_library(planning
         src/planning/Mesh.cpp
         src/planning/RandomNumberGenerator.cpp
         src/planning/RandomNumberGenerator.h
+        src/planning/fcl_utils.cpp
+        src/planning/fcl_utils.h
 )
 
 target_link_libraries(planning math_utils)
@@ -223,8 +225,6 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/snake_path.h
             src/experiment_utils/MeshOcclusionModel.cpp
             src/experiment_utils/MeshOcclusionModel.h
-            src/experiment_utils/fcl_utils.cpp
-            src/experiment_utils/fcl_utils.h
 #            src/planning/IncrementalGoalStateGenerator.cpp
 #            src/planning/IncrementalGoalStateGenerator.h
             src/planning/fcl_forward_declarations.h

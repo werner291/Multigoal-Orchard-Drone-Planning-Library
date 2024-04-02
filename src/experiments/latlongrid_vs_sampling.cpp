@@ -13,7 +13,7 @@
 #include "../planning/moveit_state_tools.h"
 #include "../experiment_utils/TreeMeshes.h"
 #include "../experiment_utils/procedural_robot_models.h"
-#include "../experiment_utils/fcl_utils.h"
+#include "../planning/fcl_utils.h"
 #include "../planning/LatitudeLongitudeGrid.h"
 #include "../planning/collision_detection.h"
 #include "../visualization/SimpleVtkViewer.h"

@@ -23,7 +23,7 @@
 
 #include "../planning/RobotModel.h"
 #include "../experiment_utils/procedural_robot_models.h"
-#include "../experiment_utils/fcl_utils.h"
+#include "../planning/fcl_utils.h"
 //#include "../visibility/convex_hull.h"
 #include "../planning/spherical_geometry.h"
 #include "../planning/LatitudeLongitudeGrid.h"
