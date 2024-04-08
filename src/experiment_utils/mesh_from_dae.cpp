@@ -42,11 +42,22 @@ mgodpl::Mesh mgodpl::from_dae(const std::string &dae_file) {
 		size_t index_offset = mesh.vertices.size();
 		for (unsigned int j = 0; j < ai_mesh->mNumVertices; ++j) {
 			const aiVector3D &vertex = ai_mesh->mVertices[j];
-			mesh.vertices.emplace_back(
-					vertex.x/MESH_SCALE_FACTOR, // There appears to me some sort of cm/mm conversion going on with DAE, hence the division by 10
-					vertex.z/MESH_SCALE_FACTOR, // Z and Y are swapped intentionally
-					vertex.y/MESH_SCALE_FACTOR
-									   );
+
+			if (is_tree_mesh) {
+
+				mesh.vertices.emplace_back(
+						vertex.x / MESH_SCALE_FACTOR, // There appears to me some sort of cm/mm conversion going on with DAE, hence the division by 10
+						vertex.z / MESH_SCALE_FACTOR, // Z and Y are swapped intentionally
+						vertex.y / MESH_SCALE_FACTOR
+				);
+
+			} else {
+				mesh.vertices.emplace_back(
+						vertex.x / MESH_SCALE_FACTOR,
+						vertex.y / MESH_SCALE_FACTOR,
+						vertex.z / MESH_SCALE_FACTOR
+				);
+			}
 		}
 		for (unsigned int j = 0; j < ai_mesh->mNumFaces; ++j) {
 			const aiFace &face = ai_mesh->mFaces[j];
