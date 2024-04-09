@@ -46,7 +46,9 @@ namespace mgodpl {
 	);
 
 	RobotPath plan_multigoal_path(const robot_model::RobotModel &robot,
-								  const tree_meshes::TreeMeshes &tree_model,
+								  const mgodpl::Mesh& trunk_mesh,
+								  const mgodpl::Mesh& leaves_mesh,
+								  const std::vector<math::Vec3d>& fruit_positions,
 								  const RobotState &initial_state);
 
 }

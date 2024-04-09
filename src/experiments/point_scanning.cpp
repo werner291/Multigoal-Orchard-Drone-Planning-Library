@@ -8,44 +8,15 @@
 #include "../experiment_utils/scan_paths.h"
 #include "../experiment_utils/joint_distances.h"
 #include "../experiment_utils/point_scanning_evaluation.h"
-#include "../experiment_utils/declarative_environment.h"
 #include "../experiment_utils/parameter_space.h"
 #include "../experiment_utils/parametric_paths.h"
-#include "../experiment_utils/LoadedTreeModel.h"
-#include "../planning/RandomNumberGenerator.h"
 #include "../planning/probing_motions.h"
 #include "../planning/state_tools.h"
+#include "../experiment_utils/declarative/SolutionMethod.h"
 
 using namespace mgodpl;
 using namespace declarative;
 using namespace experiments;
-
-struct OrbitFacingTree {
-	OrbitPathParameters params;
-};
-
-struct ProbingMotionsMethod {
-
-};
-
-using SolutionMethod = std::variant<OrbitFacingTree, ProbingMotionsMethod>;
-
-Json::Value toJson(const OrbitFacingTree &orbit) {
-	Json::Value json;
-	json["type"] = "orbit";
-	json["parameters"] = toJson(orbit.params);
-	return json;
-}
-
-Json::Value toJson(const ProbingMotionsMethod &_method) {
-	Json::Value json;
-	json["type"] = "probing";
-	return json;
-}
-
-Json::Value toJson(const SolutionMethod &method) {
-	return std::visit([](const auto &m) { return toJson(m); }, method);
-}
 
 int main() {
 
@@ -73,13 +44,13 @@ int main() {
 		orbits.emplace_back(OrbitFacingTree{OrbitPathParameters{CircularOrbitParameters{.radius = radius}}});
 	}
 
-//	for (double radius : {1.0, 1.5, 2.0}) {
-//		for (double amplitude : {0.25, 0.5, 0.75}) {
-//			for (unsigned int cycles : {4, 8}) {
-//				orbits.emplace_back(OrbitFacingTree{OrbitPathParameters{SphericalOscillationParameters{.radius = radius, .amplitude = amplitude, .cycles = cycles}}});
-//			}
-//		}
-//	}
+	for (double radius : {1.0, 1.5, 2.0}) {
+		for (double amplitude : {0.25, 0.5, 0.75}) {
+			for (unsigned int cycles : {4, 8}) {
+				orbits.emplace_back(OrbitFacingTree{OrbitPathParameters{SphericalOscillationParameters{.radius = radius, .amplitude = amplitude, .cycles = cycles}}});
+			}
+		}
+	}
 
 	std::cout << "with the following " << orbits.size() << " orbits:" << std::endl;
 	for (const auto &orbit: orbits) {

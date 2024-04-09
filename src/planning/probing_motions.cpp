@@ -66,20 +66,22 @@ mgodpl::ApproachPath mgodpl::straightout(const mgodpl::robot_model::RobotModel &
 }
 
 RobotPath mgodpl::plan_multigoal_path(const robot_model::RobotModel &robot,
-							  const tree_meshes::TreeMeshes &tree_model,
+							  const mgodpl::Mesh& trunk_mesh,
+							  const mgodpl::Mesh& leaves_mesh,
+							  const std::vector<math::Vec3d>& fruit_positions,
 							  const RobotState &initial_state) {// Create a collision object for the tree trunk.
 
 	auto flying_base = robot.findLinkByName("flying_base");
 
 	// Allocate a BVH convex_hull for the tree trunk.
-	const auto &tree_trunk_bvh = fcl_utils::meshToFclBVH(tree_model.trunk_mesh);
+	const auto &tree_trunk_bvh = fcl_utils::meshToFclBVH(trunk_mesh);
 
 	fcl::CollisionObjectd tree_trunk_object(tree_trunk_bvh);
 
 	random_numbers::RandomNumberGenerator rng(42);
 
 	// First, create the convex hull.
-	CgalMeshData mesh_data(tree_model.leaves_mesh);
+	CgalMeshData mesh_data(leaves_mesh);
 
 	ApproachPath initial_approach_path = plan_initial_approach_path(robot,
 																	initial_state,
@@ -89,7 +91,7 @@ RobotPath mgodpl::plan_multigoal_path(const robot_model::RobotModel &robot,
 	std::vector <ApproachPath> approach_paths;
 
 	// For every fruit position...
-	for (const auto &tgt: computeFruitPositions(tree_model)) {
+	for (const auto &tgt: fruit_positions) {
 		auto straightout = uniform_straightout_approach(tgt, robot, tree_trunk_object, mesh_data, rng, 1000);
 
 		if (straightout) {

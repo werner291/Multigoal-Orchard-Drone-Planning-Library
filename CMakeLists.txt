@@ -265,6 +265,11 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/declarative/fruit_models.h
             src/experiment_utils/mesh_from_dae.cpp
             src/experiment_utils/mesh_from_dae.h
+            src/experiment_utils/declarative/SolutionMethod.h
+            src/experiment_utils/plan_path_from_parameters.cpp
+            src/experiment_utils/plan_path_from_parameters.h
+            src/experiment_utils/tracing.cpp
+            src/experiment_utils/tracing.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
@@ -306,6 +311,8 @@ if (ENABLE_VISUALIZATION)
             src/visualization/robot_state.cpp
             src/visualization/robot_state.h
             src/visualization/declarative.cpp
+            src/visualization/ladder_trace.cpp
+            src/visualization/ladder_trace.h
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
@@ -350,6 +357,7 @@ if (ENABLE_VISUALIZATION)
             src/visualizations/swept_volume.cpp
             src/visualizations/robot_variations.cpp
             src/visualizations/declarative.cpp
+            src/visualizations/swapper.cpp
     )
 
     target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)

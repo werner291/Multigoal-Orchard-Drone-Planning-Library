@@ -73,7 +73,7 @@ mgodpl::declarative::instantiate_fruit_models(const mgodpl::experiments::LoadedT
 		std::vector<SphericalFruit> fruit_centers;
 		fruit_centers.reserve(fruit_locations.size());
 		for (const auto &fruit_location: fruit_locations) {
-			fruit_centers.push_back({fruit_location, 0.05});
+			fruit_centers.push_back({fruit_location, 0.25});
 		}
 		return fruit_centers;
 	}

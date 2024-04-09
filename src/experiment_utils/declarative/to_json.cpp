@@ -8,6 +8,7 @@
 
 #include <json/value.h>
 #include "SensorModelParameters.h"
+#include "SolutionMethod.h"
 #include "../tree_models.h"
 
 namespace mgodpl::declarative {
@@ -36,6 +37,23 @@ namespace mgodpl::declarative {
 		}
 		json["seed"] = treeModelParameters.seed;
 		return json;
+	}
+
+	Json::Value toJson(const OrbitFacingTree &orbit) {
+		Json::Value json;
+		json["type"] = "orbit";
+		json["parameters"] = toJson(orbit.params);
+		return json;
+	}
+
+	Json::Value toJson(const ProbingMotionsMethod &_method) {
+		Json::Value json;
+		json["type"] = "probing";
+		return json;
+	}
+
+	Json::Value toJson(const SolutionMethod &method) {
+		return std::visit([](const auto &m) { return toJson(m); }, method);
 	}
 
 }

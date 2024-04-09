@@ -111,7 +111,11 @@ REGISTER_VISUALIZATION(probing_fullpath)
 	const std::vector<math::Vec3d>& targets = computeFruitPositions(tree_model);
 
 	// Plan the final path as a whole:
-	RobotPath final_path = plan_multigoal_path(robot, tree_model, initial_state);
+	RobotPath final_path = plan_multigoal_path(robot,
+											   tree_model.trunk_mesh,
+											   tree_model.leaves_mesh,
+											   targets,
+											   initial_state);
 
 	auto end_time = std::chrono::high_resolution_clock::now();
 
