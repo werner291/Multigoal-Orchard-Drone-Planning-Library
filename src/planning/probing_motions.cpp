@@ -65,12 +65,49 @@ mgodpl::ApproachPath mgodpl::straightout(const mgodpl::robot_model::RobotModel &
 
 }
 
-RobotPath mgodpl::plan_multigoal_path(const robot_model::RobotModel &robot,
-							  const mgodpl::Mesh& trunk_mesh,
-							  const mgodpl::Mesh& leaves_mesh,
-							  const std::vector<math::Vec3d>& fruit_positions,
-							  const RobotState &initial_state) {// Create a collision object for the tree trunk.
+std::optional<ApproachPath> mgodpl::uniform_straightout_approach(const math::Vec3d &target,
+														 const robot_model::RobotModel &robot,
+														 const fcl::CollisionObjectd &tree_trunk_object,
+														 const CgalMeshData &mesh_data,
+														 random_numbers::RandomNumberGenerator &rng,
+														 size_t max_attempts,
+														 double ee_distance) {
 
+
+	const auto flying_base = robot.findLinkByName("flying_base");
+	const auto end_effector = robot.findLinkByName("end_effector");
+
+	// auto sample = findGoalStateByUniformSampling(target,
+	// 											 robot,
+	// 											 flying_base,
+	// 											 end_effector,
+	// 											 tree_trunk_object,
+	// 											 rng,
+	// 											 max_attempts);
+
+	auto sample = generateUniformRandomArmVectorState(robot, tree_trunk_object, target, rng, max_attempts, ee_distance);
+
+	if (!sample) {
+		return std::nullopt;
+	}
+
+	// Then, try the straight-out motion:
+	auto path = straightout(robot, *sample, mesh_data.tree, mesh_data.mesh_path);
+
+	PathPoint collision_point{};
+	if (!check_path_collides(robot, tree_trunk_object, path.path, collision_point)) {
+		return path;
+	}
+
+	return std::nullopt;
+
+}
+
+RobotPath ShellPathPlanningMethod::plan_static(const robot_model::RobotModel &robot,
+											   const Mesh &trunk_mesh,
+											   const Mesh &leaves_mesh,
+											   const std::vector<math::Vec3d> &fruit_positions,
+											   const RobotState &initial_state) {
 	auto flying_base = robot.findLinkByName("flying_base");
 
 	// Allocate a BVH convex_hull for the tree trunk.
@@ -116,47 +153,9 @@ RobotPath mgodpl::plan_multigoal_path(const robot_model::RobotModel &robot,
 	const std::vector <size_t> &order = visitation_order_greedy(target_to_target_distances, initial_state_distances);
 
 	const RobotPath &final_path = mgodpl::shell_path_planning::assemble_final_path(robot,
-													  mesh_data.convex_hull,
-													  approach_paths,
-													  initial_approach_path,
-													  order);
+																				   mesh_data.convex_hull,
+																				   approach_paths,
+																				   initial_approach_path,
+																				   order);
 	return final_path;
-}
-
-std::optional<ApproachPath> mgodpl::uniform_straightout_approach(const math::Vec3d &target,
-														 const robot_model::RobotModel &robot,
-														 const fcl::CollisionObjectd &tree_trunk_object,
-														 const CgalMeshData &mesh_data,
-														 random_numbers::RandomNumberGenerator &rng,
-														 size_t max_attempts,
-														 double ee_distance) {
-
-
-	const auto flying_base = robot.findLinkByName("flying_base");
-	const auto end_effector = robot.findLinkByName("end_effector");
-
-	// auto sample = findGoalStateByUniformSampling(target,
-	// 											 robot,
-	// 											 flying_base,
-	// 											 end_effector,
-	// 											 tree_trunk_object,
-	// 											 rng,
-	// 											 max_attempts);
-
-	auto sample = generateUniformRandomArmVectorState(robot, tree_trunk_object, target, rng, max_attempts, ee_distance);
-
-	if (!sample) {
-		return std::nullopt;
-	}
-
-	// Then, try the straight-out motion:
-	auto path = straightout(robot, *sample, mesh_data.tree, mesh_data.mesh_path);
-
-	PathPoint collision_point{};
-	if (!check_path_collides(robot, tree_trunk_object, path.path, collision_point)) {
-		return path;
-	}
-
-	return std::nullopt;
-
 }

@@ -208,6 +208,8 @@ add_library(planning
         src/planning/RandomNumberGenerator.h
         src/planning/fcl_utils.cpp
         src/planning/fcl_utils.h
+        src/planning/local_optimization.cpp
+        src/planning/local_optimization.h
 )
 
 target_link_libraries(planning math_utils)
@@ -265,11 +267,9 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/declarative/fruit_models.h
             src/experiment_utils/mesh_from_dae.cpp
             src/experiment_utils/mesh_from_dae.h
-            src/experiment_utils/declarative/SolutionMethod.h
-            src/experiment_utils/plan_path_from_parameters.cpp
-            src/experiment_utils/plan_path_from_parameters.h
             src/experiment_utils/tracing.cpp
             src/experiment_utils/tracing.h
+            src/experiment_utils/declarative/local_optimization.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")

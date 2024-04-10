@@ -112,11 +112,9 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath) {
 	}
 
 	// Plan the final path as a whole:
-	RobotPath final_path = plan_multigoal_path(robot,
-											   tree_model.trunk_mesh,
-											   tree_model.leaves_mesh,
-											   computeFruitPositions(tree_model),
-											   initial_state);
+	ShellPathPlanningMethod shell_path_planner;
+
+	RobotPath final_path = shell_path_planner.plan_static(robot, tree_model.trunk_mesh, tree_model.leaves_mesh, computeFruitPositions(tree_model), initial_state);
 
 	PathPoint path_point = {0, 0.0};
 

@@ -40,6 +40,8 @@ namespace mgodpl::declarative {
 		const std::vector<std::vector<SurfacePoint>> scannable_points;
 		/// The occlusion model to use to accelerate occlusion checks.
 		const std::shared_ptr<const MeshOcclusionModel> mesh_occlusion_model;
+		/// The initial state of the robot.
+		const RobotState initial_state;
 	};
 
 	std::vector<std::vector<SurfacePoint>> generate_scannable_points(const FruitModels &fruit_models,

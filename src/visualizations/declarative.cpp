@@ -6,14 +6,17 @@
 // Created by werner on 3/11/24.
 //
 
+#include <fcl/geometry/bvh/BVH_model.h>
+#include <fcl/math/bv/OBB.h>
 #include "../visualization/visualization_function_macros.h"
 #include "../experiment_utils/declarative/SensorModelParameters.h"
 #include "../experiment_utils/declarative_environment.h"
 #include "../visualization/declarative.h"
-#include "../experiment_utils/declarative/SolutionMethod.h"
-#include "../experiment_utils/plan_path_from_parameters.h"
 #include "../visualization/ladder_trace.h"
 #include "../experiment_utils/default_colors.h"
+#include "../planning/RobotModel.h"
+#include "../planning/probing_motions.h"
+#include "../planning/state_tools.h"
 
 using namespace mgodpl;
 using namespace declarative;
@@ -51,19 +54,11 @@ REGISTER_VISUALIZATION(declarative_visualization)
 
 REGISTER_VISUALIZATION(declarative_fullpath) {
 
-//	SolutionMethod method = OrbitFacingTree {
-//			.params = CircularOrbitParameters{.radius=1.0}
-//	};
-
-	SolutionMethod method = ProbingMotionsMethod {
-//		.shortcutting = false,
-	};
-
 	mgodpl::declarative::PointScanEvalParameters eval_params {
 			.tree_params = TreeModelParameters {
 					.name = "appletree",
 					.leaf_scale = 1.5,
-					.fruit_subset = Replace {100},
+					.fruit_subset = Unchanged {}, //Replace {100},
 					.seed = 42
 			},
 			.sensor_params = SensorScalarParameters {
@@ -80,7 +75,14 @@ REGISTER_VISUALIZATION(declarative_fullpath) {
 
 	const PointScanEnvironment &env = create_environment(eval_params, environment_cache);
 
-	const auto& path = plan_multigoal_path_in_scenario(method, env);
+	ShellPathPlanningMethod method;
+	RobotPath path = method.plan_static(
+			env.robot,
+			env.tree_model->meshes.trunk_mesh,
+			env.scaled_leaves,
+			fruit_positions_from_models(env.fruit_models),
+			env.initial_state
+			);
 
 	visualize_ladder_trace(env.robot, path, viewer);
 

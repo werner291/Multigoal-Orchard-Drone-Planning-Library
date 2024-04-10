@@ -59,6 +59,8 @@ namespace mgodpl::declarative {
 										 experiments::TreeModelCache &cache,
 										 random_numbers::RandomNumberGenerator &rng);
 
+	std::vector<math::Vec3d> fruit_positions_from_models(const FruitModels &fruit_models);
+
 }
 
 #endif //MGODPL_TREE_MODELS_H

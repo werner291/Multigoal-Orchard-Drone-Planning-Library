@@ -8,8 +8,8 @@
 
 #include <json/value.h>
 #include "SensorModelParameters.h"
-#include "SolutionMethod.h"
 #include "../tree_models.h"
+#include "local_optimization.h"
 
 namespace mgodpl::declarative {
 
@@ -39,21 +39,39 @@ namespace mgodpl::declarative {
 		return json;
 	}
 
-	Json::Value toJson(const OrbitFacingTree &orbit) {
+	Json::Value to_json(const RandomSpanShortcutting& config) {
 		Json::Value json;
-		json["type"] = "orbit";
-		json["parameters"] = toJson(orbit.params);
+		json["max_radius"] = config.max_radius;
+		json["n_attempts"] = config.n_attempts;
 		return json;
 	}
 
-	Json::Value toJson(const ProbingMotionsMethod &_method) {
+	Json::Value to_json(const MidpointPull& config) {
 		Json::Value json;
-		json["type"] = "probing";
+		json["max_pull_factor"] = config.max_pull_factor;
+		json["n_attempts"] = config.n_attempts;
 		return json;
 	}
 
-	Json::Value toJson(const SolutionMethod &method) {
-		return std::visit([](const auto &m) { return toJson(m); }, method);
+	Json::Value to_json(const WaypointDeletion& config) {
+		Json::Value json;
+		return json;
+	}
+
+	Json::Value to_json(const LocalOptimizationConfig& config) {
+		Json::Value json = std::visit([](const auto &c) { return to_json(c); }, config);
+
+		if (std::holds_alternative<RandomSpanShortcutting>(config)) {
+			json["type"] = "random_span_shortcutting";
+		} else if (std::holds_alternative<MidpointPull>(config)) {
+			json["type"] = "midpoint_pull";
+		} else if (std::holds_alternative<WaypointDeletion>(config)) {
+			json["type"] = "waypoint_deletion";
+		} else {
+			throw std::runtime_error("Unknown local optimization config type");
+		}
+
+		return json;
 	}
 
 }

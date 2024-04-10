@@ -12,6 +12,7 @@
 #include "procedural_fruit_placement.h"
 #include "procedural_robot_models.h"
 #include "LoadedTreeModel.h"
+#include "../planning/state_tools.h"
 
 mgodpl::experiments::LoadedTreeModel mgodpl::experiments::LoadedTreeModel::from_name(const std::string &name) {
 	const auto meshes = mgodpl::tree_meshes::loadTreeMeshes(name);
@@ -99,6 +100,23 @@ mgodpl::declarative::instantiate_tree_model(const mgodpl::declarative::TreeModel
 	};
 }
 
+std::vector<mgodpl::math::Vec3d>
+mgodpl::declarative::fruit_positions_from_models(const mgodpl::declarative::FruitModels &fruit_models) {
+	std::vector<math::Vec3d> fruit_positions;
+	if (auto meshes = std::get_if<std::vector<MeshFruit>>(&fruit_models)) {
+		for (const auto &mesh : *meshes) {
+			fruit_positions.push_back(mesh.center);
+		}
+	} else if (auto spheres = std::get_if<std::vector<SphericalFruit>>(&fruit_models)) {
+		for (const auto &sphere : *spheres) {
+			fruit_positions.push_back(sphere.center);
+		}
+	} else {
+		throw std::runtime_error("Unsupported fruit model type");
+	}
+	return fruit_positions;
+}
+
 std::vector<std::vector<mgodpl::SurfacePoint>> mgodpl::declarative::generate_scannable_points(
 		const mgodpl::declarative::FruitModels &fruit_models,
 		size_t n_points_per_fruit,
@@ -157,13 +175,18 @@ mgodpl::declarative::create_environment(const mgodpl::declarative::PointScanEval
 											tree_model->root_points,
 											params.tree_params.leaf_scale);
 
+	robot_model::RobotModel robot = experiments::createProceduralRobotModel();
+
+	RobotState initial_state = fromEndEffectorAndVector(robot, {0, 5, 5}, {0, 1, 1});
+
 	// Return the environment instance
 	return {
-			.robot = experiments::createProceduralRobotModel(),
+			.robot = robot,
 			.tree_model = tree_model,
 			.scaled_leaves = scaled_leaves,
 			.fruit_models = fruit_models,
 			.scannable_points = all_scannable_points,
-			.mesh_occlusion_model = std::make_shared<MeshOcclusionModel>(scaled_leaves, 0.0)
+			.mesh_occlusion_model = std::make_shared<MeshOcclusionModel>(scaled_leaves, 0.0),
+			.initial_state = initial_state
 	};
 }

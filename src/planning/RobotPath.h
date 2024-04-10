@@ -71,6 +71,24 @@ namespace mgodpl
 			path_point.segment_t = d - (double) path_point.segment_i;
 			return path_point;
 		}
+
+		/**
+		 * @brief Converts a PathPoint to a scalar value in the range [0, path.states.size() - 1).
+		 * @return The scalar value corresponding to this PathPoint.
+		 */
+		[[nodiscard]] double toScalar() const {
+			return (double) segment_i + segment_t;
+		}
+
+		/**
+		 * @brief Adjust the PathPoint by a scalar value, clamping to the range [0, path.states.size() - 1).
+		 * @param d 		The scalar value to adjust by.
+		 * @param path 		The RobotPath to use for determining the segment index.
+		 * @return 			The adjusted PathPoint.
+		 */
+		[[nodiscard]] PathPoint adjustByScalar(double d, const mgodpl::RobotPath& path) const {
+			return fromScalar(toScalar() + d, path);
+		}
     };
 
     /**

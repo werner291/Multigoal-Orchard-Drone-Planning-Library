@@ -110,8 +110,10 @@ REGISTER_VISUALIZATION(probing_fullpath)
 	// First, get some stats on how many straight-in motions we can do.
 	const std::vector<math::Vec3d>& targets = computeFruitPositions(tree_model);
 
+	ShellPathPlanningMethod planner;
+
 	// Plan the final path as a whole:
-	RobotPath final_path = plan_multigoal_path(robot,
+	RobotPath final_path = planner.plan_static(robot,
 											   tree_model.trunk_mesh,
 											   tree_model.leaves_mesh,
 											   targets,
