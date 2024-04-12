@@ -76,6 +76,7 @@ REGISTER_VISUALIZATION(declarative_fullpath) {
 	const PointScanEnvironment &env = create_environment(eval_params, environment_cache);
 
 	ShellPathPlanningMethod method;
+
 	RobotPath path = method.plan_static(
 			env.robot,
 			env.tree_model->meshes.trunk_mesh,

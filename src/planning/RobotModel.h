@@ -115,6 +115,15 @@ namespace mgodpl::robot_model {
 
 			/// The visual geometry of the link.
 			std::vector<PositionedShape> visual_geometry {};
+
+			/**
+			 * @brief Creates a Link object representing a box with the specified name and size.
+			 *
+			 * @param name The name of the link.
+			 * @param size The size of the box, represented as a 3D vector.
+			 * @return A Link object representing a box with the specified name and size.
+			 */
+			[[nodiscard]] static Link namedBox(const std::string& name, const math::Vec3d& size);
 		};
 
 		/**

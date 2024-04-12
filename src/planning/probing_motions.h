@@ -48,38 +48,81 @@ namespace mgodpl {
 
 	class ApproachPlanner {
 
+		virtual std::optional<ApproachPath> plan(
+				const mgodpl::math::Vec3d &target,
+				const mgodpl::robot_model::RobotModel &robot,
+				const fcl::CollisionObjectd &tree_trunk_object,
+				const cgal::CgalMeshData &mesh_data,
+				random_numbers::RandomNumberGenerator &rng,
+				double ee_distance = 0.0
+				) const = 0;
+
+		virtual Json::Value configuration() const = 0;
+
 	};
 
-	class StraightoutApproachPlanner {
+	class StraightoutApproachPlanner : public ApproachPlanner {
+
+		unsigned int goal_sample_attempts = 1000;
 
 	public:
 
-		ApproachPath plan(const robot_model::RobotModel &robot,
-						  const RobotState &target_state,
-						  const CGAL::AABB_tree<cgal::AABBTraits> &tree,
-						  const cgal::Surface_mesh_shortest_path &algo) {
-			return straightout(robot, target_state, tree, algo);
+		[[nodiscard]] std::optional<ApproachPath> plan(const mgodpl::math::Vec3d &target,
+													   const mgodpl::robot_model::RobotModel &robot,
+													   const fcl::CollisionObjectd &tree_trunk_object,
+													   const cgal::CgalMeshData &mesh_data,
+													   random_numbers::RandomNumberGenerator &rng,
+													   size_t max_attempts,
+													   double ee_distance = 0.0) const {
+
+			return uniform_straightout_approach(target,
+												robot,
+												tree_trunk_object,
+												mesh_data,
+												rng,
+												max_attempts,
+												ee_distance);
+
 		}
 
-		Json::Value configuration() {
-			Json::Value config;
-			config["type"] = "straightout";
-			return config;
-		}
+		Json::Value configuration() const;
+
+	};
+
+	class GoalToGoalOptimizationMethod {
+
+		/**
+		 * Optimize a path to reduce its length without introducing collisions.
+		 *
+		 * @param robot 		The robot model.
+		 * @param path 			The path to optimize.
+		 * @param obstacle 		The obstacle to avoid.
+		 * @return 				True if the path was optimized, false if it is unmodified.
+		 */
+		virtual bool optimize(const robot_model::RobotModel &robot,
+							  RobotPath &path,
+							  const fcl::CollisionObjectd &obstacle) const = 0;
 
 	};
 
 	class ShellPathPlanningMethod {
 
+		/// Te approach planning method to use.
+		const std::shared_ptr<const ApproachPlanner> approach_planner;
+
+		/// The goal-to-goal optimization method to use, if any.
+		/// This may be null, in which case no optimization is performed.
+		const std::shared_ptr<const GoalToGoalOptimizationMethod> optimization_method;
+
 	public:
 
 		RobotPath plan_static(
 				const robot_model::RobotModel &robot,
-				const mgodpl::Mesh& trunk_mesh,
-				const mgodpl::Mesh& leaves_mesh,
-				const std::vector<math::Vec3d>& fruit_positions,
+				const mgodpl::Mesh &trunk_mesh,
+				const mgodpl::Mesh &leaves_mesh,
+				const std::vector<math::Vec3d> &fruit_positions,
 				const RobotState &initial_state
-				);
+		);
 
 		Json::Value configuration() {
 			Json::Value config;

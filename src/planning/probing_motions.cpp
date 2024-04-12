@@ -108,6 +108,7 @@ RobotPath ShellPathPlanningMethod::plan_static(const robot_model::RobotModel &ro
 											   const Mesh &leaves_mesh,
 											   const std::vector<math::Vec3d> &fruit_positions,
 											   const RobotState &initial_state) {
+
 	auto flying_base = robot.findLinkByName("flying_base");
 
 	// Allocate a BVH convex_hull for the tree trunk.
@@ -125,7 +126,7 @@ RobotPath ShellPathPlanningMethod::plan_static(const robot_model::RobotModel &ro
 																	flying_base,
 																	mesh_data);
 
-	std::vector <ApproachPath> approach_paths;
+	std::vector<ApproachPath> approach_paths;
 
 	// For every fruit position...
 	for (const auto &tgt: fruit_positions) {
@@ -158,4 +159,10 @@ RobotPath ShellPathPlanningMethod::plan_static(const robot_model::RobotModel &ro
 																				   initial_approach_path,
 																				   order);
 	return final_path;
+}
+
+Json::Value StraightoutApproachPlanner::configuration() const {
+	Json::Value config;
+	config["type"] = "straightout";
+	return config;
 }
