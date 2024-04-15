@@ -36,6 +36,7 @@ namespace mgodpl
         {
             states.insert(states.end(), path.states.begin(), path.states.end());
         }
+
     };
 
     /**
@@ -197,6 +198,14 @@ namespace mgodpl
      * @return A new RobotPath that is the reverse of the input path.
      */
     RobotPath reverse(const RobotPath& path);
+
+	/**
+	 * Modify a path, inserting the given number of sub-steps into each segment.
+	 *
+	 * @param num_steps 		The number of sub-steps to insert into each segment.
+	 * @return 				A new path with the sub-steps inserted.
+	 */
+	RobotPath subdivided(const RobotPath& original, size_t num_steps);
 }
 
 

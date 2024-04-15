@@ -93,3 +93,18 @@ mgodpl::RobotPath mgodpl::reverse(const RobotPath& path)
     std::reverse(result.states.begin(), result.states.end());
     return result;
 }
+
+mgodpl::RobotPath mgodpl::subdivided(const mgodpl::RobotPath &original, size_t num_steps) {
+
+	std::vector<RobotState> new_states;
+
+	for (size_t segment_i = 0; segment_i + 1 < original.states.size(); segment_i++) {
+		for (size_t step_i = 0; step_i < num_steps; step_i++) {
+			double t = (double) step_i / (double) num_steps;
+			new_states.push_back(interpolate(original.states[segment_i], original.states[segment_i+1], t));
+		}
+	}
+
+	return {new_states};
+
+}
