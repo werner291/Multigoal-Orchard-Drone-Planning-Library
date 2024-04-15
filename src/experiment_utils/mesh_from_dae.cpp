@@ -29,14 +29,6 @@ mgodpl::Mesh mgodpl::from_dae(const std::string &dae_file) {
 						dae_file.find("leaves") != std::string::npos ||
 						dae_file.find("trunk") != std::string::npos;
 
-	// We divide all coordinates by this due to a cm/mm conversion in the DAE files
-	double MESH_SCALE_FACTOR = 10.0;
-
-	// Something weird happened with a cm/inch conversion in the tree models, so we correct for that here
-	if (is_tree_mesh) {
-		MESH_SCALE_FACTOR *= CENTIMETERS_PER_INCH;
-	}
-
 	for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
 		const aiMesh *ai_mesh = scene->mMeshes[i];
 		size_t index_offset = mesh.vertices.size();
@@ -46,16 +38,16 @@ mgodpl::Mesh mgodpl::from_dae(const std::string &dae_file) {
 			if (is_tree_mesh) {
 
 				mesh.vertices.emplace_back(
-						vertex.x / MESH_SCALE_FACTOR, // There appears to me some sort of cm/mm conversion going on with DAE, hence the division by 10
-						vertex.z / MESH_SCALE_FACTOR, // Z and Y are swapped intentionally
-						vertex.y / MESH_SCALE_FACTOR
+						vertex.x / (100.0 / CENTIMETERS_PER_INCH), // There appears to me some sort of cm/mm conversion going on with DAE, hence the weird division
+						vertex.z / (100.0 / CENTIMETERS_PER_INCH), // Z and Y are swapped intentionally
+						vertex.y / (100.0 / CENTIMETERS_PER_INCH)
 				);
 
 			} else {
 				mesh.vertices.emplace_back(
-						vertex.x / MESH_SCALE_FACTOR,
-						vertex.y / MESH_SCALE_FACTOR,
-						vertex.z / MESH_SCALE_FACTOR
+						vertex.x / 10.0,
+						vertex.y / 10.0,
+						vertex.z / 10.0
 				);
 			}
 		}
