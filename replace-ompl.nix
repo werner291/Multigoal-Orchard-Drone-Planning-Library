@@ -4,7 +4,7 @@ self: super:
 
 let
   myOmpl = super.rosPackages.rolling.ompl.overrideAttrs ({ patches ? [ ], ... }: {
-    version="Fix patch";
+    version = "Fix patch";
     patches = patches ++ [
       # Use full install paths for pkg-config
       (self.fetchpatch {
