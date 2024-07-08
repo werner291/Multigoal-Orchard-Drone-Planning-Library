@@ -34,7 +34,7 @@ namespace mgodpl {
 		// The robot model to be returned.
 		RobotModel model;
 
-		mgodpl::Mesh base_mesh = from_dae("../test_robots/meshes/drone.dae");
+		mgodpl::Mesh base_mesh = from_dae(ROBOTS_DIR "/meshes/drone.dae");
 		Box base_box{.size = {0.8, 0.8, 0.2}};
 
 		// The flying base of the robot model.

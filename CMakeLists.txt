@@ -22,6 +22,11 @@ option(ENABLE_TESTS "Enable TESTS" OFF)
 # Add an option for Python byndings.
 option(ENABLE_PYTHON_BINDINGS "Enable PYTHON BINDINGS" OFF)
 
+# Add an option to specify the directory where the robots are to be found.
+# By default, this is just the source dir, but that assumes that we still have the source available, rather than the installed package.
+option(ROBOTS_DIRECTORY "Where the robots are to be found." "${CMAKE_SOURCE_DIR}/test_robots")
+
+# Force the detection of NixOS. (TODO: I'd rather just detect the nix package manager; can I do that?)
 option(FORCE_NIXOS "Force NixOS" OFF)
 
 # Detect if we're on NixOS
@@ -111,6 +116,7 @@ set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 add_compile_definitions(PARALLEL) # Enable parallelism in some parts of the code.
+add_compile_definitions(ROBOTS_DIR="${ROBOTS_DIRECTORY}") # Forwards the robots directory to the code.
 
 # A small library featuring some vector math (not depending on Eigen)
 # and some general-purpose geometry utilities.

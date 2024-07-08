@@ -45,7 +45,7 @@
         ];
 
         configurePhase = ''
-          cmake . -GNinja -DCMAKE_BUILD_TYPE=Release -DENABLE_VISUALIZATION=ON -DENABLE_EXPERIMENTS=ON -DFORCE_NIXOS=ON
+          cmake . -GNinja -DCMAKE_BUILD_TYPE=Release -DENABLE_VISUALIZATION=ON -DENABLE_EXPERIMENTS=ON -DFORCE_NIXOS=ON -DROBOTS_DIRECTORY=$out/test_robots
         '';
 
         buildPhase = ''
@@ -56,6 +56,7 @@
           ls
           mkdir -p $out/bin
           cp -r visualizations $out/bin
+          cp -r test_robots $out
         '';
       };
     };
