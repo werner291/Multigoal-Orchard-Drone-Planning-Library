@@ -57,10 +57,6 @@
           mkdir -p $out/bin
           cp -r visualizations $out/bin
         '';
-
-        runPhase = ''
-          echo "Hello, world!"
-        '';
       };
     };
 }
