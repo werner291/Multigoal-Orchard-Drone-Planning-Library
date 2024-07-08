@@ -357,7 +357,7 @@ if (ENABLE_VISUALIZATION)
             src/visualizations/swept_volume.cpp
             src/visualizations/robot_variations.cpp
             src/visualizations/declarative.cpp
-            src/visualizations/swapper.cpp
+            # src/visualizations/swapper.cpp
             src/visualizations/reacharound_motions.cpp
     )
 
