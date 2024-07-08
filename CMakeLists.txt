@@ -26,9 +26,9 @@ option(ENABLE_PYTHON_BINDINGS "Enable PYTHON BINDINGS" OFF)
 if (EXISTS /etc/NIXOS)
     message(STATUS "NixOS detected")
     set(NIXOS TRUE)
-else()
+else ()
     set(NIXOS FALSE)
-endif()
+endif ()
 
 if (NIXOS)
     find_package(ortools REQUIRED)
@@ -38,15 +38,15 @@ if (NIXOS)
         # Here, I'm forcing it to use the flake.nix version.
         find_package(Python3 3.11.8 EXACT REQUIRED COMPONENTS Interpreter Development)
         find_package(pybind11 REQUIRED)
-    endif()
-else()
+    endif ()
+else ()
     set(ORTOOLS_LIBRARIES ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so)
 
     if (ENABLE_PYTHON_BINDINGS)
         find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
         find_package(pybind11 REQUIRED)
-    endif()
-endif()
+    endif ()
+endif ()
 
 ## System dependencies are found with CMake's conventions
 #find_package(Eigen3 REQUIRED)
@@ -55,7 +55,7 @@ find_package(Boost REQUIRED)
 #find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
 
-find_file (DEBIAN_FOUND debian_version debconf.conf
+find_file(DEBIAN_FOUND debian_version debconf.conf
         PATHS /etc
 )
 
@@ -72,7 +72,7 @@ include_directories(
         ${Boost_INCLUDE_DIRS}
         ${GTEST_INCLUDE_DIRS}
         ${BULLET_INCLUDE_DIRS}
-#        ${OMPL_INCLUDE_DIRS}
+        #        ${OMPL_INCLUDE_DIRS}
         ${QHULL_INCLUDE_DIRS}
         ${VTK_INCLUDE_DIRS}
         ortools/include
@@ -82,18 +82,18 @@ include_directories(
 
 link_libraries(
         tbb
-#        ${EIGEN_LIBRARIES}
+        #        ${EIGEN_LIBRARIES}
         ${FCL_LIBRARIES}
         ${Boost_LIBRARIES}
         ${BULLET_LIBRARIES}
-#        ${OMPL_LIBRARIES}
+        #        ${OMPL_LIBRARIES}
         ${VTK_LIBRARIES}
         jsoncpp_lib
         assimp
-#        tbb
+        #        tbb
         ${CGAL_LIBRARIES}
-#        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
-#        moveit_ompl_interface
+        #        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
+        #        moveit_ompl_interface
         ${ORTOOLS_LIBRARIES}
 )
 
@@ -152,7 +152,7 @@ add_library(visibility
         src/visibility/voxel_visibility.cpp
         src/visibility/Octree.cpp
         src/visibility/Octree.h
-#        src/visibility/octree_visibility.cpp
+        #        src/visibility/octree_visibility.cpp
         src/visibility/octree_visibility.h
         src/visibility/visibility_geometry.cpp
         src/visibility/visibility_geometry.h
@@ -161,9 +161,9 @@ add_library(visibility
 target_link_libraries(visibility math_utils)
 
 add_library(planning
-    src/planning/RobotAlgorithm.h
-#    src/planning/BlindlyMoveToNextFruit.h
-#    src/planning/BlindlyMoveToNextFruit.cpp
+        src/planning/RobotAlgorithm.h
+        #    src/planning/BlindlyMoveToNextFruit.h
+        #    src/planning/BlindlyMoveToNextFruit.cpp
         src/planning/NextTargetSelector.cpp
         src/planning/NextTargetSelector.h
         src/planning/MonadicBehavior.h
@@ -227,8 +227,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/snake_path.h
             src/experiment_utils/MeshOcclusionModel.cpp
             src/experiment_utils/MeshOcclusionModel.h
-#            src/planning/IncrementalGoalStateGenerator.cpp
-#            src/planning/IncrementalGoalStateGenerator.h
+            #            src/planning/IncrementalGoalStateGenerator.cpp
+            #            src/planning/IncrementalGoalStateGenerator.h
             src/planning/fcl_forward_declarations.h
             src/experiment_utils/procedural_robot_models.cpp
             src/experiment_utils/procedural_robot_models.h
@@ -275,7 +275,7 @@ if (ENABLE_EXPERIMENTS)
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
     target_link_libraries(experiment_utils math_utils visibility)
-endif()
+endif ()
 
 if (ENABLE_VISUALIZATION)
 
@@ -365,25 +365,28 @@ if (ENABLE_VISUALIZATION)
 
 endif ()
 
-include(GoogleTest)
+if (ENABLE_TESTS)
 
-add_executable(${PROJECT_NAME}_tests
-        test/test.cpp
-#        test/math/AABBGrid_test.cpp
-#        test/math/AABB_test.cpp
-#        test/experiment_utils/voxel_visibility_test.cpp
-#        test/math/intersection_test.cpp
-#        test/math/lp_test.cpp
-        test/planning/spherical_geomety_test.cpp
-        test/planning/LatitudeLongitudeGridTests.cpp
-        src/experiment_utils/declarative/PointScanExperiment.h
-        src/experiment_utils/declarative/to_json.cpp
-        src/visualization/declarative.cpp
-        src/visualization/declarative.h
-)
+    include(GoogleTest)
 
-target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils planning gtest)
-gtest_discover_tests(${PROJECT_NAME}_tests)
+    add_executable(${PROJECT_NAME}_tests
+            test/test.cpp
+            #        test/math/AABBGrid_test.cpp
+            #        test/math/AABB_test.cpp
+            #        test/experiment_utils/voxel_visibility_test.cpp
+            #        test/math/intersection_test.cpp
+            #        test/math/lp_test.cpp
+            test/planning/spherical_geomety_test.cpp
+            test/planning/LatitudeLongitudeGridTests.cpp
+            src/experiment_utils/declarative/PointScanExperiment.h
+            src/experiment_utils/declarative/to_json.cpp
+            src/visualization/declarative.cpp
+            src/visualization/declarative.h
+    )
+
+    target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils planning gtest)
+    gtest_discover_tests(${PROJECT_NAME}_tests)
+endif () # ENABLE_TESTS
 
 if (ENABLE_PYTHON_BINDINGS)
     message(STATUS "Building with Python bindings")
