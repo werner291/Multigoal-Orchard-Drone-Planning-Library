@@ -1,6 +1,8 @@
 {
-  description = "My ROS Project Build Environment";
-  nixConfig.bash-prompt = "[ros] ";
+  description = "Multigoal Orchard Drone Planning Library";
+
+  nixConfig.bash-prompt = "[ros $(pwd)]$ ";
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
   };
@@ -9,34 +11,45 @@
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
-    in {
-      devShells.x86_64-linux.default = pkgs.mkShell {
-        name = "My ROS Project Build Environment";
-        packages = with pkgs; [
-            #ompl
-	        pkg-config
-            (python3.withPackages(ps: with ps; [ matplotlib jupyterlab numpy pandas pybind11 seaborn ]))
-            cmake
-            jsoncpp
-            range-v3
-            cgal_5
-            gmp
-            mpfr
-            or-tools
-            re2
-            CoinMP
-            glpk
-            vtk
-            eigen
-            pandoc
-            tbb # For the parallel for_each
-            glxinfo
-	        fcl
-	        boost
-	        mpfr
-		zlib
-		assimp
+    in
+    {
+
+      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
+
+      packages.x86_64-linux.default = pkgs.stdenv.mkDerivation {
+        name = "Multigoal Orchard Drone Planning Library";
+        src = ./.;
+        nativeBuildInputs = with pkgs; [ cmake ninja ];
+        buildInputs = with pkgs; [
+          boost # A set of common tools for C++ development, like an unofficial standard library
+          eigen # Useful tools for linear algebra; pretty heavy package, prefer to use our own math library when possible.
+          fcl # A library for collision detection; it's the same one MoveIt uses internally.
+          or-tools # A set of tools for combinatorial optimization; we use it for the TSP solver.
+          CoinMP # Extra dependency for OR-Tools; it's a solver for linear programming problems.
+          glpk # Another solver for linear programming problems, also a dependency for OR-Tools. (Should these be upstreamed as dependencies to nixpkgs OR-Tools?)
+          vtk # A visualization library for rendering all the visuals.
+          assimp # A library for importing 3D models; we use it to import the fruit tree models and the drone model.
+          cgal_5 # The Computational Geometry Algorithms Library; we use it for the convex hull geodesics and such.
+          range-v3 # A library for working with ranges in C++. I'd like to migrate to C++ 20, actually, if possible.
+          jsoncpp # Simple JSON library, mainly for outputting statistics.
+          tbb # A library for parallelizing for_each loops.
+          gmp # A library for arbitrary precision arithmetic; used by CGAL.
+          mpfr # A library for arbitrary precision floating point arithmetic; used by CGAL.
+          gtest # Google test
         ];
+
+        configurePhase = ''
+          cmake . -GNinja -DCMAKE_BUILD_TYPE=Release
+        '';
+
+        buildPhase = ''
+          ninja planning
+        '';
+
+        installPhase = ''
+          mkdir -p $out
+          cp -r libplanning.a $out
+        '';
       };
     };
 }
