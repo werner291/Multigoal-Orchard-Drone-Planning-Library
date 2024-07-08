@@ -22,8 +22,10 @@ option(ENABLE_TESTS "Enable TESTS" OFF)
 # Add an option for Python byndings.
 option(ENABLE_PYTHON_BINDINGS "Enable PYTHON BINDINGS" OFF)
 
+option(FORCE_NIXOS "Force NixOS" OFF)
+
 # Detect if we're on NixOS
-if (EXISTS /etc/NIXOS)
+if (EXISTS /etc/NIXOS OR FORCE_NIXOS)
     message(STATUS "NixOS detected")
     set(NIXOS TRUE)
 else ()

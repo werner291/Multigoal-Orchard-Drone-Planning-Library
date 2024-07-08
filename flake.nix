@@ -17,7 +17,7 @@
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
 
       packages.x86_64-linux.default = pkgs.stdenv.mkDerivation {
-        name = "Multigoal Orchard Drone Planning Library";
+        name = "visualizations";
         src = ./.;
         nativeBuildInputs = with pkgs; [
           cmake
@@ -45,16 +45,21 @@
         ];
 
         configurePhase = ''
-          cmake . -GNinja -DCMAKE_BUILD_TYPE=Release
+          cmake . -GNinja -DCMAKE_BUILD_TYPE=Release -DENABLE_VISUALIZATION=ON -DENABLE_EXPERIMENTS=ON -DFORCE_NIXOS=ON
         '';
 
         buildPhase = ''
-          ninja planning
+          ninja visualizations
         '';
 
         installPhase = ''
-          mkdir -p $out
-          cp -r libplanning.a $out
+          ls
+          mkdir -p $out/bin
+          cp -r visualizations $out/bin
+        '';
+
+        runPhase = ''
+          echo "Hello, world!"
         '';
       };
     };
