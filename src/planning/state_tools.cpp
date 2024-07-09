@@ -7,6 +7,8 @@
 //
 
 #include "state_tools.h"
+
+#include "RandomNumberGenerator.h"
 #include "spherical_geometry.h"
 
 mgodpl::RobotState mgodpl::fromEndEffectorAndVector(const mgodpl::robot_model::RobotModel &robot,
@@ -31,4 +33,29 @@ mgodpl::RobotState mgodpl::fromEndEffectorAndVector(const mgodpl::robot_model::R
 			.base_tf = flying_base_tf,
 			.joint_values = arm_angles,
 	};
+}
+
+mgodpl::RobotState mgodpl::generateUniformRandomState(const robot_model::RobotModel &robot,
+                                                      random_numbers::RandomNumberGenerator &rng,
+                                                      const double h_range,
+                                                      const double v_range,
+                                                      const double joint_angle_range) {
+	RobotState state{
+		.base_tf = {
+			.translation = {
+				rng.uniformReal(-h_range, h_range),
+				rng.uniformReal(-h_range, h_range),
+				rng.uniformReal(0, v_range)
+			},
+			.orientation = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), rng.uniformReal(0, 2 * M_PI))
+		},
+		.joint_values = {}
+	};
+
+	state.joint_values.reserve(robot.getJoints().size());
+	for (size_t i = 0; i < robot.getJoints().size(); ++i) {
+		state.joint_values.push_back(rng.uniformReal(-joint_angle_range, joint_angle_range));
+	}
+
+	return state;
 }
