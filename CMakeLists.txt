@@ -24,7 +24,10 @@ option(ENABLE_PYTHON_BINDINGS "Enable PYTHON BINDINGS" OFF)
 
 # Add an option to specify the directory where the robots are to be found.
 # By default, this is just the source dir, but that assumes that we still have the source available, rather than the installed package.
-option(ROBOTS_DIRECTORY "Where the robots are to be found." "${CMAKE_SOURCE_DIR}/test_robots")
+option(ROBOTS_DIRECTORY "Where the robots are to be found.")
+if (NOT ROBOTS_DIRECTORY) # Workaround for an apparent bug where CMake somehow sets OFF even if a default value is given.
+    set(ROBOTS_DIRECTORY "${CMAKE_SOURCE_DIR}/test_robots")
+endif ()
 
 # Force the detection of NixOS. (TODO: I'd rather just detect the nix package manager; can I do that?)
 option(FORCE_NIXOS "Force NixOS" OFF)
