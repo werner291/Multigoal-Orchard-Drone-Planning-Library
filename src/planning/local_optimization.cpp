@@ -9,12 +9,10 @@
 #include "local_optimization.h"
 
 namespace mgodpl {
-
 	bool tryShortcutByDeletingWaypoint(const mgodpl::robot_model::RobotModel &robot,
-											   mgodpl::RobotPath &path,
-											   size_t waypointIndex,
-											   const fcl::CollisionObjectd &obstacle) {
-
+	                                   mgodpl::RobotPath &path,
+	                                   size_t waypointIndex,
+	                                   const fcl::CollisionObjectd &obstacle) {
 		assert(waypointIndex > 0 && waypointIndex + 1 < path.states.size());
 
 		// Get the three states affected:
@@ -26,11 +24,11 @@ namespace mgodpl {
 
 		// Check if the motion between prev and next is collision-free:
 		bool collides = mgodpl::check_motion_collides(
-				robot,
-				obstacle,
-				prev,
-				next,
-				toi
+			robot,
+			obstacle,
+			prev,
+			next,
+			toi
 		);
 
 		if (collides) {
@@ -41,15 +39,13 @@ namespace mgodpl {
 		path.states.erase(path.states.begin() + waypointIndex);
 
 		return true;
-
 	}
 
 	bool tryMidpointPull(const mgodpl::robot_model::RobotModel &robot,
-								 mgodpl::RobotPath &path,
-								 size_t waypointIndex,
-								 double pull_factor,
-								 const fcl::CollisionObjectd &obstacle) {
-
+	                     mgodpl::RobotPath &path,
+	                     size_t waypointIndex,
+	                     double pull_factor,
+	                     const fcl::CollisionObjectd &obstacle) {
 		assert(waypointIndex > 0 && waypointIndex + 1 < path.states.size());
 
 		// Get the three states affected:
@@ -67,19 +63,19 @@ namespace mgodpl {
 		double toi1, toi2;
 
 		bool collides1 = mgodpl::check_motion_collides(
-				robot,
-				obstacle,
-				prev,
-				new_state,
-				toi1
+			robot,
+			obstacle,
+			prev,
+			new_state,
+			toi1
 		);
 
 		bool collides2 = mgodpl::check_motion_collides(
-				robot,
-				obstacle,
-				new_state,
-				next,
-				toi2
+			robot,
+			obstacle,
+			new_state,
+			next,
+			toi2
 		);
 
 		if (collides1 || collides2) {
@@ -93,11 +89,10 @@ namespace mgodpl {
 	}
 
 	bool tryShortcutBetweenPathPoints(const mgodpl::robot_model::RobotModel &robot,
-											  mgodpl::RobotPath &path,
-											  const mgodpl::PathPoint &start,
-											  const mgodpl::PathPoint &end,
-											  const fcl::CollisionObjectd &obstacle) {
-
+	                                  mgodpl::RobotPath &path,
+	                                  const mgodpl::PathPoint &start,
+	                                  const mgodpl::PathPoint &end,
+	                                  const fcl::CollisionObjectd &obstacle) {
 		RobotState st1 = interpolate(start, path);
 		RobotState st2 = interpolate(end, path);
 
@@ -126,9 +121,8 @@ namespace mgodpl {
 	}
 
 	bool tryDeletingEveryWaypoint(const mgodpl::robot_model::RobotModel &robot,
-										  mgodpl::RobotPath &path,
-										  const fcl::CollisionObjectd &obstacle) {
-
+	                              mgodpl::RobotPath &path,
+	                              const fcl::CollisionObjectd &obstacle) {
 		size_t cursor = 1;
 
 		bool shortened = false;
@@ -142,14 +136,12 @@ namespace mgodpl {
 		}
 
 		return shortened;
-
 	}
 
 	bool tryShortcuttingRandomly(const mgodpl::robot_model::RobotModel &robot,
-										 mgodpl::RobotPath &path,
-										 const fcl::CollisionObjectd &obstacle,
-										 random_numbers::RandomNumberGenerator &rng) {
-
+	                             mgodpl::RobotPath &path,
+	                             const fcl::CollisionObjectd &obstacle,
+	                             random_numbers::RandomNumberGenerator &rng) {
 		// Generate a random path point.
 		PathPoint middle = generateRandomPathPoint(path, rng);
 
@@ -163,5 +155,4 @@ namespace mgodpl {
 		// Try to shortcut between the two points.
 		return tryShortcutBetweenPathPoints(robot, path, start, end, obstacle);
 	}
-
 }
