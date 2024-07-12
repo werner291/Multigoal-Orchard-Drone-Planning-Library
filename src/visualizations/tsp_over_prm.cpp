@@ -34,6 +34,47 @@ struct PRM {
 	Graph graph;
 };
 
+std::vector<Graph::vertex_descriptor>
+k_nearest_neighbors_lineartime(const PRM &prm, const RobotState &state, size_t k) {
+	// Keep the distances and the indices.
+	std::vector<std::pair<double, Graph::vertex_descriptor> > distances;
+	distances.reserve(k + 1);
+
+	// Iterate over all nodes.
+	auto [vertices_begin, vertices_end] = boost::vertices(prm.graph);
+	for (auto vit = vertices_begin; vit != vertices_end; ++vit) {
+		const VertexProperties &node = prm.graph[*vit];
+
+		bool inserted = false;
+
+		// Iterate over all neighbors found so far.
+		for (size_t i = 0; i < distances.size(); ++i) {
+			// If the distance is smaller than the current distance, insert it.
+			if (distances[i].first > equal_weights_distance(node.state, state)) {
+				distances.insert(distances.begin() + i, {equal_weights_distance(node.state, state), *vit});
+				inserted = true;
+				// If it's now larger than n_neighbours, remove the last element.
+				if (distances.size() > k) {
+					distances.pop_back();
+				}
+				break;
+			}
+		}
+
+		if (!inserted && distances.size() < k) {
+			distances.emplace_back(equal_weights_distance(node.state, state), *vit);
+		}
+	}
+
+	std::vector<Graph::vertex_descriptor> result;
+	result.reserve(k);
+	for (const auto &d: distances) {
+		result.push_back(d.second);
+	}
+
+	return result;
+}
+
 REGISTER_VISUALIZATION(tsp_over_prm) {
 	auto tree_model = tree_meshes::loadTreeMeshes("appletree");
 	viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
@@ -74,7 +115,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 
 		// Remove the last sample visualization, if it exists.
 		if (sample_viz) {
-			for (auto vtk_actor: sample_viz->actors) {
+			for (const auto &vtk_actor: sample_viz->actors) {
 				viewer.viewerRenderer->RemoveActor(vtk_actor);
 			}
 		}
@@ -115,58 +156,27 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 		// Otherwise, add it to the roadmap, and try to connect it to the nearest neighbors.
 
 		// Find the k nearest neighbors. (Brute-force; should migrate to a VP-tree when I can.)
-
-		// Keep the distances and the indices.
-		std::vector<std::pair<double, Graph::vertex_descriptor> > distances;
-		distances.reserve(n_neighbours + 1);
-
-		// Iterate over all nodes.
-		auto [vertices_begin, vertices_end] = boost::vertices(prm.graph);
-		for (auto vit = vertices_begin; vit != vertices_end; ++vit) {
-			const VertexProperties &node = prm.graph[*vit];
-
-			// First, check the motion collision:
-			bool collides = check_motion_collides(
-				robot,
-				tree_collision,
-				node.state,
-				state
-			);
-
-			if (collides) {
-				continue;
-			}
-
-			bool inserted = false;
-
-			// Iterate over all neighbors found so far.
-			for (size_t k = 0; k < distances.size(); ++k) {
-				// If the distance is smaller than the current distance, insert it.
-				if (distances[k].first > equal_weights_distance(node.state, state)) {
-					distances.insert(distances.begin() + k, {equal_weights_distance(node.state, state), *vit});
-					inserted = true;
-					// If it's now larger than n_neighbours, remove the last element.
-					if (distances.size() > n_neighbours) {
-						distances.pop_back();
-					}
-					break;
-				}
-			}
-
-			if (!inserted && distances.size() < n_neighbours) {
-				distances.emplace_back(equal_weights_distance(node.state, state), *vit);
-			}
-		}
+		auto k_nearest = k_nearest_neighbors_lineartime(prm, state, n_neighbours);
 
 		// Add the new node to the graph.
 		auto new_vertex = boost::add_vertex({state}, prm.graph);
 
 		// Then add the edges:
-		for (const auto &d: distances) {
-			boost::add_edge(new_vertex, d.second, prm.graph);
+		for (const auto &neighbor: k_nearest) {
+			// Do collision check: if it collides, don't add the edge.
+			if (check_motion_collides(
+				robot,
+				tree_collision,
+				prm.graph[neighbor].state,
+				state
+			)) {
+				continue;
+			}
+
+			boost::add_edge(new_vertex, neighbor, prm.graph);
 			edges.emplace_back(
 				prm.graph[new_vertex].state.base_tf.translation,
-				prm.graph[d.second].state.base_tf.translation
+				prm.graph[neighbor].state.base_tf.translation
 			);
 		}
 
