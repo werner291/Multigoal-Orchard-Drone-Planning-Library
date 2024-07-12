@@ -221,6 +221,7 @@ add_library(planning
         src/planning/fcl_utils.h
         src/planning/local_optimization.cpp
         src/planning/local_optimization.h
+        src/planning/vptree.hpp
 )
 
 target_link_libraries(planning math_utils)
