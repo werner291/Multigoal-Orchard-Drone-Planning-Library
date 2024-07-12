@@ -122,6 +122,7 @@ namespace mgodpl {
 
 		path.states = std::move(new_states);
 
+		return true; // Shortcut successful.
 	}
 
 	bool tryDeletingEveryWaypoint(const mgodpl::robot_model::RobotModel &robot,
