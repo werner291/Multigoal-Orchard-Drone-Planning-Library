@@ -38,8 +38,8 @@ namespace mgodpl {
 	 * @return 							True if there is a collision, false otherwise.
 	 */
 	bool check_robot_collision(const robot_model::RobotModel &robot,
-							   const fcl::CollisionObjectd &tree_trunk_object,
-							   const RobotState &state);
+	                           const fcl::CollisionObjectd &tree_trunk_object,
+	                           const RobotState &state);
 
 	/**
 	 * Check whether a motion from one state to another (assuming linear interpolation in the configuration space)
@@ -55,10 +55,30 @@ namespace mgodpl {
 	 * @return 						True if the motion collides, false otherwise.
 	 */
 	bool check_motion_collides(const robot_model::RobotModel &robot,
-							   const fcl::CollisionObjectd &tree_trunk_object,
-							   const RobotState &state1,
-							   const RobotState &state2,
-							   double &toi);
+	                           const fcl::CollisionObjectd &tree_trunk_object,
+	                           const RobotState &state1,
+	                           const RobotState &state2,
+	                           double &toi);
+
+	/**
+	 * Check whether a motion from one state to another (assuming linear interpolation in the configuration space)
+	 * collides with the given CollisionObjectd.
+	 *
+	 * TODO: This function uses samples, and is not a full CCD function.
+	 *
+	 * @param robot 				The robot model.
+	 * @param tree_trunk_object 	The tree trunk that the robot must not collide with.
+	 * @param state1 				The state to start from.
+	 * @param state2 				The state to end at.
+	 * @return 						True if the motion collides, false otherwise.
+	 */
+	inline bool check_motion_collides(const mgodpl::robot_model::RobotModel &robot,
+	                                  const fcl::CollisionObjectd &tree_trunk_object,
+	                                  const mgodpl::RobotState &state1,
+	                                  const mgodpl::RobotState &state2) {
+		double dummy_toi; // This will act as a placeholder for the 'time of impact' parameter.
+		return check_motion_collides(robot, tree_trunk_object, state1, state2, dummy_toi);
+	}
 
 	/**
 	 * Check whether the given path collides.
@@ -70,9 +90,9 @@ namespace mgodpl {
 	 * @return						True if the path collides, false otherwise.
 	 */
 	bool check_path_collides(const robot_model::RobotModel &robot,
-							 const fcl::CollisionObjectd &tree_trunk_object,
-							 const RobotPath &path,
-							 PathPoint& collision_point);
+	                         const fcl::CollisionObjectd &tree_trunk_object,
+	                         const RobotPath &path,
+	                         PathPoint &collision_point);
 }
 
 #endif //MGODPL_COLLISION_DETECTION_H
