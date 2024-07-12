@@ -22,6 +22,20 @@
 
 using namespace mgodpl;
 
+/**
+ * A probabilistic roadmap.
+ */
+struct PRM {
+	// A node in the roadmap, consisting of a state and a list of neighbor indices.
+	struct Node {
+		RobotState state;
+		std::vector<size_t> neighbors;
+	};
+
+	// The nodes in the roadmap, as a vector. (We're assuming no nodes are removed.)
+	std::vector<Node> nodes;
+};
+
 REGISTER_VISUALIZATION(tsp_over_prm) {
 	auto tree_model = tree_meshes::loadTreeMeshes("appletree");
 	viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
@@ -32,56 +46,60 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	// Create a random number generator.
 	random_numbers::RandomNumberGenerator rng;
 
-	// Create a PRM.
-	struct Node {
-		RobotState state;
-		std::vector<size_t> neighbors;
-	};
-
-	std::vector<Node> nodes;
+	// Allocate an empty prm.
+	PRM prm;
 
 	const size_t max_samples = 100;
 	const size_t n_neighbours = 5;
 
+	// Initialize a visualization for the edges.
 	VtkLineSegmentsVisualization prm_edges(1, 0, 1);
 	std::vector<std::pair<math::Vec3d, math::Vec3d> > edges;
 	viewer.addActor(prm_edges.getActor());
 
+	// Add a frame counter so we can slow down the sampling for visualization.
 	int frames_until_sample = 0;
 
 	// Allocate a BVH convex_hull for the tree trunk.
 	auto tree_collision = fcl_utils::treeMeshesToFclCollisionObject(tree_model);
 
+	// The actors for the last-vizualized robot configuration sample, so we can remove them later.
 	std::optional<vizualisation::RobotActors> sample_viz;
 
 	viewer.addTimerCallback([&]() {
+		// Some slow-down logic for visualization.
 		if (frames_until_sample > 0) {
 			--frames_until_sample;
 			return;
 		}
 		frames_until_sample = 1;
 
+		// Remove the last sample visualization, if it exists.
 		if (sample_viz) {
 			for (auto vtk_actor: sample_viz->actors) {
 				viewer.viewerRenderer->RemoveActor(vtk_actor);
 			}
 		}
 
-		// Skip if we're at the maximum number of samples.
-		if (nodes.size() >= max_samples) {
+		// Skip if we're at the maximum number of samples, and stop the viewer.
+		if (prm.nodes.size() >= max_samples) {
 			viewer.stop();
 			return;
 		}
 
+		// Generate a random state.
 		auto state = generateUniformRandomState(robot, rng, 5.0, 10.0);
 
+		// Check if the robot collides with the tree.
 		bool collides = check_robot_collision(robot, tree_collision, state);
 
+		// Pick a color based on whether it collides.
 		math::Vec3d color = collides
 			                    ? math::Vec3d{1.0, 0.0, 0.0}
 			                    : // Red if it collides.
 			                    math::Vec3d{0.0, 1.0, 0.0}; // Green if it doesn't.
 
+		// Visualize the robot state.
 		sample_viz = vizualisation::vizualize_robot_state(viewer,
 		                                                  robot,
 		                                                  robot_model::forwardKinematics(
@@ -96,6 +114,8 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			return;
 		}
 
+		// Otherwise, add it to the roadmap, and try to connect it to the nearest neighbors.
+
 		// Find the k nearest neighbors. (Brute-force; should migrate to a VP-tree when I can.)
 
 		// Keep the distances and the indices.
@@ -103,12 +123,12 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 		distances.reserve(n_neighbours + 1);
 
 		// Iterate over all nodes.
-		for (size_t j = 0; j < nodes.size(); ++j) {
+		for (size_t j = 0; j < prm.nodes.size(); ++j) {
 			// First, check the motion collision:
 			bool collides = check_motion_collides(
 				robot,
 				tree_collision,
-				nodes[j].state,
+				prm.nodes[j].state,
 				state
 			);
 
@@ -121,8 +141,8 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			// Iterate over all neighbors found so far.
 			for (size_t k = 0; k < distances.size(); ++k) {
 				// If the distance is smaller than the current distance, insert it.
-				if (distances[k].first > equal_weights_distance(nodes[j].state, state)) {
-					distances.insert(distances.begin() + k, {equal_weights_distance(nodes[j].state, state), j});
+				if (distances[k].first > equal_weights_distance(prm.nodes[j].state, state)) {
+					distances.insert(distances.begin() + k, {equal_weights_distance(prm.nodes[j].state, state), j});
 					inserted = true;
 					// If it's now larger than n_neighbours, remove the last element.
 					if (distances.size() > n_neighbours) {
@@ -133,7 +153,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			}
 
 			if (!inserted && distances.size() < n_neighbours) {
-				distances.push_back({equal_weights_distance(nodes[j].state, state), j});
+				distances.push_back({equal_weights_distance(prm.nodes[j].state, state), j});
 			}
 		}
 
@@ -144,12 +164,12 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			neighbors.push_back(d.second);
 
 			// In the visualization, draw the edge between the base links:
-			edges.push_back({nodes[d.second].state.base_tf.translation, state.base_tf.translation});
+			edges.push_back({prm.nodes[d.second].state.base_tf.translation, state.base_tf.translation});
 		}
 
 		// TODO: Should I maybe only add it if it has neighbors?
 
-		nodes.push_back({state, neighbors});
+		prm.nodes.push_back({state, neighbors});
 
 		prm_edges.updateLine(edges);
 	});
