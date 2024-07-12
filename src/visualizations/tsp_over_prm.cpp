@@ -104,6 +104,18 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 
 		// Iterate over all nodes.
 		for (size_t j = 0; j < nodes.size(); ++j) {
+			// First, check the motion collision:
+			bool collides = check_motion_collides(
+				robot,
+				tree_collision,
+				nodes[j].state,
+				state
+			);
+
+			if (collides) {
+				continue;
+			}
+
 			bool inserted = false;
 
 			// Iterate over all neighbors found so far.
@@ -134,6 +146,8 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			// In the visualization, draw the edge between the base links:
 			edges.push_back({nodes[d.second].state.base_tf.translation, state.base_tf.translation});
 		}
+
+		// TODO: Should I maybe only add it if it has neighbors?
 
 		nodes.push_back({state, neighbors});
 
