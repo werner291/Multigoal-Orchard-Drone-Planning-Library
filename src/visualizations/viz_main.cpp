@@ -13,23 +13,26 @@ std::map<std::string, VisFn> visualizations;
 //
 // Created by werner on 14-2-24.
 //
-int main(int argc, char** argv)
-{
-
+int main(int argc, char **argv) {
 	// Check the command line args for a visualization name:
-	if (argc > 1)
-	{
+	if (argc > 1) {
 		std::string visualization_name = argv[1];
-		if (visualizations.find(visualization_name) == visualizations.end())
-		{
+		if (visualizations.find(visualization_name) == visualizations.end()) {
 			std::cerr << "Unknown visualization: " << visualization_name << std::endl;
 			return 1;
 		}
+
 		mgodpl::SimpleVtkViewer viewer;
+
+		// Check if argv[2] is "record"
+		if (argc > 2 && std::string(argv[2]) == "record") {
+			std::cout << "Recording to " << visualization_name << ".ogv" << std::endl;
+			viewer.startRecording(visualization_name + ".ogv");
+		}
+
 		visualizations[visualization_name](viewer);
 		return 0;
 	} else {
-
 		// Print a list of visualizations with a number:
 		std::cout << "Available visualizations:" << std::endl;
 		int i = 0;
