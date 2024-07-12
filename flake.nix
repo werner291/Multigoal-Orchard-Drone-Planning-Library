@@ -42,6 +42,7 @@
           gtest # Google test
           zlib
           re2
+          flann # A library for fast approximate nearest neighbors.
         ];
 
         configurePhase = ''
