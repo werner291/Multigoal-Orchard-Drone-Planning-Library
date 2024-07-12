@@ -17,7 +17,6 @@
 #include "RobotPath.h"
 
 namespace mgodpl {
-
 	/**
 	 * Check for collisions of a single robot link with a given fcl collision object.
 	 *
@@ -27,8 +26,8 @@ namespace mgodpl {
 	 * @return 						True if there is a collision, false otherwise.
 	 */
 	bool check_link_collision(const robot_model::RobotModel::Link &link,
-							  const fcl::CollisionObjectd &tree_trunk_object,
-							  const math::Transformd &link_tf);
+	                          const fcl::CollisionObjectd &tree_trunk_object,
+	                          const math::Transformd &link_tf);
 
 	/**
 	 * Check for collisions between a whole robot and a single FCL collision object.
