@@ -11,24 +11,26 @@
 
 #include "fcl_utils.h"
 
+#include "../experiment_utils/TreeMeshes.h"
+
+#include "Mesh.h"
+
 using namespace mgodpl;
 using namespace fcl;
 
 namespace mgodpl::fcl_utils {
-
 	std::shared_ptr<fcl::BVHModel<fcl::OBBd> > meshToFclBVH(const mgodpl::Mesh &shape) {
-
 		// Create a shared pointer to the BVHModel
-		auto g = std::make_shared<fcl::BVHModel<fcl::OBBd>>();
+		auto g = std::make_shared<fcl::BVHModel<fcl::OBBd> >();
 
 		// Create a vector to store FCL triangles
 		std::vector<fcl::Triangle> tri_indices(shape.triangles.size());
 		for (unsigned int i = 0; i < shape.triangles.size(); ++i) {
 			// Populate FCL Triangle indices from the Mesh message
 			tri_indices[i] = fcl::Triangle(
-					shape.triangles[i][0],
-					shape.triangles[i][1],
-					shape.triangles[i][2]
+				shape.triangles[i][0],
+				shape.triangles[i][1],
+				shape.triangles[i][2]
 			);
 		}
 
@@ -50,5 +52,9 @@ namespace mgodpl::fcl_utils {
 
 		// Return the constructed BVHModel as a shared pointer
 		return g;
+	}
+
+	fcl::CollisionObjectd treeMeshesToFclCollisionObject(const mgodpl::tree_meshes::TreeMeshes &meshes) {
+		return fcl::CollisionObjectd(fcl_utils::meshToFclBVH(meshes.trunk_mesh));
 	}
 }

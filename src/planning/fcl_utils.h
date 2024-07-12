@@ -10,18 +10,25 @@
 #define MGODPL_FCL_UTILS_H
 
 #include <memory>
-#include "Mesh.h"
+#include <fcl/narrowphase/collision_object.h>
+
+namespace mgodpl {
+	struct Mesh;
+}
 
 namespace fcl {
-	template <typename S>
+	template<typename S>
 	class BVHModel;
-	template <typename S>
+	template<typename S>
 	struct OBB;
 	using OBBd = OBB<double>;
 }
 
-namespace mgodpl::fcl_utils {
+namespace mgodpl::tree_meshes {
+	struct TreeMeshes;
+}
 
+namespace mgodpl::fcl_utils {
 	/**
 	 * @brief Converts a mesh from the ROS2 message format to FCL's BVHModel.
 	 *
@@ -33,6 +40,13 @@ namespace mgodpl::fcl_utils {
 	 */
 	std::shared_ptr<fcl::BVHModel<fcl::OBBd> > meshToFclBVH(const mgodpl::Mesh &shape);
 
+	/**
+	 * @brief High-level function to turn a TreeMeshes into a CollisionObject.
+	 *
+	 * @param	meshes	The TreeMeshes to turn into a CollisionObject.
+	 * @return			The CollisionObjectd.
+	 */
+	fcl::CollisionObjectd treeMeshesToFclCollisionObject(const mgodpl::tree_meshes::TreeMeshes &meshes);
 }
 
 #endif //MGODPL_FCL_UTILS_H
