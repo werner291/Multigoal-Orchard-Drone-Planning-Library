@@ -17,23 +17,21 @@
 #include "../planning/fcl_utils.h"
 #include "../visualization/VtkLineSegmentVizualization.h"
 #include <fcl/narrowphase/collision.h>
+#include <boost/graph/adjacency_list.hpp>
 
 #include "../planning/collision_detection.h"
 
 using namespace mgodpl;
 
-/**
- * A probabilistic roadmap.
- */
-struct PRM {
-	// A node in the roadmap, consisting of a state and a list of neighbor indices.
-	struct Node {
-		RobotState state;
-		std::vector<size_t> neighbors;
-	};
+struct VertexProperties {
+	RobotState state;
+};
 
-	// The nodes in the roadmap, as a vector. (We're assuming no nodes are removed.)
-	std::vector<Node> nodes;
+// Define the graph type: an undirected graph with the defined vertex properties
+using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, VertexProperties>;
+
+struct PRM {
+	Graph graph;
 };
 
 REGISTER_VISUALIZATION(tsp_over_prm) {
@@ -82,7 +80,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 		}
 
 		// Skip if we're at the maximum number of samples, and stop the viewer.
-		if (prm.nodes.size() >= max_samples) {
+		if (boost::num_vertices(prm.graph) >= max_samples) {
 			viewer.stop();
 			return;
 		}
@@ -119,16 +117,19 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 		// Find the k nearest neighbors. (Brute-force; should migrate to a VP-tree when I can.)
 
 		// Keep the distances and the indices.
-		std::vector<std::pair<double, size_t> > distances;
+		std::vector<std::pair<double, Graph::vertex_descriptor> > distances;
 		distances.reserve(n_neighbours + 1);
 
 		// Iterate over all nodes.
-		for (size_t j = 0; j < prm.nodes.size(); ++j) {
+		auto [vertices_begin, vertices_end] = boost::vertices(prm.graph);
+		for (auto vit = vertices_begin; vit != vertices_end; ++vit) {
+			const VertexProperties &node = prm.graph[*vit];
+
 			// First, check the motion collision:
 			bool collides = check_motion_collides(
 				robot,
 				tree_collision,
-				prm.nodes[j].state,
+				node.state,
 				state
 			);
 
@@ -141,8 +142,8 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			// Iterate over all neighbors found so far.
 			for (size_t k = 0; k < distances.size(); ++k) {
 				// If the distance is smaller than the current distance, insert it.
-				if (distances[k].first > equal_weights_distance(prm.nodes[j].state, state)) {
-					distances.insert(distances.begin() + k, {equal_weights_distance(prm.nodes[j].state, state), j});
+				if (distances[k].first > equal_weights_distance(node.state, state)) {
+					distances.insert(distances.begin() + k, {equal_weights_distance(node.state, state), *vit});
 					inserted = true;
 					// If it's now larger than n_neighbours, remove the last element.
 					if (distances.size() > n_neighbours) {
@@ -153,23 +154,21 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			}
 
 			if (!inserted && distances.size() < n_neighbours) {
-				distances.push_back({equal_weights_distance(prm.nodes[j].state, state), j});
+				distances.emplace_back(equal_weights_distance(node.state, state), *vit);
 			}
 		}
 
-		// Extract just the indices.
-		std::vector<size_t> neighbors;
-		neighbors.reserve(n_neighbours);
+		// Add the new node to the graph.
+		auto new_vertex = boost::add_vertex({state}, prm.graph);
+
+		// Then add the edges:
 		for (const auto &d: distances) {
-			neighbors.push_back(d.second);
-
-			// In the visualization, draw the edge between the base links:
-			edges.push_back({prm.nodes[d.second].state.base_tf.translation, state.base_tf.translation});
+			boost::add_edge(new_vertex, d.second, prm.graph);
+			edges.emplace_back(
+				prm.graph[new_vertex].state.base_tf.translation,
+				prm.graph[d.second].state.base_tf.translation
+			);
 		}
-
-		// TODO: Should I maybe only add it if it has neighbors?
-
-		prm.nodes.push_back({state, neighbors});
 
 		prm_edges.updateLine(edges);
 	});
