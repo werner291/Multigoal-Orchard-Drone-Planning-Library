@@ -43,6 +43,7 @@
           zlib
           re2
           flann # A library for fast approximate nearest neighbors.
+          lz4 # Unlisted dependency of flann.
         ];
 
         configurePhase = ''

@@ -103,6 +103,8 @@ link_libraries(
         #        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
         #        moveit_ompl_interface
         ${ORTOOLS_LIBRARIES}
+        flann
+        lz4 # For flann
 )
 
 ###########
