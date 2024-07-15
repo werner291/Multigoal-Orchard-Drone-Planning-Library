@@ -33,10 +33,12 @@ struct VertexProperties {
 // Define the graph type: an undirected graph with the defined vertex properties
 using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, VertexProperties>;
 
-struct PRM {
+struct MultigoalPRM {
 	size_t n_neighbours = 5;
 
 	Graph graph;
+
+	std::vector<Graph::vertex_descriptor> infrastructure_nodes;
 
 	std::function<bool(const RobotState &, const RobotState &)> check_motion_collides;
 
@@ -47,9 +49,8 @@ struct PRM {
 		distances.reserve(k + 1);
 
 		// Iterate over all nodes.
-		auto [vertices_begin, vertices_end] = boost::vertices(graph);
-		for (auto vit = vertices_begin; vit != vertices_end; ++vit) {
-			const VertexProperties &node = graph[*vit];
+		for (auto v: infrastructure_nodes) {
+			const VertexProperties &node = graph[v];
 
 			bool inserted = false;
 
@@ -57,7 +58,7 @@ struct PRM {
 			for (size_t i = 0; i < distances.size(); ++i) {
 				// If the distance is smaller than the current distance, insert it.
 				if (distances[i].first > equal_weights_distance(node.state, state)) {
-					distances.insert(distances.begin() + i, {equal_weights_distance(node.state, state), *vit});
+					distances.insert(distances.begin() + i, {equal_weights_distance(node.state, state), v});
 					inserted = true;
 					// If it's now larger than n_neighbours, remove the last element.
 					if (distances.size() > k) {
@@ -68,7 +69,7 @@ struct PRM {
 			}
 
 			if (!inserted && distances.size() < k) {
-				distances.emplace_back(equal_weights_distance(node.state, state), *vit);
+				distances.emplace_back(equal_weights_distance(node.state, state), v);
 			}
 		}
 
@@ -88,7 +89,7 @@ struct PRM {
 	 * @param	state	The state of the new node.
 	 * @returns The vertex descriptor of the new node.
 	 */
-	Graph::vertex_descriptor add_node(const RobotState &state) {
+	Graph::vertex_descriptor add_roadmap_node(const RobotState &state, bool is_goal_sample = false) {
 		// Find the k nearest neighbors. (Brute-force; should migrate to a VP-tree when I can.)
 		auto k_nearest = k_nearest_neighbors_lineartime(state, n_neighbours);
 
@@ -105,12 +106,20 @@ struct PRM {
 			boost::add_edge(new_vertex, neighbor, graph);
 		}
 
+		if (!is_goal_sample) {
+			infrastructure_nodes.push_back(new_vertex);
+		}
+
 		return new_vertex;
 	}
 };
 
 
 REGISTER_VISUALIZATION(tsp_over_prm) {
+	viewer.lockCameraUp();
+
+	viewer.setCameraTransform({20, 10, 8}, {0, 0, 5});
+
 	// Create a random number generator.
 	random_numbers::RandomNumberGenerator rng;
 
@@ -131,7 +140,6 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 
 	auto robot = experiments::createProceduralRobotModel();
 
-
 	const size_t max_samples = 100;
 
 	// Initialize a visualization for the edges.
@@ -150,7 +158,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	fcl::CollisionObjectd tree_collision(fcl_utils::meshToFclBVH(tree.tree_model->meshes.trunk_mesh));
 
 	// Allocate an empty prm.
-	PRM prm{
+	MultigoalPRM prm{
 		.n_neighbours = 5,
 		.graph = Graph(),
 		.check_motion_collides = [&](const RobotState &a, const RobotState &b) {
@@ -216,7 +224,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			}
 
 			// Otherwise, add it to the roadmap, and try to connect it to the nearest neighbors.
-			auto new_vertex = prm.add_node(state);
+			auto new_vertex = prm.add_roadmap_node(state, false);
 
 			// Iterate over the graph vertex neighbors and add the edges to the visualization.
 			for (const auto &neighbor: boost::make_iterator_range(boost::adjacent_vertices(new_vertex, prm.graph))) {
@@ -253,7 +261,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 					                                                  {0.0, 0.0, 1.0});
 
 					// Add the goal to the roadmap.
-					auto new_vertex = prm.add_node(goal_state);
+					auto new_vertex = prm.add_roadmap_node(goal_state, true);
 
 					// Add the links:
 					for (const auto &neighbor: boost::make_iterator_range(
