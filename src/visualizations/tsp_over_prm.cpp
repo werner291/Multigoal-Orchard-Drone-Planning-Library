@@ -34,50 +34,81 @@ struct VertexProperties {
 using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, VertexProperties>;
 
 struct PRM {
+	size_t n_neighbours = 5;
+
 	Graph graph;
 
-};
+	std::function<bool(const RobotState &, const RobotState &)> check_motion_collides;
 
-std::vector<Graph::vertex_descriptor>
-k_nearest_neighbors_lineartime(const PRM &prm, const RobotState &state, size_t k) {
-	// Keep the distances and the indices.
-	std::vector<std::pair<double, Graph::vertex_descriptor> > distances;
-	distances.reserve(k + 1);
+	std::vector<Graph::vertex_descriptor>
+	k_nearest_neighbors_lineartime(const RobotState &state, size_t k) {
+		// Keep the distances and the indices.
+		std::vector<std::pair<double, Graph::vertex_descriptor> > distances;
+		distances.reserve(k + 1);
 
-	// Iterate over all nodes.
-	auto [vertices_begin, vertices_end] = boost::vertices(prm.graph);
-	for (auto vit = vertices_begin; vit != vertices_end; ++vit) {
-		const VertexProperties &node = prm.graph[*vit];
+		// Iterate over all nodes.
+		auto [vertices_begin, vertices_end] = boost::vertices(graph);
+		for (auto vit = vertices_begin; vit != vertices_end; ++vit) {
+			const VertexProperties &node = graph[*vit];
 
-		bool inserted = false;
+			bool inserted = false;
 
-		// Iterate over all neighbors found so far.
-		for (size_t i = 0; i < distances.size(); ++i) {
-			// If the distance is smaller than the current distance, insert it.
-			if (distances[i].first > equal_weights_distance(node.state, state)) {
-				distances.insert(distances.begin() + i, {equal_weights_distance(node.state, state), *vit});
-				inserted = true;
-				// If it's now larger than n_neighbours, remove the last element.
-				if (distances.size() > k) {
-					distances.pop_back();
+			// Iterate over all neighbors found so far.
+			for (size_t i = 0; i < distances.size(); ++i) {
+				// If the distance is smaller than the current distance, insert it.
+				if (distances[i].first > equal_weights_distance(node.state, state)) {
+					distances.insert(distances.begin() + i, {equal_weights_distance(node.state, state), *vit});
+					inserted = true;
+					// If it's now larger than n_neighbours, remove the last element.
+					if (distances.size() > k) {
+						distances.pop_back();
+					}
+					break;
 				}
-				break;
+			}
+
+			if (!inserted && distances.size() < k) {
+				distances.emplace_back(equal_weights_distance(node.state, state), *vit);
 			}
 		}
 
-		if (!inserted && distances.size() < k) {
-			distances.emplace_back(equal_weights_distance(node.state, state), *vit);
+		std::vector<Graph::vertex_descriptor> result;
+		result.reserve(k);
+		for (const auto &d: distances) {
+			result.push_back(d.second);
 		}
+
+		return result;
 	}
 
-	std::vector<Graph::vertex_descriptor> result;
-	result.reserve(k);
-	for (const auto &d: distances) {
-		result.push_back(d.second);
-	}
 
-	return result;
-}
+	/**
+	 * @brief Add a new node to the PRM, connecting it up to the nearest neighbors.
+	 *
+	 * @param	state	The state of the new node.
+	 * @returns The vertex descriptor of the new node.
+	 */
+	Graph::vertex_descriptor add_node(const RobotState &state) {
+		// Find the k nearest neighbors. (Brute-force; should migrate to a VP-tree when I can.)
+		auto k_nearest = k_nearest_neighbors_lineartime(state, n_neighbours);
+
+		// Add the new node to the graph.
+		auto new_vertex = boost::add_vertex({state}, graph);
+
+		// Then add the edges:
+		for (const auto &neighbor: k_nearest) {
+			// Do collision check: if it collides, don't add the edge.
+			if (check_motion_collides(graph[neighbor].state, state)) {
+				continue;
+			}
+
+			boost::add_edge(new_vertex, neighbor, graph);
+		}
+
+		return new_vertex;
+	}
+};
+
 
 REGISTER_VISUALIZATION(tsp_over_prm) {
 	// Create a random number generator.
@@ -100,11 +131,8 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 
 	auto robot = experiments::createProceduralRobotModel();
 
-	// Allocate an empty prm.
-	PRM prm;
 
-	const size_t max_samples = 0;
-	const size_t n_neighbours = 5;
+	const size_t max_samples = 100;
 
 	// Initialize a visualization for the edges.
 	VtkLineSegmentsVisualization prm_edges(1, 0, 1);
@@ -116,6 +144,15 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 
 	// Create a collision object BVH for the tree trunk.
 	fcl::CollisionObjectd tree_collision(fcl_utils::meshToFclBVH(tree.tree_model->meshes.trunk_mesh));
+
+	// Allocate an empty prm.
+	PRM prm{
+		.n_neighbours = 5,
+		.graph = Graph(),
+		.check_motion_collides = [&](const RobotState &a, const RobotState &b) {
+			return check_motion_collides(robot, tree_collision, a, b);
+		}
+	};
 
 	// The actors for the last-vizualized robot configuration sample, so we can remove them later.
 	std::optional<vizualisation::RobotActors> sample_viz;
@@ -175,26 +212,10 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			}
 
 			// Otherwise, add it to the roadmap, and try to connect it to the nearest neighbors.
+			auto new_vertex = prm.add_node(state);
 
-			// Find the k nearest neighbors. (Brute-force; should migrate to a VP-tree when I can.)
-			auto k_nearest = k_nearest_neighbors_lineartime(prm, state, n_neighbours);
-
-			// Add the new node to the graph.
-			auto new_vertex = boost::add_vertex({state}, prm.graph);
-
-			// Then add the edges:
-			for (const auto &neighbor: k_nearest) {
-				// Do collision check: if it collides, don't add the edge.
-				if (check_motion_collides(
-					robot,
-					tree_collision,
-					prm.graph[neighbor].state,
-					state
-				)) {
-					continue;
-				}
-
-				boost::add_edge(new_vertex, neighbor, prm.graph);
+			// Iterate over the graph vertex neighbors and add the edges to the visualization.
+			for (const auto &neighbor: boost::make_iterator_range(boost::adjacent_vertices(new_vertex, prm.graph))) {
 				edges.emplace_back(
 					prm.graph[new_vertex].state.base_tf.translation,
 					prm.graph[neighbor].state.base_tf.translation
