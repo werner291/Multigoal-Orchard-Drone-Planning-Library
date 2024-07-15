@@ -248,6 +248,20 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 						                                     goal_state.base_tf),
 					                                     {0.0, 0.0, 1.0});
 
+					// Add the goal to the roadmap.
+					auto new_vertex = prm.add_node(goal_state);
+
+					// Add the links:
+					for (const auto &neighbor: boost::make_iterator_range(
+						     boost::adjacent_vertices(new_vertex, prm.graph))) {
+						edges.emplace_back(
+							prm.graph[new_vertex].state.base_tf.translation,
+							prm.graph[neighbor].state.base_tf.translation
+						);
+					}
+
+					prm_edges.updateLine(edges);
+
 					if (samples_found >= max_samples_per_goal) {
 						break;
 					}
