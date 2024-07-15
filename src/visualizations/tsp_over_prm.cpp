@@ -139,6 +139,10 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	std::vector<std::pair<math::Vec3d, math::Vec3d> > edges;
 	viewer.addActor(prm_edges.getActor());
 
+	VtkLineSegmentsVisualization prm_goal_edges(0.5, 1.0, 0.5);
+	std::vector<std::pair<math::Vec3d, math::Vec3d> > goal_edges;
+	viewer.addActor(prm_goal_edges.getActor());
+
 	// Add a frame counter so we can slow down the sampling for visualization.
 	int frames_until_sample = 0;
 
@@ -239,14 +243,14 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 				if (!check_robot_collision(robot, tree_collision, goal_state)) {
 					samples_found += 1;
 
-					vizualisation::vizualize_robot_state(viewer,
-					                                     robot,
-					                                     robot_model::forwardKinematics(
-						                                     robot,
-						                                     goal_state.joint_values,
-						                                     0,
-						                                     goal_state.base_tf),
-					                                     {0.0, 0.0, 1.0});
+					sample_viz = vizualisation::vizualize_robot_state(viewer,
+					                                                  robot,
+					                                                  robot_model::forwardKinematics(
+						                                                  robot,
+						                                                  goal_state.joint_values,
+						                                                  0,
+						                                                  goal_state.base_tf),
+					                                                  {0.0, 0.0, 1.0});
 
 					// Add the goal to the roadmap.
 					auto new_vertex = prm.add_node(goal_state);
@@ -254,13 +258,13 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 					// Add the links:
 					for (const auto &neighbor: boost::make_iterator_range(
 						     boost::adjacent_vertices(new_vertex, prm.graph))) {
-						edges.emplace_back(
+						goal_edges.emplace_back(
 							prm.graph[new_vertex].state.base_tf.translation,
 							prm.graph[neighbor].state.base_tf.translation
 						);
 					}
 
-					prm_edges.updateLine(edges);
+					prm_goal_edges.updateLine(goal_edges);
 
 					if (samples_found >= max_samples_per_goal) {
 						break;
