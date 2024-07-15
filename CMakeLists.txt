@@ -62,7 +62,6 @@ endif ()
 #find_package(Eigen3 REQUIRED)
 find_package(fcl REQUIRED)
 find_package(Boost REQUIRED)
-#find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
 
 find_file(DEBIAN_FOUND debian_version debconf.conf
@@ -96,7 +95,6 @@ link_libraries(
         ${FCL_LIBRARIES}
         ${Boost_LIBRARIES}
         ${BULLET_LIBRARIES}
-        #        ${OMPL_LIBRARIES}
         ${VTK_LIBRARIES}
         jsoncpp_lib
         assimp
