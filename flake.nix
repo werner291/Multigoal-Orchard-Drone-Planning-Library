@@ -5,12 +5,14 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
+    nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay";
+    nix-ros-overlay.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs }:
+  outputs = { self, nixpkgs, nix-ros-overlay, ... }:
     let
       system = "x86_64-linux";
-      pkgs = import nixpkgs { inherit system; };
+      pkgs = import nixpkgs { inherit system; overlays = [ nix-ros-overlay.overlays.default ]; };
     in
     {
 
@@ -43,6 +45,7 @@
           zlib
           re2
           flann # A library for fast approximate nearest neighbors.
+          rosPackages.rolling.ompl # The Open Motion Planning Library.
         ];
 
         configurePhase = ''
