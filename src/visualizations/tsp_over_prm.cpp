@@ -26,14 +26,20 @@
 
 using namespace mgodpl;
 
-struct VertexProperties {
-	RobotState state;
-};
+struct TwoTierMultigoalPRM {
+	struct VertexProperties {
+		RobotState state;
+	};
 
-// Define the graph type: an undirected graph with the defined vertex properties
-using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, VertexProperties>;
+	// Define the graph type: an undirected graph with the defined vertex properties
+	using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, VertexProperties>;
 
-struct MultigoalPRM {
+	TwoTierMultigoalPRM(size_t n_neighbours,
+	                    std::function<bool(const RobotState &, const RobotState &)> check_motion_collides)
+		: n_neighbours(n_neighbours),
+		  check_motion_collides(std::move(check_motion_collides)) {
+	}
+
 	size_t n_neighbours = 5;
 
 	Graph graph;
@@ -158,13 +164,10 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	fcl::CollisionObjectd tree_collision(fcl_utils::meshToFclBVH(tree.tree_model->meshes.trunk_mesh));
 
 	// Allocate an empty prm.
-	MultigoalPRM prm{
-		.n_neighbours = 5,
-		.graph = Graph(),
-		.check_motion_collides = [&](const RobotState &a, const RobotState &b) {
-			return check_motion_collides(robot, tree_collision, a, b);
-		}
-	};
+	TwoTierMultigoalPRM prm(5,
+	                        [&](const RobotState &a, const RobotState &b) {
+		                        return check_motion_collides(robot, tree_collision, a, b);
+	                        });
 
 	// The actors for the last-vizualized robot configuration sample, so we can remove them later.
 	std::optional<vizualisation::RobotActors> sample_viz;
