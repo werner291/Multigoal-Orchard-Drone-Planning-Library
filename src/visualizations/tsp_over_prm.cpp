@@ -16,10 +16,13 @@
 #include "../planning/vptree.hpp"
 #include "../planning/fcl_utils.h"
 #include "../visualization/VtkLineSegmentVizualization.h"
+#include "../experiment_utils/declarative/fruit_models.h"
 #include <fcl/narrowphase/collision.h>
 #include <boost/graph/adjacency_list.hpp>
 
 #include "../planning/collision_detection.h"
+#include "../planning/goal_sampling.h"
+#include "../visualization/declarative.h"
 
 using namespace mgodpl;
 
@@ -32,6 +35,7 @@ using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS
 
 struct PRM {
 	Graph graph;
+
 };
 
 std::vector<Graph::vertex_descriptor>
@@ -76,19 +80,30 @@ k_nearest_neighbors_lineartime(const PRM &prm, const RobotState &state, size_t k
 }
 
 REGISTER_VISUALIZATION(tsp_over_prm) {
-	auto tree_model = tree_meshes::loadTreeMeshes("appletree");
-	viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
-
-	// Load a robot model.
-	auto robot = experiments::createProceduralRobotModel();
-
 	// Create a random number generator.
 	random_numbers::RandomNumberGenerator rng;
+
+	experiments::TreeModelCache cache;
+
+
+	auto tree = declarative::instantiate_tree_model(
+		declarative::TreeModelParameters{
+			.name = "appletree",
+			.leaf_scale = 1.0,
+			.fruit_subset = declarative::Unchanged{},
+			.seed = 42
+		},
+		cache,
+		rng);
+
+	visualization::visualize(viewer, tree);
+
+	auto robot = experiments::createProceduralRobotModel();
 
 	// Allocate an empty prm.
 	PRM prm;
 
-	const size_t max_samples = 100;
+	const size_t max_samples = 0;
 	const size_t n_neighbours = 5;
 
 	// Initialize a visualization for the edges.
@@ -99,11 +114,20 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	// Add a frame counter so we can slow down the sampling for visualization.
 	int frames_until_sample = 0;
 
-	// Allocate a BVH convex_hull for the tree trunk.
-	auto tree_collision = fcl_utils::treeMeshesToFclCollisionObject(tree_model);
+	// Create a collision object BVH for the tree trunk.
+	fcl::CollisionObjectd tree_collision(fcl_utils::meshToFclBVH(tree.tree_model->meshes.trunk_mesh));
 
 	// The actors for the last-vizualized robot configuration sample, so we can remove them later.
 	std::optional<vizualisation::RobotActors> sample_viz;
+
+	size_t goal_being_sampled = 0;
+
+	const size_t max_samples_per_goal = 1;
+
+	const auto fruit_positions = fruit_positions_from_models(tree.fruit_models);
+
+	robot_model::RobotModel::LinkId base_link = robot.findLinkByName("flying_base");
+	robot_model::RobotModel::LinkId end_effector_link = robot.findLinkByName("end_effector");
 
 	viewer.addTimerCallback([&]() {
 		// Some slow-down logic for visualization.
@@ -120,67 +144,99 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			}
 		}
 
+
 		// Skip if we're at the maximum number of samples, and stop the viewer.
-		if (boost::num_vertices(prm.graph) >= max_samples) {
-			viewer.stop();
-			return;
-		}
+		if (boost::num_vertices(prm.graph) < max_samples) {
+			// Generate a random state.
+			auto state = generateUniformRandomState(robot, rng, 5.0, 10.0);
 
-		// Generate a random state.
-		auto state = generateUniformRandomState(robot, rng, 5.0, 10.0);
+			// Check if the robot collides with the tree.
+			bool collides = check_robot_collision(robot, tree_collision, state);
 
-		// Check if the robot collides with the tree.
-		bool collides = check_robot_collision(robot, tree_collision, state);
+			// Pick a color based on whether it collides.
+			math::Vec3d color = collides
+				                    ? math::Vec3d{1.0, 0.0, 0.0}
+				                    : // Red if it collides.
+				                    math::Vec3d{0.0, 1.0, 0.0}; // Green if it doesn't.
 
-		// Pick a color based on whether it collides.
-		math::Vec3d color = collides
-			                    ? math::Vec3d{1.0, 0.0, 0.0}
-			                    : // Red if it collides.
-			                    math::Vec3d{0.0, 1.0, 0.0}; // Green if it doesn't.
-
-		// Visualize the robot state.
-		sample_viz = vizualisation::vizualize_robot_state(viewer,
-		                                                  robot,
-		                                                  robot_model::forwardKinematics(
+			// Visualize the robot state.
+			sample_viz = vizualisation::vizualize_robot_state(viewer,
 			                                                  robot,
-			                                                  state.joint_values,
-			                                                  0,
-			                                                  state.base_tf),
-		                                                  color);
+			                                                  robot_model::forwardKinematics(
+				                                                  robot,
+				                                                  state.joint_values,
+				                                                  0,
+				                                                  state.base_tf),
+			                                                  color);
 
-		// If this sample collides, don't add it to the roadmap.
-		if (collides) {
-			return;
-		}
-
-		// Otherwise, add it to the roadmap, and try to connect it to the nearest neighbors.
-
-		// Find the k nearest neighbors. (Brute-force; should migrate to a VP-tree when I can.)
-		auto k_nearest = k_nearest_neighbors_lineartime(prm, state, n_neighbours);
-
-		// Add the new node to the graph.
-		auto new_vertex = boost::add_vertex({state}, prm.graph);
-
-		// Then add the edges:
-		for (const auto &neighbor: k_nearest) {
-			// Do collision check: if it collides, don't add the edge.
-			if (check_motion_collides(
-				robot,
-				tree_collision,
-				prm.graph[neighbor].state,
-				state
-			)) {
-				continue;
+			// If this sample collides, don't add it to the roadmap.
+			if (collides) {
+				return;
 			}
 
-			boost::add_edge(new_vertex, neighbor, prm.graph);
-			edges.emplace_back(
-				prm.graph[new_vertex].state.base_tf.translation,
-				prm.graph[neighbor].state.base_tf.translation
-			);
-		}
+			// Otherwise, add it to the roadmap, and try to connect it to the nearest neighbors.
 
-		prm_edges.updateLine(edges);
+			// Find the k nearest neighbors. (Brute-force; should migrate to a VP-tree when I can.)
+			auto k_nearest = k_nearest_neighbors_lineartime(prm, state, n_neighbours);
+
+			// Add the new node to the graph.
+			auto new_vertex = boost::add_vertex({state}, prm.graph);
+
+			// Then add the edges:
+			for (const auto &neighbor: k_nearest) {
+				// Do collision check: if it collides, don't add the edge.
+				if (check_motion_collides(
+					robot,
+					tree_collision,
+					prm.graph[neighbor].state,
+					state
+				)) {
+					continue;
+				}
+
+				boost::add_edge(new_vertex, neighbor, prm.graph);
+				edges.emplace_back(
+					prm.graph[new_vertex].state.base_tf.translation,
+					prm.graph[neighbor].state.base_tf.translation
+				);
+			}
+
+			prm_edges.updateLine(edges);
+		} else if (goal_being_sampled < fruit_positions.size()) {
+			size_t samples_found = 0;
+
+			for (int attempt = 0; attempt < 100; ++attempt) {
+				auto goal_state = genGoalStateUniform(
+					rng,
+					fruit_positions[goal_being_sampled],
+					robot,
+					base_link,
+					end_effector_link
+				);
+
+				// Check collisions:
+				if (!check_robot_collision(robot, tree_collision, goal_state)) {
+					samples_found += 1;
+
+					vizualisation::vizualize_robot_state(viewer,
+					                                     robot,
+					                                     robot_model::forwardKinematics(
+						                                     robot,
+						                                     goal_state.joint_values,
+						                                     0,
+						                                     goal_state.base_tf),
+					                                     {0.0, 0.0, 1.0});
+
+					if (samples_found >= max_samples_per_goal) {
+						break;
+					}
+				}
+			}
+
+			goal_being_sampled += 1;
+		} else {
+			viewer.stop();
+		}
 	});
 
 	viewer.start();
