@@ -19,6 +19,7 @@
 #include "../experiment_utils/declarative/fruit_models.h"
 #include <fcl/narrowphase/collision.h>
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
 
 #include "../planning/collision_detection.h"
 #include "../planning/goal_sampling.h"
@@ -55,11 +56,16 @@ struct TwoTierMultigoalPRM {
 	 * @brief The properties of a vertex in the PRM as stored by Boost Graph Library.
 	 */
 	struct VertexProperties {
+		/// The state of the robot at this vertex.
 		RobotState state;
+		/// The index of the goal this vertex represents, if it is a goal vertex.
+		/// The index is in two parts: the first part is the fruit index, the second part is the goal sample index.
+		std::optional<std::pair<size_t, size_t> > goal_index;
 	};
 
 	// Define the graph type: an undirected graph with the defined vertex properties
-	using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, VertexProperties>;
+	using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, VertexProperties, boost::property<
+		boost::edge_weight_t, double> >;
 
 	// The number of nearest neighbors to connect to. (This is more like traditional PRM, rather than PRM* which uses a dynamic number of neighbors.)
 	size_t n_neighbours = 5;
@@ -137,12 +143,13 @@ struct TwoTierMultigoalPRM {
 	 * @param	is_goal_sample	Whether this is a goal sample or not (if it is, it will not be added to the infrastructure nodes.)
 	 * @returns The vertex descriptor of the new node.
 	 */
-	Graph::vertex_descriptor add_roadmap_node(const RobotState &state, bool is_goal_sample = false) {
+	Graph::vertex_descriptor add_roadmap_node(const RobotState &state,
+	                                          std::optional<std::pair<size_t, size_t> > goal_index) {
 		// Find the k nearest neighbors. (Brute-force; should migrate to a VP-tree when I can.)
 		auto k_nearest = k_nearest_neighbors(state);
 
 		// Add the new node to the graph.
-		auto new_vertex = boost::add_vertex({state}, graph);
+		auto new_vertex = boost::add_vertex({state, goal_index}, graph);
 
 		// Then add the edges:
 		for (const auto &[distance, neighbor]: k_nearest) {
@@ -151,11 +158,11 @@ struct TwoTierMultigoalPRM {
 				continue;
 			}
 
-			boost::add_edge(new_vertex, neighbor, graph);
+			boost::add_edge(new_vertex, neighbor, distance, graph);
 		}
 
 		// If it's not a goal sample, add it to the infrastructure nodes.
-		if (!is_goal_sample) {
+		if (!goal_index) {
 			infrastructure_nodes.push_back(new_vertex);
 		}
 
@@ -226,10 +233,21 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 
 	// How many times to sample per goal.
 	const size_t max_samples_per_goal = 2;
+	// Store the goal sample vertex nodes, with a separate sub-vector for each goal.
+	// Start with a vector of empty vectors.
+	std::vector<TwoTierMultigoalPRM::Graph::vertex_descriptor> goal_nodes;
+
+	// Create a distance lookup table. It is of size n^2, where n is the number of goal samples.
+	std::vector<std::vector<double> > distance_lookup;
 
 	// Look up the link IDs for the base and end effector.
 	robot_model::RobotModel::LinkId base_link = robot.findLinkByName("flying_base");
 	robot_model::RobotModel::LinkId end_effector_link = robot.findLinkByName("end_effector");
+
+	VtkLineSegmentsVisualization distance_edges_viz(0.5, 0.5, 0.5);
+	viewer.addActor(distance_edges_viz.getActor());
+
+	// Let's build an n^2 lookup table for the distances between the fruit.
 
 	// Finally, register our timer callback.
 	viewer.addTimerCallback([&]() {
@@ -249,7 +267,6 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 
 		// Execute different logic depending on whether the infrastructure nodes are full or not.
 		if (boost::num_vertices(prm.graph) < max_samples) {
-
 			// Generate a random state.
 			auto state = generateUniformRandomState(robot, rng, 5.0, 10.0);
 
@@ -278,7 +295,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			}
 
 			// Otherwise, add it to the roadmap, and try to connect it to the nearest neighbors.
-			auto new_vertex = prm.add_roadmap_node(state, false);
+			auto new_vertex = prm.add_roadmap_node(state, std::nullopt);
 
 			// Iterate over the graph vertex neighbors and add the edges to the visualization.
 			for (const auto &neighbor: boost::make_iterator_range(boost::adjacent_vertices(new_vertex, prm.graph))) {
@@ -315,7 +332,8 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 					                                                  {0.0, 0.0, 1.0});
 
 					// Add the goal to the roadmap.
-					auto new_vertex = prm.add_roadmap_node(goal_state, true);
+					auto new_vertex = prm.add_roadmap_node(goal_state, {{goal_being_sampled, samples_found - 1}});
+					goal_nodes.push_back(new_vertex);
 
 					// Add the links:
 					for (const auto &neighbor: boost::make_iterator_range(
@@ -335,6 +353,37 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			}
 
 			goal_being_sampled += 1;
+		} else if (distance_lookup.size() < goal_nodes.size()) {
+			// Look up the Boost graph node for the origin fruit, for the origin sample.
+			TwoTierMultigoalPRM::Graph::vertex_descriptor origin_node = goal_nodes[distance_lookup.size()];
+			std::cout << "Looking up distances for goal " << distance_lookup.size() << " with node " << origin_node <<
+					std::endl;
+			std::vector<TwoTierMultigoalPRM::Graph::vertex_descriptor> predecessors(boost::num_vertices(prm.graph));
+			std::vector<double> distances(boost::num_vertices(prm.graph));
+
+			// Run Dijkstra.
+			boost::dijkstra_shortest_paths(prm.graph,
+			                               origin_node,
+			                               boost::predecessor_map(boost::make_iterator_property_map(
+				                               predecessors.begin(),
+				                               boost::get(boost::vertex_index, prm.graph)))
+			                               .distance_map(boost::make_iterator_property_map(distances.begin(),
+				                               boost::get(boost::vertex_index, prm.graph))));
+
+			// Then, filter out all the non-goal nodes. Should be as simple as snipping off the start of the vector, of length equal to the number of infrastructure nodes.
+			distance_lookup.emplace_back(distances.begin() + prm.infrastructure_nodes.size(), distances.end());
+
+			std::vector<std::pair<math::Vec3d, math::Vec3d> > distance_edges;
+			distance_edges.reserve(predecessors.size());
+			// We visualize using the predecessor map.
+			for (size_t i = 0; i < predecessors.size(); ++i) {
+				if (predecessors[i] != i) {
+					auto origin = prm.graph[predecessors[i]].state.base_tf.translation;
+					auto dest = prm.graph[i].state.base_tf.translation;
+					distance_edges.emplace_back(origin, dest);
+				}
+			}
+			distance_edges_viz.updateLine(distance_edges);
 		} else {
 			viewer.stop();
 		}
