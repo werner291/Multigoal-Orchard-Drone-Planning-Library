@@ -3,7 +3,6 @@
 #define NEW_PLANNERS_TRAVELING_SALESMAN_H
 
 #include <functional>
-#include <ompl/base/PlannerTerminationCondition.h>
 
 /**
  * Determine an approximately optimal ordering of a given set of items/indices.
@@ -15,16 +14,14 @@
  * @param from_start	A function that gives a distance between a given item index and some assumed start item.
  * @param between		A function that gives a distance between two given item indices.
  * @param n				The number of items in the set (all indices will be in the range 0..n-1).
- * @param ptc			A termination condition to terminate the operation. This is a timeout only; no result is returned if the timeout is exceeded.
  * @return				The tour, represented as a vector of indices.
  *
  * @throws PlanningTimeout if the timeout is exceeded.
  */
 std::vector<size_t> tsp_open_end(
-		const std::function<double(size_t)> &from_start,
-		const std::function<double(size_t,size_t)> & between,
-		size_t n,
-		const ompl::base::PlannerTerminationCondition &ptc = ompl::base::plannerNonTerminatingCondition());
+	const std::function<double(size_t)> &from_start,
+	const std::function<double(size_t, size_t)> &between,
+	size_t n);
 
 /**
  * Determine an approximately optimal ordering of a given set of items/indices, where items may be grouped together.
@@ -34,15 +31,13 @@ std::vector<size_t> tsp_open_end(
  * @param from_start 	A function that gives a distance between a given item and an implicit start item.
  * @param between 		A function that gives a distance between two given items.
  * @param sizes 		A vector of the number of items in each group.
- * @param ptc 			A termination condition to terminate the operation. This is a timeout only; no result is returned if the timeout is exceeded.
  * @return 				The tour, represented as a vector of pairs of indices.
  *
  * @throws PlanningTimeout if the timeout is exceeded.
  */
-std::vector<std::pair<size_t, size_t>>
+std::vector<std::pair<size_t, size_t> >
 tsp_open_end_grouped(const std::function<double(std::pair<size_t, size_t>)> &from_start,
-					 const std::function<double(std::pair<size_t, size_t>, std::pair<size_t, size_t>)> &between,
-					 const std::vector<size_t> &sizes,
-					 ompl::base::PlannerTerminationCondition &ptc);
+                     const std::function<double(std::pair<size_t, size_t>, std::pair<size_t, size_t>)> &between,
+                     const std::vector<size_t> &sizes);
 
 #endif //NEW_PLANNERS_TRAVELING_SALESMAN_H
