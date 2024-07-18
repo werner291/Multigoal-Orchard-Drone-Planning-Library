@@ -105,6 +105,7 @@ link_libraries(
         ${ORTOOLS_LIBRARIES}
         flann
         lz4 # For flann
+        ortools
 )
 
 ###########
