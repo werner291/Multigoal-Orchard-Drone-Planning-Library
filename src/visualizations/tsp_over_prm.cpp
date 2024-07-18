@@ -15,7 +15,9 @@
 #include "../planning/state_tools.h"
 #include "../planning/vptree.hpp"
 #include "../planning/fcl_utils.h"
+#include "../planning/traveling_salesman.h"
 #include "../visualization/VtkLineSegmentVizualization.h"
+#include "../visualization/ladder_trace.h"
 #include "../experiment_utils/declarative/fruit_models.h"
 #include <fcl/narrowphase/collision.h>
 #include <boost/graph/adjacency_list.hpp>
@@ -171,6 +173,123 @@ struct TwoTierMultigoalPRM {
 	}
 };
 
+/**
+ * This struct provides a table of indices for goal samples, grouped by fruit.
+ * It also tracks the total number of samples.
+ *
+ * Specifically, it allows to look up two things:
+ * - Given a fruit index, the indices of the goal samples for that fruit.
+ * - Given a fruit index and a goal sample index, the goal sample index in the global list of goal samples.
+ *
+ * Note: these are NOT graph vertex IDs.
+ */
+class GroupIndexTable {
+	size_t total_samples;
+	std::vector<std::vector<size_t> > index_table;
+
+public:
+	/**
+	 * 
+	 * @param counts
+	 */
+	explicit GroupIndexTable(const std::vector<size_t> &counts) : index_table(counts.size()) {
+		size_t global_index = 0;
+
+		for (size_t i = 0; i < counts.size(); ++i) {
+			index_table[i].reserve(counts[i]);
+			for (size_t j = 0; j < counts[i]; ++j) {
+				index_table[i].push_back(global_index++);
+			}
+		}
+
+		total_samples = global_index;
+	}
+
+	/**
+	 * @brief Look up the indices of the goal samples for a given fruit.
+	 * @param fruit_index	The index of the fruit.
+	 * @return			A vector of the indices of the goal samples for that fruit.
+	 */
+	[[nodiscard]] const std::vector<size_t> &for_fruit(size_t fruit_index) const {
+		return index_table[fruit_index];
+	}
+
+	/**
+	 * @brief Look up the global index of a goal sample.
+	 * @param fruit_index	The index of the fruit.
+	 * @param sample_index	The index of the goal sample within the fruit.
+	 * @return		The global index of the goal sample.
+	 */
+	[[nodiscard]] const size_t &lookup(size_t fruit_index, size_t sample_index) const {
+		return index_table[fruit_index][sample_index];
+	}
+
+	/**
+	 * @brief Get the total number of goal samples.
+	 */
+	[[nodiscard]] inline size_t total() const {
+		return total_samples;
+	}
+};
+
+/**
+ * @brief Run Dijkstra's algorithm on a graph, starting from a given node.
+ *
+ * This function abstracts over Boost, running Dijkstra on a (PRM) graph, returning the distance map and the predecessor map from the given start node.
+ *
+ * The distance map contains the distance to each node from the start node.
+ * The predecessor map contains, for every node, the predecessor node on the shortest path from the start node.
+ *
+ * @param graph			The graph to run Dijkstra on.
+ * @param start_node	The node to start from.
+ * @return				A pair of vectors: the first vector contains the distances to each node, the second vector contains the predecessor node for each node.
+ */
+std::pair<std::vector<double>, std::vector<TwoTierMultigoalPRM::Graph::vertex_descriptor> >
+runDijkstra(const TwoTierMultigoalPRM::Graph &graph,
+            TwoTierMultigoalPRM::Graph::vertex_descriptor start_node) {
+	std::vector<TwoTierMultigoalPRM::Graph::vertex_descriptor> predecessors(num_vertices(graph));
+	std::vector<double> distances(num_vertices(graph));
+
+	dijkstra_shortest_paths(graph,
+	                        start_node,
+	                        boost::predecessor_map(
+		                        boost::make_iterator_property_map(predecessors.begin(),
+		                                                          get(boost::vertex_index, graph)))
+	                        .distance_map(
+		                        boost::make_iterator_property_map(distances.begin(), get(boost::vertex_index, graph))));
+
+	return {distances, predecessors};
+}
+
+/**
+ * @brief Retrace a path through the predecessor map.
+ *
+ * This function takes a predecessor map and a goal node, and reconstructs the path from the start node to the goal node.
+ *
+ * @param	graph				The graph the path is in.
+ * @param	predecessor_lookup	The predecessor lookup table. (The start node is implied by the structure of the table.)
+ * @param   goal_node			The goal node to retrace from.
+ *
+ * @return	The path from the start node to the goal node. The start node is whichever node in the path has itself as a predecessor.
+ */
+[[nodiscard]] RobotPath retrace_path(const TwoTierMultigoalPRM::Graph &graph,
+                                     const std::vector<TwoTierMultigoalPRM::Graph::vertex_descriptor> &
+                                     predecessor_lookup,
+                                     TwoTierMultigoalPRM::Graph::vertex_descriptor goal_node) {
+	RobotPath path;
+
+	auto current_node = goal_node;
+
+	while (predecessor_lookup[current_node] != current_node) {
+		path.states.push_back(graph[current_node].state);
+		current_node = predecessor_lookup[current_node];
+	}
+
+	// Reverse the path.
+	std::reverse(path.states.begin(), path.states.end());
+
+	return path;
+}
 
 REGISTER_VISUALIZATION(tsp_over_prm) {
 	// Look up the tree model; force the camera to stay upright.
@@ -232,13 +351,23 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	size_t goal_being_sampled = 0;
 
 	// How many times to sample per goal.
-	const size_t max_samples_per_goal = 2;
+	const size_t max_samples_per_goal = 1;
 	// Store the goal sample vertex nodes, with a separate sub-vector for each goal.
 	// Start with a vector of empty vectors.
 	std::vector<TwoTierMultigoalPRM::Graph::vertex_descriptor> goal_nodes;
 
-	// Create a distance lookup table. It is of size n^2, where n is the number of goal samples.
+	// A group index table, to look up the goal samples by fruit. (Optional because it's not initialized until all goals states are sampled.)
+	std::optional<GroupIndexTable> group_index_table;
+
+	// Store a goal-sample-to-goal-sample distance lookup table.
+	// Given two goal samples indices i and j, distance_lookup[i][j] contains
+	// the distance from goal sample i to goal sample j through the PRM.
+	//
+	// Note: these are global goal sample indices, not graph vertex IDs. (See group_index_table)
 	std::vector<std::vector<double> > distance_lookup;
+
+	// And a predecessor lookup table to reconstruct the paths.
+	std::vector<std::vector<TwoTierMultigoalPRM::Graph::vertex_descriptor> > predecessor_lookup;
 
 	// Look up the link IDs for the base and end effector.
 	robot_model::RobotModel::LinkId base_link = robot.findLinkByName("flying_base");
@@ -247,147 +376,201 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	VtkLineSegmentsVisualization distance_edges_viz(0.5, 0.5, 0.5);
 	viewer.addActor(distance_edges_viz.getActor());
 
-	// Let's build an n^2 lookup table for the distances between the fruit.
+	std::vector<size_t> group_sizes(fruit_positions.size(), 0);
+
+	std::optional<RobotPath> unoptimized_path;
+
+	/// The goal sample index that's being distanced and predecessor-looked-up.
+	size_t next_goal_sample_index = 0;
 
 	// Finally, register our timer callback.
 	viewer.addTimerCallback([&]() {
-		// Some slow-down logic for visualization.
-		if (frames_until_sample > 0) {
-			--frames_until_sample;
-			return;
-		}
-		frames_until_sample = 1;
-
-		// Remove the last sample visualization, if it exists.
-		if (sample_viz) {
-			for (const auto &vtk_actor: sample_viz->actors) {
-				viewer.viewerRenderer->RemoveActor(vtk_actor);
-			}
-		}
-
-		// Execute different logic depending on whether the infrastructure nodes are full or not.
-		if (boost::num_vertices(prm.graph) < max_samples) {
-			// Generate a random state.
-			auto state = generateUniformRandomState(robot, rng, 5.0, 10.0);
-
-			// Check if the robot collides with the tree.
-			bool collides = check_robot_collision(robot, tree_collision, state);
-
-			// Pick a color based on whether it collides.
-			math::Vec3d color = collides
-				                    ? math::Vec3d{1.0, 0.0, 0.0}
-				                    : // Red if it collides.
-				                    math::Vec3d{0.0, 1.0, 0.0}; // Green if it doesn't.
-
-			// Visualize the robot state.
-			sample_viz = vizualisation::vizualize_robot_state(viewer,
-			                                                  robot,
-			                                                  robot_model::forwardKinematics(
-				                                                  robot,
-				                                                  state.joint_values,
-				                                                  0,
-				                                                  state.base_tf),
-			                                                  color);
-
-			// If this sample collides, don't add it to the roadmap.
-			if (collides) {
+			// Some slow-down logic for visualization.
+			if (frames_until_sample > 0) {
+				--frames_until_sample;
 				return;
 			}
+			frames_until_sample = 1;
 
-			// Otherwise, add it to the roadmap, and try to connect it to the nearest neighbors.
-			auto new_vertex = prm.add_roadmap_node(state, std::nullopt);
-
-			// Iterate over the graph vertex neighbors and add the edges to the visualization.
-			for (const auto &neighbor: boost::make_iterator_range(boost::adjacent_vertices(new_vertex, prm.graph))) {
-				edges.emplace_back(
-					prm.graph[new_vertex].state.base_tf.translation,
-					prm.graph[neighbor].state.base_tf.translation
-				);
+			// Remove the last sample visualization, if it exists.
+			if (sample_viz) {
+				for (const auto &vtk_actor: sample_viz->actors) {
+					viewer.viewerRenderer->RemoveActor(vtk_actor);
+				}
 			}
 
-			prm_edges.updateLine(edges);
-		} else if (goal_being_sampled < fruit_positions.size()) {
-			size_t samples_found = 0;
+			// Execute different logic depending on whether the infrastructure nodes are full or not.
+			if (boost::num_vertices(prm.graph) < max_samples) {
+				// Generate a random state.
+				auto state = generateUniformRandomState(robot, rng, 5.0, 10.0);
 
-			for (int attempt = 0; attempt < 100; ++attempt) {
-				auto goal_state = genGoalStateUniform(
-					rng,
-					fruit_positions[goal_being_sampled],
-					robot,
-					base_link,
-					end_effector_link
-				);
+				// Check if the robot collides with the tree.
+				bool collides = check_robot_collision(robot, tree_collision, state);
 
-				// Check collisions:
-				if (!check_robot_collision(robot, tree_collision, goal_state)) {
-					samples_found += 1;
+				// Pick a color based on whether it collides.
+				math::Vec3d color = collides
+					                    ? math::Vec3d{1.0, 0.0, 0.0}
+					                    : // Red if it collides.
+					                    math::Vec3d{0.0, 1.0, 0.0}; // Green if it doesn't.
 
-					sample_viz = vizualisation::vizualize_robot_state(viewer,
+				// Visualize the robot state.
+				sample_viz = vizualisation::vizualize_robot_state(viewer,
+				                                                  robot,
+				                                                  robot_model::forwardKinematics(
 					                                                  robot,
-					                                                  robot_model::forwardKinematics(
+					                                                  state.joint_values,
+					                                                  0,
+					                                                  state.base_tf),
+				                                                  color);
+
+				// If this sample collides, don't add it to the roadmap.
+				if (collides) {
+					return;
+				}
+
+				// Otherwise, add it to the roadmap, and try to connect it to the nearest neighbors.
+				auto new_vertex = prm.add_roadmap_node(state, std::nullopt);
+
+				// Iterate over the graph vertex neighbors and add the edges to the visualization.
+				for (const auto &neighbor:
+				     boost::make_iterator_range(boost::adjacent_vertices(new_vertex, prm.graph))) {
+					edges.emplace_back(
+						prm.graph[new_vertex].state.base_tf.translation,
+						prm.graph[neighbor].state.base_tf.translation
+					);
+				}
+
+				prm_edges.updateLine(edges);
+			} else if (goal_being_sampled < fruit_positions.size()) {
+				for (int attempt = 0; attempt < 100; ++attempt) {
+					auto goal_state = genGoalStateUniform(
+						rng,
+						fruit_positions[goal_being_sampled],
+						robot,
+						base_link,
+						end_effector_link
+					);
+
+					// Check collisions:
+					if (!check_robot_collision(robot, tree_collision, goal_state)) {
+						group_sizes[goal_being_sampled] += 1;
+
+						sample_viz = vizualisation::vizualize_robot_state(viewer,
 						                                                  robot,
-						                                                  goal_state.joint_values,
-						                                                  0,
-						                                                  goal_state.base_tf),
-					                                                  {0.0, 0.0, 1.0});
+						                                                  robot_model::forwardKinematics(
+							                                                  robot,
+							                                                  goal_state.joint_values,
+							                                                  0,
+							                                                  goal_state.base_tf),
+						                                                  {0.0, 0.0, 1.0});
 
-					// Add the goal to the roadmap.
-					auto new_vertex = prm.add_roadmap_node(goal_state, {{goal_being_sampled, samples_found - 1}});
-					goal_nodes.push_back(new_vertex);
+						// Add the goal to the roadmap.
+						auto new_vertex = prm.add_roadmap_node(goal_state,
+						                                       {
+							                                       {
+								                                       goal_being_sampled,
+								                                       group_sizes[goal_being_sampled] - 1
+							                                       }
+						                                       });
+						goal_nodes.push_back(new_vertex);
 
-					// Add the links:
-					for (const auto &neighbor: boost::make_iterator_range(
-						     boost::adjacent_vertices(new_vertex, prm.graph))) {
-						goal_edges.emplace_back(
-							prm.graph[new_vertex].state.base_tf.translation,
-							prm.graph[neighbor].state.base_tf.translation
-						);
-					}
+						// Add the links:
+						for (const auto &neighbor: boost::make_iterator_range(
+							     boost::adjacent_vertices(new_vertex, prm.graph))) {
+							goal_edges.emplace_back(
+								prm.graph[new_vertex].state.base_tf.translation,
+								prm.graph[neighbor].state.base_tf.translation
+							);
+						}
 
-					prm_goal_edges.updateLine(goal_edges);
+						prm_goal_edges.updateLine(goal_edges);
 
-					if (samples_found >= max_samples_per_goal) {
-						break;
+						if (group_sizes[goal_being_sampled] >= max_samples_per_goal) {
+							break;
+						}
 					}
 				}
-			}
 
-			goal_being_sampled += 1;
-		} else if (distance_lookup.size() < goal_nodes.size()) {
-			// Look up the Boost graph node for the origin fruit, for the origin sample.
-			TwoTierMultigoalPRM::Graph::vertex_descriptor origin_node = goal_nodes[distance_lookup.size()];
-			std::cout << "Looking up distances for goal " << distance_lookup.size() << " with node " << origin_node <<
-					std::endl;
-			std::vector<TwoTierMultigoalPRM::Graph::vertex_descriptor> predecessors(boost::num_vertices(prm.graph));
-			std::vector<double> distances(boost::num_vertices(prm.graph));
+				goal_being_sampled += 1;
 
-			// Run Dijkstra.
-			boost::dijkstra_shortest_paths(prm.graph,
-			                               origin_node,
-			                               boost::predecessor_map(boost::make_iterator_property_map(
-				                               predecessors.begin(),
-				                               boost::get(boost::vertex_index, prm.graph)))
-			                               .distance_map(boost::make_iterator_property_map(distances.begin(),
-				                               boost::get(boost::vertex_index, prm.graph))));
-
-			// Then, filter out all the non-goal nodes. Should be as simple as snipping off the start of the vector, of length equal to the number of infrastructure nodes.
-			distance_lookup.emplace_back(distances.begin() + prm.infrastructure_nodes.size(), distances.end());
-
-			std::vector<std::pair<math::Vec3d, math::Vec3d> > distance_edges;
-			distance_edges.reserve(predecessors.size());
-			// We visualize using the predecessor map.
-			for (size_t i = 0; i < predecessors.size(); ++i) {
-				if (predecessors[i] != i) {
-					auto origin = prm.graph[predecessors[i]].state.base_tf.translation;
-					auto dest = prm.graph[i].state.base_tf.translation;
-					distance_edges.emplace_back(origin, dest);
+				if (goal_being_sampled == fruit_positions.size()) {
+					group_index_table = GroupIndexTable(group_sizes);
 				}
+			} else if (next_goal_sample_index < group_index_table->total()) {
+				// Run Dijkstra's algorithm on the graph, starting from the next goal sample.
+				const auto &[distances, predecessors] = runDijkstra(prm.graph, goal_nodes[next_goal_sample_index]);
+
+				// Then, filter out all the non-goal nodes.
+				distance_lookup.emplace_back(goal_nodes.size());
+				for (unsigned long goal_node: goal_nodes) {
+					distance_lookup.back().push_back(distances[goal_node]);
+				}
+
+				// Keep the predecessor lookup table. (TODO: this might be quite memory-hungry; we'll see.)
+				predecessor_lookup.push_back(predecessors);
+
+				std::vector<std::pair<math::Vec3d, math::Vec3d> > distance_edges;
+				distance_edges.reserve(predecessors.size());
+				// We visualize using the predecessor map.
+				for (size_t i = 0; i < predecessors.size(); ++i) {
+					if (predecessors[i] != i) {
+						auto origin = prm.graph[predecessors[i]].state.base_tf.translation;
+						auto dest = prm.graph[i].state.base_tf.translation;
+						distance_edges.emplace_back(origin, dest);
+					}
+				}
+				distance_edges_viz.updateLine(distance_edges);
+			} else if (!unoptimized_path) {
+				// Plan a TSP over the PRM.
+				std::vector<std::pair<size_t, size_t> > tour = tsp_open_end_grouped(
+					[&](std::pair<size_t, size_t> a) {
+						return 0.0; // TODO: we need to define a start state and hook it up to the PRM.
+					},
+					[&](std::pair<size_t, size_t> a, std::pair<size_t, size_t> b) {
+						return distance_lookup[group_index_table->lookup(a.first, a.second)][group_index_table->lookup(
+							b.first,
+							b.second)];
+					},
+					group_sizes
+				);
+
+				RobotPath path;
+
+				for (size_t i = 1; i < tour.size(); ++i) {
+					// We're going to retrace the goal-to-goal path through the PRM.
+					// Note the terminology: this path will start and end at "goal" samples, which are goals in the over-arching problem.
+
+					// The sub-path ends at this goal sample.
+					auto end_ad_goal_index = group_index_table->lookup(tour[i].first, tour[i].second);
+
+					TwoTierMultigoalPRM::Graph::vertex_descriptor goal_vertex = goal_nodes[end_ad_goal_index];
+
+					auto start_at_goal_sample = group_index_table->lookup(
+						tour[i - 1].first,
+						tour[i - 1].second);
+
+					const auto &predecessors = predecessor_lookup[start_at_goal_sample];
+
+					// Retrace the goal-to-goal path, and append it to the path.
+					path.append(retrace_path(prm.graph, predecessors, goal_vertex));
+				}
+
+				// (TODO: go back to the start node.)
+
+				// Reverse the path.
+				std::reverse(path.states.begin(), path.states.end());
+
+				visualization::visualize_ladder_trace(robot, path, viewer);
+
+				unoptimized_path = path;
+			} else {
+				//viewer.stop();
 			}
-			distance_edges_viz.updateLine(distance_edges);
-		} else {
-			viewer.stop();
 		}
-	});
 
-	viewer.start();
+	);
+
+	viewer
+			.
+			start();
 }
