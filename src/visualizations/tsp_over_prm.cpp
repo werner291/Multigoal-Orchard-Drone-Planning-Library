@@ -22,6 +22,8 @@
 #include <fcl/narrowphase/collision.h>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <range/v3/view/transform.hpp>
+#include <range/v3/range/conversion.hpp>
 
 #include "../planning/collision_detection.h"
 #include "../planning/goal_sampling.h"
@@ -291,6 +293,81 @@ runDijkstra(const TwoTierMultigoalPRM::Graph &graph,
 	return path;
 }
 
+/**
+ * Convert a TSP solution referring to fruit-and-sample indices to one using only global goal sample indices.
+ *
+ * @param group_index_table	The group index table, to translate the index pairs from the TSP solution to global goal sample
+ * @param tour				The TSP solution.
+ *
+ * @returns			The TSP solution with global goal sample indices.
+ */
+std::vector<size_t> convert_tour_to_global(const GroupIndexTable &group_index_table,
+                                           const std::vector<std::pair<size_t, size_t> > &tour) {
+	return tour | ranges::views::transform([&](const auto &pair) {
+		return group_index_table.lookup(pair.first, pair.second);
+	}) | ranges::to<std::vector>();
+}
+
+/**
+ * @brief Plan a visitation order based on the distance lookup tables. This is an abstraction over tsp_open_end_grouped that avoids lambdas.
+ * @return The visitation order, expressed in terms of global goal sample indices.
+ */
+std::vector<size_t> pick_visitation_order(
+	const std::vector<std::vector<double> > &distance_lookup,
+	const std::vector<double> &start_to_goals_distances,
+	const GroupIndexTable *group_index_table,
+	const std::vector<size_t> &group_sizes
+) {
+	// Plan a TSP over the PRM.
+	auto tour = tsp_open_end_grouped(
+		[&](std::pair<size_t, size_t> a) {
+			return start_to_goals_distances[group_index_table->lookup(a.first, a.second)];
+		},
+		[&](std::pair<size_t, size_t> a, std::pair<size_t, size_t> b) {
+			return distance_lookup[group_index_table->lookup(a.first, a.second)][group_index_table->lookup(
+				b.first,
+				b.second)];
+		},
+		group_sizes
+	);
+
+	return convert_tour_to_global(*group_index_table, tour);
+}
+
+/**
+ * @brief Construct the final path based on the TSP solution and predecessor lookup tables.
+ *
+ * @param graph							The graph that the different vertices are in.
+ * @param predecessor_lookup			The predecessor lookup tables; one for each goal sample.
+ * @param start_to_goals_predecessors	The predecessor lookup table for the start-to-goal samples.
+ * @param goal_nodes					The graph vertices corresponding to the goal indices.
+ * @param tour							The TSP solution, expressed in goal sample indices.
+ *
+ * @return The final path through the PRM, from the start and passing by all the goals in the TSP solution.
+ */
+RobotPath construct_final_path(const TwoTierMultigoalPRM::Graph &graph,
+                               const std::vector<std::vector<TwoTierMultigoalPRM::Graph::vertex_descriptor> > &
+                               predecessor_lookup,
+                               const std::vector<TwoTierMultigoalPRM::Graph::vertex_descriptor> &
+                               start_to_goals_predecessors,
+                               const std::vector<TwoTierMultigoalPRM::Graph::vertex_descriptor> &goal_nodes,
+                               const std::vector<size_t> &tour) {
+	// Allocate a path object.
+	RobotPath path;
+
+	// Start at the start node.
+	path.append(retrace_path(graph,
+	                         start_to_goals_predecessors,
+	                         goal_nodes[tour[0]]));
+
+	for (size_t i = 1; i < tour.size(); ++i) {
+		// Retrace the goal-to-goal path, and append it to the path.
+		path.append(retrace_path(graph, predecessor_lookup[tour[i - 1]], goal_nodes[tour[i]]));
+	}
+
+	return path;
+}
+
 REGISTER_VISUALIZATION(tsp_over_prm) {
 	// Look up the tree model; force the camera to stay upright.
 	viewer.lockCameraUp();
@@ -319,6 +396,11 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	// Create a procedural robot model.
 	auto robot = experiments::createProceduralRobotModel();
 
+	// Define a start state somewhere outside the tree...
+	RobotState start_state;
+	start_state.joint_values = std::vector(robot.count_joint_variables(), 0.0);
+	start_state.base_tf = math::Transformd::fromTranslation({-10, -10, 0});
+
 	// Max 100 samples (bit small, but avoids visual clutter).
 	const size_t max_samples = 100;
 
@@ -344,6 +426,9 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 		                        return check_motion_collides(robot, tree_collision, a, b);
 	                        });
 
+	// Add the start state to the roadmap.
+	prm.add_roadmap_node(start_state, std::nullopt);
+
 	// The actors for the last-vizualized robot configuration sample, so we can remove them later.
 	std::optional<vizualisation::RobotActors> sample_viz;
 
@@ -365,9 +450,11 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	//
 	// Note: these are global goal sample indices, not graph vertex IDs. (See group_index_table)
 	std::vector<std::vector<double> > distance_lookup;
+	std::vector<double> start_to_goals_distances;
 
 	// And a predecessor lookup table to reconstruct the paths.
 	std::vector<std::vector<TwoTierMultigoalPRM::Graph::vertex_descriptor> > predecessor_lookup;
+	std::vector<TwoTierMultigoalPRM::Graph::vertex_descriptor> start_to_goals_predecessors;
 
 	// Look up the link IDs for the base and end effector.
 	robot_model::RobotModel::LinkId base_link = robot.findLinkByName("flying_base");
@@ -522,46 +609,22 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 				distance_edges_viz.updateLine(distance_edges);
 			} else if (!unoptimized_path) {
 				// Plan a TSP over the PRM.
-				std::vector<std::pair<size_t, size_t> > tour = tsp_open_end_grouped(
-					[&](std::pair<size_t, size_t> a) {
-						return 0.0; // TODO: we need to define a start state and hook it up to the PRM.
-					},
-					[&](std::pair<size_t, size_t> a, std::pair<size_t, size_t> b) {
-						return distance_lookup[group_index_table->lookup(a.first, a.second)][group_index_table->lookup(
-							b.first,
-							b.second)];
-					},
-					group_sizes
-				);
+				auto tour = pick_visitation_order(distance_lookup,
+				                                  start_to_goals_distances,
+				                                  &*group_index_table,
+				                                  group_sizes);
 
-				RobotPath path;
+				// Construct the final path based on the TSP solution and predecessor lookup tables.
+				RobotPath path = construct_final_path(prm.graph,
+				                                      predecessor_lookup,
+				                                      start_to_goals_predecessors,
+				                                      goal_nodes,
+				                                      tour);
 
-				for (size_t i = 1; i < tour.size(); ++i) {
-					// We're going to retrace the goal-to-goal path through the PRM.
-					// Note the terminology: this path will start and end at "goal" samples, which are goals in the over-arching problem.
-
-					// The sub-path ends at this goal sample.
-					auto end_ad_goal_index = group_index_table->lookup(tour[i].first, tour[i].second);
-
-					TwoTierMultigoalPRM::Graph::vertex_descriptor goal_vertex = goal_nodes[end_ad_goal_index];
-
-					auto start_at_goal_sample = group_index_table->lookup(
-						tour[i - 1].first,
-						tour[i - 1].second);
-
-					const auto &predecessors = predecessor_lookup[start_at_goal_sample];
-
-					// Retrace the goal-to-goal path, and append it to the path.
-					path.append(retrace_path(prm.graph, predecessors, goal_vertex));
-				}
-
-				// (TODO: go back to the start node.)
-
-				// Reverse the path.
-				std::reverse(path.states.begin(), path.states.end());
-
+				// Visualize the path.
 				visualization::visualize_ladder_trace(robot, path, viewer);
 
+				// Register that we solved the problem.
 				unoptimized_path = path;
 			} else {
 				//viewer.stop();
@@ -570,7 +633,5 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 
 	);
 
-	viewer
-			.
-			start();
+	viewer.start();
 }
