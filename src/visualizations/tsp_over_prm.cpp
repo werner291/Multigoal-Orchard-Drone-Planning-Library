@@ -17,6 +17,7 @@
 #include "../planning/vptree.hpp"
 #include "../planning/fcl_utils.h"
 #include "../planning/traveling_salesman.h"
+#include "../planning/tsp_over_prm.h"
 #include "../visualization/VtkLineSegmentVizualization.h"
 #include "../visualization/ladder_trace.h"
 #include "../visualization/Throttle.h"
@@ -32,53 +33,6 @@
 #include "../visualization/declarative.h"
 
 using namespace mgodpl;
-
-/**
-	 * @brief The properties of a vertex in the PRM as stored by Boost Graph Library.
-	 */
-struct VertexProperties {
-	/// The state of the robot at this vertex.
-	RobotState state;
-	/// The index of the goal this vertex represents, if it is a goal vertex.
-	/// The index is in two parts: the first part is the fruit index, the second part is the goal sample index.
-	std::optional<std::pair<size_t, size_t> > goal_index;
-};
-
-// Define the graph type: an undirected graph with the defined vertex properties
-using PRMGraph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, VertexProperties, boost::property<
-	boost::edge_weight_t, double> >;
-
-/**
- * A variant of Probabilitsic Roadmap (PRM), designed to create a base "infrastructure" roadmap, and then connect up an arbitrary number of goals to this roadmap.
- *
- * It works as follows:
- *
- * First, it iteratively:
- * - Samples a random state.
- * - Checks if it collides with the environment.
- * - If it collides, the state is discarded.
- * - Otherwise:
- *	 - The state is added to the roadmap as an "infrastructure" node.
- *	 - The k nearest neighbors are looked up.
- *	 - For each neighbor, if a collision-free motion exists between the new state and the neighbor, an edge is added.
- *
- * The above process is repeated until the maximum number of samples is reached.
- *
- * Then, for each goal:
- *	- A random goal state is sampled.
- *	- If it collides with the environment, it is discarded.
- *	- Otherwise:
- *	  - The state is added to the roadmap as a "goal" node.
- *	  - The k nearest neighbors are looked up; only infrastructure nodes are considered.
- *	  - For each neighbor, if a collision-free motion exists between the new state and the neighbor, an edge is added.
- */
-struct TwoTierMultigoalPRM {
-	// The Boost Graph representing the roadmap.
-	PRMGraph graph;
-
-	// A vector of all the infrastructure nodes. (TODO: make this a spatial index instead.)
-	std::vector<PRMGraph::vertex_descriptor> infrastructure_nodes;
-};
 
 /**
  * This function looks up the k nearest neighbors to a given state. These are infrastructure nodes only.

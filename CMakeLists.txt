@@ -225,6 +225,8 @@ add_library(planning
         src/planning/vptree.hpp
         src/planning/traveling_salesman.h
         src/planning/traveling_salesman.cpp
+        src/planning/tsp_over_prm.cpp
+        src/planning/tsp_over_prm.h
 )
 
 target_link_libraries(planning math_utils)
