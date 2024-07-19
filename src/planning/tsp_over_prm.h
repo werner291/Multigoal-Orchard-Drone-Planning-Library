@@ -52,6 +52,7 @@ namespace mgodpl {
 	/**
 	 * This function looks up the k nearest neighbors to a given state. These are infrastructure nodes only.
 	 *
+	 * @param prm		The PRM to look up the neighbors in.
 	 * @param state		The state to find the neighbors for; it need not yet be in the graph.
 	 * @param k			The number of neighbors to find.
 	 * @return			A vector of the k nearest neighbors, paired with their distances. (This may be less than k if there are fewer nodes in the graph.)
