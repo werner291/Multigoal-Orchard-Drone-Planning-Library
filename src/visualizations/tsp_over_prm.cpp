@@ -530,6 +530,22 @@ std::vector<PRMGraph::vertex_descriptor> sample_and_connect_goal_states(
 	return valid_samples;
 }
 
+
+/**
+ * @brief Filters the distances towards goal nodes from the distances vector.
+ *
+ * @param goal_nodes	A vector of vertex descriptors representing the goal nodes in the PRM graph.
+ * @param distances		A vector containing the distances between nodes in the PRM graph, indexed by the vertex descriptors.
+ *
+ * @return A vector of distances that correspond to the goal nodes.
+ */
+std::vector<double> create_goal_distances_vector(const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
+                                                 const std::vector<double> &distances) {
+	return goal_nodes
+	       | ranges::views::transform([&](auto goal_node) { return distances[goal_node]; })
+	       | ranges::to<std::vector<double> >();
+}
+
 /**
  * @brief Plan a path around a fruit tree using the TSP-over-PRM method.
  *
@@ -782,11 +798,15 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 				// Run Dijkstra's algorithm on the graph, starting from the next goal sample.
 				const auto &[distances, predecessors] = runDijkstra(prm.graph, goal_nodes[next_goal_sample_index]);
 
-				// Then, filter out all the non-goal nodes.
-				distance_lookup.emplace_back(goal_nodes.size());
-				for (unsigned long goal_node: goal_nodes) {
-					distance_lookup.back().push_back(distances[goal_node]);
-				}
+				// Create a vector of distances for the current goal sample to all other goal samples.
+				std::vector<double> goal_distances = goal_nodes
+				                                     | ranges::views::transform([&](auto goal_node) {
+					                                     return distances[goal_node];
+				                                     })
+				                                     | ranges::to<std::vector<double> >();
+
+				// Push the created vector to the end of distance_lookup.
+				distance_lookup.push_back(std::move(goal_distances));
 
 				// Keep the predecessor lookup table. (TODO: this might be quite memory-hungry; we'll see.)
 				predecessor_lookup.push_back(predecessors);
