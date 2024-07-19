@@ -49,7 +49,6 @@ namespace mgodpl {
 		std::vector<PRMGraph::vertex_descriptor> infrastructure_nodes;
 	};
 
-
 	/**
 	 * This function looks up the k nearest neighbors to a given state. These are infrastructure nodes only.
 	 *
@@ -60,15 +59,18 @@ namespace mgodpl {
 	std::vector<std::pair<double, PRMGraph::vertex_descriptor> > k_nearest_neighbors(
 		const TwoTierMultigoalPRM &prm,
 		const RobotState &state,
-		size_t k);
+		size_t k
+	);
 
+	/**
+	 * A set of hooks for adding a roadmap node.
+	 */
 	struct AddRoadmapNodeHooks {
 		/// A function called when an edge is considered, with the source and target states, and a boolean decision (true if added, false if not).
 		std::function<void(
 			std::pair<const RobotState &, const PRMGraph::vertex_descriptor &>,
 			std::pair<const RobotState &, const PRMGraph::vertex_descriptor &>,
-			bool)>
-		on_edge_considered;
+			bool)> on_edge_considered;
 	};
 
 	/**
@@ -83,15 +85,13 @@ namespace mgodpl {
 	 *
 	 * @returns The vertex descriptor of the new node.
 	 */
-	PRMGraph::vertex_descriptor add_and_connect_roadmap_node(const RobotState &state,
-	                                                         TwoTierMultigoalPRM &prm,
-	                                                         size_t k_neighbors,
-	                                                         std::optional<std::pair<size_t, size_t> > goal_index,
-	                                                         const std::function<bool(const RobotState &,
-		                                                         const RobotState &)> &
-	                                                         check_motion_collides,
-	                                                         const std::optional<AddRoadmapNodeHooks> &hooks =
-			                                                         std::nullopt
+	PRMGraph::vertex_descriptor add_and_connect_roadmap_node(
+		const RobotState &state,
+		TwoTierMultigoalPRM &prm,
+		size_t k_neighbors,
+		std::optional<std::pair<size_t, size_t> > goal_index,
+		const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides,
+		const std::optional<AddRoadmapNodeHooks> &hooks = std::nullopt
 	);
 
 	/**
@@ -106,9 +106,10 @@ namespace mgodpl {
 	 * @param start_node	The node to start from.
 	 * @return				A pair of vectors: the first vector contains the distances to each node, the second vector contains the predecessor node for each node.
 	 */
-	std::pair<std::vector<double>, std::vector<PRMGraph::vertex_descriptor> >
-	runDijkstra(const PRMGraph &graph,
-	            PRMGraph::vertex_descriptor start_node);
+	std::pair<std::vector<double>, std::vector<PRMGraph::vertex_descriptor> > runDijkstra(
+		const PRMGraph &graph,
+		PRMGraph::vertex_descriptor start_node
+	);
 
 	/**
 	 * @brief Retrace a path through the predecessor map.
@@ -121,10 +122,12 @@ namespace mgodpl {
 	 *
 	 * @return	The path from the start node to the goal node. The start node is whichever node in the path has itself as a predecessor.
 	 */
-	[[nodiscard]] RobotPath retrace_path(const PRMGraph &graph,
-	                                     const std::vector<PRMGraph::vertex_descriptor> &
-	                                     predecessor_lookup,
-	                                     PRMGraph::vertex_descriptor goal_node);
+	[[nodiscard]] RobotPath retrace_path(
+		const PRMGraph &graph,
+		const std::vector<PRMGraph::vertex_descriptor> &
+		predecessor_lookup,
+		PRMGraph::vertex_descriptor goal_node
+	);
 
 	/**
 	 * Convert a TSP solution referring to fruit-and-sample indices to one using only global goal sample indices.
@@ -159,13 +162,15 @@ namespace mgodpl {
 	 *
 	 * @return The final path through the PRM, from the start and passing by all the goals in the TSP solution.
 	 */
-	RobotPath construct_final_path(const PRMGraph &graph,
-	                               const std::vector<std::vector<PRMGraph::vertex_descriptor> > &
-	                               predecessor_lookup,
-	                               const std::vector<PRMGraph::vertex_descriptor> &
-	                               start_to_goals_predecessors,
-	                               const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
-	                               const std::vector<size_t> &tour);
+	RobotPath construct_final_path(
+		const PRMGraph &graph,
+		const std::vector<std::vector<PRMGraph::vertex_descriptor> > &
+		predecessor_lookup,
+		const std::vector<PRMGraph::vertex_descriptor> &
+		start_to_goals_predecessors,
+		const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
+		const std::vector<size_t> &tour
+	);
 
 	/**
 	 * A set of hooks for sampling and connecting infrastructure nodes.
@@ -242,7 +247,6 @@ namespace mgodpl {
 		const std::optional<GoalSampleHooks> &hooks
 	);
 
-
 	/**
 	 * @brief Filters the distances towards goal nodes from the distances vector.
 	 *
@@ -251,8 +255,10 @@ namespace mgodpl {
 	 *
 	 * @return A vector of distances that correspond to the goal nodes.
 	 */
-	std::vector<double> filter_goal_distances_vector(const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
-	                                                 const std::vector<double> &distances);
+	std::vector<double> filter_goal_distances_vector(
+		const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
+		const std::vector<double> &distances
+	);
 
 	struct TspOverPrmParameters {
 		/// The number of nearest neighbors to connect to.
