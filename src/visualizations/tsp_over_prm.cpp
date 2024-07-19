@@ -539,7 +539,7 @@ std::vector<PRMGraph::vertex_descriptor> sample_and_connect_goal_states(
  *
  * @return A vector of distances that correspond to the goal nodes.
  */
-std::vector<double> create_goal_distances_vector(const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
+std::vector<double> filter_goal_distances_vector(const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
                                                  const std::vector<double> &distances) {
 	return goal_nodes
 	       | ranges::views::transform([&](auto goal_node) { return distances[goal_node]; })
@@ -798,15 +798,8 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 				// Run Dijkstra's algorithm on the graph, starting from the next goal sample.
 				const auto &[distances, predecessors] = runDijkstra(prm.graph, goal_nodes[next_goal_sample_index]);
 
-				// Create a vector of distances for the current goal sample to all other goal samples.
-				std::vector<double> goal_distances = goal_nodes
-				                                     | ranges::views::transform([&](auto goal_node) {
-					                                     return distances[goal_node];
-				                                     })
-				                                     | ranges::to<std::vector<double> >();
-
-				// Push the created vector to the end of distance_lookup.
-				distance_lookup.push_back(std::move(goal_distances));
+				// Filter the distances to the goal nodes.
+				distance_lookup.push_back(filter_goal_distances_vector(goal_nodes, std::move(distances)));
 
 				// Keep the predecessor lookup table. (TODO: this might be quite memory-hungry; we'll see.)
 				predecessor_lookup.push_back(predecessors);
