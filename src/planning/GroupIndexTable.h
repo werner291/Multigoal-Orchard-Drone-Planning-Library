@@ -13,30 +13,30 @@
 
 namespace mgodpl {
 	/**
- * This struct provides a table of indices for goal samples, grouped by fruit.
- * It also tracks the total number of samples.
- *
- * Specifically, it allows to look up two things:
- * - Given a fruit index, the indices of the goal samples for that fruit.
- * - Given a fruit index and a goal sample index, the goal sample index in the global list of goal samples.
- *
- * Note: these are NOT graph vertex IDs.
- */
+	 * This struct provides a table of indices for goal samples, grouped by fruit.
+	 * It also tracks the total number of samples.
+	 *
+	 * Specifically, it allows to look up two things:
+	 * - Given a fruit index, the indices of the goal samples for that fruit.
+	 * - Given a fruit index and a goal sample index, the goal sample index in the global list of goal samples.
+	 *
+	 * Note: these are NOT graph vertex IDs.
+	 */
 	class GroupIndexTable {
 		size_t total_samples;
 		std::vector<std::vector<size_t> > index_table;
 
 	public:
 		/**
-		 *
-		 * @param counts
+		 * @brief Construct a group index table from a vector of counts of goal samples per fruit.
+		 * @param counts	A vector of counts of goal samples per fruit.
 		 */
 		explicit GroupIndexTable(const std::vector<size_t> &counts);
 
 		/**
 		 * @brief Look up the indices of the goal samples for a given fruit.
 		 * @param fruit_index	The index of the fruit.
-		 * @return			A vector of the indices of the goal samples for that fruit.
+		 * @return A vector of the indices of the goal samples for that fruit.
 		 */
 		[[nodiscard]] inline const std::vector<size_t> &for_fruit(size_t fruit_index) const {
 			return index_table[fruit_index];
