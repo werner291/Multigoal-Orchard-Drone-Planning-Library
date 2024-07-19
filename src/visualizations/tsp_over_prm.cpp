@@ -2,6 +2,7 @@
 //
 // All rights reserved.
 
+#include <condition_variable>
 #include <vtkRenderer.h>
 #include <fcl/narrowphase/collision_object.h>
 
@@ -131,7 +132,10 @@ std::vector<std::pair<double, PRMGraph::vertex_descriptor> > k_nearest_neighbors
 
 struct AddRoadmapNodeHooks {
 	/// A function called when an edge is considered, with the source and target states, and a boolean decision (true if added, false if not).
-	std::function<void(const PRMGraph::vertex_descriptor &, const PRMGraph::vertex_descriptor &, bool)>
+	std::function<void(
+		std::pair<const RobotState &, const PRMGraph::vertex_descriptor &>,
+		std::pair<const RobotState &, const PRMGraph::vertex_descriptor &>,
+		bool)>
 	on_edge_considered;
 };
 
@@ -169,7 +173,7 @@ PRMGraph::vertex_descriptor add_and_connect_roadmap_node(const RobotState &state
 		bool collides = check_motion_collides(prm.graph[neighbor].state, state);
 
 		// Call the hooks.
-		if (hooks) hooks->on_edge_considered(neighbor, new_vertex, !collides);
+		if (hooks) hooks->on_edge_considered({state, new_vertex}, {prm.graph[neighbor].state, neighbor}, !collides);
 
 		if (!collides) {
 			// Add an edge to the graph if it doesn't collide.
@@ -379,26 +383,6 @@ RobotPath construct_final_path(const PRMGraph &graph,
 	return path;
 }
 
-struct TspOverPrmParameters {
-	/// The number of nearest neighbors to connect to.
-	size_t n_neighbours = 5;
-	/// The number of samples to take.
-	size_t max_samples = 100;
-	/// The number of samples to take per goal.
-	size_t max_samples_per_goal = 1;
-};
-
-/**
- * A struct with callbacks for observing the progress of the TSP over PRM algorithm.
- *
- * The callbacks in here will be called at various points in the algorithm, allowing the user to visualize the progress.
- *
- * The data relevant to each event is passed as a const reference, allowing it to peek at, but not modify, the internal state.
- */
-struct TspOverPrmObserver {
-	std::function<void(const RobotState &)> on_sample;
-};
-
 /**
  * A set of hooks for sampling and connecting infrastructure nodes.
  */
@@ -494,7 +478,7 @@ std::vector<PRMGraph::vertex_descriptor> sample_and_connect_goal_states(
 	std::function<RobotState()> &sample_goal_state,
 	const std::function<bool(const RobotState &)> &check_state_collides,
 	const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides,
-	const std::optional<InfrastructureSampleHooks> &hooks
+	const std::optional<GoalSampleHooks> &hooks
 ) {
 	// Reserve space for the valid samples.
 	std::vector<PRMGraph::vertex_descriptor> valid_samples;
@@ -546,6 +530,22 @@ std::vector<double> filter_goal_distances_vector(const std::vector<PRMGraph::ver
 	       | ranges::to<std::vector<double> >();
 }
 
+struct TspOverPrmParameters {
+	/// The number of nearest neighbors to connect to.
+	size_t n_neighbours = 5;
+	/// The number of samples to take.
+	size_t max_samples = 100;
+	/// The number of samples to take per goal.
+	GoalSampleParams goal_sample_params;
+};
+
+struct TspOverPrmHooks {
+	/// Hooks for sampling and connecting infrastructure nodes.
+	InfrastructureSampleHooks infrastructure_sample_hooks;
+	/// Hooks for sampling and connecting goal nodes.
+	GoalSampleHooks goal_sample_hooks;
+};
+
 /**
  * @brief Plan a path around a fruit tree using the TSP-over-PRM method.
  *
@@ -563,14 +563,186 @@ std::vector<double> filter_goal_distances_vector(const std::vector<PRMGraph::ver
  * @return RobotPath The planned path, including all the states the robot should go through to visit all fruits.
  */
 RobotPath plan_path_tsp_over_prm(
-	const RobotState &initial_state,
+	const RobotState &start_state,
 	const std::vector<math::Vec3d> &fruit_positions,
-	const robot_model::RobotModel &robot_model,
-	const fcl::CollisionObjectd &tree_trunk_collision_object,
+	const robot_model::RobotModel &robot,
+	const fcl::CollisionObjectd &tree_collision,
 	const TspOverPrmParameters &parameters,
-	const std::optional<TspOverPrmObserver> &observer
+	random_numbers::RandomNumberGenerator &rng,
+	const std::optional<TspOverPrmHooks> &hooks = std::nullopt
 ) {
+	// Allocate an empty prm.
+	TwoTierMultigoalPRM prm;
+
+	// Uniform sampling function:
+	std::function sample_uniform = [&]() {
+		return generateUniformRandomState(robot, rng, 5.0, 10.0);
+	};
+
+	// Collision check function:
+	std::function state_collides = [&](const RobotState &state) {
+		return check_robot_collision(robot, tree_collision, state);
+	};
+
+	// Motion collision check function:
+	std::function motion_collides = [&](const RobotState &a, const RobotState &b) {
+		return check_motion_collides(robot, tree_collision, a, b);
+	};
+
+	// Add the start state to the roadmap.
+	add_and_connect_roadmap_node(start_state, prm, parameters.n_neighbours, std::nullopt, motion_collides);
+
+	// Store the goal sample vertex nodes, with a separate sub-vector for each goal.
+	// Start with a vector of empty vectors.
+	std::vector<PRMGraph::vertex_descriptor> goal_nodes;
+
+	// Look up the link IDs for the base and end effector.
+	robot_model::RobotModel::LinkId base_link = robot.findLinkByName("flying_base");
+	robot_model::RobotModel::LinkId end_effector_link = robot.findLinkByName("end_effector");
+
+	std::vector<size_t> group_sizes(fruit_positions.size(), 0);
+
+	// Sample infrastructure nodes.
+	for (size_t i = 0; i < parameters.max_samples; ++i) {
+		sample_and_connect_infrastucture_node(prm,
+		                                      parameters.n_neighbours,
+		                                      sample_uniform,
+		                                      state_collides,
+		                                      motion_collides,
+		                                      hooks
+			                                      ? std::make_optional(hooks->infrastructure_sample_hooks)
+			                                      : std::nullopt);
+	}
+
+	// Sample goal nodes.
+	for (size_t goal_index = 0; goal_index < fruit_positions.size(); ++goal_index) {
+		std::function goal_sample = [&]() {
+			return genGoalStateUniform(
+				rng,
+				fruit_positions[goal_index],
+				robot,
+				base_link,
+				end_effector_link
+			);
+		};
+
+		auto goal_sample_states = sample_and_connect_goal_states(
+			prm,
+			parameters.goal_sample_params,
+			goal_index,
+			goal_sample,
+			state_collides,
+			motion_collides,
+			hooks ? std::make_optional(hooks->goal_sample_hooks) : std::nullopt);
+
+		// Store the goal nodes.
+		goal_nodes.insert(goal_nodes.end(), goal_sample_states.begin(), goal_sample_states.end());
+
+		// Store the number of goal samples for this fruit.
+		group_sizes[goal_index] = goal_sample_states.size();
+	}
+
+	// Create a group index table.
+	GroupIndexTable group_index_table(group_sizes);
+
+	// Allocate the distance lookup table.
+	// Store a goal-sample-to-goal-sample distance lookup table.
+	// Given two goal samples indices i and j, distance_lookup[i][j] contains
+	// the distance from goal sample i to goal sample j through the PRM.
+	//
+	// Note: these are global goal sample indices, not graph vertex IDs. (See group_index_table)
+	std::vector<std::vector<double> > distance_lookup;
+	std::vector<double> start_to_goals_distances;
+
+	// And a predecessor lookup table to reconstruct the paths.
+	std::vector<std::vector<PRMGraph::vertex_descriptor> > predecessor_lookup;
+	std::vector<PRMGraph::vertex_descriptor> start_to_goals_predecessors;
+
+	distance_lookup.resize(group_index_table.total());
+	predecessor_lookup.resize(group_index_table.total());
+
+	// Calculate the distances between all goal samples.
+	for (size_t i = 0; i < group_index_table.total(); ++i) {
+		// Run Dijkstra's algorithm from the goal node.
+		auto [distances, predecessors] = runDijkstra(prm.graph, goal_nodes[i]);
+
+		// Store the distances and predecessors.
+		distance_lookup[i] = distances;
+		predecessor_lookup[i] = predecessors;
+	}
+
+	// Calculate the distances from the start to all goal samples.
+	{
+		// Run Dijkstra's algorithm from the start node.
+		auto [distances, predecessors] = runDijkstra(prm.graph, 0);
+
+		// Store the distances and predecessors.
+		start_to_goals_distances = filter_goal_distances_vector(goal_nodes, distances);
+		start_to_goals_predecessors = predecessors;
+	}
+
+	// Plan a visitation order based on the distance lookup tables.
+	auto visitation_order = pick_visitation_order(
+		distance_lookup,
+		start_to_goals_distances,
+		&group_index_table,
+		group_sizes
+	);
+
+	// Construct the final path based on the TSP solution and predecessor lookup tables.
+	auto final_path = construct_final_path(
+		prm.graph,
+		predecessor_lookup,
+		start_to_goals_predecessors,
+		goal_nodes,
+		visitation_order
+	);
+
+	// Return the final path.
+	return final_path;
 }
+
+/**
+ * This class encapsulates the logic for throttling the algorithm; i.e. only allowing it to advance when it's allowed to.
+ */
+class Throttle {
+	std::condition_variable cv;
+	std::mutex cv_mutex;
+	std::atomic_int64_t steps_allowed = 0; // How many steps the algorithm is allowed to take.
+
+public:
+	/**
+	 * @brief Wait until the algorithm is allowed to advance.
+	 *
+	 * This method waits until the number of steps allowed is greater than zero, decrementing it when it's allowed to advance, then returns.
+	 */
+	void wait_and_advance() {
+		// Lock the mutex.
+		std::unique_lock<std::mutex> lock(cv_mutex);
+
+		// Wait until we're allowed to advance.
+		cv.wait(lock, [&]() { return steps_allowed > 0; });
+
+		// Decrement the steps allowed.
+		--steps_allowed;
+	}
+
+	/**
+	 * @brief Allow the algorithm to advance.
+	 *
+	 * This method increments the number of steps allowed, then notifies the algorithm thread that it's allowed to advance.
+	 */
+	void allow_advance() {
+		// Lock the mutex.
+		std::unique_lock<std::mutex> lock(cv_mutex);
+
+		// Increment the steps allowed.
+		++steps_allowed;
+
+		// Notify the algorithm thread that it's allowed to advance.
+		cv.notify_one();
+	}
+};
 
 REGISTER_VISUALIZATION(tsp_over_prm) {
 	using namespace mgodpl;
@@ -582,6 +754,9 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 
 	// Create a random number generator; seeded for reproducibility.
 	random_numbers::RandomNumberGenerator rng(42);
+
+	// We're going to "throttle" the algorithm: it's going to run in a separate thread, but only advance when it's allowed to.
+	Throttle throttle;
 
 	// Create a tree model.
 	experiments::TreeModelCache cache;
@@ -629,51 +804,8 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	// Create a collision object BVH for the tree trunk.
 	fcl::CollisionObjectd tree_collision(fcl_utils::meshToFclBVH(tree.tree_model->meshes.trunk_mesh));
 
-	// Allocate an empty prm.
-	TwoTierMultigoalPRM prm;
-
-	// Uniform sampling function:
-	std::function sample_uniform = [&]() {
-		return generateUniformRandomState(robot, rng, 5.0, 10.0);
-	};
-
-	// Collision check function:
-	std::function state_collides = [&](const RobotState &state) {
-		return check_robot_collision(robot, tree_collision, state);
-	};
-
-	// Motion collision check function:
-	std::function motion_collides = [&](const RobotState &a, const RobotState &b) {
-		return check_motion_collides(robot, tree_collision, a, b);
-	};
-
-	// Add the start state to the roadmap.
-	add_and_connect_roadmap_node(start_state, prm, n_neighbours, std::nullopt, motion_collides);
-
 	// The actors for the last-vizualized robot configuration sample(s), so we can remove them later.
 	std::vector<vizualisation::RobotActors> sample_viz;
-
-	// Index to track which goal to sample next in the visualization.
-	size_t goal_being_sampled = 0;
-
-	// Store the goal sample vertex nodes, with a separate sub-vector for each goal.
-	// Start with a vector of empty vectors.
-	std::vector<PRMGraph::vertex_descriptor> goal_nodes;
-
-	// A group index table, to look up the goal samples by fruit. (Optional because it's not initialized until all goals states are sampled.)
-	std::optional<GroupIndexTable> group_index_table;
-
-	// Store a goal-sample-to-goal-sample distance lookup table.
-	// Given two goal samples indices i and j, distance_lookup[i][j] contains
-	// the distance from goal sample i to goal sample j through the PRM.
-	//
-	// Note: these are global goal sample indices, not graph vertex IDs. (See group_index_table)
-	std::vector<std::vector<double> > distance_lookup;
-	std::vector<double> start_to_goals_distances;
-
-	// And a predecessor lookup table to reconstruct the paths.
-	std::vector<std::vector<PRMGraph::vertex_descriptor> > predecessor_lookup;
-	std::vector<PRMGraph::vertex_descriptor> start_to_goals_predecessors;
 
 	// Look up the link IDs for the base and end effector.
 	robot_model::RobotModel::LinkId base_link = robot.findLinkByName("flying_base");
@@ -681,13 +813,6 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 
 	VtkLineSegmentsVisualization distance_edges_viz(0.5, 0.5, 0.5);
 	viewer.addActor(distance_edges_viz.getActor());
-
-	std::vector<size_t> group_sizes(fruit_positions.size(), 0);
-
-	std::optional<RobotPath> unoptimized_path;
-
-	/// The goal sample index that's being distanced and predecessor-looked-up.
-	size_t next_goal_sample_index = 0;
 
 	std::function viz_sampled_state = [&](const RobotState &state, bool added) {
 		// Pick a color based on whether it collides.
@@ -700,27 +825,72 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 		sample_viz.push_back(vizualisation::vizualize_robot_state(viewer, robot, fk, color));
 	};
 
-	std::function viz_edge = [&](const PRMGraph::vertex_descriptor &source,
-	                             const PRMGraph::vertex_descriptor &target,
-	                             bool added) {
+	std::function viz_edge = [&](
+		std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> source,
+		std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> target,
+		bool added) {
 		if (added) {
 			edges.emplace_back(
-				prm.graph[source].state.base_tf.translation,
-				prm.graph[target].state.base_tf.translation
+				source.first.base_tf.translation,
+				target.first.base_tf.translation
 			);
 		}
 	};
 
-	std::function viz_goal_edge = [&](const PRMGraph::vertex_descriptor &source,
-	                                  const PRMGraph::vertex_descriptor &target,
-	                                  bool added) {
+	std::function viz_goal_edge = [&](
+		std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> source,
+		std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> target,
+		bool added) {
 		if (added) {
 			goal_edges.emplace_back(
-				prm.graph[source].state.base_tf.translation,
-				prm.graph[target].state.base_tf.translation
+				source.first.base_tf.translation,
+				target.first.base_tf.translation
 			);
 		}
 	};
+
+	InfrastructureSampleHooks infrastructure_sample_hooks{
+		.on_sample = viz_sampled_state,
+		.add_roadmap_node_hooks = AddRoadmapNodeHooks{
+			.on_edge_considered = viz_edge
+		}
+	};
+
+	GoalSampleHooks goal_sampling_hooks{
+		.on_sample = viz_sampled_state,
+		.add_roadmap_node_hooks = AddRoadmapNodeHooks{
+			.on_edge_considered = viz_goal_edge
+		}
+	};
+
+	TspOverPrmHooks hooks{
+		.infrastructure_sample_hooks = infrastructure_sample_hooks,
+		.goal_sample_hooks = goal_sampling_hooks
+	};
+
+	std::thread algorithm_thread([&]() {
+		// Plan the path.
+		auto path = plan_path_tsp_over_prm(
+			start_state,
+			fruit_positions,
+			robot,
+			tree_collision,
+			TspOverPrmParameters{
+				.n_neighbours = n_neighbours,
+				.max_samples = max_samples,
+				.goal_sample_params = GoalSampleParams{
+					.k_neighbors = n_neighbours,
+					.max_valid_samples = max_samples_per_goal,
+					.max_attempts = 100
+				}
+			},
+			rng,
+			hooks
+		);
+
+		// Visualize the final path.
+		visualization::visualize_ladder_trace(robot, path, viewer);
+	});
 
 	// Finally, register our timer callback.
 	viewer.addTimerCallback([&]() {
@@ -738,105 +908,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 				}
 			}
 
-			// Execute different logic depending on whether the infrastructure nodes are full or not.
-			if (boost::num_vertices(prm.graph) < max_samples) {
-				InfrastructureSampleHooks hooks{
-					.on_sample = viz_sampled_state,
-					.add_roadmap_node_hooks = AddRoadmapNodeHooks{
-						.on_edge_considered = viz_edge
-					}
-				};
-
-				sample_and_connect_infrastucture_node(
-					prm,
-					n_neighbours,
-					sample_uniform,
-					state_collides,
-					motion_collides,
-					hooks
-				);
-
-				prm_edges.updateLine(edges);
-			} else if (goal_being_sampled < fruit_positions.size()) {
-				std::function goal_sample = [&]() {
-					return genGoalStateUniform(
-						rng,
-						fruit_positions[goal_being_sampled],
-						robot,
-						base_link,
-						end_effector_link
-					);
-				};
-
-				InfrastructureSampleHooks hooks{
-					.on_sample = viz_sampled_state,
-					.add_roadmap_node_hooks = AddRoadmapNodeHooks{
-						.on_edge_considered = viz_goal_edge
-					}
-				};
-
-				auto new_goal_nodes = sample_and_connect_goal_states(
-					prm,
-					{.k_neighbors = n_neighbours, .max_valid_samples = max_samples_per_goal, .max_attempts = 100},
-					goal_being_sampled,
-					goal_sample,
-					state_collides,
-					motion_collides,
-					hooks
-				);
-
-				prm_goal_edges.updateLine(goal_edges);
-
-				goal_nodes.insert(goal_nodes.end(), new_goal_nodes.begin(), new_goal_nodes.end());
-				group_sizes[goal_being_sampled] = new_goal_nodes.size();
-				if (goal_being_sampled == fruit_positions.size()) {
-					group_index_table = GroupIndexTable(group_sizes);
-				} else {
-					++goal_being_sampled;
-				}
-			} else if (next_goal_sample_index < group_index_table->total()) {
-				// Run Dijkstra's algorithm on the graph, starting from the next goal sample.
-				auto &[distances, predecessors] = runDijkstra(prm.graph, goal_nodes[next_goal_sample_index]);
-
-				// Filter the distances to the goal nodes.
-				distance_lookup.push_back(filter_goal_distances_vector(goal_nodes, std::move(distances)));
-
-				// Keep the predecessor lookup table. (TODO: this might be quite memory-hungry; we'll see.)
-				predecessor_lookup.push_back(predecessors);
-
-				std::vector<std::pair<math::Vec3d, math::Vec3d> > distance_edges;
-				distance_edges.reserve(predecessors.size());
-				// We visualize using the predecessor map.
-				for (size_t i = 0; i < predecessors.size(); ++i) {
-					if (predecessors[i] != i) {
-						auto origin = prm.graph[predecessors[i]].state.base_tf.translation;
-						auto dest = prm.graph[i].state.base_tf.translation;
-						distance_edges.emplace_back(origin, dest);
-					}
-				}
-				distance_edges_viz.updateLine(distance_edges);
-			} else if (!unoptimized_path) {
-				// Plan a TSP over the PRM.
-				auto tour = pick_visitation_order(distance_lookup,
-				                                  start_to_goals_distances,
-				                                  &*group_index_table,
-				                                  group_sizes);
-
-				// Construct the final path based on the TSP solution and predecessor lookup tables.
-				RobotPath path = construct_final_path(prm.graph,
-				                                      predecessor_lookup,
-				                                      start_to_goals_predecessors,
-				                                      goal_nodes,
-				                                      tour);
-
-				// Visualize the path.
-				visualization::visualize_ladder_trace(robot, path, viewer);
-
-				// Register that we solved the problem.
-				unoptimized_path = path;
-			} else {
-				//viewer.stop();
-			}
+			throttle.allow_advance();
 		}
 
 	);
