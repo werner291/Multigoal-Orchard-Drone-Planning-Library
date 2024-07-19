@@ -19,6 +19,7 @@
 #include "../planning/traveling_salesman.h"
 #include "../visualization/VtkLineSegmentVizualization.h"
 #include "../visualization/ladder_trace.h"
+#include "../visualization/Throttle.h"
 #include "../experiment_utils/declarative/fruit_models.h"
 #include <fcl/narrowphase/collision.h>
 #include <boost/graph/adjacency_list.hpp>
@@ -702,48 +703,6 @@ RobotPath plan_path_tsp_over_prm(
 	// Return the final path.
 	return final_path;
 }
-
-/**
- * This class encapsulates the logic for throttling the algorithm; i.e. only allowing it to advance when it's allowed to.
- */
-class Throttle {
-	std::condition_variable cv;
-	std::mutex cv_mutex;
-	std::atomic_int64_t steps_allowed = 0; // How many steps the algorithm is allowed to take.
-
-public:
-	/**
-	 * @brief Wait until the algorithm is allowed to advance.
-	 *
-	 * This method waits until the number of steps allowed is greater than zero, decrementing it when it's allowed to advance, then returns.
-	 */
-	void wait_and_advance() {
-		// Lock the mutex.
-		std::unique_lock<std::mutex> lock(cv_mutex);
-
-		// Wait until we're allowed to advance.
-		cv.wait(lock, [&]() { return steps_allowed > 0; });
-
-		// Decrement the steps allowed.
-		--steps_allowed;
-	}
-
-	/**
-	 * @brief Allow the algorithm to advance.
-	 *
-	 * This method increments the number of steps allowed, then notifies the algorithm thread that it's allowed to advance.
-	 */
-	void allow_advance() {
-		// Lock the mutex.
-		std::unique_lock<std::mutex> lock(cv_mutex);
-
-		// Increment the steps allowed.
-		++steps_allowed;
-
-		// Notify the algorithm thread that it's allowed to advance.
-		cv.notify_one();
-	}
-};
 
 REGISTER_VISUALIZATION(tsp_over_prm) {
 	using namespace mgodpl;
