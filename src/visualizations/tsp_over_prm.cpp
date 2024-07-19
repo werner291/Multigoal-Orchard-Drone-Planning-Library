@@ -796,7 +796,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 				}
 			} else if (next_goal_sample_index < group_index_table->total()) {
 				// Run Dijkstra's algorithm on the graph, starting from the next goal sample.
-				const auto &[distances, predecessors] = runDijkstra(prm.graph, goal_nodes[next_goal_sample_index]);
+				auto &[distances, predecessors] = runDijkstra(prm.graph, goal_nodes[next_goal_sample_index]);
 
 				// Filter the distances to the goal nodes.
 				distance_lookup.push_back(filter_goal_distances_vector(goal_nodes, std::move(distances)));
