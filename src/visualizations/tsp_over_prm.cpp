@@ -451,11 +451,11 @@ struct GoalSampleHooks {
  */
 struct GoalSampleParams {
 	/// The number of (infrastructure) neighbors to connect to.
-	size_t k_neighbors;
+	size_t k_neighbors = 5;
 	/// The maximum number of valid samples to take.
-	size_t max_valid_samples;
+	size_t max_valid_samples = 2;
 	/// The maximum number of attempts to take a valid sample. (Total; not affected by max_valid_samples.)
-	size_t max_attempts;
+	size_t max_attempts = 100;
 };
 
 /**
@@ -549,16 +549,17 @@ struct TspOverPrmHooks {
 /**
  * @brief Plan a path around a fruit tree using the TSP-over-PRM method.
  *
- * This function implements a variant of the Traveling Salesman Problem (TSP) '
+ * This function implements a variant of the Traveling Salesman Problem (TSP)
  * over a Probabilistic Roadmap (PRM) to plan a path for a robot to visit all
  * specified fruit positions around a tree.
  *
- * @param initial_state The initial state of the robot.
+ * @param start_state The initial state of the robot.
  * @param fruit_positions A vector of positions representing the locations of fruits to be collected.
- * @param robot_model The robot model, containing information about the robot's kinematics and dynamics.
- * @param tree_trunk_collision_object The collision object representing the tree trunk, to check for collisions between the robot and the tree.
+ * @param robot The robot model, containing information about the robot's kinematics and dynamics.
+ * @param tree_collision The collision object representing the tree trunk, to check for collisions between the robot and the tree.
  * @param parameters A struct containing parameters for the TSP-over-PRM algorithm, such as the number of samples to take and the number of nearest neighbors to connect.
- * @param observer An observer object with callbacks for observing the progress of the algorithm.
+ * @param rng A random number generator used throughout the planning process.
+ * @param hooks (Optional) An object containing various hooks for observing the progress of the algorithm.
  *
  * @return RobotPath The planned path, including all the states the robot should go through to visit all fruits.
  */
@@ -758,6 +759,16 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	// We're going to "throttle" the algorithm: it's going to run in a separate thread, but only advance when it's allowed to.
 	Throttle throttle;
 
+	// A mutex for the algorithm thread to write to the to-be-visualized data.
+	std::mutex data_transfer_mutex;
+
+	/**
+	 * A vector of recently-sampled states, paired with a boolean indicating whether they were added to the roadmap.
+	 * These should be visualized on the next frame, and cleared the frame after that.
+	 * Note: access to this vector should be protected by the data_transfer_mutex.
+	 */
+	std::vector<std::pair<RobotState, bool> > recent_samples;
+
 	// Create a tree model.
 	experiments::TreeModelCache cache;
 	auto tree = declarative::instantiate_tree_model(
@@ -815,25 +826,28 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	viewer.addActor(distance_edges_viz.getActor());
 
 	std::function viz_sampled_state = [&](const RobotState &state, bool added) {
-		// Pick a color based on whether it collides.
-		math::Vec3d color = added ? math::Vec3d{0.0, 1.0, 0.0} : math::Vec3d{1.0, 0.0, 0.0};
-
-		// Compute the forward kinematics.
-		auto fk = forwardKinematics(robot, state.joint_values, 0, state.base_tf);
-
-		// Visualize the robot state.
-		sample_viz.push_back(vizualisation::vizualize_robot_state(viewer, robot, fk, color));
+		{
+			std::lock_guard lock(data_transfer_mutex);
+			recent_samples.emplace_back(state, added);
+		}
+		throttle.wait_and_advance();
 	};
 
+	// A callback for visualizing a single edge.
 	std::function viz_edge = [&](
 		std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> source,
 		std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> target,
 		bool added) {
 		if (added) {
-			edges.emplace_back(
-				source.first.base_tf.translation,
-				target.first.base_tf.translation
-			);
+			{
+				std::lock_guard lock(data_transfer_mutex);
+
+				edges.emplace_back(
+					source.first.base_tf.translation,
+					target.first.base_tf.translation
+				);
+			}
+			throttle.wait_and_advance();
 		}
 	};
 
@@ -842,10 +856,14 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 		std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> target,
 		bool added) {
 		if (added) {
-			goal_edges.emplace_back(
-				source.first.base_tf.translation,
-				target.first.base_tf.translation
-			);
+			{
+				std::lock_guard lock(data_transfer_mutex);
+				goal_edges.emplace_back(
+					source.first.base_tf.translation,
+					target.first.base_tf.translation
+				);
+			}
+			throttle.wait_and_advance();
 		}
 	};
 
@@ -906,6 +924,27 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 				for (const auto &vtk_actor: vtk_actors.actors) {
 					viewer.viewerRenderer->RemoveActor(vtk_actor);
 				}
+			}
+
+			// Add the samples recently sampled.
+			{
+				std::lock_guard lock(data_transfer_mutex);
+				for (const auto &[state, added]: recent_samples) {
+					// Pick a color based on whether it collides.
+					math::Vec3d color = added ? math::Vec3d{0.0, 1.0, 0.0} : math::Vec3d{1.0, 0.0, 0.0};
+
+					// Compute the forward kinematics.
+					auto fk = forwardKinematics(robot, state.joint_values, 0, state.base_tf);
+
+					// Visualize the robot state.
+					sample_viz.push_back(vizualisation::vizualize_robot_state(viewer, robot, fk, color));
+				}
+
+				// update the edges:
+				prm_edges.updateLine(edges);
+				prm_goal_edges.updateLine(goal_edges);
+
+				recent_samples.clear();
 			}
 
 			throttle.allow_advance();
