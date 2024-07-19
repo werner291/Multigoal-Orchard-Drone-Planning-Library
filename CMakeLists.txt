@@ -227,6 +227,8 @@ add_library(planning
         src/planning/traveling_salesman.cpp
         src/planning/tsp_over_prm.cpp
         src/planning/tsp_over_prm.h
+        src/planning/GroupIndexTable.cpp
+        src/planning/GroupIndexTable.h
 )
 
 target_link_libraries(planning math_utils)
