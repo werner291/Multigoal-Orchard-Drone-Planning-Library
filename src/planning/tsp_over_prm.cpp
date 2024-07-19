@@ -18,9 +18,11 @@
 #include "traveling_salesman.h"
 
 namespace mgodpl {
-	std::vector<std::pair<double, PRMGraph::vertex_descriptor> > k_nearest_neighbors(const TwoTierMultigoalPRM &prm,
+	std::vector<std::pair<double, PRMGraph::vertex_descriptor> > k_nearest_neighbors(
+		const TwoTierMultigoalPRM &prm,
 		const RobotState &state,
-		size_t k) {
+		size_t k
+	) {
 		// Keep the distances and the indices.
 		std::vector<std::pair<double, PRMGraph::vertex_descriptor> > distances;
 
@@ -61,14 +63,16 @@ namespace mgodpl {
 		return distances;
 	}
 
-	PRMGraph::vertex_descriptor add_and_connect_roadmap_node(const RobotState &state,
-	                                                         TwoTierMultigoalPRM &prm,
-	                                                         size_t k_neighbors,
-	                                                         std::optional<std::pair<size_t, size_t> > goal_index,
-	                                                         const std::function<bool(
-		                                                         const RobotState &,
-		                                                         const RobotState &)> &check_motion_collides,
-	                                                         const std::optional<AddRoadmapNodeHooks> &hooks) {
+	PRMGraph::vertex_descriptor add_and_connect_roadmap_node(
+		const RobotState &state,
+		TwoTierMultigoalPRM &prm,
+		size_t k_neighbors,
+		std::optional<std::pair<size_t, size_t> > goal_index,
+		const std::function<bool(
+			const RobotState &,
+			const RobotState &)> &check_motion_collides,
+		const std::optional<AddRoadmapNodeHooks> &hooks
+	) {
 		// Find the k nearest neighbors. (Brute-force; should migrate to a VP-tree when I can.)
 		auto k_nearest = k_nearest_neighbors(prm, state, k_neighbors);
 
@@ -98,8 +102,10 @@ namespace mgodpl {
 		return new_vertex;
 	}
 
-	std::pair<std::vector<double>, std::vector<PRMGraph::vertex_descriptor> > runDijkstra(const PRMGraph &graph,
-		PRMGraph::vertex_descriptor start_node) {
+	std::pair<std::vector<double>, std::vector<PRMGraph::vertex_descriptor> > runDijkstra(
+		const PRMGraph &graph,
+		PRMGraph::vertex_descriptor start_node
+	) {
 		std::vector<PRMGraph::vertex_descriptor> predecessors(num_vertices(graph));
 		std::vector<double> distances(num_vertices(graph));
 
@@ -115,9 +121,11 @@ namespace mgodpl {
 		return {distances, predecessors};
 	}
 
-	RobotPath retrace_path(const PRMGraph &graph,
-	                       const std::vector<PRMGraph::vertex_descriptor> &predecessor_lookup,
-	                       PRMGraph::vertex_descriptor goal_node) {
+	RobotPath retrace_path(
+		const PRMGraph &graph,
+		const std::vector<PRMGraph::vertex_descriptor> &predecessor_lookup,
+		PRMGraph::vertex_descriptor goal_node
+	) {
 		RobotPath path;
 
 		auto current_node = goal_node;
@@ -133,17 +141,21 @@ namespace mgodpl {
 		return path;
 	}
 
-	std::vector<size_t> convert_tour_to_global(const GroupIndexTable &group_index_table,
-	                                           const std::vector<std::pair<size_t, size_t> > &tour) {
+	std::vector<size_t> convert_tour_to_global(
+		const GroupIndexTable &group_index_table,
+		const std::vector<std::pair<size_t, size_t> > &tour
+	) {
 		return tour | ranges::views::transform([&](const auto &pair) {
 			return group_index_table.lookup(pair.first, pair.second);
 		}) | ranges::to<std::vector>();
 	}
 
-	std::vector<size_t> pick_visitation_order(const std::vector<std::vector<double> > &distance_lookup,
-	                                          const std::vector<double> &start_to_goals_distances,
-	                                          const GroupIndexTable *group_index_table,
-	                                          const std::vector<size_t> &group_sizes) {
+	std::vector<size_t> pick_visitation_order(
+		const std::vector<std::vector<double> > &distance_lookup,
+		const std::vector<double> &start_to_goals_distances,
+		const GroupIndexTable *group_index_table,
+		const std::vector<size_t> &group_sizes
+	) {
 		// Plan a TSP over the PRM.
 		auto tour = tsp_open_end_grouped(
 			[&](std::pair<size_t, size_t> a) {
@@ -160,11 +172,13 @@ namespace mgodpl {
 		return convert_tour_to_global(*group_index_table, tour);
 	}
 
-	RobotPath construct_final_path(const PRMGraph &graph,
-	                               const std::vector<std::vector<PRMGraph::vertex_descriptor> > &predecessor_lookup,
-	                               const std::vector<PRMGraph::vertex_descriptor> &start_to_goals_predecessors,
-	                               const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
-	                               const std::vector<size_t> &tour) {
+	RobotPath construct_final_path(
+		const PRMGraph &graph,
+		const std::vector<std::vector<PRMGraph::vertex_descriptor> > &predecessor_lookup,
+		const std::vector<PRMGraph::vertex_descriptor> &start_to_goals_predecessors,
+		const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
+		const std::vector<size_t> &tour
+	) {
 		// Allocate a path object.
 		RobotPath path;
 
@@ -181,13 +195,15 @@ namespace mgodpl {
 		return path;
 	}
 
-	bool sample_and_connect_infrastucture_node(TwoTierMultigoalPRM &prm,
-	                                           size_t k_neighbors,
-	                                           std::function<RobotState()> &sample_state_at_random,
-	                                           const std::function<bool(const RobotState &)> &check_state_collides,
-	                                           const std::function<bool(const RobotState &, const RobotState &)> &
-	                                           check_motion_collides,
-	                                           const std::optional<InfrastructureSampleHooks> &hooks) {
+	bool sample_and_connect_infrastucture_node(
+		TwoTierMultigoalPRM &prm,
+		size_t k_neighbors,
+		std::function<RobotState()> &sample_state_at_random,
+		const std::function<bool(const RobotState &)> &check_state_collides,
+		const std::function<bool(const RobotState &, const RobotState &)> &
+		check_motion_collides,
+		const std::optional<InfrastructureSampleHooks> &hooks
+	) {
 		// Generate a random state.
 		auto state = sample_state_at_random();
 
@@ -212,20 +228,18 @@ namespace mgodpl {
 		return true;
 	}
 
-	std::vector<PRMGraph::vertex_descriptor> sample_and_connect_goal_states(TwoTierMultigoalPRM &prm,
-	                                                                        const GoalSampleParams &params,
-	                                                                        size_t goal_group_id,
-	                                                                        std::function<RobotState()> &
-	                                                                        sample_goal_state,
-	                                                                        const std::function<bool
-		                                                                        (const RobotState &)> &
-	                                                                        check_state_collides,
-	                                                                        const std::function<bool(
-		                                                                        const RobotState &,
-		                                                                        const RobotState &)> &
-	                                                                        check_motion_collides,
-	                                                                        const std::optional<GoalSampleHooks> &
-	                                                                        hooks) {
+	std::vector<PRMGraph::vertex_descriptor> sample_and_connect_goal_states(
+		TwoTierMultigoalPRM &prm,
+		const GoalSampleParams &params,
+		size_t goal_group_id,
+		std::function<RobotState()> &sample_goal_state,
+		const std::function<bool(const RobotState &)> &
+		check_state_collides,
+		const std::function<bool(const RobotState &, const RobotState &)> &
+		check_motion_collides,
+		const std::optional<GoalSampleHooks> &
+		hooks
+	) {
 		// Reserve space for the valid samples.
 		std::vector<PRMGraph::vertex_descriptor> valid_samples;
 		valid_samples.reserve(params.max_valid_samples);
@@ -261,20 +275,24 @@ namespace mgodpl {
 		return valid_samples;
 	}
 
-	std::vector<double> filter_goal_distances_vector(const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
-	                                                 const std::vector<double> &distances) {
+	std::vector<double> filter_goal_distances_vector(
+		const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
+		const std::vector<double> &distances
+	) {
 		return goal_nodes
 		       | ranges::views::transform([&](auto goal_node) { return distances[goal_node]; })
 		       | ranges::to<std::vector<double> >();
 	}
 
-	RobotPath plan_path_tsp_over_prm(const RobotState &start_state,
-	                                 const std::vector<math::Vec3d> &fruit_positions,
-	                                 const robot_model::RobotModel &robot,
-	                                 const fcl::CollisionObjectd &tree_collision,
-	                                 const TspOverPrmParameters &parameters,
-	                                 random_numbers::RandomNumberGenerator &rng,
-	                                 const std::optional<TspOverPrmHooks> &hooks) {
+	RobotPath plan_path_tsp_over_prm(
+		const RobotState &start_state,
+		const std::vector<math::Vec3d> &fruit_positions,
+		const robot_model::RobotModel &robot,
+		const fcl::CollisionObjectd &tree_collision,
+		const TspOverPrmParameters &parameters,
+		random_numbers::RandomNumberGenerator &rng,
+		const std::optional<TspOverPrmHooks> &hooks
+	) {
 		// Allocate an empty prm.
 		TwoTierMultigoalPRM prm;
 
