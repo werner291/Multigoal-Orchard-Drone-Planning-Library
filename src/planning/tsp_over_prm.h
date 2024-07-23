@@ -17,6 +17,7 @@
 #include "RobotModel.h"
 #include "RobotPath.h"
 #include "RobotState.h"
+#include "nearest_neighbours/NearestNeighborsGNAT.h"
 
 namespace mgodpl {
 	/**
@@ -46,7 +47,7 @@ namespace mgodpl {
 		PRMGraph graph;
 
 		// A vector of all the infrastructure nodes. (TODO: make this a spatial index instead.)
-		std::vector<PRMGraph::vertex_descriptor> infrastructure_nodes;
+		ompl::NearestNeighborsGNAT<std::pair<RobotState, PRMGraph::vertex_descriptor> > infrastructure_nodes;
 	};
 
 	/**

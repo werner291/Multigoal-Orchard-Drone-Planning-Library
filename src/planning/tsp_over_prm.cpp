@@ -18,51 +18,6 @@
 #include "traveling_salesman.h"
 
 namespace mgodpl {
-	std::vector<std::pair<double, PRMGraph::vertex_descriptor> > k_nearest_neighbors(
-		const TwoTierMultigoalPRM &prm,
-		const RobotState &state,
-		size_t k
-	) {
-		// Keep the distances and the indices.
-		std::vector<std::pair<double, PRMGraph::vertex_descriptor> > distances;
-
-		// Reserve k+1 elements, so we can insert the new element at the correct position.
-		distances.reserve(k + 1);
-
-		// Iterate over all infrastructure nodes (TODO: do better than this linear search.)
-		for (auto v: prm.infrastructure_nodes) {
-			// Get the properties of the node (i.e., the state).
-			const auto &node = prm.graph[v];
-
-			bool inserted = false;
-
-			// Iterate over all neighbors found so far.
-			for (size_t i = 0; i < distances.size(); ++i) {
-				// If the distance is smaller than the current distance, insert it.
-				if (distances[i].first > equal_weights_distance(node.state, state)) {
-					distances.insert(distances.begin() + static_cast<long>(i),
-					                 {equal_weights_distance(node.state, state), v});
-
-					// Mark that we've inserted the element.
-					inserted = true;
-
-					// If it's now larger than n_neighbours, remove the last element.
-					if (distances.size() > k) {
-						distances.pop_back();
-					}
-					break; // Once we've inserted, we're done.
-				}
-			}
-
-			// If we haven't inserted it yet, and there's still space, add it to the end.
-			if (!inserted && distances.size() < k) {
-				distances.emplace_back(equal_weights_distance(node.state, state), v);
-			}
-		}
-
-		return distances;
-	}
-
 	PRMGraph::vertex_descriptor add_and_connect_roadmap_node(
 		const RobotState &state,
 		TwoTierMultigoalPRM &prm,
@@ -73,29 +28,29 @@ namespace mgodpl {
 			const RobotState &)> &check_motion_collides,
 		const std::optional<AddRoadmapNodeHooks> &hooks
 	) {
-		// Find the k nearest neighbors. (Brute-force; should migrate to a VP-tree when I can.)
-		auto k_nearest = k_nearest_neighbors(prm, state, k_neighbors);
+		std::vector<std::pair<RobotState, PRMGraph::vertex_descriptor> > k_nearest;
+		prm.infrastructure_nodes.nearestK({state, 0}, k_neighbors, k_nearest);
 
 		// Add the new node to the graph. (Note: we do this AFTER finding the neighbors, so we don't connect to ourselves.)
 		auto new_vertex = boost::add_vertex({state, goal_index}, prm.graph);
 
 		// Then add the edges:
-		for (const auto &[distance, neighbor]: k_nearest) {
+		for (const auto &[neighbor_state, neighbor]: k_nearest) {
 			// Check if the motion collides.
-			bool collides = check_motion_collides(prm.graph[neighbor].state, state);
+			bool collides = check_motion_collides(neighbor_state, state);
 
 			// Call the hooks.
-			if (hooks) hooks->on_edge_considered({state, new_vertex}, {prm.graph[neighbor].state, neighbor}, !collides);
+			if (hooks) hooks->on_edge_considered({state, new_vertex}, {neighbor_state, neighbor}, !collides);
 
 			if (!collides) {
 				// Add an edge to the graph if it doesn't collide.
-				boost::add_edge(new_vertex, neighbor, distance, prm.graph);
+				boost::add_edge(new_vertex, neighbor, equal_weights_distance(state, neighbor_state), prm.graph);
 			}
 		}
 
 		// If it's not a goal sample, add it to the infrastructure nodes.
 		if (!goal_index) {
-			prm.infrastructure_nodes.push_back(new_vertex);
+			prm.infrastructure_nodes.add({state, new_vertex});
 		}
 
 		// Return the graph vertex id.

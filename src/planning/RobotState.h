@@ -15,6 +15,10 @@ namespace mgodpl {
 	struct RobotState {
 		math::Transformd base_tf;
 		std::vector<double> joint_values;
+
+		[[nodiscard]] bool operator==(const RobotState &other) const {
+			return base_tf == other.base_tf && joint_values == other.joint_values;
+		}
 	};
 
 	/**
