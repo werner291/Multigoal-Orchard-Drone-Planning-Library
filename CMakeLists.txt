@@ -229,6 +229,9 @@ add_library(planning
         src/planning/tsp_over_prm.h
         src/planning/GroupIndexTable.cpp
         src/planning/GroupIndexTable.h
+        src/planning/nearest_neighbours/NearestNeighborsGNAT.h
+        src/planning/nearest_neighbours/NearestNeighbors.h
+        src/planning/nearest_neighbours/GreedyKCenters.h
 )
 
 target_link_libraries(planning math_utils)
