@@ -16,6 +16,7 @@
 #include "goal_sampling.h"
 #include "state_tools.h"
 #include "traveling_salesman.h"
+#include "nearest_neighbours/GreedyKCenters.h"
 
 namespace mgodpl {
 	PRMGraph::vertex_descriptor add_and_connect_roadmap_node(
@@ -248,10 +249,35 @@ namespace mgodpl {
 		random_numbers::RandomNumberGenerator &rng,
 		const std::optional<TspOverPrmHooks> &hooks
 	) {
+		using GNATPoint = std::pair<RobotState, PRMGraph::vertex_descriptor>;
+
+		std::function gnat_dist_fn = [&](const GNATPoint &a, const GNATPoint &b) {
+			return equal_weights_distance(a.first, b.first);
+		};
+
+		ompl::NearestNeighborsGNAT<GNATPoint>::SelectPivotFn select_pivots = [&](
+			const std::vector<GNATPoint> &data,
+			unsigned int k) {
+			return greedy_k_centers(data,
+			                        k,
+			                        gnat_dist_fn,
+			                        rng,
+			                        std::nullopt);
+		};
+
 		// Allocate an empty prm.
-		TwoTierMultigoalPRM prm;
+		TwoTierMultigoalPRM prm{
+			.graph = {},
+			.infrastructure_nodes = ompl::NearestNeighborsGNAT(select_pivots)
+		};
+		prm.infrastructure_nodes.setDistanceFunction(
+			[&](const auto &a, const auto &b) {
+				return equal_weights_distance(a.first, b.first);
+			});
 
 		// Uniform sampling function:
+
+
 		std::function sample_uniform = [&]() {
 			return generateUniformRandomState(robot, rng, 5.0, 10.0);
 		};

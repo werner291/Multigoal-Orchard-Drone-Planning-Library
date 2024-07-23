@@ -73,7 +73,7 @@ struct GreedyKCentersHooks {
  *
  * @returns     A vector of indices of the computed centers. If fewer than k data points are available, this vector may be smaller than k.
  */
-template<typename T, typename Matrix>
+template<typename T>
 std::vector<size_t> greedy_k_centers(
     const std::vector<T> &data,
     unsigned int k,

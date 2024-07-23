@@ -79,18 +79,21 @@ namespace ompl {
 
         using NodeQueue = std::priority_queue<NodeDist, std::vector<NodeDist>, NodeDistCompare>;
 
-        /// A function that selects the pivots for the GNAT when splitting a node.
-        using SelectPivotFn = std::function<std::vector<unsigned int>(const std::vector<T> &, unsigned int)>;
-
     public:
-        NearestNeighborsGNAT(unsigned int degree = 8,
-                             unsigned int minDegree = 4,
-                             unsigned int maxDegree = 12,
-                             unsigned int maxNumPtsPerLeaf = 50,
-                             unsigned int removedCacheSize = 500,
-                             bool rebalancing = false
+        /// A function that selects the pivots for the GNAT when splitting a node.
+        using SelectPivotFn = std::function<std::vector<size_t>(const std::vector<T> &, size_t)>;
+
+        explicit NearestNeighborsGNAT(
+            SelectPivotFn fn,
+            unsigned int degree = 8,
+            unsigned int minDegree = 4,
+            unsigned int maxDegree = 12,
+            unsigned int maxNumPtsPerLeaf = 50,
+            unsigned int removedCacheSize = 500,
+            bool rebalancing = false
         )
             : NearestNeighbors<T>()
+              , pivotSelector_(std::move(fn))
               , degree_(degree)
               , minDegree_(std::min(degree, minDegree))
               , maxDegree_(std::max(maxDegree, degree))
