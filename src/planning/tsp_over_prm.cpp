@@ -33,7 +33,8 @@ namespace mgodpl {
 	 */
 	PRMGraph::vertex_descriptor add_and_connect_roadmap_node(
 		const RobotState &state,
-		TwoTierMultigoalPRM &prm,
+		PRMGraph &prm,
+		const PRMGraphSpatialIndex &spatial_index,
 		size_t k_neighbors,
 		std::optional<std::pair<size_t, size_t> > goal_index,
 		const std::function<bool(
@@ -42,10 +43,10 @@ namespace mgodpl {
 		const std::optional<AddRoadmapNodeHooks> &hooks
 	) {
 		std::vector<std::pair<RobotState, PRMGraph::vertex_descriptor> > k_nearest;
-		prm.infrastructure_nodes.nearestK({state, 0}, k_neighbors, k_nearest);
+		spatial_index.nearestK({state, 0}, k_neighbors, k_nearest);
 
 		// Add the new node to the graph. (Note: we do this AFTER finding the neighbors, so we don't connect to ourselves.)
-		auto new_vertex = boost::add_vertex({state, goal_index}, prm.graph);
+		auto new_vertex = boost::add_vertex({state, goal_index}, prm);
 
 		// Then add the edges:
 		for (const auto &[neighbor_state, neighbor]: k_nearest) {
@@ -57,13 +58,8 @@ namespace mgodpl {
 
 			if (!collides) {
 				// Add an edge to the graph if it doesn't collide.
-				boost::add_edge(new_vertex, neighbor, equal_weights_distance(state, neighbor_state), prm.graph);
+				boost::add_edge(new_vertex, neighbor, equal_weights_distance(state, neighbor_state), prm);
 			}
-		}
-
-		// If it's not a goal sample, add it to the infrastructure nodes.
-		if (!goal_index) {
-			prm.infrastructure_nodes.add({state, new_vertex});
 		}
 
 		// Return the graph vertex id.
@@ -221,7 +217,8 @@ namespace mgodpl {
 	 * @return True if the sample was added to the roadmap, false if it was discarded.
 	 */
 	bool sample_and_connect_infrastucture_node(
-		TwoTierMultigoalPRM &prm,
+		PRMGraph &prm,
+		PRMGraphSpatialIndex &spatial_index,
 		size_t k_neighbors,
 		std::function<RobotState()> &sample_state_at_random,
 		const std::function<bool(const RobotState &)> &check_state_collides,
@@ -243,12 +240,17 @@ namespace mgodpl {
 		}
 
 		// Otherwise, add it to the roadmap, and try to connect it to the nearest neighbors.
-		add_and_connect_roadmap_node(state,
-		                             prm,
-		                             k_neighbors,
-		                             std::nullopt,
-		                             check_motion_collides,
-		                             hooks ? hooks->add_roadmap_node_hooks : std::nullopt);
+		auto new_vertex = add_and_connect_roadmap_node(state,
+		                                               prm,
+		                                               spatial_index,
+		                                               k_neighbors,
+		                                               std::nullopt,
+		                                               check_motion_collides,
+		                                               hooks ? hooks->add_roadmap_node_hooks : std::nullopt);
+
+		// If it's not a goal sample, add it to the infrastructure nodes.
+		spatial_index.add({state, new_vertex});
+
 
 		return true;
 	}
@@ -257,6 +259,7 @@ namespace mgodpl {
 	 * Take a goal sample and connect it to the roadmap if it doesn't collide.
 	 *
 	 * @param prm						The PRM to add the node to.
+	 * @param spatial_index				The spatial index to use for nearest neighbor queries.
 	 * @param params					The parameters for sampling and connecting goal nodes.
 	 * @param goal_group_id				The index of the goal group.
 	 * @param sample_goal_state			A function that generates a random state from the goal region.
@@ -267,7 +270,8 @@ namespace mgodpl {
 	 * @return The vertex IDs of the goal samples that were added to the roadmap.
 	 */
 	std::vector<PRMGraph::vertex_descriptor> sample_and_connect_goal_states(
-		TwoTierMultigoalPRM &prm,
+		PRMGraph &prm,
+		const PRMGraphSpatialIndex &spatial_index,
 		const GoalSampleParams &params,
 		size_t goal_group_id,
 		std::function<RobotState()> &sample_goal_state,
@@ -299,6 +303,7 @@ namespace mgodpl {
 				// Add the goal state to the roadmap.
 				auto new_vertex = add_and_connect_roadmap_node(goal_state,
 				                                               prm,
+				                                               spatial_index,
 				                                               params.k_neighbors,
 				                                               std::make_pair(goal_group_id, valid_samples.size()),
 				                                               check_motion_collides,
@@ -379,13 +384,15 @@ namespace mgodpl {
 	 * This repeats for a number of iterations, as specified in `parameters.max_samples`.
 	 *
 	 * @param prm				The PRM to build the infrastructure roadmap on
+	 * @param spatial_index		The spatial index to use for nearest neighbor queries; new nodes are added to this index
 	 * @param parameters		The parameters for the TSP over PRM algorithm
 	 * @param sample_uniform	A function to sample a random state
 	 * @param state_collides	A function to check if a state collides with the tree
 	 * @param motion_collides	A function to check if a motion between two states collides with the tree
 	 * @param hooks				Optional hooks to observe the behavior of the algorithm
 	 */
-	void build_infrastructure_roadmap(TwoTierMultigoalPRM &prm,
+	void build_infrastructure_roadmap(PRMGraph &prm,
+	                                  PRMGraphSpatialIndex &spatial_index,
 	                                  const TspOverPrmParameters &parameters,
 	                                  std::function<RobotState()> sample_uniform,
 	                                  std::function<bool(const RobotState &)> state_collides,
@@ -394,6 +401,7 @@ namespace mgodpl {
 		// Sample infrastructure nodes.
 		for (size_t i = 0; i < parameters.max_samples; ++i) {
 			sample_and_connect_infrastucture_node(prm,
+			                                      spatial_index,
 			                                      parameters.n_neighbours,
 			                                      sample_uniform,
 			                                      state_collides,
@@ -409,6 +417,7 @@ namespace mgodpl {
 	 *
 	 * @param fruit_positions		The positions of the fruits to sample goal states for.
 	 * @param prm					The PRM to connect the goal states to.
+	 * @param spatial_index			The spatial index to use for nearest neighbor queries. Goal states are not added to this index.
 	 * @param parameters			The parameters for the TSP over PRM algorithm.
 	 * @param sample_goal_state		A function to sample a goal state for a given fruit index. (Does not check for collisions.)
 	 * @param state_collides		A function to check if a state collides with the tree.
@@ -419,7 +428,8 @@ namespace mgodpl {
 	 */
 	std::pair<std::vector<PRMGraph::vertex_descriptor>, std::vector<size_t> > sample_goal_states(
 		const std::vector<math::Vec3d> &fruit_positions,
-		TwoTierMultigoalPRM &prm,
+		PRMGraph &prm,
+		const PRMGraphSpatialIndex &spatial_index,
 		const TspOverPrmParameters &parameters,
 		const std::function<RobotState(size_t)> &sample_goal_state,
 		const std::function<bool(const RobotState &)> &state_collides,
@@ -439,6 +449,7 @@ namespace mgodpl {
 
 			auto goal_sample_states = sample_and_connect_goal_states(
 				prm,
+				spatial_index,
 				parameters.goal_sample_params,
 				goal_index,
 				goal_sample,
@@ -520,10 +531,8 @@ namespace mgodpl {
 		robot_model::RobotModel::LinkId end_effector_link = robot.findLinkByName("end_effector");
 
 		// Allocate an empty prm.
-		TwoTierMultigoalPRM prm{
-			.graph = {},
-			.infrastructure_nodes = init_empty_spatial_index(rng)
-		};
+		PRMGraph prm;
+		PRMGraphSpatialIndex infrastructure_spatial_index = init_empty_spatial_index(rng);
 
 		// We allocate a few functions here to hide details regarding collision checking and sampling from the algorithm.
 
@@ -556,18 +565,26 @@ namespace mgodpl {
 		// Add the start state to the roadmap.
 		add_and_connect_roadmap_node(start_state,
 		                             prm,
+		                             infrastructure_spatial_index,
 		                             parameters.n_neighbours,
 		                             std::nullopt,
 		                             motion_collides,
 		                             std::nullopt);
 
 		// Build the infrastructure roadmap.
-		build_infrastructure_roadmap(prm, parameters, sample_uniform, state_collides, motion_collides, hooks);
+		build_infrastructure_roadmap(prm,
+		                             infrastructure_spatial_index,
+		                             parameters,
+		                             sample_uniform,
+		                             state_collides,
+		                             motion_collides,
+		                             hooks);
 
 		// Sample goal states and connect them to the roadmap.
 		const auto &[goal_nodes, group_sizes] =
 				sample_goal_states(fruit_positions,
 				                   prm,
+				                   infrastructure_spatial_index,
 				                   parameters,
 				                   sample_goal_state,
 				                   state_collides,
@@ -579,7 +596,7 @@ namespace mgodpl {
 		GroupIndexTable group_index_table(group_sizes);
 
 		const auto &goal_to_goal_paths = calculate_goal_to_goal_paths(
-			prm.graph,
+			prm,
 			goal_nodes,
 			group_index_table);
 
@@ -593,7 +610,7 @@ namespace mgodpl {
 
 		// Construct the final path based on the TSP solution and predecessor lookup tables.
 		auto final_path = construct_final_path(
-			prm.graph,
+			prm,
 			goal_to_goal_paths.predecessor_lookup,
 			goal_to_goal_paths.start_to_goals_predecessors,
 			goal_nodes,

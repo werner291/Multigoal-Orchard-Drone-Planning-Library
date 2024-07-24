@@ -35,20 +35,8 @@ namespace mgodpl {
 	using PRMGraph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, VertexProperties,
 		boost::property<boost::edge_weight_t, double> >;
 
-	/**
-	 * A container struct for a two-tier multi-goal PRM.
-	 *
-	 * It maintains a list of "infrastructure nodes", which are considered the candidates for nearest-neighbour
-	 * connections; this implies that anything *not* on that list is considered a goal node and will not be
-	 * connected to.
-	 */
-	struct TwoTierMultigoalPRM {
-		// The Boost Graph representing the roadmap.
-		PRMGraph graph;
-
-		// A vector of all the infrastructure nodes. (TODO: make this a spatial index instead.)
-		ompl::NearestNeighborsGNAT<std::pair<RobotState, PRMGraph::vertex_descriptor> > infrastructure_nodes;
-	};
+	// A spatial index for nearest neighbors in the PRM graph.
+	using PRMGraphSpatialIndex = ompl::NearestNeighborsGNAT<std::pair<RobotState, PRMGraph::vertex_descriptor> >;
 
 	/**
 	 * A set of hooks for adding a roadmap node.
