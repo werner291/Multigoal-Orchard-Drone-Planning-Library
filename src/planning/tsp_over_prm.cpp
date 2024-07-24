@@ -19,6 +19,18 @@
 #include "nearest_neighbours/GreedyKCenters.h"
 
 namespace mgodpl {
+	/**
+	 * @brief Add a new node to the PRM, connecting it up to the nearest neighbors.
+	 *
+	 * @param	state						The state of the new node.
+	 * @param	prm							The PRM to add the node to.
+	 * @param	k_neighbors					The number of neighbors to connect to.
+	 * @param   goal_index					The index of the goal this node represents, if it is a goal node.
+	 * @param   check_motion_collides		A function that checks if a motion between two states collides.
+	 * @param   hooks						Optional hooks to call at various points in the process.
+	 *
+	 * @returns The vertex descriptor of the new node.
+	 */
 	PRMGraph::vertex_descriptor add_and_connect_roadmap_node(
 		const RobotState &state,
 		TwoTierMultigoalPRM &prm,
@@ -58,6 +70,18 @@ namespace mgodpl {
 		return new_vertex;
 	}
 
+	/**
+	 * @brief Run Dijkstra's algorithm on a graph, starting from a given node.
+	 *
+	 * This function abstracts over Boost, running Dijkstra on a (PRM) graph, returning the distance map and the predecessor map from the given start node.
+	 *
+	 * The distance map contains the distance to each node from the start node.
+	 * The predecessor map contains, for every node, the predecessor node on the shortest path from the start node.
+	 *
+	 * @param graph			The graph to run Dijkstra on.
+	 * @param start_node	The node to start from.
+	 * @return				A pair of vectors: the first vector contains the distances to each node, the second vector contains the predecessor node for each node.
+	 */
 	std::pair<std::vector<double>, std::vector<PRMGraph::vertex_descriptor> > runDijkstra(
 		const PRMGraph &graph,
 		PRMGraph::vertex_descriptor start_node
@@ -77,6 +101,17 @@ namespace mgodpl {
 		return {distances, predecessors};
 	}
 
+	/**
+	 * @brief Retrace a path through the predecessor map.
+	 *
+	 * This function takes a predecessor map and a goal node, and reconstructs the path from the start node to the goal node.
+	 *
+	 * @param	graph				The graph the path is in.
+	 * @param	predecessor_lookup	The predecessor lookup table. (The start node is implied by the structure of the table.)
+	 * @param   goal_node			The goal node to retrace from.
+	 *
+	 * @return	The path from the start node to the goal node. The start node is whichever node in the path has itself as a predecessor.
+	 */
 	RobotPath retrace_path(
 		const PRMGraph &graph,
 		const std::vector<PRMGraph::vertex_descriptor> &predecessor_lookup,
@@ -97,6 +132,14 @@ namespace mgodpl {
 		return path;
 	}
 
+	/**
+	 * Convert a TSP solution referring to fruit-and-sample indices to one using only global goal sample indices.
+	 *
+	 * @param group_index_table	The group index table, to translate the index pairs from the TSP solution to global goal sample
+	 * @param tour				The TSP solution.
+	 *
+	 * @returns			The TSP solution with global goal sample indices.
+	 */
 	std::vector<size_t> convert_tour_to_global(
 		const GroupIndexTable &group_index_table,
 		const std::vector<std::pair<size_t, size_t> > &tour
@@ -106,6 +149,10 @@ namespace mgodpl {
 		}) | ranges::to<std::vector>();
 	}
 
+	/**
+	 * @brief Plan a visitation order based on the distance lookup tables. This is an abstraction over tsp_open_end_grouped that avoids lambdas.
+	 * @return The visitation order, expressed in terms of global goal sample indices.
+	 */
 	std::vector<size_t> pick_visitation_order(
 		const std::vector<std::vector<double> > &distance_lookup,
 		const std::vector<double> &start_to_goals_distances,
@@ -128,6 +175,17 @@ namespace mgodpl {
 		return convert_tour_to_global(*group_index_table, tour);
 	}
 
+	/**
+	 * @brief Construct the final path based on the TSP solution and predecessor lookup tables.
+	 *
+	 * @param graph							The graph that the different vertices are in.
+	 * @param predecessor_lookup			The predecessor lookup tables; one for each goal sample.
+	 * @param start_to_goals_predecessors	The predecessor lookup table for the start-to-goal samples.
+	 * @param goal_nodes					The graph vertices corresponding to the goal indices.
+	 * @param tour							The TSP solution, expressed in goal sample indices.
+	 *
+	 * @return The final path through the PRM, from the start and passing by all the goals in the TSP solution.
+	 */
 	RobotPath construct_final_path(
 		const PRMGraph &graph,
 		const std::vector<std::vector<PRMGraph::vertex_descriptor> > &predecessor_lookup,
@@ -151,6 +209,17 @@ namespace mgodpl {
 		return path;
 	}
 
+	/**
+	 * Take a sample and connect it to the roadmap if it doesn't collide.
+	 *
+	 * @param prm						The PRM to add the node to.
+	 * @param k_neighbors				The number of neighbors to connect to.
+	 * @param sample_state_at_random	A function that generates a random state.
+	 * @param check_state_collides		A function that checks if a state collides with the environment.
+	 * @param check_motion_collides		A function that checks if a motion between two states collides.
+	 * @param hooks						Optional hooks for observing the process.
+	 * @return True if the sample was added to the roadmap, false if it was discarded.
+	 */
 	bool sample_and_connect_infrastucture_node(
 		TwoTierMultigoalPRM &prm,
 		size_t k_neighbors,
@@ -184,6 +253,19 @@ namespace mgodpl {
 		return true;
 	}
 
+	/**
+	 * Take a goal sample and connect it to the roadmap if it doesn't collide.
+	 *
+	 * @param prm						The PRM to add the node to.
+	 * @param params					The parameters for sampling and connecting goal nodes.
+	 * @param goal_group_id				The index of the goal group.
+	 * @param sample_goal_state			A function that generates a random state from the goal region.
+	 * @param check_state_collides		A function that checks if a state collides with the environment.
+	 * @param check_motion_collides		A function that checks if a motion between two states collides.
+	 * @param hooks						Optional hooks for observing the process.
+	 *
+	 * @return The vertex IDs of the goal samples that were added to the roadmap.
+	 */
 	std::vector<PRMGraph::vertex_descriptor> sample_and_connect_goal_states(
 		TwoTierMultigoalPRM &prm,
 		const GoalSampleParams &params,
@@ -201,7 +283,7 @@ namespace mgodpl {
 		valid_samples.reserve(params.max_valid_samples);
 
 		// Keep iterating until we have enough valid samples or we've tried too many times.
-		for (int attempt = 0; attempt < params.max_attempts && valid_samples.size() < params.max_valid_samples; ++
+		for (size_t attempt = 0; attempt < params.max_attempts && valid_samples.size() < params.max_valid_samples; ++
 		     attempt) {
 			// Sample a goal state.
 			auto goal_state = sample_goal_state();
@@ -240,71 +322,75 @@ namespace mgodpl {
 		       | ranges::to<std::vector<double> >();
 	}
 
-	RobotPath plan_path_tsp_over_prm(
-		const RobotState &start_state,
-		const std::vector<math::Vec3d> &fruit_positions,
-		const robot_model::RobotModel &robot,
-		const fcl::CollisionObjectd &tree_collision,
-		const TspOverPrmParameters &parameters,
-		random_numbers::RandomNumberGenerator &rng,
-		const std::optional<TspOverPrmHooks> &hooks
-	) {
-		using GNATPoint = std::pair<RobotState, PRMGraph::vertex_descriptor>;
+	/// A combination of a RobotState and a PRMGraph vertex descriptor, used as entries into the GNAT spatial index.
+	/// The RobotState should be identical to the one stored in the PRMGraph.
+	/// (TODO: This creates potentially quite some redundancy, as the state is stored at least twice.)
+	using GNATPoint = std::pair<RobotState, PRMGraph::vertex_descriptor>;
 
+	/**
+	 * Initialize an empty GNAT spatial index over the robot states and graph vertex descriptors.
+	 *
+	 * @param rng	The random number generator to use for the GNAT index (must outlive the index)
+	 * @return	The initialized GNAT index
+	 */
+	ompl::NearestNeighborsGNAT<GNATPoint> init_empty_spatial_index(
+		random_numbers::RandomNumberGenerator &rng
+	) {
+		// The distance function for the GNAT index, which extracts the RobotState from the GNATPoint and measures the distance between them.
+		// TODO: don't hardcode equal_weights_distance here.
 		std::function gnat_dist_fn = [&](const GNATPoint &a, const GNATPoint &b) {
 			return equal_weights_distance(a.first, b.first);
 		};
 
-		ompl::NearestNeighborsGNAT<GNATPoint>::SelectPivotFn select_pivots = [&](
+		// The pivot selection function for the GNAT index, which uses the greedy k-centers algorithm to select pivots.
+		// Note that it takes a reference to the rng, as greedy_k_centers requires a random number generator.
+		// NearestNeighborsGNAT itself is not aware of the RNG.
+		ompl::NearestNeighborsGNAT<GNATPoint>::SelectPivotFn select_pivots = [gnat_dist_fn, &rng](
 			const std::vector<GNATPoint> &data,
 			unsigned int k) {
-			return greedy_k_centers(data,
-			                        k,
-			                        gnat_dist_fn,
-			                        rng,
-			                        std::nullopt);
+			return greedy_k_centers<GNATPoint>(data,
+			                                   k,
+			                                   gnat_dist_fn,
+			                                   rng,
+			                                   std::nullopt);
 		};
 
-		// Allocate an empty prm.
-		TwoTierMultigoalPRM prm{
-			.graph = {},
-			.infrastructure_nodes = ompl::NearestNeighborsGNAT(select_pivots)
-		};
-		prm.infrastructure_nodes.setDistanceFunction(
-			[&](const auto &a, const auto &b) {
+		// Initialize the GNAT index.
+		ompl::NearestNeighborsGNAT gnat(select_pivots);
+
+		// Set the distance function. (TODO: make this a constructor argument)
+		gnat.setDistanceFunction(
+			[](const auto &a, const auto &b) {
 				return equal_weights_distance(a.first, b.first);
 			});
 
-		// Uniform sampling function:
+		// Return the initialized GNAT index.
+		return gnat;
+	}
 
-
-		std::function sample_uniform = [&]() {
-			return generateUniformRandomState(robot, rng, 5.0, 10.0);
-		};
-
-		// Collision check function:
-		std::function state_collides = [&](const RobotState &state) {
-			return check_robot_collision(robot, tree_collision, state);
-		};
-
-		// Motion collision check function:
-		std::function motion_collides = [&](const RobotState &a, const RobotState &b) {
-			return check_motion_collides(robot, tree_collision, a, b);
-		};
-
-		// Add the start state to the roadmap.
-		add_and_connect_roadmap_node(start_state, prm, parameters.n_neighbours, std::nullopt, motion_collides);
-
-		// Store the goal sample vertex nodes, with a separate sub-vector for each goal.
-		// Start with a vector of empty vectors.
-		std::vector<PRMGraph::vertex_descriptor> goal_nodes;
-
-		// Look up the link IDs for the base and end effector.
-		robot_model::RobotModel::LinkId base_link = robot.findLinkByName("flying_base");
-		robot_model::RobotModel::LinkId end_effector_link = robot.findLinkByName("end_effector");
-
-		std::vector<size_t> group_sizes(fruit_positions.size(), 0);
-
+	/**
+	 * Build the infrastructure roadmap for the TSP over PRM algorithm.
+	 *
+	 * This algorithm repeatedly:
+	 * - Samples a random state.
+	 * - Checks if it does not collide with the tree.
+	 * - If so, adds it to the roadmap and connects it to the nearest neighbors.
+	 *
+	 * This repeats for a number of iterations, as specified in `parameters.max_samples`.
+	 *
+	 * @param prm				The PRM to build the infrastructure roadmap on
+	 * @param parameters		The parameters for the TSP over PRM algorithm
+	 * @param sample_uniform	A function to sample a random state
+	 * @param state_collides	A function to check if a state collides with the tree
+	 * @param motion_collides	A function to check if a motion between two states collides with the tree
+	 * @param hooks				Optional hooks to observe the behavior of the algorithm
+	 */
+	void build_infrastructure_roadmap(TwoTierMultigoalPRM &prm,
+	                                  const TspOverPrmParameters &parameters,
+	                                  std::function<RobotState()> sample_uniform,
+	                                  std::function<bool(const RobotState &)> state_collides,
+	                                  std::function<bool(const RobotState &, const RobotState &)> motion_collides,
+	                                  const std::optional<TspOverPrmHooks> &hooks) {
 		// Sample infrastructure nodes.
 		for (size_t i = 0; i < parameters.max_samples; ++i) {
 			sample_and_connect_infrastucture_node(prm,
@@ -316,18 +402,40 @@ namespace mgodpl {
 				                                      ? std::make_optional(hooks->infrastructure_sample_hooks)
 				                                      : std::nullopt);
 		}
+	}
+
+	/**
+	 * Sample goal states for the TSP over PRM algorithm, and connect them to the roadmap.
+	 *
+	 * @param fruit_positions		The positions of the fruits to sample goal states for.
+	 * @param prm					The PRM to connect the goal states to.
+	 * @param parameters			The parameters for the TSP over PRM algorithm.
+	 * @param sample_goal_state		A function to sample a goal state for a given fruit index. (Does not check for collisions.)
+	 * @param state_collides		A function to check if a state collides with the tree.
+	 * @param motion_collides		A function to check if a motion between two states collides with the tree.
+	 * @param rng					The random number generator to use for sampling.
+	 * @param hooks					Optional hooks to observe the behavior of the algorithm.
+	 * @return A pair of vectors: the goal nodes in the PRM, and the number of goal samples for each fruit.
+	 */
+	std::pair<std::vector<PRMGraph::vertex_descriptor>, std::vector<size_t> > sample_goal_states(
+		const std::vector<math::Vec3d> &fruit_positions,
+		TwoTierMultigoalPRM &prm,
+		const TspOverPrmParameters &parameters,
+		const std::function<RobotState(size_t)> &sample_goal_state,
+		const std::function<bool(const RobotState &)> &state_collides,
+		const std::function<bool(const RobotState &, const RobotState &)> &motion_collides,
+		random_numbers::RandomNumberGenerator &rng,
+		const std::optional<TspOverPrmHooks> &hooks
+	) {
+		// Store the goal sample vertex nodes, with a separate sub-vector for each goal.
+		// Start with a vector of empty vectors.
+		std::vector<PRMGraph::vertex_descriptor> goal_nodes;
+
+		std::vector<size_t> group_sizes(fruit_positions.size(), 0);
 
 		// Sample goal nodes.
 		for (size_t goal_index = 0; goal_index < fruit_positions.size(); ++goal_index) {
-			std::function goal_sample = [&]() {
-				return genGoalStateUniform(
-					rng,
-					fruit_positions[goal_index],
-					robot,
-					base_link,
-					end_effector_link
-				);
-			};
+			std::function goal_sample = [&]() { return sample_goal_state(goal_index); };
 
 			auto goal_sample_states = sample_and_connect_goal_states(
 				prm,
@@ -345,49 +453,140 @@ namespace mgodpl {
 			group_sizes[goal_index] = goal_sample_states.size();
 		}
 
-		// Create a group index table.
-		GroupIndexTable group_index_table(group_sizes);
+		return {goal_nodes, group_sizes};
+	}
 
-		// Allocate the distance lookup table.
-		// Store a goal-sample-to-goal-sample distance lookup table.
-		// Given two goal samples indices i and j, distance_lookup[i][j] contains
-		// the distance from goal sample i to goal sample j through the PRM.
-		//
-		// Note: these are global goal sample indices, not graph vertex IDs. (See group_index_table)
-		std::vector<std::vector<double> > distance_lookup;
-		std::vector<double> start_to_goals_distances;
+	/**
+	 * This structure contains the distance lookup tables and predecessor lookup tables
+	 * necessary to reconstruct the paths between goals and from the start to the goals.
+	 */
+	struct GoalToGoalPathResults {
+		/// Distance lookup tables between goal samples.
+		std::vector<std::vector<double> > distance_lookup; ///< Distance lookup table between goal samples.
+		/// Distance lookup table from the start node to each goal sample.
+		std::vector<double> start_to_goals_distances; ///< Distances from the start node to each goal sample.
 
-		// And a predecessor lookup table to reconstruct the paths.
+		/// Predecessor lookup tables for reconstructing goal-to-goal paths.
 		std::vector<std::vector<PRMGraph::vertex_descriptor> > predecessor_lookup;
+		/// Predecessor lookup table for reconstructing paths from the start to each goal.
 		std::vector<PRMGraph::vertex_descriptor> start_to_goals_predecessors;
+	};
 
-		distance_lookup.resize(group_index_table.total());
-		predecessor_lookup.resize(group_index_table.total());
+	/**
+	 * @brief Calculate the distances and paths between goal nodes and from the start node to goal nodes.
+	 *
+	 * This function runs Dijkstra's algorithm from each goal node to calculate the distances and predecessor
+	 * lookup tables for reconstructing the paths. It also runs Dijkstra's algorithm from the start node to
+	 * calculate the distances and predecessor lookup table for paths from the start to each goal node.
+	 *
+	 * @param graph The PRM graph.
+	 * @param goal_nodes The goal nodes in the PRM graph.
+	 * @param group_index_table The group index table for goal nodes.
+	 * @return A GoalToGoalPathResults structure containing the distance and predecessor lookup tables.
+	 */
+	GoalToGoalPathResults calculate_goal_to_goal_paths(
+		const PRMGraph &graph,
+		const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
+		const GroupIndexTable &group_index_table
+	) {
+		GoalToGoalPathResults results;
+		results.distance_lookup.resize(group_index_table.total());
+		results.predecessor_lookup.resize(group_index_table.total());
 
 		// Calculate the distances between all goal samples.
 		for (size_t i = 0; i < group_index_table.total(); ++i) {
 			// Run Dijkstra's algorithm from the goal node.
-			auto [distances, predecessors] = runDijkstra(prm.graph, goal_nodes[i]);
-
-			// Store the distances and predecessors.
-			distance_lookup[i] = distances;
-			predecessor_lookup[i] = predecessors;
+			std::tie(results.distance_lookup[i], results.predecessor_lookup[i]) = runDijkstra(graph, goal_nodes[i]);
 		}
 
 		// Calculate the distances from the start to all goal samples.
-		{
-			// Run Dijkstra's algorithm from the start node.
-			auto [distances, predecessors] = runDijkstra(prm.graph, 0);
+		// Run Dijkstra's algorithm from the start node.
+		std::tie(results.start_to_goals_distances, results.start_to_goals_predecessors) = runDijkstra(graph, 0);
 
-			// Store the distances and predecessors.
-			start_to_goals_distances = filter_goal_distances_vector(goal_nodes, distances);
-			start_to_goals_predecessors = predecessors;
-		}
+		return results;
+	}
+
+	RobotPath plan_path_tsp_over_prm(
+		const RobotState &start_state,
+		const std::vector<math::Vec3d> &fruit_positions,
+		const robot_model::RobotModel &robot,
+		const fcl::CollisionObjectd &tree_collision,
+		const TspOverPrmParameters &parameters,
+		random_numbers::RandomNumberGenerator &rng,
+		const std::optional<TspOverPrmHooks> &hooks
+	) {
+		// Look up the link IDs for the base and end effector. (TODO: could potentially abstract this away into a goal sampler function?)
+		robot_model::RobotModel::LinkId base_link = robot.findLinkByName("flying_base");
+		robot_model::RobotModel::LinkId end_effector_link = robot.findLinkByName("end_effector");
+
+		// Allocate an empty prm.
+		TwoTierMultigoalPRM prm{
+			.graph = {},
+			.infrastructure_nodes = init_empty_spatial_index(rng)
+		};
+
+		// We allocate a few functions here to hide details regarding collision checking and sampling from the algorithm.
+
+		// Uniform sampling function:
+		std::function sample_uniform = [&]() {
+			return generateUniformRandomState(robot, rng, 5.0, 10.0);
+		};
+
+		// Collision check function:
+		std::function state_collides = [&](const RobotState &state) {
+			return check_robot_collision(robot, tree_collision, state);
+		};
+
+		// Motion collision check function:
+		std::function motion_collides = [&](const RobotState &a, const RobotState &b) {
+			return check_motion_collides(robot, tree_collision, a, b);
+		};
+
+		// Goal sampling function for a given goal index:
+		std::function sample_goal_state = [&](size_t goal_index) {
+			return genGoalStateUniform(
+				rng,
+				fruit_positions[goal_index],
+				robot,
+				base_link,
+				end_effector_link
+			);
+		};
+
+		// Add the start state to the roadmap.
+		add_and_connect_roadmap_node(start_state,
+		                             prm,
+		                             parameters.n_neighbours,
+		                             std::nullopt,
+		                             motion_collides,
+		                             std::nullopt);
+
+		// Build the infrastructure roadmap.
+		build_infrastructure_roadmap(prm, parameters, sample_uniform, state_collides, motion_collides, hooks);
+
+		// Sample goal states and connect them to the roadmap.
+		const auto &[goal_nodes, group_sizes] =
+				sample_goal_states(fruit_positions,
+				                   prm,
+				                   parameters,
+				                   sample_goal_state,
+				                   state_collides,
+				                   motion_collides,
+				                   rng,
+				                   hooks);
+
+		// Create a group index table.
+		GroupIndexTable group_index_table(group_sizes);
+
+		const auto &goal_to_goal_paths = calculate_goal_to_goal_paths(
+			prm.graph,
+			goal_nodes,
+			group_index_table);
 
 		// Plan a visitation order based on the distance lookup tables.
 		auto visitation_order = pick_visitation_order(
-			distance_lookup,
-			start_to_goals_distances,
+			goal_to_goal_paths.distance_lookup,
+			goal_to_goal_paths.start_to_goals_distances,
 			&group_index_table,
 			group_sizes
 		);
@@ -395,8 +594,8 @@ namespace mgodpl {
 		// Construct the final path based on the TSP solution and predecessor lookup tables.
 		auto final_path = construct_final_path(
 			prm.graph,
-			predecessor_lookup,
-			start_to_goals_predecessors,
+			goal_to_goal_paths.predecessor_lookup,
+			goal_to_goal_paths.start_to_goals_predecessors,
 			goal_nodes,
 			visitation_order
 		);
