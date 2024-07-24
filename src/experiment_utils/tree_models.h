@@ -21,7 +21,6 @@
 #include "../planning/RandomNumberGenerator.h"
 
 namespace mgodpl::declarative {
-
 	/**
 	 * @struct TreeModelParameters
 	 *
@@ -37,14 +36,14 @@ namespace mgodpl::declarative {
 	Json::Value toJson(const TreeModelParameters &treeModelParameters);
 
 	std::vector<Mesh> random_subset_of_meshes(random_numbers::RandomNumberGenerator &rng,
-															   const experiments::LoadedTreeModel &tree_model,
-															   const RandomSubset &subset_params);
+	                                          const experiments::LoadedTreeModel &tree_model,
+	                                          const RandomSubset &subset_params);
 
-	using FruitModels = std::variant<std::vector<SphericalFruit>, std::vector<MeshFruit>>;
+	using FruitModels = std::variant<std::vector<SphericalFruit>, std::vector<MeshFruit> >;
 
 	FruitModels instantiate_fruit_models(const experiments::LoadedTreeModel &tree_model,
-										 const FruitSubset &tree_params,
-										 random_numbers::RandomNumberGenerator &rng);
+	                                     const FruitSubset &tree_params,
+	                                     random_numbers::RandomNumberGenerator &rng);
 
 	/**
 	 * An instantiation of the TreeModelParameters, containing a tree model and the fruit models.
@@ -56,11 +55,13 @@ namespace mgodpl::declarative {
 	};
 
 	FullTreeModel instantiate_tree_model(const TreeModelParameters &tree_params,
-										 experiments::TreeModelCache &cache,
-										 random_numbers::RandomNumberGenerator &rng);
+	                                     experiments::TreeModelCache &cache,
+	                                     random_numbers::RandomNumberGenerator &rng);
+
+	FullTreeModel instantiate_tree_model(const TreeModelParameters &tree_params,
+	                                     random_numbers::RandomNumberGenerator &rng);
 
 	std::vector<math::Vec3d> fruit_positions_from_models(const FruitModels &fruit_models);
-
 }
 
 #endif //MGODPL_TREE_MODELS_H
