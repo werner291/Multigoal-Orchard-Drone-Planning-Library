@@ -70,6 +70,7 @@ struct GreedyKCentersHooks {
  * @param k         The number of centers to compute.
  * @param distFun   A function that computes the distance between two data points.
  * @param rng       A random number generator.
+ * @param hooks     A set of hooks that can be used to observe the behavior of the algorithm.
  *
  * @returns     A vector of indices of the computed centers. If fewer than k data points are available, this vector may be smaller than k.
  */
@@ -77,9 +78,9 @@ template<typename T>
 std::vector<size_t> greedy_k_centers(
     const std::vector<T> &data,
     unsigned int k,
-    std::function<double(const T &, const T &)> distFun,
+    const std::function<double(const T &, const T &)> &distFun,
     random_numbers::RandomNumberGenerator &rng,
-    std::optional<GreedyKCentersHooks> hooks = std::nullopt
+    const std::optional<GreedyKCentersHooks> hooks = std::nullopt
 ) {
     // A vector of indices of the computed centers; indices are into the data vector
     std::vector<size_t> centers;
@@ -145,6 +146,7 @@ std::vector<size_t> greedy_k_centers(
         // Add the new center to the list of centers.
         centers.push_back(best_index);
 
+        // Notify the hooks that a new center has been added.
         if (hooks) hooks->centerAdded(centers.back());
     }
 
