@@ -46,7 +46,7 @@ namespace mgodpl {
 		spatial_index.nearestK({state, 0}, k_neighbors, k_nearest);
 
 		// Add the new node to the graph. (Note: we do this AFTER finding the neighbors, so we don't connect to ourselves.)
-		auto new_vertex = boost::add_vertex({state, goal_index}, prm);
+		auto new_vertex = boost::add_vertex(state, prm);
 
 		// Then add the edges:
 		for (const auto &[neighbor_state, neighbor]: k_nearest) {
@@ -118,7 +118,7 @@ namespace mgodpl {
 		auto current_node = goal_node;
 
 		while (predecessor_lookup[current_node] != current_node) {
-			path.states.push_back(graph[current_node].state);
+			path.states.push_back(graph[current_node]);
 			current_node = predecessor_lookup[current_node];
 		}
 
@@ -530,10 +530,6 @@ namespace mgodpl {
 		robot_model::RobotModel::LinkId base_link = robot.findLinkByName("flying_base");
 		robot_model::RobotModel::LinkId end_effector_link = robot.findLinkByName("end_effector");
 
-		// Allocate an empty prm.
-		PRMGraph prm;
-		PRMGraphSpatialIndex infrastructure_spatial_index = init_empty_spatial_index(rng);
-
 		// We allocate a few functions here to hide details regarding collision checking and sampling from the algorithm.
 
 		// Uniform sampling function:
@@ -562,14 +558,9 @@ namespace mgodpl {
 			);
 		};
 
-		// Add the start state to the roadmap.
-		add_and_connect_roadmap_node(start_state,
-		                             prm,
-		                             infrastructure_spatial_index,
-		                             parameters.n_neighbours,
-		                             std::nullopt,
-		                             motion_collides,
-		                             std::nullopt);
+		// Allocate an empty prm.
+		PRMGraph prm;
+		PRMGraphSpatialIndex infrastructure_spatial_index = init_empty_spatial_index(rng);
 
 		// Build the infrastructure roadmap.
 		build_infrastructure_roadmap(prm,
@@ -579,6 +570,15 @@ namespace mgodpl {
 		                             state_collides,
 		                             motion_collides,
 		                             hooks);
+
+		// Add the start state to the roadmap.
+		add_and_connect_roadmap_node(start_state,
+		                             prm,
+		                             infrastructure_spatial_index,
+		                             parameters.n_neighbours,
+		                             std::nullopt,
+		                             motion_collides,
+		                             std::nullopt);
 
 		// Sample goal states and connect them to the roadmap.
 		const auto &[goal_nodes, group_sizes] =

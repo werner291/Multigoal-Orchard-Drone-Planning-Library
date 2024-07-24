@@ -20,19 +20,8 @@
 #include "nearest_neighbours/NearestNeighborsGNAT.h"
 
 namespace mgodpl {
-	/**
-	 * @brief The properties of a vertex in the PRM as stored by Boost Graph Library.
-	 */
-	struct VertexProperties {
-		/// The state of the robot at this vertex.
-		RobotState state;
-		/// The index of the goal this vertex represents, if it is a goal vertex.
-		/// The index is in two parts: the first part is the fruit index, the second part is the goal sample index.
-		std::optional<std::pair<size_t, size_t> > goal_index;
-	};
-
 	// Define the graph type: an undirected graph with the defined vertex properties
-	using PRMGraph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, VertexProperties,
+	using PRMGraph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, RobotState,
 		boost::property<boost::edge_weight_t, double> >;
 
 	// A spatial index for nearest neighbors in the PRM graph.
