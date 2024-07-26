@@ -156,6 +156,9 @@ namespace mgodpl {
 	                                     const std::function<bool(const RobotState &, const RobotState &)> &
 	                                     check_motion,
 	                                     random_numbers::RandomNumberGenerator &rng) {
+		// Assert that the path is at least 3 waypoints long.
+		assert(path.states.size() >= 3);
+
 		// Pick two random path points.
 		PathPoint start = generateRandomPathPoint(path, rng);
 		PathPoint end = generateRandomPathPoint(path, rng);
