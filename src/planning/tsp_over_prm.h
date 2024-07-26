@@ -97,6 +97,8 @@ namespace mgodpl {
 		std::optional<PrmBuildHooks> infrastructure_sample_hooks;
 		/// Hooks for sampling and connecting goal nodes.
 		std::optional<GoalSampleHooks> goal_sample_hooks;
+		/// Hooks for observing the shortcutting process.
+		std::optional<std::function<void(const RobotPath &path)> > on_shortcut;
 	};
 
 	/**

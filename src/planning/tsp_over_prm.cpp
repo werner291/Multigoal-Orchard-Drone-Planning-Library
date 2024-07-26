@@ -14,6 +14,7 @@
 
 #include "collision_detection.h"
 #include "goal_sampling.h"
+#include "local_optimization.h"
 #include "state_tools.h"
 #include "traveling_salesman.h"
 #include "nearest_neighbours/GreedyKCenters.h"
@@ -187,19 +188,20 @@ namespace mgodpl {
 		const std::vector<std::vector<PRMGraph::vertex_descriptor> > &predecessor_lookup,
 		const std::vector<PRMGraph::vertex_descriptor> &start_to_goals_predecessors,
 		const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
-		const std::vector<size_t> &tour
+		const std::vector<size_t> &tour,
+		const std::function<RobotPath(RobotPath)> &optimize_segment
 	) {
 		// Allocate a path object.
 		RobotPath path;
 
 		// Start at the start node.
-		path.append(retrace_path(graph,
-		                         start_to_goals_predecessors,
-		                         goal_nodes[tour[0]]));
+		path.append(optimize_segment(retrace_path(graph,
+		                                          start_to_goals_predecessors,
+		                                          goal_nodes[tour[0]])));
 
 		for (size_t i = 1; i < tour.size(); ++i) {
 			// Retrace the goal-to-goal path, and append it to the path.
-			path.append(retrace_path(graph, predecessor_lookup[tour[i - 1]], goal_nodes[tour[i]]));
+			path.append(optimize_segment(retrace_path(graph, predecessor_lookup[tour[i - 1]], goal_nodes[tour[i]])));
 		}
 
 		return path;
@@ -588,19 +590,26 @@ namespace mgodpl {
 			);
 		};
 
-		// Allocate an empty prm.
-		PRMGraph prm;
-		PRMGraphSpatialIndex infrastructure_spatial_index = init_empty_spatial_index(rng);
+		std::function optimize_path_segment = [&](RobotPath path) {
+			// Do 100 iterations of shortcutting.
+			for (size_t i = 0; i < 100; ++i) {
+				if (tryShortcuttingRandomlyGlobally(path, motion_collides, rng)) {
+					if (hooks && hooks->on_shortcut) hooks->on_shortcut->operator()(path);
+				}
+			}
+			return path;
+		};
 
-		// Build the infrastructure roadmap.
-		build_infrastructure_roadmap(prm,
-		                             infrastructure_spatial_index,
-		                             parameters.max_samples,
-		                             parameters.n_neighbours,
-		                             sample_uniform,
-		                             state_collides,
-		                             motion_collides,
-		                             hooks ? hooks->infrastructure_sample_hooks : std::nullopt);
+		// Allocate an empty prm.
+		auto [prm, infrastructure_spatial_index] = build_prm(
+			parameters.max_samples,
+			parameters.n_neighbours,
+			rng,
+			sample_uniform,
+			state_collides,
+			motion_collides,
+			hooks ? hooks->infrastructure_sample_hooks : std::nullopt
+		);
 
 		// Add the start state to the roadmap.
 		add_and_connect_roadmap_node(start_state,
@@ -644,7 +653,8 @@ namespace mgodpl {
 			goal_to_goal_paths.predecessor_lookup,
 			goal_to_goal_paths.start_to_goals_predecessors,
 			goal_nodes,
-			visitation_order
+			visitation_order,
+			optimize_path_segment
 		);
 
 		// Return the final path.
