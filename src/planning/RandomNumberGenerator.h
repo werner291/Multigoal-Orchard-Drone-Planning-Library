@@ -10,28 +10,28 @@
 #define MGODPL_RANDOMNUMBERGENERATOR_H
 
 #include <random>
+#include <cassert>
 
 namespace random_numbers {
-
 	/**
 	 * Facade to the <random> library.
 	 */
 	class RandomNumberGenerator {
-
 		// The random number generator.
 		std::mt19937 generator;
 
 	public:
-
 		/**
 		 * Constructor that takes a seed.
 		 */
-		RandomNumberGenerator(unsigned int seed) : generator(seed) {}
+		RandomNumberGenerator(unsigned int seed) : generator(seed) {
+		}
 
 		/**
 		 * Constructor that uses a random seed.
 		 */
-		RandomNumberGenerator() : generator(std::random_device()()) {}
+		RandomNumberGenerator() : generator(std::random_device()()) {
+		}
 
 		/**
 		 * Generate a random number uniformly distributed between 0 and 1.
@@ -48,6 +48,7 @@ namespace random_numbers {
 		 * @return 			A random number uniformly distributed between min and max (inclusive).
 		 */
 		inline int uniformInteger(int min, int max) {
+			assert(min <= max);
 			std::uniform_int_distribution<int> distribution(min, max);
 			return distribution(generator);
 		}
@@ -65,7 +66,6 @@ namespace random_numbers {
 			return distribution(generator);
 		}
 	};
-
 } // random_numbers
 
 #endif //MGODPL_RANDOMNUMBERGENERATOR_H
