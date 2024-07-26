@@ -298,7 +298,21 @@ if (ENABLE_EXPERIMENTS)
 
     target_link_libraries(experiment_utils math_utils visibility)
 
-    add_executable(benchmarks src/benchmarks/main.cpp)
+    # Get the latest abbreviated commit hash of the working branch
+    execute_process(
+            COMMAND git log -1 --format=%h
+            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+            OUTPUT_VARIABLE GIT_HASH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    add_compile_definitions(GIT_HASH="${GIT_HASH}")
+
+    add_executable(benchmarks
+            src/benchmarks/main.cpp
+            src/benchmarks/goal_sample_success_rate.cpp
+    )
+
     target_link_libraries(benchmarks math_utils visibility experiment_utils planning)
 endif ()
 
