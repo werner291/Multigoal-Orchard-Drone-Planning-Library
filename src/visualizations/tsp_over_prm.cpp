@@ -57,6 +57,9 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	 * Note: access to this vector should be protected by the data_transfer_mutex.
 	 */
 	std::vector<std::pair<RobotState, bool> > recent_samples;
+	std::optional<RobotPath> final_path;
+	PathPoint final_path_point = {0, 0};
+	std::optional<vizualisation::RobotActors> final_path_follower;
 
 	// Create a tree model.
 	experiments::TreeModelCache cache;
@@ -195,8 +198,11 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			hooks
 		);
 
-		// Visualize the final path.
-		visualization::visualize_ladder_trace(robot, path, viewer);
+		// Visualize the path.
+		{
+			std::lock_guard lock(data_transfer_mutex);
+			final_path = path;
+		}
 	});
 
 	// Finally, register our timer callback.
@@ -215,9 +221,12 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 				}
 			}
 
-			// Add the samples recently sampled.
+			// Process updates received from the algorithm thread.
 			{
+				// Lock the mutex.
 				std::lock_guard lock(data_transfer_mutex);
+
+				// Visualize any states we received.
 				for (const auto &[state, added]: recent_samples) {
 					// Pick a color based on whether it collides.
 					math::Vec3d color = added ? math::Vec3d{0.0, 1.0, 0.0} : math::Vec3d{1.0, 0.0, 0.0};
@@ -232,6 +241,34 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 				// update the edges:
 				prm_edges.updateLine(edges);
 				prm_goal_edges.updateLine(goal_edges);
+
+				// If there's a path, vizualize it as a ladder trace.
+				if (final_path.has_value()) {
+					if (!final_path_follower) {
+						visualize_ladder_trace(robot, *final_path, viewer);
+
+						// Set up the final path follower.
+						final_path_follower = vizualisation::vizualize_robot_state(
+							viewer,
+							robot,
+							robot_model::forwardKinematics(robot, start_state.joint_values, 0, start_state.base_tf),
+							{1, 0, 0});
+					} else {
+						// Advance the path point:
+						final_path_point = final_path_point.adjustByScalar(0.01, *final_path);
+
+						// Update the state.
+						RobotState state = interpolate(final_path_point, *final_path);
+
+						update_robot_state(robot,
+						                   forwardKinematics(
+							                   robot,
+							                   state.joint_values,
+							                   0,
+							                   state.base_tf),
+						                   *final_path_follower);
+					}
+				}
 
 				recent_samples.clear();
 			}
