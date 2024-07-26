@@ -189,19 +189,40 @@ namespace mgodpl {
 		const std::vector<PRMGraph::vertex_descriptor> &start_to_goals_predecessors,
 		const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
 		const std::vector<size_t> &tour,
-		const std::function<RobotPath(RobotPath)> &optimize_segment
+		const std::function<bool(RobotPath &)> &optimize_segment,
+		const std::optional<TspOverPrmHooks> &hooks = std::nullopt
 	) {
 		// Allocate a path object.
-		RobotPath path;
+		RobotPath path; {
+			auto initial_path = retrace_path(graph,
+			                                 start_to_goals_predecessors,
+			                                 goal_nodes[tour[0]]);
 
-		// Start at the start node.
-		path.append(optimize_segment(retrace_path(graph,
-		                                          start_to_goals_predecessors,
-		                                          goal_nodes[tour[0]])));
+			if (hooks) hooks->computed_initial_path(initial_path);
+
+			// Start at the start node.
+			bool optimized = optimize_segment(initial_path);
+
+			if (hooks) hooks->optimized_initial_path(path, optimized);
+
+			path.append(initial_path);
+		}
 
 		for (size_t i = 1; i < tour.size(); ++i) {
 			// Retrace the goal-to-goal path, and append it to the path.
-			path.append(optimize_segment(retrace_path(graph, predecessor_lookup[tour[i - 1]], goal_nodes[tour[i]])));
+			// path.append(optimize_segment(retrace_path(graph, predecessor_lookup[tour[i - 1]], goal_nodes[tour[i]])));
+
+			auto goal_to_goal_path = retrace_path(graph, predecessor_lookup[tour[i - 1]], goal_nodes[tour[i]]);
+
+			if (hooks) hooks->computed_goal_to_goal_path(goal_to_goal_path);
+
+			bool optimized = optimize_segment(goal_to_goal_path);
+
+			if (hooks) hooks->optimized_goal_to_goal_path(goal_to_goal_path, optimized);
+
+			path.append(goal_to_goal_path);
+
+			if (hooks) hooks->final_path_extended(path);
 		}
 
 		return path;
@@ -469,22 +490,6 @@ namespace mgodpl {
 	}
 
 	/**
-	 * This structure contains the distance lookup tables and predecessor lookup tables
-	 * necessary to reconstruct the paths between goals and from the start to the goals.
-	 */
-	struct GoalToGoalPathResults {
-		/// Distance lookup tables between goal samples.
-		std::vector<std::vector<double> > distance_lookup; ///< Distance lookup table between goal samples.
-		/// Distance lookup table from the start node to each goal sample.
-		std::vector<double> start_to_goals_distances; ///< Distances from the start node to each goal sample.
-
-		/// Predecessor lookup tables for reconstructing goal-to-goal paths.
-		std::vector<std::vector<PRMGraph::vertex_descriptor> > predecessor_lookup;
-		/// Predecessor lookup table for reconstructing paths from the start to each goal.
-		std::vector<PRMGraph::vertex_descriptor> start_to_goals_predecessors;
-	};
-
-	/**
 	 * @brief Calculate the distances and paths between goal nodes and from the start node to goal nodes.
 	 *
 	 * This function runs Dijkstra's algorithm from each goal node to calculate the distances and predecessor
@@ -590,15 +595,22 @@ namespace mgodpl {
 			);
 		};
 
-		std::function optimize_path_segment = [&](RobotPath path) {
+		std::function optimize_path_segment = [&](RobotPath &path) {
+			bool successful = false;
+
 			// Do 100 iterations of shortcutting.
 			for (size_t i = 0; i < 100; ++i) {
-				if (tryShortcuttingRandomlyGlobally(path, motion_collides, rng)) {
-					if (hooks && hooks->on_shortcut) hooks->on_shortcut->operator()(path);
+				bool iteration_successful = tryShortcuttingRandomlyGlobally(path, motion_collides, rng);
+				if (iteration_successful) {
+					iteration_successful = true;
+					if (hooks) hooks->on_shortcut(path);
 				}
 			}
-			return path;
+
+			return successful;
 		};
+
+		if (hooks) hooks->on_start();
 
 		// Allocate an empty prm.
 		auto [prm, infrastructure_spatial_index] = build_prm(
@@ -611,14 +623,20 @@ namespace mgodpl {
 			hooks ? hooks->infrastructure_sample_hooks : std::nullopt
 		);
 
+		if (hooks) hooks->on_infrastructure_prm_built(prm);
+
 		// Add the start state to the roadmap.
-		add_and_connect_roadmap_node(start_state,
-		                             prm,
-		                             infrastructure_spatial_index,
-		                             parameters.n_neighbours,
-		                             std::nullopt,
-		                             motion_collides,
-		                             std::nullopt);
+		auto start_node = add_and_connect_roadmap_node(start_state,
+		                                               prm,
+		                                               infrastructure_spatial_index,
+		                                               parameters.n_neighbours,
+		                                               std::nullopt,
+		                                               motion_collides,
+		                                               hooks
+			                                               ? hooks->infrastructure_sample_hooks->add_roadmap_node_hooks
+			                                               : std::nullopt);
+
+		if (hooks) hooks->on_start_node_added(start_node);
 
 		// Sample goal states and connect them to the roadmap.
 		const auto &[goal_nodes, group_sizes] =
@@ -631,6 +649,8 @@ namespace mgodpl {
 				                   motion_collides,
 				                   hooks);
 
+		if (hooks) hooks->on_goal_samples_added(goal_nodes);
+
 		// Create a group index table.
 		GroupIndexTable group_index_table(group_sizes);
 
@@ -638,6 +658,8 @@ namespace mgodpl {
 			prm,
 			goal_nodes,
 			group_index_table);
+
+		if (hooks) hooks->on_goal_to_goal_paths_calculated(goal_to_goal_paths);
 
 		// Plan a visitation order based on the distance lookup tables.
 		auto visitation_order = pick_visitation_order(
@@ -647,6 +669,8 @@ namespace mgodpl {
 			group_sizes
 		);
 
+		if (hooks) hooks->on_visitation_order_picked(visitation_order);
+
 		// Construct the final path based on the TSP solution and predecessor lookup tables.
 		auto final_path = construct_final_path(
 			prm,
@@ -654,8 +678,11 @@ namespace mgodpl {
 			goal_to_goal_paths.start_to_goals_predecessors,
 			goal_nodes,
 			visitation_order,
-			optimize_path_segment
+			optimize_path_segment,
+			hooks
 		);
+
+		if (hooks) hooks->on_final_path_constructed(final_path);
 
 		// Return the final path.
 		return final_path;
