@@ -102,14 +102,9 @@ namespace ompl {
               , removedCacheSize_(removedCacheSize) {
         }
 
-        ~NearestNeighborsGNAT() override {
-            delete tree_;
-        }
-
         void clear() override {
             if (tree_) {
-                delete tree_;
-                tree_ = nullptr;
+                tree_.reset();
             }
             size_ = 0;
             removed_.clear();
@@ -127,7 +122,7 @@ namespace ompl {
                     rebuildDataStructure();
                 tree_->add(*this, data);
             } else {
-                tree_ = new Node(degree_, maxNumPtsPerLeaf_, data);
+                tree_ = std::make_unique<Node>(degree_, maxNumPtsPerLeaf_, data);
                 size_ = 1;
             }
         }
@@ -136,7 +131,7 @@ namespace ompl {
             if (tree_)
                 NearestNeighbors<T>::add(data);
             else if (!data.empty()) {
-                tree_ = new Node(degree_, maxNumPtsPerLeaf_, data[0]);
+                tree_ = std::make_unique<Node>(degree_, maxNumPtsPerLeaf_, data[0]);
 #ifdef GNAT_SAMPLER
                  tree_->subtreeSize_ = data.size();
 #endif
@@ -563,7 +558,7 @@ namespace ompl {
             std::vector<Node *> children_;
         };
 
-        Node *tree_{nullptr};
+        std::unique_ptr<Node> tree_;
         unsigned int degree_;
         unsigned int minDegree_;
         unsigned int maxDegree_;

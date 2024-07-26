@@ -551,7 +551,10 @@ namespace mgodpl {
 		                             motion_collides,
 		                             hooks);
 
-		return {prm, infrastructure_spatial_index};
+		return {
+			prm,
+			std::move(infrastructure_spatial_index)
+		};
 	}
 
 	RobotPath plan_path_tsp_over_prm(
@@ -600,6 +603,11 @@ namespace mgodpl {
 
 			// Do 100 iterations of shortcutting.
 			for (size_t i = 0; i < 100; ++i) {
+				if (path.states.size() <= 2) {
+					// A trivial path cannot be optimized.
+					break;
+				}
+
 				bool iteration_successful = tryShortcuttingRandomlyGlobally(path, motion_collides, rng);
 				if (iteration_successful) {
 					iteration_successful = true;
