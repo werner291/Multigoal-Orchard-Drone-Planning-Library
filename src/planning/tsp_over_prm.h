@@ -110,61 +110,77 @@ namespace mgodpl {
 
 	struct TspOverPrmHooks {
 		/// Hooks for sampling and connecting infrastructure nodes.
+		///
 		std::optional<PrmBuildHooks> infrastructure_sample_hooks = std::nullopt;
+
 		/// Hooks for sampling and connecting goal nodes.
 		std::optional<GoalSampleHooks> goal_sample_hooks = std::nullopt;
-		/// Hooks for observing the shortcutting process.
+
+		/// Hook that is called when a path has been successfully shortened.
 		std::function<void(const RobotPath &path)> on_shortcut = [](const RobotPath &) {
 		};
-		/// Hook for when the planning process starts.
+
+		/// Hook for when the planning process starts; this is about equivalent
+		/// to just calling the function, but the hooks there just in case.
 		std::function<void()> on_start = []() {
 		};
-		/// Hook for when the infrastructure PRM is built.
+
+		/// Hook for when the infrastructure PRM has been built, but neither the start
+		/// nor the goal nodes have been added.
+		///
+		/// The reference to the PRM graph should remain valid until the end of the planning process.
 		std::function<void(const PRMGraph &prm)> on_infrastructure_prm_built = [](const PRMGraph &) {
 		};
+
 		/// Hook for when the start node is added to the roadmap.
 		std::function<void(const PRMGraph::vertex_descriptor &start_node)> on_start_node_added =
 				[](const PRMGraph::vertex_descriptor &) {
 		};
-		/// Hook for when goal samples are added to the roadmap.
+
+		/// Hook for when goal samples have been added to the roadmap.
 		std::function<void(const std::vector<PRMGraph::vertex_descriptor> &goal_nodes)> on_goal_samples_added =
 				[](const std::vector<PRMGraph::vertex_descriptor> &) {
 		};
-		/// Hook for when goal-to-goal paths are calculated.
+
+		/// Hook for when goal-to-goal paths have been calculated.
+		/// Note these aren't *paths* but rather predecessor lookup tables and distances,
+		/// from which the paths can be easily reconstructed through backtracking.
 		std::function<void(const GoalToGoalPathResults &goal_to_goal_paths)> on_goal_to_goal_paths_calculated =
 				[](const GoalToGoalPathResults &) {
 		};
-		/// Hook for when the visitation order is picked.
+
+		/// Hook for when the visitation order has been picked.
 		std::function<void(const std::vector<size_t> &visitation_order)> on_visitation_order_picked =
 				[](const std::vector<size_t> &) {
 		};
-		/// Hook for when the final path is constructed.
+
+		/// Hook for when the initial non-optimized path from the start state to the first goal is computed.
 		std::function<void(const RobotPath &final_path)> computed_initial_path =
 				[](const RobotPath &) {
 		};
 
-		/// Hook for when the final path is constructed.
+		/// Hook for when the initial, optimized path from the start state to the first goal is computed.
 		std::function<void(const RobotPath &final_path, bool optimized)> optimized_initial_path =
 				[](const RobotPath &, bool optimized) {
 		};
 
-		/// Hook for when the final path is constructed.
-		std::function<void(const RobotPath &final_path)> on_final_path_constructed =
-				[](const RobotPath &) {
-		};
-
-		/// Hook for when the final path is constructed.
+		/// Hook for when a goal-to-goal path is computed before optimization.
 		std::function<void(const RobotPath &final_path)> computed_goal_to_goal_path =
 				[](const RobotPath &) {
 		};
 
-		/// Hook for when the final path is constructed.
+		/// Hook for when a goal-to-goal path has been constructed and optimized.
 		std::function<void(const RobotPath &final_path, bool optimized)> optimized_goal_to_goal_path =
 				[](const RobotPath &, bool) {
 		};
 
 		/// Hook for when an additional segment has been added to the final path.
 		std::function<void(const RobotPath &final_path)> final_path_extended =
+				[](const RobotPath &) {
+		};
+
+		/// Hook for when the final path has been constructed.
+		std::function<void(const RobotPath &final_path)> on_final_path_constructed =
 				[](const RobotPath &) {
 		};
 	};
