@@ -92,6 +92,15 @@ namespace mgodpl {
 		[[nodiscard]] bool operator<(const PathPoint &other) const {
 			return toScalar() < other.toScalar();
 		}
+
+		/**
+		 * @brief			Compare two PathPoints.
+		 * @param other		The other PathPoint to compare to.
+		 * @return			True if this PathPoint is after than the other, false otherwise.
+		 */
+		[[nodiscard]] bool operator>(const PathPoint &other) const {
+			return toScalar() > other.toScalar();
+		}
 	};
 
 	/**
