@@ -224,7 +224,7 @@ namespace mgodpl {
 		const std::function<bool(const RobotState &)> &check_state_collides,
 		const std::function<bool(const RobotState &, const RobotState &)> &
 		check_motion_collides,
-		const std::optional<InfrastructureSampleHooks> &hooks
+		const std::optional<PrmBuildHooks> &hooks
 	) {
 		// Generate a random state.
 		auto state = sample_state_at_random();
@@ -385,7 +385,8 @@ namespace mgodpl {
 	 *
 	 * @param prm				The PRM to build the infrastructure roadmap on
 	 * @param spatial_index		The spatial index to use for nearest neighbor queries; new nodes are added to this index
-	 * @param parameters		The parameters for the TSP over PRM algorithm
+	 * @param max_samples		The number of samples to take; this may be more than the number of nodes in the PRM if any colliding samples are discarded
+	 * @param n_neighbours		The number of nearest neighbors to try to connect to
 	 * @param sample_uniform	A function to sample a random state
 	 * @param state_collides	A function to check if a state collides with the tree
 	 * @param motion_collides	A function to check if a motion between two states collides with the tree
@@ -393,22 +394,21 @@ namespace mgodpl {
 	 */
 	void build_infrastructure_roadmap(PRMGraph &prm,
 	                                  PRMGraphSpatialIndex &spatial_index,
-	                                  const TspOverPrmParameters &parameters,
+	                                  const size_t &max_samples,
+	                                  const size_t &n_neighbours,
 	                                  std::function<RobotState()> sample_uniform,
 	                                  std::function<bool(const RobotState &)> state_collides,
 	                                  std::function<bool(const RobotState &, const RobotState &)> motion_collides,
-	                                  const std::optional<TspOverPrmHooks> &hooks) {
+	                                  const std::optional<PrmBuildHooks> &hooks) {
 		// Sample infrastructure nodes.
-		for (size_t i = 0; i < parameters.max_samples; ++i) {
+		for (size_t i = 0; i < max_samples; ++i) {
 			sample_and_connect_infrastucture_node(prm,
 			                                      spatial_index,
-			                                      parameters.n_neighbours,
+			                                      n_neighbours,
 			                                      sample_uniform,
 			                                      state_collides,
 			                                      motion_collides,
-			                                      hooks
-				                                      ? std::make_optional(hooks->infrastructure_sample_hooks)
-				                                      : std::nullopt);
+			                                      hooks);
 		}
 	}
 
@@ -434,7 +434,6 @@ namespace mgodpl {
 		const std::function<RobotState(size_t)> &sample_goal_state,
 		const std::function<bool(const RobotState &)> &state_collides,
 		const std::function<bool(const RobotState &, const RobotState &)> &motion_collides,
-		random_numbers::RandomNumberGenerator &rng,
 		const std::optional<TspOverPrmHooks> &hooks
 	) {
 		// Store the goal sample vertex nodes, with a separate sub-vector for each goal.
@@ -455,7 +454,7 @@ namespace mgodpl {
 				goal_sample,
 				state_collides,
 				motion_collides,
-				hooks ? std::make_optional(hooks->goal_sample_hooks) : std::nullopt);
+				hooks ? hooks->goal_sample_hooks : std::nullopt);
 
 			// Store the goal nodes.
 			goal_nodes.insert(goal_nodes.end(), goal_sample_states.begin(), goal_sample_states.end());
@@ -517,6 +516,37 @@ namespace mgodpl {
 		return results;
 	}
 
+	struct PRM {
+		PRMGraph graph;
+		PRMGraphSpatialIndex spatial_index;
+	};
+
+	PRM build_prm(
+		const size_t &max_samples,
+		const size_t &n_neighbours,
+		random_numbers::RandomNumberGenerator &rng,
+		std::function<RobotState()> sample_uniform,
+		std::function<bool(const RobotState &)> state_collides,
+		std::function<bool(const RobotState &, const RobotState &)> motion_collides,
+		const std::optional<PrmBuildHooks> &hooks
+	) {
+		// Allocate an empty prm.
+		PRMGraph prm;
+		PRMGraphSpatialIndex infrastructure_spatial_index = init_empty_spatial_index(rng);
+
+		// Build the infrastructure roadmap.
+		build_infrastructure_roadmap(prm,
+		                             infrastructure_spatial_index,
+		                             max_samples,
+		                             n_neighbours,
+		                             sample_uniform,
+		                             state_collides,
+		                             motion_collides,
+		                             hooks);
+
+		return {prm, infrastructure_spatial_index};
+	}
+
 	RobotPath plan_path_tsp_over_prm(
 		const RobotState &start_state,
 		const std::vector<math::Vec3d> &fruit_positions,
@@ -565,11 +595,12 @@ namespace mgodpl {
 		// Build the infrastructure roadmap.
 		build_infrastructure_roadmap(prm,
 		                             infrastructure_spatial_index,
-		                             parameters,
+		                             parameters.max_samples,
+		                             parameters.n_neighbours,
 		                             sample_uniform,
 		                             state_collides,
 		                             motion_collides,
-		                             hooks);
+		                             hooks ? hooks->infrastructure_sample_hooks : std::nullopt);
 
 		// Add the start state to the roadmap.
 		add_and_connect_roadmap_node(start_state,
@@ -589,7 +620,6 @@ namespace mgodpl {
 				                   sample_goal_state,
 				                   state_collides,
 				                   motion_collides,
-				                   rng,
 				                   hooks);
 
 		// Create a group index table.

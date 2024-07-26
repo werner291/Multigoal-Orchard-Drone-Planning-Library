@@ -41,7 +41,7 @@ namespace mgodpl {
 	/**
 	 * A set of hooks for sampling and connecting infrastructure nodes.
 	 */
-	struct InfrastructureSampleHooks {
+	struct PrmBuildHooks {
 		// A callback for when a sample is taken, with the state and a boolean indicating whether it was added.
 		std::function<void(const RobotState &state, bool added)> on_sample;
 		// Sub-hooks for connecting the roadmap node to the nearest neighbors.
@@ -94,9 +94,9 @@ namespace mgodpl {
 
 	struct TspOverPrmHooks {
 		/// Hooks for sampling and connecting infrastructure nodes.
-		InfrastructureSampleHooks infrastructure_sample_hooks;
+		std::optional<PrmBuildHooks> infrastructure_sample_hooks;
 		/// Hooks for sampling and connecting goal nodes.
-		GoalSampleHooks goal_sample_hooks;
+		std::optional<GoalSampleHooks> goal_sample_hooks;
 	};
 
 	/**

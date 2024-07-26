@@ -156,7 +156,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 		}
 	};
 
-	InfrastructureSampleHooks infrastructure_sample_hooks{
+	PrmBuildHooks infrastructure_sample_hooks{
 		.on_sample = viz_sampled_state,
 		.add_roadmap_node_hooks = AddRoadmapNodeHooks{
 			.on_edge_considered = viz_edge
