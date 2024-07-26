@@ -297,6 +297,9 @@ if (ENABLE_EXPERIMENTS)
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
     target_link_libraries(experiment_utils math_utils visibility)
+
+    add_executable(benchmarks src/benchmarks/main.cpp)
+    target_link_libraries(benchmarks math_utils visibility experiment_utils planning)
 endif ()
 
 if (ENABLE_VISUALIZATION)
