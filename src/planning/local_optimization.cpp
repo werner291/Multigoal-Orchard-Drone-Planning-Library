@@ -9,10 +9,23 @@
 #include "local_optimization.h"
 
 namespace mgodpl {
-	bool tryShortcutByDeletingWaypoint(const mgodpl::robot_model::RobotModel &robot,
-	                                   mgodpl::RobotPath &path,
-	                                   size_t waypointIndex,
-	                                   const fcl::CollisionObjectd &obstacle) {
+	/**
+	 * Try to shorten a path by deleting the waypoint at the given index. This will result in moving directly from
+	 * the waypoint before the index to the waypoint after the index.
+	 *
+	 * The waypoint to be deleted should not be the first or the last waypoint. (Checked by assertion in debug builds.)
+	 *
+	 * @param path						The path to shorten.
+	 * @param waypointIndex				The index of the waypoint to delete.
+	 * @param check_motion_collides		A function that checks if a motion between two states collides.
+	 * @return							True if the path was successfully shortened, false otherwise.
+	 */
+	bool tryShortcutByDeletingWaypoint(
+		RobotPath &path,
+		size_t waypointIndex,
+		const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides
+	) {
+		// The waypoint to be deleted should not be the first or the last waypoint.
 		assert(waypointIndex > 0 && waypointIndex + 1 < path.states.size());
 
 		// Get the three states affected:
@@ -20,32 +33,22 @@ namespace mgodpl {
 		const auto &current = path.states[waypointIndex];
 		const auto &next = path.states[waypointIndex + 1];
 
-		double toi;
-
-		// Check if the motion between prev and next is collision-free:
-		bool collides = mgodpl::check_motion_collides(
-			robot,
-			obstacle,
-			prev,
-			next,
-			toi
-		);
-
-		if (collides) {
+		if (check_motion_collides(prev, next)) {
 			return false;
 		}
 
 		// If the motion is collision-free, remove the waypoint:
-		path.states.erase(path.states.begin() + waypointIndex);
+		path.states.erase(path.states.begin() + static_cast<long>(waypointIndex));
 
 		return true;
 	}
 
-	bool tryMidpointPull(const mgodpl::robot_model::RobotModel &robot,
-	                     mgodpl::RobotPath &path,
-	                     size_t waypointIndex,
-	                     double pull_factor,
-	                     const fcl::CollisionObjectd &obstacle) {
+	bool tryMidpointPull(
+		RobotPath &path,
+		size_t waypointIndex,
+		double pull_factor,
+		const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides
+	) {
 		assert(waypointIndex > 0 && waypointIndex + 1 < path.states.size());
 
 		// Get the three states affected:
@@ -59,26 +62,8 @@ namespace mgodpl {
 		// Pull the waypoint towards the midpoint:
 		auto new_state = interpolate(current, midpoint, pull_factor);
 
-		// Check collision-freeness on the new two motions that go by the pulled waypoint:
-		double toi1, toi2;
-
-		bool collides1 = mgodpl::check_motion_collides(
-			robot,
-			obstacle,
-			prev,
-			new_state,
-			toi1
-		);
-
-		bool collides2 = mgodpl::check_motion_collides(
-			robot,
-			obstacle,
-			new_state,
-			next,
-			toi2
-		);
-
-		if (collides1 || collides2) {
+		// Check if the motion between prev and next is collision-free. If not, abort.
+		if (check_motion_collides(current, new_state) || check_motion_collides(new_state, next)) {
 			return false;
 		}
 
@@ -88,16 +73,19 @@ namespace mgodpl {
 		return true;
 	}
 
-	bool tryShortcutBetweenPathPoints(const mgodpl::robot_model::RobotModel &robot,
-	                                  mgodpl::RobotPath &path,
-	                                  const mgodpl::PathPoint &start,
-	                                  const mgodpl::PathPoint &end,
-	                                  const fcl::CollisionObjectd &obstacle) {
+	bool tryShortcutBetweenPathPoints(
+		RobotPath &path,
+		const PathPoint &start,
+		const PathPoint &end,
+		const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides
+	) {
+		// Start should be before end.
+		assert(start < end);
+
 		RobotState st1 = interpolate(start, path);
 		RobotState st2 = interpolate(end, path);
 
-		double toi;
-		bool collides = check_motion_collides(robot, obstacle, st1, st2, toi);
+		bool collides = check_motion_collides(st1, st2);
 
 		if (collides) {
 			return false;
@@ -120,15 +108,22 @@ namespace mgodpl {
 		return true; // Shortcut successful.
 	}
 
-	bool tryDeletingEveryWaypoint(const mgodpl::robot_model::RobotModel &robot,
-	                              mgodpl::RobotPath &path,
-	                              const fcl::CollisionObjectd &obstacle) {
+	PathPoint generateRandomPathPoint(const RobotPath &path, random_numbers::RandomNumberGenerator &rng) {
+		size_t segment_i = rng.uniformInteger(0, path.states.size() - 2);
+		double segment_t = rng.uniformReal(0.0, 1.0);
+		return PathPoint{segment_i, segment_t};
+	}
+
+	bool tryDeletingEveryWaypoint(
+		RobotPath &path,
+		const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides
+	) {
 		size_t cursor = 1;
 
 		bool shortened = false;
 
 		while (cursor + 1 < path.states.size()) {
-			if (tryShortcutByDeletingWaypoint(robot, path, cursor, obstacle)) {
+			if (tryShortcutByDeletingWaypoint(path, cursor, check_motion_collides)) {
 				shortened = true;
 			} else {
 				cursor++;
@@ -138,10 +133,11 @@ namespace mgodpl {
 		return shortened;
 	}
 
-	bool tryShortcuttingRandomly(const mgodpl::robot_model::RobotModel &robot,
-	                             mgodpl::RobotPath &path,
-	                             const fcl::CollisionObjectd &obstacle,
-	                             random_numbers::RandomNumberGenerator &rng) {
+	bool tryShortcuttingRandomlyLocally(
+		RobotPath &path,
+		random_numbers::RandomNumberGenerator &rng,
+		const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides
+	) {
 		// Generate a random path point.
 		PathPoint middle = generateRandomPathPoint(path, rng);
 
@@ -153,6 +149,23 @@ namespace mgodpl {
 		PathPoint end = middle.adjustByScalar(radius, path);
 
 		// Try to shortcut between the two points.
-		return tryShortcutBetweenPathPoints(robot, path, start, end, obstacle);
+		return tryShortcutBetweenPathPoints(path, start, end, check_motion_collides);
+	}
+
+	bool tryShortcuttingRandomlyGlobally(RobotPath &path,
+	                                     const std::function<bool(const RobotState &, const RobotState &)> &
+	                                     check_motion,
+	                                     random_numbers::RandomNumberGenerator &rng) {
+		// Pick two random path points.
+		PathPoint start = generateRandomPathPoint(path, rng);
+		PathPoint end = generateRandomPathPoint(path, rng);
+
+		// Swap to make sure start is before end.
+		if (start > end) {
+			std::swap(start, end);
+		}
+
+		// Try shortcutting between the two points.
+		return tryShortcutBetweenPathPoints(path, start, end, check_motion);
 	}
 }
