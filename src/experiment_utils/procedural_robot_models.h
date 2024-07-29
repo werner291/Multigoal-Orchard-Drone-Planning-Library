@@ -8,17 +8,16 @@
 #include "../planning/RobotModel.h"
 
 namespace mgodpl::experiments {
-
 	// The length of the arm in the robot model.
 	static const double ARM_LENGTH = 0.75;
 
-/**
-	 * @enum JointType
-	 * @brief An enumeration representing whether a joint is horizontal or vertical.
-	 */
+	/**
+		 * @enum JointType
+		 * @brief An enumeration representing whether a joint is horizontal or vertical.
+		 */
 	enum JointType {
 		HORIZONTAL, ///< Represents a horizontal joint.
-		VERTICAL    ///< Represents a vertical joint.
+		VERTICAL ///< Represents a vertical joint.
 	};
 
 	/**
@@ -46,9 +45,51 @@ namespace mgodpl::experiments {
 		}
 	};
 
-	mgodpl::robot_model::RobotModel createProceduralRobotModel(const RobotArmParameters &parameters);
+	/**
+	 * @struct RobotArmMetaParameters
+	 * @brief A structure representing the meta-parameters for generating robot arm parameters.
+	 *
+	 * This structure contains the lengths of the arms, the maximum number of links,
+	 * and flags indicating whether to include all horizontal, all vertical, and alternating horizontal/vertical joints.
+	 */
+	struct RobotArmMetaParameters {
+		std::array<double, 4> arm_lengths; ///< An array of arm lengths.
+		size_t max_links; ///< The maximum number of links in the arm.
+		bool include_all_horizontal; ///< Flag to include all horizontal joints.
+		bool include_all_vertical; ///< Flag to include all vertical joints.
+		bool include_alternating_horizontal_vertical; ///< Flag to include alternating horizontal/vertical joints.
+	};
 
-	mgodpl::robot_model::RobotModel createProceduralRobotModel();
+	/**
+	 * @brief Generates a vector of RobotArmParameters based on the given meta-parameters.
+	 *
+	 * This function generates a vector of RobotArmParameters by iterating over the arm lengths and the maximum number of links,
+	 * and including the specified joint types based on the meta-parameters.
+	 *
+	 * @param meta_params The meta-parameters for generating robot arm parameters.
+	 * @return A vector of RobotArmParameters.
+	 */
+	std::vector<RobotArmParameters> generateRobotArmParameters(
+		const RobotArmMetaParameters &meta_params);
+
+	/**
+	 * @brief Creates a procedural robot model based on the given robot arm parameters.
+	 *
+	 * This function creates a procedural robot model using the specified robot arm parameters.
+	 *
+	 * @param parameters The parameters of the robot arm.
+	 * @return A procedural robot model.
+	 */
+	robot_model::RobotModel createProceduralRobotModel(const RobotArmParameters &parameters);
+
+	/**
+	 * @brief Creates a default procedural robot model.
+	 *
+	 * This function creates a procedural robot model using default parameters.
+	 *
+	 * @return A default procedural robot model.
+	 */
+	robot_model::RobotModel createProceduralRobotModel();
 }
 
 #endif //MGODPL_PROCEDURAL_ROBOT_MODELS_H

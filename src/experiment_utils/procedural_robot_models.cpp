@@ -15,6 +15,48 @@ namespace mgodpl {
 	using namespace experiments;
 	using namespace robot_model;
 
+	std::vector<mgodpl::experiments::RobotArmParameters> experiments::generateRobotArmParameters(
+		const RobotArmMetaParameters &meta_params) {
+		std::vector<mgodpl::experiments::RobotArmParameters> robot_arm_parameters;
+
+		for (const auto &arm_length: meta_params.arm_lengths) {
+			for (size_t i = 0; i < meta_params.max_links; ++i) {
+				std::vector<std::vector<mgodpl::experiments::JointType> > joint_types;
+
+				if (meta_params.include_all_vertical) {
+					// All vertical:
+					joint_types.emplace_back(i, mgodpl::experiments::JointType::VERTICAL);
+				}
+
+				if (meta_params.include_all_horizontal) {
+					// All horizontal:
+					joint_types.emplace_back(i, mgodpl::experiments::JointType::HORIZONTAL);
+				}
+
+				if (meta_params.include_alternating_horizontal_vertical) {
+					// Alternating horizontal/vertical:
+					std::vector<mgodpl::experiments::JointType> alternating_joint_types;
+					for (size_t j = 0; j < i; ++j) {
+						alternating_joint_types.push_back(j % 2 == 0
+							                                  ? mgodpl::experiments::JointType::HORIZONTAL
+							                                  : mgodpl::experiments::JointType::VERTICAL);
+					}
+					joint_types.push_back(alternating_joint_types);
+				}
+
+				for (const auto &joint_type: joint_types) {
+					robot_arm_parameters.push_back(mgodpl::experiments::RobotArmParameters{
+						.total_arm_length = arm_length,
+						.joint_types = joint_type,
+						.add_spherical_wrist = false
+					});
+				}
+			}
+		}
+
+		return robot_arm_parameters;
+	}
+
 	/**
 	 * @brief Creates a procedural robot model.
 	 *
