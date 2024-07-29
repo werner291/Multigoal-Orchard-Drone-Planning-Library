@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 		// Record the starting time:
 		auto start = std::chrono::high_resolution_clock::now();
 
-		benchmarks[visualization_name]();
+		benchmarks[visualization_name](root["results"]);
 
 		// Record the ending time:
 		auto end = std::chrono::high_resolution_clock::now();
@@ -86,6 +86,8 @@ int main(int argc, char **argv) {
 		std::ofstream file(filename.str());
 		file << root;
 		file.close();
+
+		std::cout << "Results written to " << filename.str() << std::endl;
 	} else {
 		// Print available benchmarks
 		std::cout << "No benchmark chosen. Available benchmarks:" << std::endl;
