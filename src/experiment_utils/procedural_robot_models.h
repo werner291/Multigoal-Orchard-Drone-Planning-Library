@@ -43,6 +43,11 @@ namespace mgodpl::experiments {
 		[[nodiscard]] double arm_segment_length() const {
 			return total_arm_length / (double) joint_types.size();
 		}
+
+		/**
+		 * Compile a short string corresponding to the parameters.
+		 */
+		[[nodiscard]] std::string short_designator() const;
 	};
 
 	/**
