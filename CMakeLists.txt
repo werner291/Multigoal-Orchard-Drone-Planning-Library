@@ -310,6 +310,7 @@ if (ENABLE_EXPERIMENTS)
     add_executable(benchmarks
             src/benchmarks/main.cpp
             src/benchmarks/goal_sample_success_rate.cpp
+            src/benchmarks/tree_stats.cpp
     )
 
     target_link_libraries(benchmarks math_utils visibility experiment_utils planning)
