@@ -14,7 +14,6 @@
 #include "../planning/RandomNumberGenerator.h"
 #include "../planning/RobotState.h"
 #include "../planning/state_tools.h"
-#include "../planning/vptree.hpp"
 #include "../planning/fcl_utils.h"
 #include "../planning/traveling_salesman.h"
 #include "../planning/tsp_over_prm.h"

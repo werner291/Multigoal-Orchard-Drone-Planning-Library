@@ -222,7 +222,6 @@ add_library(planning
         src/planning/fcl_utils.h
         src/planning/local_optimization.cpp
         src/planning/local_optimization.h
-        src/planning/vptree.hpp
         src/planning/traveling_salesman.h
         src/planning/traveling_salesman.cpp
         src/planning/tsp_over_prm.cpp
@@ -437,3 +436,6 @@ if (ENABLE_PYTHON_BINDINGS)
     target_link_libraries(pymgodpl PRIVATE math_utils visibility planning experiment_utils ${PROJECT_NAME}_visualisation ${VTK_LIBRARIES})
     ament_target_dependencies(pymgodpl PUBLIC ${AMENT_DEPS})
 endif ()
+
+add_custom_target(benchmarks_and_visualizations)
+add_dependencies(benchmarks_and_visualizations benchmarks visualizations)
