@@ -51,13 +51,14 @@
         '';
 
         buildPhase = ''
-          ninja visualizations
+          ninja benchmarks_and_visualizations
         '';
 
         installPhase = ''
           ls
           mkdir -p $out/bin
           cp -r visualizations $out/bin
+          cp -r benchmarks $out/bin
           cp -r test_robots $out
         '';
       };
