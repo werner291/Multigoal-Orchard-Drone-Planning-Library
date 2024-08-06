@@ -30,16 +30,16 @@ namespace mgodpl::tree_meshes {
 
 		meshes.tree_name = treeName;
 
-		meshes.leaves_mesh = from_dae("../3d-models/" + treeName + "_leaves.dae");
-		meshes.trunk_mesh = from_dae("../3d-models/" + treeName + "_trunk.dae");
+		meshes.leaves_mesh = from_dae("3d-models/" + treeName + "_leaves.dae");
+		meshes.trunk_mesh = from_dae("3d-models/" + treeName + "_trunk.dae");
 
 		// Due to legacy reasons, some files are named "fruit" others are named "apples". Test if the file exists:
-		if (std::filesystem::exists("../3d-models/" + treeName + "_fruit.dae")) {
-			auto fruit_meshes = from_dae("../3d-models/" + treeName + "_fruit.dae");
+		if (std::filesystem::exists("3d-models/" + treeName + "_fruit.dae")) {
+			auto fruit_meshes = from_dae("3d-models/" + treeName + "_fruit.dae");
 
 			meshes.fruit_meshes = break_down_to_connected_components(fruit_meshes);
 		} else {
-			auto fruit_meshes = from_dae("../3d-models/" + treeName + "_apples.dae");
+			auto fruit_meshes = from_dae("3d-models/" + treeName + "_apples.dae");
 
 			meshes.fruit_meshes = break_down_to_connected_components(fruit_meshes);
 		}
