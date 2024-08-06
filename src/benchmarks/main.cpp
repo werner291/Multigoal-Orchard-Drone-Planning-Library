@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 	if (argc >= 2) {
 		std::string visualization_name = argv[1];
 		if (benchmarks.find(visualization_name) == benchmarks.end()) {
-			std::cout << "Unknown visualization: " << visualization_name << std::endl;
+			std::cout << "Unknown benchmark: " << visualization_name << std::endl;
 			return 1;
 		}
 
