@@ -17,7 +17,21 @@ const double CENTIMETERS_PER_INCH = 2.54;
 mgodpl::Mesh mgodpl::from_dae(const std::string &dae_file) {
 
 	Assimp::Importer importer;
-	const aiScene *scene = importer.ReadFile(dae_file, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+
+	// Tell Assimp to delete everything but vertices and faces.
+	importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
+								aiComponent_NORMALS                  |
+								aiComponent_TANGENTS_AND_BITANGENTS  |
+								aiComponent_COLORS                   |
+								aiComponent_TEXCOORDS                |
+								aiComponent_BONEWEIGHTS              |
+								aiComponent_ANIMATIONS               |
+								aiComponent_TEXTURES                 |
+								aiComponent_LIGHTS                   |
+								aiComponent_CAMERAS                  |
+								aiComponent_MATERIALS);
+
+	const aiScene *scene = importer.ReadFile(dae_file, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_RemoveComponent);
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 		throw std::runtime_error("Failed to load mesh from " + dae_file + ": " + importer.GetErrorString());
 	}
