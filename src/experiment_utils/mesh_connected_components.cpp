@@ -55,8 +55,8 @@ namespace mgodpl {
 						connected_component_ids[in_ccb] = ccidA;
 					}
 
-					// Remove the second component.
-					connected_components.erase(ccidB);
+					// Clear the second component:
+					connected_components[ccidB].clear();
 				}
 
 			}
@@ -65,7 +65,9 @@ namespace mgodpl {
 		// Return a vector of connected components.
 		std::vector<std::vector<size_t>> result;
 		for (auto [_id, contents]: connected_components) {
-			result.push_back(std::move(contents));
+			if (!contents.empty()) {
+				result.push_back(std::move(contents));
+			}
 		}
 		return result;
 	}
