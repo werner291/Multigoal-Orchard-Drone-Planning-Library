@@ -44,6 +44,7 @@
           re2
           flann # A library for fast approximate nearest neighbors.
           lz4 # Unlisted dependency of flann.
+          (python3.withPackages (ps: with ps; [matplotlib pandas numpy]))
         ];
 
         configurePhase = ''
