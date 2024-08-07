@@ -2,7 +2,7 @@ import json
 import matplotlib.pyplot as plt
 import argparse
 
-from loach_benchmark_results import load_benchmark_results
+from load_benchmark_results import load_benchmark_results
 
 results = load_benchmark_results('benchmark_tree_stats', 'Plot number of fruits per tree from a JSON file.')
 
