@@ -4,19 +4,7 @@ import argparse
 
 from loach_benchmark_results import load_benchmark_results
 
-parser = argparse.ArgumentParser(description='Plot number of fruits per tree from a JSON file.')
-parser.add_argument('file_path', nargs='?', type=str, help='Path to the JSON file containing tree stats')
-parser.add_argument('--benchmark_name', type=str, default='benchmark_tree_stats',
-                    help='Benchmark name prefix for finding the latest file')
-args = parser.parse_args()
-
-if args.file_path:
-    with open(args.file_path, 'r') as file:
-        data = json.load(file)
-    results = data['results']
-    print(f"Using file: {args.file_path}")
-else:
-    results = load_benchmark_results(args.benchmark_name)
+results = load_benchmark_results('benchmark_tree_stats', 'Plot number of fruits per tree from a JSON file.')
 
 # Define the metrics to plot
 metrics = ['n_fruit', 'leaf_triangles', 'trunk_triangles']
@@ -49,6 +37,6 @@ for ax, metric in zip(axes, metrics):
 
 # Adjust layout
 plt.tight_layout()
-plt.subplots_adjust(hspace=0.5, bottom=0.2)
-plt.savefig('tree_stats.svg')
+plt.subplots_adjust(hspace=1.0, bottom=0.2)
+# plt.savefig('tree_stats.svg')
 plt.show()
