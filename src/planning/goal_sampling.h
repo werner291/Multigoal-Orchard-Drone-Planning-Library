@@ -17,11 +17,23 @@
 
 namespace mgodpl {
 	/**
-	 * Generate an upright robot state, without checking for collisions.
-	 * @param rng 		The random number generator to use.
-	 * @return 			The generated robot state.
+	 * @brief Generates an upright state for a given robot model, without collision checking.
+	 *
+	 * This function generates an upright state for a given robot model.
+	 *
+	 * The state consists of a base transform and joint values.
+	 * The base transform is initialized with a translation of (0.0, 0.0, 0.0) and a random orientation around the Z-axis.
+	 *
+	 * The joint values are initialized based on the joint types of the robot model.
+	 * - For revolute joints, a random value between the minimum and maximum angle is chosen.
+	 * - For fixed joints, no value is added.
+	 * If an unknown joint type is encountered, the function throws a runtime error.
+	 *
+	 * @param robot The robot model for which to generate an upright state.
+	 * @param rng A random number generator used to generate the random orientation and joint values.
+	 * @return The generated upright state for the robot model.
 	 */
-	RobotState genUprightState(random_numbers::RandomNumberGenerator &rng);
+	RobotState genUprightState(const robot_model::RobotModel &robot, random_numbers::RandomNumberGenerator &rng);
 
 	/**
 	 * Generate a state where the end effector is at the given target, not checking for collisions.
