@@ -10,6 +10,7 @@
 #define MGODPL_FCL_UTILS_H
 
 #include <memory>
+#include <fcl/narrowphase/collision.h>
 #include <fcl/narrowphase/collision_object.h>
 
 namespace mgodpl {
