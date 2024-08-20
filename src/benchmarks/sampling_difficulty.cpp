@@ -79,8 +79,8 @@ REGISTER_BENCHMARK(sampling_difficulty) {
 		std::cout << "Sampling for tree model " << tree_model_name << std::endl;
 
 		// Record the sampling radii in the results
-		results["results"][tree_model_name]["h_radius"] = sample_h;
-		results["results"][tree_model_name]["z_radius"] = sample_z;
+		results[tree_model_name]["h_radius"] = sample_h;
+		results[tree_model_name]["z_radius"] = sample_z;
 
 		// Sample 10,000 states.
 		for (int i = 0; i < 10000; ++i) {
@@ -102,12 +102,15 @@ REGISTER_BENCHMARK(sampling_difficulty) {
 			// Compute the signed distance (negative if inside the convex hull, positive otherwise)
 			double signed_distance = inside_tree ? -distance : distance;
 
+			Json::Value sample_result;
+			sample_result["base_center"][0] = base_center.getX();
+			sample_result["base_center"][1] = base_center.getY();
+			sample_result["base_center"][2] = base_center.getZ();
+			sample_result["signed_depth"] = signed_distance;
+			sample_result["collides"] = collides;
+
 			// Record the base center, signed distance, and collision status in the results
-			results["results"][tree_model_name]["samples"]["base_center"][0] = base_center.getX();
-			results["results"][tree_model_name]["samples"]["base_center"][1] = base_center.getY();
-			results["results"][tree_model_name]["samples"]["base_center"][2] = base_center.getZ();
-			results["results"][tree_model_name]["samples"]["signed_depth"].append(signed_distance);
-			results["results"][tree_model_name]["samples"]["collides"].append(collides);
+			results[tree_model_name]["samples"].append(sample_result);
 
 		}
 	}
