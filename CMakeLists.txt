@@ -402,6 +402,7 @@ if (ENABLE_VISUALIZATION)
             src/visualizations/reacharound_motions.cpp
             src/visualizations/tsp_over_prm.cpp
             src/visualizations/shortcutting.cpp
+            src/visualizations/goal_samples.cpp
     )
 
     target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
