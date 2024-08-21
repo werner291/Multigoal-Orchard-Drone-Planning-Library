@@ -11,13 +11,10 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
 #include "ConvexHullSpace.h"
-#include "moveit_state_tools.h"
 
 namespace mgodpl {
 
 	using namespace cgal;
-	using namespace moveit_facade;
-	using namespace experiment_state_tools;
 
 	Surface_mesh make_chull(const std::vector<math::Vec3d> &points) {
 		Surface_mesh mesh;

@@ -8,13 +8,12 @@
 
 #include <fcl/narrowphase/collision_object.h>
 #include <fcl/narrowphase/collision.h>
-#include <random_numbers/random_numbers.h>
 #include <CGAL/convex_hull_3.h>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include "../planning/RobotModel.h"
 #include "../experiment_utils/procedural_robot_models.h"
 #include "../experiment_utils/TreeMeshes.h"
-#include "../experiment_utils/fcl_utils.h"
+#include "../planning/fcl_utils.h"
 #include "../visualization/SimpleVtkViewer.h"
 #include "../planning/ConvexHullSpace.h"
 #include "../planning/state_tools.h"
@@ -111,8 +110,14 @@ REGISTER_VISUALIZATION(probing_fullpath)
 	// First, get some stats on how many straight-in motions we can do.
 	const std::vector<math::Vec3d>& targets = computeFruitPositions(tree_model);
 
+	ShellPathPlanningMethod planner;
+
 	// Plan the final path as a whole:
-	RobotPath final_path = plan_multigoal_path(robot, tree_model, initial_state);
+	RobotPath final_path = planner.plan_static(robot,
+											   tree_model.trunk_mesh,
+											   tree_model.leaves_mesh,
+											   targets,
+											   initial_state);
 
 	auto end_time = std::chrono::high_resolution_clock::now();
 

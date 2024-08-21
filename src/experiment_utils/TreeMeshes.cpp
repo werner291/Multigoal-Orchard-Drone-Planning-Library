@@ -7,9 +7,8 @@
 #include <iostream>
 
 #include "TreeMeshes.h"
-#include "load_mesh_ros.h"
 #include "mesh_connected_components.h"
-#include "mesh_utils.h"
+#include "mesh_from_dae.h"
 
 namespace mgodpl::tree_meshes {
 	/**
@@ -31,55 +30,61 @@ namespace mgodpl::tree_meshes {
 
 		meshes.tree_name = treeName;
 
-		meshes.leaves_mesh = loadMesh(treeName + "_leaves.dae");
-		meshes.trunk_mesh = loadMesh(treeName + "_trunk.dae");
+		meshes.leaves_mesh = from_dae("3d-models/" + treeName + "_leaves.dae");
+		meshes.trunk_mesh = from_dae("3d-models/" + treeName + "_trunk.dae");
 
-		auto fruit_meshes = loadMesh(treeName + "_fruit.dae");
+		// Due to legacy reasons, some files are named "fruit" others are named "apples". Test if the file exists:
+		if (std::filesystem::exists("3d-models/" + treeName + "_fruit.dae")) {
+			auto fruit_meshes = from_dae("3d-models/" + treeName + "_fruit.dae");
 
-		meshes.fruit_meshes = break_down_to_connected_components(fruit_meshes);
+			meshes.fruit_meshes = break_down_to_connected_components(fruit_meshes);
+		} else {
+			auto fruit_meshes = from_dae("3d-models/" + treeName + "_apples.dae");
+
+			meshes.fruit_meshes = break_down_to_connected_components(fruit_meshes);
+		}
 
 		size_t n_before = meshes.fruit_meshes.size();
 
 		// Some meshes are actually tiny sliver triangles that represent the "Stem" of the fruit. WE should ignore these.
 		meshes.fruit_meshes
-				.erase(std::remove_if(meshes.fruit_meshes.begin(), meshes.fruit_meshes.end(), [](const auto &mesh) {
-					return mesh.vertices.size() <= 5;
-				}), meshes.fruit_meshes.end());
+				.erase(std::remove_if(meshes.fruit_meshes.begin(),
+				                      meshes.fruit_meshes.end(),
+				                      [](const auto &mesh) {
+					                      return mesh.vertices.size() <= 5;
+				                      }),
+				       meshes.fruit_meshes.end());
 
 		size_t n_after = meshes.fruit_meshes.size();
 
 		if (n_before != n_after) {
 			std::cout << "Removed " << n_before - n_after << " out of " << n_before
-					  << " fruit meshes that were too small from model " << treeName << std::endl;
+					<< " fruit meshes that were too small from model " << treeName << std::endl;
 		}
 
 		return meshes;
 	}
 
 	std::vector<std::string> getTreeModelNames() {
-
 		std::string root(MYSOURCE_ROOT);
 
 
 		std::vector<std::string> modelNames;
 
 		for (const auto &entry: std::filesystem::directory_iterator(root + "/3d-models/")) {
-
 			// Check if the file is a *_trunk.dae file
 
 			if (entry.path().extension() == ".dae" &&
-				entry.path().stem().string().find("_trunk") != std::string::npos) {
-
+			    entry.path().stem().string().find("_trunk") != std::string::npos) {
 				// Extract the name of the file excluding the _trunk.dae part and add it to the vector
 				modelNames.push_back(entry.path()
-											 .stem()
-											 .string()
-											 .substr(0, entry.path().stem().string().find("_trunk")));
+					.stem()
+					.string()
+					.substr(0, entry.path().stem().string().find("_trunk")));
 			}
 		}
 
 		return modelNames;
-
 	}
 
 	bool endsWith(std::string_view str, std::string_view suffix) {
@@ -87,7 +92,6 @@ namespace mgodpl::tree_meshes {
 	}
 
 	std::vector<std::string> getTreeNames() {
-
 		// Check inside the 3d-models directory for all the tree names.
 		// Tree models always come in 3 files: treename_leaves.dae, treename_trunk.dae, treename_fruit.dae
 		// So we can just look for all the files ending in _fruit.dae and strip off the _fruit.dae to get the tree name.
@@ -99,29 +103,21 @@ namespace mgodpl::tree_meshes {
 		const std::string tree_model_suffix = "_fruit.dae";
 
 		for (const auto &entry: std::filesystem::directory_iterator(tree_model_directory)) {
-
 			if (entry.is_regular_file()) {
-
 				std::string filename = entry.path().filename().string();
 
 				if (endsWith(filename, tree_model_suffix)) {
-
 					std::string tree_name = filename.substr(0, filename.size() - tree_model_suffix.size());
 
 					tree_names.push_back(tree_name);
-
 				}
-
 			}
-
 		}
 
 		return tree_names;
-
 	}
 
 	std::vector<TreeMeshes> loadRandomTreeModels(const int n, const int max_fruit) {
-
 		// Initialize a random number generator.
 		std::mt19937 gen(std::random_device{}());
 
@@ -152,7 +148,6 @@ namespace mgodpl::tree_meshes {
 	}
 
 	std::vector<TreeMeshes> loadAllTreeMeshes() {
-
 		// Get the names of available tree models and shuffle them.
 		auto tree_names = getTreeModelNames();
 
@@ -165,17 +160,14 @@ namespace mgodpl::tree_meshes {
 			auto models = loadTreeMeshes(name);
 
 			// If the tree model has a suitable number of fruit meshes, add it to the vector.
-				tree_models.push_back(models);
-
+			tree_models.push_back(models);
 		}
 
 		// Return the vector of loaded tree models.
 		return tree_models;
-
 	}
 
 	std::vector<TreeMeshes> loadAllTreeModels(int max_n, int max_fruit) {
-
 		// Get the names of available tree models and shuffle them.
 		auto tree_names = getTreeModelNames();
 
@@ -200,7 +192,6 @@ namespace mgodpl::tree_meshes {
 
 		// Return the vector of loaded tree models.
 		return tree_models;
-
 	}
 
 	SimplifiedOrchard makeSingleRowOrchard(std::vector<TreeMeshes> &tree_models) {
@@ -208,7 +199,7 @@ namespace mgodpl::tree_meshes {
 		SimplifiedOrchard orchard;
 
 		for (const auto &model: tree_models) {
-			orchard.trees.push_back({{x_displacement, 0.0,0.0}, model});
+			orchard.trees.push_back({{x_displacement, 0.0, 0.0}, model});
 			x_displacement += 2.0;
 		}
 		return orchard;
@@ -222,4 +213,3 @@ namespace mgodpl::tree_meshes {
 		return fruit_positions;
 	}
 }
-

@@ -9,3 +9,5 @@
 /analysis/.ipynb_checkpoints/
 /analysis/data/
 scene_cached_*
+/result/
+benchmark_*

@@ -152,4 +152,14 @@ namespace mgodpl::robot_model {
 		}
 	}
 
+	RobotModel::Link RobotModel::Link::namedBox(const std::string &name, const math::Vec3d &size) {
+		return Link {
+				.name = name,
+				.joints = {},
+				.collision_geometry = {
+						PositionedShape::untransformed(Box { .size = size })
+				},
+				.visual_geometry = {}
+		};
+	}
 }

@@ -16,9 +16,9 @@
 #include <CGAL/Surface_mesh_shortest_path.h>
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/AABB_traits.h>
-#include <shape_msgs/msg/mesh.hpp>
 
 #include "../math/Vec3.h"
+#include "Mesh.h"
 
 namespace mgodpl::cgal {
 
@@ -82,7 +82,7 @@ namespace mgodpl::cgal {
 	 * @param leaves_mesh The mesh representing the leaves of the tree.
 	 * @return The convex hull around the leaves as a CGAL Surface_mesh.
 	 */
-	mgodpl::cgal::Surface_mesh cgal_convex_hull_around_leaves(const shape_msgs::msg::Mesh &leaves_mesh);
+	mgodpl::cgal::Surface_mesh cgal_convex_hull_around_leaves(const Mesh &leaves_mesh);
 
 	/**
 	 * @struct CgalMeshData
@@ -105,7 +105,7 @@ namespace mgodpl::cgal {
 		 *
 		 * @param tree_model The tree model from which to compute the mesh data.
 		 */
-		explicit CgalMeshData(const shape_msgs::msg::Mesh &leaves_mesh);
+		explicit CgalMeshData(const Mesh &leaves_mesh);
 	};
 
 }

@@ -7,3 +7,7 @@
 //
 
 #include "Mesh.h"
+
+namespace mgodpl {
+
+}

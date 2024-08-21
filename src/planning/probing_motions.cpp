@@ -9,7 +9,7 @@
 #include <fcl/narrowphase/collision_object.h>
 #include <fcl/narrowphase/collision.h>
 #include "probing_motions.h"
-#include "../experiment_utils/fcl_utils.h"
+#include "fcl_utils.h"
 #include "collision_detection.h"
 #include "shell_path_assembly.h"
 #include "approach_path_planning.h"
@@ -65,61 +65,6 @@ mgodpl::ApproachPath mgodpl::straightout(const mgodpl::robot_model::RobotModel &
 
 }
 
-RobotPath mgodpl::plan_multigoal_path(const robot_model::RobotModel &robot,
-							  const tree_meshes::TreeMeshes &tree_model,
-							  const RobotState &initial_state) {// Create a collision object for the tree trunk.
-
-	auto flying_base = robot.findLinkByName("flying_base");
-
-	// Allocate a BVH convex_hull for the tree trunk.
-	const auto &tree_trunk_bvh = fcl_utils::meshToFclBVH(tree_model.trunk_mesh);
-	fcl::CollisionObjectd tree_trunk_object(tree_trunk_bvh);
-
-	random_numbers::RandomNumberGenerator rng(42);
-
-	// First, create the convex hull.
-	CgalMeshData mesh_data(tree_model.leaves_mesh);
-
-	ApproachPath initial_approach_path = plan_initial_approach_path(robot,
-																	initial_state,
-																	flying_base,
-																	mesh_data);
-
-	std::vector <ApproachPath> approach_paths;
-
-	// For every fruit position...
-	for (const auto &tgt: computeFruitPositions(tree_model)) {
-		auto straightout = uniform_straightout_approach(tgt, robot, tree_trunk_object, mesh_data, rng, 1000);
-
-		if (straightout) {
-			approach_paths.push_back(*straightout);
-		}
-	}
-
-	// And one for the initial state:
-	const std::vector<double> &initial_state_distances = shell_distances(initial_approach_path.shell_point,
-																		 approach_paths,
-																		 mesh_data.convex_hull);
-
-	// Now, compute the distance matrix.
-	std::vector <std::vector<double>> target_to_target_distances;
-	target_to_target_distances.reserve(approach_paths.size());
-	for (const ApproachPath &path1: approach_paths) {
-		target_to_target_distances.emplace_back(shell_distances(path1.shell_point,
-																approach_paths,
-																mesh_data.convex_hull));
-	}
-
-	const std::vector <size_t> &order = visitation_order_greedy(target_to_target_distances, initial_state_distances);
-
-	const RobotPath &final_path = mgodpl::shell_path_planning::assemble_final_path(robot,
-													  mesh_data.convex_hull,
-													  approach_paths,
-													  initial_approach_path,
-													  order);
-	return final_path;
-}
-
 std::optional<ApproachPath> mgodpl::uniform_straightout_approach(const math::Vec3d &target,
 														 const robot_model::RobotModel &robot,
 														 const fcl::CollisionObjectd &tree_trunk_object,
@@ -156,4 +101,68 @@ std::optional<ApproachPath> mgodpl::uniform_straightout_approach(const math::Vec
 
 	return std::nullopt;
 
+}
+
+RobotPath ShellPathPlanningMethod::plan_static(const robot_model::RobotModel &robot,
+											   const Mesh &trunk_mesh,
+											   const Mesh &leaves_mesh,
+											   const std::vector<math::Vec3d> &fruit_positions,
+											   const RobotState &initial_state) {
+
+	auto flying_base = robot.findLinkByName("flying_base");
+
+	// Allocate a BVH convex_hull for the tree trunk.
+	const auto &tree_trunk_bvh = fcl_utils::meshToFclBVH(trunk_mesh);
+
+	fcl::CollisionObjectd tree_trunk_object(tree_trunk_bvh);
+
+	random_numbers::RandomNumberGenerator rng(42);
+
+	// First, create the convex hull.
+	CgalMeshData mesh_data(leaves_mesh);
+
+	ApproachPath initial_approach_path = plan_initial_approach_path(robot,
+																	initial_state,
+																	flying_base,
+																	mesh_data);
+
+	std::vector<ApproachPath> approach_paths;
+
+	// For every fruit position...
+	for (const auto &tgt: fruit_positions) {
+		auto straightout = uniform_straightout_approach(tgt, robot, tree_trunk_object, mesh_data, rng, 1000);
+
+		if (straightout) {
+			approach_paths.push_back(*straightout);
+		}
+	}
+
+	// And one for the initial state:
+	const std::vector<double> &initial_state_distances = shell_distances(initial_approach_path.shell_point,
+																		 approach_paths,
+																		 mesh_data.convex_hull);
+
+	// Now, compute the distance matrix.
+	std::vector <std::vector<double>> target_to_target_distances;
+	target_to_target_distances.reserve(approach_paths.size());
+	for (const ApproachPath &path1: approach_paths) {
+		target_to_target_distances.emplace_back(shell_distances(path1.shell_point,
+																approach_paths,
+																mesh_data.convex_hull));
+	}
+
+	const std::vector <size_t> &order = visitation_order_greedy(target_to_target_distances, initial_state_distances);
+
+	const RobotPath &final_path = mgodpl::shell_path_planning::assemble_final_path(robot,
+																				   mesh_data.convex_hull,
+																				   approach_paths,
+																				   initial_approach_path,
+																				   order);
+	return final_path;
+}
+
+Json::Value StraightoutApproachPlanner::configuration() const {
+	Json::Value config;
+	config["type"] = "straightout";
+	return config;
 }

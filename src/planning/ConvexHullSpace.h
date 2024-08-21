@@ -9,10 +9,8 @@
 #ifndef MGODPL_CONVEXHULLSPACE_H
 #define MGODPL_CONVEXHULLSPACE_H
 
-#include "moveit_forward_declarations.h"
 #include "cgal_chull_shortest_paths.h"
 #include "../math/Vec3.h"
-#include "JointSpacePoint.h"
 
 namespace mgodpl {
 

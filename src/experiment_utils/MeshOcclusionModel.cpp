@@ -7,19 +7,19 @@
 
 namespace mgodpl {
 
-	MeshOcclusionModel::MeshOcclusionModel(const shape_msgs::msg::Mesh &mesh, double margin) : margin(margin) {
+	MeshOcclusionModel::MeshOcclusionModel(const Mesh &mesh, double margin) : margin(margin) {
 
 		// Use CGAL to create an AABB tree of the mesh's triangles.
 
 		for (const auto &triangle: mesh.triangles) {
-			const auto &p1 = mesh.vertices[triangle.vertex_indices[0]];
-			const auto &p2 = mesh.vertices[triangle.vertex_indices[1]];
-			const auto &p3 = mesh.vertices[triangle.vertex_indices[2]];
+			const auto &p1 = mesh.vertices[triangle[0]];
+			const auto &p2 = mesh.vertices[triangle[1]];
+			const auto &p3 = mesh.vertices[triangle[2]];
 
 			// Skip degenerate triangles:
-			Point a(p1.x, p1.y, p1.z);
-			Point b(p2.x, p2.y, p2.z);
-			Point c(p3.x, p3.y, p3.z);
+			Point a(p1.x(), p1.y(), p1.z());
+			Point b(p2.x(), p2.y(), p2.z());
+			Point c(p3.x(), p3.y(), p3.z());
 
 			Triangle t(a, b, c);
 
@@ -32,8 +32,7 @@ namespace mgodpl {
 
 	}
 
-	bool
-	MeshOcclusionModel::checkOcclusion(const math::Vec3d &point, const math::Vec3d &viewpoint) const {
+	bool MeshOcclusionModel::checkOcclusion(const math::Vec3d &point, const math::Vec3d &viewpoint) const {
 
 		// Actually check a point that's `margin` away from the point, in the direction of the viewpoint.
 		// This is to prevent the point from being occluded by accidentally being inside of the mesh.

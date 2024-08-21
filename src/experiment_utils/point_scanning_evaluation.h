@@ -15,6 +15,7 @@
 #include "declarative/SensorModelParameters.h"
 #include "MeshOcclusionModel.h"
 #include "joint_distances.h"
+#include "declarative_environment.h"
 
 namespace mgodpl {
 
@@ -23,6 +24,7 @@ namespace mgodpl {
 		struct Frame {
 			JointDistances joint_distances;
 			std::vector<size_t> pts_seen;
+			std::vector<size_t> interior_pts_seen;
 		};
 
 		std::vector<Frame> frames;
@@ -44,9 +46,8 @@ namespace mgodpl {
 	 */
 	EvaluationTrace eval_static_path(const RobotPath &path,
 								 double interpolation_speed,
-								 const std::vector<std::vector<SurfacePoint>> &all_scannable_points,
-								 const declarative::SensorScalarParameters &sensor_params,
-								 const std::shared_ptr<const MeshOcclusionModel> &mesh_occlusion_model);
+								 const declarative::PointScanEvalParameters &params,
+								 const declarative::PointScanEnvironment &env);
 
 	/**
 	 * Creates a seen/unseen status for each scannable point, initialized to false.

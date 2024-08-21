@@ -104,7 +104,7 @@ namespace mgodpl {
 		videoRecorder.reset();
 	}
 
-	vtkSmartPointer<vtkActor> SimpleVtkViewer::addMesh(const shape_msgs::msg::Mesh &mesh,
+	vtkSmartPointer<vtkActor> SimpleVtkViewer::addMesh(const Mesh &mesh,
 													   const Vec3d &color,
 													   double opacity,
 													   const Vec3d &position) {

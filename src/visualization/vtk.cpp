@@ -1,4 +1,3 @@
-#include <geometric_shapes/shapes.h>
 #include <vtkSphereSource.h>
 #include <vtkCylinderSource.h>
 #include <vtkCubeSource.h>
@@ -33,27 +32,27 @@ void addActorCollectionToRenderer(vtkActorCollection *orchard_actors, vtkRendere
 	}
 }
 
-vtkNew<vtkCellArray> meshTrianglesToVtkCells(const shape_msgs::msg::Mesh &mesh) {
+vtkNew<vtkCellArray> meshTrianglesToVtkCells(const mgodpl::Mesh &mesh) {
 	vtkNew<vtkCellArray> cells;
 	for (auto &triangle : mesh.triangles) {
 		cells->InsertNextCell({
-									  triangle.vertex_indices[0],
-									  triangle.vertex_indices[1],
-									  triangle.vertex_indices[2]
+									  triangle[0],
+									  triangle[1],
+									  triangle[2]
 							  });
 	}
 	return cells;
 }
 
-vtkNew<vtkPoints> meshVerticesToVtkPoints(const shape_msgs::msg::Mesh &mesh) {
+vtkNew<vtkPoints> meshVerticesToVtkPoints(const mgodpl::Mesh &mesh) {
 	vtkNew<vtkPoints> points;
 	for (auto &point : mesh.vertices) {
-		points->InsertNextPoint(point.x, point.y, point.z);
+		points->InsertNextPoint(point.x(), point.y(), point.z());
 	}
 	return points;
 }
 
-vtkNew<vtkPolyData> rosMeshToVtkPolyData(const shape_msgs::msg::Mesh &mesh) {
+vtkNew<vtkPolyData> rosMeshToVtkPolyData(const mgodpl::Mesh &mesh) {
 
 	vtkNew<vtkPoints> points = meshVerticesToVtkPoints(mesh);
 
@@ -68,7 +67,7 @@ vtkNew<vtkPolyData> rosMeshToVtkPolyData(const shape_msgs::msg::Mesh &mesh) {
 
 }
 
-vtkNew<vtkActor> createActorFromMesh(const shape_msgs::msg::Mesh &mesh) {
+vtkNew<vtkActor> createActorFromMesh(const mgodpl::Mesh &mesh) {
 
 	vtkNew<vtkPolyData> polyData = rosMeshToVtkPolyData(mesh);
 
@@ -167,7 +166,7 @@ vtkNew<vtkActor> buildDepthImagePointCloudActor(vtkAlgorithmOutput *pointCloudIn
 	return pointCloudActor;
 }
 
-vtkSmartPointer<vtkActor> addColoredMeshActor(const shape_msgs::msg::Mesh &mesh,
+vtkSmartPointer<vtkActor> addColoredMeshActor(const mgodpl::Mesh &mesh,
 											  const std::array<double, 4> &color_rgba,
 											  vtkRenderer *renderer,
 											  bool visible) {
@@ -178,7 +177,7 @@ vtkSmartPointer<vtkActor> addColoredMeshActor(const shape_msgs::msg::Mesh &mesh,
 
 }
 
-vtkSmartPointer<vtkActor> createColoredMeshActor(const shape_msgs::msg::Mesh &mesh, const std::array<double, 4> &color_rgba, bool visible) {
+vtkSmartPointer<vtkActor> createColoredMeshActor(const mgodpl::Mesh &mesh, const std::array<double, 4> &color_rgba, bool visible) {
 
 	auto actor = createActorFromMesh(mesh);
 	actor->GetProperty()->SetColor(color_rgba[0], color_rgba[1], color_rgba[2]);
@@ -189,7 +188,7 @@ vtkSmartPointer<vtkActor> createColoredMeshActor(const shape_msgs::msg::Mesh &me
 
 }
 
-std::vector<vtkSmartPointer<vtkActor>> createColoredMeshActors(const std::vector<shape_msgs::msg::Mesh> &meshes,
+std::vector<vtkSmartPointer<vtkActor>> createColoredMeshActors(const std::vector<mgodpl::Mesh> &meshes,
 															   const std::array<double, 4> &color_rgba,
 															   bool visible) {
 

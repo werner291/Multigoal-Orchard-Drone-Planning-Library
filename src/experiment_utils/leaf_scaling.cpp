@@ -34,15 +34,15 @@ namespace mgodpl {
 	 * @param mesh The ROS shape_msgs::Mesh to convert.
 	 * @return A vector of CGAL Triangles representing the given mesh.
 	 */
-	std::vector<Triangle> createTrianglesFromMesh(const shape_msgs::msg::Mesh &mesh) {
+	std::vector<Triangle> createTrianglesFromMesh(const Mesh &mesh) {
 		std::vector<Triangle> triangles;
 		for (const auto &face: mesh.triangles) {
-			const auto &vertex1 = mesh.vertices[face.vertex_indices[0]];
-			const auto &vertex2 = mesh.vertices[face.vertex_indices[1]];
-			const auto &vertex3 = mesh.vertices[face.vertex_indices[2]];
-			triangles.emplace_back(Point(vertex1.x, vertex1.y, vertex1.z),
-								   Point(vertex2.x, vertex2.y, vertex2.z),
-								   Point(vertex3.x, vertex3.y, vertex3.z));
+			const auto &vertex1 = mesh.vertices[face[0]];
+			const auto &vertex2 = mesh.vertices[face[1]];
+			const auto &vertex3 = mesh.vertices[face[2]];
+			triangles.emplace_back(Point(vertex1.x(), vertex1.y(), vertex1.z()),
+								   Point(vertex2.x(), vertex2.y(), vertex2.z()),
+								   Point(vertex3.x(), vertex3.y(), vertex3.z()));
 		}
 		return triangles;
 	}
@@ -62,7 +62,7 @@ namespace mgodpl {
 	 */
 	std::pair<size_t, math::Vec3d> findLeafVertexClosestToTrunk(const AABB_Tree &tree,
 																const std::vector<size_t> &component,
-																const shape_msgs::msg::Mesh &leaves_mesh) {
+																const Mesh &leaves_mesh) {
 		// Initialize the index of the closest leaf vertex and the minimum distance to infinity.
 		size_t closest_leaf_index = 0;
 		double closest_leaf_distance = std::numeric_limits<double>::infinity();
@@ -72,7 +72,7 @@ namespace mgodpl {
 		for (const auto &leaf_index: component) {
 			// Get the current leaf vertex.
 			const auto &leaf_vertex = leaves_mesh.vertices[leaf_index];
-			Point query_point(leaf_vertex.x, leaf_vertex.y, leaf_vertex.z);
+			Point query_point(leaf_vertex.x(), leaf_vertex.y(), leaf_vertex.z());
 
 			// Query the AABB tree to find the closest point on the trunk to the current leaf vertex.
 			auto result = tree.closest_point_and_primitive(query_point);
@@ -124,11 +124,11 @@ namespace mgodpl {
 		return leaf_root_vertex;
 	}
 
-	shape_msgs::msg::Mesh scale_leaves(const mgodpl::tree_meshes::TreeMeshes &tree_meshes,
+	Mesh scale_leaves(const mgodpl::tree_meshes::TreeMeshes &tree_meshes,
 											   const std::vector<math::Vec3d> &leaf_root_vertex,
 											   double scale_factor) {
 		// Create a copy of the leaves mesh
-		shape_msgs::msg::Mesh leaves_mesh_copy = tree_meshes.leaves_mesh;
+		Mesh leaves_mesh_copy = tree_meshes.leaves_mesh;
 
 		// Iterate over all the vertices in the mesh
 		for (size_t i = 0; i < leaves_mesh_copy.vertices.size(); ++i) {
@@ -136,17 +136,17 @@ namespace mgodpl {
 			const auto &scale_center = leaf_root_vertex[i];
 
 			// Create a math::Vec3d object representing the current leaf vertex
-			math::Vec3d leaf_vertex(leaves_mesh_copy.vertices[i].x,
-									leaves_mesh_copy.vertices[i].y,
-									leaves_mesh_copy.vertices[i].z);
+			math::Vec3d leaf_vertex(leaves_mesh_copy.vertices[i].x(),
+									leaves_mesh_copy.vertices[i].y(),
+									leaves_mesh_copy.vertices[i].z());
 
 			// Scale the leaf vertex around the root point by the given scale factor
 			leaf_vertex = scale_center + (leaf_vertex - scale_center) * scale_factor;
 
 			// Write the scaled vertex back to the mesh
-			leaves_mesh_copy.vertices[i].x = leaf_vertex.x();
-			leaves_mesh_copy.vertices[i].y = leaf_vertex.y();
-			leaves_mesh_copy.vertices[i].z = leaf_vertex.z();
+			leaves_mesh_copy.vertices[i].x() = leaf_vertex.x();
+			leaves_mesh_copy.vertices[i].y() = leaf_vertex.y();
+			leaves_mesh_copy.vertices[i].z() = leaf_vertex.z();
 		}
 
 		// Return the modified leaves mesh

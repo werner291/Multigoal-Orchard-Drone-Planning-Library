@@ -15,21 +15,24 @@
 #include <cassert>
 
 namespace mgodpl::math {
-
 	/**
 	 * A simple 3D vector as an alternative to Vec3d, as per https://stackoverflow.com/a/70616903
 	 */
 	template<typename Scalar>
 	struct Vec3 {
-
 		std::array<Scalar, 3> components = {0, 0, 0};
+
+		/// Default constructor; initializes the vector to zero.
+		Vec3() = default;
 
 		Vec3(Scalar x, Scalar y, Scalar z) : components({x, y, z}) {
 		}
 
-		explicit Vec3(const Scalar data[3]) : components({data[0], data[1], data[2]}) {} // NOLINT(*-avoid-c-arrays)
+		explicit Vec3(const Scalar data[3]) : components({data[0], data[1], data[2]}) {
+		} // NOLINT(*-avoid-c-arrays)
 
-		explicit Vec3(const std::array<Scalar, 3> &components) : components(components) {}
+		explicit Vec3(const std::array<Scalar, 3> &components) : components(components) {
+		}
 
 		/**
 		 * Add two vectors element-wise.
@@ -219,7 +222,6 @@ namespace mgodpl::math {
 		 * Find the unit vector closest to this vector.
 		 */
 		[[nodiscard]] Vec3 nearestUnit() const {
-
 			assert(squaredNorm() > 0.0);
 
 			if (std::abs(x()) >= std::abs(y()) && std::abs(x()) >= std::abs(z())) {
@@ -257,7 +259,7 @@ namespace mgodpl::math {
 			return os;
 		}
 
-		Vec3 <Scalar> normalized() const {
+		Vec3<Scalar> normalized() const {
 			return *this / norm();
 		}
 
@@ -304,7 +306,6 @@ namespace mgodpl::math {
 		void setZ(double z) {
 			this->z() = z;
 		}
-
 	};
 
 	using Vec3d = Vec3<double>;

@@ -3,12 +3,10 @@
 // All rights reserved.
 
 #include <map>
-#include <random_numbers/random_numbers.h>
 #include "../visualization/SimpleVtkViewer.h"
 #include "../visualization/VtkLineSegmentVizualization.h"
 #include "../experiment_utils/TreeMeshes.h"
 #include "../experiment_utils/surface_points.h"
-#include "../experiment_utils/mesh_utils.h"
 #include "../experiment_utils/scan_paths.h"
 #include "../visualization/VtkPolyLineVisualization.h"
 #include "../visualization/visualization_function_macros.h"
@@ -23,7 +21,7 @@ REGISTER_VISUALIZATION(visualize_several_orbits_simultaneously)
     auto tree_model = tree_meshes::loadTreeMeshes("appletree");
 
     // Grab the fruit mesh
-    shape_msgs::msg::Mesh fruit_mesh = tree_model.fruit_meshes[0];
+    Mesh fruit_mesh = tree_model.fruit_meshes[0];
 
     // Calculate the center of the fruit mesh
     math::Vec3d fruit_center = mesh_aabb(fruit_mesh).center();
@@ -106,7 +104,7 @@ REGISTER_VISUALIZATION(scan_progressive_orbit)
     auto tree_model = tree_meshes::loadTreeMeshes("appletree");
 
     // Grab the fruit mesh
-    shape_msgs::msg::Mesh fruit_mesh = tree_model.fruit_meshes[0];
+    Mesh fruit_mesh = tree_model.fruit_meshes[0];
 
     // Calculate the center of the fruit mesh
     math::Vec3d fruit_center = mesh_aabb(fruit_mesh).center();

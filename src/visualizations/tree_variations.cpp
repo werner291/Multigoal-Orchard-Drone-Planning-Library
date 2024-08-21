@@ -5,7 +5,6 @@
 #include <vtkActor.h>
 #include <vtkSmartPointer.h>
 #include <vtkRenderer.h>
-#include <random_numbers/random_numbers.h>
 
 #include "../math/Transform.h"
 #include "../planning/RobotModel.h"
@@ -19,7 +18,6 @@
 #include "../visualization/visualization_function_macros.h"
 #include "../experiment_utils/surface_points.h"
 #include "../experiment_utils/procedural_fruit_placement.h"
-#include "../experiment_utils/mesh_utils.h"
 
 using namespace mgodpl;
 
@@ -43,6 +41,8 @@ REGISTER_VISUALIZATION(leaf_density_rescaling) {
 		auto leaves_mesh = scale_leaves(tree_model, leaf_roots, 1.0 + 0.5 * std::sin(t));
 
 		leaf_triangles = triangles_from_mesh(leaves_mesh);
+
+		leaves_visualization.updateTriangles(leaf_triangles);
 
 		if (t > 3.0 * M_PI) {
 			viewer.stop();

@@ -31,9 +31,9 @@ namespace mgodpl {
 	 * @param tree_meshes The tree meshes which include the trunk mesh and the leaves mesh.
 	 * @param leaf_root_vertex A vector of math::Vec3d objects representing the root point for each leaf.
 	 * @param scale_factor The factor by which to scale the leaves.
-	 * @return A shape_msgs::msg::Mesh object representing the leaves mesh after scaling.
+	 * @return A Mesh object representing the leaves mesh after scaling.
 	 */
-	shape_msgs::msg::Mesh scale_leaves(
+	Mesh scale_leaves(
 			const mgodpl::tree_meshes::TreeMeshes &tree_meshes,
 			const std::vector<math::Vec3d> &leaf_root_vertex,
 			double scale_factor

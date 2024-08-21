@@ -9,10 +9,9 @@
 #ifndef MGODPL_SURFACE_POINTS_H
 #define MGODPL_SURFACE_POINTS_H
 
-#include <random_numbers/random_numbers.h>
-#include <shape_msgs/msg/mesh.hpp>
 #include "../math/Vec3.h"
 #include "MeshOcclusionModel.h"
+#include "../planning/RandomNumberGenerator.h"
 
 namespace mgodpl {
 
@@ -115,7 +114,7 @@ namespace mgodpl {
 	 * @param mesh 			The mesh to compute the cumulative areas for.
 	 * @return 				A vector of cumulative areas, of the same size as the number of triangles in the mesh.
 	 */
-	std::vector<double> triangle_cumulative_areas(const shape_msgs::msg::Mesh &mesh);
+	std::vector<double> triangle_cumulative_areas(const Mesh &mesh);
 
 	/**
 	 * @brief Uniformly sample a point on a mesh.
@@ -126,7 +125,7 @@ namespace mgodpl {
 	 * @return 						A point on the mesh including position and normal
 	 */
 	SurfacePoint sample_point_on_mesh(random_numbers::RandomNumberGenerator &rng,
-									  const shape_msgs::msg::Mesh &mesh,
+									  const Mesh &mesh,
 									  const std::vector<double> &cumulative_areas);
 
 	/**
@@ -141,7 +140,7 @@ namespace mgodpl {
 	 * @return A vector of SurfacePoint structures. Each SurfacePoint contains a position and a normal vector.
 	 */
 	std::vector<SurfacePoint> sample_points_on_mesh(random_numbers::RandomNumberGenerator &rng,
-													const shape_msgs::msg::Mesh &mesh,
+													const Mesh &mesh,
 													size_t num_points);
 
     /**
@@ -161,7 +160,7 @@ namespace mgodpl {
 	 * @return A ScannablePoints object.
 	 */
 	ScannablePoints createScannablePoints(random_numbers::RandomNumberGenerator &rng,
-	                                      const shape_msgs::msg::Mesh &mesh,
+	                                      const Mesh &mesh,
 	                                      size_t num_points,
 	                                      double max_distance,
 	                                      double min_distance,

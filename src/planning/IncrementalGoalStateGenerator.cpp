@@ -19,7 +19,7 @@
 #include "IncrementalGoalStateGenerator.h"
 #include "JointSpacePoint.h"
 #include "moveit_state_tools.h"
-#include "../experiment_utils/fcl_utils.h"
+#include "fcl_utils.h"
 
 
 bool
@@ -151,7 +151,7 @@ namespace mgodpl {
 	}
 
 	GoalStateAlgorithm::GoalStateAlgorithm(const moveit::core::RobotModelConstPtr &robot,
-										   const shape_msgs::msg::Mesh &tree_model,
+										   const Mesh &tree_model,
 										   const math::Vec3d &target,
 										   const random_numbers::RandomNumberGenerator &rng) :
 			tree_bvh(fcl_utils::meshToFclBVH(tree_model)),

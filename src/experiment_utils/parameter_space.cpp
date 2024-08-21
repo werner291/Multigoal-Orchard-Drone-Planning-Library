@@ -50,7 +50,7 @@ mgodpl::declarative::gen_eval_params(const mgodpl::declarative::StaticPointScanM
 	for (const auto &tree_param: tree_params) {
 		eval_params.push_back({
 									  .tree_params = tree_param,
-									  .sensor_params = sensor_params
+									  .sensor_params = sensor_params,
 							  });
 	}
 

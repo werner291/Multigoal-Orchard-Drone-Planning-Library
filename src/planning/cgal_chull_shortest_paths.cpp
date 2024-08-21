@@ -25,7 +25,7 @@ namespace mgodpl::cgal {
 		states.push_back({f, location});
 	}
 
-	CgalMeshData::CgalMeshData(const shape_msgs::msg::Mesh &leaves_mesh)
+	CgalMeshData::CgalMeshData(const Mesh &leaves_mesh)
 			: convex_hull(cgal_convex_hull_around_leaves(leaves_mesh)),
 			  mesh_path(convex_hull),
 			  tree()
@@ -33,12 +33,12 @@ namespace mgodpl::cgal {
 		mesh_path.build_aabb_tree(tree);
 	}
 
-	mgodpl::cgal::Surface_mesh cgal_convex_hull_around_leaves(const shape_msgs::msg::Mesh &leaves_mesh) {
+	mgodpl::cgal::Surface_mesh cgal_convex_hull_around_leaves(const Mesh &leaves_mesh) {
 		Surface_mesh convex_hull;
 		{
 			std::vector<Point_3> cgal_points;
 			for (const auto &point: leaves_mesh.vertices) {
-				cgal_points.emplace_back(point.x, point.y, point.z);
+				cgal_points.emplace_back(point.x(), point.y(), point.z());
 			}
 			CGAL::convex_hull_3(cgal_points.begin(), cgal_points.end(), convex_hull);
 		}

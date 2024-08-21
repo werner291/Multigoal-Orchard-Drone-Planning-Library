@@ -13,7 +13,7 @@
 #include "../planning/RobotModel.h"
 #include "../experiment_utils/procedural_robot_models.h"
 #include "../experiment_utils/TreeMeshes.h"
-#include "../experiment_utils/fcl_utils.h"
+#include "../planning/fcl_utils.h"
 #include "../planning/ConvexHullSpace.h"
 #include "../planning/goal_sampling.h"
 #include "../visualization/SimpleVtkViewer.h"

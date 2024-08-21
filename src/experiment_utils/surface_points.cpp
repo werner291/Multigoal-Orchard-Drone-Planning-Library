@@ -31,7 +31,7 @@ namespace mgodpl {
 	}
 
 	std::vector<SurfacePoint> sample_points_on_mesh(random_numbers::RandomNumberGenerator &rng,
-													const shape_msgs::msg::Mesh &mesh,
+													const Mesh &mesh,
 													size_t num_points) {
 		// Mesh must be non-empty:
 		assert(!mesh.vertices.empty());
@@ -57,7 +57,7 @@ namespace mgodpl {
 	}
 
 	SurfacePoint sample_point_on_mesh(random_numbers::RandomNumberGenerator &rng,
-									  const shape_msgs::msg::Mesh &mesh,
+									  const Mesh &mesh,
 									  const std::vector<double> &cumulative_areas) {
 
 		assert(!cumulative_areas.empty());
@@ -75,17 +75,14 @@ namespace mgodpl {
 
 		// Get the vertices of the triangle
 		const auto &triangle = mesh.triangles[triangle_index];
-		const auto &vertex1 = mesh.vertices[triangle.vertex_indices[0]];
-		const auto &vertex2 = mesh.vertices[triangle.vertex_indices[1]];
-		const auto &vertex3 = mesh.vertices[triangle.vertex_indices[2]];
+		const auto &a = mesh.vertices[triangle[0]];
+		const auto &b = mesh.vertices[triangle[1]];
+		const auto &c = mesh.vertices[triangle[2]];
 
 		// Generate a random barycentric coordinate within the triangle
 		math::Vec3d barycentric = random_barycentric(rng);
 
 		// Calculate the position of the point using the barycentric coordinate
-		math::Vec3d a = math::Vec3d(vertex1.x, vertex1.y, vertex1.z);
-		math::Vec3d b = math::Vec3d(vertex2.x, vertex2.y, vertex2.z);
-		math::Vec3d c = math::Vec3d(vertex3.x, vertex3.y, vertex3.z);
 		math::Vec3d position = a * barycentric[0] + b * barycentric[1] + c * barycentric[2];
 
 		// Calculate the normal of the triangle
@@ -95,7 +92,7 @@ namespace mgodpl {
 		return point;
 	}
 
-	ScannablePoints createScannablePoints(random_numbers::RandomNumberGenerator& rng, const shape_msgs::msg::Mesh& mesh,
+	ScannablePoints createScannablePoints(random_numbers::RandomNumberGenerator& rng, const Mesh& mesh,
 		size_t num_points, double max_distance, double min_distance, double max_angle, std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model)
 	{
 		return {max_distance, min_distance, max_angle, sample_points_on_mesh(rng, mesh, num_points), occlusion_model};
@@ -157,17 +154,15 @@ namespace mgodpl {
 		return n_seen;
 	}
 
-	std::vector<double> triangle_cumulative_areas(const shape_msgs::msg::Mesh &mesh) {
+	std::vector<double> triangle_cumulative_areas(const Mesh &mesh) {
 		std::vector<double> cumulative_areas;
 		cumulative_areas.reserve(mesh.triangles.size());
 		double total_area = 0;
 		for (const auto &triangle : mesh.triangles) {
-			const auto &a = mesh.vertices[triangle.vertex_indices[0]];
-			const auto &b = mesh.vertices[triangle.vertex_indices[1]];
-			const auto &c = mesh.vertices[triangle.vertex_indices[2]];
-			total_area += math::Triangle(math::Vec3d(a.x, a.y, a.z),
-										 math::Vec3d(b.x, b.y, b.z),
-										 math::Vec3d(c.x, c.y, c.z)).area();
+			const auto &a = mesh.vertices[triangle[0]];
+			const auto &b = mesh.vertices[triangle[1]];
+			const auto &c = mesh.vertices[triangle[2]];
+			total_area += math::Triangle(a,b,c).area();
 			cumulative_areas.push_back(total_area);
 		}
 		return cumulative_areas;

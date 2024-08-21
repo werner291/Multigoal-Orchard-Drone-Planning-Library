@@ -17,7 +17,7 @@
 #include "../experiment_utils/load_robot_model.h"
 #include "../planning/CollisionDetection.h"
 #include "../planning/moveit_state_tools.h"
-#include "../experiment_utils/fcl_utils.h"
+#include "../planning/fcl_utils.h"
 
 using namespace mgodpl;
 using namespace tree_meshes;
@@ -57,7 +57,7 @@ void check_collision_custom(const moveit::core::RobotModelPtr& robot, fcl::Colli
     }
 }
 
-std::vector<int> mksamples(const moveit::core::RobotModelPtr& robot, const shape_msgs::msg::Mesh& shape,
+std::vector<int> mksamples(const moveit::core::RobotModelPtr& robot, const Mesh& shape,
 						   const std::vector<math::Vec3d>& fruit, const size_t N_SAMPLES)
 {
     std::vector<int> success_counts;

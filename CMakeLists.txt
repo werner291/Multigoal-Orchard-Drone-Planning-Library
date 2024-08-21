@@ -22,13 +22,23 @@ option(ENABLE_TESTS "Enable TESTS" OFF)
 # Add an option for Python byndings.
 option(ENABLE_PYTHON_BINDINGS "Enable PYTHON BINDINGS" OFF)
 
+# Add an option to specify the directory where the robots are to be found.
+# By default, this is just the source dir, but that assumes that we still have the source available, rather than the installed package.
+option(ROBOTS_DIRECTORY "Where the robots are to be found.")
+if (NOT ROBOTS_DIRECTORY) # Workaround for an apparent bug where CMake somehow sets OFF even if a default value is given.
+    set(ROBOTS_DIRECTORY "${CMAKE_SOURCE_DIR}/test_robots")
+endif ()
+
+# Force the detection of NixOS. (TODO: I'd rather just detect the nix package manager; can I do that?)
+option(FORCE_NIXOS "Force NixOS" OFF)
+
 # Detect if we're on NixOS
-if (EXISTS /etc/NIXOS)
+if (EXISTS /etc/NIXOS OR FORCE_NIXOS)
     message(STATUS "NixOS detected")
     set(NIXOS TRUE)
-else()
+else ()
     set(NIXOS FALSE)
-endif()
+endif ()
 
 if (NIXOS)
     find_package(ortools REQUIRED)
@@ -36,81 +46,66 @@ if (NIXOS)
     if (ENABLE_PYTHON_BINDINGS)
         # Weird bug where CLion seems too substitute its own Python3 version when called from its context.
         # Here, I'm forcing it to use the flake.nix version.
-        find_package(Python3 3.10.12 EXACT REQUIRED COMPONENTS Interpreter Development)
+        find_package(Python3 3.11.8 EXACT REQUIRED COMPONENTS Interpreter Development)
         find_package(pybind11 REQUIRED)
-    endif()
-else()
+    endif ()
+else ()
     set(ORTOOLS_LIBRARIES ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so)
 
     if (ENABLE_PYTHON_BINDINGS)
         find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
         find_package(pybind11 REQUIRED)
-    endif()
-endif()
+    endif ()
+endif ()
 
 ## System dependencies are found with CMake's conventions
 #find_package(Eigen3 REQUIRED)
 find_package(fcl REQUIRED)
 find_package(Boost REQUIRED)
-find_package(Bullet REQUIRED)
-find_package(ompl REQUIRED)
 find_package(range-v3 REQUIRED)
-find_package(Qhull REQUIRED)
 
-find_file (DEBIAN_FOUND debian_version debconf.conf
+find_file(DEBIAN_FOUND debian_version debconf.conf
         PATHS /etc
 )
 
 set(CGAL_DATA_DIR "UNUSED_STOP_WARNING")
 find_package(CGAL REQUIRED)
 
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(moveit_core REQUIRED)
-find_package(moveit_msgs REQUIRED)
-#find_package(moveit_ros_planning REQUIRED)
-#find_package(moveit_planners_ompl REQUIRED)
-find_package(shape_msgs REQUIRED)
 find_package(jsoncpp REQUIRED)
 
-# Ament seems to complain about moveit_planners_ompl exporting a non-existent include directory, see https://github.com/lopsided98/nix-ros-overlay/issues/312
-# Is there a way to get this to be at least semi-nonbroken?
-#set(HACKY_MOVEIT_INCLUDE /nix/store/mg432iy0715cc7fylwg10bsdhsg4qy30-ros-rolling-moveit-planners-ompl-2.8.0-r2/include/moveit_planners)
-#set(HACKY_MOVEIT_LINK /nix/store/mg432iy0715cc7fylwg10bsdhsg4qy30-ros-rolling-moveit-planners-ompl-2.8.0-r2/)
+find_package(assimp REQUIRED)
 
 include_directories(
-#        ${EIGEN3_INCLUDE_DIRS}
         ${FCL_INCLUDE_DIRS}
         ${JSONCPP_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
         ${GTEST_INCLUDE_DIRS}
         ${BULLET_INCLUDE_DIRS}
-        ${OMPL_INCLUDE_DIRS}
+        #        ${OMPL_INCLUDE_DIRS}
         ${QHULL_INCLUDE_DIRS}
         ${VTK_INCLUDE_DIRS}
-        #{CGAL_INCLUDE_DIRS}
         ortools/include
         miniball/cpp/main
-#        ${HACKY_MOVEIT_INCLUDE}
 )
 
 
 link_libraries(
         tbb
-#        ${EIGEN_LIBRARIES}
+        #        ${EIGEN_LIBRARIES}
         ${FCL_LIBRARIES}
         ${Boost_LIBRARIES}
         ${BULLET_LIBRARIES}
-#        ${OMPL_LIBRARIES}
         ${VTK_LIBRARIES}
-        qhullcpp
-        HACD # Note: the HACD library is included Bullet's "extra" libraries
         jsoncpp_lib
-#        tbb
+        assimp
+        #        tbb
         ${CGAL_LIBRARIES}
-#        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
-#        moveit_ompl_interface
+        #        ${CMAKE_SOURCE_DIR}/ortools/lib/libortools.so
+        #        moveit_ompl_interface
         ${ORTOOLS_LIBRARIES}
+        flann
+        lz4 # For flann
+        ortools
 )
 
 ###########
@@ -124,9 +119,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
-set(AMENT_DEPS "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" )# "ompl")
-
 add_compile_definitions(PARALLEL) # Enable parallelism in some parts of the code.
+add_compile_definitions(ROBOTS_DIR="${ROBOTS_DIRECTORY}") # Forwards the robots directory to the code.
 
 # A small library featuring some vector math (not depending on Eigen)
 # and some general-purpose geometry utilities.
@@ -170,7 +164,7 @@ add_library(visibility
         src/visibility/voxel_visibility.cpp
         src/visibility/Octree.cpp
         src/visibility/Octree.h
-#        src/visibility/octree_visibility.cpp
+        #        src/visibility/octree_visibility.cpp
         src/visibility/octree_visibility.h
         src/visibility/visibility_geometry.cpp
         src/visibility/visibility_geometry.h
@@ -179,34 +173,18 @@ add_library(visibility
 target_link_libraries(visibility math_utils)
 
 add_library(planning
-    src/planning/RobotAlgorithm.h
-#    src/planning/BlindlyMoveToNextFruit.h
-#    src/planning/BlindlyMoveToNextFruit.cpp
-    src/planning/JointSpacePoint.h
-    src/planning/JointSpacePoint.cpp
-    src/planning/moveit_state_tools.h
-    src/planning/moveit_state_tools.cpp
-    src/planning/CollisionDetection.h
-    src/planning/CollisionDetection.cpp
-    src/planning/MyCollisionEnv.h
-    src/planning/MyCollisionEnv.cpp
-    src/planning/moveit_motion_velocity.h
-    src/planning/moveit_motion_velocity.cpp
+        src/planning/RobotAlgorithm.h
+        #    src/planning/BlindlyMoveToNextFruit.h
+        #    src/planning/BlindlyMoveToNextFruit.cpp
         src/planning/NextTargetSelector.cpp
         src/planning/NextTargetSelector.h
-        src/planning/CollisionPrediction.cpp
-        src/planning/CollisionPrediction.h
         src/planning/MonadicBehavior.h
-        src/planning/JointSpacePath.h
-        src/planning/JointSpacePath.cpp
         src/planning/cgal_chull_shortest_paths.cpp
         src/planning/cgal_chull_shortest_paths.h
         src/planning/ConvexHullSpace.cpp
         src/planning/ConvexHullSpace.h
         src/planning/RobotModel.cpp
         src/planning/RobotModel.h
-#        src/planning/longitude_sweep.cpp
-#        src/planning/longitude_sweep.h
         src/planning/RobotState.cpp
         src/planning/LatitudeLongitudeGrid.h
         src/planning/LatitudeLongitudeGrid.cpp
@@ -222,8 +200,6 @@ add_library(planning
         src/planning/shell_path.cpp
         src/planning/shell_path.h
         src/planning/RobotPath.h
-        #        src/planning/PyramidGrid.cpp
-#        src/planning/PyramidGrid.h
         src/planning/visitation_order.h
         src/planning/visitation_order.cpp
         src/planning/ApproachPath.h
@@ -238,10 +214,26 @@ add_library(planning
         src/planning/swept_volume_ccd.h
         src/planning/scanning_motions.cpp
         src/planning/scanning_motions.h
+        src/planning/Mesh.h
+        src/planning/Mesh.cpp
+        src/planning/RandomNumberGenerator.cpp
+        src/planning/RandomNumberGenerator.h
+        src/planning/fcl_utils.cpp
+        src/planning/fcl_utils.h
+        src/planning/local_optimization.cpp
+        src/planning/local_optimization.h
+        src/planning/traveling_salesman.h
+        src/planning/traveling_salesman.cpp
+        src/planning/tsp_over_prm.cpp
+        src/planning/tsp_over_prm.h
+        src/planning/GroupIndexTable.cpp
+        src/planning/GroupIndexTable.h
+        src/planning/nearest_neighbours/NearestNeighborsGNAT.h
+        src/planning/nearest_neighbours/NearestNeighbors.h
+        src/planning/nearest_neighbours/GreedyKCenters.h
 )
 
 target_link_libraries(planning math_utils)
-ament_target_dependencies(planning ${AMENT_DEPS})
 
 #target_compile_options(visibility PRIVATE -O3)
 
@@ -252,24 +244,12 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/TreeMeshes.cpp
             src/experiment_utils/mesh_connected_components.cpp
             src/experiment_utils/mesh_connected_components.h
-            src/experiment_utils/load_mesh_ros.h
-            src/experiment_utils/load_mesh_ros.cpp
-            src/experiment_utils/load_robot_model.h
-            src/experiment_utils/load_robot_model.cpp
             src/experiment_utils/snake_path.cpp
             src/experiment_utils/snake_path.h
-            src/experiment_utils/mesh_utils.h
-            src/experiment_utils/mesh_utils.cpp
-            src/experiment_utils/VoxelShroudedSceneInfo.cpp
-            src/experiment_utils/VoxelShroudedSceneInfo.h
-            src/experiment_utils/VoxelShroudedSimulation.cpp
-            src/experiment_utils/VoxelShroudedSimulation.h
             src/experiment_utils/MeshOcclusionModel.cpp
             src/experiment_utils/MeshOcclusionModel.h
-            src/experiment_utils/fcl_utils.cpp
-            src/experiment_utils/fcl_utils.h
-            src/planning/IncrementalGoalStateGenerator.cpp
-            src/planning/IncrementalGoalStateGenerator.h
+            #            src/planning/IncrementalGoalStateGenerator.cpp
+            #            src/planning/IncrementalGoalStateGenerator.h
             src/planning/fcl_forward_declarations.h
             src/experiment_utils/procedural_robot_models.cpp
             src/experiment_utils/procedural_robot_models.h
@@ -306,13 +286,36 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/LoadedTreeModel.h
             src/experiment_utils/declarative/to_json.cpp
             src/experiment_utils/declarative/fruit_models.h
+            src/experiment_utils/mesh_from_dae.cpp
+            src/experiment_utils/mesh_from_dae.h
+            src/experiment_utils/tracing.cpp
+            src/experiment_utils/tracing.h
+            src/experiment_utils/declarative/local_optimization.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
 
     target_link_libraries(experiment_utils math_utils visibility)
-    ament_target_dependencies(experiment_utils ${AMENT_DEPS})
-endif()
+
+    # Get the latest abbreviated commit hash of the working branch
+    execute_process(
+            COMMAND git log -1 --format=%h
+            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+            OUTPUT_VARIABLE GIT_HASH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    add_compile_definitions(GIT_HASH="${GIT_HASH}")
+
+    add_executable(benchmarks
+            src/benchmarks/main.cpp
+            src/benchmarks/goal_sample_success_rate.cpp
+            src/benchmarks/tree_stats.cpp
+            src/benchmarks/sampling_difficulty.cpp
+    )
+
+    target_link_libraries(benchmarks math_utils visibility experiment_utils planning)
+endif ()
 
 if (ENABLE_VISUALIZATION)
 
@@ -339,12 +342,8 @@ if (ENABLE_VISUALIZATION)
             src/visualization/VtkLineSegmentVizualization.h
             src/visualization/VtkTriangleSetVisualization.h
             src/visualization/VtkTriangleSetVisualization.cpp
-            src/visualization/VtkRobotModel.h
-            src/visualization/VtkRobotModel.cpp
             src/visualization/voxels.cpp
             src/visualization/voxels.h
-            src/visualization/VtkEndAndBaseTraceVisualization.cpp
-            src/visualization/VtkEndAndBaseTraceVisualization.h
             src/visualization/quick_markers.h
             src/visualization/quick_markers.cpp
             src/visualization/scannable_points.cpp
@@ -352,50 +351,43 @@ if (ENABLE_VISUALIZATION)
             src/visualization/robot_state.cpp
             src/visualization/robot_state.h
             src/visualization/declarative.cpp
+            src/visualization/ladder_trace.cpp
+            src/visualization/ladder_trace.h
+            src/visualization/Throttle.cpp
+            src/visualization/Throttle.h
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
-    ament_target_dependencies(${PROJECT_NAME}_visualisation "moveit_core" "moveit_msgs" "shape_msgs" "rclcpp" "ompl")
     target_link_libraries(${PROJECT_NAME}_visualisation ${VTK_LIBRARIES} experiment_utils)
 
     add_executable(vizcube_lightweight src/experiments/cubeviz.cpp)
     target_link_libraries(vizcube_lightweight math_utils ${PROJECT_NAME}_visualisation experiment_utils)
-    ament_target_dependencies(vizcube_lightweight shape_msgs)
 
     add_executable(no_preknowledge src/experiments/no_preknowledge.cpp)
     target_link_libraries(no_preknowledge math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-    ament_target_dependencies(no_preknowledge shape_msgs moveit_core)
 
     add_executable(approach_planning src/experiments/approach_planning.cpp)
     target_link_libraries(approach_planning math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-    ament_target_dependencies(approach_planning shape_msgs moveit_core)
 
     add_executable(goal_construction src/experiments/goal_construction.cpp)
     target_link_libraries(goal_construction math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-    ament_target_dependencies(goal_construction shape_msgs moveit_core)
 
     add_executable(latlongrid_vs_sampling src/experiments/latlongrid_vs_sampling.cpp)
     target_link_libraries(latlongrid_vs_sampling math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-    ament_target_dependencies(latlongrid_vs_sampling shape_msgs moveit_core)
 
     add_executable(collision_detection_mwe src/experiments/collision_detection_mwe.cpp)
-    ament_target_dependencies(collision_detection_mwe shape_msgs moveit_core random_numbers)
 
     add_executable(latitude_sweep_vizualization src/experiments/latitude_sweep_vizualization.cpp)
     target_link_libraries(latitude_sweep_vizualization math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-    ament_target_dependencies(latitude_sweep_vizualization shape_msgs moveit_core)
 
     add_executable(new_integration src/experiments/new_integration.cpp)
     target_link_libraries(new_integration math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-    ament_target_dependencies(new_integration shape_msgs moveit_core)
 
     add_executable(sphere_scannable_points_orbit src/experiments/sphere_scannable_points_orbit.cpp)
     target_link_libraries(sphere_scannable_points_orbit math_utils experiment_utils planning)
-    ament_target_dependencies(sphere_scannable_points_orbit shape_msgs)
 
     add_executable(point_scanning src/experiments/point_scanning.cpp)
     target_link_libraries(point_scanning math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-    ament_target_dependencies(point_scanning shape_msgs)
 
     add_executable(visualizations
             src/visualizations/viz_main.cpp
@@ -407,33 +399,39 @@ if (ENABLE_VISUALIZATION)
             src/visualizations/swept_volume.cpp
             src/visualizations/robot_variations.cpp
             src/visualizations/declarative.cpp
+            # src/visualizations/swapper.cpp
+            src/visualizations/reacharound_motions.cpp
+            src/visualizations/tsp_over_prm.cpp
+            src/visualizations/shortcutting.cpp
+            src/visualizations/goal_samples.cpp
     )
 
     target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-    ament_target_dependencies(visualizations shape_msgs)
-
 
 endif ()
 
-include(GoogleTest)
+if (ENABLE_TESTS)
 
-add_executable(${PROJECT_NAME}_tests
-        test/test.cpp
-#        test/math/AABBGrid_test.cpp
-#        test/math/AABB_test.cpp
-#        test/experiment_utils/voxel_visibility_test.cpp
-#        test/math/intersection_test.cpp
-#        test/math/lp_test.cpp
-        test/planning/spherical_geomety_test.cpp
-        test/planning/LatitudeLongitudeGridTests.cpp
-        src/experiment_utils/declarative/PointScanExperiment.h
-        src/experiment_utils/declarative/to_json.cpp
-        src/visualization/declarative.cpp
-        src/visualization/declarative.h
-)
+    include(GoogleTest)
 
-target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils planning gtest)
-gtest_discover_tests(${PROJECT_NAME}_tests)
+    add_executable(${PROJECT_NAME}_tests
+            test/test.cpp
+            #        test/math/AABBGrid_test.cpp
+            #        test/math/AABB_test.cpp
+            #        test/experiment_utils/voxel_visibility_test.cpp
+            #        test/math/intersection_test.cpp
+            #        test/math/lp_test.cpp
+            test/planning/spherical_geomety_test.cpp
+            test/planning/LatitudeLongitudeGridTests.cpp
+            src/experiment_utils/declarative/PointScanExperiment.h
+            src/experiment_utils/declarative/to_json.cpp
+            src/visualization/declarative.cpp
+            src/visualization/declarative.h
+    )
+
+    target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils planning gtest)
+    gtest_discover_tests(${PROJECT_NAME}_tests)
+endif () # ENABLE_TESTS
 
 if (ENABLE_PYTHON_BINDINGS)
     message(STATUS "Building with Python bindings")
@@ -441,3 +439,6 @@ if (ENABLE_PYTHON_BINDINGS)
     target_link_libraries(pymgodpl PRIVATE math_utils visibility planning experiment_utils ${PROJECT_NAME}_visualisation ${VTK_LIBRARIES})
     ament_target_dependencies(pymgodpl PUBLIC ${AMENT_DEPS})
 endif ()
+
+add_custom_target(benchmarks_and_visualizations)
+add_dependencies(benchmarks_and_visualizations benchmarks visualizations)

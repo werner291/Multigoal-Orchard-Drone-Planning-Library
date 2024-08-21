@@ -9,21 +9,31 @@
 #ifndef MGODPL_GOAL_SAMPLING_H
 #define MGODPL_GOAL_SAMPLING_H
 
-
-#include <random_numbers/random_numbers.h>
 #include <optional>
 #include "RobotState.h"
 #include "RobotModel.h"
 #include "fcl_forward_declarations.h"
+#include "RandomNumberGenerator.h"
 
 namespace mgodpl {
-
 	/**
-	 * Generate an upright robot state, without checking for collisions.
-	 * @param rng 		The random number generator to use.
-	 * @return 			The generated robot state.
+	 * @brief Generates an upright state for a given robot model, without collision checking.
+	 *
+	 * This function generates an upright state for a given robot model.
+	 *
+	 * The state consists of a base transform and joint values.
+	 * The base transform is initialized with a translation of (0.0, 0.0, 0.0) and a random orientation around the Z-axis.
+	 *
+	 * The joint values are initialized based on the joint types of the robot model.
+	 * - For revolute joints, a random value between the minimum and maximum angle is chosen.
+	 * - For fixed joints, no value is added.
+	 * If an unknown joint type is encountered, the function throws a runtime error.
+	 *
+	 * @param robot The robot model for which to generate an upright state.
+	 * @param rng A random number generator used to generate the random orientation and joint values.
+	 * @return The generated upright state for the robot model.
 	 */
-	RobotState genUprightState(random_numbers::RandomNumberGenerator rng);
+	RobotState genUprightState(const robot_model::RobotModel &robot, random_numbers::RandomNumberGenerator &rng);
 
 	/**
 	 * Generate a state where the end effector is at the given target, not checking for collisions.
@@ -36,11 +46,11 @@ namespace mgodpl {
 	 * @return 						The generated robot state.
 	 */
 	RobotState genGoalStateUniform(
-			random_numbers::RandomNumberGenerator rng,
-			const math::Vec3d& target,
-			const robot_model::RobotModel& robot,
-			const robot_model::RobotModel::LinkId& flying_base,
-			const robot_model::RobotModel::LinkId& end_effector);
+		random_numbers::RandomNumberGenerator &rng,
+		const math::Vec3d &target,
+		const robot_model::RobotModel &robot,
+		const robot_model::RobotModel::LinkId &flying_base,
+		const robot_model::RobotModel::LinkId &end_effector);
 
 	/**
 	 * Attempt to find a collision-free goal state by uniform sampling.
@@ -55,13 +65,13 @@ namespace mgodpl {
 	 * @return 							The generated robot state, or nullopt if no state was found.
 	 */
 	std::optional<RobotState> findGoalStateByUniformSampling(
-			const math::Vec3d& target,
-			const robot_model::RobotModel& robot,
-			const robot_model::RobotModel::LinkId& flying_base,
-			const robot_model::RobotModel::LinkId& end_effector,
-			const fcl::CollisionObjectd& tree_trunk_object,
-			random_numbers::RandomNumberGenerator& rng,
-			size_t max_attempts);
+		const math::Vec3d &target,
+		const robot_model::RobotModel &robot,
+		const robot_model::RobotModel::LinkId &flying_base,
+		const robot_model::RobotModel::LinkId &end_effector,
+		const fcl::CollisionObjectd &tree_trunk_object,
+		random_numbers::RandomNumberGenerator &rng,
+		size_t max_attempts);
 
 	/**
 	 * @brief Attempts to generate a collision-free RobotState by uniformly sampling random arm vectors.
@@ -75,12 +85,12 @@ namespace mgodpl {
 	 * @return A collision-free RobotState, or std::nullopt if no state was found.
 	 */
 	std::optional<RobotState> generateUniformRandomArmVectorState(
-	    const robot_model::RobotModel& robot,
-	    const fcl::CollisionObjectd& tree_trunk_object,
-	    const math::Vec3d& fruit_center,
-	    random_numbers::RandomNumberGenerator& rng,
-	    int max_attempts,
-	    double ee_distance);
+		const robot_model::RobotModel &robot,
+		const fcl::CollisionObjectd &tree_trunk_object,
+		const math::Vec3d &fruit_center,
+		random_numbers::RandomNumberGenerator &rng,
+		int max_attempts,
+		double ee_distance);
 }
 
 #endif //MGODPL_GOAL_SAMPLING_H

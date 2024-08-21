@@ -7,48 +7,49 @@
 //
 
 #include <vector>
-#include <random_numbers/random_numbers.h>
 
-#include "../visualization/SimpleVtkViewer.h"
-#include "../visualization/VtkLineSegmentVizualization.h"
+
+
 #include "../experiment_utils/TreeMeshes.h"
-#include "../experiment_utils/surface_points.h"
-#include "../experiment_utils/mesh_utils.h"
-#include "../visualization/VtkPolyLineVisualization.h"
-#include "../visualization/visualization_function_macros.h"
-#include "../visualization/robot_state.h"
-#include "../experiment_utils/scan_path_generators.h"
-#include "../visualization/scannable_points.h"
-#include "../planning/RobotPath.h"
-#include "../planning/probing_motions.h"
+#include "../experiment_utils/declarative/SensorModelParameters.h"
+#include "../experiment_utils/default_colors.h"
+#include "../experiment_utils/leaf_scaling.h"
 #include "../experiment_utils/procedural_robot_models.h"
-#include "../planning/state_tools.h"
+#include "../experiment_utils/prompting.h"
+#include "../experiment_utils/scan_path_generators.h"
+#include "../experiment_utils/surface_points.h"
+#include "../experiment_utils/tracing.h"
+#include "../planning/RobotPath.h"
 #include "../planning/approach_path_planning.h"
-#include "../experiment_utils/fcl_utils.h"
-
-#include <fcl/narrowphase/collision.h>
-#include <vtkTextActor.h>
-#include <vtkProperty2D.h>
-#include <vtkSphereSource.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkProperty.h>
-#include <vtkSliderWidget.h>
-#include <vtkSliderRepresentation2D.h>
-#include <vtkTextProperty.h>
-
 #include "../planning/collision_detection.h"
+#include "../planning/fcl_utils.h"
 #include "../planning/goal_sampling.h"
+#include "../planning/probing_motions.h"
 #include "../planning/scanning_motions.h"
+#include "../planning/shell_path.h"
 #include "../planning/shell_path_assembly.h"
 #include "../planning/spherical_geometry.h"
-#include "../planning/shell_path.h"
+#include "../planning/state_tools.h"
 #include "../planning/visitation_order.h"
-#include "../experiment_utils/prompting.h"
-#include "../experiment_utils/leaf_scaling.h"
+#include "../visualization/SimpleVtkViewer.h"
 #include "../visualization/VtkFunctionalCallback.h"
+#include "../visualization/VtkLineSegmentVizualization.h"
+#include "../visualization/VtkPolyLineVisualization.h"
 #include "../visualization/VtkTriangleSetVisualization.h"
-#include "../experiment_utils/default_colors.h"
-#include "../experiment_utils/declarative/SensorModelParameters.h"
+#include "../visualization/ladder_trace.h"
+#include "../visualization/robot_state.h"
+#include "../visualization/scannable_points.h"
+#include "../visualization/visualization_function_macros.h"
+
+#include <fcl/narrowphase/collision.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
+#include <vtkProperty2D.h>
+#include <vtkSliderRepresentation2D.h>
+#include <vtkSliderWidget.h>
+#include <vtkSphereSource.h>
+#include <vtkTextActor.h>
+#include <vtkTextProperty.h>
 
 using namespace mgodpl;
 
@@ -111,7 +112,9 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath) {
 	}
 
 	// Plan the final path as a whole:
-	RobotPath final_path = plan_multigoal_path(robot, tree_model, initial_state);
+	ShellPathPlanningMethod shell_path_planner;
+
+	RobotPath final_path = shell_path_planner.plan_static(robot, tree_model.trunk_mesh, tree_model.leaves_mesh, computeFruitPositions(tree_model), initial_state);
 
 	PathPoint path_point = {0, 0.0};
 
@@ -990,6 +993,21 @@ std::vector<std::pair<math::Vec3d, math::Vec3d>> computeVisibleSightlines(
 	return sightlinesData;
 }
 
+mgodpl::Mesh ground_plane(double size) {
+	mgodpl::Mesh ground;
+	ground.vertices = {
+			{-size, -size, 0},
+			{size, -size, 0},
+			{size, size, 0},
+			{-size, size, 0}
+	};
+	ground.triangles = {
+			{0, 1, 2},
+			{0, 2, 3}
+	};
+	return ground;
+}
+
 REGISTER_VISUALIZATION(sensor_model_demonstration) {
 
 	viewer.addMesh(ground_plane(10), {0.5, 0.8, 0.5}, 1.0);
@@ -1172,34 +1190,6 @@ REGISTER_VISUALIZATION(sensor_model_demonstration) {
 	viewer.start();
 }
 
-/**
- * @brief This function generates a trace of a specific link's position along a robot path.
- *
- * @param robot		 The robot model.
- * @param final_path The robot path.
- * @param link 		 The ID of the link to trace.
- * @return std::vector<math::Vec3d> A vector of 3D vectors representing the positions of the link along the path.
- */
-std::vector<math::Vec3d> link_trace(const robot_model::RobotModel &robot,
-									const RobotPath &final_path,
-									const robot_model::RobotModel::LinkId link) {
-	// Initialize a vector to store the positions of the link
-	std::vector<math::Vec3d> end_effector_positions;
-
-	// Iterate over all states in the path
-	for (size_t i = 0; i < final_path.states.size(); ++i) {
-		// Compute the forward kinematics for the current state
-		const auto fk = forwardKinematics(robot, final_path.states[i].joint_values,
-										  robot.findLinkByName("flying_base"), final_path.states[i].base_tf);
-		// Add the position of the link to the vector
-		end_effector_positions.push_back(fk.forLink(link).translation);
-	}
-
-	// Return the vector of positions
-	return end_effector_positions;
-}
-
-
 REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples_replan_interactive) {
 	// Load the tree meshes
 	auto tree_model = tree_meshes::loadTreeMeshes("appletree");
@@ -1370,24 +1360,7 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples_replan_interactive)
 	// Slider for the interpolation parameter:
 	CREATE_SLIDER(path_t, path_t, 0.0, total_sum, 0.0, "Path t", 0.1)
 
-	const auto &end_effector_positions = link_trace(robot, final_path, robot.findLinkByName("end_effector"));
-	const auto &base_positions = link_trace(robot, final_path, robot.findLinkByName("flying_base"));
-	std::vector<std::pair<math::Vec3d, math::Vec3d>> connections_data;
-	for (size_t i = 0; i < final_path.states.size(); ++i) {
-		connections_data.push_back({end_effector_positions[i], base_positions[i]});
-	}
-
-	VtkPolyLineVisualization end_effector_trace(1, 0, 1);
-	viewer.addActor(end_effector_trace.getActor());
-	end_effector_trace.updateLine(end_effector_positions);
-
-	VtkPolyLineVisualization base_trace(1, 1, 0);
-	viewer.addActor(base_trace.getActor());
-	base_trace.updateLine(base_positions);
-
-	VtkLineSegmentsVisualization connections(0.2, 1, 0.2);
-	viewer.addActor(connections.getActor());
-	connections.updateLine(connections_data);
+	mgodpl::visualization::visualize_ladder_trace(robot, final_path, viewer);
 
 	// Register the timer callback function to be called at regular intervals
 	viewer.addTimerCallback([&]() {

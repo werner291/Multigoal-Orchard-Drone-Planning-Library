@@ -1,0 +1,5 @@
+Files in this directory are "stolen" from the Open Motion Planning Library (OMPL) project, because we needed a simple
+nearest neighbor data structure for our implementation of some of the planning algorithms, but we did not want to
+introduce a dependency on OMPL. The files are copied from the OMPL project and are licensed under the BSD license.
+
+Credit for the implementation goes to the OMPL developers, of course. The original files can be found in the OMPL project.
