@@ -28,27 +28,6 @@
 
 #include <execution>
 
-/**
- * Pick k indices without replacement from the range 0..n. (Exclusive of n.)
- *
- * @param n		The number of indices to pick from.
- * @param k		The number of indices to pick.
- * @param rng	The random number generator to use.
- * @return		A vector of k indices.
- */
-std::vector<size_t> pick_indices_without_replacement(size_t n, size_t k, std::default_random_engine &rng) {
-	assert(n >= k);
-
-	std::vector<size_t> indices(n);
-	std::iota(indices.begin(), indices.end(), 0);
-
-	std::shuffle(indices.begin(), indices.end(), rng);
-
-	indices.resize(k);
-
-	return indices;
-}
-
 REGISTER_BENCHMARK(goal_sample_success_rate) {
 	std::cout << "Running goal_sample_success_rate" << std::endl;
 
@@ -121,32 +100,18 @@ REGISTER_BENCHMARK(goal_sample_success_rate) {
 	// We get some truly excessive numbers of problems here, so we limit the number of goals per tree:
 	const size_t MAX_GOALS_PER_TREE = 100;
 
-	std::default_random_engine shuffler(42); // NOLINT(*-msc51-cpp)
+	random_numbers::RandomNumberGenerator shuffler(42);
 
 	std::vector<Problem> problems;
 	for (size_t tree_model_index = 0; tree_model_index < tree_meshes.size(); ++tree_model_index) {
-		if (tree_meshes[tree_model_index].fruit_meshes.size() <= MAX_GOALS_PER_TREE) {
-			for (size_t goal_index = 0; goal_index < tree_meshes[tree_model_index].fruit_meshes.size(); ++goal_index) {
-				for (size_t robot_model_index = 0; robot_model_index < robot_models.size(); ++robot_model_index) {
-					problems.push_back(Problem{
-						.tree_model_index = tree_model_index,
-						.goal_index = goal_index,
-						.robot_model_index = robot_model_index
-					});
-				}
-			}
-		} else {
-			// Grab the first MAX_GOALS_PER_TREE indices:
-			for (size_t goal_index: pick_indices_without_replacement(tree_meshes[tree_model_index].fruit_meshes.size(),
-			                                                         MAX_GOALS_PER_TREE,
-			                                                         shuffler)) {
-				for (size_t robot_model_index = 0; robot_model_index < robot_models.size(); ++robot_model_index) {
-					problems.push_back(Problem{
-						.tree_model_index = tree_model_index,
-						.goal_index = goal_index,
-						.robot_model_index = robot_model_index
-					});
-				}
+		for (size_t goal_index: shuffler.pick_indices_without_replacement(tree_meshes[tree_model_index].fruit_meshes.size(),
+																 MAX_GOALS_PER_TREE)) {
+			for (size_t robot_model_index = 0; robot_model_index < robot_models.size(); ++robot_model_index) {
+				problems.push_back(Problem{
+					.tree_model_index = tree_model_index,
+					.goal_index = goal_index,
+					.robot_model_index = robot_model_index
+				});
 			}
 		}
 	}
