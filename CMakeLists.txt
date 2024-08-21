@@ -358,6 +358,8 @@ if (ENABLE_VISUALIZATION)
             src/visualization/ladder_trace.h
             src/visualization/Throttle.cpp
             src/visualization/Throttle.h
+            src/visualization/RunQueue.cpp
+            src/visualization/RunQueue.h
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
