@@ -19,16 +19,9 @@ using namespace mgodpl;
 using namespace declarative;
 using namespace experiments;
 
-int main() {
-
-	const StaticPointScanMetaParameters meta_params = {
-			.n_repeat = 1,
-			.seed = 42,
-	};
-
-	// Generate our environmental parameter space to evaluate/test.
-	const auto &eval_params = gen_eval_params(meta_params);
-
+void run_experiment(const StaticPointScanMetaParameters &meta_params,
+					const std::vector<PointScanEvalParameters> &eval_params,
+					const std::vector<OrbitPathParameters> &orbits) {
 	std::cout << "Will run experiment with meta-parameters:" << std::endl;
 	std::cout << toJson(meta_params) << std::endl;
 
@@ -36,12 +29,6 @@ int main() {
 	for (const auto &params: eval_params) {
 		std::cout << toJson(params) << std::endl;
 	}
-
-	// Get a set of orbits to serve as potential paths to evaluate.
-	const std::vector<OrbitPathParameters> orbits{
-			{.parameters = CircularOrbitParameters{.radius = 1.0}},
-			{.parameters = SphericalOscillationParameters{.radius = 1.0, .amplitude = 0.5, .cycles = 4}}
-	};
 
 	std::cout << "with the following " << orbits.size() << " orbits:" << std::endl;
 	for (const auto &orbit: orbits) {
@@ -55,7 +42,7 @@ int main() {
 	Json::Value stats;
 
 	// Create an environment cache to store the non-POD environments we create
-	mgodpl::experiments::TreeModelCache environment_cache {};
+	TreeModelCache environment_cache {};
 
 	std::cout << "Starting evaluation" << std::endl;
 	std::cout << "Will test " << eval_params.size() << " scenarios with " << orbits.size() << " orbits each, for total of " << eval_params.size() * orbits.size() << " evaluations." << std::endl;
@@ -66,7 +53,7 @@ int main() {
 	std::atomic_int in_flight = 0;
 
 	// Iterate over every combination of environment and solution.
-    std::for_each(std::execution::par, eval_params.begin(), eval_params.end(), [&](const auto &scenario_params) {
+	std::for_each(std::execution::par, eval_params.begin(), eval_params.end(), [&](const auto &scenario_params) {
 
 		std::cout << "Starting scenario " << (scenarios_completed+1) << " of " << eval_params.size() << std::endl;
 
@@ -134,5 +121,57 @@ int main() {
 
 	std::cout << "All runs completed and written to file." << std::endl;
 	std::cout << "Results written to ../analysis/data/point_scanning.json" << std::endl;
+}
+
+int main() {
+
+	const StaticPointScanMetaParameters meta_params {
+			.n_repeat = 1,
+			.leaf_scales = {0.0, 0.5, 1.0, 1.5, 2.0},
+			.seed = 42,
+	};
+
+	// Generate our environmental parameter space to evaluate/test.
+	random_numbers::RandomNumberGenerator rng(meta_params.seed);
+
+	// Define the sensor parameters
+	SensorScalarParameters sensor_params {
+			.maxViewDistance = INFINITY,
+			.minViewDistance = 0.0,
+			.fieldOfViewAngle = M_PI / 3.0,
+			.maxScanAngle = M_PI / 3.0,
+	};
+
+	// Create a set of trees with different leaf scaling factors
+	std::vector<TreeModelParameters> tree_params;
+
+	for (const double leaf_scale: meta_params.leaf_scales) {
+		tree_params.push_back(TreeModelParameters {
+				.name = "appletree",
+				.leaf_scale = leaf_scale,
+				.fruit_subset = Unchanged {},
+				.seed = rng.uniformInteger(0, std::numeric_limits<int>::max())
+		});
+	}
+
+	for (const auto &tree_param: tree_params) {
+		eval_params.push_back({
+			  .tree_params = tree_param,
+			  .sensor_params = sensor_params
+	    });
+	}
+
+	// Get a set of orbits to serve as potential paths to evaluate.
+	const std::vector<OrbitPathParameters> orbits{
+			{.parameters = CircularOrbitParameters{.radius = 1.0}},
+			{.parameters = CircularOrbitParameters{.radius = 1.5}},
+			{.parameters = CircularOrbitParameters{.radius = 2.0}},
+			{.parameters = SphericalOscillationParameters{.radius = 1.0, .amplitude = 0.5, .cycles = 4}},
+			{.parameters = SphericalOscillationParameters{.radius = 1.0, .amplitude = 0.5, .cycles = 8}},
+			{.parameters = SphericalOscillationParameters{.radius = 1.5, .amplitude = 0.5, .cycles = 4}},
+			{.parameters = SphericalOscillationParameters{.radius = 1.5, .amplitude = 0.5, .cycles = 8}}
+	};
+
+	run_experiment(meta_params, eval_params, orbits);
 
 }
