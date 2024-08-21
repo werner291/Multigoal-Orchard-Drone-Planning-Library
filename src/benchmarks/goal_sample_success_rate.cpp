@@ -9,15 +9,11 @@
 #include <iostream>
 #include <fcl/narrowphase/collision.h>
 #include <fcl/narrowphase/collision_object.h>
-#include <range/v3/view/transform.hpp>
-#include <range/v3/to_container.hpp>
-#include <range/v3/view/iota.hpp>
 
 #include "benchmark_function_macros.h"
 #include "../experiment_utils/LoadedTreeModel.h"
 #include "../experiment_utils/procedural_robot_models.h"
 
-#include "../experiment_utils/TreeMeshes.h"
 #include "../experiment_utils/tree_models.h"
 #include "../planning/collision_detection.h"
 #include "../planning/fcl_utils.h"
@@ -25,53 +21,24 @@
 
 #include "../planning/RobotModel.h"
 #include "../planning/cgal_chull_shortest_paths.h"
+#include "../experiment_utils/tree_benchmark_data.h"
 
 #include <execution>
 
 REGISTER_BENCHMARK(goal_sample_success_rate) {
 	std::cout << "Running goal_sample_success_rate" << std::endl;
 
-	// Grab a list of all tree models:
-	auto tree_model_names = mgodpl::tree_meshes::getTreeModelNames();
+	// Grab a list of all tree models and load them:
+	auto tree_models = mgodpl::experiments::loadAllTreeBenchmarkData(results);
 
-	std::cout << "Will evaluate for the following tree models:";
-	for (const auto &tree_model: tree_model_names) {
-		std::cout << " " << tree_model;
-	}
-	std::cout << std::endl;
-	std::cout << "Total of " << tree_model_names.size() << " tree models." << std::endl;
-
-	// Note the tree names:
-	results["tree_models"] = Json::arrayValue;
-	for (const auto &tree_model: tree_model_names) {
-		results["tree_models"].append(tree_model);
-	}
-
-	// Make CollisionObjectd's for each tree:
-	std::vector<fcl::CollisionObjectd> tree_collision_objects;
-
-	// Load the tree meshes for each tree:
-	std::vector<mgodpl::tree_meshes::TreeMeshes> tree_meshes;
-	for (const auto &tree_model_name: tree_model_names) {
-		tree_meshes.push_back(mgodpl::tree_meshes::loadTreeMeshes(tree_model_name));
-		std::cout << "Creating collision object for tree model " << tree_model_name << std::endl;
-		tree_collision_objects.emplace_back(mgodpl::fcl_utils::meshToFclBVH(tree_meshes.back().trunk_mesh));
-	}
-
-	// Create a convex hull of the leaves of every tree:
-	// We get inexplicable memory errors if we don't use unique_ptr here, so let's just keep it and try not to think about it.
-	std::vector<std::unique_ptr<mgodpl::cgal::CgalMeshData>> tree_convex_hulls;
-	for (const auto &tree_mesh: tree_meshes) {
-		tree_convex_hulls.push_back(std::make_unique<mgodpl::cgal::CgalMeshData>(tree_mesh.leaves_mesh));
-	}
-
-	const auto robot_params = mgodpl::experiments::generateRobotArmParameters({
-		.arm_lengths = {0.25, 0.5, 0.75, 1.0},
-		.max_links = 3,
-		.include_all_horizontal = true,
-		.include_all_vertical = true,
-		.include_alternating_horizontal_vertical = true
-	});
+	const auto robot_params = mgodpl::experiments::generateRobotArmParameters(
+			{
+					.arm_lengths = {0.25, 0.5, 0.75, 1.0},
+					.max_links = 3,
+					.include_all_horizontal = true,
+					.include_all_vertical = true,
+					.include_alternating_horizontal_vertical = true
+			});
 
 	std::cout << "Will use robots: ";
 	for (const auto &robot_param: robot_params) {
@@ -103,14 +70,14 @@ REGISTER_BENCHMARK(goal_sample_success_rate) {
 	random_numbers::RandomNumberGenerator shuffler(42);
 
 	std::vector<Problem> problems;
-	for (size_t tree_model_index = 0; tree_model_index < tree_meshes.size(); ++tree_model_index) {
-		for (size_t goal_index: shuffler.pick_indices_without_replacement(tree_meshes[tree_model_index].fruit_meshes.size(),
-																 MAX_GOALS_PER_TREE)) {
+	for (size_t tree_model_index = 0; tree_model_index < tree_models.size(); ++tree_model_index) {
+		for (size_t goal_index: shuffler.pick_indices_without_replacement(tree_models[tree_model_index].tree_mesh.fruit_meshes.size(),
+																		  MAX_GOALS_PER_TREE)) {
 			for (size_t robot_model_index = 0; robot_model_index < robot_models.size(); ++robot_model_index) {
 				problems.push_back(Problem{
-					.tree_model_index = tree_model_index,
-					.goal_index = goal_index,
-					.robot_model_index = robot_model_index
+						.tree_model_index = tree_model_index,
+						.goal_index = goal_index,
+						.robot_model_index = robot_model_index
 				});
 			}
 		}
@@ -131,7 +98,7 @@ REGISTER_BENCHMARK(goal_sample_success_rate) {
 		threads_in_flight += 1;
 
 		// Get the tree model:
-		const auto &tree_mesh = tree_meshes[problem.tree_model_index];
+		const auto &tree_mesh = tree_models[problem.tree_model_index].tree_mesh;
 
 		// Get the robot model:
 		const auto &robot_model = robot_models[problem.robot_model_index];
@@ -146,10 +113,10 @@ REGISTER_BENCHMARK(goal_sample_success_rate) {
 		const mgodpl::math::Vec3d goal_center = mgodpl::mesh_aabb(goal).center();
 
 		// Look up the distance of the goal to the tree canopy hull:
-		const auto &tree_convex_hull = tree_convex_hulls[problem.tree_model_index];
+		const auto &tree_convex_hull = tree_models[problem.tree_model_index].tree_convex_hull;
 		const auto distance = sqrt(tree_convex_hull->tree.squared_distance(mgodpl::cgal::to_cgal_point(goal_center)));
 
-		const auto &tree_collision = tree_collision_objects[problem.tree_model_index];
+		const auto &tree_collision = tree_models[problem.tree_model_index].tree_collision_object;
 
 		// RNG:
 		random_numbers::RandomNumberGenerator rng(42);
@@ -162,15 +129,15 @@ REGISTER_BENCHMARK(goal_sample_success_rate) {
 		// Take 1000 goal samples:
 		for (size_t i = 0; i < MAX_SAMPLES; ++i) {
 			auto sample = mgodpl::genGoalStateUniform(
-				rng,
-				goal_center,
-				robot_model,
-				base_link,
-				end_effector_link
+					rng,
+					goal_center,
+					robot_model,
+					base_link,
+					end_effector_link
 			);
 
 			// Check collisions:
-			if (check_robot_collision(robot_model, tree_collision, sample)) {
+			if (check_robot_collision(robot_model, *tree_collision, sample)) {
 				collisions += 1;
 			}
 		}
@@ -179,7 +146,7 @@ REGISTER_BENCHMARK(goal_sample_success_rate) {
 		auto end_time = std::chrono::high_resolution_clock::now();
 
 		Json::Value result;
-		result["tree_model"] = tree_model_names[problem.tree_model_index];
+		result["tree_model"] = tree_models[problem.tree_model_index].tree_model_name;
 		result["goal_index"] = static_cast<int>(problem.goal_index);
 		result["goal_depth"] = distance;
 		result["robot_model"] = robot_params[problem.robot_model_index].short_designator();
@@ -191,7 +158,7 @@ REGISTER_BENCHMARK(goal_sample_success_rate) {
 		results["results"].append(result);
 
 		std::cout << "Finished problem " << results["results"].size() << " of " << problems.size() <<
-				std::endl;
+				  std::endl;
 		std::cout << "In flight: " << threads_in_flight << std::endl;
 
 		// Decrement the number of threads in flight:
@@ -201,7 +168,7 @@ REGISTER_BENCHMARK(goal_sample_success_rate) {
 	// We're going to run experiments in parallel, so we need a mutex to protect the results:
 	std::mutex problems_mutex;
 	std::for_each(std::execution::par,
-	              problems.begin(),
-	              problems.end(),
-	              fn);
+				  problems.begin(),
+				  problems.end(),
+				  fn);
 }
