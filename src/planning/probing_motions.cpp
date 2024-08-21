@@ -43,7 +43,10 @@ mgodpl::ApproachPath mgodpl::straightout(const mgodpl::robot_model::RobotModel &
 		isect = tree.first_intersection(mgodpl::cgal::Ray_3(to_cgal_point(end_effector_position),
 															to_cgal_direction(exit_vector)));
 
-		assert(isect.has_value());
+		if (!isect.has_value()) {
+			// No intersection either way, we must be outside the tree already.
+			throw std::runtime_error("Straightout approach failed: no intersection found. Already outside the tree?");
+		}
 	}
 
 	Point_3 intersection = boost::get<Point_3>(isect->first);
@@ -66,12 +69,12 @@ mgodpl::ApproachPath mgodpl::straightout(const mgodpl::robot_model::RobotModel &
 }
 
 std::optional<ApproachPath> mgodpl::uniform_straightout_approach(const math::Vec3d &target,
-														 const robot_model::RobotModel &robot,
-														 const fcl::CollisionObjectd &tree_trunk_object,
-														 const CgalMeshData &mesh_data,
-														 random_numbers::RandomNumberGenerator &rng,
-														 size_t max_attempts,
-														 double ee_distance) {
+																 const robot_model::RobotModel &robot,
+																 const fcl::CollisionObjectd &tree_trunk_object,
+																 const CgalMeshData &mesh_data,
+																 random_numbers::RandomNumberGenerator &rng,
+																 size_t max_attempts,
+																 double ee_distance) {
 
 
 	const auto flying_base = robot.findLinkByName("flying_base");
@@ -143,7 +146,7 @@ RobotPath ShellPathPlanningMethod::plan_static(const robot_model::RobotModel &ro
 																		 mesh_data.convex_hull);
 
 	// Now, compute the distance matrix.
-	std::vector <std::vector<double>> target_to_target_distances;
+	std::vector<std::vector<double>> target_to_target_distances;
 	target_to_target_distances.reserve(approach_paths.size());
 	for (const ApproachPath &path1: approach_paths) {
 		target_to_target_distances.emplace_back(shell_distances(path1.shell_point,
@@ -151,7 +154,7 @@ RobotPath ShellPathPlanningMethod::plan_static(const robot_model::RobotModel &ro
 																mesh_data.convex_hull));
 	}
 
-	const std::vector <size_t> &order = visitation_order_greedy(target_to_target_distances, initial_state_distances);
+	const std::vector<size_t> &order = visitation_order_greedy(target_to_target_distances, initial_state_distances);
 
 	const RobotPath &final_path = mgodpl::shell_path_planning::assemble_final_path(robot,
 																				   mesh_data.convex_hull,
