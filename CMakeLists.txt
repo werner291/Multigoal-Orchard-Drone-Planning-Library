@@ -291,6 +291,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/tracing.cpp
             src/experiment_utils/tracing.h
             src/experiment_utils/declarative/local_optimization.h
+            src/experiment_utils/tree_benchmark_data.cpp
+            src/experiment_utils/tree_benchmark_data.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
@@ -312,6 +314,7 @@ if (ENABLE_EXPERIMENTS)
             src/benchmarks/goal_sample_success_rate.cpp
             src/benchmarks/tree_stats.cpp
             src/benchmarks/sampling_difficulty.cpp
+            src/benchmarks/probing_motions.cpp
     )
 
     target_link_libraries(benchmarks math_utils visibility experiment_utils planning)
