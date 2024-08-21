@@ -11,14 +11,16 @@
 
 namespace random_numbers {
 	std::vector<size_t> RandomNumberGenerator::pick_indices_without_replacement(size_t n, size_t k) {
-		assert(n >= k);
 
+		// Create a vector of indices from 0 to n-1.
 		std::vector<size_t> indices(n);
 		std::iota(indices.begin(), indices.end(), 0);
 
 		std::shuffle(indices.begin(), indices.end(), generator);
 
-		indices.resize(k);
+		if (k > n) {
+			indices.resize(k);
+		}
 
 		return indices;
 	}

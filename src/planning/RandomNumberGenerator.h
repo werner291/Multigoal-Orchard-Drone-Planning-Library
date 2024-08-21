@@ -68,7 +68,8 @@ namespace random_numbers {
 
 		/**
 		 * Pick k indices without replacement from the range 0..n. (Exclusive of n.)
-		 * Asserts that n >= k. (in debug mode)
+		 *
+		 * If k > n, the function will return a vector of size n with the indices 0..n-1 in random order.
 		 *
 		 * @param n		The number of indices to pick from.
 		 * @param k		The number of indices to pick.
