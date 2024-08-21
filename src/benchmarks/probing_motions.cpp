@@ -166,7 +166,7 @@ REGISTER_BENCHMARK(probing_motions) {
 				);
 
 				// Check collisions:
-				successful_pullouts += check_path_collides(robot_model, *tree_collision, path.path);
+				successful_pullouts += check_path_collides(robot_model, *tree_collision, path.path) ? 0 : 1;
 			}
 
 		}
