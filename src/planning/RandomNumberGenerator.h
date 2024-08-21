@@ -68,10 +68,10 @@ namespace random_numbers {
 
 		/**
 		 * Pick k indices without replacement from the range 0..n. (Exclusive of n.)
+		 * Asserts that n >= k. (in debug mode)
 		 *
 		 * @param n		The number of indices to pick from.
 		 * @param k		The number of indices to pick.
-		 * @param rng	The random number generator to use.
 		 * @return		A vector of k indices.
 		 */
 		std::vector<size_t> pick_indices_without_replacement(size_t n, size_t k);
