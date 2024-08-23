@@ -24,6 +24,7 @@
 #include "../planning/goal_sampling.h"
 
 #include "../planning/RobotModel.h"
+#include "../planning/cgal_chull_shortest_paths.h"
 
 #include <execution>
 
@@ -52,7 +53,7 @@ REGISTER_BENCHMARK(goal_sample_success_rate) {
 	std::cout << "Running goal_sample_success_rate" << std::endl;
 
 	// Grab a list of all tree models:
-	const auto tree_model_names = mgodpl::tree_meshes::getTreeModelNames();
+	auto tree_model_names = mgodpl::tree_meshes::getTreeModelNames();
 
 	std::cout << "Will evaluate for the following tree models:";
 	for (const auto &tree_model: tree_model_names) {
@@ -76,6 +77,13 @@ REGISTER_BENCHMARK(goal_sample_success_rate) {
 		tree_meshes.push_back(mgodpl::tree_meshes::loadTreeMeshes(tree_model_name));
 		std::cout << "Creating collision object for tree model " << tree_model_name << std::endl;
 		tree_collision_objects.emplace_back(mgodpl::fcl_utils::meshToFclBVH(tree_meshes.back().trunk_mesh));
+	}
+
+	// Create a convex hull of the leaves of every tree:
+	// We get inexplicable memory errors if we don't use unique_ptr here, so let's just keep it and try not to think about it.
+	std::vector<std::unique_ptr<mgodpl::cgal::CgalMeshData>> tree_convex_hulls;
+	for (const auto &tree_mesh: tree_meshes) {
+		tree_convex_hulls.push_back(std::make_unique<mgodpl::cgal::CgalMeshData>(tree_mesh.leaves_mesh));
 	}
 
 	const auto robot_params = mgodpl::experiments::generateRobotArmParameters({
@@ -172,6 +180,10 @@ REGISTER_BENCHMARK(goal_sample_success_rate) {
 		// AABB center:
 		const mgodpl::math::Vec3d goal_center = mgodpl::mesh_aabb(goal).center();
 
+		// Look up the distance of the goal to the tree canopy hull:
+		const auto &tree_convex_hull = tree_convex_hulls[problem.tree_model_index];
+		const auto distance = sqrt(tree_convex_hull->tree.squared_distance(mgodpl::cgal::to_cgal_point(goal_center)));
+
 		const auto &tree_collision = tree_collision_objects[problem.tree_model_index];
 
 		// RNG:
@@ -204,6 +216,7 @@ REGISTER_BENCHMARK(goal_sample_success_rate) {
 		Json::Value result;
 		result["tree_model"] = tree_model_names[problem.tree_model_index];
 		result["goal_index"] = static_cast<int>(problem.goal_index);
+		result["goal_depth"] = distance;
 		result["robot_model"] = robot_params[problem.robot_model_index].short_designator();
 		result["collisions"] = collisions;
 		result["time_ms"] = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();

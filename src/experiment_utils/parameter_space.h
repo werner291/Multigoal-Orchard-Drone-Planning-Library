@@ -22,6 +22,7 @@ namespace mgodpl::declarative {
 	struct StaticPointScanMetaParameters {
 		/// The number of scenarios to evaluate.
 		size_t n_repeat = 1;
+		std::vector<double> leaf_scales = {1.0};
 		int seed = 42; //< The seed to use for random number generation.
 		const std::vector<double> leaf_sizes; //< The leaf sizes to use for the trees.
 	};

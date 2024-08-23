@@ -311,6 +311,7 @@ if (ENABLE_EXPERIMENTS)
             src/benchmarks/main.cpp
             src/benchmarks/goal_sample_success_rate.cpp
             src/benchmarks/tree_stats.cpp
+            src/benchmarks/sampling_difficulty.cpp
     )
 
     target_link_libraries(benchmarks math_utils visibility experiment_utils planning)
@@ -402,6 +403,7 @@ if (ENABLE_VISUALIZATION)
             src/visualizations/reacharound_motions.cpp
             src/visualizations/tsp_over_prm.cpp
             src/visualizations/shortcutting.cpp
+            src/visualizations/goal_samples.cpp
     )
 
     target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
