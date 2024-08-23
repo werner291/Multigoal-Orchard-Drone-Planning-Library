@@ -138,3 +138,27 @@ REGISTER_VISUALIZATION(procedural_fruit_clusters) {
 
 	viewer.start();
 }
+
+REGISTER_VISUALIZATION(tree_model_parts) {
+	// Load the "appletree" tree meshes
+	auto model = tree_meshes::loadTreeMeshes("appletree");
+
+	// Define a constant for the spacing between each tree model
+	const double SPACING = 8.0;
+
+	// Add trunk mesh
+	viewer.addMesh(model.trunk_mesh, {0.5, 0.3, 0.1}, 1.0, {0, 0, 0});
+
+	// Add leaves mesh
+	viewer.addMesh(model.leaves_mesh, {0.1, 0.5, 0.1}, 1.0, {-SPACING, 0, 0});
+
+	// Add fruit meshes
+	for (const auto &fruit_mesh: model.fruit_meshes) {
+		viewer.addMesh(fruit_mesh, {0.9, 0.0, 0.0}, 1.0, {+SPACING, 0, 0});
+	}
+
+	// Place the camera such that it looks at the middle model
+	viewer.setCameraTransform({0, 40, 5}, {0, 0, 5});
+
+	viewer.start();
+}
