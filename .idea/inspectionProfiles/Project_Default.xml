@@ -128,6 +128,29 @@
             <item index="107" class="java.lang.String" itemvalue="ros2action" />
             <item index="108" class="java.lang.String" itemvalue="control-msgs" />
             <item index="109" class="java.lang.String" itemvalue="sensor-msgs-py" />
+            <item index="110" class="java.lang.String" itemvalue="colcon-recursive-crawl" />
+            <item index="111" class="java.lang.String" itemvalue="colcon-ros" />
+            <item index="112" class="java.lang.String" itemvalue="rosdep" />
+            <item index="113" class="java.lang.String" itemvalue="syncthing-gtk" />
+            <item index="114" class="java.lang.String" itemvalue="colcon-core" />
+            <item index="115" class="java.lang.String" itemvalue="catkin-pkg-modules" />
+            <item index="116" class="java.lang.String" itemvalue="colcon-cmake" />
+            <item index="117" class="java.lang.String" itemvalue="colcon-devtools" />
+            <item index="118" class="java.lang.String" itemvalue="colcon-parallel-executor" />
+            <item index="119" class="java.lang.String" itemvalue="colcon-package-information" />
+            <item index="120" class="java.lang.String" itemvalue="colcon-powershell" />
+            <item index="121" class="java.lang.String" itemvalue="python-apt" />
+            <item index="122" class="java.lang.String" itemvalue="colcon-zsh" />
+            <item index="123" class="java.lang.String" itemvalue="rosdep-modules" />
+            <item index="124" class="java.lang.String" itemvalue="ubuntu-advantage-tools" />
+            <item index="125" class="java.lang.String" itemvalue="python-debian" />
+            <item index="126" class="java.lang.String" itemvalue="distro-info" />
+            <item index="127" class="java.lang.String" itemvalue="rosdistro-modules" />
+            <item index="128" class="java.lang.String" itemvalue="colcon-bash" />
+            <item index="129" class="java.lang.String" itemvalue="colcon-cd" />
+            <item index="130" class="java.lang.String" itemvalue="rospkg-modules" />
+            <item index="131" class="java.lang.String" itemvalue="colcon-installed-package-information" />
+            <item index="132" class="java.lang.String" itemvalue="colcon-notification" />
           </list>
         </value>
       </option>
