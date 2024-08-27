@@ -229,6 +229,10 @@ REGISTER_VISUALIZATION(probing_isolated) {
 
 	viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
 	viewer.addMesh(tree_model.leaves_mesh, LEAF_COLOR);
+	// Add the apple models:
+	for (const auto &apple: tree_model.fruit_meshes) {
+		viewer.addMesh(apple, FRUIT_COLOR);
+	}
 
 	auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -246,67 +250,119 @@ REGISTER_VISUALIZATION(probing_isolated) {
 
 	const std::vector<math::Vec3d> &targets = computeFruitPositions(tree_model);
 
-	mgodpl::visualization::Throttle throttle;
+	size_t target_i = 0;
 
-	mgodpl::visualization::RunQueue run;
+	size_t attempts_for_target = 0;
+	const size_t MAX_ATTEMPTS = 100;
 
-	std::thread algo_thread([&]() {
+	const size_t MAX_TARGETS_FOR_VIDEO = 10;
 
-		random_numbers::RandomNumberGenerator rng(42);
+	// Keep a step timer to slow down the visualization:
+	size_t step_timer = 10;
 
-		vtkSmartPointer<vtkActor> target_point_actor;
-		run.enqueue([&]() {
-			target_point_actor = viewer.addSphere(0.05, targets[0], math::Vec3d{1, 0, 0}, 1.0);
-		});
+	// RNG:
+	random_numbers::RandomNumberGenerator rng(42);
 
-		for (const auto &target: targets) {
-			std::cout << "Target: " << target << std::endl;
+	std::vector<vtkSmartPointer<vtkActor>> clear_actors;
 
-			// Take 1000 samples:
-			std::vector<RobotState> samples;
-
-			for (int i = 0; i < 100; ++i) {
-				samples.push_back(genGoalStateUniform(rng, target, robot, flying_base, end_effector));
-			}
-
-			std::vector<RobotActors> actors;
-
-			// Visualize 1000 states:
-			run.enqueue([&]() {
-				std::cout << "Visualizing actors." << std::endl;
-				for (const auto &sample: samples) {
-					auto fk = robot_model::forwardKinematics(robot, sample.joint_values, flying_base, sample.base_tf);
-					actors.push_back(vizualize_robot_state(viewer, robot, fk));
-				}
-			});
-
-			throttle.wait_and_advance();
-			// sleep 500ms:
-			std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-			// Clear the actors:
-			run.enqueue([&]() {
-				std::cout << "Clearing actors." << std::endl;
-				for (const auto &state_actors: actors) {
-					for (const auto &actor: state_actors.actors) {
-						viewer.viewerRenderer->RemoveActor(actor);
-					}
-				}
-				actors.clear();
-			});
-			throttle.wait_and_advance();
-		}
-
-		run.enqueue([&]() {
-			viewer.stop();
-		});
-
-	});
+	const auto tree_center = mesh_aabb(tree_model.leaves_mesh).center();
 
 	viewer.addTimerCallback([&]() {
-		run.run_all();
-		throttle.allow_advance();
+
+		auto rel_vec = (targets[target_i] - tree_center).normalized() * 10.0;
+		rel_vec.z() = 5.0;
+
+		// Focus the camera on the new target:
+		viewer.setCameraTransform(
+				targets[target_i] + rel_vec,
+				targets[target_i]);
+
+		if (step_timer > 0) {
+			step_timer -= 1;
+			return;
+		} else {
+			step_timer = 5;
+		}
+
+		// Clear actors:
+		for (const auto &actor: clear_actors) {
+			viewer.removeActor(actor);
+		}
+		clear_actors.clear();
+
+		attempts_for_target += 1;
+		if (attempts_for_target > MAX_ATTEMPTS) {
+			attempts_for_target = 0;
+
+			size_t max_targets = viewer.isRecording() ? MAX_TARGETS_FOR_VIDEO : targets.size();
+
+			if (target_i + 1 >= max_targets) {
+				if (viewer.isRecording()) {
+					viewer.stop();
+				} else {
+					target_i = 0;
+				}
+				return;
+			} else {
+				target_i += 1;
+			}
+		}
+
+		const math::Vec3d &target = targets[target_i];
+
+		std::cout << "Target: " << target << "(" << target_i << "/" << targets.size() << ")" << std::endl;
+
+		// Take 1000 samples:
+		RobotState sample = genGoalStateUniform(rng, target, robot, flying_base, end_effector);
+
+		std::cout << "Visualizing actors." << std::endl;
+		auto fk = robot_model::forwardKinematics(robot, sample.joint_values, flying_base, sample.base_tf);
+
+		// Check collision:
+		bool collides = check_robot_collision(robot, tree_trunk_object, sample);
+
+		auto actors = vizualize_robot_state(viewer,
+											robot,
+											fk,
+											collides ? math::Vec3d{1, 0, 0} : math::Vec3d{0, 1, 0});
+
+		for (const auto &actor: actors.actors) {
+			clear_actors.push_back(actor);
+		}
+
+		if (!collides) {
+
+			const auto &motion = straightout(robot, sample, mesh_data.tree, mesh_data.mesh_path);
+
+			bool motion_collides = check_path_collides(robot, tree_trunk_object, motion.path);
+
+			if (!motion_collides) {
+				// Generate more actors:
+				for (size_t j = 1; j < 10; ++j) {
+					double t = j / 10.0;
+
+					auto state = interpolate(PathPoint{0, t}, motion.path);
+
+					auto fk = robot_model::forwardKinematics(robot, state.joint_values, flying_base, state.base_tf);
+
+					auto actors = vizualize_robot_state(viewer, robot, fk, {0, 1, 0});
+
+					for (const auto &actor: actors.actors) {
+						clear_actors.push_back(actor);
+					}
+				}
+
+				// Increase the step timer to slow down the visualization:
+				step_timer = 50;
+
+				// advance the target:
+				attempts_for_target = MAX_ATTEMPTS;
+			}
+		}
+
 	});
+
+	viewer.lockCameraUp();
 
 	viewer.start();
 
