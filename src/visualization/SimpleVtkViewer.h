@@ -170,6 +170,10 @@ namespace mgodpl {
 		void lockCameraUp();
 
 		void setCameraTransform(const math::Vec3d &position, const math::Vec3d &lookAt);
+
+		void removeActor(vtkActor *pointer);
+
+		bool isRecording();
 	};
 
 }

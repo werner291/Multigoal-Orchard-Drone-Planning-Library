@@ -359,4 +359,12 @@ namespace mgodpl {
 		}
 
 	}
+
+	void SimpleVtkViewer::removeActor(vtkActor *pointer) {
+		viewerRenderer->RemoveActor(pointer);
+	}
+
+	bool SimpleVtkViewer::isRecording() {
+		return videoRecorder.has_value();
+	}
 }
