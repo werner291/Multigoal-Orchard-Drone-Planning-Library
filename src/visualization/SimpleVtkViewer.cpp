@@ -58,8 +58,7 @@ namespace mgodpl {
 		enforceCameraUp(viewerRenderer, renderWindowInteractor);
 	}
 
-	void SimpleVtkViewer::setCameraTransform(const math::Vec3d& position, const math::Vec3d& lookAt)
-	{
+	void SimpleVtkViewer::setCameraTransform(const math::Vec3d &position, const math::Vec3d &lookAt) {
 		viewerRenderer->GetActiveCamera()->SetPosition(position.data());
 		viewerRenderer->GetActiveCamera()->SetFocalPoint(lookAt.data());
 		viewerRenderer->GetActiveCamera()->SetViewUp(0, 0, 1);
@@ -127,24 +126,23 @@ namespace mgodpl {
 
 	}
 
-	vtkSmartPointer<vtkActor> SimpleVtkViewer::addMesh(const mgodpl::Mesh& mesh, const math::Transformd& transform,
-		const math::Vec3d& color, double opacity)
-	{
+	vtkSmartPointer<vtkActor> SimpleVtkViewer::addMesh(const mgodpl::Mesh &mesh, const math::Transformd &transform,
+													   const math::Vec3d &color, double opacity) {
 
 		// Make the vtkPoints for the mesh.
 		vtkNew<vtkPoints> points;
-		for (const auto& vertex : mesh.vertices) {
+		for (const auto &vertex: mesh.vertices) {
 			points->InsertNextPoint(vertex.x(), vertex.y(), vertex.z());
 		}
 
 		// Make the vtkCellArray for the mesh.
 		vtkNew<vtkCellArray> cells;
-		for (const auto& triangle : mesh.triangles) {
+		for (const auto &triangle: mesh.triangles) {
 			cells->InsertNextCell({
-				triangle[0],
-				triangle[1],
-				triangle[2]
-			});
+										  triangle[0],
+										  triangle[1],
+										  triangle[2]
+								  });
 		}
 
 		// PolyData.
@@ -169,26 +167,24 @@ namespace mgodpl {
 
 	}
 
-	void SimpleVtkViewer::set_transform(const math::Transformd& transform, vtkActor* actor)
-	{
+	void SimpleVtkViewer::set_transform(const math::Transformd &transform, vtkActor *actor) {
 		actor->SetPosition(transform.translation.x(), transform.translation.y(), transform.translation.z());
 
-		const auto& axisangle = transform.orientation.toAxisAngle();
+		const auto &axisangle = transform.orientation.toAxisAngle();
 
 		actor->SetOrientation(0, 0, 0);
 		actor->RotateWXYZ(axisangle.angle / M_PI * 180.0,
-		                  axisangle.axis.x(),
-		                  axisangle.axis.y(),
-		                  axisangle.axis.z());
+						  axisangle.axis.x(),
+						  axisangle.axis.y(),
+						  axisangle.axis.z());
 	}
 
-	vtkSmartPointer<vtkActor> SimpleVtkViewer::addPositionedShape(const PositionedShape& shape,
-		const math::Vec3d& color, double opacity)
-	{
+	vtkSmartPointer<vtkActor> SimpleVtkViewer::addPositionedShape(const PositionedShape &shape,
+																  const math::Vec3d &color, double opacity) {
 
-		if (const auto& box = std::get_if<Box>(&shape.shape)) {
+		if (const auto &box = std::get_if<Box>(&shape.shape)) {
 			return addBox(box->size, shape.transform, color, opacity);
-		} else if (const auto& mesh = std::get_if<Mesh>(&shape.shape)) {
+		} else if (const auto &mesh = std::get_if<Mesh>(&shape.shape)) {
 			return addMesh(*mesh, shape.transform, color, opacity);
 		} else {
 			throw std::runtime_error("Unknown shape type");
@@ -199,8 +195,7 @@ namespace mgodpl {
 	vtkSmartPointer<vtkActor> SimpleVtkViewer::addBox(const math::Vec3d &size,
 													  const math::Transformd &transform,
 													  const math::Vec3d &color,
-													  double d)
-	{
+													  double d) {
 
 		vtkNew<vtkCubeSource> cubeSource;
 		cubeSource->SetXLength(size.x());
@@ -245,8 +240,7 @@ namespace mgodpl {
 
 	}
 
-	vtkSmartPointer<vtkImageData> SimpleVtkViewer::currentImage()
-	{
+	vtkSmartPointer<vtkImageData> SimpleVtkViewer::currentImage() {
 
 		visualizerWindow->Render();
 
@@ -256,7 +250,7 @@ namespace mgodpl {
 		windowToImageFilter->ReadFrontBufferOff();
 		windowToImageFilter->Update();
 
-		 return windowToImageFilter->GetOutput();
+		return windowToImageFilter->GetOutput();
 	}
 
 
@@ -325,7 +319,8 @@ namespace mgodpl {
 	mgodpl::SimpleVtkViewer::~SimpleVtkViewer() {
 	}
 
-	vtkSmartPointer<vtkActor> SimpleVtkViewer::addSphere(double radius, const math::Vec3d &center, const math::Vec3d &color, double opacity) {
+	vtkSmartPointer<vtkActor>
+	SimpleVtkViewer::addSphere(double radius, const math::Vec3d &center, const math::Vec3d &color, double opacity) {
 
 		vtkNew<vtkSphereSource> sphereSource;
 		sphereSource->SetRadius(radius);
@@ -353,7 +348,7 @@ namespace mgodpl {
 			addActor(createColoredMeshActor(tree.leaves_mesh, {0.0, 0.5, 0.0, 1.0}, true));
 		}
 		if (show_fruit) {
-			for (const auto &fruit : computeFruitPositions(tree)) {
+			for (const auto &fruit: computeFruitPositions(tree)) {
 				addSphere(0.03, fruit, {0.8, 0.0, 0.0}, 1.0);
 			}
 		}
