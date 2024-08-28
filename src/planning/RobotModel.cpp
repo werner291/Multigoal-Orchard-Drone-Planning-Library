@@ -10,6 +10,8 @@
 
 #include <numeric>
 
+#include "RobotState.h"
+
 namespace mgodpl::robot_model {
 
 	ForwardKinematicsResult forwardKinematics(const RobotModel &model,
@@ -19,17 +21,14 @@ namespace mgodpl::robot_model {
 
 		// Allocate a result with all identity transforms.
 		ForwardKinematicsResult result{
-				.link_transforms = std::vector<math::Transformd>(model.getLinks().size(), root_link_transform)
-		};
+				.link_transforms = std::vector<math::Transformd>(model.getLinks().size(), root_link_transform)};
 
 		// Keep a vector to track which links have been visited, since a robot may contain cycles.
 		std::vector<bool> visited(model.getLinks().size(), false);
 
 		// Keep a stack of links to visit, and push the root link.
 		// Every entry in the stack is a pair of a link and its transform relative to the root_link.
-		std::vector<std::pair<RobotModel::LinkId, math::Transformd>> stack{
-				{root_link, root_link_transform}
-		};
+		std::vector<std::pair<RobotModel::LinkId, math::Transformd>> stack{{root_link, root_link_transform}};
 
 		// Keep track of the index in the joint_values vector; this induces the DFS order.
 		size_t variable_index = 0;
@@ -58,37 +57,40 @@ namespace mgodpl::robot_model {
 					continue;
 
 				// Compute the transform from the link to the joint.
-				math::Transformd local_to_joint = model.getJoints()[joint].linkA == link ? model.getJoints()[joint].attachmentA
-																					: model.getJoints()[joint].attachmentB;
+				math::Transformd local_to_joint = model.getJoints()[joint].linkA == link
+														  ? model.getJoints()[joint].attachmentA
+														  : model.getJoints()[joint].attachmentB;
 
 				// Compute the transform induced by the variable part of the joint.
 				math::Transformd joint_transform = RobotModel::variableTransform(model.getJoints()[joint].type_specific,
 																				 joint_values.data() + variable_index);
-				if (model.getJoints()[joint].linkB == link) joint_transform = joint_transform.inverse();
+				if (model.getJoints()[joint].linkB == link)
+					joint_transform = joint_transform.inverse();
 				variable_index += RobotModel::n_variables(model.getJoints()[joint].type_specific);
 
 				// Compute the transform from the joint to the link.
-				math::Transformd after_joint_frame = (model.getJoints()[joint].linkA == link
-													  ? model.getJoints()[joint].attachmentB
-													  : model.getJoints()[joint].attachmentA).inverse();
+				math::Transformd after_joint_frame =
+						(model.getJoints()[joint].linkA == link ? model.getJoints()[joint].attachmentB
+																: model.getJoints()[joint].attachmentA)
+								.inverse();
 
 				// Compute the transform from the link to the next link.
 				math::Transformd next_link_transform =
-						transform
-								.then(local_to_joint)
-								.then(joint_transform)
-								.then(after_joint_frame);
+						transform.then(local_to_joint).then(joint_transform).then(after_joint_frame);
 
 				// Push the next link on the stack.
-				stack.emplace_back(
-						model.getJoints()[joint].linkA == link ? model.getJoints()[joint].linkB : model.getJoints()[joint].linkA,
-						next_link_transform);
+				stack.emplace_back(model.getJoints()[joint].linkA == link ? model.getJoints()[joint].linkB
+																		  : model.getJoints()[joint].linkA,
+								   next_link_transform);
 			}
 		}
 
 		// Return the result.
 		return result;
-
+	}
+	ForwardKinematicsResult
+	forwardKinematics(const RobotModel &model, const RobotState &state, const RobotModel::LinkId &root_link) {
+		return forwardKinematics(model, state.joint_values, root_link, state.base_tf);
 	}
 
 	RobotModel::LinkId RobotModel::insertLink(const RobotModel::Link &link) {
@@ -125,9 +127,8 @@ namespace mgodpl::robot_model {
 		throw std::runtime_error("Joint not found: " + name);
 	}
 
-	size_t RobotModel::count_joint_variables() const
-	{
-		return std::accumulate(joints.begin(), joints.end(), 0, [](size_t acc, const auto& joint) {
+	size_t RobotModel::count_joint_variables() const {
+		return std::accumulate(joints.begin(), joints.end(), 0, [](size_t acc, const auto &joint) {
 			return acc + n_variables(joint.type_specific);
 		});
 	}
@@ -140,8 +141,8 @@ namespace mgodpl::robot_model {
 			case 0: {
 				// Construct a rotation transform from the axis and the joint value.
 				const auto &revolute_joint = std::get<RevoluteJoint>(variablePart);
-				return math::Transformd::fromRotation(math::Quaterniond::fromAxisAngle(revolute_joint.axis,
-																					   joint_values[0]));
+				return math::Transformd::fromRotation(
+						math::Quaterniond::fromAxisAngle(revolute_joint.axis, joint_values[0]));
 			}
 			case 1: {
 				// Fixed joint, return identity.
@@ -153,13 +154,9 @@ namespace mgodpl::robot_model {
 	}
 
 	RobotModel::Link RobotModel::Link::namedBox(const std::string &name, const math::Vec3d &size) {
-		return Link {
-				.name = name,
-				.joints = {},
-				.collision_geometry = {
-						PositionedShape::untransformed(Box { .size = size })
-				},
-				.visual_geometry = {}
-		};
+		return Link{.name = name,
+					.joints = {},
+					.collision_geometry = {PositionedShape::untransformed(Box{.size = size})},
+					.visual_geometry = {}};
 	}
-}
+} // namespace mgodpl::robot_model
