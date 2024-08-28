@@ -9,6 +9,7 @@
 #include "../experiment_utils/default_colors.h"
 #include "../experiment_utils/procedural_fruit_placement.h"
 #include "../experiment_utils/procedural_robot_models.h"
+#include "../planning/ParametricInfiniteCone.h"
 #include "../planning/RobotPath.h"
 #include "../planning/RobotPathFn.h"
 #include "../planning/state_tools.h"
@@ -21,11 +22,24 @@
 using namespace mgodpl;
 using namespace mgodpl::vizualisation;
 
-RobotPathFn whole_body_orbit_path(const robot_model::RobotModel &robot_model, double distance = 0.5) {
-	return [robot_model, distance](double t) {
+/**
+ * Creates a path that orbits around the fruit, keeping the end-effector at a fixed distance from the fruit,
+ * and the arm pointing radially inwards towards the fruit. This causes the robot's main body to swing out a lot.
+ *
+ * @param robot_model		The robot model that the path is for.
+ * @param distance			The distance from the center of the fruit to the end-effector.
+ * @param fruit_position	The position of the fruit.
+ *
+ * @return A function that takes a time parameter and returns a RobotState. (Note: captures robot_model, distance,
+ * fruit_position by reference)
+ */
+RobotPathFn whole_body_orbit_path(const robot_model::RobotModel &robot_model,
+								  double distance = 0.5,
+								  const math::Vec3d &fruit_position = {0.0, 0.0, 0.0}) {
+	return [robot_model, distance, fruit_position](double t) {
 		const double angle = t * 2.0 * M_PI;
 		const math::Vec3d arm_vector = math::Vec3d{cos(angle), sin(angle), 0.0};
-		const math::Vec3d offset_vector = arm_vector * distance;
+		const math::Vec3d offset_vector = fruit_position + arm_vector * distance;
 		return fromEndEffectorAndVector(robot_model, offset_vector, arm_vector);
 	};
 }
@@ -56,40 +70,6 @@ RobotPathFn end_effector_vertical_path(const robot_model::RobotModel &robot_mode
 RobotPathFn segmented_orbit_path(const robot_model::RobotModel &robot_model, double distance = 0.5) {
 	return concat({whole_body_orbit_path(robot_model, distance), end_effector_orbit_path(robot_model, distance)});
 }
-
-class ParametricInfiniteCone {
-
-	// Three basis vectors:
-	math::Vec3d axis, b, c;
-
-	// The position of the apex:
-	math::Vec3d apex;
-
-public:
-	[[nodiscard]] math::Vec3d position(double t, double theta) const {
-		return (axis + b * cos(theta) + c * sin(theta)) * t + apex;
-	}
-
-	/**
-	 * Constructs a parametric infinite cone with the given axis and apex angle.
-	 * Axis assumed to be normalized (checked with an assertion).
-	 *
-	 * Also, the axis is assumed to not be parallel to the z-axis.
-	 */
-	ParametricInfiniteCone(const math::Vec3d &axis, double apex_angle, const math::Vec3d &apex = math::Vec3d::Zero()) :
-		axis(axis), apex(apex) {
-		assert(apex_angle > 0.0 && apex_angle < M_PI / 2.0);
-		assert(abs(axis.squaredNorm() - 1.0) < 1e-6);
-
-		b = math::Vec3d::UnitZ().cross(axis);
-		assert(abs(b.squaredNorm() - 1.0) < 1e-6);
-		c = axis.cross(b);
-		assert(abs(c.squaredNorm() - 1.0) < 1e-6);
-
-		b *= tan(apex_angle);
-		c *= tan(apex_angle);
-	}
-};
 
 REGISTER_VISUALIZATION(parametric_scan_path) {
 
@@ -175,8 +155,8 @@ REGISTER_VISUALIZATION(parametric_scan_path) {
 }
 
 math::Vec3d arm_vector_from_eepoint(const math::Vec3d &ee_point) {
-	const math::Vec3d REFERENCE_SHALLOW_PULL_POINT = {-5, 0, 0};
-	const math::Vec3d arm_vector = -(REFERENCE_SHALLOW_PULL_POINT - ee_point).normalized();
+	const math::Vec3d REFERENCE_SHALLOW_PULL_POINT = {5, 0, 0};
+	const math::Vec3d arm_vector = (REFERENCE_SHALLOW_PULL_POINT - ee_point).normalized();
 	return arm_vector;
 }
 
@@ -199,6 +179,21 @@ RobotPathFn spider_path(const robot_model::RobotModel &robot_model, double dista
 		if (linear > 0.5)
 			linear = 1.0 - linear;
 		const auto ee_point = cone.position(linear, theta);
+		return fromEndEffectorAndVector(robot_model, ee_point, arm_vector_from_eepoint(ee_point));
+	};
+}
+
+RobotPathFn curved_spider_path(const robot_model::RobotModel &robot_model, double distance = 0.5) {
+
+	return [robot_model, distance](double t) {
+		const double theta = std::floor(t * 8.0) * 2.0 * M_PI / 8.0;
+		double linear = t * 8.0 - std::floor(t * 8.0);
+		if (linear > 0.5)
+			linear = 1.0 - linear;
+
+		math::Vec3d ee_point = {
+				distance - linear * linear, sin(theta) * linear * distance * 4.0, cos(theta) * linear * distance * 4.0};
+
 		return fromEndEffectorAndVector(robot_model, ee_point, arm_vector_from_eepoint(ee_point));
 	};
 }
@@ -229,11 +224,12 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 
 	auto rb = vizualize_robot_state(viewer, robot_model, forwardKinematics(robot_model, initial_state));
 
-	const std::vector paths = {whole_body_orbit_path(robot_model, scan_radius),
-							   end_effector_orbit_path(robot_model, scan_radius),
-							   end_effector_vertical_path(robot_model, scan_radius),
-							   weird_cone_curve_path(robot_model, scan_radius),
-							   spider_path(robot_model, scan_radius)};
+	const std::vector paths = {// whole_body_orbit_path(robot_model, scan_radius),
+							   // end_effector_orbit_path(robot_model, scan_radius),
+							   // end_effector_vertical_path(robot_model, scan_radius),
+							   // weird_cone_curve_path(robot_model, scan_radius),
+							   spider_path(robot_model, scan_radius),
+							   curved_spider_path(robot_model, scan_radius)};
 
 	double t = 0.0;
 
@@ -244,7 +240,7 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 
 	viewer.addTimerCallback([&]() {
 		// If the nondecimal part of t has changed, clear the lines:
-		if (std::floor(t) != std::floor(t - 0.01)) {
+		if (std::floor(t) != std::floor(t + 0.01)) {
 			lines.clear();
 		}
 
