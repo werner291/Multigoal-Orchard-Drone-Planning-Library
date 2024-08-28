@@ -233,6 +233,8 @@ add_library(planning
         src/planning/nearest_neighbours/GreedyKCenters.h
         src/planning/RobotPathFn.cpp
         src/planning/RobotPathFn.h
+        src/planning/ParametricInfiniteCone.cpp
+        src/planning/ParametricInfiniteCone.h
 )
 
 target_link_libraries(planning math_utils)
