@@ -231,6 +231,8 @@ add_library(planning
         src/planning/nearest_neighbours/NearestNeighborsGNAT.h
         src/planning/nearest_neighbours/NearestNeighbors.h
         src/planning/nearest_neighbours/GreedyKCenters.h
+        src/planning/RobotPathFn.cpp
+        src/planning/RobotPathFn.h
 )
 
 target_link_libraries(planning math_utils)
