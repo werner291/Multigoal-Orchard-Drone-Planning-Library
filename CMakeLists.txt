@@ -42,6 +42,7 @@ endif ()
 
 if (NIXOS)
     find_package(ortools REQUIRED)
+    set(ORTOOLS_LIBRARIES ortools)
 
     if (ENABLE_PYTHON_BINDINGS)
         # Weird bug where CLion seems too substitute its own Python3 version when called from its context.
