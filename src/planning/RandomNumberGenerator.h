@@ -65,6 +65,17 @@ namespace random_numbers {
 			std::uniform_real_distribution<double> distribution(min, max);
 			return distribution(generator);
 		}
+
+		/**
+		 * Pick k indices without replacement from the range 0..n. (Exclusive of n.)
+		 *
+		 * If k > n, the function will return a vector of size n with the indices 0..n-1 in random order.
+		 *
+		 * @param n		The number of indices to pick from.
+		 * @param k		The number of indices to pick.
+		 * @return		A vector of k indices.
+		 */
+		std::vector<size_t> pick_indices_without_replacement(size_t n, size_t k);
 	};
 } // random_numbers
 

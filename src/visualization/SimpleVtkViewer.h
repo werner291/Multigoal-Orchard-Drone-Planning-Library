@@ -16,22 +16,24 @@
 
 // Forward declarations.
 class vtkActor;
+
 class vtkActorCollection;
+
 class vtkRenderer;
+
 class vtkRenderWindow;
+
 class vtkRenderWindowInteractor;
 
 namespace mgodpl {
 	struct PositionedShape;
 	struct Mesh;
 
-	namespace robot_model
-	{
+	namespace robot_model {
 		struct RobotModel;
 	}
 
-	namespace math
-	{
+	namespace math {
 		struct Transformd;
 	}
 
@@ -54,7 +56,7 @@ namespace mgodpl {
 		/**
 		 * Create a new VTK viewer.
 		 */
-		SimpleVtkViewer(bool offscreen=false);
+		SimpleVtkViewer(bool offscreen = false);
 
 		~SimpleVtkViewer();;
 
@@ -115,17 +117,17 @@ namespace mgodpl {
 		 * @param opacity		The opacity of the mesh.
 		 */
 		vtkSmartPointer<vtkActor> addMesh(
-			const mgodpl::Mesh	&mesh,
-			const math::Transformd &transform,
-			const math::Vec3d &color,
-			double opacity = 1.0);
+				const mgodpl::Mesh &mesh,
+				const math::Transformd &transform,
+				const math::Vec3d &color,
+				double opacity = 1.0);
 
-		void addTree(const tree_meshes::TreeMeshes& tree, bool show_leaves, bool show_fruit);
+		void addTree(const tree_meshes::TreeMeshes &tree, bool show_leaves, bool show_fruit);
 
-		static void set_transform(const math::Transformd& transform, vtkActor* actor);
+		static void set_transform(const math::Transformd &transform, vtkActor *actor);
 
-		vtkSmartPointer<vtkActor> addPositionedShape(const PositionedShape& shape,
-													 const math::Vec3d& color,
+		vtkSmartPointer<vtkActor> addPositionedShape(const PositionedShape &shape,
+													 const math::Vec3d &color,
 													 double opacity = 1.0);
 
 		/**
@@ -135,7 +137,8 @@ namespace mgodpl {
 		 * @param transform 	The transform of the box.
 		 * @param color			The color of the box.
 		 */
-		vtkSmartPointer<vtkActor> addBox(const math::Vec3d &size, const math::Transformd &transform, const math::Vec3d &color, double d=1.0);
+		vtkSmartPointer<vtkActor>
+		addBox(const math::Vec3d &size, const math::Transformd &transform, const math::Vec3d &color, double d = 1.0);
 
 		/**
 		 * Add a sphere to the scene with a given size, transform and color.
@@ -145,7 +148,8 @@ namespace mgodpl {
 		 * @param opacity
 		 * @return
 		 */
-		vtkSmartPointer<vtkActor> addSphere(double radius, const math::Vec3d &center, const math::Vec3d &color, double opacity = 1.0);
+		vtkSmartPointer<vtkActor>
+		addSphere(double radius, const math::Vec3d &center, const math::Vec3d &color, double opacity = 1.0);
 
 		/**
 		 * Add a callback that is called every time the simulation is rendered.
@@ -170,6 +174,10 @@ namespace mgodpl {
 		void lockCameraUp();
 
 		void setCameraTransform(const math::Vec3d &position, const math::Vec3d &lookAt);
+
+		void removeActor(vtkActor *pointer);
+
+		bool isRecording();
 	};
 
 }

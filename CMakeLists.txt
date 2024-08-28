@@ -105,7 +105,6 @@ link_libraries(
         ${ORTOOLS_LIBRARIES}
         flann
         lz4 # For flann
-        ortools
 )
 
 ###########
@@ -291,6 +290,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/tracing.cpp
             src/experiment_utils/tracing.h
             src/experiment_utils/declarative/local_optimization.h
+            src/experiment_utils/tree_benchmark_data.cpp
+            src/experiment_utils/tree_benchmark_data.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
@@ -312,6 +313,7 @@ if (ENABLE_EXPERIMENTS)
             src/benchmarks/goal_sample_success_rate.cpp
             src/benchmarks/tree_stats.cpp
             src/benchmarks/sampling_difficulty.cpp
+            src/benchmarks/probing_motions.cpp
     )
 
     target_link_libraries(benchmarks math_utils visibility experiment_utils planning)
@@ -355,6 +357,8 @@ if (ENABLE_VISUALIZATION)
             src/visualization/ladder_trace.h
             src/visualization/Throttle.cpp
             src/visualization/Throttle.h
+            src/visualization/RunQueue.cpp
+            src/visualization/RunQueue.h
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
