@@ -47,13 +47,28 @@ int main(int argc, char **argv) {
 		std::cout << "Enter a number, and add \"record\" to record the visualization to a file." << std::endl;
 
 		// Wait for a numbered input
-		int choice;
-		std::cin >> choice;
+		std::string input;
+		std::cin >> input;
 
-		// Make sure that the choice is valid
-		if (choice < 0 || choice >= visualization_names.size()) {
-			std::cerr << "Invalid choice" << std::endl;
-			return 1;
+		int choice;
+		std::stringstream ss(input);
+		if (!(ss >> choice)) { // If the input string cannot be parsed to an integer
+			// Find a visualization whose name contains the input string as a substring
+			auto it = std::find_if(visualization_names.begin(), visualization_names.end(),
+								   [&input](const std::string& name) {
+									   return name.find(input) != std::string::npos;
+								   });
+			if (it == visualization_names.end()) {
+				std::cerr << "Invalid choice" << std::endl;
+				return 1;
+			}
+			choice = std::distance(visualization_names.begin(), it);
+		} else {
+			// Make sure that the choice is valid
+			if (choice < 0 || choice >= visualization_names.size()) {
+				std::cerr << "Invalid choice" << std::endl;
+				return 1;
+			}
 		}
 
 		mgodpl::SimpleVtkViewer viewer;
