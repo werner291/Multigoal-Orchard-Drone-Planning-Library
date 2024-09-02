@@ -220,7 +220,7 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 
 	const RobotState initial_state = fromEndEffectorAndVector(robot_model, {scan_radius, 0.0, 0.0}, {1.0, 0.0, 0.0});
 
-	viewer.setCameraTransform(fruit_position + math::Vec3d{5.0, 0.0, 5}, fruit_position);
+	viewer.setCameraTransform(fruit_position + math::Vec3d{1.0, 4.0, 3}, fruit_position);
 
 	auto rb = vizualize_robot_state(viewer, robot_model, forwardKinematics(robot_model, initial_state));
 
@@ -236,25 +236,40 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 	VtkLineSegmentsVisualization to_surface(1, 0, 1);
 	viewer.addActor(to_surface.getActor());
 
+	VtkPolyLineVisualization ee_trace_vis(1, 1, 0);
+	viewer.addActor(ee_trace_vis.getActor());
+
 	std::vector<std::pair<math::Vec3d, math::Vec3d>> lines;
+	std::vector<math::Vec3d> ee_trace;
 
 	viewer.addTimerCallback([&]() {
 		// If the nondecimal part of t has changed, clear the lines:
 		if (std::floor(t) != std::floor(t + 0.01)) {
 			lines.clear();
+			ee_trace.clear();
 		}
 
 		t += 0.01;
 
 		if (t > static_cast<double>(paths.size())) {
-			t = 0.0;
+			if (viewer.isRecording()) {
+				viewer.stop();
+			} else {
+				t = 0.0;
+			}
 		}
 		auto fk = forwardKinematics(robot_model, paths[static_cast<size_t>(std::floor(t))](t - std::floor(t)));
 		update_robot_state(robot_model, fk, rb);
 
+		const math::Vec3d ee_pos = fk.forLink(robot_model.findLinkByName("end_effector")).translation;
+
 		// Add the ee-to-fruit line to the visualization.
-		lines.emplace_back(fk.forLink(robot_model.findLinkByName("end_effector")).translation, fruit_position);
+		lines.emplace_back(ee_pos, fruit_position);
 		to_surface.updateLine(lines);
+
+		// Add the end-effector trace to the visualization.
+		ee_trace.push_back(ee_pos);
+		ee_trace_vis.updateLine(ee_trace);
 	});
 
 	viewer.start();
