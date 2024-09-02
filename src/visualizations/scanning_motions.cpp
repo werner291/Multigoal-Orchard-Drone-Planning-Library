@@ -224,12 +224,14 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 
 	auto rb = vizualize_robot_state(viewer, robot_model, forwardKinematics(robot_model, initial_state));
 
-	const std::vector paths = {// whole_body_orbit_path(robot_model, scan_radius),
-							   // end_effector_orbit_path(robot_model, scan_radius),
-							   // end_effector_vertical_path(robot_model, scan_radius),
-							   // weird_cone_curve_path(robot_model, scan_radius),
-							   spider_path(robot_model, scan_radius),
-							   curved_spider_path(robot_model, scan_radius)};
+	const std::vector<std::pair<RobotPathFn, double>> paths = {
+		{whole_body_orbit_path(robot_model, scan_radius), 0.05},
+		{end_effector_orbit_path(robot_model, scan_radius), 0.05},
+		{end_effector_vertical_path(robot_model, scan_radius), 0.05},
+		{weird_cone_curve_path(robot_model, scan_radius), 0.05},
+		{spider_path(robot_model, scan_radius), 0.01},
+		{curved_spider_path(robot_model, scan_radius), 0.01}
+	};
 
 	double t = 0.0;
 
@@ -244,12 +246,12 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 
 	viewer.addTimerCallback([&]() {
 		// If the nondecimal part of t has changed, clear the lines:
-		if (std::floor(t) != std::floor(t + 0.01)) {
+		if (std::floor(t) != std::floor(t + paths[static_cast<size_t>(std::floor(t))].second)) {
 			lines.clear();
 			ee_trace.clear();
 		}
 
-		t += 0.01;
+		t += paths[static_cast<size_t>(std::floor(t))].second;
 
 		if (t > static_cast<double>(paths.size())) {
 			if (viewer.isRecording()) {
@@ -258,7 +260,7 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 				t = 0.0;
 			}
 		}
-		auto fk = forwardKinematics(robot_model, paths[static_cast<size_t>(std::floor(t))](t - std::floor(t)));
+		auto fk = forwardKinematics(robot_model, paths[static_cast<size_t>(std::floor(t))].first(t - std::floor(t)));
 		update_robot_state(robot_model, fk, rb);
 
 		const math::Vec3d ee_pos = fk.forLink(robot_model.findLinkByName("end_effector")).translation;
