@@ -6,6 +6,7 @@
 // Created by werner on 8/28/24.
 //
 
+#include <vtkTextActor.h>
 #include "../experiment_utils/default_colors.h"
 #include "../experiment_utils/procedural_fruit_placement.h"
 #include "../experiment_utils/procedural_robot_models.h"
@@ -218,11 +219,22 @@ ScannablePoints generate_sphere_scannable_points(const int n_points, random_numb
 	return scannable_points;
 }
 
+#include <vtkRenderer.h>
+#include <vtkActor2D.h>
+#include <vtkTextProperty.h>
+
 /**
  * Visualizes a set of different motions whereby the robot, starting from a configuration near a fruit,
  * will make motions to scan the fruit from different angles using its end-effector.
  */
 REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
+
+	// Create a small vtk text label saying "Hello world!":
+	vtkNew<vtkTextActor> stats_output;
+	stats_output->SetInput("Scanning motions");
+	stats_output->SetPosition(10, 10);
+	stats_output->GetTextProperty()->SetFontSize(24);
+	viewer.viewerRenderer->AddActor2D(stats_output);
 
 	// The radius of the sphere representing the fruit.
 	const double FRUIT_RADIUS = 0.1;
@@ -248,7 +260,7 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 	viewer.addActor(fruit_points_visualization.getActor());
 
 	const robot_model::RobotModel robot_model = experiments::createProceduralRobotModel(
-			experiments::RobotArmParameters{.total_arm_length = 1.0, .joint_types = {experiments::HORIZONTAL}});
+			experiments::RobotArmParameters{.total_arm_length = 1.0, .joint_types = {experiments::HORIZONTAL}, .add_spherical_wrist=false});
 
 	const RobotState initial_state = fromEndEffectorAndVector(robot_model, {scan_radius, 0.0, 0.0}, {1.0, 0.0, 0.0});
 
@@ -256,13 +268,13 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 
 	auto rb = vizualize_robot_state(viewer, robot_model, forwardKinematics(robot_model, initial_state));
 
-	const std::vector<std::pair<RobotPathFn, double>> paths = {
-		{whole_body_orbit_path(robot_model, scan_radius), 0.05},
-		{end_effector_orbit_path(robot_model, scan_radius), 0.05},
-		{end_effector_vertical_path(robot_model, scan_radius), 0.05},
-		{weird_cone_curve_path(robot_model, scan_radius), 0.05},
-		{spider_path(robot_model, scan_radius), 0.01},
-		{curved_spider_path(robot_model, scan_radius), 0.01}
+	const std::vector<std::tuple<RobotPathFn, double, std::string>> paths = {
+		{whole_body_orbit_path(robot_model, scan_radius), 0.05, "whole_body_orbit_path"},
+		{end_effector_orbit_path(robot_model, scan_radius), 0.05, "end_effector_orbit_path"},
+		{end_effector_vertical_path(robot_model, scan_radius), 0.025, "end_effector_vertical_path"},
+		{weird_cone_curve_path(robot_model, scan_radius), 0.025, "weird_cone_curve_path"},
+		{spider_path(robot_model, scan_radius), 0.01, "spider_path"},
+		{curved_spider_path(robot_model, scan_radius), 0.01, "curved_spider_path"}
 	};
 
 	double t = 0.0;
@@ -278,19 +290,23 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 
 	double robot_distance = 0.0;
 	size_t current_path = 0;
-	RobotState last_state = paths[current_path].first(t);
+	RobotState last_state = get<0>(paths[current_path])(0.0);
+	stats_output->SetInput(get<2>(paths[current_path]).c_str());
 
 	viewer.addTimerCallback([&]() {
 
-		t += paths[current_path].second;
+		t += get<1>(paths[current_path]);
 
-		RobotState new_state = paths[current_path].first(t);
+		RobotState new_state = get<0>(paths[current_path])(t);
 
 		// Add the distance:
 		robot_distance += equal_weights_distance(last_state, new_state);
 		last_state = new_state;
 
 		if (t > 1.0) {
+
+			std::cout << "Path " << get<2>(paths[current_path]) << " scan stats: " << ever_seen.count_seen() << "/" << scannable_points.surface_points.size() << ", distance: " << robot_distance << std::endl;
+
 			t = 0.0;
 			current_path += 1;
 			if (current_path >= paths.size()) {
@@ -302,10 +318,10 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 
 			lines.clear();
 			ee_trace.clear();
-			last_state = paths[current_path].first(t);
-			std::cout << "Scan stats: " << ever_seen.count_seen() << "/" << scannable_points.surface_points.size() << ", distance: " << robot_distance << std::endl;
+			last_state = get<0>(paths[current_path])(t);
 			ever_seen = SeenPoints::create_all_unseen(scannable_points);
 			robot_distance = 0.0;
+			stats_output->SetInput(get<2>(paths[current_path]).c_str());
 		}
 
 		auto fk = forwardKinematics(robot_model, new_state);
