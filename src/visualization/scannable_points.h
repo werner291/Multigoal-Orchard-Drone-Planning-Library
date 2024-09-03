@@ -11,6 +11,7 @@
 
 #include "VtkLineSegmentVizualization.h"
 #include "../experiment_utils/surface_points.h"
+#include "SimpleVtkViewer.h"
 
 /**
    * @brief Creates a VtkLineSegmentsVisualization object for fruit points.
@@ -22,7 +23,7 @@
    * @param scannable_points The scannable points on the fruit surface.
    * @return A VtkLineSegmentsVisualization object that can be used to visualize the fruit points.
    */
-VtkLineSegmentsVisualization createFruitLinesVisualization(const mgodpl::ScannablePoints& scannable_points);
+VtkLineSegmentsVisualization createFruitLinesVisualization(const mgodpl::ScannablePoints &scannable_points);
 
 /**
    * @brief Creates a VtkLineSegmentsVisualization object for fruit points.
@@ -34,7 +35,7 @@ VtkLineSegmentsVisualization createFruitLinesVisualization(const mgodpl::Scannab
    * @param scannable_points The scannable points on the fruit surface.
    * @return A VtkLineSegmentsVisualization object that can be used to visualize the fruit points.
    */
-VtkLineSegmentsVisualization createFruitLinesVisualization(const std::vector<mgodpl::SurfacePoint>& scannable_points);
+VtkLineSegmentsVisualization createFruitLinesVisualization(const std::vector<mgodpl::SurfacePoint> &scannable_points);
 
 /**
  * @brief Generates colors for the visualization based on visibility of points.
@@ -46,6 +47,32 @@ VtkLineSegmentsVisualization createFruitLinesVisualization(const std::vector<mgo
  * @param ever_seen The visibility status of each point.
  * @return A vector of colors for the visualization.
  */
-std::vector<mgodpl::math::Vec3d> generateVisualizationColors(const mgodpl::SeenPoints& ever_seen);
+std::vector<mgodpl::math::Vec3d> generateVisualizationColors(const mgodpl::SeenPoints &ever_seen);
+
+
+/**
+ * \brief Visualizes the fruit points using VtkLineSegmentsVisualization.
+ *
+ * This function creates a visualization of the fruit points and adds it to the viewer.
+ *
+ * \param viewer The viewer to which the visualization will be added.
+ * \param scannable_points The scannable points representing the fruit surface.
+ * \param initial_seen_status The SeenPoints object tracking which points have been seen.
+ */
+VtkLineSegmentsVisualization
+visualize(mgodpl::SimpleVtkViewer &viewer,
+		  const mgodpl::ScannablePoints &scannable_points,
+		  const mgodpl::SeenPoints &initial_seen_status);
+
+/**
+ * \brief Updates the visualization of the fruit points based on the seen points.
+ *
+ * This function updates the colors of the fruit points visualization to reflect which points have been seen.
+ *
+ * \param ever_seen The SeenPoints object tracking which points have been seen.
+ * \param fruit_points_visualization The visualization object for the fruit points.
+ */
+void update_visualization(const mgodpl::SeenPoints &ever_seen,
+						  VtkLineSegmentsVisualization &fruit_points_visualization);
 
 #endif //MGODPL_SCANNABLE_POINTS_H

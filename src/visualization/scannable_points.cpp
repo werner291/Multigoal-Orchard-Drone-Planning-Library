@@ -15,8 +15,7 @@ VtkLineSegmentsVisualization createFruitLinesVisualization(const mgodpl::Scannab
 
 	std::vector<std::pair<math::Vec3d, math::Vec3d>> fruit_lines;
 	fruit_lines.reserve(scannable_points.surface_points.size());
-	for (const auto& [position, normal] : scannable_points.surface_points)
-	{
+	for (const auto &[position, normal]: scannable_points.surface_points) {
 		fruit_lines.emplace_back(position, position + normal * 0.01);
 	}
 	fruit_points_visualization.updateLine(fruit_lines);
@@ -26,14 +25,10 @@ VtkLineSegmentsVisualization createFruitLinesVisualization(const mgodpl::Scannab
 
 std::vector<mgodpl::math::Vec3d> generateVisualizationColors(const SeenPoints &ever_seen) {
 	std::vector<math::Vec3d> vis_colors;
-	for (const auto& v : ever_seen.ever_seen)
-	{
-		if (v)
-		{
+	for (const auto &v: ever_seen.ever_seen) {
+		if (v) {
 			vis_colors.emplace_back(0.0, 1.0, 0.0);
-		}
-		else
-		{
+		} else {
 			vis_colors.emplace_back(1.0, 0.0, 0.0);
 		}
 	}
@@ -45,11 +40,25 @@ VtkLineSegmentsVisualization createFruitLinesVisualization(const std::vector<mgo
 
 	std::vector<std::pair<math::Vec3d, math::Vec3d>> fruit_lines;
 	fruit_lines.reserve(scannable_points.size());
-	for (const auto& [position, normal] : scannable_points)
-	{
+	for (const auto &[position, normal]: scannable_points) {
 		fruit_lines.emplace_back(position, position + normal * 0.01);
 	}
 	fruit_points_visualization.updateLine(fruit_lines);
 
 	return fruit_points_visualization;
+}
+
+VtkLineSegmentsVisualization visualize(mgodpl::SimpleVtkViewer &viewer,
+									   const ScannablePoints &scannable_points,
+									   const SeenPoints &initial_seen_status) {
+	// Create the fruit points visualization
+	VtkLineSegmentsVisualization fruit_points_visualization = createFruitLinesVisualization(scannable_points);
+	viewer.addActor(fruit_points_visualization.getActor());
+	// Set the color:
+	fruit_points_visualization.setColors(generateVisualizationColors(initial_seen_status));
+	return fruit_points_visualization;
+}
+
+void update_visualization(const SeenPoints &ever_seen, VtkLineSegmentsVisualization &fruit_points_visualization) {
+	fruit_points_visualization.setColors(generateVisualizationColors(ever_seen));
 }
