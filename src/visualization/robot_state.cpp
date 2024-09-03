@@ -11,7 +11,8 @@
 mgodpl::vizualisation::RobotActors mgodpl::vizualisation::vizualize_robot_state(mgodpl::SimpleVtkViewer &viewer,
 																				const mgodpl::robot_model::RobotModel &robot,
 																				const mgodpl::robot_model::ForwardKinematicsResult &fk,
-																				const mgodpl::math::Vec3d &color) {
+																				const mgodpl::math::Vec3d &color,
+																				bool collision_only) {
 
 	std::vector<vtkSmartPointer<vtkActor>> actors;
 
@@ -19,7 +20,8 @@ mgodpl::vizualisation::RobotActors mgodpl::vizualisation::vizualize_robot_state(
 		auto link_tf = fk.forLink(link_id);
 
 		// If it has visual shapes, add them.
-		if (const auto &visual_geometry = robot.getLinks()[link_id].visual_geometry; !visual_geometry.empty()) {
+		if (const auto &visual_geometry = robot.getLinks()[link_id].visual_geometry; !visual_geometry.empty() &&
+																					 !collision_only) {
 			for (const auto &shape: visual_geometry) {
 				PositionedShape global{
 						.shape = shape.shape,

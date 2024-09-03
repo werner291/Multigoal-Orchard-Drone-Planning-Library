@@ -22,7 +22,8 @@ namespace mgodpl::vizualisation {
 	RobotActors vizualize_robot_state(SimpleVtkViewer &viewer,
 									  const robot_model::RobotModel &robot,
 									  const robot_model::ForwardKinematicsResult &fk,
-									  const math::Vec3d& color = {0.8,0.8,0.8});
+									  const math::Vec3d &color = {0.8, 0.8, 0.8},
+									  bool collision_only = false);
 
 	void update_robot_state(const robot_model::RobotModel &robot,
 							const robot_model::ForwardKinematicsResult &fk,
