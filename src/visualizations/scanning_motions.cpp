@@ -21,6 +21,7 @@
 #include "../visualization/vtk.h"
 #include "../experiment_utils/surface_points.h"
 #include "../visualization/scannable_points.h"
+#include "../visualization/TraceVisualization.h"
 
 using namespace mgodpl;
 using namespace mgodpl::vizualisation;
@@ -132,7 +133,8 @@ REGISTER_VISUALIZATION(parametric_scan_path) {
 				// Weird curve path
 				const double theta = 2.0 * M_PI * t;
 				circle_points.push_back(cone.position(sin(theta / 2.0) * scan_radius * 1.5, theta));
-			} break;
+			}
+				break;
 			case 1: {
 				// Spider path
 				double theta = std::floor(t * 8.0) * 2.0 * M_PI / 8.0;
@@ -140,7 +142,8 @@ REGISTER_VISUALIZATION(parametric_scan_path) {
 				if (linear > 0.5)
 					linear = 1.0 - linear;
 				circle_points.push_back(cone.position(linear, theta));
-			} break;
+			}
+				break;
 			default:
 				throw std::runtime_error("Invalid path_i");
 		}
@@ -202,18 +205,18 @@ RobotPathFn curved_spider_path(const robot_model::RobotModel &robot_model, doubl
 }
 
 ScannablePoints generate_sphere_scannable_points(const int n_points, random_numbers::RandomNumberGenerator &rng,
-												  const math::Vec3d &fruit_position, const double FRUIT_RADIUS) {
+												 const math::Vec3d &fruit_position, const double FRUIT_RADIUS) {
 	std::vector<SurfacePoint> points;
 	// Generate points on the sphere by sampling from a normal distribution 3 times and normalizing:
-	for (int i = 0; i < 1000; i++) {
+	for (int i = 0; i < n_points; i++) {
 		math::Vec3d point(rng.gaussian01(), rng.gaussian01(), rng.gaussian01());
 		point.normalize();
-		points.push_back({ .position = fruit_position+point * FRUIT_RADIUS, .normal = point});
+		points.push_back({.position = fruit_position + point * FRUIT_RADIUS, .normal = point});
 	}
 
 	// Create the scannable points
-	ScannablePoints scannable_points {
-			0.5, 0.1, M_PI/2.0, std::move(points)
+	ScannablePoints scannable_points{
+			0.5, 0.1, M_PI / 2.0, std::move(points)
 	};
 
 	return scannable_points;
@@ -250,17 +253,17 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 	// Generate points on the sphere surface:
 	random_numbers::RandomNumberGenerator rng;
 
-	const auto& scannable_points = generate_sphere_scannable_points(100, rng, fruit_position, FRUIT_RADIUS);
+	const auto &scannable_points = generate_sphere_scannable_points(500, rng, fruit_position, FRUIT_RADIUS);
 
 	// Initialize all points as unseen
 	SeenPoints ever_seen = SeenPoints::create_all_unseen(scannable_points);
 
 	// Create the fruit points visualization
-	VtkLineSegmentsVisualization fruit_points_visualization = createFruitLinesVisualization(scannable_points);
-	viewer.addActor(fruit_points_visualization.getActor());
+	auto fruit_points_visualization = visualize(viewer, scannable_points, ever_seen);
 
 	const robot_model::RobotModel robot_model = experiments::createProceduralRobotModel(
-			experiments::RobotArmParameters{.total_arm_length = 1.0, .joint_types = {experiments::HORIZONTAL}, .add_spherical_wrist=false});
+			experiments::RobotArmParameters{.total_arm_length = 1.0, .joint_types = {
+					experiments::HORIZONTAL}, .add_spherical_wrist=false});
 
 	const RobotState initial_state = fromEndEffectorAndVector(robot_model, {scan_radius, 0.0, 0.0}, {1.0, 0.0, 0.0});
 
@@ -269,12 +272,12 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 	auto rb = vizualize_robot_state(viewer, robot_model, forwardKinematics(robot_model, initial_state));
 
 	const std::vector<std::tuple<RobotPathFn, double, std::string>> paths = {
-		{whole_body_orbit_path(robot_model, scan_radius), 0.05, "whole_body_orbit_path"},
-		{end_effector_orbit_path(robot_model, scan_radius), 0.05, "end_effector_orbit_path"},
-		{end_effector_vertical_path(robot_model, scan_radius), 0.025, "end_effector_vertical_path"},
-		{weird_cone_curve_path(robot_model, scan_radius), 0.025, "weird_cone_curve_path"},
-		{spider_path(robot_model, scan_radius), 0.01, "spider_path"},
-		{curved_spider_path(robot_model, scan_radius), 0.01, "curved_spider_path"}
+			{whole_body_orbit_path(robot_model, scan_radius),      0.05,  "whole_body_orbit_path"},
+			{end_effector_orbit_path(robot_model, scan_radius),    0.05,  "end_effector_orbit_path"},
+			{end_effector_vertical_path(robot_model, scan_radius), 0.025, "end_effector_vertical_path"},
+			{weird_cone_curve_path(robot_model, scan_radius),      0.025, "weird_cone_curve_path"},
+			{spider_path(robot_model, scan_radius),                0.01,  "spider_path"},
+			{curved_spider_path(robot_model, scan_radius),         0.01,  "curved_spider_path"}
 	};
 
 	double t = 0.0;
@@ -282,11 +285,9 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 	VtkLineSegmentsVisualization to_surface(1, 0, 1);
 	viewer.addActor(to_surface.getActor());
 
-	VtkPolyLineVisualization ee_trace_vis(1, 1, 0);
-	viewer.addActor(ee_trace_vis.getActor());
+	mgodpl::visualization::TraceVisualisation trace_visualisation(viewer, {1, 0, 1});
 
 	std::vector<std::pair<math::Vec3d, math::Vec3d>> lines;
-	std::vector<math::Vec3d> ee_trace;
 
 	double robot_distance = 0.0;
 	size_t current_path = 0;
@@ -305,7 +306,8 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 
 		if (t > 1.0) {
 
-			std::cout << "Path " << get<2>(paths[current_path]) << " scan stats: " << ever_seen.count_seen() << "/" << scannable_points.surface_points.size() << ", distance: " << robot_distance << std::endl;
+			std::cout << "Path " << get<2>(paths[current_path]) << " scan stats: " << ever_seen.count_seen() << "/"
+					  << scannable_points.surface_points.size() << ", distance: " << robot_distance << std::endl;
 
 			t = 0.0;
 			current_path += 1;
@@ -317,7 +319,7 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 			}
 
 			lines.clear();
-			ee_trace.clear();
+			trace_visualisation.clear();
 			last_state = get<0>(paths[current_path])(t);
 			ever_seen = SeenPoints::create_all_unseen(scannable_points);
 			robot_distance = 0.0;
@@ -333,16 +335,17 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 		lines.emplace_back(ee_pos, fruit_position);
 		to_surface.updateLine(lines);
 
-		// Add the end-effector trace to the visualization.
-		ee_trace.push_back(ee_pos);
-		ee_trace_vis.updateLine(ee_trace);
+		// Add the ee position to the trace visualization.
+		trace_visualisation.add_point(ee_pos);
 
 		// Update seen/unseen points
 		update_visibility(scannable_points, ee_pos, ever_seen);
 
 		// Set the colors of the fruit points visualization
-		fruit_points_visualization.setColors(generateVisualizationColors(ever_seen));
+		update_visualization(ever_seen, fruit_points_visualization);
 	});
 
 	viewer.start();
 }
+
+
