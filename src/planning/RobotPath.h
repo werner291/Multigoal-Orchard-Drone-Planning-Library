@@ -31,6 +31,17 @@ namespace mgodpl {
 		void append(const RobotPath &path) {
 			states.insert(states.end(), path.states.begin(), path.states.end());
 		}
+
+		/**
+		 * @brief Create a singleton path with a single state.
+		 * @param state 		The state to create the path with.
+		 * @return 				A new RobotPath with the given state.
+		 */
+		static RobotPath singleton(RobotState state) {
+			return {
+					.states = {state}
+			};
+		}
 	};
 
 	/**
@@ -127,8 +138,8 @@ namespace mgodpl {
 	 * @return The length of the segment.
 	 */
 	double calculateSegmentLength(const mgodpl::RobotPath &robot_path,
-	                              const mgodpl::PathPoint &path_point,
-	                              DistanceFn distanceFunc);
+								  const mgodpl::PathPoint &path_point,
+								  DistanceFn distanceFunc);
 
 	/**
 	 * @brief Clamp a path point to the end of a robot path.
@@ -170,9 +181,9 @@ namespace mgodpl {
 	 * @return True if the path point was clamped, false otherwise.
 	 */
 	bool advancePathPointClamp(const mgodpl::RobotPath &robot_path,
-	                           mgodpl::PathPoint &path_point,
-	                           double advancement,
-	                           DistanceFn distanceFunc);
+							   mgodpl::PathPoint &path_point,
+							   double advancement,
+							   DistanceFn distanceFunc);
 
 	/**
 	 * @brief Advance a path point along a robot path, wrapping at the end.
@@ -188,9 +199,9 @@ namespace mgodpl {
 	 * @return True if the path point was wrapped, false otherwise.
 	 */
 	bool advancePathPointWrap(const mgodpl::RobotPath &robot_path,
-	                          mgodpl::PathPoint &path_point,
-	                          double advancement,
-	                          DistanceFn distanceFunc);
+							  mgodpl::PathPoint &path_point,
+							  double advancement,
+							  DistanceFn distanceFunc);
 
 	/**
 	 * @brief Concatenates two RobotPaths.
