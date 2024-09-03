@@ -364,6 +364,8 @@ if (ENABLE_VISUALIZATION)
             src/visualization/Throttle.h
             src/visualization/RunQueue.cpp
             src/visualization/RunQueue.h
+            src/visualization/TraceVisualization.cpp
+            src/visualization/TraceVisualization.h
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
