@@ -90,7 +90,7 @@ bool mgodpl::check_motion_collides(const mgodpl::robot_model::RobotModel &robot,
 
 	size_t n_steps = std::ceil(distance / MAX_STEP);
 
-	for (size_t step_i = 0; step_i < n_steps; ++step_i) {
+	for (size_t step_i = 0; step_i <= n_steps; ++step_i) {
 		double t = (double) step_i / (double) n_steps;
 		auto interpolated_state = interpolate(state1, state2, t);
 
