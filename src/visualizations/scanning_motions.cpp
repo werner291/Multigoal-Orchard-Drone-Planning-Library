@@ -7,6 +7,8 @@
 //
 
 #include <vtkTextActor.h>
+#include <fcl/narrowphase/collision_object.h>
+#include <fcl/geometry/shape/box.h>
 #include "../experiment_utils/default_colors.h"
 #include "../experiment_utils/procedural_fruit_placement.h"
 #include "../experiment_utils/procedural_robot_models.h"
@@ -22,6 +24,8 @@
 #include "../experiment_utils/surface_points.h"
 #include "../visualization/scannable_points.h"
 #include "../visualization/TraceVisualization.h"
+#include "../visualization/ui.h"
+#include "../planning/collision_detection.h"
 
 using namespace mgodpl;
 using namespace mgodpl::vizualisation;
@@ -189,20 +193,29 @@ RobotPathFn spider_path(const robot_model::RobotModel &robot_model, double dista
 	};
 }
 
-RobotPathFn curved_spider_path(const robot_model::RobotModel &robot_model, double distance = 0.5) {
+math::Vec3d paraboloid_point(double distance, const double theta, double linear) {
+	math::Vec3d ee_point = {
+			distance - linear * linear, sin(theta) * linear * distance * 4.0, cos(theta) * linear * distance * 4.0};
+	return ee_point;
+}
 
-	return [robot_model, distance](double t) {
-		const double theta = std::floor(t * 8.0) * 2.0 * M_PI / 8.0;
-		double linear = t * 8.0 - std::floor(t * 8.0);
+RobotPathFn
+curved_spider_path(const robot_model::RobotModel &robot_model, double distance = 0.5, unsigned int n_spokes = 8) {
+	return [robot_model, distance, n_spokes](double t) {
+
+		double spokes_d = static_cast<double>(n_spokes);
+
+		const double theta = std::floor(t * spokes_d) * 2.0 * M_PI / spokes_d;
+		double linear = t * spokes_d - std::floor(t * spokes_d);
 		if (linear > 0.5)
 			linear = 1.0 - linear;
 
-		math::Vec3d ee_point = {
-				distance - linear * linear, sin(theta) * linear * distance * 4.0, cos(theta) * linear * distance * 4.0};
+		math::Vec3d ee_point = paraboloid_point(distance, theta, linear);
 
 		return fromEndEffectorAndVector(robot_model, ee_point, arm_vector_from_eepoint(ee_point));
 	};
 }
+
 
 ScannablePoints generate_sphere_scannable_points(const int n_points, random_numbers::RandomNumberGenerator &rng,
 												 const math::Vec3d &fruit_position, const double FRUIT_RADIUS) {
@@ -222,22 +235,13 @@ ScannablePoints generate_sphere_scannable_points(const int n_points, random_numb
 	return scannable_points;
 }
 
-#include <vtkRenderer.h>
-#include <vtkActor2D.h>
-#include <vtkTextProperty.h>
-
 /**
  * Visualizes a set of different motions whereby the robot, starting from a configuration near a fruit,
  * will make motions to scan the fruit from different angles using its end-effector.
  */
 REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 
-	// Create a small vtk text label saying "Hello world!":
-	vtkNew<vtkTextActor> stats_output;
-	stats_output->SetInput("Scanning motions");
-	stats_output->SetPosition(10, 10);
-	stats_output->GetTextProperty()->SetFontSize(24);
-	viewer.viewerRenderer->AddActor2D(stats_output);
+	auto stats_output = visualization::add_text_label(viewer, "Straight arm", 10, 10);
 
 	// The radius of the sphere representing the fruit.
 	const double FRUIT_RADIUS = 0.1;
@@ -294,6 +298,8 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 	RobotState last_state = get<0>(paths[current_path])(0.0);
 	stats_output->SetInput(get<2>(paths[current_path]).c_str());
 
+	RobotPath path = RobotPath::singleton(initial_state);
+
 	viewer.addTimerCallback([&]() {
 
 		t += get<1>(paths[current_path]);
@@ -348,4 +354,222 @@ REGISTER_VISUALIZATION(scanning_motions_straight_arm) {
 	viewer.start();
 }
 
+/**
+ * \brief Creates a cube collision object.
+ *
+ * This function creates a cube collision object with the specified position and size.
+ *
+ * \param position The position of the cube's center.
+ * \param size The size of the cube (length of each side).
+ * \return A collision object representing the cube.
+ */
+fcl::CollisionObjectd createCubeCollisionObject(const math::Vec3d &position, const math::Vec3d &size) {
+	auto box = std::make_shared<fcl::Boxd>(size.x(), size.y(), size.z());
+	fcl::Transform3d transform = fcl::Transform3d::Identity();
+	transform.translation() = fcl::Vector3d(position.x(), position.y(), position.z());
+	return {box, transform};
+}
+
+
+/**
+ * Maximum-y-cycle.
+ *
+ * @param x_range The maximum x value.
+ * @param y_range The maximum y value.
+ * @param can_move  A function that takes two Vec2i and tells us if we can move from the first to the second.
+ *
+ * (0,0) is assumed to be a valid point.
+ */
+std::vector<std::array<int, 2>>
+maximum_y_cycle(int x_range, int y_range, std::function<bool(std::array<int, 2>, std::array<int, 2>)> can_move) {
+
+	// The furthest one can move on each spoke in the y direction.
+	std::vector<int> max_y(x_range, 0);
+
+	// Find the maximum y for each x:
+	for (int x = 0; x < x_range; x++) {
+		int y = 0;
+		while (y < y_range && can_move({x, y}, {x, y + 1})) {
+			y++;
+		}
+		max_y[x] = y;
+	}
+
+	// The furthest y for each x where we can move to the right; at most the maximum y.
+	std::vector<int> shift_y(x_range, 0);
+
+	// find the maximum y for each x where we can move to the right.
+	for (int x = 0; x < x_range; x++) {
+		int y = std::min(max_y[x], max_y[(x + 1) % x_range]);
+		while (y > 0 && !can_move({x, y}, {(x + 1) % x_range, y})) {
+			y--;
+		}
+		// Record the shift y:
+		shift_y[x] = y;
+	}
+
+	// Now, build the path:
+	std::vector<std::array<int, 2>> path;
+
+	// Starts at 0,0:
+	path.push_back({0, 0});
+
+	// Run through each x:
+	for (int x = 0; x < x_range; x++) {
+
+		// Push points from current y to max y:
+		for (int y = path.back()[1]; y < max_y[x]; y++) {
+			path.push_back({x, y});
+		}
+
+		// Then down to the shift y:
+		for (int y = max_y[x]; y > shift_y[x]; y--) {
+			path.push_back({x, y});
+		}
+
+		// Push with increased x at the shift y:
+		path.push_back({(x + 1) % x_range, shift_y[x]});
+	}
+
+	// Then push points back down to 0,0:
+	for (int y = shift_y[0]; y >= 0; y--) {
+		path.push_back({0, y});
+	}
+
+	return path;
+}
+
+#include <vtkProperty.h>
+
+REGISTER_VISUALIZATION(scanning_motions_obstacle_avoidance) {
+
+	// The radius of the sphere representing the fruit.
+	const double FRUIT_RADIUS = 0.1;
+
+	// The distance from the surface at which we'd ideally like to scan the fruit.
+	const double SCAN_DISTANCE = 0.1;
+
+	double scan_radius = FRUIT_RADIUS + SCAN_DISTANCE;
+
+	const math::Vec3d fruit_position = {0.0, 0.0, 0.0};
+	viewer.addSphere(FRUIT_RADIUS, fruit_position, FRUIT_COLOR);
+
+	// Generate points on the sphere surface:
+	random_numbers::RandomNumberGenerator rng;
+
+	const auto &scannable_points = generate_sphere_scannable_points(500, rng, fruit_position, FRUIT_RADIUS);
+
+	// Initialize all points as unseen
+	SeenPoints ever_seen = SeenPoints::create_all_unseen(scannable_points);
+
+	// Create the fruit points visualization
+	auto fruit_points_visualization = visualize(viewer, scannable_points, ever_seen);
+
+	const robot_model::RobotModel robot_model = experiments::createProceduralRobotModel(
+			experiments::RobotArmParameters{.total_arm_length = 1.0, .joint_types = {
+					experiments::HORIZONTAL}, .add_spherical_wrist=false});
+
+	const RobotState initial_state = fromEndEffectorAndVector(robot_model, {scan_radius, 0.0, 0.0}, {1.0, 0.0, 0.0});
+
+	viewer.setCameraTransform(fruit_position + math::Vec3d{1.0, 4.0, 3}, fruit_position);
+
+	auto rb = vizualize_robot_state(viewer,
+									robot_model,
+									forwardKinematics(robot_model, initial_state),
+									{0.8, 0.8, 0.8},
+									true);
+
+	// Create an fcl collision object: a cube above the fruit to simulate an obstacle.
+	math::Vec3d obstacle_position(0.0, 0.0, 0.3);
+	math::Vec3d obstacle_size(0.3, 0.3, 0.3);
+	fcl::CollisionObjectd obstacle = createCubeCollisionObject(obstacle_position, obstacle_size);
+
+	// Visualize a cube at that position:
+	viewer.addBox(obstacle_size, obstacle_position, WOOD_COLOR);
+
+	// Define constants for maximum x and y values
+	const int MAX_X = 100;
+	const int MAX_Y = 100;
+
+	auto calculate_position = [](const std::array<int, 2> &a, double scan_radius, int MAX_X, int MAX_Y) {
+		double u = a[0] / static_cast<double>(MAX_X);
+		double v = a[1] / static_cast<double>(MAX_Y);
+		math::Vec3d eePoint = {scan_radius * (1.0 - v * v),
+							   sin(2.0 * M_PI * u) * v * scan_radius,
+							   cos(2.0 * M_PI * u) * v * scan_radius};
+		return eePoint;
+	};
+
+	// Create a path that avoids the obstacle:
+	auto path = maximum_y_cycle(MAX_X, MAX_Y, [&](std::array<int, 2> a, std::array<int, 2> b) {
+
+		math::Vec3d a_pos = calculate_position(a, scan_radius, MAX_X, MAX_Y);
+		math::Vec3d b_pos = calculate_position(b, scan_radius, MAX_X, MAX_Y);
+
+		return !check_motion_collides(robot_model, obstacle,
+									  fromEndEffectorAndVector(robot_model, a_pos, arm_vector_from_eepoint(a_pos)),
+									  fromEndEffectorAndVector(robot_model, b_pos, arm_vector_from_eepoint(b_pos)));
+	});
+
+	// Turn it into a RobotPath:
+	RobotPath path_robot;
+	for (const auto &point: path) {
+		math::Vec3d ee_pos = calculate_position(point, scan_radius, MAX_X, MAX_Y);
+		RobotState state = fromEndEffectorAndVector(robot_model, ee_pos, arm_vector_from_eepoint(ee_pos));
+
+		path_robot.append(state);
+	}
+
+	mgodpl::visualization::TraceVisualisation trace_visualisation(viewer, {1, 0, 1});
+
+	PathPoint path_point{0, 0.0};
+
+	viewer.addTimerCallback([&]() {
+
+		// Advance the robot state by a small amount of time.
+		if (advancePathPointWrap(path_robot, path_point, 0.05, equal_weights_distance)) {
+
+			std::cout << "Scanned " << ever_seen.count_seen() << " out of " << scannable_points.surface_points.size()
+					  << " points." << std::endl;
+
+			if (viewer.isRecording()) {
+				viewer.stop();
+			} else {
+				ever_seen = SeenPoints::create_all_unseen(scannable_points);
+				trace_visualisation.clear();
+			}
+		}
+
+		// Get the new state:
+		RobotState new_state = interpolate(path_point, path_robot);
+
+		// FK:
+		auto fk = forwardKinematics(robot_model, new_state);
+
+		// Check if collides:
+		bool collides = check_robot_collision(robot_model, obstacle, new_state);
+
+		if (collides) {
+			rb.actors[0]->GetProperty()->SetColor(1.0, 0.0, 0.0);
+		} else {
+			rb.actors[0]->GetProperty()->SetColor(0.8, 0.8, 0.8);
+		}
+
+		update_robot_state(robot_model, fk, rb);
+
+		const math::Vec3d ee_pos = fk.forLink(robot_model.findLinkByName("end_effector")).translation;
+		trace_visualisation.add_point(ee_pos);
+
+		update_visibility(scannable_points, ee_pos, ever_seen);
+
+		// Set the colors of the fruit points visualization
+		update_visualization(ever_seen, fruit_points_visualization);
+
+	});
+
+	viewer.lockCameraUp();
+	viewer.setCameraTransform({2.0, 2.0, -2.0}, fruit_position);
+
+	viewer.start();
+}
 
