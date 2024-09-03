@@ -352,7 +352,6 @@ namespace mgodpl {
 				addSphere(0.03, fruit, {0.8, 0.0, 0.0}, 1.0);
 			}
 		}
-
 	}
 
 	void SimpleVtkViewer::removeActor(vtkActor *pointer) {
@@ -361,5 +360,26 @@ namespace mgodpl {
 
 	bool SimpleVtkViewer::isRecording() {
 		return videoRecorder.has_value();
+	}
+
+	vtkSmartPointer<vtkActor> SimpleVtkViewer::addBox(const Vec3d &size, const Vec3d &center, const Vec3d &color) {
+		vtkNew<vtkCubeSource> cubeSource;
+		cubeSource->SetXLength(size.x());
+		cubeSource->SetYLength(size.y());
+		cubeSource->SetZLength(size.z());
+		cubeSource->Update();
+
+		vtkNew<vtkPolyDataMapper> mapper;
+		mapper->SetInputConnection(cubeSource->GetOutputPort());
+
+		vtkNew<vtkActor> actor;
+		actor->SetMapper(mapper);
+		actor->GetProperty()->SetColor(color.x(), color.y(), color.z());
+		actor->SetPosition(center.x(), center.y(), center.z());
+
+		this->addActor(actor);
+
+		return actor;
+
 	}
 }

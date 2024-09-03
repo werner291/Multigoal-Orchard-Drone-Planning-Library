@@ -141,15 +141,28 @@ namespace mgodpl {
 		addBox(const math::Vec3d &size, const math::Transformd &transform, const math::Vec3d &color, double d = 1.0);
 
 		/**
-		 * Add a sphere to the scene with a given size, transform and color.
-		 * @param radius
-		 * @param center
-		 * @param color
-		 * @param opacity
-		 * @return
+		 * \brief Add a sphere to the scene with a given size, transform and color.
+		 *
+		 * This function creates a sphere actor with the specified radius, center position, color, and opacity,
+		 * and adds it to the VTK viewer scene.
+		 *
+		 * \param radius The radius of the sphere.
+		 * \param center The center position of the sphere.
+		 * \param color The color of the sphere.
+		 * \param opacity The opacity of the sphere.
+		 * \return A vtkSmartPointer to the created sphere actor.
 		 */
 		vtkSmartPointer<vtkActor>
 		addSphere(double radius, const math::Vec3d &center, const math::Vec3d &color, double opacity = 1.0);
+
+		/**
+		 * Add a box to the scene with a given size, transform and color.
+		 *
+		 * @param size 			The size of the box.
+		 * @param center		The center of the box.
+		 * @param color			The color of the box.
+		 */
+		vtkSmartPointer<vtkActor> addBox(const math::Vec3d &size, const math::Vec3d &center, const math::Vec3d &color);
 
 		/**
 		 * Add a callback that is called every time the simulation is rendered.
