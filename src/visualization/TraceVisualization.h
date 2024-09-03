@@ -34,7 +34,7 @@ namespace mgodpl::visualization {
 		 * \param color The color of the trace visualization.
 		 * \param max_points The maximum number of points in the trace. Old points are removed when this limit is exceeded.
 		 */
-		TraceVisualisation(SimpleVtkViewer &viewer, const std::array<double, 3> &color, size_t max_points = 100);
+		TraceVisualisation(SimpleVtkViewer &viewer, const std::array<double, 3> &color, size_t max_points = SIZE_MAX);
 
 		/**
 		 * \brief Adds a point to the trace visualization.
