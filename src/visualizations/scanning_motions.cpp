@@ -487,8 +487,9 @@ RobotPath createObstacleAvoidingPath(const robot_model::RobotModel &robot_model,
 		return paraboloid_point(scan_radius, a[0] / static_cast<double>(MAX_X), a[1] / static_cast<double>(MAX_Y));
     };
 
+
 	// Compute a basis that'll transform the paraboloid such that the y-axis aligns with the arm vector:
-	const math::Vec3d y = initial_arm_vector;
+	const math::Vec3d y = initial_arm_vector; // Inverted such that the paraboloid faces away from the robot.
 	const math::Vec3d x = initial_arm_vector.cross({0.0, 0.0, 1.0}).normalized();
 	const math::Vec3d z = x.cross(y).normalized();
 
@@ -500,10 +501,10 @@ RobotPath createObstacleAvoidingPath(const robot_model::RobotModel &robot_model,
 		math::Vec3d b_arm = initial_arm_vector;// arm_vector_from_eepoint(b_pos);
 
 		// transform them:
-		a_pos = math::Vec3d(x.dot(a_pos), y.dot(a_pos), z.dot(a_pos)) + fruit_position;
-		b_pos = math::Vec3d(x.dot(b_pos), y.dot(b_pos), z.dot(b_pos)) + fruit_position;
-		a_arm = {x.dot(a_arm), y.dot(a_arm), z.dot(a_arm)};
-		b_arm = {x.dot(b_arm), y.dot(b_arm), z.dot(b_arm)};
+		a_pos = x * a_pos.x() + y * a_pos.y() + z * a_pos.z() + fruit_position;
+		b_pos = x * b_pos.x() + y * b_pos.y() + z * b_pos.z() + fruit_position;
+		a_arm = x * a_arm.x() + y * a_arm.y() + z * a_arm.z();
+		b_arm = x * b_arm.x() + y * b_arm.y() + z * b_arm.z();
 
         return !check_motion_collides(robot_model, obstacle,
                                       fromEndEffectorAndVector(robot_model, a_pos, a_arm),
@@ -515,10 +516,10 @@ RobotPath createObstacleAvoidingPath(const robot_model::RobotModel &robot_model,
     RobotPath path_robot;
     for (const auto &point: path) {
         math::Vec3d ee_pos = calculate_position(point, scan_radius, MAX_X, MAX_Y);
-		math::Vec3d arm_vector = arm_vector_from_eepoint(ee_pos);
+		math::Vec3d arm_vector = initial_arm_vector;//arm_vector_from_eepoint(ee_pos);
 
-		ee_pos = math::Vec3d(x.dot(ee_pos), y.dot(ee_pos), z.dot(ee_pos)) + fruit_position;
-		arm_vector = initial_arm_vector;// {x.dot(arm_vector), y.dot(arm_vector), z.dot(arm_vector)};
+		ee_pos = x * ee_pos.x() + y * ee_pos.y() + z * ee_pos.z() + fruit_position;
+		arm_vector = x * arm_vector.x() + y * arm_vector.y() + z * arm_vector.z();
 
 		path_robot.append(fromEndEffectorAndVector(robot_model, ee_pos, arm_vector));
 	}
