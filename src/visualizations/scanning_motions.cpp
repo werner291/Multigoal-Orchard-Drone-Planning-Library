@@ -503,8 +503,6 @@ RobotPath createObstacleAvoidingPath(const robot_model::RobotModel &robot_model,
 		// transform them:
 		a_pos = x * a_pos.x() + y * a_pos.y() + z * a_pos.z() + fruit_position;
 		b_pos = x * b_pos.x() + y * b_pos.y() + z * b_pos.z() + fruit_position;
-		a_arm = x * a_arm.x() + y * a_arm.y() + z * a_arm.z();
-		b_arm = x * b_arm.x() + y * b_arm.y() + z * b_arm.z();
 
         return !check_motion_collides(robot_model, obstacle,
                                       fromEndEffectorAndVector(robot_model, a_pos, a_arm),
@@ -519,7 +517,6 @@ RobotPath createObstacleAvoidingPath(const robot_model::RobotModel &robot_model,
 		math::Vec3d arm_vector = initial_arm_vector;//arm_vector_from_eepoint(ee_pos);
 
 		ee_pos = x * ee_pos.x() + y * ee_pos.y() + z * ee_pos.z() + fruit_position;
-		arm_vector = x * arm_vector.x() + y * arm_vector.y() + z * arm_vector.z();
 
 		path_robot.append(fromEndEffectorAndVector(robot_model, ee_pos, arm_vector));
 	}
