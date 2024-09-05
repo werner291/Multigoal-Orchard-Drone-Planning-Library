@@ -235,6 +235,8 @@ add_library(planning
         src/planning/RobotPathFn.h
         src/planning/ParametricInfiniteCone.cpp
         src/planning/ParametricInfiniteCone.h
+        src/planning/nearest_neighbours/approach_by_pullout.cpp
+        src/planning/nearest_neighbours/approach_by_pullout.h
 )
 
 target_link_libraries(planning math_utils)
