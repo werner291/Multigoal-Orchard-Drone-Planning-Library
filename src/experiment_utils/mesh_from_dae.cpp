@@ -33,7 +33,8 @@ mgodpl::Mesh mgodpl::from_dae(const std::string &dae_file) {
 
 	const aiScene *scene = importer.ReadFile(dae_file, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_RemoveComponent);
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-		throw std::runtime_error("Failed to load mesh from " + dae_file + ": " + importer.GetErrorString());
+		throw std::runtime_error("Failed to load mesh from " + dae_file + ": " + importer.GetErrorString()
+		+ " (Are you in the right working directory, and are the mesh files available in it?)");
 	}
 
 	Mesh mesh;
