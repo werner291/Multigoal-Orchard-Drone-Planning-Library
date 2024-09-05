@@ -349,7 +349,7 @@ namespace mgodpl {
 		}
 		if (show_fruit) {
 			for (const auto &fruit: computeFruitPositions(tree)) {
-				addSphere(0.03, fruit, {0.8, 0.0, 0.0}, 1.0);
+				addSphere(0.05, fruit, {0.8, 0.0, 0.0}, 1.0);
 			}
 		}
 	}
