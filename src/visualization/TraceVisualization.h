@@ -11,6 +11,7 @@
 
 #include "VtkPolyLineVisualization.h"
 #include "SimpleVtkViewer.h"
+#include <memory>
 
 namespace mgodpl::visualization {
 
