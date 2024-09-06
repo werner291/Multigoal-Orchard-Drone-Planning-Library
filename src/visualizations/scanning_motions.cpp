@@ -720,6 +720,8 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 
 	const auto &target_points = computeFruitPositions(tree_model);
 
+	// Record start time for measuring time taken:
+	auto start_time = std::chrono::high_resolution_clock::now();
 	RobotPath path = mgodpl::shell_path_planning::plan_multigoal_path(
 			initial_state,
 			tree_collision,
@@ -741,6 +743,11 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 				);
 			}
 	);
+	// Record end time for measuring time taken:
+	auto end_time = std::chrono::high_resolution_clock::now();
+	std::cout << "Planning took "
+			  << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
+			  << "ms" << std::endl;
 
 	// Create an end-effector visualization:
 	mgodpl::visualization::TraceVisualisation trace_visualisation(viewer, {1, 0, 1}, 1000);
@@ -751,8 +758,20 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 	// Create an instance of CameraTracker
 	CameraTracker camera_tracker(viewer, 0.1);
 
+	// Record start time:
+	auto display_start_time = std::chrono::high_resolution_clock::now();
+
 	static PathPoint path_point{0, 0.0};
 	viewer.addTimerCallback([&]() {
+
+		// If recording, stop after 1 minute:
+		if (viewer.isRecording()) {
+			auto current_time = std::chrono::high_resolution_clock::now();
+			if (std::chrono::duration_cast<std::chrono::minutes>(current_time - display_start_time).count() > 1) {
+				viewer.stop();
+			}
+		}
+
 		if (advancePathPointWrap(path, path_point, 0.05, equal_weights_max_distance)) {
 			if (viewer.isRecording()) {
 				viewer.stop();
