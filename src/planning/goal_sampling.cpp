@@ -70,7 +70,7 @@ mgodpl::RobotState mgodpl::genGoalStateUniform(random_numbers::RandomNumberGener
 	// TODO: This should not be just a vector along the arm vector;
 	// it'd make more sense to sample on the whole sphere.
 	if (distance_from_target > 0.0) {
-		target_delta += ee_tf.orientation.rotate(math::Vec3d(0.0, distance_from_target, 0.0));
+		target_delta += ee_tf.orientation.rotate(math::Vec3d(0.0, -distance_from_target, 0.0));
 	}
 
 	state.base_tf.translation = state.base_tf.translation + target_delta;
