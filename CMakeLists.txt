@@ -372,6 +372,8 @@ if (ENABLE_VISUALIZATION)
             src/visualization/TraceVisualization.h
             src/visualization/ui.h
             src/visualization/ui.cpp
+            src/visualization/CameraTracker.cpp
+            src/visualization/CameraTracker.h
     )
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
