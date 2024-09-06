@@ -128,6 +128,8 @@ namespace mgodpl {
 					.max_angle = M_PI
 				}
 			});
+											  .min_angle = -M_PI / 2.0,
+											  .max_angle = M_PI / 2.0
 
 			attachmentA = stick_link_tf.inverse();
 			attach_to = link;
