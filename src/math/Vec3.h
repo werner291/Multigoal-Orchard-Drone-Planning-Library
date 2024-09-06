@@ -89,6 +89,12 @@ namespace mgodpl::math {
 			z() *= scalar;
 		}
 
+		void operator+=(const Vec3 &other) {
+			x() += other.x();
+			y() += other.y();
+			z() += other.z();
+		}
+
 		/**
 		 * Retrieve the x component of the vector.
 		 */
@@ -269,9 +275,9 @@ namespace mgodpl::math {
 
 		[[nodiscard]] Vec3 cross(Vec3 other) const {
 			return {
-				y() * other.z() - z() * other.y(),
-				z() * other.x() - x() * other.z(),
-				x() * other.y() - y() * other.x()
+					y() * other.z() - z() * other.y(),
+					z() * other.x() - x() * other.z(),
+					x() * other.y() - y() * other.x()
 			};
 		}
 
