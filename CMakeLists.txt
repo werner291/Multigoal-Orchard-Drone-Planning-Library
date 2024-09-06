@@ -138,7 +138,6 @@ add_library(math_utils
         src/math/intersections.cpp
         src/math/intersections.h
         src/math/Triangle.h
-        src/math/OpenPyramid.h
         src/math/Plane.cpp
         src/math/Plane.h
         src/math/RangeInclusive.h
@@ -154,6 +153,25 @@ add_library(math_utils
         src/math/Quaternion.cpp
         src/math/Quaternion.h
         src/math/Transform.cpp
+        src/math/Transform.h
+)
+
+target_precompile_headers(math_utils PRIVATE
+        src/math/AABBGrid.h
+        src/math/AABB.h
+        src/math/Vec3.h
+        src/math/grid_utils.h
+        src/math/ParametricLine.h
+        src/math/Segment3d.h
+        src/math/intersections.h
+        src/math/Triangle.h
+        src/math/Plane.h
+        src/math/RangeInclusive.h
+        src/math/Ray.h
+        src/math/DomainSlice.h
+        src/math/aabb_of.h
+        src/math/Polar.h
+        src/math/Quaternion.h
         src/math/Transform.h
 )
 
