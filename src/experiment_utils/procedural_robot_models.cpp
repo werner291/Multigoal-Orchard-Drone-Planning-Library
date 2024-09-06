@@ -31,7 +31,7 @@ namespace mgodpl {
 	}
 
 	std::vector<mgodpl::experiments::RobotArmParameters> experiments::generateRobotArmParameters(
-		const RobotArmMetaParameters &meta_params) {
+			const RobotArmMetaParameters &meta_params) {
 		std::vector<mgodpl::experiments::RobotArmParameters> robot_arm_parameters;
 
 		for (const auto &arm_length: meta_params.arm_lengths) {
@@ -53,17 +53,17 @@ namespace mgodpl {
 					std::vector<mgodpl::experiments::JointType> alternating_joint_types;
 					for (size_t j = 0; j < i; ++j) {
 						alternating_joint_types.push_back(j % 2 == 0
-							                                  ? mgodpl::experiments::JointType::HORIZONTAL
-							                                  : mgodpl::experiments::JointType::VERTICAL);
+														  ? mgodpl::experiments::JointType::HORIZONTAL
+														  : mgodpl::experiments::JointType::VERTICAL);
 					}
 					joint_types.push_back(alternating_joint_types);
 				}
 
 				for (const auto &joint_type: joint_types) {
 					robot_arm_parameters.push_back(mgodpl::experiments::RobotArmParameters{
-						.total_arm_length = arm_length,
-						.joint_types = joint_type,
-						.add_spherical_wrist = false
+							.total_arm_length = arm_length,
+							.joint_types = joint_type,
+							.add_spherical_wrist = false
 					});
 				}
 			}
@@ -95,12 +95,12 @@ namespace mgodpl {
 
 		// The flying base of the robot model.
 		RobotModel::LinkId flying_base = model.insertLink(
-			{
-				.name = "flying_base",
-				.joints = {},
-				.collision_geometry = {PositionedShape::untransformed(base_box)},
-				.visual_geometry = {PositionedShape::untransformed(base_mesh)}
-			});
+				{
+						.name = "flying_base",
+						.joints = {},
+						.collision_geometry = {PositionedShape::untransformed(base_box)},
+						.visual_geometry = {PositionedShape::untransformed(base_mesh)}
+				});
 
 		// The stick of the robot model.
 		RobotModel::LinkId attach_to = flying_base;
@@ -117,19 +117,17 @@ namespace mgodpl {
 			RobotModel::LinkId link = model.insertLink(RobotModel::Link::namedBox("stick", {0.05, stick_length, 0.05}));
 
 			model.insertJoint({
-				.name = joint_name,
-				.attachmentA = attachmentA,
-				.attachmentB = stick_link_tf,
-				.linkA = attach_to,
-				.linkB = link,
-				.type_specific = RobotModel::RevoluteJoint{
-					.axis = axis,
-					.min_angle = -M_PI,
-					.max_angle = M_PI
-				}
-			});
+									  .name = joint_name,
+									  .attachmentA = attachmentA,
+									  .attachmentB = stick_link_tf,
+									  .linkA = attach_to,
+									  .linkB = link,
+									  .type_specific = RobotModel::RevoluteJoint{
+											  .axis = axis,
 											  .min_angle = -M_PI / 2.0,
 											  .max_angle = M_PI / 2.0
+									  }
+							  });
 
 			attachmentA = stick_link_tf.inverse();
 			attach_to = link;
@@ -137,19 +135,19 @@ namespace mgodpl {
 
 		// The end effector of the robot model.
 		RobotModel::LinkId end_effector = model.insertLink({
-			.name = "end_effector",
-			.joints = {}
-		});
+																   .name = "end_effector",
+																   .joints = {}
+														   });
 
 		// The joint connecting the stick and the end effector.
 		model.insertJoint({
-			.name = "stick_end_attachment",
-			.attachmentA = attachmentA,
-			.attachmentB = math::Transformd::identity(),
-			.linkA = attach_to,
-			.linkB = end_effector,
-			.type_specific = RobotModel::FixedJoint{}
-		});
+								  .name = "stick_end_attachment",
+								  .attachmentA = attachmentA,
+								  .attachmentB = math::Transformd::identity(),
+								  .linkA = attach_to,
+								  .linkB = end_effector,
+								  .type_specific = RobotModel::FixedJoint{}
+						  });
 
 		// Return the created robot model.
 		return model;
