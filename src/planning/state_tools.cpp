@@ -17,6 +17,9 @@ mgodpl::RobotState mgodpl::fromEndEffectorAndVector(const mgodpl::robot_model::R
 	// Generate a state.
 	std::vector<double> arm_angles{-spherical_geometry::latitude(vector)};
 
+	assert(arm_angles[0] >= -M_PI / 2.0);
+	assert(arm_angles[0] <= M_PI / 2.0);
+
 	math::Transformd flying_base_tf{
 		.translation = math::Vec3d(0.0, 0.0, 0.0),
 		.orientation = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(),
