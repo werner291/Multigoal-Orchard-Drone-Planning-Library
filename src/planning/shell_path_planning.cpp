@@ -33,7 +33,8 @@ namespace mgodpl::shell_path_planning {
 										  const robot_model::RobotModel &robot,
 										  random_numbers::RandomNumberGenerator &rng,
 										  const PlanMultigoalPathMethods &methods,
-										  const std::optional<std::function<RobotPath(const math::Vec3d target_point, const RobotState &state)>> &at_goal_hook,
+										  const std::optional<std::function<RobotPath(const math::Vec3d target_point,
+																					  const RobotState &state)>> &at_goal_hook,
 										  const std::optional<PlanMultigoalPathHooks> &hooks) {
 
 		// Plan a path from the initial state to the shell:
@@ -45,12 +46,13 @@ namespace mgodpl::shell_path_planning {
 
 		// Plan an approach path for every target:
 		std::vector<ApproachPath> approach_paths;
+		std::vector<size_t> target_indices;
 
-		for (const auto &target_point: target_points) {
+		for (size_t target_i = 0; target_i < target_points.size(); ++target_i) {
 			auto approach_path = approach_planning::plan_approach_by_pullout(
 					obstacle,
 					chull_shell,
-					target_point,
+					target_points[target_i],
 					distance_from_target,
 					robot,
 					rng,
@@ -59,6 +61,7 @@ namespace mgodpl::shell_path_planning {
 
 			if (approach_path.has_value()) {
 				approach_paths.push_back(approach_path.value());
+				target_indices.push_back(target_i);
 			}
 		}
 
@@ -70,7 +73,8 @@ namespace mgodpl::shell_path_planning {
 															  chull_shell.convex_hull);
 		const auto &target_to_target_distances = shell_distances(approach_paths, chull_shell);
 
-		std::vector<size_t> order = methods.compute_visitation_order(target_to_target_distances, initial_state_distances);
+		std::vector<size_t> order = methods.compute_visitation_order(target_to_target_distances,
+																	 initial_state_distances);
 
 		RobotPath finalPath;
 
@@ -83,6 +87,13 @@ namespace mgodpl::shell_path_planning {
 			auto goalToGoal = retreat_move_probe(robot, chull_shell.convex_hull, *lastPath, *nextPath);
 
 			finalPath.append(goalToGoal);
+
+			// Check if the user wants to do something at this goal:
+			if (at_goal_hook.has_value()) {
+				auto hook = at_goal_hook.value();
+				auto path = hook(target_points[target_indices[order[i]]], finalPath.states.back());
+				finalPath.append(path);
+			}
 
 			lastPath = nextPath;
 		}

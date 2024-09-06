@@ -460,9 +460,9 @@ maximum_y_cycle(int x_range, int y_range, std::function<bool(std::array<int, 2>,
  * @return The point on the paraboloid.
  */
 math::Vec3d paraboloid_point(double scan_radius, double u, double v) {
-	return { sin(2.0 * M_PI * u) * v * scan_radius,
-			 scan_radius * (1.0 - v * v),
-			 cos(2.0 * M_PI * u) * v * scan_radius};
+	return {sin(2.0 * M_PI * u) * v * scan_radius,
+			scan_radius * (1.0 - v * v),
+			cos(2.0 * M_PI * u) * v * scan_radius};
 }
 
 /**
@@ -485,7 +485,7 @@ RobotPath createObstacleAvoidingPath(const robot_model::RobotModel &robot_model,
 
 	auto calculate_position = [](const std::array<int, 2> &a, double scan_radius, int MAX_X, int MAX_Y) {
 		return paraboloid_point(scan_radius, a[0] / static_cast<double>(MAX_X), a[1] / static_cast<double>(MAX_Y));
-    };
+	};
 
 
 	// Compute a basis that'll transform the paraboloid such that the y-axis aligns with the arm vector:
@@ -494,26 +494,26 @@ RobotPath createObstacleAvoidingPath(const robot_model::RobotModel &robot_model,
 	const math::Vec3d z = x.cross(y).normalized();
 
 	// Create a path that avoids the obstacle:
-    auto path = maximum_y_cycle(MAX_X, MAX_Y, [&](std::array<int, 2> a, std::array<int, 2> b) {
-        math::Vec3d a_pos = calculate_position(a, scan_radius, MAX_X, MAX_Y);
+	auto path = maximum_y_cycle(MAX_X, MAX_Y, [&](std::array<int, 2> a, std::array<int, 2> b) {
+		math::Vec3d a_pos = calculate_position(a, scan_radius, MAX_X, MAX_Y);
 		math::Vec3d a_arm = initial_arm_vector;// arm_vector_from_eepoint(a_pos);
-        math::Vec3d b_pos = calculate_position(b, scan_radius, MAX_X, MAX_Y);
+		math::Vec3d b_pos = calculate_position(b, scan_radius, MAX_X, MAX_Y);
 		math::Vec3d b_arm = initial_arm_vector;// arm_vector_from_eepoint(b_pos);
 
 		// transform them:
 		a_pos = x * a_pos.x() + y * a_pos.y() + z * a_pos.z() + fruit_position;
 		b_pos = x * b_pos.x() + y * b_pos.y() + z * b_pos.z() + fruit_position;
 
-        return !check_motion_collides(robot_model, obstacle,
-                                      fromEndEffectorAndVector(robot_model, a_pos, a_arm),
-                                      fromEndEffectorAndVector(robot_model, b_pos, b_arm));
-    });
+		return !check_motion_collides(robot_model, obstacle,
+									  fromEndEffectorAndVector(robot_model, a_pos, a_arm),
+									  fromEndEffectorAndVector(robot_model, b_pos, b_arm));
+	});
 
 
-    // Turn it into a RobotPath:
-    RobotPath path_robot;
-    for (const auto &point: path) {
-        math::Vec3d ee_pos = calculate_position(point, scan_radius, MAX_X, MAX_Y);
+	// Turn it into a RobotPath:
+	RobotPath path_robot;
+	for (const auto &point: path) {
+		math::Vec3d ee_pos = calculate_position(point, scan_radius, MAX_X, MAX_Y);
 		math::Vec3d arm_vector = initial_arm_vector;//arm_vector_from_eepoint(ee_pos);
 
 		ee_pos = x * ee_pos.x() + y * ee_pos.y() + z * ee_pos.z() + fruit_position;
@@ -570,7 +570,13 @@ REGISTER_VISUALIZATION(scanning_motions_obstacle_avoidance) {
 	// Visualize a cube at that position:
 	viewer.addBox(obstacle_size, obstacle_position, WOOD_COLOR);
 
-	RobotPath path_robot = createObstacleAvoidingPath(robot_model, obstacle, scan_radius, 100, 100, fruit_position, {1.0, 0.0, 0.0});
+	RobotPath path_robot = createObstacleAvoidingPath(robot_model,
+													  obstacle,
+													  scan_radius,
+													  100,
+													  100,
+													  fruit_position,
+													  {1.0, 0.0, 0.0});
 
 	mgodpl::visualization::TraceVisualisation trace_visualisation(viewer, {1, 0, 1});
 
@@ -638,7 +644,8 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 	viewer.addTree(tree_model, false, true);
 
 	robot_model::RobotModel robot_model = experiments::createProceduralRobotModel(
-			experiments::RobotArmParameters{.total_arm_length = 0.75, .joint_types = {experiments::HORIZONTAL}, .add_spherical_wrist=false});
+			experiments::RobotArmParameters{.total_arm_length = 0.75, .joint_types = {
+					experiments::HORIZONTAL}, .add_spherical_wrist=false});
 
 	RobotState initial_state = fromEndEffectorAndVector(robot_model, {5.0, 0.0, 5.0}, {1.0, 0.0, 0.0});
 
@@ -648,27 +655,44 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 	// Allocate a BVH convex_hull for the tree trunk.
 	auto tree_collision = mgodpl::fcl_utils::treeMeshesToFclCollisionObject(tree_model);
 
-	const auto& target_points = computeFruitPositions(tree_model);
+	const auto &target_points = computeFruitPositions(tree_model);
 
 	RobotPath path = mgodpl::shell_path_planning::plan_multigoal_path(
-		initial_state,
-		tree_collision,
-		chull_shell,
-		target_points,
-		SCAN_RADIUS,
-		robot_model,
-		rng,
-		{}, //Default planning methods
-		[](const math::Vec3d target_point, const RobotState &state){
-			return RobotPath::singleton(state);
-		}
-		);
+			initial_state,
+			tree_collision,
+			chull_shell,
+			target_points,
+			SCAN_RADIUS,
+			robot_model,
+			rng,
+			{}, //Default planning methods
+			[&](const math::Vec3d target_point, const RobotState &state) {
+
+				// Compute the arm vector:
+				const math::Vec3d arm_vector =
+						forwardKinematics(robot_model, state)
+								.forLink(robot_model.findLinkByName("end_effector"))
+								.orientation
+								.rotate(math::Vec3d(0.0, -1.0, 0.0));
+
+				return createObstacleAvoidingPath(robot_model,
+												  tree_collision,
+												  SCAN_RADIUS,
+												  32, // MAX_X
+												  10, // MAX_Y
+												  target_point,
+												  arm_vector);
+			}
+	);
 
 	// Create an end-effector visualization:
 	mgodpl::visualization::TraceVisualisation trace_visualisation(viewer, {1, 0, 1}, 1000);
 
 	// Visualize the state:
 	auto robot_visual = vizualize_robot_state(viewer, robot_model, forwardKinematics(robot_model, initial_state));
+
+	math::Vec3d camera_center = {10.0, 10.0, 10.0};
+	math::Vec3d camera_target = initial_state.base_tf.translation;
 
 	static PathPoint path_point{0, 0.0};
 	viewer.addTimerCallback([&]() {
@@ -680,7 +704,17 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 		auto fk = forwardKinematics(robot_model, interpolate(path_point, path));
 		trace_visualisation.add_point(fk.forLink(robot_model.findLinkByName("end_effector")).translation);
 		update_robot_state(robot_model, fk, robot_visual);
+
+		camera_center = camera_center * 0.9 +
+						fk.forLink(robot_model.findLinkByName("flying_base")).apply(math::Vec3d{0.5, -2.0, 1.0}) * 0.1;
+
+		camera_target = camera_target * 0.9 + fk.forLink(robot_model.findLinkByName("end_effector")).translation * 0.1;
+
+		// Focus the camera on the robot:
+		viewer.setCameraTransform(camera_center, camera_target);
 	});
+
+	viewer.lockCameraUp();
 
 	viewer.start();
 
