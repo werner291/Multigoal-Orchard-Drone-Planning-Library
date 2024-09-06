@@ -16,7 +16,7 @@ VtkLineSegmentsVisualization createFruitLinesVisualization(const mgodpl::Scannab
 	std::vector<std::pair<math::Vec3d, math::Vec3d>> fruit_lines;
 	fruit_lines.reserve(scannable_points.surface_points.size());
 	for (const auto &[position, normal]: scannable_points.surface_points) {
-		fruit_lines.emplace_back(position, position + normal * 0.01);
+		fruit_lines.emplace_back(position + normal * 0.01, position + normal * 0.02);
 	}
 	fruit_points_visualization.updateLine(fruit_lines);
 

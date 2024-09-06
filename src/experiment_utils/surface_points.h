@@ -12,6 +12,7 @@
 #include "../math/Vec3.h"
 #include "MeshOcclusionModel.h"
 #include "../planning/RandomNumberGenerator.h"
+#include "TreeMeshes.h"
 
 namespace mgodpl {
 
@@ -21,8 +22,8 @@ namespace mgodpl {
 	 * This struct encapsulates the position and normal vector of a point on a surface.
 	 */
 	struct SurfacePoint {
-	    math::Vec3d position; ///< The position of the point on the surface.
-	    math::Vec3d normal; ///< The normal vector at the point on the surface.
+		math::Vec3d position; ///< The position of the point on the surface.
+		math::Vec3d normal; ///< The normal vector at the point on the surface.
 	};
 
 	/**
@@ -32,36 +33,36 @@ namespace mgodpl {
 	 * as well as a vector of SurfacePoint objects for which scanning is to be performed.
 	 */
 	struct ScannablePoints {
-	    double max_distance; ///< The maximum distance for scanning checks.
-	    double min_distance; ///< The minimum distance for scanning checks.
-	    double max_angle; ///< The maximum angle for scanning checks.
-	    std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model; ///< The occlusion mesh to use for visibility checks.
-	    std::vector<SurfacePoint> surface_points; ///< The vector of SurfacePoint objects for which scanning is to be performed.
+		double max_distance; ///< The maximum distance for scanning checks.
+		double min_distance; ///< The minimum distance for scanning checks.
+		double max_angle; ///< The maximum angle for scanning checks.
+		std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model; ///< The occlusion mesh to use for visibility checks.
+		std::vector<SurfacePoint> surface_points; ///< The vector of SurfacePoint objects for which scanning is to be performed.
 
 		using PointId = size_t; ///< An identifier for a point in ScannablePoints.
 
-	    /**
-	     * @brief Constructor for the ScannablePoints struct.
-	     *
-	     * This constructor initializes the max_distance, min_distance, max_angle, and surface_points members.
-	     *
-	     * @param max_distance The maximum distance for scanning checks.
-	     * @param min_distance The minimum distance for scanning checks.
-	     * @param max_angle The maximum angle for scanning checks.
-	     * @param surface_points The vector of SurfacePoint objects for which scanning is to be performed.
-	     */
-	    ScannablePoints(
+		/**
+		 * @brief Constructor for the ScannablePoints struct.
+		 *
+		 * This constructor initializes the max_distance, min_distance, max_angle, and surface_points members.
+		 *
+		 * @param max_distance The maximum distance for scanning checks.
+		 * @param min_distance The minimum distance for scanning checks.
+		 * @param max_angle The maximum angle for scanning checks.
+		 * @param surface_points The vector of SurfacePoint objects for which scanning is to be performed.
+		 */
+		ScannablePoints(
 				double max_distance,
 				double min_distance,
 				double max_angle,
 				std::vector<SurfacePoint> surface_points,
 				std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model = std::nullopt
-				)
-	        : 	max_distance(max_distance),
-				min_distance(min_distance),
-				max_angle(max_angle),
-				occlusion_model(std::move(occlusion_model)),
-				surface_points(std::move(surface_points)) {}
+		)
+				: max_distance(max_distance),
+				  min_distance(min_distance),
+				  max_angle(max_angle),
+				  occlusion_model(std::move(occlusion_model)),
+				  surface_points(std::move(surface_points)) {}
 	};
 
 	/**
@@ -72,23 +73,24 @@ namespace mgodpl {
 	 * If the value is true, the point has ever been seen. If the value is false, the point has never been seen.
 	 */
 	struct SeenPoints {
-	    std::vector<bool> ever_seen; ///< The vector of booleans representing the visibility status of points.
+		std::vector<bool> ever_seen; ///< The vector of booleans representing the visibility status of points.
 
-	    /**
-	     * @brief Creates a SeenPoints object with all points initially set to unseen.
-	     *
-	     * This static function creates a SeenPoints object with all points initially set to unseen (false).
-	     * It initializes the ever_seen vector with a size equal to the number of points in the ScannablePoints object.
-	     *
-	     * @param scannable_points A ScannablePoints object. Each SurfacePoint object in ScannablePoints
-	     *                         represents a point in 3D space and has a position and a normal.
-	     * @return A SeenPoints object with all points initially set to unseen.
-	     */
-	    static SeenPoints create_all_unseen(const ScannablePoints& scannable_points) {
-	        SeenPoints seen_points;
-	        seen_points.ever_seen.resize(scannable_points.surface_points.size(), false);
-	        return seen_points;
-	    }
+		/**
+		 * @brief Creates a SeenPoints object with all points initially set to unseen.
+		 *
+		 * This static function creates a SeenPoints object with all points initially set to unseen (false).
+		 * It initializes the ever_seen vector with a size equal to the number of points in the ScannablePoints object.
+		 *
+		 * @param scannable_points A ScannablePoints object. Each SurfacePoint object in ScannablePoints
+		 *                         represents a point in 3D space and has a position and a normal.
+		 * @return A SeenPoints object with all points initially set to unseen.
+		 */
+		static SeenPoints create_all_unseen(const ScannablePoints &scannable_points) {
+			SeenPoints seen_points;
+			seen_points.ever_seen.resize(scannable_points.surface_points.size(), false);
+			return seen_points;
+		}
+
 		/**
 		 * @brief Counts the number of points that have been seen.
 		 *
@@ -143,7 +145,7 @@ namespace mgodpl {
 													const Mesh &mesh,
 													size_t num_points);
 
-    /**
+	/**
 	 * @brief Creates a ScannablePoints object.
 	 *
 	 * This function encapsulates the `sample_points_on_mesh` function and returns a `ScannablePoints` object.
@@ -156,17 +158,38 @@ namespace mgodpl {
 	 * @param max_distance The maximum distance for scanning checks.
 	 * @param min_distance The minimum distance for scanning checks.
 	 * @param max_angle The maximum angle for scanning checks.
-     * @param occlusion_model The occlusion model to use for visibility checks.
+	 * @param occlusion_model The occlusion model to use for visibility checks.
 	 * @return A ScannablePoints object.
 	 */
 	ScannablePoints createScannablePoints(random_numbers::RandomNumberGenerator &rng,
-	                                      const Mesh &mesh,
-	                                      size_t num_points,
-	                                      double max_distance,
-	                                      double min_distance,
-	                                      double max_angle,
+										  const Mesh &mesh,
+										  size_t num_points,
+										  double max_distance,
+										  double min_distance,
+										  double max_angle,
 										  std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model = std::nullopt);
 
+	/**
+	 * @brief Creates a vector of ScannablePoints for all fruit meshes in the tree model.
+	 *
+	 * This function iterates over all fruit meshes in the tree model and creates ScannablePoints
+	 * for each mesh using the provided parameters.
+	 *
+	 * @param tree_model The tree model containing fruit meshes.
+	 * @param rng The random number generator.
+	 * @param num_points The number of points to sample on each mesh. (Not in total!)
+	 * @param max_distance The maximum distance for scanning checks.
+	 * @param min_distance The minimum distance for scanning checks.
+	 * @param max_angle The maximum angle for scanning checks.
+	 * @return A vector of ScannablePoints for all fruit meshes in the tree model.
+	 */
+	std::vector<ScannablePoints> createAllScannablePoints(
+			const tree_meshes::TreeMeshes &tree_model,
+			random_numbers::RandomNumberGenerator &rng,
+			size_t num_points,
+			double max_distance,
+			double min_distance,
+			double max_angle);
 
 	/**
 	 * @brief Checks if a point is visible from a given position.
@@ -185,7 +208,9 @@ namespace mgodpl {
 	 * @param eye_position     A Vec3d object representing the position of the eye in 3D space.
 	 * @return                 A boolean value. If true, the point is visible from the eye position. If false, the point is not visible.
 	 */
-	bool is_visible(const ScannablePoints& scannable_points, ScannablePoints::PointId point_index, const math::Vec3d& eye_position);
+	bool is_visible(const ScannablePoints &scannable_points,
+					ScannablePoints::PointId point_index,
+					const math::Vec3d &eye_position);
 
 	/**
 	 * @brief Checks if a point is visible from a given position and direction.
@@ -229,9 +254,9 @@ namespace mgodpl {
 	 * @param seen_points      A SeenPoints object. Each value in the SeenPoints object corresponds to a point in the ScannablePoints object.
 	 *                         If the value is true, the point has ever been seen from the eye position. If the value is false, the point has never been seen.
 	 */
-	size_t update_visibility(const ScannablePoints& scannable_points,
-	                         const math::Vec3d& eye_position,
-	                         SeenPoints& seen_points);
+	size_t update_visibility(const ScannablePoints &scannable_points,
+							 const math::Vec3d &eye_position,
+							 SeenPoints &seen_points);
 }
 
 #endif //MGODPL_SURFACE_POINTS_H

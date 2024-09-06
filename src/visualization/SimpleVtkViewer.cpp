@@ -348,8 +348,11 @@ namespace mgodpl {
 			addActor(createColoredMeshActor(tree.leaves_mesh, {0.0, 0.5, 0.0, 1.0}, true));
 		}
 		if (show_fruit) {
-			for (const auto &fruit: computeFruitPositions(tree)) {
-				addSphere(0.05, fruit, {0.8, 0.0, 0.0}, 1.0);
+//			for (const auto &fruit: computeFruitPositions(tree)) {
+//				addSphere(0.05, fruit, {0.8, 0.0, 0.0}, 1.0);
+//			}
+			for (const auto &fruit: tree.fruit_meshes) {
+				addActor(createColoredMeshActor(fruit, {0.8, 0.0, 0.0, 1.0}, true));
 			}
 		}
 	}

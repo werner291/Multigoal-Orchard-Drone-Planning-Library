@@ -65,3 +65,11 @@ mgodpl::RobotState mgodpl::generateUniformRandomState(const robot_model::RobotMo
 
 	return state;
 }
+
+mgodpl::math::Vec3d mgodpl::arm_vector_from_state(const mgodpl::robot_model::RobotModel &robot_model,
+												  const mgodpl::RobotState &state) {
+	return forwardKinematics(robot_model, state)
+			.forLink(robot_model.findLinkByName("end_effector"))
+			.orientation
+			.rotate(math::Vec3d(0.0, -1.0, 0.0));
+}

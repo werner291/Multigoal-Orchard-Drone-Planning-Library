@@ -444,6 +444,7 @@ maximum_y_cycle(int x_range, int y_range, std::function<bool(std::array<int, 2>,
 }
 
 #include <vtkProperty.h>
+#include <range/v3/view/zip.hpp>
 
 /**
  * A function that defines a parametric paraboloid.
@@ -631,12 +632,50 @@ REGISTER_VISUALIZATION(scanning_motions_obstacle_avoidance) {
 	viewer.start();
 }
 
+/**
+ * \class CameraTracker
+ * \brief A class to manage and smoothly update the camera position and focus in a SimpleVtkViewer.
+ */
+class CameraTracker {
+
+	SimpleVtkViewer &viewer; ///< Reference to the SimpleVtkViewer instance.
+	double aggressiveness; ///< Interpolation aggressiveness factor.
+	math::Vec3d camera_center; ///< Current camera center position.
+	math::Vec3d camera_target; ///< Current camera target position.
+
+public:
+	/**
+	 * \brief Constructor for CameraTracker.
+	 * \param viewer A reference to the SimpleVtkViewer instance.
+	 * \param aggressiveness A factor in the range [0, 1] that determines the interpolation aggressiveness.
+	 */
+	CameraTracker(SimpleVtkViewer &viewer, double aggressiveness)
+			: viewer(viewer), aggressiveness(aggressiveness) {
+		camera_center = {10.0, 10.0, 10.0};
+		camera_target = {0.0, 0.0, 0.0};
+	}
+
+	/**
+	 * \brief Sets the new camera position and focus with interpolation.
+	 * \param new_camera_center The new target position for the camera center.
+	 * \param new_camera_target The new target position for the camera focus.
+	 */
+	void setPositionAndFocus(const math::Vec3d &new_camera_center, const math::Vec3d &new_camera_target) {
+		camera_center = camera_center * (1.0 - aggressiveness) + new_camera_center * aggressiveness;
+		camera_target = camera_target * (1.0 - aggressiveness) + new_camera_target * aggressiveness;
+		viewer.setCameraTransform(camera_center, camera_target);
+	}
+
+};
+
 REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 
 	const double SCAN_RADIUS = 0.2;
 
 	// Load the tree meshes
 	auto tree_model = tree_meshes::loadTreeMeshes("appletree");
+
+	// Grab the scan points:
 
 	// Initialize a random number generator
 	random_numbers::RandomNumberGenerator rng(42);
@@ -648,6 +687,30 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 					experiments::HORIZONTAL}, .add_spherical_wrist=false});
 
 	RobotState initial_state = fromEndEffectorAndVector(robot_model, {5.0, 0.0, 5.0}, {1.0, 0.0, 0.0});
+
+	// Create the scannable points for all the fruit meshes
+	auto scan_points = createAllScannablePoints(
+			tree_model,
+			rng,
+			250,
+			SCAN_RADIUS,
+			0.05,
+			M_PI_2
+	);
+
+	std::vector<SeenPoints> ever_seen;
+	ever_seen.reserve(scan_points.size());
+	for (const auto &scannable_points: scan_points) {
+		ever_seen.push_back(SeenPoints::create_all_unseen(scannable_points));
+	}
+
+	std::vector<VtkLineSegmentsVisualization> fruit_points_visualization;
+	fruit_points_visualization.reserve(scan_points.size());
+
+	// Create the fruit points visualization
+	for (const auto &[scannable_points, ever_seen_points]: ranges::views::zip(scan_points, ever_seen)) {
+		fruit_points_visualization.push_back(visualize(viewer, scannable_points, ever_seen_points));
+	}
 
 	// CGAl mesh data for the tree model:
 	cgal::CgalMeshData chull_shell(tree_model.leaves_mesh);
@@ -667,21 +730,15 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 			rng,
 			{}, //Default planning methods
 			[&](const math::Vec3d target_point, const RobotState &state) {
-
-				// Compute the arm vector:
-				const math::Vec3d arm_vector =
-						forwardKinematics(robot_model, state)
-								.forLink(robot_model.findLinkByName("end_effector"))
-								.orientation
-								.rotate(math::Vec3d(0.0, -1.0, 0.0));
-
-				return createObstacleAvoidingPath(robot_model,
-												  tree_collision,
-												  SCAN_RADIUS,
-												  32, // MAX_X
-												  10, // MAX_Y
-												  target_point,
-												  arm_vector);
+				return createObstacleAvoidingPath(
+						robot_model,
+						tree_collision,
+						SCAN_RADIUS,
+						32, // MAX_X (We use 32 because it's a curved motion and we want to avoid linearizing too much)
+						10, // MAX_Y (10 is probably fine, gives us enough depth range, and the robot makes mostly probing motions here)
+						target_point,
+						arm_vector_from_state(robot_model, state)
+				);
 			}
 	);
 
@@ -691,27 +748,38 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 	// Visualize the state:
 	auto robot_visual = vizualize_robot_state(viewer, robot_model, forwardKinematics(robot_model, initial_state));
 
-	math::Vec3d camera_center = {10.0, 10.0, 10.0};
-	math::Vec3d camera_target = initial_state.base_tf.translation;
+	// Create an instance of CameraTracker
+	CameraTracker camera_tracker(viewer, 0.1);
 
 	static PathPoint path_point{0, 0.0};
 	viewer.addTimerCallback([&]() {
-		if (advancePathPointWrap(path, path_point, 0.05, equal_weights_distance)) {
+		if (advancePathPointWrap(path, path_point, 0.05, equal_weights_max_distance)) {
 			if (viewer.isRecording()) {
 				viewer.stop();
 			}
 		}
+
 		auto fk = forwardKinematics(robot_model, interpolate(path_point, path));
-		trace_visualisation.add_point(fk.forLink(robot_model.findLinkByName("end_effector")).translation);
+
+		math::Vec3d ee_pos = fk.forLink(robot_model.findLinkByName("end_effector")).translation;
+
+		trace_visualisation.add_point(ee_pos);
+
 		update_robot_state(robot_model, fk, robot_visual);
 
-		camera_center = camera_center * 0.9 +
-						fk.forLink(robot_model.findLinkByName("flying_base")).apply(math::Vec3d{0.5, -2.0, 1.0}) * 0.1;
+		// Update the seen status:
+		for (size_t cluster_i = 0; cluster_i < scan_points.size(); cluster_i++) {
+			update_visibility(scan_points[cluster_i], ee_pos, ever_seen[cluster_i]);
 
-		camera_target = camera_target * 0.9 + fk.forLink(robot_model.findLinkByName("end_effector")).translation * 0.1;
+			// Set the colors of the fruit points visualization
+			update_visualization(ever_seen[cluster_i], fruit_points_visualization[cluster_i]);
+		}
 
-		// Focus the camera on the robot:
-		viewer.setCameraTransform(camera_center, camera_target);
+		// Update the camera position and focus using CameraTracker
+		camera_tracker.setPositionAndFocus(
+				fk.forLink(robot_model.findLinkByName("flying_base")).apply(math::Vec3d{2.0, -1.0, 1.0}),
+				ee_pos
+		);
 	});
 
 	viewer.lockCameraUp();
