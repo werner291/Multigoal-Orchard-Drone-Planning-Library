@@ -10,15 +10,17 @@
 #include "collision_detection.h"
 #include "state_tools.h"
 
-mgodpl::RobotState mgodpl::genUprightState(const robot_model::RobotModel &robot, random_numbers::RandomNumberGenerator &rng) {
+mgodpl::RobotState
+mgodpl::genUprightState(const robot_model::RobotModel &robot, random_numbers::RandomNumberGenerator &rng) {
 
 	// Initialize the fixed-size parts of the state.
 	RobotState state = {
-		.base_tf = math::Transformd{
-			.translation = math::Vec3d(0.0, 0.0, 0.0), // At (0,0,0)
-			.orientation = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), rng.uniformReal(-M_PI, M_PI)) // Random Z rotation/
-		},
-		.joint_values = {}
+			.base_tf = math::Transformd{
+					.translation = math::Vec3d(0.0, 0.0, 0.0), // At (0,0,0)
+					.orientation = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(),
+																	rng.uniformReal(-M_PI, M_PI)) // Random Z rotation/
+			},
+			.joint_values = {}
 	};
 
 	// Generate the arm joint variables.
@@ -27,7 +29,7 @@ mgodpl::RobotState mgodpl::genUprightState(const robot_model::RobotModel &robot,
 	state.joint_values.reserve(robot.count_joint_variables());
 
 	// Generate a value for each...
-	for (const auto &joint : robot.getJoints()) {
+	for (const auto &joint: robot.getJoints()) {
 
 		if (const auto &revolute = std::get_if<robot_model::RobotModel::RevoluteJoint>(&joint.type_specific)) {
 
@@ -47,20 +49,29 @@ mgodpl::RobotState mgodpl::genUprightState(const robot_model::RobotModel &robot,
 }
 
 mgodpl::RobotState mgodpl::genGoalStateUniform(random_numbers::RandomNumberGenerator &rng,
-                                               const mgodpl::math::Vec3d &target,
-                                               const mgodpl::robot_model::RobotModel &robot,
-                                               const mgodpl::robot_model::RobotModel::LinkId &flying_base,
-                                               const mgodpl::robot_model::RobotModel::LinkId &end_effector) {
-	RobotState state = genUprightState(robot,rng);
+											   const mgodpl::math::Vec3d &target,
+											   double distance_from_target,
+											   const mgodpl::robot_model::RobotModel &robot,
+											   const mgodpl::robot_model::RobotModel::LinkId &flying_base,
+											   const mgodpl::robot_model::RobotModel::LinkId &end_effector) {
+	RobotState state = genUprightState(robot, rng);
 
 	const auto &fk = robot_model::forwardKinematics(
-		robot,
-		state.joint_values,
-		flying_base,
-		state.base_tf
+			robot,
+			state.joint_values,
+			flying_base,
+			state.base_tf
 	);
 
-	math::Vec3d target_delta = target - fk.forLink(end_effector).translation;
+	const auto &ee_tf = fk.forLink(end_effector);
+
+	math::Vec3d target_delta = target - ee_tf.translation;
+
+	// TODO: This should not be just a vector along the arm vector;
+	// it'd make more sense to sample on the whole sphere.
+	if (distance_from_target > 0.0) {
+		target_delta += ee_tf.orientation.rotate(math::Vec3d(0.0, distance_from_target, 0.0));
+	}
 
 	state.base_tf.translation = state.base_tf.translation + target_delta;
 
@@ -68,14 +79,14 @@ mgodpl::RobotState mgodpl::genGoalStateUniform(random_numbers::RandomNumberGener
 }
 
 std::optional<mgodpl::RobotState> mgodpl::findGoalStateByUniformSampling(const mgodpl::math::Vec3d &target,
-                                                                         const mgodpl::robot_model::RobotModel &robot,
-                                                                         const mgodpl::robot_model::RobotModel::LinkId &
-                                                                         flying_base,
-                                                                         const mgodpl::robot_model::RobotModel::LinkId &
-                                                                         end_effector,
-                                                                         const fcl::CollisionObjectd &tree_trunk_object,
-                                                                         random_numbers::RandomNumberGenerator &rng,
-                                                                         size_t max_attempts) {
+																		 const mgodpl::robot_model::RobotModel &robot,
+																		 const mgodpl::robot_model::RobotModel::LinkId &
+																		 flying_base,
+																		 const mgodpl::robot_model::RobotModel::LinkId &
+																		 end_effector,
+																		 const fcl::CollisionObjectd &tree_trunk_object,
+																		 random_numbers::RandomNumberGenerator &rng,
+																		 size_t max_attempts) {
 	for (size_t i = 0; i < max_attempts; ++i) {
 		RobotState state = genGoalStateUniform(rng, target, robot, flying_base, end_effector);
 
@@ -88,12 +99,12 @@ std::optional<mgodpl::RobotState> mgodpl::findGoalStateByUniformSampling(const m
 }
 
 std::optional<mgodpl::RobotState> mgodpl::generateUniformRandomArmVectorState(
-	const robot_model::RobotModel &robot,
-	const fcl::CollisionObjectd &tree_trunk_object,
-	const math::Vec3d &fruit_center,
-	random_numbers::RandomNumberGenerator &rng,
-	const int max_attempts,
-	const double ee_distance) {
+		const robot_model::RobotModel &robot,
+		const fcl::CollisionObjectd &tree_trunk_object,
+		const math::Vec3d &fruit_center,
+		random_numbers::RandomNumberGenerator &rng,
+		const int max_attempts,
+		const double ee_distance) {
 	std::optional<RobotState> sample;
 
 	for (int attempt = 0; attempt < max_attempts; ++attempt) {

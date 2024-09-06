@@ -46,11 +46,32 @@ namespace mgodpl {
 	 * @return 						The generated robot state.
 	 */
 	RobotState genGoalStateUniform(
-		random_numbers::RandomNumberGenerator &rng,
-		const math::Vec3d &target,
-		const robot_model::RobotModel &robot,
-		const robot_model::RobotModel::LinkId &flying_base,
-		const robot_model::RobotModel::LinkId &end_effector);
+			random_numbers::RandomNumberGenerator &rng,
+			const math::Vec3d &target,
+			double distance_from_target,
+			const robot_model::RobotModel &robot,
+			const robot_model::RobotModel::LinkId &flying_base,
+			const robot_model::RobotModel::LinkId &end_effector);
+
+	/**
+	 * Generate a state where the end effector is at the given target, not checking for collisions.
+	 *
+	 * @param rng 					The random number generator to use.
+	 * @param target 				The target position.
+	 * @param robot 				The robot model.
+	 * @param flying_base 			The link ID of the flying base.
+	 * @param end_effector 			The link ID of the end effector.
+	 * @return 						The generated robot state.
+	 */
+	inline RobotState genGoalStateUniform(
+			random_numbers::RandomNumberGenerator &rng,
+			const math::Vec3d &target,
+			const robot_model::RobotModel &robot,
+			const robot_model::RobotModel::LinkId &flying_base,
+			const robot_model::RobotModel::LinkId &end_effector) {
+		return genGoalStateUniform(rng, target, 0.0, robot, flying_base, end_effector);
+	}
+
 
 	/**
 	 * Attempt to find a collision-free goal state by uniform sampling.
@@ -65,13 +86,13 @@ namespace mgodpl {
 	 * @return 							The generated robot state, or nullopt if no state was found.
 	 */
 	std::optional<RobotState> findGoalStateByUniformSampling(
-		const math::Vec3d &target,
-		const robot_model::RobotModel &robot,
-		const robot_model::RobotModel::LinkId &flying_base,
-		const robot_model::RobotModel::LinkId &end_effector,
-		const fcl::CollisionObjectd &tree_trunk_object,
-		random_numbers::RandomNumberGenerator &rng,
-		size_t max_attempts);
+			const math::Vec3d &target,
+			const robot_model::RobotModel &robot,
+			const robot_model::RobotModel::LinkId &flying_base,
+			const robot_model::RobotModel::LinkId &end_effector,
+			const fcl::CollisionObjectd &tree_trunk_object,
+			random_numbers::RandomNumberGenerator &rng,
+			size_t max_attempts);
 
 	/**
 	 * @brief Attempts to generate a collision-free RobotState by uniformly sampling random arm vectors.
@@ -85,12 +106,12 @@ namespace mgodpl {
 	 * @return A collision-free RobotState, or std::nullopt if no state was found.
 	 */
 	std::optional<RobotState> generateUniformRandomArmVectorState(
-		const robot_model::RobotModel &robot,
-		const fcl::CollisionObjectd &tree_trunk_object,
-		const math::Vec3d &fruit_center,
-		random_numbers::RandomNumberGenerator &rng,
-		int max_attempts,
-		double ee_distance);
+			const robot_model::RobotModel &robot,
+			const fcl::CollisionObjectd &tree_trunk_object,
+			const math::Vec3d &fruit_center,
+			random_numbers::RandomNumberGenerator &rng,
+			int max_attempts,
+			double ee_distance);
 }
 
 #endif //MGODPL_GOAL_SAMPLING_H
