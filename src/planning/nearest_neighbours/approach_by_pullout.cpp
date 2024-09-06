@@ -11,12 +11,12 @@
 namespace mgodpl::approach_planning {
 	std::optional<ApproachPath>
 	plan_approach_by_pullout(const fcl::CollisionObjectd &obstacle,
-						   const mgodpl::cgal::CgalMeshData &chull_shell,
-						   const mgodpl::math::Vec3d &target_point,
-						   double distance_from_target,
-						   const mgodpl::robot_model::RobotModel &robot,
-						   random_numbers::RandomNumberGenerator &rng,
-						   const size_t max_goal_samples) {
+							 const mgodpl::cgal::CgalMeshData &chull_shell,
+							 const mgodpl::math::Vec3d &target_point,
+							 double distance_from_target,
+							 const mgodpl::robot_model::RobotModel &robot,
+							 random_numbers::RandomNumberGenerator &rng,
+							 const size_t max_goal_samples) {
 
 		// Get the robot's base and end effector links:
 		const auto &base_link = robot.findLinkByName("flying_base");
@@ -28,6 +28,7 @@ namespace mgodpl::approach_planning {
 			auto sample = mgodpl::genGoalStateUniform(
 					rng,
 					target_point,
+					distance_from_target,
 					robot,
 					base_link,
 					end_effector_link
