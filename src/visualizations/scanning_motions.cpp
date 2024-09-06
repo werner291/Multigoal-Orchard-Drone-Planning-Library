@@ -30,6 +30,8 @@
 #include "../planning/RobotModel.h"
 #include "../planning/fcl_utils.h"
 #include "../planning/cgal_chull_shortest_paths.h"
+#include "../visualization/CameraTracker.h"
+#include "../experiment_utils/point_scanning_evaluation.h"
 
 using namespace mgodpl;
 using namespace mgodpl::vizualisation;
@@ -466,6 +468,54 @@ math::Vec3d paraboloid_point(double scan_radius, double u, double v) {
 			cos(2.0 * M_PI * u) * v * scan_radius};
 }
 
+REGISTER_VISUALIZATION(paraboloid_grid) {
+
+	// We're going to visualize the parametric paraboloid through a grid mesh.
+	const double MIN_U = -1.0;
+	const double MAX_U = 1.0;
+	const double MIN_V = 0.0;
+	const double MAX_V = 1.0;
+
+	const double FRUIT_RADIUS = 0.1;
+	const double DISTANCE_FROM_SURFACE = 0.1;
+	const double SCAN_RADIUS = FRUIT_RADIUS + DISTANCE_FROM_SURFACE;
+
+	const int N_U = 20;
+	const int N_V = 20;
+
+	std::vector<std::pair<math::Vec3d, math::Vec3d>> lines;
+
+	for (int i = 0; i < N_U; i++) {
+		const double u = MIN_U + (MAX_U - MIN_U) * i / (N_U - 1);
+		for (int j = 0; j < N_V; j++) {
+			const double v = MIN_V + (MAX_V - MIN_V) * j / (N_V - 1);
+			lines.emplace_back(paraboloid_point(SCAN_RADIUS, u, v), paraboloid_point(SCAN_RADIUS, u, v + 1.0 / N_V));
+			lines.emplace_back(paraboloid_point(SCAN_RADIUS, u, v), paraboloid_point(SCAN_RADIUS, u + 1.0 / N_U, v));
+		}
+	}
+
+	VtkLineSegmentsVisualization paraboloid(1, 0, 1);
+	paraboloid.updateLine(lines);
+	viewer.addActor(paraboloid.getActor());
+
+	// Add a sphere to represent the fruit at (0,0,0):
+	viewer.addSphere(FRUIT_RADIUS, {0.0, 0.0, 0.0}, FRUIT_COLOR);
+
+	// Put a robot model for illustration:
+	const robot_model::RobotModel robot_model = experiments::createProceduralRobotModel(
+			experiments::RobotArmParameters{.total_arm_length = 1.0, .joint_types = {
+					experiments::HORIZONTAL}, .add_spherical_wrist=false});
+
+	// The initial state of the robot:
+	const RobotState initial_state = fromEndEffectorAndVector(robot_model, {0.0, SCAN_RADIUS, 0.0}, {0.0, 1.0, 0.0});
+
+	// Visualize the robot:
+	auto rb = vizualize_robot_state(viewer, robot_model, forwardKinematics(robot_model, initial_state));
+
+	viewer.start();
+
+}
+
 /**
  * @fn RobotPath createObstacleAvoidingPath(const robot_model::RobotModel &robot_model, const fcl::CollisionObjectd &obstacle, double scan_radius, int MAX_X, int MAX_Y)
  * @brief Creates a path for the robot that avoids a given obstacle.
@@ -632,42 +682,6 @@ REGISTER_VISUALIZATION(scanning_motions_obstacle_avoidance) {
 	viewer.start();
 }
 
-/**
- * \class CameraTracker
- * \brief A class to manage and smoothly update the camera position and focus in a SimpleVtkViewer.
- */
-class CameraTracker {
-
-	SimpleVtkViewer &viewer; ///< Reference to the SimpleVtkViewer instance.
-	double aggressiveness; ///< Interpolation aggressiveness factor.
-	math::Vec3d camera_center; ///< Current camera center position.
-	math::Vec3d camera_target; ///< Current camera target position.
-
-public:
-	/**
-	 * \brief Constructor for CameraTracker.
-	 * \param viewer A reference to the SimpleVtkViewer instance.
-	 * \param aggressiveness A factor in the range [0, 1] that determines the interpolation aggressiveness.
-	 */
-	CameraTracker(SimpleVtkViewer &viewer, double aggressiveness)
-			: viewer(viewer), aggressiveness(aggressiveness) {
-		camera_center = {10.0, 10.0, 10.0};
-		camera_target = {0.0, 0.0, 0.0};
-	}
-
-	/**
-	 * \brief Sets the new camera position and focus with interpolation.
-	 * \param new_camera_center The new target position for the camera center.
-	 * \param new_camera_target The new target position for the camera focus.
-	 */
-	void setPositionAndFocus(const math::Vec3d &new_camera_center, const math::Vec3d &new_camera_target) {
-		camera_center = camera_center * (1.0 - aggressiveness) + new_camera_center * aggressiveness;
-		camera_target = camera_target * (1.0 - aggressiveness) + new_camera_target * aggressiveness;
-		viewer.setCameraTransform(camera_center, camera_target);
-	}
-
-};
-
 REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 
 	const double SCAN_RADIUS = 0.2;
@@ -743,11 +757,20 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 				);
 			}
 	);
+
 	// Record end time for measuring time taken:
 	auto end_time = std::chrono::high_resolution_clock::now();
 	std::cout << "Planning took "
 			  << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
 			  << "ms" << std::endl;
+
+	auto eval = count_scanned_points(robot_model, path, scan_points, 0.1);
+	size_t total_points = 0;
+	for (const auto &scannable_points: scan_points) {
+		total_points += scannable_points.surface_points.size();
+	}
+	std::cout << "Scanned " << eval.total_seen << " out of " << total_points << " points ("
+			  << eval.total_seen / static_cast<double>(total_points) * 100.0 << "%)" << std::endl;
 
 	// Create an end-effector visualization:
 	mgodpl::visualization::TraceVisualisation trace_visualisation(viewer, {1, 0, 1}, 1000);
@@ -756,7 +779,7 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 	auto robot_visual = vizualize_robot_state(viewer, robot_model, forwardKinematics(robot_model, initial_state));
 
 	// Create an instance of CameraTracker
-	CameraTracker camera_tracker(viewer, 0.1);
+	visualization::CameraTracker camera_tracker(viewer, 0.1);
 
 	// Record start time:
 	auto display_start_time = std::chrono::high_resolution_clock::now();

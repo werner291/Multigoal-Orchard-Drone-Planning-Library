@@ -61,7 +61,9 @@ mgodpl::EvaluationTrace mgodpl::eval_static_path(const mgodpl::RobotPath &path,
 			size_t count = 0;
 			for (size_t i = 0; i < env.scannable_points[fruit_i].size(); ++i) {
 				// Count only if the surface normal points towards the middle of the leaves.
-				if (ever_seen[fruit_i][i] && (env.scannable_points[fruit_i][i].position - center).dot(env.scannable_points[fruit_i][i].normal) > 0) {
+				if (ever_seen[fruit_i][i] &&
+					(env.scannable_points[fruit_i][i].position - center).dot(env.scannable_points[fruit_i][i].normal) >
+					0) {
 					count++;
 				}
 			}
@@ -102,7 +104,8 @@ Json::Value mgodpl::toJson(const mgodpl::EvaluationTrace &trace) {
 	return json;
 }
 
-std::vector<std::vector<bool>> mgodpl::init_seen_status(const std::vector<std::vector<SurfacePoint>> &all_scannable_points) {
+std::vector<std::vector<bool>>
+mgodpl::init_seen_status(const std::vector<std::vector<SurfacePoint>> &all_scannable_points) {
 	std::vector<std::vector<bool>> ever_seen;
 	ever_seen.reserve(all_scannable_points.size());
 	for (const auto &scannable_points: all_scannable_points) {
@@ -112,11 +115,11 @@ std::vector<std::vector<bool>> mgodpl::init_seen_status(const std::vector<std::v
 }
 
 void mgodpl::update_seen(const declarative::SensorScalarParameters &sensor_params,
-				 const std::shared_ptr<const MeshOcclusionModel> &mesh_occlusion_model,
-				 const math::Vec3d &eye_position,
-				 const math::Vec3d &eye_forward,
-				 const std::vector<std::vector<SurfacePoint>> &all_scannable_points,
-				 std::vector<std::vector<bool>> &ever_seen) {
+						 const std::shared_ptr<const MeshOcclusionModel> &mesh_occlusion_model,
+						 const math::Vec3d &eye_position,
+						 const math::Vec3d &eye_forward,
+						 const std::vector<std::vector<SurfacePoint>> &all_scannable_points,
+						 std::vector<std::vector<bool>> &ever_seen) {
 	for (size_t fruit_i = 0; fruit_i < all_scannable_points.size(); ++fruit_i) {
 		for (size_t i = 0; i < all_scannable_points[fruit_i].size(); ++i) {
 			if (!ever_seen[fruit_i][i] &&
@@ -132,4 +135,37 @@ void mgodpl::update_seen(const declarative::SensorScalarParameters &sensor_param
 			}
 		}
 	}
+}
+
+PointScanStats mgodpl::count_scanned_points(const mgodpl::robot_model::RobotModel robot_model,
+											const RobotPath &path,
+											const std::vector<ScannablePoints> &scannable_points,
+											double step_size) {
+
+	std::vector<SeenPoints> ever_seen;
+	for (const auto &scannable_points: scannable_points) {
+		ever_seen.push_back(SeenPoints::create_all_unseen(scannable_points));
+	}
+
+	PathPoint path_point{0, 0.0};
+
+	do {
+		auto state = interpolate(path_point, path);
+		auto ee_pos = forwardKinematics(robot_model,
+										state).forLink(robot_model.findLinkByName("end_effector")).translation;
+
+		for (size_t cluster_i = 0; cluster_i < scannable_points.size(); cluster_i++) {
+			update_visibility(scannable_points[cluster_i], ee_pos, ever_seen[cluster_i]);
+		}
+
+	} while (!advancePathPointClamp(path, path_point, step_size, equal_weights_distance));
+
+	PointScanStats stats;
+
+	for (const auto &seen: ever_seen) {
+		stats.seen_per_fruit.push_back(seen.count_seen());
+		stats.total_seen += seen.count_seen();
+	}
+
+	return stats;
 }

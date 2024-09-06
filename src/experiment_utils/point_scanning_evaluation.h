@@ -45,9 +45,9 @@ namespace mgodpl {
 	 * @return 								A trace of the evaluation containing statistics for each frame.
 	 */
 	EvaluationTrace eval_static_path(const RobotPath &path,
-								 double interpolation_speed,
-								 const declarative::PointScanEvalParameters &params,
-								 const declarative::PointScanEnvironment &env);
+									 double interpolation_speed,
+									 const declarative::PointScanEvalParameters &params,
+									 const declarative::PointScanEnvironment &env);
 
 	/**
 	 * Creates a seen/unseen status for each scannable point, initialized to false.
@@ -74,6 +74,27 @@ namespace mgodpl {
 					 const math::Vec3d &eye_forward,
 					 const std::vector<std::vector<SurfacePoint>> &all_scannable_points,
 					 std::vector<std::vector<bool>> &ever_seen);
+
+	struct PointScanStats {
+		std::vector<int> seen_per_fruit;
+		int total_seen = 0;
+	};
+
+	/**
+	 * Given a path and a vector of ScannablePoints, this function will count the number of points that have been seen
+	 * in each cluster, as well as the total number of points seen.
+	 *
+	 * @param robot_model 		The robot model.
+	 * @param path 				The path the robot has taken.
+	 * @param scannable_points 	The scannable points for each fruit.
+	 * @param step_size 		The step size for the path.
+	 *
+	 * @return The number of points seen in each cluster, and the total number of points seen.
+	 */
+	PointScanStats count_scanned_points(const mgodpl::robot_model::RobotModel robot_model,
+										const RobotPath &path,
+										const std::vector<ScannablePoints> &scannable_points,
+										double step_size);
 }
 
 #endif //MGODPL_POINT_SCANNING_EVALUATION_H
