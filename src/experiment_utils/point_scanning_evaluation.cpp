@@ -6,6 +6,7 @@
 // Created by werner on 3/11/24.
 //
 
+#include <range/v3/view/transform.hpp>
 #include "point_scanning_evaluation.h"
 
 using namespace mgodpl;
@@ -143,11 +144,19 @@ PointScanStats mgodpl::count_scanned_points(const mgodpl::robot_model::RobotMode
 											double step_size) {
 
 	std::vector<SeenPoints> ever_seen;
-	for (const auto &scannable_points: scannable_points) {
-		ever_seen.push_back(SeenPoints::create_all_unseen(scannable_points));
+	for (const auto &cluster: scannable_points) {
+		ever_seen.push_back(SeenPoints::create_all_unseen(cluster));
 	}
 
 	PathPoint path_point{0, 0.0};
+
+	// Compute the AABB of each cluster of points
+	std::vector<math::AABBd> aabbs(scannable_points.size(), math::AABBd::inverted_infinity());
+	for (size_t cluster_i = 0; cluster_i < scannable_points.size(); cluster_i++) {
+		for (const auto &point: scannable_points[cluster_i].surface_points) {
+			aabbs[cluster_i].expand(point.position);
+		}
+	}
 
 	do {
 		auto state = interpolate(path_point, path);
@@ -155,7 +164,10 @@ PointScanStats mgodpl::count_scanned_points(const mgodpl::robot_model::RobotMode
 										state).forLink(robot_model.findLinkByName("end_effector")).translation;
 
 		for (size_t cluster_i = 0; cluster_i < scannable_points.size(); cluster_i++) {
-			update_visibility(scannable_points[cluster_i], ee_pos, ever_seen[cluster_i]);
+			// Skip the cluster if the end effector is not within the AABB (inflated by the scan radius)
+			if (aabbs[cluster_i].inflated(scannable_points[cluster_i].max_distance).contains(ee_pos)) {
+				update_visibility(scannable_points[cluster_i], ee_pos, ever_seen[cluster_i]);
+			}
 		}
 
 	} while (!advancePathPointClamp(path, path_point, step_size, equal_weights_distance));
@@ -168,4 +180,21 @@ PointScanStats mgodpl::count_scanned_points(const mgodpl::robot_model::RobotMode
 	}
 
 	return stats;
+}
+
+std::vector<math::AABBd> mgodpl::computeAABBsForClusters(const std::vector<ScannablePoints> &clusters) {
+	std::vector<math::AABBd> aabbs;
+	aabbs.reserve(clusters.size());
+	for (const auto& cluster: clusters) {
+		aabbs.push_back(computeAABBForCluster(cluster));
+	}
+	return aabbs;
+}
+
+math::AABBd mgodpl::computeAABBForCluster(const ScannablePoints &cluster) {
+	math::AABBd aabb = math::AABBd::inverted_infinity();
+	for (const auto& point: cluster.surface_points) {
+		aabb.expand(point.position);
+	}
+	return aabb;
 }
