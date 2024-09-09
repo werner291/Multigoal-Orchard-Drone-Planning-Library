@@ -682,6 +682,25 @@ REGISTER_VISUALIZATION(scanning_motions_obstacle_avoidance) {
 	viewer.start();
 }
 
+//RobotPath optimize_scanpath(
+//    const RobotPath& path,
+//    const std::vector<ScannablePoints>& scan_points,
+//    const fcl::CollisionObjectd& tree_collision,
+//    const robot_model::RobotModel& robot_model,
+//    random_numbers::RandomNumberGenerator& rng)
+//{
+//
+//
+//	// Step 1: for every waypoint in the path, check a pool that says whether it scans a point or not:
+//	std::vector<bool> scans_point(path.size(), false);
+//
+//	for (size_t i = 0; i < path.size(); i++) {
+//
+//	}
+//
+//    return path;
+//}
+
 REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 
 	const double SCAN_RADIUS = 0.2;
@@ -732,7 +751,10 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 	// Allocate a BVH convex_hull for the tree trunk.
 	auto tree_collision = mgodpl::fcl_utils::treeMeshesToFclCollisionObject(tree_model);
 
-	const auto &target_points = computeFruitPositions(tree_model);
+	auto target_points = computeFruitPositions(tree_model);
+
+//	target_points.resize(10);
+//	std::cout << "Note: restricting to 10 fruit for visualization purposes." << std::endl;
 
 	// Record start time for measuring time taken:
 	auto start_time = std::chrono::high_resolution_clock::now();
@@ -758,13 +780,24 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 			}
 	);
 
+	const bool POST_OPTIMIZE = true;
+
+//	if (POST_OPTIMIZE) {
+//		path = optimize_scanpath(
+//				path,
+//				scan_points,
+//				tree_collision,
+//				robot_model,
+//				rng);
+//	}
+
 	// Record end time for measuring time taken:
 	auto end_time = std::chrono::high_resolution_clock::now();
 	std::cout << "Planning took "
 			  << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()
 			  << "ms" << std::endl;
 
-	auto eval = count_scanned_points(robot_model, path, scan_points, 0.1);
+	auto eval = count_scanned_points(robot_model, path, scan_points, 0.05);
 	size_t total_points = 0;
 	for (const auto &scannable_points: scan_points) {
 		total_points += scannable_points.surface_points.size();
@@ -798,6 +831,13 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 		if (advancePathPointWrap(path, path_point, 0.05, equal_weights_max_distance)) {
 			if (viewer.isRecording()) {
 				viewer.stop();
+			} else {
+				path_point = {0, 0.0};
+				// Reset scan state:
+				for (size_t i = 0; i < scan_points.size(); i++) {
+					ever_seen[i] = SeenPoints::create_all_unseen(scan_points[i]);
+					update_visualization(ever_seen[i], fruit_points_visualization[i]);
+				}
 			}
 		}
 
@@ -816,6 +856,13 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 			// Set the colors of the fruit points visualization
 			update_visualization(ever_seen[cluster_i], fruit_points_visualization[cluster_i]);
 		}
+
+		// Count seen and cout:
+		int total_seen = 0;
+		for (const auto &seen: ever_seen) {
+			total_seen += seen.count_seen();
+		}
+
 
 		// Update the camera position and focus using CameraTracker
 		camera_tracker.setPositionAndFocus(
