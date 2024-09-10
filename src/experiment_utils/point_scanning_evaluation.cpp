@@ -185,7 +185,7 @@ PointScanStats mgodpl::count_scanned_points(const mgodpl::robot_model::RobotMode
 std::vector<math::AABBd> mgodpl::computeAABBsForClusters(const std::vector<ScannablePoints> &clusters) {
 	std::vector<math::AABBd> aabbs;
 	aabbs.reserve(clusters.size());
-	for (const auto& cluster: clusters) {
+	for (const auto &cluster: clusters) {
 		aabbs.push_back(computeAABBForCluster(cluster));
 	}
 	return aabbs;
@@ -193,8 +193,8 @@ std::vector<math::AABBd> mgodpl::computeAABBsForClusters(const std::vector<Scann
 
 math::AABBd mgodpl::computeAABBForCluster(const ScannablePoints &cluster) {
 	math::AABBd aabb = math::AABBd::inverted_infinity();
-	for (const auto& point: cluster.surface_points) {
+	for (const auto &point: cluster.surface_points) {
 		aabb.expand(point.position);
 	}
-	return aabb;
+	return aabb.inflated(cluster.max_distance);
 }
