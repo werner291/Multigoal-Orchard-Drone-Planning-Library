@@ -792,6 +792,11 @@ struct OptimizeScanpathHooks {
 	 * \brief Hook called at the end of deleting associated waypoints.
 	 */
 	std::function<void(const RobotPath &)> end_deleting_associated_waypoints;
+
+	/**
+	 * \brief Hook called when the shortcutting process ends.
+	 */
+	std::function<void(const RobotPath &)> end_shortcutting;
 };
 
 bool is_any_point_visible(const ScannablePoints &scannable_points, const math::Vec3d &ee_pos) {
@@ -801,6 +806,27 @@ bool is_any_point_visible(const ScannablePoints &scannable_points, const math::V
 		}
 	}
 	return false;
+}
+
+bool is_any_point_visible(const std::vector<ScannablePoints> &scan_points, const math::Vec3d &ee_pos) {
+	for (const auto &scannable_points: scan_points) {
+		if (is_any_point_visible(scannable_points, ee_pos)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool
+is_any_new_point_visible(const std::vector<ScannablePoints> &scan_points,
+						 const math::Vec3d &ee_pos,
+						 std::vector<SeenPoints> &ever_seen) {
+	size_t newly_seen = 0;
+	for (size_t i = 0; i < scan_points.size(); i++) {
+		const auto &scannable_points = scan_points[i];
+		newly_seen += update_visibility(scannable_points, ee_pos, ever_seen[i]);
+	}
+	return newly_seen;
 }
 
 RobotPath optimize_scanpath(RobotPath path,
@@ -841,28 +867,8 @@ RobotPath optimize_scanpath(RobotPath path,
 
 		if (hooks) hooks->begin_mapping_state_to_scan_points(state);
 
-		for (size_t j = 0; j < scan_points.size(); j++) {
-			const auto &scannable_points = scan_points[j];
-			const auto &aabb = aabbs[j];
-
-			if (aabb.contains(ee_pos)) {
-				if (scans_new_point[i] = is_any_point_visible(scannable_points, ee_pos)) {
-					scans_point[i] = true;
-					break;
-				}
-			}
-		}
-
-		for (size_t j = 0; j < scan_points.size(); j++) {
-			const auto &scannable_points = scan_points[j];
-			const auto &aabb = aabbs[j];
-
-			if (hooks) hooks->begin_mapping_state_to_scan_point_cluster(j);
-
-			if (aabb.contains(ee_pos)) {
-				scans_new_point[i] = update_visibility(scannable_points, ee_pos, ever_seen[j]) > 0;
-			}
-		}
+		scans_point[i] = is_any_point_visible(scan_points, ee_pos);
+		scans_new_point[i] = is_any_new_point_visible(scan_points, ee_pos, ever_seen);
 	}
 
 	if (hooks) hooks->end_mapping_states_to_scan_points(scans_point);
@@ -927,6 +933,25 @@ RobotPath optimize_scanpath(RobotPath path,
 
 	if (hooks) hooks->end_deleting_associated_waypoints(path);
 
+	// Step 5: try shortcutting between the midpoints of every segment:
+	for (size_t wp_i = path.n_waypoints() - 1; wp_i > 0; wp_i--) {
+		// ^ Working backwards so we don't invalidate indices.
+
+		// Skip points where we already scan a point:
+		if (scans_point[wp_i]) {
+			continue;
+		}
+
+		tryShortcutBetweenPathPoints(
+				path,
+				{.segment_i=wp_i - 1, .segment_t=0.5},
+				{.segment_i=wp_i, .segment_t=0.5},
+				motion_collides
+		);
+	}
+
+	if (hooks) hooks->end_shortcutting(path);
+
 	return path;
 }
 
@@ -985,6 +1010,10 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 //	target_points.resize(10);
 //	std::cout << "Note: restricting to 10 fruit for visualization purposes." << std::endl;
 
+	// TODO: Try adding optimal goal state selection. Instead of taking first-best,
+	// generate k, and pick the best one from that based on some criterion,
+	// which may be either most optimal approach vector, or most points scanned, or a combination of both.
+
 	// Record start time for measuring time taken:
 	auto start_time = std::chrono::high_resolution_clock::now();
 	RobotPath path = mgodpl::shell_path_planning::plan_multigoal_path(
@@ -1015,8 +1044,8 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 
 		double length_before = pathLength(path, equal_weights_distance);
 		auto scanned_before = count_scanned_points(robot_model, path, scan_points, 0.05);
-		double length_after_unassociated, length_after_associated;
-		PointScanStats scanned_after_unassociated, scanned_after_associated;
+		double length_after_unassociated, length_after_associated, length_after_shortcutting;
+		PointScanStats scanned_after_unassociated, scanned_after_associated, scanned_after_shortcutting;
 
 		path = optimize_scanpath(
 				path,
@@ -1056,6 +1085,10 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 						.end_deleting_associated_waypoints = [&](const RobotPath &path) {
 							length_after_associated = pathLength(path, equal_weights_distance);
 							scanned_after_associated = count_scanned_points(robot_model, path, scan_points, 0.05);
+						},
+						.end_shortcutting = [&](const RobotPath &path) {
+							length_after_shortcutting = pathLength(path, equal_weights_distance);
+							scanned_after_shortcutting = count_scanned_points(robot_model, path, scan_points, 0.05);
 						}
 				});
 		double length_after = pathLength(path, equal_weights_distance);
@@ -1066,6 +1099,14 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 				  << scanned_after_unassociated.total_seen << std::endl;
 		std::cout << "After associated waypoint deletion, length: " << length_after_associated << ", scanned: "
 				  << scanned_after_associated.total_seen << std::endl;
+		std::cout << "After shortcutting, length: " << length_after_shortcutting << ", scanned: "
+				  << scanned_after_shortcutting.total_seen << std::endl;
+
+		// TODO: Would be nice if we had some notion of entry-and-exit vectors for the scan motion so we could rotate the path to optimize more easily.
+		// TODO: Idea: perhaps finding an approach path could yield not between 0 and 1 results,
+		//  but between 0 and n resultsm and the shell path planning algorithm will try to visit all n!
+		//  This would be useful if we have multiple angles from which to approach an apple, from which
+		// disjoint sets of scan points could be reached.
 	}
 
 	// Record end time for measuring time taken:
