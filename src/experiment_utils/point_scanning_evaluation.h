@@ -13,7 +13,7 @@
 #include "../planning/RobotPath.h"
 #include "surface_points.h"
 #include "declarative/SensorModelParameters.h"
-#include "MeshOcclusionModel.h"
+#include "../planning/MeshOcclusionModel.h"
 #include "joint_distances.h"
 #include "declarative_environment.h"
 

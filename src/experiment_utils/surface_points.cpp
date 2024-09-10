@@ -38,7 +38,6 @@ namespace mgodpl {
 
 		// Prepare a vector to store cumulative areas of triangles
 		std::vector<double> cumulative_areas = triangle_cumulative_areas(mesh);
-		double total_area = cumulative_areas.back();
 
 		// Prepare a vector to store the sampled points
 		std::vector<SurfacePoint> points;
@@ -98,7 +97,7 @@ namespace mgodpl {
 										  double min_distance,
 										  double max_angle,
 										  std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model) {
-		return {max_distance, min_distance, max_angle, sample_points_on_mesh(rng, mesh, num_points), occlusion_model};
+		return {max_distance, min_distance, max_angle, occlusion_model, sample_points_on_mesh(rng, mesh, num_points)};
 	}
 
 

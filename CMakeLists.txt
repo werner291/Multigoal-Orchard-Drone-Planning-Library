@@ -261,6 +261,10 @@ add_library(planning
         src/planning/distance.h
         src/planning/distance.cpp
         src/planning/roughness.cpp
+        src/planning/scan_aware_local_optimization.cpp
+        src/planning/scan_aware_local_optimization.h
+        src/planning/MeshOcclusionModel.cpp
+        src/planning/MeshOcclusionModel.h
 )
 
 target_link_libraries(planning math_utils)
@@ -276,8 +280,6 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/mesh_connected_components.h
             src/experiment_utils/snake_path.cpp
             src/experiment_utils/snake_path.h
-            src/experiment_utils/MeshOcclusionModel.cpp
-            src/experiment_utils/MeshOcclusionModel.h
             #            src/planning/IncrementalGoalStateGenerator.cpp
             #            src/planning/IncrementalGoalStateGenerator.h
             src/planning/fcl_forward_declarations.h

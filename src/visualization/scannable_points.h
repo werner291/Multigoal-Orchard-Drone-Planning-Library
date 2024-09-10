@@ -6,8 +6,8 @@
 // Created by werner on 2/12/24.
 //
 
-#ifndef MGODPL_SCANNABLE_POINTS_H
-#define MGODPL_SCANNABLE_POINTS_H
+#ifndef MGODPL_VISUALIZATION_SCANNABLE_POINTS_H
+#define MGODPL_VISUALIZATION_SCANNABLE_POINTS_H
 
 #include "VtkLineSegmentVizualization.h"
 #include "../experiment_utils/surface_points.h"
@@ -75,4 +75,4 @@ visualize(mgodpl::SimpleVtkViewer &viewer,
 void update_visualization(const mgodpl::SeenPoints &ever_seen,
 						  VtkLineSegmentsVisualization &fruit_points_visualization);
 
-#endif //MGODPL_SCANNABLE_POINTS_H
+#endif //MGODPL_VISUALIZATION_SCANNABLE_POINTS_H

@@ -10,98 +10,12 @@
 #define MGODPL_SURFACE_POINTS_H
 
 #include "../math/Vec3.h"
-#include "MeshOcclusionModel.h"
+#include "../planning/MeshOcclusionModel.h"
 #include "../planning/RandomNumberGenerator.h"
+#include "../planning/scannable_points.h"
 #include "TreeMeshes.h"
 
 namespace mgodpl {
-
-	/**
-	 * @brief A struct representing a point on a surface.
-	 *
-	 * This struct encapsulates the position and normal vector of a point on a surface.
-	 */
-	struct SurfacePoint {
-		math::Vec3d position; ///< The position of the point on the surface.
-		math::Vec3d normal; ///< The normal vector at the point on the surface.
-	};
-
-	/**
-	 * @brief A struct encapsulating scannable points parameters.
-	 *
-	 * This struct encapsulates the maximum distance, minimum distance, and maximum angle for scanning checks,
-	 * as well as a vector of SurfacePoint objects for which scanning is to be performed.
-	 */
-	struct ScannablePoints {
-		double max_distance; ///< The maximum distance for scanning checks.
-		double min_distance; ///< The minimum distance for scanning checks.
-		double max_angle; ///< The maximum angle for scanning checks.
-		std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model; ///< The occlusion mesh to use for visibility checks.
-		std::vector<SurfacePoint> surface_points; ///< The vector of SurfacePoint objects for which scanning is to be performed.
-
-		using PointId = size_t; ///< An identifier for a point in ScannablePoints.
-
-		/**
-		 * @brief Constructor for the ScannablePoints struct.
-		 *
-		 * This constructor initializes the max_distance, min_distance, max_angle, and surface_points members.
-		 *
-		 * @param max_distance The maximum distance for scanning checks.
-		 * @param min_distance The minimum distance for scanning checks.
-		 * @param max_angle The maximum angle for scanning checks.
-		 * @param surface_points The vector of SurfacePoint objects for which scanning is to be performed.
-		 */
-		ScannablePoints(
-				double max_distance,
-				double min_distance,
-				double max_angle,
-				std::vector<SurfacePoint> surface_points,
-				std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model = std::nullopt
-		)
-				: max_distance(max_distance),
-				  min_distance(min_distance),
-				  max_angle(max_angle),
-				  occlusion_model(std::move(occlusion_model)),
-				  surface_points(std::move(surface_points)) {}
-	};
-
-	/**
-	 * @brief A struct encapsulating the visibility status of points.
-	 *
-	 * This struct encapsulates a vector of booleans representing the visibility status of points.
-	 * Each boolean value in the vector corresponds to a point in a ScannablePoints object.
-	 * If the value is true, the point has ever been seen. If the value is false, the point has never been seen.
-	 */
-	struct SeenPoints {
-		std::vector<bool> ever_seen; ///< The vector of booleans representing the visibility status of points.
-
-		/**
-		 * @brief Creates a SeenPoints object with all points initially set to unseen.
-		 *
-		 * This static function creates a SeenPoints object with all points initially set to unseen (false).
-		 * It initializes the ever_seen vector with a size equal to the number of points in the ScannablePoints object.
-		 *
-		 * @param scannable_points A ScannablePoints object. Each SurfacePoint object in ScannablePoints
-		 *                         represents a point in 3D space and has a position and a normal.
-		 * @return A SeenPoints object with all points initially set to unseen.
-		 */
-		static SeenPoints create_all_unseen(const ScannablePoints &scannable_points) {
-			SeenPoints seen_points;
-			seen_points.ever_seen.resize(scannable_points.surface_points.size(), false);
-			return seen_points;
-		}
-
-		/**
-		 * @brief Counts the number of points that have been seen.
-		 *
-		 * This function counts the number of points that have been seen by checking the `ever_seen` vector.
-		 * Each value in the `ever_seen` vector corresponds to a point in the `ScannablePoints` object.
-		 * If the value is true, the point has ever been seen. If the value is false, the point has never been seen.
-		 *
-		 * @return The number of points that have been seen.
-		 */
-		[[nodiscard]] size_t count_seen() const;
-	};
 
 	/**
 	 * Generate a random barycentric coordinate uniformly distributed over the triangle.

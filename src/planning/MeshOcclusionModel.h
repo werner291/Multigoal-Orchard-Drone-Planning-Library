@@ -1,3 +1,7 @@
+// Copyright (c) 2024 University College Roosevelt
+//
+// All rights reserved.
+
 //
 // Created by werner on 27-2-23.
 //
@@ -13,7 +17,7 @@
 #include <CGAL/AABB_triangle_primitive.h>
 
 #include "../math/Vec3.h"
-#include "../planning/Mesh.h"
+#include "Mesh.h"
 
 namespace mgodpl {
 	class MeshOcclusionModel {
