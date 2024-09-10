@@ -18,7 +18,11 @@ namespace mgodpl {
 	 * @struct RobotPath
 	 * @brief A structure representing a path for the robot.
 	 *
-	 * This structure contains a vector of RobotState objects, each representing a state of the robot at a certain point along the path.
+	 * This structure contains a vector of RobotState objects,
+	 * each representing a state of the robot at a certain point along the path.
+	 *
+	 * The path itself is interpreted as a sequence of
+	 * linearly-interpolated motions between the states.
 	 */
 	struct RobotPath {
 		/// @brief A vector of RobotState objects representing the states of the robot along the path.
@@ -41,6 +45,10 @@ namespace mgodpl {
 			return {
 					.states = {state}
 			};
+		}
+
+		[[nodiscard]] size_t n_waypoints() const {
+			return states.size();
 		}
 	};
 
