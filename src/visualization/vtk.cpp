@@ -20,8 +20,8 @@
 
 vtkNew<vtkLight> mkWhiteAmbientLight() {
 	vtkNew<vtkLight> light;
-	light->SetDiffuseColor(0.0,0.0,0.0);
-	light->SetAmbientColor(1.0,1.0,1.0);
+	light->SetDiffuseColor(0.0, 0.0, 0.0);
+	light->SetAmbientColor(1.0, 1.0, 1.0);
 	light->SetLightTypeToSceneLight();
 	return light;
 }
@@ -34,11 +34,11 @@ void addActorCollectionToRenderer(vtkActorCollection *orchard_actors, vtkRendere
 
 vtkNew<vtkCellArray> meshTrianglesToVtkCells(const mgodpl::Mesh &mesh) {
 	vtkNew<vtkCellArray> cells;
-	for (auto &triangle : mesh.triangles) {
+	for (auto &triangle: mesh.triangles) {
 		cells->InsertNextCell({
-									  triangle[0],
-									  triangle[1],
-									  triangle[2]
+									  static_cast<vtkIdType>(triangle[0]),
+									  static_cast<vtkIdType>(triangle[1]),
+									  static_cast<vtkIdType>(triangle[2])
 							  });
 	}
 	return cells;
@@ -46,7 +46,7 @@ vtkNew<vtkCellArray> meshTrianglesToVtkCells(const mgodpl::Mesh &mesh) {
 
 vtkNew<vtkPoints> meshVerticesToVtkPoints(const mgodpl::Mesh &mesh) {
 	vtkNew<vtkPoints> points;
-	for (auto &point : mesh.vertices) {
+	for (auto &point: mesh.vertices) {
 		points->InsertNextPoint(point.x(), point.y(), point.z());
 	}
 	return points;
@@ -106,7 +106,7 @@ vtkNew<vtkActorCollection> buildTreeActors(const mgodpl::tree_meshes::TreeMeshes
 	actors->AddItem(tree_actor);
 	actors->AddItem(leaves_actor);
 
-	for (const auto& fruit_mesh : meshes.fruit_meshes) {
+	for (const auto &fruit_mesh: meshes.fruit_meshes) {
 		auto fruit_actor = createActorFromMesh(fruit_mesh);
 		setColorsByEncoding(fruit_actor, {1.0, 0.0, 0.0}, usePureColor);
 		actors->AddItem(fruit_actor);
@@ -115,12 +115,12 @@ vtkNew<vtkActorCollection> buildTreeActors(const mgodpl::tree_meshes::TreeMeshes
 	return actors;
 }
 
-vtkNew<vtkActorCollection> buildOrchardActors(const mgodpl::tree_meshes::SimplifiedOrchard &orchard, bool usePureColor) {
+vtkNew<vtkActorCollection>
+buildOrchardActors(const mgodpl::tree_meshes::SimplifiedOrchard &orchard, bool usePureColor) {
 
 	vtkNew<vtkActorCollection> orchard_actors;
 
-	for (const auto& [pos, meshes] : orchard.trees)
-	{
+	for (const auto &[pos, meshes]: orchard.trees) {
 		auto tree_actors = buildTreeActors(meshes, usePureColor);
 
 		for (int i = 0; i < tree_actors->GetNumberOfItems(); i++) {
@@ -177,7 +177,8 @@ vtkSmartPointer<vtkActor> addColoredMeshActor(const mgodpl::Mesh &mesh,
 
 }
 
-vtkSmartPointer<vtkActor> createColoredMeshActor(const mgodpl::Mesh &mesh, const std::array<double, 4> &color_rgba, bool visible) {
+vtkSmartPointer<vtkActor>
+createColoredMeshActor(const mgodpl::Mesh &mesh, const std::array<double, 4> &color_rgba, bool visible) {
 
 	auto actor = createActorFromMesh(mesh);
 	actor->GetProperty()->SetColor(color_rgba[0], color_rgba[1], color_rgba[2]);
@@ -194,15 +195,13 @@ std::vector<vtkSmartPointer<vtkActor>> createColoredMeshActors(const std::vector
 
 	std::vector<vtkSmartPointer<vtkActor>> actors;
 
-	for (const auto& mesh : meshes) {
+	for (const auto &mesh: meshes) {
 		actors.push_back(createColoredMeshActor(mesh, color_rgba, visible));
 	}
 
 	return actors;
 
 }
-
-
 
 
 VtkPointCloudVisualization::VtkPointCloudVisualization(float r, float g, float b) {

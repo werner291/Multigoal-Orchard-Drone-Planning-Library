@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(MgODPL) # Multigoal Orchard Drone Planning Library
 
-#if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-#    add_compile_options(-Wall -Wextra -Wpedantic)
-#endif()
+# Enforce using clang 15:
+set(CMAKE_CXX_COMPILER /usr/bin/clang++-15)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -153,25 +152,6 @@ add_library(math_utils
         src/math/Quaternion.cpp
         src/math/Quaternion.h
         src/math/Transform.cpp
-        src/math/Transform.h
-)
-
-target_precompile_headers(math_utils PRIVATE
-        src/math/AABBGrid.h
-        src/math/AABB.h
-        src/math/Vec3.h
-        src/math/grid_utils.h
-        src/math/ParametricLine.h
-        src/math/Segment3d.h
-        src/math/intersections.h
-        src/math/Triangle.h
-        src/math/Plane.h
-        src/math/RangeInclusive.h
-        src/math/Ray.h
-        src/math/DomainSlice.h
-        src/math/aabb_of.h
-        src/math/Polar.h
-        src/math/Quaternion.h
         src/math/Transform.h
 )
 

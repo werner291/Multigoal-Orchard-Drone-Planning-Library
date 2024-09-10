@@ -139,9 +139,9 @@ namespace mgodpl {
 		vtkNew<vtkCellArray> cells;
 		for (const auto &triangle: mesh.triangles) {
 			cells->InsertNextCell({
-										  triangle[0],
-										  triangle[1],
-										  triangle[2]
+										  static_cast<vtkIdType>(triangle[0]),
+										  static_cast<vtkIdType>(triangle[1]),
+										  static_cast<vtkIdType>(triangle[2])
 								  });
 		}
 
