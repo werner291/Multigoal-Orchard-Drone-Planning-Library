@@ -28,18 +28,26 @@ namespace mgodpl {
 		/// @brief A vector of RobotState objects representing the states of the robot along the path.
 		std::vector<RobotState> states;
 
+		/**
+		 * @brief Appends a new state to the path.
+		 * @param state The RobotState to append.
+		 */
 		void append(const RobotState &state) {
 			states.push_back(state);
 		}
 
+		/**
+		 * @brief Appends another path to this path.
+		 * @param path The RobotPath to append.
+		 */
 		void append(const RobotPath &path) {
 			states.insert(states.end(), path.states.begin(), path.states.end());
 		}
 
 		/**
 		 * @brief Create a singleton path with a single state.
-		 * @param state 		The state to create the path with.
-		 * @return 				A new RobotPath with the given state.
+		 * @param state The state to create the path with.
+		 * @return A new RobotPath with the given state.
 		 */
 		static RobotPath singleton(RobotState state) {
 			return {
@@ -47,8 +55,53 @@ namespace mgodpl {
 			};
 		}
 
+		/**
+		 * @brief Get the number of waypoints in the path.
+		 * @return The number of waypoints.
+		 */
 		[[nodiscard]] size_t n_waypoints() const {
 			return states.size();
+		}
+
+		/**
+		 * @brief Check if the path is empty.
+		 * @return True if the path is empty, false otherwise.
+		 */
+		[[nodiscard]] bool empty() const {
+			return states.empty();
+		}
+
+		/**
+		 * @brief Get the starting state of the path.
+		 * @return The starting RobotState.
+		 */
+		[[nodiscard]] const RobotState &start() const {
+			return states.front();
+		}
+
+		/**
+		 * @brief Get the ending state of the path.
+		 * @return The ending RobotState.
+		 */
+		[[nodiscard]] const RobotState &end() const {
+			return states.back();
+		}
+
+		/**
+		 * @brief Get the state at a specific waypoint.
+		 * @param i The index of the waypoint.
+		 * @return The RobotState at the specified waypoint.
+		 */
+		[[nodiscard]] const RobotState &waypoint(size_t i) const {
+			return states.at(i);
+		}
+
+		/**
+		 * @brief Check if the path is a singleton (contains only one state).
+		 * @return True if the path is a singleton, false otherwise.
+		 */
+		[[nodiscard]] bool is_singleton() const {
+			return states.size() == 1;
 		}
 	};
 
