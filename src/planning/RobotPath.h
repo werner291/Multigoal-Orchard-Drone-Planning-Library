@@ -12,6 +12,7 @@
 
 #include <vector>
 #include "RobotState.h"
+#include "distance.h"
 
 namespace mgodpl {
 	/**
@@ -184,9 +185,6 @@ namespace mgodpl {
 	 */
 	RobotState interpolate(const mgodpl::PathPoint &path_point, const mgodpl::RobotPath &robot_path);
 
-	/// Define a function pointer type for distance calculation functions
-	using DistanceFn = double (*)(const RobotState &, const RobotState &);
-
 	/**
 	 * @brief Calculate the length of a segment in a robot path.
 	 *
@@ -305,6 +303,19 @@ namespace mgodpl {
 	 * @return The length of the path.
 	 */
 	double pathLength(const RobotPath &path, const DistanceFn &distanceFunc = equal_weights_distance);
+
+	/**
+	 * @brief Compute the roughness of the path using a given roughness function, summing the roughness of every waypoint.
+	 *
+	 * @param path 			The path to compute the roughness of.
+	 * @param roughnessFunc The roughness function to use, taking a triple of states and returning a double.
+	 *
+	 * @return The roughness of the path (lower is smoother).
+	 */
+	double pathRoughness(const RobotPath &path,
+						 const std::function<double(const RobotState &,
+													const RobotState &,
+													const RobotState &)> &roughnessFunc);
 }
 
 

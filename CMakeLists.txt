@@ -257,6 +257,10 @@ add_library(planning
         src/planning/shell_path_planning.h
         src/planning/nearest_neighbours/approach_by_pullout.cpp
         src/planning/nearest_neighbours/approach_by_pullout.h
+        src/planning/roughness.h
+        src/planning/distance.h
+        src/planning/distance.cpp
+        src/planning/roughness.cpp
 )
 
 target_link_libraries(planning math_utils)

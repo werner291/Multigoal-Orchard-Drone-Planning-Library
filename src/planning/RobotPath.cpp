@@ -109,4 +109,17 @@ namespace mgodpl {
 							   });
 	}
 
+	double pathRoughness(const RobotPath &path,
+						 const std::function<double(const RobotState &,
+													const RobotState &,
+													const RobotState &)> &roughnessFunc) {
+
+		double roughness = 0.0;
+		for (size_t i = 1; i + 1 < path.states.size(); ++i) {
+			roughness += roughnessFunc(path.states[i - 1], path.states[i], path.states[i + 1]);
+		}
+		return roughness;
+
+	}
+
 }
