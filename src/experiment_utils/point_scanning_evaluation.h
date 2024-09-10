@@ -95,6 +95,28 @@ namespace mgodpl {
 										const RobotPath &path,
 										const std::vector<ScannablePoints> &scannable_points,
 										double step_size);
+
+	/**
+	 * @brief Computes the Axis-Aligned Bounding Box (AABB) for a given cluster of scannable points.
+	 *
+	 * This function iterates over all the surface points in the given cluster and expands the AABB
+	 * to include the position of each point. The AABB is initialized to inverted infinity.
+	 *
+	 * @param cluster A ScannablePoints object representing a cluster of points.
+	 * @return The computed AABB for the given cluster.
+	 */
+	math::AABBd computeAABBForCluster(const ScannablePoints& cluster);
+
+	/**
+	 * @brief Computes the Axis-Aligned Bounding Boxes (AABBs) for a vector of clusters of scannable points.
+	 *
+	 * This function iterates over all the clusters in the given vector and computes the AABB for each cluster
+	 * by calling the computeAABBForCluster function. The result is a vector of AABBs, one for each cluster.
+	 *
+	 * @param clusters A vector of ScannablePoints objects, each representing a cluster of points.
+	 * @return A vector of computed AABBs for the given clusters.
+	 */
+	std::vector<math::AABBd> computeAABBsForClusters(const std::vector<ScannablePoints>& clusters);
 }
 
 #endif //MGODPL_POINT_SCANNING_EVALUATION_H
