@@ -190,11 +190,13 @@ namespace mgodpl {
 	/**
 	 * @brief Calculate the length of a segment in a robot path.
 	 *
+	 * TODO: Using PathPoint for this is really weird, do we want to keep it like this?
+	 *
 	 * This function calculates the length of the segment at the given point on the path.
 	 * The length is calculated using the provided distance function.
 	 *
 	 * @param robot_path The robot path.
-	 * @param path_point The point on the path.
+	 * @param path_point The point on the path that falls into the segment.
 	 * @param distanceFunc The function to use for calculating the distance between two states.
 	 * @return The length of the segment.
 	 */
@@ -294,6 +296,15 @@ namespace mgodpl {
 	 * @return 				A new path with the sub-steps inserted.
 	 */
 	RobotPath subdivided(const RobotPath &original, size_t num_steps);
+
+	/**
+	 * @brief Compute the path length using a given inter-state distance function.
+	 *
+	 * @param path 			The path to compute the length of.
+	 * @param distanceFunc 	The inter-state distance function to use (default is equal_weights_distance).
+	 * @return The length of the path.
+	 */
+	double pathLength(const RobotPath &path, const DistanceFn &distanceFunc = equal_weights_distance);
 }
 
 
