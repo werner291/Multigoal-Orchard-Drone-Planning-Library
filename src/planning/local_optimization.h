@@ -9,8 +9,6 @@
 #ifndef MGODPL_LOCAL_OPTIMIZATION_H
 #define MGODPL_LOCAL_OPTIMIZATION_H
 
-#include <fcl/geometry/bvh/BVH_model.h>
-
 #include "RobotModel.h"
 #include "RobotPath.h"
 #include "collision_detection.h"
@@ -29,9 +27,9 @@ namespace mgodpl {
 	 * @return							True if the path was successfully shortened, false otherwise.
 	 */
 	bool tryShortcutByDeletingWaypoint(
-		RobotPath &path,
-		size_t waypointIndex,
-		const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides
+			RobotPath &path,
+			size_t waypointIndex,
+			const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides
 	);
 
 	/**
@@ -43,8 +41,8 @@ namespace mgodpl {
 	 * @return 				True if the path was successfully shortened at any point, false otherwise.
 	 */
 	bool tryDeletingEveryWaypoint(const mgodpl::robot_model::RobotModel &robot,
-	                              RobotPath &path,
-	                              const fcl::CollisionObjectd &obstacle);
+								  RobotPath &path,
+								  const fcl::CollisionObjectd &obstacle);
 
 	/**
 	 * Given a RobotPath and two waypoints, try to shortcut the path by connecting two index/point pairs with a straight line.
@@ -57,10 +55,10 @@ namespace mgodpl {
 	 * @return 				True if the path was successfully shortened, false otherwise.
 	 */
 	bool tryShortcutBetweenPathPoints(
-		RobotPath &path,
-		const PathPoint &start,
-		const PathPoint &end,
-		const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides
+			RobotPath &path,
+			const PathPoint &start,
+			const PathPoint &end,
+			const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides
 	);
 
 	/**
@@ -82,9 +80,9 @@ namespace mgodpl {
 	 * @return 				 True if the path was successfully shortened at any point, false otherwise.
 	 */
 	bool tryShortcuttingRandomlyLocally(
-		RobotPath &path,
-		random_numbers::RandomNumberGenerator &rng,
-		const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides
+			RobotPath &path,
+			random_numbers::RandomNumberGenerator &rng,
+			const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides
 	);
 
 	/**
@@ -97,10 +95,10 @@ namespace mgodpl {
 	 * @return True if the path was successfully shortened, false otherwise.
 	 */
 	bool tryShortcuttingRandomlyGlobally(
-		RobotPath &path,
-		const std::function<bool(const RobotState &, const RobotState &)> &
-		check_motion,
-		random_numbers::RandomNumberGenerator &rng
+			RobotPath &path,
+			const std::function<bool(const RobotState &, const RobotState &)> &
+			check_motion,
+			random_numbers::RandomNumberGenerator &rng
 	);
 
 	/**
@@ -116,10 +114,10 @@ namespace mgodpl {
 	 * @return True if the optimization was successful, false otherwise.
 	 */
 	bool tryMidpointPull(
-		RobotPath &path,
-		size_t waypointIndex,
-		double pull_factor,
-		const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides
+			RobotPath &path,
+			size_t waypointIndex,
+			double pull_factor,
+			const std::function<bool(const RobotState &, const RobotState &)> &check_motion_collides
 	);
 }
 
