@@ -623,36 +623,61 @@ REGISTER_VISUALIZATION(scanning_motions_obstacle_avoidance) {
 	// Visualize a cube at that position:
 	viewer.addBox(obstacle_size, obstacle_position, WOOD_COLOR);
 
-	RobotPath path_robot = createObstacleAvoidingPath(robot_model,
-													  obstacle,
-													  scan_radius,
-													  100,
-													  100,
-													  fruit_position,
-													  {1.0, 0.0, 0.0});
+	RobotPath grid_curve_motion = createObstacleAvoidingPath(robot_model,
+															 obstacle,
+															 scan_radius,
+															 100,
+															 100,
+															 fruit_position,
+															 {1.0, 0.0, 0.0});
+
+	const std::vector<std::tuple<RobotPath, double, std::string>> paths = {
+			{grid_curve_motion, 0.05, "grid_curve_motion"},
+//			{search_based_motion, 0.05, "search_based_motion"}
+	};
+
+	// Add a text label to display the current path name:
+	auto motion_name = visualization::add_text_label(viewer, get<2>(paths[0]), 10, 10);
 
 	mgodpl::visualization::TraceVisualisation trace_visualisation(viewer, {1, 0, 1});
 
 	PathPoint path_point{0, 0.0};
+	size_t current_path = 0;
 
 	viewer.addTimerCallback([&]() {
 
 		// Advance the robot state by a small amount of time.
-		if (advancePathPointWrap(path_robot, path_point, 0.05, equal_weights_distance)) {
+		if (advancePathPointClamp(get<0>(paths[current_path]),
+								  path_point,
+								  get<1>(paths[current_path]),
+								  equal_weights_distance)) {
 
 			std::cout << "Scanned " << ever_seen.count_seen() << " out of " << scannable_points.surface_points.size()
 					  << " points." << std::endl;
 
-			if (viewer.isRecording()) {
-				viewer.stop();
-			} else {
-				ever_seen = SeenPoints::create_all_unseen(scannable_points);
-				trace_visualisation.clear();
+			ever_seen = SeenPoints::create_all_unseen(scannable_points);
+			trace_visualisation.clear();
+
+			// Switch to the next path:
+			current_path += 1;
+			path_point = {0, 0.0};
+
+			if (current_path >= paths.size()) {
+				current_path = 0;
+
+				if (viewer.isRecording()) {
+					viewer.stop();
+				}
 			}
+
+			// Update the motion name label:
+			motion_name->SetInput(get<2>(paths[current_path]).c_str());
 		}
 
+		const auto &[path, step_size, name] = paths[current_path];
+
 		// Get the new state:
-		RobotState new_state = interpolate(path_point, path_robot);
+		RobotState new_state = interpolate(path_point, path);
 
 		// FK:
 		auto fk = forwardKinematics(robot_model, new_state);
@@ -737,7 +762,7 @@ struct OptimizeScanpathHooks {
 	/**
 	 * \brief Hook called at the end of mapping states to scan points.
 	 */
-	std::function<void()> end_mapping_states_to_scan_points;
+	std::function<void(std::vector<bool>)> end_mapping_states_to_scan_points;
 
 	/**
 	 * \brief Hook called when a waypoint will be deleted.
@@ -747,15 +772,42 @@ struct OptimizeScanpathHooks {
 	 * \param next The next state.
 	 */
 	std::function<void(size_t, const RobotState &, const RobotState &, const RobotState &)> will_delete_waypoint;
+
+	/**
+	 * \brief Hook called at the beginning of deleting unassociated waypoints.
+	 */
+	std::function<void()> begin_deleting_unassociated_waypoints;
+
+	/**
+	 * \brief Hook called at the end of deleting unassociated waypoints.
+	 */
+	std::function<void(const RobotPath &)> end_deleting_unassociated_waypoints;
+
+	/**
+	 * \brief Hook called at the beginning of deleting associated waypoints.
+	 */
+	std::function<void()> begin_deleting_associated_waypoints;
+
+	/**
+	 * \brief Hook called at the end of deleting associated waypoints.
+	 */
+	std::function<void(const RobotPath &)> end_deleting_associated_waypoints;
 };
 
-RobotPath optimize_scanpath(
-		RobotPath path,
-		const std::vector<ScannablePoints> &scan_points,
-		const fcl::CollisionObjectd &tree_collision,
-		const robot_model::RobotModel &robot_model,
-		random_numbers::RandomNumberGenerator &rng,
-		const std::optional<OptimizeScanpathHooks> &hooks = {}) {
+bool is_any_point_visible(const ScannablePoints &scannable_points, const math::Vec3d &ee_pos) {
+	for (size_t point_index = 0; point_index < scannable_points.surface_points.size(); point_index++) {
+		if (is_visible(scannable_points, point_index, ee_pos)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+RobotPath optimize_scanpath(RobotPath path,
+							const std::vector<ScannablePoints> &scan_points,
+							const fcl::CollisionObjectd &tree_collision,
+							const robot_model::RobotModel &robot_model,
+							const std::optional<OptimizeScanpathHooks> &hooks = {}) {
 
 	// The path is trivial and cannot be optimized:
 	if (path.n_waypoints() < 3) {
@@ -771,6 +823,15 @@ RobotPath optimize_scanpath(
 	// Step 1: for every waypoint in the path, check a pool that says whether it scans a point or not:
 	std::vector<bool> scans_point(path.n_waypoints(), false);
 
+	// TODO: update_visibility offers an interface to see if NEW points are visible, as opposed ti just any points.
+	std::vector<bool> scans_new_point(path.n_waypoints(), false);
+
+	std::vector<SeenPoints> ever_seen;
+	ever_seen.reserve(scan_points.size());
+	for (const auto &scannable_points: scan_points) {
+		ever_seen.push_back(SeenPoints::create_all_unseen(scannable_points));
+	}
+
 	// Step two: for every waypoint in the path, check if it is associated with any point in the scan points:
 	for (size_t i = 0; i < path.n_waypoints(); i++) {
 
@@ -784,29 +845,33 @@ RobotPath optimize_scanpath(
 			const auto &scannable_points = scan_points[j];
 			const auto &aabb = aabbs[j];
 
+			if (aabb.contains(ee_pos)) {
+				if (scans_new_point[i] = is_any_point_visible(scannable_points, ee_pos)) {
+					scans_point[i] = true;
+					break;
+				}
+			}
+		}
+
+		for (size_t j = 0; j < scan_points.size(); j++) {
+			const auto &scannable_points = scan_points[j];
+			const auto &aabb = aabbs[j];
+
 			if (hooks) hooks->begin_mapping_state_to_scan_point_cluster(j);
 
 			if (aabb.contains(ee_pos)) {
-				for (size_t point_index = 0; point_index < scannable_points.surface_points.size(); point_index++) {
-					if (is_visible(scannable_points, point_index, ee_pos)) {
-						scans_point[i] = true;
-						if (hooks) hooks->state_scans_point(j, point_index);
-						break;
-					}
-				}
-			} else {
-				if (hooks) hooks->state_outside_aabb(j);
+				scans_new_point[i] = update_visibility(scannable_points, ee_pos, ever_seen[j]) > 0;
 			}
-
-			if (hooks) hooks->end_mapping_state_to_scan_point_cluster(j);
 		}
 	}
 
-	if (hooks) hooks->end_mapping_states_to_scan_points();
+	if (hooks) hooks->end_mapping_states_to_scan_points(scans_point);
 
 	const std::function motion_collides = [&](const RobotState &a, const RobotState &b) {
 		return check_motion_collides(robot_model, tree_collision, a, b);
 	};
+
+	if (hooks) hooks->begin_deleting_unassociated_waypoints();
 
 	// Step 3: for every waypoint that doesn't scan a point, try to delete it:
 	for (size_t wp_i = 1; wp_i + 1 < path.n_waypoints(); wp_i++) {
@@ -830,6 +895,37 @@ RobotPath optimize_scanpath(
 			}
 		}
 	}
+
+	if (hooks) hooks->end_deleting_unassociated_waypoints(path);
+
+	// Step 4: for every waypoint that doesn't scan a new point, try to delete it:
+	if (hooks) hooks->begin_deleting_associated_waypoints();
+
+	for (size_t wp_i = 1; wp_i + 1 < path.n_waypoints(); wp_i++) {
+		if (!scans_new_point[wp_i]) {
+
+			// Get the three states affected:
+			const auto &prev = path.states[wp_i - 1];
+			const auto &current = path.states[wp_i];
+			const auto &next = path.states[wp_i + 1];
+
+			if (!motion_collides(prev, next)) {
+
+				if (hooks) hooks->will_delete_waypoint(wp_i, prev, current, next);
+
+				// If the motion is collision-free, remove the waypoint:
+				path.states.erase(path.states.begin() + static_cast<long>(wp_i));
+				// Delete the entry in scans_point:
+				scans_point.erase(scans_point.begin() + static_cast<long>(wp_i));
+				// Delete the entry in scans_new_point:
+				scans_new_point.erase(scans_new_point.begin() + static_cast<long>(wp_i));
+
+				wp_i -= 1; // Since we just deleted the waypoint, we need to recheck the current index.
+			}
+		}
+	}
+
+	if (hooks) hooks->end_deleting_associated_waypoints(path);
 
 	return path;
 }
@@ -916,13 +1012,60 @@ REGISTER_VISUALIZATION(scanning_motions_for_each_fruit) {
 	const bool POST_OPTIMIZE = true;
 
 	if (POST_OPTIMIZE) {
+
 		double length_before = pathLength(path, equal_weights_distance);
+		auto scanned_before = count_scanned_points(robot_model, path, scan_points, 0.05);
+		double length_after_unassociated, length_after_associated;
+		PointScanStats scanned_after_unassociated, scanned_after_associated;
+
 		path = optimize_scanpath(
 				path,
 				scan_points,
 				tree_collision,
 				robot_model,
-				rng);
+				OptimizeScanpathHooks{
+						.computed_aabbs = [](const std::vector<math::AABBd> &aabbs) {
+						},
+						.begin_mapping_states_to_scan_points = []() {
+						},
+						.begin_mapping_state_to_scan_points = [](const RobotState &state) {
+						},
+						.begin_mapping_state_to_scan_point_cluster = [](size_t cluster_index) {
+						},
+						.state_scans_point = [](size_t state_index, size_t point_index) {
+						},
+						.state_outside_aabb = [](size_t state_index) {
+						},
+						.end_mapping_state_to_scan_point_cluster = [](size_t cluster_index) {
+						},
+						.end_mapping_states_to_scan_points = [](std::vector<bool> scans_point) {
+						},
+						.will_delete_waypoint = [](size_t waypoint_index,
+												   const RobotState &prev,
+												   const RobotState &current,
+												   const RobotState &next) {
+						},
+						.begin_deleting_unassociated_waypoints = []() {
+						},
+						.end_deleting_unassociated_waypoints = [&](const RobotPath &path) {
+							length_after_unassociated = pathLength(path, equal_weights_distance);
+							scanned_after_unassociated = count_scanned_points(robot_model, path, scan_points, 0.05);
+						},
+						.begin_deleting_associated_waypoints = []() {
+						},
+						.end_deleting_associated_waypoints = [&](const RobotPath &path) {
+							length_after_associated = pathLength(path, equal_weights_distance);
+							scanned_after_associated = count_scanned_points(robot_model, path, scan_points, 0.05);
+						}
+				});
+		double length_after = pathLength(path, equal_weights_distance);
+
+		std::cout << "Before optimization, length: " << length_before << ", scanned: " << scanned_before.total_seen
+				  << std::endl;
+		std::cout << "After unassociated waypoint deletion, length: " << length_after_unassociated << ", scanned: "
+				  << scanned_after_unassociated.total_seen << std::endl;
+		std::cout << "After associated waypoint deletion, length: " << length_after_associated << ", scanned: "
+				  << scanned_after_associated.total_seen << std::endl;
 	}
 
 	// Record end time for measuring time taken:
