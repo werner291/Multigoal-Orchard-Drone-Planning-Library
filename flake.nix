@@ -16,7 +16,7 @@
 
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
 
-      packages.x86_64-linux.default = pkgs.llvmPackages_17.stdenv.mkDerivation {
+      packages.x86_64-linux.default = pkgs.llvmPackages_17.libcxxStdenv.mkDerivation {
         name = "visualizations";
         src = ./.;
         nativeBuildInputs = with pkgs; [
@@ -24,6 +24,7 @@
           ninja
           pkg-config
           abseil-cpp
+          llvmPackages_17.clang-tools
         ];
         buildInputs = with pkgs; [
           boost # A set of common tools for C++ development, like an unofficial standard library

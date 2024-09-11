@@ -9,10 +9,10 @@
 #ifndef MGODPL_VEC3_H
 #define MGODPL_VEC3_H
 
-#include <array>
 #include <cmath>
 #include <ostream>
 #include <cassert>
+#include <array>
 
 namespace mgodpl::math {
 	/**

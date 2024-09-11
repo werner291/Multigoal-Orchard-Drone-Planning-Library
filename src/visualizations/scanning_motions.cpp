@@ -449,7 +449,8 @@ maximum_y_cycle(int x_range, int y_range, std::function<bool(std::array<int, 2>,
 
 #include <vtkProperty.h>
 #include <range/v3/view/zip.hpp>
-#include "../planning/scan_aware_local_optimization.h"
+
+import scan_aware_local_optimization;
 
 /**
  * A function that defines a parametric paraboloid.

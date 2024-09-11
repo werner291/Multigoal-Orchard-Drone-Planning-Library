@@ -116,6 +116,7 @@ set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
@@ -242,10 +243,16 @@ add_library(planning
         src/planning/distance.h
         src/planning/distance.cpp
         src/planning/roughness.cpp
-        src/planning/scan_aware_local_optimization.cpp
-        src/planning/scan_aware_local_optimization.h
         src/planning/MeshOcclusionModel.cpp
         src/planning/MeshOcclusionModel.h
+)
+
+target_sources(
+        planning
+        PUBLIC
+        FILE_SET CXX_MODULES
+        FILES
+        src/planning/scan_aware_local_optimization.cppm
 )
 
 target_link_libraries(planning math_utils)
@@ -467,3 +474,12 @@ endif ()
 
 add_custom_target(benchmarks_and_visualizations)
 add_dependencies(benchmarks_and_visualizations benchmarks visualizations)
+
+# Test target trying out C++20 modules:
+
+
+add_executable(modules_test)
+target_sources(modules_test
+        PRIVATE src/modules_test/main.cpp
+        PUBLIC FILE_SET CXX_MODULES FILES src/modules_test/module.cppm
+)

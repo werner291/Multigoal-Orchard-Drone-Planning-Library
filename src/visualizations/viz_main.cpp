@@ -5,6 +5,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <sstream>
 
 #include "../visualization/visualization_function_macros.h"
 

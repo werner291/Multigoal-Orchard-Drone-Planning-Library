@@ -42,6 +42,7 @@
 #include "../visualization/visualization_function_macros.h"
 
 #include <fcl/narrowphase/collision.h>
+#include <fcl/narrowphase/collision_object.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkProperty2D.h>
