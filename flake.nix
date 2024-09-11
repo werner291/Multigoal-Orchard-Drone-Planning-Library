@@ -16,7 +16,7 @@
 
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
 
-      packages.x86_64-linux.default = pkgs.llvmPackages_17.libcxxStdenv.mkDerivation {
+      packages.x86_64-linux.default = pkgs.llvmPackages_17.stdenv.mkDerivation {
         name = "visualizations";
         src = ./.;
         nativeBuildInputs = with pkgs; [
