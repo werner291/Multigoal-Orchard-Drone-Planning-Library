@@ -4,7 +4,7 @@
   nixConfig.bash-prompt = "[ros $(pwd)]$ ";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
   };
 
   outputs = { self, nixpkgs, ... }:
@@ -16,13 +16,14 @@
 
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
 
-      packages.x86_64-linux.default = pkgs.stdenv.mkDerivation {
+      packages.x86_64-linux.default = pkgs.llvmPackages_17.stdenv.mkDerivation {
         name = "visualizations";
         src = ./.;
         nativeBuildInputs = with pkgs; [
           cmake
           ninja
           pkg-config
+          abseil-cpp
         ];
         buildInputs = with pkgs; [
           boost # A set of common tools for C++ development, like an unofficial standard library
@@ -45,6 +46,8 @@
           flann # A library for fast approximate nearest neighbors.
           lz4 # Unlisted dependency of flann.
           (python3.withPackages (ps: with ps; [matplotlib pandas numpy seaborn]))
+          llvmPackages_17.clang-tools
+          abseil-cpp
         ];
 
         configurePhase = ''

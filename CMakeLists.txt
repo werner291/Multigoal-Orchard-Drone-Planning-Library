@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 project(MgODPL) # Multigoal Orchard Drone Planning Library
 
-# Enforce using clang 15:
-set(CMAKE_CXX_COMPILER /usr/bin/clang++-15)
+#if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+#    add_compile_options(-Wall -Wextra -Wpedantic)
+#endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
