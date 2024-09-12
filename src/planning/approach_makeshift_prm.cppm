@@ -19,36 +19,12 @@ export namespace mgodpl {
 	 * Sample a RobotState nearby the original state.
 	 *
 	 * @param state 	The original state.
-	 * @param rng 		A random number generator.
-	 * @param distance 	The maximum distance from the original state.
+	 * @param rng 			A random number generator.
+	 * @param noise_scale 	The scale of the noise.
 	 */
 	RobotState sample_nearby_state(RobotState state,
 								   random_numbers::RandomNumberGenerator &rng,
 								   double distance) {
-
-		// Generate noise:
-		double translation_noise_scalar = rng.uniform01();
-		double base_rotation_noise_scalar = rng.uniform01();
-		std::vector<double> joint_noise(state.joint_values.size());
-		for (double &joint_value : joint_noise) {
-			joint_value = rng.uniform01();
-		}
-
-		// Add it all up:
-		double noise_total = translation_noise_scalar + base_rotation_noise_scalar + std::accumulate(joint_noise.begin(), joint_noise.end(), 0.0);
-
-		// Divide by the distance such that the noise is proportional to the distance:
-		double divider = noise_total / distance;
-
-		// Normalize the noise such that it doesn't exceed the distance:
-		translation_noise_scalar /= noise_total;
-		base_rotation_noise_scalar /= noise_total;
-		for (double &joint_value : joint_noise) {
-			joint_value /= noise_total;
-		}
-
-		// Sanity check: the noise should not exceed the distance.
-		assert(translation_noise_scalar + base_rotation_noise_scalar + std::accumulate(joint_noise.begin(), joint_noise.end(), 0.0) < distance);
 
 		// Generate a random direction:
 		math::Vec3d translation_noise_vector(rng.gaussian01(),
@@ -56,21 +32,21 @@ export namespace mgodpl {
 											  rng.gaussian01());
 		translation_noise_vector.normalize();
 		// Scale it by the distance:
-		translation_noise_vector *= translation_noise_scalar;
+		translation_noise_vector *= distance * rng.uniform01();
 
 		// Apply the noise:
 		state.base_tf.translation += translation_noise_vector;
 
 		// Convert the scalar rotation to a Quaternion rotation around the Z-axis:
-		math::Quaterniond orientation_noise = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), base_rotation_noise_scalar);
+		math::Quaterniond orientation_noise = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), rng.uniformReal(-distance, distance));
 		// Apply the noise:
 		state.base_tf.orientation = state.base_tf.orientation * orientation_noise;
 
-		// Apply the joint noise:
-		for (size_t i = 0; i < state.joint_values.size(); ++i) {
-			state.joint_values[i] += joint_noise[i];
+		// Apply the joint nois:
+		for (double & joint_value : state.joint_values) {
+			joint_value += rng.uniformReal(-distance, distance);
 			// Apply limit:
-			state.joint_values[i] = std::clamp(state.joint_values[i], -M_PI_2, M_PI_2);
+			joint_value = std::clamp(joint_value, -M_PI_2, M_PI_2);
 		}
 
 		return state;
