@@ -438,25 +438,22 @@ REGISTER_VISUALIZATION(static_goals_and_motions) {
 
 			auto fk = robot_model::forwardKinematics(robot, goal.joint_values, flying_base, goal.base_tf);
 
-			// Visualize the goal state
-			auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot, fk, {0.5, 0.5, 0.5});
+			// Visualize the goal state; change the color to highlight ones that don't have a probing motion:
+			math::Vec3d robot_color = goalAndMotions[i].probingMotion.has_value() ? math::Vec3d{0.5, 0.5, 0.5} : math::Vec3d{1, 0, 0};
+			auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot, fk, robot_color);
 
 			if (goalAndMotions[i].probingMotion.has_value()) {
 				const auto &motion = goalAndMotions[i].probingMotion.value();
 
-
 				// Visualize the probing motion
-				for (const auto & state : motion.states) {
-					auto fk = robot_model::forwardKinematics(robot, state.joint_values, flying_base,
-															 state.base_tf);
+				auto fk = robot_model::forwardKinematics(robot, motion.end());
 
-					auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot, fk, {0, 1, 0});
-				}
+				auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot, fk, {0, 1, 0});
 
 				auto volume = swept_volume_triangles(robot, motion.states.front(), motion.states.back(), 1);
 
 				// Visualize the swept volume
-				VtkTriangleSetVisualization swept_volume_viz(0.8, 0.8, 0.8, 0.5);
+				VtkTriangleSetVisualization swept_volume_viz(0.8, 0.8, 0.8, 0.2);
 				swept_volume_viz.updateTriangles(volume);
 				viewer.addActor(swept_volume_viz.getActor());
 			}
