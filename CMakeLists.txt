@@ -237,8 +237,6 @@ add_library(planning
         src/planning/ParametricInfiniteCone.h
         src/planning/shell_path_planning.cpp
         src/planning/shell_path_planning.h
-        src/planning/nearest_neighbours/approach_by_pullout.cpp
-        src/planning/nearest_neighbours/approach_by_pullout.h
         src/planning/roughness.h
         src/planning/distance.h
         src/planning/distance.cpp
@@ -253,6 +251,7 @@ target_sources(
         FILE_SET CXX_MODULES
         FILES
         src/planning/scan_aware_local_optimization.cppm
+        src/planning/approach_by_pullout.cppm
 )
 
 target_link_libraries(planning math_utils)

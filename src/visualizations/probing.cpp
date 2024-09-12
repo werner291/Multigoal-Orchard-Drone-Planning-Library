@@ -34,6 +34,9 @@
 #include "../visualization/Throttle.h"
 #include "../experiment_utils/default_colors.h"
 #include "../visualization/RunQueue.h"
+#include "../planning/swept_volume_ccd.h"
+
+import approach_by_pullout;
 
 using namespace mgodpl;
 using namespace mgodpl::cgal;
@@ -366,4 +369,99 @@ REGISTER_VISUALIZATION(probing_isolated) {
 
 	viewer.start();
 
+}
+
+#include <optional>
+#include <vector>
+
+REGISTER_VISUALIZATION(static_goals_and_motions) {
+
+	// In this visualization, we will show the process of finding a probing motion for target points in isolation.
+	const auto &robot = experiments::createProceduralRobotModel();
+
+	const auto &tree_model = tree_meshes::loadTreeMeshes("appletree");
+
+	viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
+
+	// Look up special links:
+	robot_model::RobotModel::LinkId flying_base = robot.findLinkByName("flying_base");
+	robot_model::RobotModel::LinkId end_effector = robot.findLinkByName("end_effector");
+
+	const auto &tree_trunk_bvh = fcl_utils::meshToFclBVH(tree_model.trunk_mesh);
+	fcl::CollisionObjectd tree_trunk_object(tree_trunk_bvh);
+
+	CgalMeshData mesh_data(tree_model.leaves_mesh);
+
+	const std::vector<math::Vec3d> &targets = computeFruitPositions(tree_model);
+
+	random_numbers::RandomNumberGenerator rng(42);
+
+	struct GoalAndMotion {
+		std::optional<RobotState> goalConfiguration;
+		std::optional<RobotPath> probingMotion;
+	};
+
+	std::vector<GoalAndMotion> goalAndMotions(targets.size());
+
+	for (size_t i = 0;i < targets.size();++i) {
+		const math::Vec3d &target = targets[i];
+
+		auto pullout = plan_approach_by_pullout(tree_trunk_object, mesh_data, target, 0.0, robot, rng, 1000, {{
+			.sampled_state = [&](const RobotState &state, bool collision_free) {
+				if (collision_free) {
+					goalAndMotions[i].goalConfiguration = state;
+				}
+				},
+			.pullout_motion_considered = [&](const ApproachPath &path, bool path_collision_free) {
+				// Ignore it, we'll get it from the return value.
+			}
+		}});
+
+		goalAndMotions[i].probingMotion = pullout ? std::make_optional(pullout->path) : std::nullopt;
+	}
+
+	// Lock the camera's up direction to prevent it from rotating
+	viewer.lockCameraUp();
+
+	// Let's visualize the results:
+	for (size_t i = 0;i < targets.size();++i) {
+		const math::Vec3d &target = targets[i];
+
+		// Change the color of the fruit based on whether there's anything there at all:
+		math::Vec3d color = goalAndMotions[i].goalConfiguration.has_value() ? math::Vec3d{1, 1, 0} : math::Vec3d{1, 0, 0};
+
+		// Add a sphere to the viewer at the target's position
+		viewer.addMesh(tree_model.fruit_meshes[i], color);
+
+		if (goalAndMotions[i].goalConfiguration.has_value()) {
+			const auto &goal = goalAndMotions[i].goalConfiguration.value();
+
+			auto fk = robot_model::forwardKinematics(robot, goal.joint_values, flying_base, goal.base_tf);
+
+			// Visualize the goal state
+			auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot, fk, {0.5, 0.5, 0.5});
+
+			if (goalAndMotions[i].probingMotion.has_value()) {
+				const auto &motion = goalAndMotions[i].probingMotion.value();
+
+
+				// Visualize the probing motion
+				for (const auto & state : motion.states) {
+					auto fk = robot_model::forwardKinematics(robot, state.joint_values, flying_base,
+															 state.base_tf);
+
+					auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot, fk, {0, 1, 0});
+				}
+
+				auto volume = swept_volume_triangles(robot, motion.states.front(), motion.states.back(), 1);
+
+				// Visualize the swept volume
+				VtkTriangleSetVisualization swept_volume_viz(0.8, 0.8, 0.8, 0.5);
+				swept_volume_viz.updateTriangles(volume);
+				viewer.addActor(swept_volume_viz.getActor());
+			}
+		}
+	}
+
+	viewer.start();
 }

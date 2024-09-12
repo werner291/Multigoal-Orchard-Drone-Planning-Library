@@ -20,7 +20,7 @@
 #include "shell_path.h"
 #include "shell_path_assembly.h"
 #include "visitation_order.h"
-#include "nearest_neighbours/approach_by_pullout.h"
+import approach_by_pullout;
 #include "shell_path_planning.h"
 
 namespace mgodpl::shell_path_planning {
