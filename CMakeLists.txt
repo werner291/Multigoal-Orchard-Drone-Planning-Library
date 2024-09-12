@@ -252,6 +252,7 @@ target_sources(
         FILES
         src/planning/scan_aware_local_optimization.cppm
         src/planning/approach_by_pullout.cppm
+        src/planning/approach_makeshift_prm.cppm
 )
 
 target_link_libraries(planning math_utils)
