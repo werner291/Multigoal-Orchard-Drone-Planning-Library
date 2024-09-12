@@ -25,6 +25,7 @@ mgodpl::swept_volume_triangles(const mgodpl::robot_model::RobotModel &robot,
 							   const mgodpl::RobotState &state1,
 							   const mgodpl::RobotState &state2,
 							   size_t segments) {
+	assert(segments > 0);
 
 	std::vector<std::array<math::Vec3d, 3>> triangles;
 
