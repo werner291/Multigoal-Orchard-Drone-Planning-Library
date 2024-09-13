@@ -117,8 +117,8 @@ set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
-set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra -ftime-trace")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -ftime-trace")
 
 add_compile_definitions(PARALLEL) # Enable parallelism in some parts of the code.
 add_compile_definitions(ROBOTS_DIR="${ROBOTS_DIRECTORY}") # Forwards the robots directory to the code.
@@ -243,6 +243,7 @@ add_library(planning
         src/planning/roughness.cpp
         src/planning/MeshOcclusionModel.cpp
         src/planning/MeshOcclusionModel.h
+        src/planning/fcl.pch
 )
 
 target_sources(
@@ -254,6 +255,8 @@ target_sources(
         src/planning/approach_by_pullout.cppm
         src/planning/approach_makeshift_prm.cppm
 )
+
+target_precompile_headers(planning PUBLIC src/planning/fcl.pch src/planning/cgal_chull_shortest_paths.h)
 
 target_link_libraries(planning math_utils)
 
@@ -337,6 +340,8 @@ if (ENABLE_EXPERIMENTS)
             src/benchmarks/probing_motions.cpp
     )
 
+    target_precompile_headers(experiment_utils REUSE_FROM planning)
+
     target_link_libraries(benchmarks math_utils visibility experiment_utils planning)
 endif ()
 
@@ -387,6 +392,8 @@ if (ENABLE_VISUALIZATION)
             src/visualization/CameraTracker.cpp
             src/visualization/CameraTracker.h
     )
+
+    target_precompile_headers(${PROJECT_NAME}_visualisation REUSE_FROM planning)
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
     target_link_libraries(${PROJECT_NAME}_visualisation ${VTK_LIBRARIES} experiment_utils)
@@ -440,6 +447,7 @@ if (ENABLE_VISUALIZATION)
     )
 
     target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
+    target_precompile_headers(visualizations REUSE_FROM planning)
 
 endif ()
 
@@ -464,6 +472,9 @@ if (ENABLE_TESTS)
 
     target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils planning gtest)
     gtest_discover_tests(${PROJECT_NAME}_tests)
+
+    target_precompile_headers(${PROJECT_NAME}_tests REUSE_FROM planning)
+
 endif () # ENABLE_TESTS
 
 if (ENABLE_PYTHON_BINDINGS)

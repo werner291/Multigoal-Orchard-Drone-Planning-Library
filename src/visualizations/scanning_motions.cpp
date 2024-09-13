@@ -32,7 +32,6 @@
 #include "../visualization/visualization_function_macros.h"
 #include "../visualization/vtk.h"
 #include <fcl/geometry/shape/box.h>
-#include <fcl/narrowphase/collision_object.h>
 #include <vtkTextActor.h>
 
 using namespace mgodpl;

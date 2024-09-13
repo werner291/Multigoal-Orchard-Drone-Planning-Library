@@ -9,7 +9,7 @@
 #include <fcl/common/types.h>
 #include <fcl/geometry/shape/box.h>
 #include <fcl/narrowphase/collision_request.h>
-#include <fcl/narrowphase/collision.h>
+
 #include "collision_detection.h"
 
 bool mgodpl::check_link_collision(const mgodpl::robot_model::RobotModel::Link &link,

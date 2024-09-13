@@ -9,8 +9,6 @@
 #include "tsp_over_prm.h"
 
 #include <boost/graph/dijkstra_shortest_paths.hpp>
-#include <range/v3/view/transform.hpp>
-#include <range/v3/to_container.hpp>
 
 #include "collision_detection.h"
 #include "goal_sampling.h"
@@ -33,15 +31,15 @@ namespace mgodpl {
 	 * @returns The vertex descriptor of the new node.
 	 */
 	PRMGraph::vertex_descriptor add_and_connect_roadmap_node(
-		const RobotState &state,
-		PRMGraph &prm,
-		const PRMGraphSpatialIndex &spatial_index,
-		size_t k_neighbors,
-		std::optional<std::pair<size_t, size_t> > goal_index,
-		const std::function<bool(
-			const RobotState &,
-			const RobotState &)> &check_motion_collides,
-		const std::optional<AddRoadmapNodeHooks> &hooks
+			const RobotState &state,
+			PRMGraph &prm,
+			const PRMGraphSpatialIndex &spatial_index,
+			size_t k_neighbors,
+			std::optional<std::pair<size_t, size_t> > goal_index,
+			const std::function<bool(
+					const RobotState &,
+					const RobotState &)> &check_motion_collides,
+			const std::optional<AddRoadmapNodeHooks> &hooks
 	) {
 		std::vector<std::pair<RobotState, PRMGraph::vertex_descriptor> > k_nearest;
 		spatial_index.nearestK({state, 0}, k_neighbors, k_nearest);
@@ -80,20 +78,20 @@ namespace mgodpl {
 	 * @return				A pair of vectors: the first vector contains the distances to each node, the second vector contains the predecessor node for each node.
 	 */
 	std::pair<std::vector<double>, std::vector<PRMGraph::vertex_descriptor> > runDijkstra(
-		const PRMGraph &graph,
-		PRMGraph::vertex_descriptor start_node
+			const PRMGraph &graph,
+			PRMGraph::vertex_descriptor start_node
 	) {
 		std::vector<PRMGraph::vertex_descriptor> predecessors(num_vertices(graph));
 		std::vector<double> distances(num_vertices(graph));
 
 		dijkstra_shortest_paths(graph,
-		                        start_node,
-		                        predecessor_map(
-			                        make_iterator_property_map(predecessors.begin(),
-			                                                   get(boost::vertex_index, graph)))
-		                        .distance_map(
-			                        make_iterator_property_map(distances.begin(),
-			                                                   get(boost::vertex_index, graph))));
+								start_node,
+								predecessor_map(
+										make_iterator_property_map(predecessors.begin(),
+																   get(boost::vertex_index, graph)))
+										.distance_map(
+												make_iterator_property_map(distances.begin(),
+																		   get(boost::vertex_index, graph))));
 
 		return {distances, predecessors};
 	}
@@ -110,9 +108,9 @@ namespace mgodpl {
 	 * @return	The path from the start node to the goal node. The start node is whichever node in the path has itself as a predecessor.
 	 */
 	RobotPath retrace_path(
-		const PRMGraph &graph,
-		const std::vector<PRMGraph::vertex_descriptor> &predecessor_lookup,
-		PRMGraph::vertex_descriptor goal_node
+			const PRMGraph &graph,
+			const std::vector<PRMGraph::vertex_descriptor> &predecessor_lookup,
+			PRMGraph::vertex_descriptor goal_node
 	) {
 		RobotPath path;
 
@@ -138,12 +136,15 @@ namespace mgodpl {
 	 * @returns			The TSP solution with global goal sample indices.
 	 */
 	std::vector<size_t> convert_tour_to_global(
-		const GroupIndexTable &group_index_table,
-		const std::vector<std::pair<size_t, size_t> > &tour
+			const GroupIndexTable &group_index_table,
+			const std::vector<std::pair<size_t, size_t> > &tour
 	) {
-		return tour | ranges::views::transform([&](const auto &pair) {
-			return group_index_table.lookup(pair.first, pair.second);
-		}) | ranges::to<std::vector>();
+		std::vector<size_t> result;
+		result.reserve(tour.size());
+		for (const auto &pair: tour) {
+			result.push_back(group_index_table.lookup(pair.first, pair.second));
+		}
+		return result;
 	}
 
 	/**
@@ -151,22 +152,22 @@ namespace mgodpl {
 	 * @return The visitation order, expressed in terms of global goal sample indices.
 	 */
 	std::vector<size_t> pick_visitation_order(
-		const std::vector<std::vector<double> > &distance_lookup,
-		const std::vector<double> &start_to_goals_distances,
-		const GroupIndexTable *group_index_table,
-		const std::vector<size_t> &group_sizes
+			const std::vector<std::vector<double> > &distance_lookup,
+			const std::vector<double> &start_to_goals_distances,
+			const GroupIndexTable *group_index_table,
+			const std::vector<size_t> &group_sizes
 	) {
 		// Plan a TSP over the PRM.
 		auto tour = tsp_open_end_grouped(
-			[&](std::pair<size_t, size_t> a) {
-				return start_to_goals_distances[group_index_table->lookup(a.first, a.second)];
-			},
-			[&](std::pair<size_t, size_t> a, std::pair<size_t, size_t> b) {
-				return distance_lookup[group_index_table->lookup(a.first, a.second)][group_index_table->lookup(
-					b.first,
-					b.second)];
-			},
-			group_sizes
+				[&](std::pair<size_t, size_t> a) {
+					return start_to_goals_distances[group_index_table->lookup(a.first, a.second)];
+				},
+				[&](std::pair<size_t, size_t> a, std::pair<size_t, size_t> b) {
+					return distance_lookup[group_index_table->lookup(a.first, a.second)][group_index_table->lookup(
+							b.first,
+							b.second)];
+				},
+				group_sizes
 		);
 
 		return convert_tour_to_global(*group_index_table, tour);
@@ -184,19 +185,20 @@ namespace mgodpl {
 	 * @return The final path through the PRM, from the start and passing by all the goals in the TSP solution.
 	 */
 	RobotPath construct_final_path(
-		const PRMGraph &graph,
-		const std::vector<std::vector<PRMGraph::vertex_descriptor> > &predecessor_lookup,
-		const std::vector<PRMGraph::vertex_descriptor> &start_to_goals_predecessors,
-		const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
-		const std::vector<size_t> &tour,
-		const std::function<bool(RobotPath &)> &optimize_segment,
-		const std::optional<TspOverPrmHooks> &hooks = std::nullopt
+			const PRMGraph &graph,
+			const std::vector<std::vector<PRMGraph::vertex_descriptor> > &predecessor_lookup,
+			const std::vector<PRMGraph::vertex_descriptor> &start_to_goals_predecessors,
+			const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
+			const std::vector<size_t> &tour,
+			const std::function<bool(RobotPath &)> &optimize_segment,
+			const std::optional<TspOverPrmHooks> &hooks = std::nullopt
 	) {
 		// Allocate a path object.
-		RobotPath path; {
+		RobotPath path;
+		{
 			auto initial_path = retrace_path(graph,
-			                                 start_to_goals_predecessors,
-			                                 goal_nodes[tour[0]]);
+											 start_to_goals_predecessors,
+											 goal_nodes[tour[0]]);
 
 			if (hooks) hooks->computed_initial_path(initial_path);
 
@@ -240,14 +242,14 @@ namespace mgodpl {
 	 * @return True if the sample was added to the roadmap, false if it was discarded.
 	 */
 	bool sample_and_connect_infrastucture_node(
-		PRMGraph &prm,
-		PRMGraphSpatialIndex &spatial_index,
-		size_t k_neighbors,
-		std::function<RobotState()> &sample_state_at_random,
-		const std::function<bool(const RobotState &)> &check_state_collides,
-		const std::function<bool(const RobotState &, const RobotState &)> &
-		check_motion_collides,
-		const std::optional<PrmBuildHooks> &hooks
+			PRMGraph &prm,
+			PRMGraphSpatialIndex &spatial_index,
+			size_t k_neighbors,
+			std::function<RobotState()> &sample_state_at_random,
+			const std::function<bool(const RobotState &)> &check_state_collides,
+			const std::function<bool(const RobotState &, const RobotState &)> &
+			check_motion_collides,
+			const std::optional<PrmBuildHooks> &hooks
 	) {
 		// Generate a random state.
 		auto state = sample_state_at_random();
@@ -264,12 +266,12 @@ namespace mgodpl {
 
 		// Otherwise, add it to the roadmap, and try to connect it to the nearest neighbors.
 		auto new_vertex = add_and_connect_roadmap_node(state,
-		                                               prm,
-		                                               spatial_index,
-		                                               k_neighbors,
-		                                               std::nullopt,
-		                                               check_motion_collides,
-		                                               hooks ? hooks->add_roadmap_node_hooks : std::nullopt);
+													   prm,
+													   spatial_index,
+													   k_neighbors,
+													   std::nullopt,
+													   check_motion_collides,
+													   hooks ? hooks->add_roadmap_node_hooks : std::nullopt);
 
 		// If it's not a goal sample, add it to the infrastructure nodes.
 		spatial_index.add({state, new_vertex});
@@ -293,17 +295,17 @@ namespace mgodpl {
 	 * @return The vertex IDs of the goal samples that were added to the roadmap.
 	 */
 	std::vector<PRMGraph::vertex_descriptor> sample_and_connect_goal_states(
-		PRMGraph &prm,
-		const PRMGraphSpatialIndex &spatial_index,
-		const GoalSampleParams &params,
-		size_t goal_group_id,
-		std::function<RobotState()> &sample_goal_state,
-		const std::function<bool(const RobotState &)> &
-		check_state_collides,
-		const std::function<bool(const RobotState &, const RobotState &)> &
-		check_motion_collides,
-		const std::optional<GoalSampleHooks> &
-		hooks
+			PRMGraph &prm,
+			const PRMGraphSpatialIndex &spatial_index,
+			const GoalSampleParams &params,
+			size_t goal_group_id,
+			std::function<RobotState()> &sample_goal_state,
+			const std::function<bool(const RobotState &)> &
+			check_state_collides,
+			const std::function<bool(const RobotState &, const RobotState &)> &
+			check_motion_collides,
+			const std::optional<GoalSampleHooks> &
+			hooks
 	) {
 		// Reserve space for the valid samples.
 		std::vector<PRMGraph::vertex_descriptor> valid_samples;
@@ -311,7 +313,7 @@ namespace mgodpl {
 
 		// Keep iterating until we have enough valid samples or we've tried too many times.
 		for (size_t attempt = 0; attempt < params.max_attempts && valid_samples.size() < params.max_valid_samples; ++
-		     attempt) {
+				attempt) {
 			// Sample a goal state.
 			auto goal_state = sample_goal_state();
 
@@ -325,12 +327,12 @@ namespace mgodpl {
 			if (!collides) {
 				// Add the goal state to the roadmap.
 				auto new_vertex = add_and_connect_roadmap_node(goal_state,
-				                                               prm,
-				                                               spatial_index,
-				                                               params.k_neighbors,
-				                                               std::make_pair(goal_group_id, valid_samples.size()),
-				                                               check_motion_collides,
-				                                               hooks ? hooks->add_roadmap_node_hooks : std::nullopt);
+															   prm,
+															   spatial_index,
+															   params.k_neighbors,
+															   std::make_pair(goal_group_id, valid_samples.size()),
+															   check_motion_collides,
+															   hooks ? hooks->add_roadmap_node_hooks : std::nullopt);
 
 				// Add it to the list of valid samples.
 				valid_samples.push_back(new_vertex);
@@ -339,15 +341,6 @@ namespace mgodpl {
 
 		// Return the valid samples.
 		return valid_samples;
-	}
-
-	std::vector<double> filter_goal_distances_vector(
-		const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
-		const std::vector<double> &distances
-	) {
-		return goal_nodes
-		       | ranges::views::transform([&](auto goal_node) { return distances[goal_node]; })
-		       | ranges::to<std::vector<double> >();
 	}
 
 	/// A combination of a RobotState and a PRMGraph vertex descriptor, used as entries into the GNAT spatial index.
@@ -362,7 +355,7 @@ namespace mgodpl {
 	 * @return	The initialized GNAT index
 	 */
 	ompl::NearestNeighborsGNAT<GNATPoint> init_empty_spatial_index(
-		random_numbers::RandomNumberGenerator &rng
+			random_numbers::RandomNumberGenerator &rng
 	) {
 		// The distance function for the GNAT index, which extracts the RobotState from the GNATPoint and measures the distance between them.
 		// TODO: don't hardcode equal_weights_distance here.
@@ -374,13 +367,13 @@ namespace mgodpl {
 		// Note that it takes a reference to the rng, as greedy_k_centers requires a random number generator.
 		// NearestNeighborsGNAT itself is not aware of the RNG.
 		ompl::NearestNeighborsGNAT<GNATPoint>::SelectPivotFn select_pivots = [gnat_dist_fn, &rng](
-			const std::vector<GNATPoint> &data,
-			unsigned int k) {
+				const std::vector<GNATPoint> &data,
+				unsigned int k) {
 			return greedy_k_centers<GNATPoint>(data,
-			                                   k,
-			                                   gnat_dist_fn,
-			                                   rng,
-			                                   std::nullopt);
+											   k,
+											   gnat_dist_fn,
+											   rng,
+											   std::nullopt);
 		};
 
 		// Initialize the GNAT index.
@@ -388,9 +381,9 @@ namespace mgodpl {
 
 		// Set the distance function. (TODO: make this a constructor argument)
 		gnat.setDistanceFunction(
-			[](const auto &a, const auto &b) {
-				return equal_weights_distance(a.first, b.first);
-			});
+				[](const auto &a, const auto &b) {
+					return equal_weights_distance(a.first, b.first);
+				});
 
 		// Return the initialized GNAT index.
 		return gnat;
@@ -416,22 +409,22 @@ namespace mgodpl {
 	 * @param hooks				Optional hooks to observe the behavior of the algorithm
 	 */
 	void build_infrastructure_roadmap(PRMGraph &prm,
-	                                  PRMGraphSpatialIndex &spatial_index,
-	                                  const size_t &max_samples,
-	                                  const size_t &n_neighbours,
-	                                  std::function<RobotState()> sample_uniform,
-	                                  std::function<bool(const RobotState &)> state_collides,
-	                                  std::function<bool(const RobotState &, const RobotState &)> motion_collides,
-	                                  const std::optional<PrmBuildHooks> &hooks) {
+									  PRMGraphSpatialIndex &spatial_index,
+									  const size_t &max_samples,
+									  const size_t &n_neighbours,
+									  std::function<RobotState()> sample_uniform,
+									  std::function<bool(const RobotState &)> state_collides,
+									  std::function<bool(const RobotState &, const RobotState &)> motion_collides,
+									  const std::optional<PrmBuildHooks> &hooks) {
 		// Sample infrastructure nodes.
 		for (size_t i = 0; i < max_samples; ++i) {
 			sample_and_connect_infrastucture_node(prm,
-			                                      spatial_index,
-			                                      n_neighbours,
-			                                      sample_uniform,
-			                                      state_collides,
-			                                      motion_collides,
-			                                      hooks);
+												  spatial_index,
+												  n_neighbours,
+												  sample_uniform,
+												  state_collides,
+												  motion_collides,
+												  hooks);
 		}
 	}
 
@@ -450,14 +443,14 @@ namespace mgodpl {
 	 * @return A pair of vectors: the goal nodes in the PRM, and the number of goal samples for each fruit.
 	 */
 	std::pair<std::vector<PRMGraph::vertex_descriptor>, std::vector<size_t> > sample_goal_states(
-		const std::vector<math::Vec3d> &fruit_positions,
-		PRMGraph &prm,
-		const PRMGraphSpatialIndex &spatial_index,
-		const TspOverPrmParameters &parameters,
-		const std::function<RobotState(size_t)> &sample_goal_state,
-		const std::function<bool(const RobotState &)> &state_collides,
-		const std::function<bool(const RobotState &, const RobotState &)> &motion_collides,
-		const std::optional<TspOverPrmHooks> &hooks
+			const std::vector<math::Vec3d> &fruit_positions,
+			PRMGraph &prm,
+			const PRMGraphSpatialIndex &spatial_index,
+			const TspOverPrmParameters &parameters,
+			const std::function<RobotState(size_t)> &sample_goal_state,
+			const std::function<bool(const RobotState &)> &state_collides,
+			const std::function<bool(const RobotState &, const RobotState &)> &motion_collides,
+			const std::optional<TspOverPrmHooks> &hooks
 	) {
 		// Store the goal sample vertex nodes, with a separate sub-vector for each goal.
 		// Start with a vector of empty vectors.
@@ -470,14 +463,14 @@ namespace mgodpl {
 			std::function goal_sample = [&]() { return sample_goal_state(goal_index); };
 
 			auto goal_sample_states = sample_and_connect_goal_states(
-				prm,
-				spatial_index,
-				parameters.goal_sample_params,
-				goal_index,
-				goal_sample,
-				state_collides,
-				motion_collides,
-				hooks ? hooks->goal_sample_hooks : std::nullopt);
+					prm,
+					spatial_index,
+					parameters.goal_sample_params,
+					goal_index,
+					goal_sample,
+					state_collides,
+					motion_collides,
+					hooks ? hooks->goal_sample_hooks : std::nullopt);
 
 			// Store the goal nodes.
 			goal_nodes.insert(goal_nodes.end(), goal_sample_states.begin(), goal_sample_states.end());
@@ -502,9 +495,9 @@ namespace mgodpl {
 	 * @return A GoalToGoalPathResults structure containing the distance and predecessor lookup tables.
 	 */
 	GoalToGoalPathResults calculate_goal_to_goal_paths(
-		const PRMGraph &graph,
-		const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
-		const GroupIndexTable &group_index_table
+			const PRMGraph &graph,
+			const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
+			const GroupIndexTable &group_index_table
 	) {
 		GoalToGoalPathResults results;
 		results.distance_lookup.resize(group_index_table.total());
@@ -529,13 +522,13 @@ namespace mgodpl {
 	};
 
 	PRM build_prm(
-		const size_t &max_samples,
-		const size_t &n_neighbours,
-		random_numbers::RandomNumberGenerator &rng,
-		std::function<RobotState()> sample_uniform,
-		std::function<bool(const RobotState &)> state_collides,
-		std::function<bool(const RobotState &, const RobotState &)> motion_collides,
-		const std::optional<PrmBuildHooks> &hooks
+			const size_t &max_samples,
+			const size_t &n_neighbours,
+			random_numbers::RandomNumberGenerator &rng,
+			std::function<RobotState()> sample_uniform,
+			std::function<bool(const RobotState &)> state_collides,
+			std::function<bool(const RobotState &, const RobotState &)> motion_collides,
+			const std::optional<PrmBuildHooks> &hooks
 	) {
 		// Allocate an empty prm.
 		PRMGraph prm;
@@ -543,28 +536,28 @@ namespace mgodpl {
 
 		// Build the infrastructure roadmap.
 		build_infrastructure_roadmap(prm,
-		                             infrastructure_spatial_index,
-		                             max_samples,
-		                             n_neighbours,
-		                             sample_uniform,
-		                             state_collides,
-		                             motion_collides,
-		                             hooks);
+									 infrastructure_spatial_index,
+									 max_samples,
+									 n_neighbours,
+									 sample_uniform,
+									 state_collides,
+									 motion_collides,
+									 hooks);
 
 		return {
-			prm,
-			std::move(infrastructure_spatial_index)
+				prm,
+				std::move(infrastructure_spatial_index)
 		};
 	}
 
 	RobotPath plan_path_tsp_over_prm(
-		const RobotState &start_state,
-		const std::vector<math::Vec3d> &fruit_positions,
-		const robot_model::RobotModel &robot,
-		const fcl::CollisionObjectd &tree_collision,
-		const TspOverPrmParameters &parameters,
-		random_numbers::RandomNumberGenerator &rng,
-		const std::optional<TspOverPrmHooks> &hooks
+			const RobotState &start_state,
+			const std::vector<math::Vec3d> &fruit_positions,
+			const robot_model::RobotModel &robot,
+			const fcl::CollisionObjectd &tree_collision,
+			const TspOverPrmParameters &parameters,
+			random_numbers::RandomNumberGenerator &rng,
+			const std::optional<TspOverPrmHooks> &hooks
 	) {
 		// Look up the link IDs for the base and end effector. (TODO: could potentially abstract this away into a goal sampler function?)
 		robot_model::RobotModel::LinkId base_link = robot.findLinkByName("flying_base");
@@ -590,11 +583,11 @@ namespace mgodpl {
 		// Goal sampling function for a given goal index:
 		std::function sample_goal_state = [&](size_t goal_index) {
 			return genGoalStateUniform(
-				rng,
-				fruit_positions[goal_index],
-				robot,
-				base_link,
-				end_effector_link
+					rng,
+					fruit_positions[goal_index],
+					robot,
+					base_link,
+					end_effector_link
 			);
 		};
 
@@ -622,40 +615,40 @@ namespace mgodpl {
 
 		// Allocate an empty prm.
 		auto [prm, infrastructure_spatial_index] = build_prm(
-			parameters.max_samples,
-			parameters.n_neighbours,
-			rng,
-			sample_uniform,
-			state_collides,
-			motion_collides,
-			hooks ? hooks->infrastructure_sample_hooks : std::nullopt
+				parameters.max_samples,
+				parameters.n_neighbours,
+				rng,
+				sample_uniform,
+				state_collides,
+				motion_collides,
+				hooks ? hooks->infrastructure_sample_hooks : std::nullopt
 		);
 
 		if (hooks) hooks->on_infrastructure_prm_built(prm);
 
 		// Add the start state to the roadmap.
 		auto start_node = add_and_connect_roadmap_node(start_state,
-		                                               prm,
-		                                               infrastructure_spatial_index,
-		                                               parameters.n_neighbours,
-		                                               std::nullopt,
-		                                               motion_collides,
-		                                               hooks
-			                                               ? hooks->infrastructure_sample_hooks->add_roadmap_node_hooks
-			                                               : std::nullopt);
+													   prm,
+													   infrastructure_spatial_index,
+													   parameters.n_neighbours,
+													   std::nullopt,
+													   motion_collides,
+													   hooks
+													   ? hooks->infrastructure_sample_hooks->add_roadmap_node_hooks
+													   : std::nullopt);
 
 		if (hooks) hooks->on_start_node_added(start_node);
 
 		// Sample goal states and connect them to the roadmap.
 		const auto &[goal_nodes, group_sizes] =
 				sample_goal_states(fruit_positions,
-				                   prm,
-				                   infrastructure_spatial_index,
-				                   parameters,
-				                   sample_goal_state,
-				                   state_collides,
-				                   motion_collides,
-				                   hooks);
+								   prm,
+								   infrastructure_spatial_index,
+								   parameters,
+								   sample_goal_state,
+								   state_collides,
+								   motion_collides,
+								   hooks);
 
 		if (hooks) hooks->on_goal_samples_added(goal_nodes);
 
@@ -663,31 +656,31 @@ namespace mgodpl {
 		GroupIndexTable group_index_table(group_sizes);
 
 		const auto &goal_to_goal_paths = calculate_goal_to_goal_paths(
-			prm,
-			goal_nodes,
-			group_index_table);
+				prm,
+				goal_nodes,
+				group_index_table);
 
 		if (hooks) hooks->on_goal_to_goal_paths_calculated(goal_to_goal_paths);
 
 		// Plan a visitation order based on the distance lookup tables.
 		auto visitation_order = pick_visitation_order(
-			goal_to_goal_paths.distance_lookup,
-			goal_to_goal_paths.start_to_goals_distances,
-			&group_index_table,
-			group_sizes
+				goal_to_goal_paths.distance_lookup,
+				goal_to_goal_paths.start_to_goals_distances,
+				&group_index_table,
+				group_sizes
 		);
 
 		if (hooks) hooks->on_visitation_order_picked(visitation_order);
 
 		// Construct the final path based on the TSP solution and predecessor lookup tables.
 		auto final_path = construct_final_path(
-			prm,
-			goal_to_goal_paths.predecessor_lookup,
-			goal_to_goal_paths.start_to_goals_predecessors,
-			goal_nodes,
-			visitation_order,
-			optimize_path_segment,
-			hooks
+				prm,
+				goal_to_goal_paths.predecessor_lookup,
+				goal_to_goal_paths.start_to_goals_predecessors,
+				goal_nodes,
+				visitation_order,
+				optimize_path_segment,
+				hooks
 		);
 
 		if (hooks) hooks->on_final_path_constructed(final_path);

@@ -6,8 +6,7 @@
 // Created by werner on 2/12/24.
 //
 
-#include <fcl/narrowphase/collision_object.h>
-#include <fcl/narrowphase/collision.h>
+
 #include "probing_motions.h"
 #include "fcl_utils.h"
 #include "collision_detection.h"

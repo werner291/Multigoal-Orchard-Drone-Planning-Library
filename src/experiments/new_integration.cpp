@@ -6,8 +6,7 @@
 // Created by werner on 1/19/24.
 //
 
-#include <fcl/narrowphase/collision_object.h>
-#include <fcl/narrowphase/collision.h>
+
 #include <random_numbers/random_numbers.h>
 #include <CGAL/convex_hull_3.h>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
@@ -51,24 +50,28 @@ VtkTriangleSetVisualization convex_hull_viz(const Surface_mesh &convex_hull) {
 		Point_3 c = convex_hull.point(*vit++);
 
 		convex_hull_triangles.push_back({
-			math::Vec3d {a.x(), a.y(), a.z()},
-			math::Vec3d {b.x(), b.y(), b.z()},
-			math::Vec3d {c.x(), c.y(), c.z()}
-		});
+												math::Vec3d{a.x(), a.y(), a.z()},
+												math::Vec3d{b.x(), b.y(), b.z()},
+												math::Vec3d{c.x(), c.y(), c.z()}
+										});
 	}
 
 	viz.updateTriangles(convex_hull_triangles);
 	return viz;
 }
 
-std::vector<bool> visited_by_path(const std::vector<math::Vec3d>& targets, const RobotPath &path, const robot_model::RobotModel& robot) {
+std::vector<bool>
+visited_by_path(const std::vector<math::Vec3d> &targets, const RobotPath &path, const robot_model::RobotModel &robot) {
 
 	std::vector<bool> visited(targets.size(), false);
 
 	auto end_effector = robot.findLinkByName("end_effector");
 
-	for (const auto& state: path.states) {
-		auto fk = robot_model::forwardKinematics(robot, state.joint_values, robot.findLinkByName("flying_base"), state.base_tf);
+	for (const auto &state: path.states) {
+		auto fk = robot_model::forwardKinematics(robot,
+												 state.joint_values,
+												 robot.findLinkByName("flying_base"),
+												 state.base_tf);
 		auto ee_pose = fk.forLink(end_effector).translation;
 
 		for (size_t i = 0; i < targets.size(); ++i) {
@@ -110,7 +113,7 @@ int main() {
 		for (const auto &tgt: targets) {
 			auto path = straight_in_motion(robot, mesh_data, tgt);
 
-			PathPoint collision_point {};
+			PathPoint collision_point{};
 			if (!check_path_collides(robot, tree_trunk_object, path.path, collision_point)) {
 				++successes;
 			}
@@ -148,17 +151,18 @@ int main() {
 
 		for (const auto &tgt: targets) {
 			auto sample = uniform_straightout_approach(tgt,
-														 robot,
-														 tree_trunk_object,
-														 mesh_data,
-														 rng,
-														 1000);
+													   robot,
+													   tree_trunk_object,
+													   mesh_data,
+													   rng,
+													   1000);
 
 			if (sample) {
 				++sample_successes;
 			}
 		}
-		std::cout << "Uniform straightout approach success rate: " << sample_successes << "/" << targets.size() << std::endl;
+		std::cout << "Uniform straightout approach success rate: " << sample_successes << "/" << targets.size()
+				  << std::endl;
 	}
 
 	// Plan the final path as a whole:
@@ -166,13 +170,16 @@ int main() {
 
 	auto end_time = std::chrono::high_resolution_clock::now();
 
-	std::cout << "Planning took " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << " ms." << std::endl;
+	std::cout << "Planning took "
+			  << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << " ms."
+			  << std::endl;
 
 	// Check collision-freeness.
 	{
 		PathPoint collision_point;
 		if (check_path_collides(robot, tree_trunk_object, final_path, collision_point)) {
-			std::cout << "Final path collides at segment " << collision_point.segment_i << " at " << collision_point.segment_t << std::endl;
+			std::cout << "Final path collides at segment " << collision_point.segment_i << " at "
+					  << collision_point.segment_t << std::endl;
 		} else {
 			std::cout << "Final path is collision-free." << std::endl;
 		}
@@ -184,12 +191,12 @@ int main() {
 		viewer.lockCameraUp();
 		viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
 
-		const auto& visited = visited_by_path(targets, final_path, robot);
+		const auto &visited = visited_by_path(targets, final_path, robot);
 
 		for (size_t target_i = 0; target_i < targets.size(); ++target_i) {
 
 			// Yellow if visited, red if not.
-			math::Vec3d color = visited[target_i] ? math::Vec3d{1,1,0} : math::Vec3d{1,0,0};
+			math::Vec3d color = visited[target_i] ? math::Vec3d{1, 1, 0} : math::Vec3d{1, 0, 0};
 
 			viewer.addSphere(0.05, targets[target_i], color, 1.0);
 		}
@@ -199,7 +206,12 @@ int main() {
 		viewer.addActor(chull_viz.getActor());
 
 		// Visualize the initial state:
-		auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot, robot_model::forwardKinematics(robot, initial_state.joint_values, flying_base, initial_state.base_tf));
+		auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer,
+																	  robot,
+																	  robot_model::forwardKinematics(robot,
+																									 initial_state.joint_values,
+																									 flying_base,
+																									 initial_state.base_tf));
 
 		double segment_t = 0.0;
 
@@ -219,7 +231,10 @@ int main() {
 			const auto &state2 = final_path.states[segment_i + 1];
 
 			auto interpolated_state = interpolate(state1, state2, segment_t_frac);
-			auto fk = robot_model::forwardKinematics(robot, interpolated_state.joint_values, flying_base, interpolated_state.base_tf);
+			auto fk = robot_model::forwardKinematics(robot,
+													 interpolated_state.joint_values,
+													 flying_base,
+													 interpolated_state.base_tf);
 
 			bool collides = check_robot_collision(robot, tree_trunk_object, interpolated_state);
 

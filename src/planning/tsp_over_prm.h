@@ -8,9 +8,9 @@
 
 #ifndef TSP_OVER_PRM_H
 #define TSP_OVER_PRM_H
+
 #include <optional>
 #include <boost/graph/adjacency_list.hpp>
-#include <fcl/narrowphase/collision_object.h>
 
 #include "GroupIndexTable.h"
 #include "RandomNumberGenerator.h"
@@ -22,7 +22,7 @@
 namespace mgodpl {
 	// Define the graph type: an undirected graph with the defined vertex properties
 	using PRMGraph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, RobotState,
-		boost::property<boost::edge_weight_t, double> >;
+			boost::property<boost::edge_weight_t, double> >;
 
 	// A spatial index for nearest neighbors in the PRM graph.
 	using PRMGraphSpatialIndex = ompl::NearestNeighborsGNAT<std::pair<RobotState, PRMGraph::vertex_descriptor> >;
@@ -33,9 +33,9 @@ namespace mgodpl {
 	struct AddRoadmapNodeHooks {
 		/// A function called when an edge is considered, with the source and target states, and a boolean decision (true if added, false if not).
 		std::function<void(
-			std::pair<const RobotState &, const PRMGraph::vertex_descriptor &>,
-			std::pair<const RobotState &, const PRMGraph::vertex_descriptor &>,
-			bool)> on_edge_considered;
+				std::pair<const RobotState &, const PRMGraph::vertex_descriptor &>,
+				std::pair<const RobotState &, const PRMGraph::vertex_descriptor &>,
+				bool)> on_edge_considered;
 	};
 
 	/**
@@ -69,19 +69,6 @@ namespace mgodpl {
 		/// The maximum number of attempts to take a valid sample. (Total; not affected by max_valid_samples.)
 		size_t max_attempts = 100;
 	};
-
-	/**
-	 * @brief Filters the distances towards goal nodes from the distances vector.
-	 *
-	 * @param goal_nodes	A vector of vertex descriptors representing the goal nodes in the PRM graph.
-	 * @param distances		A vector containing the distances between nodes in the PRM graph, indexed by the vertex descriptors.
-	 *
-	 * @return A vector of distances that correspond to the goal nodes.
-	 */
-	std::vector<double> filter_goal_distances_vector(
-		const std::vector<PRMGraph::vertex_descriptor> &goal_nodes,
-		const std::vector<double> &distances
-	);
 
 	struct TspOverPrmParameters {
 		/// The number of nearest neighbors to connect to.
@@ -135,54 +122,54 @@ namespace mgodpl {
 		/// Hook for when the start node is added to the roadmap.
 		std::function<void(const PRMGraph::vertex_descriptor &start_node)> on_start_node_added =
 				[](const PRMGraph::vertex_descriptor &) {
-		};
+				};
 
 		/// Hook for when goal samples have been added to the roadmap.
 		std::function<void(const std::vector<PRMGraph::vertex_descriptor> &goal_nodes)> on_goal_samples_added =
 				[](const std::vector<PRMGraph::vertex_descriptor> &) {
-		};
+				};
 
 		/// Hook for when goal-to-goal paths have been calculated.
 		/// Note these aren't *paths* but rather predecessor lookup tables and distances,
 		/// from which the paths can be easily reconstructed through backtracking.
 		std::function<void(const GoalToGoalPathResults &goal_to_goal_paths)> on_goal_to_goal_paths_calculated =
 				[](const GoalToGoalPathResults &) {
-		};
+				};
 
 		/// Hook for when the visitation order has been picked.
 		std::function<void(const std::vector<size_t> &visitation_order)> on_visitation_order_picked =
 				[](const std::vector<size_t> &) {
-		};
+				};
 
 		/// Hook for when the initial non-optimized path from the start state to the first goal is computed.
 		std::function<void(const RobotPath &final_path)> computed_initial_path =
 				[](const RobotPath &) {
-		};
+				};
 
 		/// Hook for when the initial, optimized path from the start state to the first goal is computed.
 		std::function<void(const RobotPath &final_path, bool optimized)> optimized_initial_path =
 				[](const RobotPath &, bool optimized) {
-		};
+				};
 
 		/// Hook for when a goal-to-goal path is computed before optimization.
 		std::function<void(const RobotPath &final_path)> computed_goal_to_goal_path =
 				[](const RobotPath &) {
-		};
+				};
 
 		/// Hook for when a goal-to-goal path has been constructed and optimized.
 		std::function<void(const RobotPath &final_path, bool optimized)> optimized_goal_to_goal_path =
 				[](const RobotPath &, bool) {
-		};
+				};
 
 		/// Hook for when an additional segment has been added to the final path.
 		std::function<void(const RobotPath &final_path)> final_path_extended =
 				[](const RobotPath &) {
-		};
+				};
 
 		/// Hook for when the final path has been constructed.
 		std::function<void(const RobotPath &final_path)> on_final_path_constructed =
 				[](const RobotPath &) {
-		};
+				};
 	};
 
 	/**
@@ -203,13 +190,13 @@ namespace mgodpl {
 	 * @return RobotPath The planned path, including all the states the robot should go through to visit all fruits.
 	 */
 	RobotPath plan_path_tsp_over_prm(
-		const RobotState &start_state,
-		const std::vector<math::Vec3d> &fruit_positions,
-		const robot_model::RobotModel &robot,
-		const fcl::CollisionObjectd &tree_collision,
-		const TspOverPrmParameters &parameters,
-		random_numbers::RandomNumberGenerator &rng,
-		const std::optional<TspOverPrmHooks> &hooks = std::nullopt
+			const RobotState &start_state,
+			const std::vector<math::Vec3d> &fruit_positions,
+			const robot_model::RobotModel &robot,
+			const fcl::CollisionObjectd &tree_collision,
+			const TspOverPrmParameters &parameters,
+			random_numbers::RandomNumberGenerator &rng,
+			const std::optional<TspOverPrmHooks> &hooks = std::nullopt
 	);
 } // mgodpl
 

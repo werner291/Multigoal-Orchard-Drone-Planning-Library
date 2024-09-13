@@ -4,7 +4,6 @@
 
 #include <condition_variable>
 #include <vtkRenderer.h>
-#include <fcl/narrowphase/collision_object.h>
 
 #include "../experiment_utils/default_colors.h"
 #include "../visualization/visualization_function_macros.h"
@@ -21,7 +20,7 @@
 #include "../visualization/ladder_trace.h"
 #include "../visualization/Throttle.h"
 #include "../experiment_utils/declarative/fruit_models.h"
-#include <fcl/narrowphase/collision.h>
+
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <range/v3/view/transform.hpp>
@@ -63,14 +62,14 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	// Create a tree model.
 	experiments::TreeModelCache cache;
 	auto tree = declarative::instantiate_tree_model(
-		declarative::TreeModelParameters{
-			.name = "appletree",
-			.leaf_scale = 1.0,
-			.fruit_subset = declarative::Unchanged{},
-			.seed = 42
-		},
-		cache,
-		rng);
+			declarative::TreeModelParameters{
+					.name = "appletree",
+					.leaf_scale = 1.0,
+					.fruit_subset = declarative::Unchanged{},
+					.seed = 42
+			},
+			cache,
+			rng);
 	// Extract the fruit positions from the tree.
 	const auto fruit_positions = fruit_positions_from_models(tree.fruit_models);
 
@@ -126,16 +125,16 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 
 	// A callback for visualizing a single edge.
 	std::function viz_edge = [&](
-		std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> source,
-		std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> target,
-		bool added) {
+			std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> source,
+			std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> target,
+			bool added) {
 		if (added) {
 			{
 				std::lock_guard lock(data_transfer_mutex);
 
 				edges.emplace_back(
-					source.first.base_tf.translation,
-					target.first.base_tf.translation
+						source.first.base_tf.translation,
+						target.first.base_tf.translation
 				);
 			}
 			throttle.wait_and_advance();
@@ -143,15 +142,15 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	};
 
 	std::function viz_goal_edge = [&](
-		std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> source,
-		std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> target,
-		bool added) {
+			std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> source,
+			std::pair<const RobotState &, const PRMGraph::vertex_descriptor &> target,
+			bool added) {
 		if (added) {
 			{
 				std::lock_guard lock(data_transfer_mutex);
 				goal_edges.emplace_back(
-					source.first.base_tf.translation,
-					target.first.base_tf.translation
+						source.first.base_tf.translation,
+						target.first.base_tf.translation
 				);
 			}
 			throttle.wait_and_advance();
@@ -159,42 +158,42 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	};
 
 	PrmBuildHooks infrastructure_sample_hooks{
-		.on_sample = viz_sampled_state,
-		.add_roadmap_node_hooks = AddRoadmapNodeHooks{
-			.on_edge_considered = viz_edge
-		}
+			.on_sample = viz_sampled_state,
+			.add_roadmap_node_hooks = AddRoadmapNodeHooks{
+					.on_edge_considered = viz_edge
+			}
 	};
 
 	GoalSampleHooks goal_sampling_hooks{
-		.on_sample = viz_sampled_state,
-		.add_roadmap_node_hooks = AddRoadmapNodeHooks{
-			.on_edge_considered = viz_goal_edge
-		}
+			.on_sample = viz_sampled_state,
+			.add_roadmap_node_hooks = AddRoadmapNodeHooks{
+					.on_edge_considered = viz_goal_edge
+			}
 	};
 
 	TspOverPrmHooks hooks{
-		.infrastructure_sample_hooks = infrastructure_sample_hooks,
-		.goal_sample_hooks = goal_sampling_hooks
+			.infrastructure_sample_hooks = infrastructure_sample_hooks,
+			.goal_sample_hooks = goal_sampling_hooks
 	};
 
 	std::thread algorithm_thread([&]() {
 		// Plan the path.
 		auto path = plan_path_tsp_over_prm(
-			start_state,
-			fruit_positions,
-			robot,
-			tree_collision,
-			TspOverPrmParameters{
-				.n_neighbours = n_neighbours,
-				.max_samples = max_samples,
-				.goal_sample_params = GoalSampleParams{
-					.k_neighbors = n_neighbours,
-					.max_valid_samples = max_samples_per_goal,
-					.max_attempts = 100
-				}
-			},
-			rng,
-			hooks
+				start_state,
+				fruit_positions,
+				robot,
+				tree_collision,
+				TspOverPrmParameters{
+						.n_neighbours = n_neighbours,
+						.max_samples = max_samples,
+						.goal_sample_params = GoalSampleParams{
+								.k_neighbors = n_neighbours,
+								.max_valid_samples = max_samples_per_goal,
+								.max_attempts = 100
+						}
+				},
+				rng,
+				hooks
 		);
 
 		// Visualize the path.
@@ -206,74 +205,74 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 
 	// Finally, register our timer callback.
 	viewer.addTimerCallback([&]() {
-			// Some slow-down logic for visualization.
-			if (frames_until_sample > 0) {
-				--frames_until_sample;
-				return;
-			}
-			frames_until_sample = 1;
+								// Some slow-down logic for visualization.
+								if (frames_until_sample > 0) {
+									--frames_until_sample;
+									return;
+								}
+								frames_until_sample = 1;
 
-			// Remove the last sample visualization, if it exists.
-			for (const auto &vtk_actors: sample_viz) {
-				for (const auto &vtk_actor: vtk_actors.actors) {
-					viewer.viewerRenderer->RemoveActor(vtk_actor);
-				}
-			}
+								// Remove the last sample visualization, if it exists.
+								for (const auto &vtk_actors: sample_viz) {
+									for (const auto &vtk_actor: vtk_actors.actors) {
+										viewer.viewerRenderer->RemoveActor(vtk_actor);
+									}
+								}
 
-			// Process updates received from the algorithm thread.
-			{
-				// Lock the mutex.
-				std::lock_guard lock(data_transfer_mutex);
+								// Process updates received from the algorithm thread.
+								{
+									// Lock the mutex.
+									std::lock_guard lock(data_transfer_mutex);
 
-				// Visualize any states we received.
-				for (const auto &[state, added]: recent_samples) {
-					// Pick a color based on whether it collides.
-					math::Vec3d color = added ? math::Vec3d{0.0, 1.0, 0.0} : math::Vec3d{1.0, 0.0, 0.0};
+									// Visualize any states we received.
+									for (const auto &[state, added]: recent_samples) {
+										// Pick a color based on whether it collides.
+										math::Vec3d color = added ? math::Vec3d{0.0, 1.0, 0.0} : math::Vec3d{1.0, 0.0, 0.0};
 
-					// Compute the forward kinematics.
-					auto fk = forwardKinematics(robot, state.joint_values, 0, state.base_tf);
+										// Compute the forward kinematics.
+										auto fk = forwardKinematics(robot, state.joint_values, 0, state.base_tf);
 
-					// Visualize the robot state.
-					sample_viz.push_back(vizualisation::vizualize_robot_state(viewer, robot, fk, color));
-				}
+										// Visualize the robot state.
+										sample_viz.push_back(vizualisation::vizualize_robot_state(viewer, robot, fk, color));
+									}
 
-				// update the edges:
-				prm_edges.updateLine(edges);
-				prm_goal_edges.updateLine(goal_edges);
+									// update the edges:
+									prm_edges.updateLine(edges);
+									prm_goal_edges.updateLine(goal_edges);
 
-				// If there's a path, vizualize it as a ladder trace.
-				if (final_path.has_value()) {
-					if (!final_path_follower) {
-						visualize_ladder_trace(robot, *final_path, viewer);
+									// If there's a path, vizualize it as a ladder trace.
+									if (final_path.has_value()) {
+										if (!final_path_follower) {
+											visualize_ladder_trace(robot, *final_path, viewer);
 
-						// Set up the final path follower.
-						final_path_follower = vizualisation::vizualize_robot_state(
-							viewer,
-							robot,
-							robot_model::forwardKinematics(robot, start_state.joint_values, 0, start_state.base_tf),
-							{1, 0, 0});
-					} else {
-						// Advance the path point:
-						final_path_point = final_path_point.adjustByScalar(0.01, *final_path);
+											// Set up the final path follower.
+											final_path_follower = vizualisation::vizualize_robot_state(
+													viewer,
+													robot,
+													robot_model::forwardKinematics(robot, start_state.joint_values, 0, start_state.base_tf),
+													{1, 0, 0});
+										} else {
+											// Advance the path point:
+											final_path_point = final_path_point.adjustByScalar(0.01, *final_path);
 
-						// Update the state.
-						RobotState state = interpolate(final_path_point, *final_path);
+											// Update the state.
+											RobotState state = interpolate(final_path_point, *final_path);
 
-						update_robot_state(robot,
-						                   forwardKinematics(
-							                   robot,
-							                   state.joint_values,
-							                   0,
-							                   state.base_tf),
-						                   *final_path_follower);
-					}
-				}
+											update_robot_state(robot,
+															   forwardKinematics(
+																	   robot,
+																	   state.joint_values,
+																	   0,
+																	   state.base_tf),
+															   *final_path_follower);
+										}
+									}
 
-				recent_samples.clear();
-			}
+									recent_samples.clear();
+								}
 
-			throttle.allow_advance();
-		}
+								throttle.allow_advance();
+							}
 
 	);
 

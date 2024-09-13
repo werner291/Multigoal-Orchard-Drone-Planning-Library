@@ -11,9 +11,8 @@
 #include <moveit/robot_model/robot_model.h>
 #include <moveit/robot_state/robot_state.h>
 #include <shape_msgs/msg/mesh.hpp>
-#include <fcl/narrowphase/collision_object.h>
 #include <fcl/narrowphase/collision_request.h>
-#include <fcl/narrowphase/collision.h>
+
 #include <fcl/geometry/shape/box.h>
 #include <geometric_shapes/shapes.h>
 #include "IncrementalGoalStateGenerator.h"
@@ -53,6 +52,7 @@ std::vector<const moveit::core::LinkModel *> mkInvertedKinematicChain(const move
 
 	return kinematic_chain;
 }
+
 /**
  * Computes a minimal orientation to get the given orientation to be upright.
  *
@@ -252,7 +252,8 @@ namespace mgodpl {
 		return error < 0.01;
 	}
 
-	void GoalStateAlgorithm::try_branch_from(size_t current_node) {// Find out how many free joints remain, assuming that the link represented by the current node is locked in place.
+	void
+	GoalStateAlgorithm::try_branch_from(size_t current_node) {// Find out how many free joints remain, assuming that the link represented by the current node is locked in place.
 // The calculation works as follows:
 // 		If current_node->depth == 1, then we only passed the fixed joint, so there are 3 free revolute joints.
 //			Thus, kinematic_chain.size() - 1 == 3, since we need to ignore the base joint (which uses a floating parent joint).
@@ -314,7 +315,8 @@ namespace mgodpl {
 	}
 
 	std::vector<Eigen::Isometry3d>
-	GoalStateAlgorithm::free_link_tfs(const std::vector<double> &joint_values, const Eigen::Isometry3d &locked_link_tf) {
+	GoalStateAlgorithm::free_link_tfs(const std::vector<double> &joint_values,
+									  const Eigen::Isometry3d &locked_link_tf) {
 
 		std::vector<Eigen::Isometry3d> free_link_tfs;
 

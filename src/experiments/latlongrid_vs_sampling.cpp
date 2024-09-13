@@ -5,7 +5,6 @@
 #include <random_numbers/random_numbers.h>
 #include <fcl/geometry/shape/box.h>
 #include <fcl/narrowphase/collision-inl.h>
-#include <fcl/narrowphase/collision_object.h>
 #include <fcl/narrowphase/detail/traversal/collision_node-inl.h>
 #include <chrono>
 
@@ -32,11 +31,11 @@ struct RotatedLatLonGrid {
 	math::Vec3d center;
 };
 
-RotatedLatLonGrid mk_rotated_lat_lon_grid(const math::Vec3d& ideal_vector, const math::Vec3d& center) {
+RotatedLatLonGrid mk_rotated_lat_lon_grid(const math::Vec3d &ideal_vector, const math::Vec3d &center) {
 	// Build the lat/lon grid.
 	LatLonGrid grid{
-			{-M_PI/2.0, M_PI/2.0},
-			{-M_PI/2.0, M_PI/2.0},
+			{-M_PI / 2.0, M_PI / 2.0},
+			{-M_PI / 2.0, M_PI / 2.0},
 			0.025,
 			50,
 			50
@@ -47,19 +46,19 @@ RotatedLatLonGrid mk_rotated_lat_lon_grid(const math::Vec3d& ideal_vector, const
 	Eigen::Matrix3d rot = Eigen::Quaterniond::FromTwoVectors(
 			Eigen::Vector3d(ideal_vector.x(), ideal_vector.y(), ideal_vector.z()),
 			Eigen::Vector3d(1.0, 0.0, 0.0)
-			).toRotationMatrix();
+	).toRotationMatrix();
 
 	Eigen::Matrix3d inv_rot = rot.inverse();
 
-	return RotatedLatLonGrid {
-		.grid = grid,
-		.rot = rot,
-		.inv_rot = inv_rot,
-		.center = center
+	return RotatedLatLonGrid{
+			.grid = grid,
+			.rot = rot,
+			.inv_rot = inv_rot,
+			.center = center
 	};
 }
 
-void insert_triangle_into_grid(RotatedLatLonGrid& grid, const mgodpl::Triangle& triangle) {
+void insert_triangle_into_grid(RotatedLatLonGrid &grid, const mgodpl::Triangle &triangle) {
 	// Rotate the triangle:
 	Eigen::Vector3d a(triangle.vertices[0].x(), triangle.vertices[0].y(), triangle.vertices[0].z());
 	Eigen::Vector3d b(triangle.vertices[1].x(), triangle.vertices[1].y(), triangle.vertices[1].z());
@@ -73,34 +72,34 @@ void insert_triangle_into_grid(RotatedLatLonGrid& grid, const mgodpl::Triangle& 
 	b = grid.rot * b;
 	c = grid.rot * c;
 
-	mgodpl::Triangle tri {
-		.vertices = {
-			math::Vec3d {a.x(), a.y(), a.z()},
-			math::Vec3d {b.x(), b.y(), b.z()},
-			math::Vec3d {c.x(), c.y(), c.z()}
-		}
+	mgodpl::Triangle tri{
+			.vertices = {
+					math::Vec3d{a.x(), a.y(), a.z()},
+					math::Vec3d{b.x(), b.y(), b.z()},
+					math::Vec3d{c.x(), c.y(), c.z()}
+			}
 	};
 
 	grid.grid.insert_triangle(tri);
 }
 
 std::optional<RobotState> findGoalStateThroughLatLonGrid(
-		const math::Vec3d& target,
-		const math::Vec3d& canopy_middle,
-		const robot_model::RobotModel& robot,
-		const robot_model::RobotModel::LinkId& flying_base,
-		const robot_model::RobotModel::LinkId& stick,
-		const robot_model::RobotModel::LinkId& end_effector,
-		const fcl::CollisionObjectd& tree_trunk_object,
+		const math::Vec3d &target,
+		const math::Vec3d &canopy_middle,
+		const robot_model::RobotModel &robot,
+		const robot_model::RobotModel::LinkId &flying_base,
+		const robot_model::RobotModel::LinkId &stick,
+		const robot_model::RobotModel::LinkId &end_effector,
+		const fcl::CollisionObjectd &tree_trunk_object,
 		random_numbers::RandomNumberGenerator rng,
-		const std::vector<mgodpl::Triangle>& triangles
-		) {
+		const std::vector<mgodpl::Triangle> &triangles
+) {
 
 	// Build the lat/lon grid.
 	RotatedLatLonGrid grid = mk_rotated_lat_lon_grid(target - canopy_middle, target);
 
 	// Put the triangles in:
-	for (const auto& triangle : triangles) {
+	for (const auto &triangle: triangles) {
 		insert_triangle_into_grid(grid, triangle);
 	}
 
@@ -125,22 +124,26 @@ std::optional<RobotState> findGoalStateThroughLatLonGrid(
 				vec_eigen = grid.inv_rot * vec_eigen;
 
 				// Generate a state.
-				std::vector<double> arm_angles { -spherical_geometry::latitude(vec) };
+				std::vector<double> arm_angles{-spherical_geometry::latitude(vec)};
 
-				math::Transformd flying_base_tf {
+				math::Transformd flying_base_tf{
 						.translation = math::Vec3d(0.0, 0.0, 0.0),
-						.orientation = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), spherical_geometry::longitude(vec) + M_PI/2.0)
+						.orientation = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(),
+																		spherical_geometry::longitude(vec) + M_PI / 2.0)
 				};
 
-				const auto& fk = mgodpl::robot_model::forwardKinematics(robot, arm_angles, flying_base, flying_base_tf);
+				const auto &fk = mgodpl::robot_model::forwardKinematics(robot, arm_angles, flying_base, flying_base_tf);
 
 				math::Vec3d end_effector_position = fk.forLink(end_effector).translation;
 
 				flying_base_tf.translation = flying_base_tf.translation + target - end_effector_position;
 
-				const auto& fk2 = mgodpl::robot_model::forwardKinematics(robot, arm_angles, flying_base, flying_base_tf);
+				const auto &fk2 = mgodpl::robot_model::forwardKinematics(robot,
+																		 arm_angles,
+																		 flying_base,
+																		 flying_base_tf);
 
-				PositionedShape positioned_shape {
+				PositionedShape positioned_shape{
 						.shape = robot.getLinks()[stick].collision_geometry[0].shape,
 						.transform = fk2.forLink(stick).then(robot.getLinks()[stick].collision_geometry[0].transform)
 				};
@@ -148,9 +151,9 @@ std::optional<RobotState> findGoalStateThroughLatLonGrid(
 				bool collision = check_link_collision(robot.getLinks()[stick], tree_trunk_object, fk2.forLink(stick));
 
 				if (!collision)
-					return RobotState {
-						.base_tf = flying_base_tf,
-						.joint_values = arm_angles
+					return RobotState{
+							.base_tf = flying_base_tf,
+							.joint_values = arm_angles
 					};
 
 			}
@@ -162,38 +165,43 @@ std::optional<RobotState> findGoalStateThroughLatLonGrid(
 
 }
 
-int main()
-{
-    const auto& robot = mgodpl::experiments::createProceduralRobotModel();
+int main() {
+	const auto &robot = mgodpl::experiments::createProceduralRobotModel();
 
-    robot_model::RobotModel::LinkId flying_base = robot.findLinkByName("flying_base");
-    robot_model::RobotModel::LinkId end_effector = robot.findLinkByName("end_effector");
+	robot_model::RobotModel::LinkId flying_base = robot.findLinkByName("flying_base");
+	robot_model::RobotModel::LinkId end_effector = robot.findLinkByName("end_effector");
 	robot_model::RobotModel::LinkId stick = robot.findLinkByName("stick");
 
-    const auto& tree_model = mgodpl::tree_meshes::loadTreeMeshes("appletree");
+	const auto &tree_model = mgodpl::tree_meshes::loadTreeMeshes("appletree");
 
 	std::vector<mgodpl::Triangle> triangles;
-	for (const auto& triangle : tree_model.trunk_mesh.triangles) {
+	for (const auto &triangle: tree_model.trunk_mesh.triangles) {
 		triangles.push_back({
-			.vertices = {
-				math::Vec3d { tree_model.trunk_mesh.vertices[triangle.vertex_indices[0]].x, tree_model.trunk_mesh.vertices[triangle.vertex_indices[0]].y, tree_model.trunk_mesh.vertices[triangle.vertex_indices[0]].z },
-				math::Vec3d { tree_model.trunk_mesh.vertices[triangle.vertex_indices[1]].x, tree_model.trunk_mesh.vertices[triangle.vertex_indices[1]].y, tree_model.trunk_mesh.vertices[triangle.vertex_indices[1]].z },
-				math::Vec3d { tree_model.trunk_mesh.vertices[triangle.vertex_indices[2]].x, tree_model.trunk_mesh.vertices[triangle.vertex_indices[2]].y, tree_model.trunk_mesh.vertices[triangle.vertex_indices[2]].z }
-			}
-		});
+									.vertices = {
+											math::Vec3d{tree_model.trunk_mesh.vertices[triangle.vertex_indices[0]].x,
+														tree_model.trunk_mesh.vertices[triangle.vertex_indices[0]].y,
+														tree_model.trunk_mesh.vertices[triangle.vertex_indices[0]].z},
+											math::Vec3d{tree_model.trunk_mesh.vertices[triangle.vertex_indices[1]].x,
+														tree_model.trunk_mesh.vertices[triangle.vertex_indices[1]].y,
+														tree_model.trunk_mesh.vertices[triangle.vertex_indices[1]].z},
+											math::Vec3d{tree_model.trunk_mesh.vertices[triangle.vertex_indices[2]].x,
+														tree_model.trunk_mesh.vertices[triangle.vertex_indices[2]].y,
+														tree_model.trunk_mesh.vertices[triangle.vertex_indices[2]].z}
+									}
+							});
 	}
 
-    // Allocate a BVH mesh for the tree trunk.
-    const auto& tree_trunk_bvh = mgodpl::fcl_utils::meshToFclBVH(tree_model.trunk_mesh);
-    fcl::CollisionObjectd tree_trunk_object(tree_trunk_bvh);
+	// Allocate a BVH mesh for the tree trunk.
+	const auto &tree_trunk_bvh = mgodpl::fcl_utils::meshToFclBVH(tree_model.trunk_mesh);
+	fcl::CollisionObjectd tree_trunk_object(tree_trunk_bvh);
 
-    random_numbers::RandomNumberGenerator rng(42);
+	random_numbers::RandomNumberGenerator rng(42);
 
 //    mgodpl::SimpleVtkViewer viewer(false);
 //    viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
 //    viewer.addMesh(createGroundPlane(5.0, 5.0), FLOOR_COLOR);
 
-    const auto& targets = computeFruitPositions(tree_model);
+	const auto &targets = computeFruitPositions(tree_model);
 
 	math::Vec3d canopy_middle = mesh_aabb(tree_model.leaves_mesh).center();
 
@@ -255,8 +263,10 @@ int main()
 		}
 
 		// Stats so far:
-		std::cout << "Uniform sampling successes: " << uniform_successes << " with t = " << uniform_duration << " ms" << std::endl;
-		std::cout << "Grid sampling successes: " << grid_successes << " with t = " << grid_duration << " ms" << std::endl;
+		std::cout << "Uniform sampling successes: " << uniform_successes << " with t = " << uniform_duration << " ms"
+				  << std::endl;
+		std::cout << "Grid sampling successes: " << grid_successes << " with t = " << grid_duration << " ms"
+				  << std::endl;
 
 	}
 
@@ -267,13 +277,13 @@ int main()
 
 	viewer.addMesh(tree_model.trunk_mesh, WOOD_COLOR);
 
-	for (const auto& target : targets) {
+	for (const auto &target: targets) {
 		viewer.addSphere(0.05, target, {1.0, 0.0, 0.0}, 1.0);
 
 		// Make the rotated grid:
 		RotatedLatLonGrid grid = mk_rotated_lat_lon_grid(target - canopy_middle, target);
 
-		for (const auto& triangle : triangles) {
+		for (const auto &triangle: triangles) {
 			insert_triangle_into_grid(grid, triangle);
 		}
 
@@ -346,7 +356,7 @@ int main()
 					// Draw a line from the center of the cell to the center of the triangle that occupies it.
 					auto center = (a_eigen + b_eigen + c_eigen + d_eigen) / 4.0;
 
-					for (const auto& triangle : cell.triangles) {
+					for (const auto &triangle: cell.triangles) {
 						auto center2 = (triangle.vertices[0] + triangle.vertices[1] + triangle.vertices[2]) / 3.0;
 
 						// Un-rotate them:
@@ -355,12 +365,14 @@ int main()
 						center2_eigen = grid.inv_rot * center2_eigen;
 
 						// Add them to the center:
-						center2_eigen = center2_eigen + Eigen::Vector3d(grid.center.x(), grid.center.y(), grid.center.z());
+						center2_eigen =
+								center2_eigen + Eigen::Vector3d(grid.center.x(), grid.center.y(), grid.center.z());
 
 						assoc_lines.push_back({
-							math::Vec3d{center.x(), center.y(), center.z()},
-							math::Vec3d{center2_eigen.x(), center2_eigen.y(), center2_eigen.z()}
-						});
+													  math::Vec3d{center.x(), center.y(), center.z()},
+													  math::Vec3d{center2_eigen.x(), center2_eigen.y(),
+																  center2_eigen.z()}
+											  });
 					}
 				}
 

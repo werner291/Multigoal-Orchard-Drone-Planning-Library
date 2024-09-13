@@ -2,8 +2,7 @@
 //
 // All rights reserved.
 
-#include <fcl/narrowphase/collision_object.h>
-#include <fcl/narrowphase/collision.h>
+
 
 #include "../experiment_utils/TreeMeshes.h"
 #include "../experiment_utils/declarative_environment.h"
@@ -26,10 +25,10 @@
 using namespace mgodpl;
 
 const declarative::TreeModelParameters DEFAULT_APPLE_TREE = {
-	.name = "appletree",
-	.leaf_scale = 1.0,
-	.fruit_subset = declarative::Unchanged{},
-	.seed = 42
+		.name = "appletree",
+		.leaf_scale = 1.0,
+		.fruit_subset = declarative::Unchanged{},
+		.seed = 42
 };
 
 // PRMGraph make_prm() {

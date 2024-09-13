@@ -15,8 +15,7 @@
 //
 
 #include <iostream>
-#include <fcl/narrowphase/collision.h>
-#include <fcl/narrowphase/collision_object.h>
+
 
 #include "benchmark_function_macros.h"
 #include "../experiment_utils/LoadedTreeModel.h"

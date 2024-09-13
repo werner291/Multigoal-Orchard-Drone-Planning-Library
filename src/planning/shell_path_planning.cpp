@@ -8,7 +8,7 @@
 
 #include "shell_path_planning.h"
 
-#include <fcl/narrowphase/collision.h>
+
 #include "RobotState.h"
 #include "RobotPath.h"
 #include "RobotModel.h"

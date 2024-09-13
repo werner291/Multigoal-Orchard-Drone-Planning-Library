@@ -6,7 +6,6 @@
 #include <range/v3/to_container.hpp>
 #include <fcl/geometry/shape/box.h>
 #include <fcl/narrowphase/collision-inl.h>
-#include <fcl/narrowphase/collision_object.h>
 #include <fcl/narrowphase/detail/traversal/collision_node-inl.h>
 #include <chrono>
 
@@ -35,33 +34,31 @@ void update_free_latitude_ranges_visualization(const math::Vec3d &target,
 											   double longitude,
 											   const std::vector<std::array<double, 2>> &free_latitudes) {
 	std::vector<std::array<math::Vec3d, 3>> intersection_points;
-	for (const auto& latitudes : free_latitudes)
-	{
+	for (const auto &latitudes: free_latitudes) {
 		double length = latitudes[1] - latitudes[0];
 
 		size_t n_points = std::max(1, (int) (length * 16.0));
 
-		for (int lat_i = 0; lat_i < n_points; ++lat_i)
-		{
+		for (int lat_i = 0; lat_i < n_points; ++lat_i) {
 			double latitude1 = latitudes[0] + lat_i * (latitudes[1] - latitudes[0]) / (double) n_points;
 			double latitude2 = latitudes[0] + (lat_i + 1) * (latitudes[1] - latitudes[0]) / (double) n_points;
 
 			math::Vec3d ray1(
-				cos(latitude1) * cos(longitude),
-				cos(latitude1) * sin(longitude),
-				sin(latitude1)
+					cos(latitude1) * cos(longitude),
+					cos(latitude1) * sin(longitude),
+					sin(latitude1)
 			);
 
 			math::Vec3d ray2(
-				cos(latitude2) * cos(longitude),
-				cos(latitude2) * sin(longitude),
-				sin(latitude2)
+					cos(latitude2) * cos(longitude),
+					cos(latitude2) * sin(longitude),
+					sin(latitude2)
 			);
 
 			std::array<math::Vec3d, 3> triangle_points{
-				target + ray1 * 1.0,
-				target + ray2 * 1.0,
-				target
+					target + ray1 * 1.0,
+					target + ray2 * 1.0,
+					target
 			};
 
 			intersection_points.push_back(triangle_points);
@@ -72,16 +69,13 @@ void update_free_latitude_ranges_visualization(const math::Vec3d &target,
 }
 
 
-bool check_link_collision(const mgodpl::robot_model::RobotModel::Link& link,
-						  const fcl::CollisionObjectd& tree_trunk_object,
-						  const std::vector<math::Transformd>::value_type& link_tf)
-{
+bool check_link_collision(const mgodpl::robot_model::RobotModel::Link &link,
+						  const fcl::CollisionObjectd &tree_trunk_object,
+						  const std::vector<math::Transformd>::value_type &link_tf) {
 	bool collision = false;
 
-	for (const auto& collision_geometry : link.collision_geometry)
-	{
-		if (const auto& box = std::get_if<Box>(&collision_geometry.shape))
-		{
+	for (const auto &collision_geometry: link.collision_geometry) {
+		if (const auto &box = std::get_if<Box>(&collision_geometry.shape)) {
 			math::Transformd total_tf = link_tf.then(collision_geometry.transform);
 
 			fcl::Transform3d fcl_tf;
@@ -104,14 +98,11 @@ bool check_link_collision(const mgodpl::robot_model::RobotModel::Link& link,
 					result
 			);
 
-			if (result.isCollision())
-			{
+			if (result.isCollision()) {
 				collision = true;
 				break;
 			}
-		}
-		else
-		{
+		} else {
 			throw std::runtime_error("Only boxes are implemented for collision geometry.");
 		}
 	}
@@ -119,63 +110,61 @@ bool check_link_collision(const mgodpl::robot_model::RobotModel::Link& link,
 	return collision;
 }
 
-int main(int argc, char** argv)
-{
-    const math::Vec3d WOOD_COLOR = {0.5, 0.35, 0.05};
+int main(int argc, char **argv) {
+	const math::Vec3d WOOD_COLOR = {0.5, 0.35, 0.05};
 
-    // Get a tree model.
-    const auto& model = mgodpl::tree_meshes::loadTreeMeshes("appletree");
+	// Get a tree model.
+	const auto &model = mgodpl::tree_meshes::loadTreeMeshes("appletree");
 
-	const auto& robot = mgodpl::experiments::createProceduralRobotModel();
+	const auto &robot = mgodpl::experiments::createProceduralRobotModel();
 
 	robot_model::RobotModel::LinkId flying_base = robot.findLinkByName("flying_base");
 	robot_model::RobotModel::LinkId stick = robot.findLinkByName("stick");
 	robot_model::RobotModel::LinkId end_effector = robot.findLinkByName("end_effector");
 
 	// Allocate a BVH mesh for the tree trunk.
-	const auto& tree_trunk_bvh = mgodpl::fcl_utils::meshToFclBVH(model.trunk_mesh);
+	const auto &tree_trunk_bvh = mgodpl::fcl_utils::meshToFclBVH(model.trunk_mesh);
 	fcl::CollisionObjectd tree_trunk_object(tree_trunk_bvh);
 
-    const math::Vec3d target(-0.195487, -0.769218, 1.34947);
+	const math::Vec3d target(-0.195487, -0.769218, 1.34947);
 
-    SimpleVtkViewer viewer(false);
-    viewer.lockCameraUp();
-    viewer.setCameraTransform(target + math::Vec3d{1.0, 0.0, 0.0}, target);
+	SimpleVtkViewer viewer(false);
+	viewer.lockCameraUp();
+	viewer.setCameraTransform(target + math::Vec3d{1.0, 0.0, 0.0}, target);
 
-    visualization::mkPointMarkerSphere(viewer, target, {1.0, 0.0, 0.0});
+	visualization::mkPointMarkerSphere(viewer, target, {1.0, 0.0, 0.0});
 
-    viewer.addMesh(
-        model.trunk_mesh,
-        WOOD_COLOR
-    );
+	viewer.addMesh(
+			model.trunk_mesh,
+			WOOD_COLOR
+	);
 
-    VtkPolyLineVisualization line_visualization(1.0,0.0,1.0);
-    viewer.addActor(line_visualization.getActor());
+	VtkPolyLineVisualization line_visualization(1.0, 0.0, 1.0);
+	viewer.addActor(line_visualization.getActor());
 
-    VtkTriangleSetVisualization intersections_visualization(1.0, 1.0, 0.0);
-    viewer.addActor(intersections_visualization.getActor());
+	VtkTriangleSetVisualization intersections_visualization(1.0, 1.0, 0.0);
+	viewer.addActor(intersections_visualization.getActor());
 
-    const std::vector<Triangle> triangles = model.trunk_mesh.triangles | ranges::views::transform(
-        [&](const auto& triangle)
-        {
-            return Triangle{
-                {
-                    math::Vec3d(model.trunk_mesh.vertices[triangle.vertex_indices[0]].x,
-                                model.trunk_mesh.vertices[triangle.vertex_indices[0]].y,
-                                model.trunk_mesh.vertices[triangle.vertex_indices[0]].z),
-                    math::Vec3d(model.trunk_mesh.vertices[triangle.vertex_indices[1]].x,
-                                model.trunk_mesh.vertices[triangle.vertex_indices[1]].y,
-                                model.trunk_mesh.vertices[triangle.vertex_indices[1]].z),
-                    math::Vec3d(model.trunk_mesh.vertices[triangle.vertex_indices[2]].x,
-                                model.trunk_mesh.vertices[triangle.vertex_indices[2]].y,
-                                model.trunk_mesh.vertices[triangle.vertex_indices[2]].z)
-                }
-            };
-        }) | ranges::to<std::vector>();
+	const std::vector<Triangle> triangles = model.trunk_mesh.triangles | ranges::views::transform(
+			[&](const auto &triangle) {
+				return Triangle{
+						{
+								math::Vec3d(model.trunk_mesh.vertices[triangle.vertex_indices[0]].x,
+											model.trunk_mesh.vertices[triangle.vertex_indices[0]].y,
+											model.trunk_mesh.vertices[triangle.vertex_indices[0]].z),
+								math::Vec3d(model.trunk_mesh.vertices[triangle.vertex_indices[1]].x,
+											model.trunk_mesh.vertices[triangle.vertex_indices[1]].y,
+											model.trunk_mesh.vertices[triangle.vertex_indices[1]].z),
+								math::Vec3d(model.trunk_mesh.vertices[triangle.vertex_indices[2]].x,
+											model.trunk_mesh.vertices[triangle.vertex_indices[2]].y,
+											model.trunk_mesh.vertices[triangle.vertex_indices[2]].z)
+						}
+				};
+			}) | ranges::to<std::vector>();
 
 	const double STARTING_LONGITUDE = 0.0;
 
-    double longitude = STARTING_LONGITUDE;
+	double longitude = STARTING_LONGITUDE;
 
 	std::cout << "Sweepline starting..." << std::endl;
 
@@ -186,19 +175,20 @@ int main(int argc, char** argv)
 	}
 	const auto elapsed_time = std::chrono::high_resolution_clock::now() - start_time;
 
-	std::cout << "Sweepline finished in average " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time).count() / 10.0 << " ms." << std::endl;
+	std::cout << "Sweepline finished in average "
+			  << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time).count() / 10.0 << " ms."
+			  << std::endl;
 
 	LatLonGrid grid = LatLonGrid::from_triangles(triangles, target, 0.025, 20, 20);
 
 	std::cout
-		<< "Stats: n_count=" << grid.count_all()
-		<< " n_empty=" << grid.count_empty()
-		<< " n_blocked=" << grid.count_fully_blocked()
-		<< std::endl;
+			<< "Stats: n_count=" << grid.count_all()
+			<< " n_empty=" << grid.count_empty()
+			<< " n_blocked=" << grid.count_fully_blocked()
+			<< std::endl;
 
 	// Let's try that for all apples?
-	for (const auto& apple : computeFruitPositions(model))
-	{
+	for (const auto &apple: computeFruitPositions(model)) {
 		LatLonGrid grid = LatLonGrid::from_triangles(triangles, apple, 0.025, 20, 20);
 
 		std::cout
@@ -212,11 +202,11 @@ int main(int argc, char** argv)
 	return 0;
 
 	for (
-		LongitudeSweep sweepline_algorithm(triangles, STARTING_LONGITUDE, target);
-		sweepline_algorithm.has_more_events();
-		sweepline_algorithm.advance())	{
+			LongitudeSweep sweepline_algorithm(triangles, STARTING_LONGITUDE, target);
+			sweepline_algorithm.has_more_events();
+			sweepline_algorithm.advance()) {
 
-		double min_free = - M_PI/2.0;
+		double min_free = -M_PI / 2.0;
 
 //		const double longitude_midpoint = sweepline_algorithm.current_longitude;
 //
@@ -337,7 +327,7 @@ int main(int argc, char** argv)
 //
 //	});
 
-    viewer.start();
+	viewer.start();
 
 
 }

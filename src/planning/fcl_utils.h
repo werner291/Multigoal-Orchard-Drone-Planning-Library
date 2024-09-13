@@ -10,8 +10,7 @@
 #define MGODPL_FCL_UTILS_H
 
 #include <memory>
-#include <fcl/narrowphase/collision.h>
-#include <fcl/narrowphase/collision_object.h>
+
 
 namespace mgodpl {
 	struct Mesh;
@@ -20,6 +19,7 @@ namespace mgodpl {
 namespace fcl {
 	template<typename S>
 	class BVHModel;
+
 	template<typename S>
 	struct OBB;
 	using OBBd = OBB<double>;

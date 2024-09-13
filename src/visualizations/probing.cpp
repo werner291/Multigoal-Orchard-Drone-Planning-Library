@@ -6,8 +6,7 @@
 // Created by werner on 1/19/24.
 //
 
-#include <fcl/narrowphase/collision_object.h>
-#include <fcl/narrowphase/collision.h>
+
 #include <CGAL/convex_hull_3.h>
 #include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include "../planning/RobotModel.h"
@@ -403,19 +402,23 @@ REGISTER_VISUALIZATION(static_goals_and_motions) {
 
 	std::vector<GoalAndMotion> goalAndMotions(targets.size());
 
-	for (size_t i = 0;i < targets.size();++i) {
+	for (size_t i = 0; i < targets.size(); ++i) {
 		const math::Vec3d &target = targets[i];
 
 		auto pullout = plan_approach_by_pullout(tree_trunk_object, mesh_data, target, 0.0, robot, rng, 1000, {{
-			.sampled_state = [&](const RobotState &state, bool collision_free) {
-				if (collision_free) {
-					goalAndMotions[i].goalConfiguration = state;
-				}
-				},
-			.pullout_motion_considered = [&](const ApproachPath &path, bool path_collision_free) {
-				// Ignore it, we'll get it from the return value.
-			}
-		}});
+																													  .sampled_state = [&](
+																															  const RobotState &state,
+																															  bool collision_free) {
+																														  if (collision_free) {
+																															  goalAndMotions[i].goalConfiguration = state;
+																														  }
+																													  },
+																													  .pullout_motion_considered = [&](
+																															  const ApproachPath &path,
+																															  bool path_collision_free) {
+																														  // Ignore it, we'll get it from the return value.
+																													  }
+																											  }});
 
 		goalAndMotions[i].probingMotion = pullout ? std::make_optional(pullout->path) : std::nullopt;
 	}
@@ -424,11 +427,12 @@ REGISTER_VISUALIZATION(static_goals_and_motions) {
 	viewer.lockCameraUp();
 
 	// Let's visualize the results:
-	for (size_t i = 0;i < targets.size();++i) {
+	for (size_t i = 0; i < targets.size(); ++i) {
 		const math::Vec3d &target = targets[i];
 
 		// Change the color of the fruit based on whether there's anything there at all:
-		math::Vec3d color = goalAndMotions[i].goalConfiguration.has_value() ? math::Vec3d{1, 1, 0} : math::Vec3d{1, 0, 0};
+		math::Vec3d color = goalAndMotions[i].goalConfiguration.has_value() ? math::Vec3d{1, 1, 0} : math::Vec3d{1, 0,
+																												 0};
 
 		// Add a sphere to the viewer at the target's position
 		viewer.addMesh(tree_model.fruit_meshes[i], color);
@@ -439,7 +443,8 @@ REGISTER_VISUALIZATION(static_goals_and_motions) {
 			auto fk = robot_model::forwardKinematics(robot, goal.joint_values, flying_base, goal.base_tf);
 
 			// Visualize the goal state; change the color to highlight ones that don't have a probing motion:
-			math::Vec3d robot_color = goalAndMotions[i].probingMotion.has_value() ? math::Vec3d{0.5, 0.5, 0.5} : math::Vec3d{1, 0, 0};
+			math::Vec3d robot_color = goalAndMotions[i].probingMotion.has_value() ? math::Vec3d{0.5, 0.5, 0.5}
+																				  : math::Vec3d{1, 0, 0};
 			auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot, fk, robot_color);
 
 			if (goalAndMotions[i].probingMotion.has_value()) {

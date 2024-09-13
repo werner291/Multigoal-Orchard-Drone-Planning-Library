@@ -9,7 +9,6 @@
 #include <vector>
 
 
-
 #include "../experiment_utils/TreeMeshes.h"
 #include "../experiment_utils/declarative/SensorModelParameters.h"
 #include "../experiment_utils/default_colors.h"
@@ -41,8 +40,7 @@
 #include "../visualization/scannable_points.h"
 #include "../visualization/visualization_function_macros.h"
 
-#include <fcl/narrowphase/collision.h>
-#include <fcl/narrowphase/collision_object.h>
+
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkProperty2D.h>
@@ -115,7 +113,11 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath) {
 	// Plan the final path as a whole:
 	ShellPathPlanningMethod shell_path_planner;
 
-	RobotPath final_path = shell_path_planner.plan_static(robot, tree_model.trunk_mesh, tree_model.leaves_mesh, computeFruitPositions(tree_model), initial_state);
+	RobotPath final_path = shell_path_planner.plan_static(robot,
+														  tree_model.trunk_mesh,
+														  tree_model.leaves_mesh,
+														  computeFruitPositions(tree_model),
+														  initial_state);
 
 	PathPoint path_point = {0, 0.0};
 
@@ -533,7 +535,9 @@ REGISTER_VISUALIZATION(local_scangraph) {
 
 		if (advancePathPointClamp(path, path_point, interpolation_speed, equal_weights_max_distance)) {
 			// Extend the path with a random motion to a neighbor.
-			size_t next_node = graph[last_node].accessible_neighbors[rng.uniformInteger(0, graph[last_node].accessible_neighbors.size() - 1)].neighbor_i;
+			size_t next_node = graph[last_node].accessible_neighbors[rng.uniformInteger(0,
+																						graph[last_node].accessible_neighbors.size() -
+																						1)].neighbor_i;
 
 			path.append(graph[next_node].state);
 
@@ -998,9 +1002,9 @@ mgodpl::Mesh ground_plane(double size) {
 	mgodpl::Mesh ground;
 	ground.vertices = {
 			{-size, -size, 0},
-			{size, -size, 0},
-			{size, size, 0},
-			{-size, size, 0}
+			{size,  -size, 0},
+			{size,  size,  0},
+			{-size, size,  0}
 	};
 	ground.triangles = {
 			{0, 1, 2},
