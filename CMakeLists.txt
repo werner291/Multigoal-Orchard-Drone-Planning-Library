@@ -395,6 +395,14 @@ if (ENABLE_VISUALIZATION)
             src/visualization/vtk_declarations.h
     )
 
+    target_sources(
+            ${PROJECT_NAME}_visualisation
+            PUBLIC
+            FILE_SET CXX_MODULES
+            FILES
+            src/visualization/visualize_path.cppm
+    )
+
     target_precompile_headers(${PROJECT_NAME}_visualisation REUSE_FROM planning)
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
