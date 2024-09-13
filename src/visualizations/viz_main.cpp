@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include <sstream>
+#include <filesystem>
 
 #include "../visualization/visualization_function_macros.h"
 
@@ -51,12 +52,12 @@ int main(int argc, char **argv) {
 		std::string input;
 		std::cin >> input;
 
-		int choice;
+		size_t choice;
 		std::stringstream ss(input);
 		if (!(ss >> choice)) { // If the input string cannot be parsed to an integer
 			// Find a visualization whose name contains the input string as a substring
 			auto it = std::find_if(visualization_names.begin(), visualization_names.end(),
-								   [&input](const std::string& name) {
+								   [&input](const std::string &name) {
 									   return name.find(input) != std::string::npos;
 								   });
 			if (it == visualization_names.end()) {
