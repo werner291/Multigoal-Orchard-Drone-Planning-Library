@@ -27,6 +27,7 @@
 using namespace mgodpl;
 
 import approach_makeshift_prm;
+import visualize_path;
 
 REGISTER_VISUALIZATION(nearby_sampling) {
 
@@ -207,20 +208,24 @@ REGISTER_VISUALIZATION(difficult_apples_rrt) {
 
 			std::optional<mgodpl::RobotPath> path;
 
+			std::function sample_state = [&]() {
+				// Generate a state randomly:
+				return generateUniformRandomState(robot, rng, 5, 10, M_PI_2);
+			};
+
+			std::function collides = [&](const RobotState &from) {
+				return check_robot_collision(robot, tree_trunk_object, from);
+			};
+
+			std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
+				return check_motion_collides(robot, tree_trunk_object, from, to);
+			};
+
 			rrt(
 					sample,
-					[&]() {
-						// Generate a state randomly:
-						return generateUniformRandomState(robot, rng, 5, 10, M_PI_2);
-					},
-					[&](const RobotState &state) {
-						// Check if the state is in collision:
-						return check_robot_collision(robot, tree_trunk_object, state);
-					},
-					[&](const RobotState &from, const RobotState &to) {
-						// Check if the motion is in collision:
-						return check_motion_collides(robot, tree_trunk_object, from, to);
-					},
+					sample_state,
+					collides,
+					motion_collides,
 					equal_weights_distance,
 					1000,
 					[&](const std::vector<RRTNode> &nodes) {
@@ -232,26 +237,11 @@ REGISTER_VISUALIZATION(difficult_apples_rrt) {
 						segment_viz.updateLine(segments);
 
 						auto side = inside(cgal::to_cgal_point(last_position));
+						bool has_escaped = side == CGAL::ON_UNBOUNDED_SIDE;
 
-						if (side == CGAL::ON_UNBOUNDED_SIDE) {
-
+						if (has_escaped) {
 							std::cout << "Found a way out for apple " << apple << "!" << std::endl;
-
-							// Retrace:
-							std::vector<RobotState> path_states;
-							size_t current_index = nodes.size() - 1;
-
-							do {
-								path_states.push_back(nodes[current_index].state);
-								current_index = nodes[current_index].parent_index;
-							} while (current_index != 0);
-
-							path_states.push_back(nodes[0].state);
-
-							path = RobotPath{
-									.states = path_states
-							};
-
+							path = retrace(nodes);
 							return true;
 						} else {
 							return false;
@@ -261,20 +251,9 @@ REGISTER_VISUALIZATION(difficult_apples_rrt) {
 
 			if (path) {
 				std::cout << "Found a path for apple " << apple << "!" << std::endl;
-
-				// Visualize the path:
-				PathPoint pt{0, 0.0};
-
-				do {
-					RobotState st = interpolate(pt, *path);
-					auto fk = robot_model::forwardKinematics(robot, st);
-					mgodpl::vizualisation::vizualize_robot_state(viewer, robot, fk, {1, 0, 1});
-				} while (!advancePathPointClamp(*path, pt, 0.1, equal_weights_distance));
-
+				visualization::visualize_path_by_interval(robot, viewer, path);
 				break;
 			}
-
-
 		}
 	}
 
