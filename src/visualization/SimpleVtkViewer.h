@@ -30,7 +30,7 @@ namespace mgodpl {
 	struct Mesh;
 
 	namespace robot_model {
-		struct RobotModel;
+		class RobotModel;
 	}
 
 	namespace math {
@@ -46,9 +46,9 @@ namespace mgodpl {
 
 	public:
 		// Create the VTK rendering objects.
-		vtkNew<vtkRenderer> viewerRenderer;
-		vtkNew<vtkRenderWindow> visualizerWindow;
-		vtkNew<vtkRenderWindowInteractor> renderWindowInteractor;
+		vtkNew <vtkRenderer> viewerRenderer;
+		vtkNew <vtkRenderWindow> visualizerWindow;
+		vtkNew <vtkRenderWindowInteractor> renderWindowInteractor;
 
 		// Optionally, a video recorder to record a video of the simulation.
 		std::optional<VideoRecorder> videoRecorder;
