@@ -254,6 +254,7 @@ target_sources(
         src/planning/scan_aware_local_optimization.cppm
         src/planning/approach_by_pullout.cppm
         src/planning/approach_makeshift_prm.cppm
+        src/planning/rrt.cppm
 )
 
 target_precompile_headers(planning PUBLIC src/planning/fcl.pch src/planning/cgal_chull_shortest_paths.h)
@@ -391,6 +392,7 @@ if (ENABLE_VISUALIZATION)
             src/visualization/ui.cpp
             src/visualization/CameraTracker.cpp
             src/visualization/CameraTracker.h
+            src/visualization/vtk_declarations.h
     )
 
     target_precompile_headers(${PROJECT_NAME}_visualisation REUSE_FROM planning)
