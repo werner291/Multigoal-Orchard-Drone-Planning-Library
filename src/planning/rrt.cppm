@@ -119,4 +119,29 @@ namespace mgodpl {
 			}
 		}
 	}
+
+	/**
+	 * \brief Retraces the path from the last node to the root node.
+	 *
+	 * This function constructs the path by following the parent indices from the last node
+	 * to the root node, and returns the path as a RobotPath object.
+	 *
+	 * Note: this path is in reverse order, starting from the last node and ending at the root node.
+	 *
+	 * \param nodes A vector of RRTNode representing the nodes in the tree.
+	 * \return A RobotPath object containing the states from the last node to the root node.
+	 */
+	export RobotPath retrace(const std::vector<RRTNode> &nodes) {
+		std::vector<RobotState> path_states;
+		size_t current_index = nodes.size() - 1;
+
+		do {
+			path_states.push_back(nodes[current_index].state);
+			current_index = nodes[current_index].parent_index;
+		} while (current_index != 0);
+
+		path_states.push_back(nodes[0].state);
+
+		return RobotPath{.states = path_states};
+	}
 }
