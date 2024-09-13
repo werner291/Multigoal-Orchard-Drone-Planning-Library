@@ -6,8 +6,8 @@
 // Created by werner on 2/12/24.
 //
 
-#ifndef MGODPL_ROBOT_STATE_H
-#define MGODPL_ROBOT_STATE_H
+#ifndef MGODPL_ROBOT_STATE_VIS_H
+#define MGODPL_ROBOT_STATE_VIS_H
 
 #include <vtkActor.h>
 #include "SimpleVtkViewer.h"
@@ -30,4 +30,4 @@ namespace mgodpl::vizualisation {
 							RobotActors &actors);
 }
 
-#endif //MGODPL_ROBOT_STATE_H
+#endif //MGODPL_ROBOT_STATE_VIS_H
