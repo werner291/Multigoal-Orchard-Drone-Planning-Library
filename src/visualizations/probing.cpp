@@ -14,23 +14,17 @@
 #include "../experiment_utils/TreeMeshes.h"
 #include "../planning/fcl_utils.h"
 #include "../visualization/SimpleVtkViewer.h"
-#include "../planning/ConvexHullSpace.h"
 #include "../planning/state_tools.h"
 #include "../planning/collision_detection.h"
 #include "../planning/goal_sampling.h"
 #include "../visualization/VtkTriangleSetVisualization.h"
 #include "../visualization/robot_state.h"
-#include "../planning/visitation_order.h"
-#include "../planning/RobotPath.h"
 #include "../planning/shell_path.h"
-#include "../planning/approach_path_planning.h"
-#include "../planning/shell_path_assembly.h"
 #include "../planning/probing_motions.h"
 #include <vtkActor.h>
 #include <vtkRenderer.h>
 
 #include "../visualization/visualization_function_macros.h"
-#include "../visualization/Throttle.h"
 #include "../experiment_utils/default_colors.h"
 #include "../visualization/RunQueue.h"
 #include "../planning/swept_volume_ccd.h"
@@ -40,7 +34,6 @@ import approach_by_pullout;
 using namespace mgodpl;
 using namespace mgodpl::cgal;
 using namespace mgodpl::approach_planning;
-using namespace mgodpl::shell_path_planning;
 
 const math::Vec3d FLOOR_COLOR{0.3, 0.6, 0.3};
 
@@ -405,20 +398,21 @@ REGISTER_VISUALIZATION(static_goals_and_motions) {
 	for (size_t i = 0; i < targets.size(); ++i) {
 		const math::Vec3d &target = targets[i];
 
-		auto pullout = plan_approach_by_pullout(tree_trunk_object, mesh_data, target, 0.0, robot, rng, 1000, {{
-																													  .sampled_state = [&](
-																															  const RobotState &state,
-																															  bool collision_free) {
-																														  if (collision_free) {
-																															  goalAndMotions[i].goalConfiguration = state;
-																														  }
-																													  },
-																													  .pullout_motion_considered = [&](
-																															  const ApproachPath &path,
-																															  bool path_collision_free) {
-																														  // Ignore it, we'll get it from the return value.
-																													  }
-																											  }});
+		auto pullout = plan_approach_by_pullout(tree_trunk_object, mesh_data, target, 0.0, robot, rng, 1000,
+												{{
+														 .sampled_state = [&](
+																 const RobotState &state,
+																 bool collision_free) {
+															 if (collision_free) {
+																 goalAndMotions[i].goalConfiguration = state;
+															 }
+														 },
+														 .pullout_motion_considered = [&](
+																 const ApproachPath &path,
+																 bool path_collision_free) {
+															 // Ignore it, we'll get it from the return value.
+														 }
+												 }});
 
 		goalAndMotions[i].probingMotion = pullout ? std::make_optional(pullout->path) : std::nullopt;
 	}
@@ -461,6 +455,9 @@ REGISTER_VISUALIZATION(static_goals_and_motions) {
 				VtkTriangleSetVisualization swept_volume_viz(0.8, 0.8, 0.8, 0.2);
 				swept_volume_viz.updateTriangles(volume);
 				viewer.addActor(swept_volume_viz.getActor());
+			} else {
+				std::cout << "Target " << i << " has no probing motion but does have a goal configuration."
+						  << std::endl;
 			}
 		}
 	}

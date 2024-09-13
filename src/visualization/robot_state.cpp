@@ -7,6 +7,7 @@
 //
 
 #include "robot_state.h"
+#include <vtkActor.h>
 
 mgodpl::vizualisation::RobotActors mgodpl::vizualisation::vizualize_robot_state(mgodpl::SimpleVtkViewer &viewer,
 																				const mgodpl::robot_model::RobotModel &robot,

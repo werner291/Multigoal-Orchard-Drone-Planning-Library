@@ -9,7 +9,7 @@
 #ifndef MGODPL_ROBOT_STATE_VIS_H
 #define MGODPL_ROBOT_STATE_VIS_H
 
-#include <vtkActor.h>
+#include "vtk_declarations.h"
 #include "SimpleVtkViewer.h"
 #include "../planning/RobotModel.h"
 
