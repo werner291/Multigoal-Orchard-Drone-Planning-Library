@@ -8,6 +8,7 @@
 
 #include <fcl/geometry/bvh/BVH_model.h>
 #include <fcl/math/triangle.h>
+#include <fcl/narrowphase/collision_object.h>
 
 #include "fcl_utils.h"
 

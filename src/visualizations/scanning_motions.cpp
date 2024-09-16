@@ -33,7 +33,8 @@
 #include "../visualization/vtk.h"
 #include <fcl/geometry/shape/box.h>
 #include <vtkTextActor.h>
-
+#include <fcl/narrowphase/collision_object.h>
+#include <fcl/geometry/bvh/BVH_model.h>
 using namespace mgodpl;
 using namespace mgodpl::vizualisation;
 

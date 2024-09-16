@@ -17,7 +17,8 @@
 #include "../planning/RandomNumberGenerator.h"
 #include "../planning/state_tools.h"
 #include "../planning/collision_detection.h"
-
+#include <fcl/narrowphase/collision_object.h>
+#include <fcl/geometry/bvh/BVH_model.h>
 #include <CGAL/Side_of_triangle_mesh.h>
 
 using namespace mgodpl;

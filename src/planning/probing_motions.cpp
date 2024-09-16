@@ -15,6 +15,8 @@
 #include "shell_path.h"
 #include "visitation_order.h"
 #include "goal_sampling.h"
+#include <fcl/narrowphase/collision_object.h>
+#include <fcl/geometry/bvh/BVH_model.h>
 
 using namespace mgodpl;
 using namespace cgal;

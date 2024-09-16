@@ -9,6 +9,8 @@
 #include <iostream>
 #include "tree_benchmark_data.h"
 #include "../planning/fcl_utils.h"
+#include <fcl/narrowphase/collision_object.h>
+#include <fcl/geometry/bvh/BVH_model.h>
 
 namespace mgodpl::experiments {
 	std::vector<std::string> getAndAnnotateTreeModels(Json::Value &results) {

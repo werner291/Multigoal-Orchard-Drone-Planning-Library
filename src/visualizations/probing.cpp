@@ -23,6 +23,8 @@
 #include "../planning/probing_motions.h"
 #include <vtkActor.h>
 #include <vtkRenderer.h>
+#include <fcl/narrowphase/collision_object.h>
+#include <fcl/geometry/bvh/BVH_model.h>
 
 #include "../visualization/visualization_function_macros.h"
 #include "../experiment_utils/default_colors.h"

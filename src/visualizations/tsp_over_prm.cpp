@@ -30,6 +30,10 @@
 #include "../planning/goal_sampling.h"
 #include "../visualization/declarative.h"
 
+#include <fcl/narrowphase/collision.h>
+#include <fcl/narrowphase/collision_object.h>
+
+
 using namespace mgodpl;
 
 REGISTER_VISUALIZATION(tsp_over_prm) {

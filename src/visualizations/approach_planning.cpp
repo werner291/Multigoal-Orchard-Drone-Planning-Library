@@ -17,7 +17,8 @@
 #include "../visualization/robot_state.h"
 #include "../visualization/visualization_function_macros.h"
 #include "../visualization/VtkLineSegmentVizualization.h"
-
+#include <fcl/narrowphase/collision_object.h>
+#include <fcl/geometry/bvh/BVH_model.h>
 #include "../planning/state_tools.h"
 #include "../planning/cgal_chull_shortest_paths.h"
 #include <optional>

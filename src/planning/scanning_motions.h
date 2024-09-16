@@ -11,6 +11,7 @@
 
 #include "RobotModel.h"
 #include "RobotPath.h"
+#include "fcl_forward_declarations.h"
 
 namespace mgodpl {
 	/**

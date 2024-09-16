@@ -18,6 +18,7 @@
 #include "RobotPath.h"
 #include "RobotState.h"
 #include "nearest_neighbours/NearestNeighborsGNAT.h"
+#include "fcl_forward_declarations.h"
 
 namespace mgodpl {
 	// Define the graph type: an undirected graph with the defined vertex properties

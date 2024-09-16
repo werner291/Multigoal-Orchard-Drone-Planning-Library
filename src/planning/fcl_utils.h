@@ -10,19 +10,10 @@
 #define MGODPL_FCL_UTILS_H
 
 #include <memory>
-
+#include "fcl_forward_declarations.h"
 
 namespace mgodpl {
 	struct Mesh;
-}
-
-namespace fcl {
-	template<typename S>
-	class BVHModel;
-
-	template<typename S>
-	struct OBB;
-	using OBBd = OBB<double>;
 }
 
 namespace mgodpl::tree_meshes {

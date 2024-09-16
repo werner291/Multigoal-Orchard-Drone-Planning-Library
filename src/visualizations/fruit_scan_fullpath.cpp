@@ -49,7 +49,8 @@
 #include <vtkSphereSource.h>
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
-
+#include <fcl/narrowphase/collision_object.h>
+#include <fcl/geometry/bvh/BVH_model.h>
 using namespace mgodpl;
 
 REGISTER_VISUALIZATION(fruit_scan_fullpath) {

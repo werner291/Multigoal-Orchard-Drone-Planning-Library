@@ -257,7 +257,9 @@ target_sources(
         src/planning/rrt.cppm
 )
 
+if (NOT NIXOS) # We get a weird error when trying to do precompiled headers on NixOS; turn it off for now.
 target_precompile_headers(planning PUBLIC src/planning/fcl.pch src/planning/cgal_chull_shortest_paths.h)
+endif ()
 
 target_link_libraries(planning math_utils)
 
@@ -341,7 +343,9 @@ if (ENABLE_EXPERIMENTS)
             src/benchmarks/probing_motions.cpp
     )
 
-    target_precompile_headers(experiment_utils REUSE_FROM planning)
+    if (NOT NIXOS) # We get a weird error when trying to do precompiled headers on NixOS; turn it off for now.
+        target_precompile_headers(experiment_utils REUSE_FROM planning)
+    endif ()
 
     target_link_libraries(benchmarks math_utils visibility experiment_utils planning)
 endif ()
@@ -403,7 +407,9 @@ if (ENABLE_VISUALIZATION)
             src/visualization/visualize_path.cppm
     )
 
-    target_precompile_headers(${PROJECT_NAME}_visualisation REUSE_FROM planning)
+    if (NOT NIXOS) # We get a weird error when trying to do precompiled headers on NixOS; turn it off for now.
+        target_precompile_headers(${PROJECT_NAME}_visualisation REUSE_FROM planning)
+    endif ()
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
     target_link_libraries(${PROJECT_NAME}_visualisation ${VTK_LIBRARIES} experiment_utils)
@@ -457,7 +463,10 @@ if (ENABLE_VISUALIZATION)
     )
 
     target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-    target_precompile_headers(visualizations REUSE_FROM planning)
+
+    if (NOT NIXOS) # We get a weird error when trying to do precompiled headers on NixOS; turn it off for now.
+        target_precompile_headers(visualizations REUSE_FROM planning)
+    endif ()
 
 endif ()
 
@@ -483,7 +492,9 @@ if (ENABLE_TESTS)
     target_link_libraries(${PROJECT_NAME}_tests math_utils experiment_utils planning gtest)
     gtest_discover_tests(${PROJECT_NAME}_tests)
 
-    target_precompile_headers(${PROJECT_NAME}_tests REUSE_FROM planning)
+    if (NOT NIXOS) # We get a weird error when trying to do precompiled headers on NixOS; turn it off for now.
+        target_precompile_headers(${PROJECT_NAME}_tests REUSE_FROM planning)
+    endif ()
 
 endif () # ENABLE_TESTS
 
