@@ -151,9 +151,19 @@ REGISTER_BENCHMARK(probing_motions) {
 		// RNG:
 		random_numbers::RandomNumberGenerator rng(42);
 
+		// Prepare to track some statistics:
+
+		// The number of samples that collided with the tree:
 		int collisions = 0;
+
+		// The number of times we found a successful pullout:
 		int successful_pullouts = 0;
+
+		// How many times the RRT was successful:
 		int successful_rrts = 0;
+
+		// How many times the RRT was successful AND the pullout failed.
+		int successful_conditional_rrts = 0;
 
 		// Take 1000 goal samples:
 		for (size_t i = 0; i < MAX_SAMPLES; ++i) {
@@ -183,13 +193,13 @@ REGISTER_BENCHMARK(probing_motions) {
 
 				successful_pullouts += collides ? 0 : 1;
 
-				if (collides) {
+				if (collides || successful_rrts == 0) {
 					std::function sample_state = [&]() {
 						// Generate a state randomly:
 						return generateUniformRandomState(robot_model, rng, 5, 10, M_PI_2);
 					};
 
-					std::function collides = [&](const RobotState &from) {
+					std::function state_collides = [&](const RobotState &from) {
 						return check_robot_collision(robot_model, *tree_collision, from);
 					};
 
@@ -202,7 +212,7 @@ REGISTER_BENCHMARK(probing_motions) {
 					rrt(
 							sample,
 							sample_state,
-							collides,
+							state_collides,
 							motion_collides,
 							equal_weights_distance,
 							1000,
@@ -213,6 +223,9 @@ REGISTER_BENCHMARK(probing_motions) {
 
 								if (has_escaped) {
 									successful_rrts += 1;
+									if (collides) {
+										successful_conditional_rrts += 1;
+									}
 									return true;
 								} else {
 									return false;
@@ -227,6 +240,7 @@ REGISTER_BENCHMARK(probing_motions) {
 		result["collisions"] = collisions;
 		result["successful_pullouts"] = successful_pullouts;
 		result["successful_rrts"] = successful_rrts;
+		result["successful_conditional_rrts"] = successful_conditional_rrts;
 
 		{
 			// Let's do a straight-in motion as well:
