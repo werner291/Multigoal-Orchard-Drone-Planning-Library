@@ -164,6 +164,7 @@ REGISTER_BENCHMARK(probing_motions) {
 		// How many times the RRT was successful:
 		int successful_rrts = 0;
 
+		int rrt_checked_samples = 0;
 		int rrt_checked_motions = 0;
 
 		// How many times the RRT was successful AND the pullout failed.
@@ -209,7 +210,10 @@ REGISTER_BENCHMARK(probing_motions) {
 						return generateUniformRandomState(robot_model, rng, 5, 10, M_PI_2);
 					};
 
+					int checked_samples = 0;
+
 					std::function state_collides = [&](const RobotState &from) {
+						checked_samples += 1;
 						return check_robot_collision(robot_model, *tree_collision, from);
 					};
 
@@ -233,6 +237,7 @@ REGISTER_BENCHMARK(probing_motions) {
 								auto side = inside(cgal::to_cgal_point(last_position));
 								bool has_escaped = side == CGAL::ON_UNBOUNDED_SIDE;
 
+								rrt_checked_samples += checked_samples;
 								rrt_checked_motions += checked_motions;
 								if (collides) {
 									conditional_rrt_checked_motions += checked_motions;
@@ -260,6 +265,7 @@ REGISTER_BENCHMARK(probing_motions) {
 		result["successful_conditional_rrts"] = successful_conditional_rrts;
 		result["samples_taken"] = samples_taken;
 		result["pullout_attempts"] = pullout_attempts;
+		result["rrt_checked_samples"] = rrt_checked_samples;
 		result["rrt_checked_motions"] = rrt_checked_motions;
 		result["conditional_rrt_checked_motions"] = conditional_rrt_checked_motions;
 
