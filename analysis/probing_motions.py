@@ -97,3 +97,32 @@ plt.ylabel('P(RRT succeeds | (goal sample available AND pullout fails))')
 plt.grid()
 plt.savefig(os.path.join(save_to_dir, 'probing_motions_rrt_success.svg'))
 plt.show()
+
+# Alternatively, we'd like to see how much this improves our performance per tree, as a stacked bar chart, where the conditional improvement is stacked on top of the base success rate.
+#
+# Essentially: P(RRT succeeds OR pullout succeeds | goal sample available)
+
+df['any_success'] = (df['successful_rrts'] > 0) | (df['successful_pullouts'] > 0)
+print(f'P(RRT succeeds OR pullout succeeds | goal sample available) = {df["any_success"].mean()}')
+
+# The same, normalize by the tree:
+any_by_tree = df.groupby(['tree_model'])['any_success']
+by_tree_mean = any_by_tree.mean()
+print(f'P(RRT succeeds OR pullout succeeds | goal sample available) by tree:')
+print('Mean:', by_tree_mean.mean())
+print('Q1:', by_tree_mean.quantile(0.25))
+print('Median:', by_tree_mean.median())
+print('Q3:', by_tree_mean.quantile(0.75))
+
+# Per tree, a stackedbar plot, showing the contribution from the RRT fallback separately:
+
+df['successful_pullouts_conditional'] = df['successful_pullouts'] / df['collision_free_samples']
+df['successful_rrts_conditional'] = df['successful_rrts'] / df['collision_free_samples']
+
+df.groupby(['tree_model'])[['successful_pullouts_conditional', 'successful_rrts_conditional']].mean().plot(kind='bar',
+                                                                                                           stacked=True)
+plt.title('RRT success rate after failed pullout')
+plt.ylabel('P(RRT succeeds OR pullout succeeds | goal sample available)')
+plt.grid()
+plt.savefig(os.path.join(save_to_dir, 'probing_motions_rrt_success_stacked.svg'))
+plt.show()
