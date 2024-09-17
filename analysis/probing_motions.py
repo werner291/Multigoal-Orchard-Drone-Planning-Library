@@ -28,6 +28,7 @@ save_to_dir = os.environ.get('FIGURES_DIR', 'generated_figures')
 os.makedirs(save_to_dir, exist_ok=True)
 
 df = pd.json_normalize(results['results'])
+df['collision_free_samples'] = max_samples - df['collisions']
 
 df['depth_ratio'] = df['signed_goal_depth'] / df.groupby('tree_model')['signed_goal_depth'].transform('max')
 # sort by increasing depth
