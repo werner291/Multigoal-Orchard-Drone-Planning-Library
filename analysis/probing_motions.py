@@ -73,3 +73,10 @@ plt.title('Probing motions conditional any pullout success rate by depth')
 plt.legend(['25th percentile', '50th percentile', '75th percentile'])
 plt.savefig(os.path.join(save_to_dir, 'probing_motions_any_conditional.svg'))
 plt.show()
+
+# We would like to know: if we have a collision-free goal sample, but the pullout fails, how likely is RRT to succeed?
+#
+# That is, we'd like to know P(RRT succeeds | (goals sample available AND pullout fails))
+# First, just as a single number:
+conditional_rrt_success = df['successful_rrts'] / (max_samples - df['collisions'] - df['successful_pullouts'])
+print(f'P(RRT succeeds | (goal sample available AND pullout fails)) = {conditional_rrt_success.mean()}')
