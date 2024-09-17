@@ -29,9 +29,12 @@
 #include "../experiment_utils/tree_benchmark_data.h"
 #include "../planning/probing_motions.h"
 #include "../planning/approach_path_planning.h"
+#include "../planning/state_tools.h"
 
 #include <execution>
 #include <CGAL/Side_of_triangle_mesh.h>
+
+import rrt;
 
 using namespace mgodpl;
 using namespace experiments;
@@ -49,6 +52,19 @@ REGISTER_BENCHMARK(probing_motions) {
 
 	// Grab a list of all tree models:
 	auto tree_models = mgodpl::experiments::loadAllTreeBenchmarkData(results);
+
+	// Get a list of canopy AABBs:
+	std::vector<mgodpl::math::AABBd> canopy_aabbs;
+	for (const auto &tree_model: tree_models) {
+		canopy_aabbs.push_back(mgodpl::mesh_aabb(tree_model.tree_mesh.leaves_mesh));
+	}
+
+	// Get a list of inside-outside checks:
+	std::vector<CGAL::Side_of_triangle_mesh<mgodpl::cgal::Surface_mesh, mgodpl::cgal::K>> inside_outside_checks;
+	for (const auto &tree_model: tree_models) {
+		inside_outside_checks.push_back(CGAL::Side_of_triangle_mesh<mgodpl::cgal::Surface_mesh, mgodpl::cgal::K>(
+				tree_model.tree_convex_hull->convex_hull));
+	}
 
 	robot_model::RobotModel robot_model = mgodpl::experiments::createProceduralRobotModel(
 			{
@@ -137,9 +153,7 @@ REGISTER_BENCHMARK(probing_motions) {
 
 		int collisions = 0;
 		int successful_pullouts = 0;
-
-		// Record start time:
-		auto start_time = std::chrono::high_resolution_clock::now();
+		int successful_rrts = 0;
 
 		// Take 1000 goal samples:
 		for (size_t i = 0; i < MAX_SAMPLES; ++i) {
@@ -165,13 +179,54 @@ REGISTER_BENCHMARK(probing_motions) {
 				);
 
 				// Check collisions:
-				successful_pullouts += check_path_collides(robot_model, *tree_collision, path.path) ? 0 : 1;
+				bool collides = check_path_collides(robot_model, *tree_collision, path.path);
+
+				successful_pullouts += collides ? 0 : 1;
+
+				if (collides) {
+					std::function sample_state = [&]() {
+						// Generate a state randomly:
+						return generateUniformRandomState(robot_model, rng, 5, 10, M_PI_2);
+					};
+
+					std::function collides = [&](const RobotState &from) {
+						return check_robot_collision(robot_model, *tree_collision, from);
+					};
+
+					std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
+						return check_motion_collides(robot_model, *tree_collision, from, to);
+					};
+
+
+					// Let's try RRT:
+					rrt(
+							sample,
+							sample_state,
+							collides,
+							motion_collides,
+							equal_weights_distance,
+							1000,
+							[&](const std::vector<RRTNode> &nodes) {
+								math::Vec3d last_position = nodes.back().state.base_tf.translation;
+								auto side = inside(cgal::to_cgal_point(last_position));
+								bool has_escaped = side == CGAL::ON_UNBOUNDED_SIDE;
+
+								if (has_escaped) {
+									successful_rrts += 1;
+									return true;
+								} else {
+									return false;
+								}
+							}
+					);
+				}
 			}
 
 		}
 
 		result["collisions"] = collisions;
 		result["successful_pullouts"] = successful_pullouts;
+		result["successful_rrts"] = successful_rrts;
 
 		{
 			// Let's do a straight-in motion as well:
@@ -183,11 +238,6 @@ REGISTER_BENCHMARK(probing_motions) {
 
 			result["straight_in_collides"] = check_path_collides(robot_model, *tree_collision, straight_in.path);
 		}
-
-		// Record end time:
-		auto end_time = std::chrono::high_resolution_clock::now();
-
-		result["time_ms"] = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
 
 		// Lock the results mutex:
 		std::lock_guard lock(results_mutex);
