@@ -152,11 +152,29 @@ plt.tight_layout()
 plt.savefig(os.path.join(save_to_dir, 'probing_motions_any_success_mean_of_trees.svg'))
 plt.show()
 
+##########################################################
+
 # Get some plots on the costs too:
-df.groupby(['tree_model', 'goal_index']).mean().plot.scatter(x='pullout_attempts', y='rrt_checked_motions', alpha=0.5)
+df.plot.scatter(x='pullout_attempts', y='rrt_checked_motions', alpha=0.5, s=1)
+# Plot a 1-1 curve:
+plt.plot(np.linspace(0, 1000, 1000), np.linspace(0, 1000, 1000), color='orange', linestyle='--')
+
 plt.title('RRT checked motions vs pullout attempts')
 plt.yscale('log')
 plt.grid()
-plt.tight_layout
 plt.savefig(os.path.join(save_to_dir, 'probing_motions_rrt_checked_vs_pullout_attempts.png'))
+plt.show()
+
+##########################################################
+
+# Try taking the mean per tree:
+df.groupby(['tree_model'])[['pullout_attempts', 'rrt_checked_motions']].mean().plot.scatter(x='pullout_attempts',
+                                                                                            y='rrt_checked_motions')
+
+# Plot a 1-1 curve:
+plt.plot(np.linspace(0, 1000, 1000), np.linspace(0, 1000, 1000), color='orange', linestyle='--')
+plt.title('RRT checked motions vs pullout attempts (per tree)')
+plt.yscale('log')
+plt.grid()
+plt.savefig(os.path.join(save_to_dir, 'probing_motions_rrt_checked_vs_pullout_attempts_pertree.svg'))
 plt.show()
