@@ -7,6 +7,12 @@ from load_benchmark_results import load_benchmark_results
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+
+# Circumvent what appears to be a bug in Pycharm/CLion:
+# https://youtrack.jetbrains.com/issue/PY-75269/Error-after-updating-to-latest-PyCharm-2024.2-CE-Failed-to-enable-GUI-event-loop-integration-for-qt
+mpl.use("Qt5Agg")
+
 import numpy as np
 import os
 
