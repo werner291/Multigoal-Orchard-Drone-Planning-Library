@@ -151,3 +151,12 @@ plt.grid()
 plt.tight_layout()
 plt.savefig(os.path.join(save_to_dir, 'probing_motions_any_success_mean_of_trees.svg'))
 plt.show()
+
+# Get some plots on the costs too:
+df.groupby(['tree_model', 'goal_index']).mean().plot.scatter(x='pullout_attempts', y='rrt_checked_motions', alpha=0.5)
+plt.title('RRT checked motions vs pullout attempts')
+plt.yscale('log')
+plt.grid()
+plt.tight_layout
+plt.savefig(os.path.join(save_to_dir, 'probing_motions_rrt_checked_vs_pullout_attempts.png'))
+plt.show()

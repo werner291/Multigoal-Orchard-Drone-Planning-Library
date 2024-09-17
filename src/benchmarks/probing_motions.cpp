@@ -159,11 +159,19 @@ REGISTER_BENCHMARK(probing_motions) {
 		// The number of times we found a successful pullout:
 		int successful_pullouts = 0;
 
+		int pullout_attempts = 0;
+
 		// How many times the RRT was successful:
 		int successful_rrts = 0;
 
+		int rrt_checked_motions = 0;
+
 		// How many times the RRT was successful AND the pullout failed.
 		int successful_conditional_rrts = 0;
+
+		int conditional_rrt_checked_motions = 0;
+
+		int samples_taken = 0;
 
 		// Take 1000 goal samples:
 		for (size_t i = 0; i < MAX_SAMPLES; ++i) {
@@ -175,6 +183,7 @@ REGISTER_BENCHMARK(probing_motions) {
 					base_link,
 					end_effector_link
 			);
+			samples_taken += 1;
 
 			// Check collisions:
 			if (check_robot_collision(robot_model, *tree_collision, sample)) {
@@ -190,6 +199,7 @@ REGISTER_BENCHMARK(probing_motions) {
 
 				// Check collisions:
 				bool collides = check_path_collides(robot_model, *tree_collision, path.path);
+				pullout_attempts += 1;
 
 				successful_pullouts += collides ? 0 : 1;
 
@@ -203,10 +213,12 @@ REGISTER_BENCHMARK(probing_motions) {
 						return check_robot_collision(robot_model, *tree_collision, from);
 					};
 
+					int checked_motions = 0;
+
 					std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
+						checked_motions += 1;
 						return check_motion_collides(robot_model, *tree_collision, from, to);
 					};
-
 
 					// Let's try RRT:
 					rrt(
@@ -220,6 +232,11 @@ REGISTER_BENCHMARK(probing_motions) {
 								math::Vec3d last_position = nodes.back().state.base_tf.translation;
 								auto side = inside(cgal::to_cgal_point(last_position));
 								bool has_escaped = side == CGAL::ON_UNBOUNDED_SIDE;
+
+								rrt_checked_motions += checked_motions;
+								if (collides) {
+									conditional_rrt_checked_motions += checked_motions;
+								}
 
 								if (has_escaped) {
 									successful_rrts += 1;
@@ -241,6 +258,10 @@ REGISTER_BENCHMARK(probing_motions) {
 		result["successful_pullouts"] = successful_pullouts;
 		result["successful_rrts"] = successful_rrts;
 		result["successful_conditional_rrts"] = successful_conditional_rrts;
+		result["samples_taken"] = samples_taken;
+		result["pullout_attempts"] = pullout_attempts;
+		result["rrt_checked_motions"] = rrt_checked_motions;
+		result["conditional_rrt_checked_motions"] = conditional_rrt_checked_motions;
 
 		{
 			// Let's do a straight-in motion as well:
