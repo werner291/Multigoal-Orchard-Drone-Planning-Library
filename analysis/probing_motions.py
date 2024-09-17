@@ -131,8 +131,23 @@ plt.show()
 df['any_sample'] = df['collision_free_samples'] > 0
 df['any_pullout'] = df['successful_pullouts'] > 0
 df['any_fallback_rrt'] = df['successful_rrts_conditional'] > 0
+df['any_pullout_with_fallback'] = df['any_pullout'] | df['any_fallback_rrt']
 df['any_main_rrt'] = df['successful_rrts'] > 0
 
 # Now, group these together by tree model, take the mean, and plot:
-df.groupby(['tree_model'])[['any_sample', 'any_pullout', 'any_fallback_rrt', 'any_main_rrt']].mean().plot(kind='bar')
+any_by_tree_rrt = df[df['any_sample']].groupby(['tree_model'])[
+    ['any_pullout', 'any_pullout_with_fallback', 'any_main_rrt']].mean()
+any_by_tree_rrt.plot(kind='bar', ylim=(0.9, 1))
+plt.title('P(any success) for various operations, per tree')
+plt.ylabel('P(any success)')
+plt.grid()
+plt.savefig(os.path.join(save_to_dir, 'probing_motions_any_success.svg'))
+plt.show()
+
+# Plot the mean of means:
+any_by_tree_rrt.mean().plot(kind='bar', ylim=(0.9, 1))
+plt.title('P(any success) for various operations, mean of trees')
+plt.grid()
+plt.tight_layout()
+plt.savefig(os.path.join(save_to_dir, 'probing_motions_any_success_mean_of_trees.svg'))
 plt.show()
