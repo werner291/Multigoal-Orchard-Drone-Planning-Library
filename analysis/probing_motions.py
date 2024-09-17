@@ -78,5 +78,22 @@ plt.show()
 #
 # That is, we'd like to know P(RRT succeeds | (goals sample available AND pullout fails))
 # First, just as a single number:
-conditional_rrt_success = df['successful_rrts'] / (max_samples - df['collisions'] - df['successful_pullouts'])
-print(f'P(RRT succeeds | (goal sample available AND pullout fails)) = {conditional_rrt_success.mean()}')
+df['conditional_rrt_success'] = df['successful_rrts'] / (max_samples - df['collisions'] - df['successful_pullouts'])
+print(f'P(RRT succeeds | (goal sample available AND pullout fails)) = {df["conditional_rrt_success"].mean()}')
+
+# The same, normalize by the tree:
+conditional_by_tree = df.groupby(['tree_model'])['conditional_rrt_success']
+by_tree_mean = conditional_by_tree.mean()
+print(f'P(RRT succeeds | (goal sample available AND pullout fails)) by tree:')
+print('Mean:', by_tree_mean.mean())
+print('Q1:', by_tree_mean.quantile(0.25))
+print('Median:', by_tree_mean.median())
+print('Q3:', by_tree_mean.quantile(0.75))
+
+# Per tree, a bar plot:
+by_tree_mean.plot(kind='bar')
+plt.title('RRT success rate after failed pullout')
+plt.ylabel('P(RRT succeeds | (goal sample available AND pullout fails))')
+plt.savefig(os.path.join(save_to_dir, 'probing_motions_rrt_success.svg'))
+plt.grid()
+plt.show()
