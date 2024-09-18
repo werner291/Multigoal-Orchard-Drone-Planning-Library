@@ -27,15 +27,20 @@ results = load_benchmark_results(
 save_to_dir = os.environ.get('FIGURES_DIR', 'generated_figures')
 os.makedirs(save_to_dir, exist_ok=True)
 
+df_problems = pd.json_normalize(results['problems'])
+
 df = pd.json_normalize(results['results'])
+df = df.join(df_problems, on='problem')
+
+# Calculate time_per_target
+df['time_per_target'] = df['time_ms'] / df['n_targets']
 
 ##########################################
 # Distribution of timings of the methods #
 ##########################################
 
 plt.figure(figsize=(10, 6))
-sns.violinplot(x='method', y='time_ms', data=df)
-# plt.yscale('log')
+sns.violinplot(x='method', y='time_per_target', data=df)
 plt.title('Violin Plot of Time (ms) by Method Index')
 plt.xlabel('Method Index')
 plt.ylabel('Time (ms)')
