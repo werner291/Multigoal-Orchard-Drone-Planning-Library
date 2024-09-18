@@ -44,11 +44,14 @@ namespace mgodpl::experiments {
 		std::cout << "Creating convex hull for tree model " << tree_model_name << std::endl;
 		auto local_tree_convex_hull = std::make_shared<mgodpl::cgal::CgalMeshData>(local_tree_mesh.leaves_mesh);
 
+		auto fruit_positions = computeFruitPositions(local_tree_mesh);
+
 		return {
 				local_tree_model_name,
 				local_tree_mesh,
 				local_tree_collision_object,
-				local_tree_convex_hull
+				local_tree_convex_hull,
+				fruit_positions
 		};
 	}
 
