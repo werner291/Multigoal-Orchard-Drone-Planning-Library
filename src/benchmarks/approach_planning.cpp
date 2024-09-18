@@ -12,8 +12,10 @@
 #include "../planning/RobotPath.h"
 #include "../experiment_utils/procedural_robot_models.h"
 #include "../planning/RandomNumberGenerator.h"
+#include "../planning/state_tools.h"
 
 import approach_by_pullout;
+import rrt;
 #include <CGAL/Side_of_triangle_mesh.h>
 
 using namespace mgodpl;
@@ -60,6 +62,82 @@ ApproachPlanningMethodFn probing_by_pullout() {
 	};
 }
 
+ApproachPlanningMethodFn rrt_from_goal_samples() {
+	return [](const ApproachPlanningProblem &problem,
+			  random_numbers::RandomNumberGenerator &rng) -> ApproachPlanningResults {
+		std::vector<std::optional<RobotPath>> paths;
+
+		for (const auto &target: problem.tree_model.target_points) {
+
+			const mgodpl::robot_model::RobotModel &robot_model = problem.robot;
+			const auto &tree_collision = *problem.tree_model.tree_collision_object;
+
+			CGAL::Side_of_triangle_mesh<cgal::Surface_mesh, cgal::K> inside(
+					problem.tree_model.tree_convex_hull->convex_hull);
+
+			for (int sample_i = 0; sample_i < 1000; sample_i++) {
+				auto sample = mgodpl::genGoalStateUniform(
+						rng,
+						math::Vec3d(0, 0, 0),
+						0.0,
+						problem.robot,
+						problem.robot.findLinkByName("flying_base"),
+						problem.robot.findLinkByName("end_effector")
+				);
+
+				if (!check_robot_collision(problem.robot, *problem.tree_model.tree_collision_object, sample)) {
+					std::function sample_state = [&]() {
+						// Generate a state randomly:
+						return generateUniformRandomState(robot_model, rng, 5, 10, M_PI_2);
+					};
+
+					int checked_samples = 0;
+
+					std::function state_collides = [&](const RobotState &from) {
+						checked_samples += 1;
+						return check_robot_collision(robot_model, tree_collision, from);
+					};
+
+					int checked_motions = 0;
+
+					std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
+						checked_motions += 1;
+						return check_motion_collides(robot_model, tree_collision, from, to);
+					};
+
+					bool found_path = false;
+
+					rrt(
+							sample,
+							sample_state,
+							state_collides,
+							motion_collides,
+							equal_weights_distance,
+							1000,
+							[&](const std::vector<RRTNode> &nodes) {
+								math::Vec3d last_position = nodes.back().state.base_tf.translation;
+								auto side = inside(cgal::to_cgal_point(last_position));
+								bool has_escaped = side == CGAL::ON_UNBOUNDED_SIDE;
+
+
+								if (has_escaped) {
+									paths.emplace_back(retrace(nodes));
+									found_path = true;
+									return true;
+								} else {
+									return false;
+								}
+							}
+					);
+
+
+				}
+			}
+		}
+
+	};
+}
+
 REGISTER_BENCHMARK(approach_planning_comparison) {
 
 	robot_model::RobotModel robot_model = mgodpl::experiments::createProceduralRobotModel(
@@ -82,7 +160,7 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 		});
 	}
 
-	const size_t REPETITIONS = 10;
+	const size_t REPETITIONS = 2;
 
 	const std::vector<ApproachPlanningMethodFn> methods{
 			probing_by_pullout()
@@ -146,7 +224,10 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 		result_json["method"] = run.method_index;
 		result_json["problem"] = run.problem_index;
 		result_json["repetition"] = run.repetition_index;
+
 		result_json["time_ms"] = time_ms;
+		result_json["targets_reached"] = std::count_if(result.paths.begin(), result.paths.end(),
+													   [](const auto &path) { return path.has_value(); });
 
 		{
 
