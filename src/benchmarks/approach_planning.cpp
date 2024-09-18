@@ -92,6 +92,12 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 	problems.reserve(tree_models.size());
 	for (const auto &tree_model: tree_models) {
 		problems.emplace_back(ApproachPlanningProblem{robot_model, tree_model});
+
+		Json::Value problem_json;
+		problem_json["name"] = tree_model.tree_model_name;
+		problem_json["n_targets"] = static_cast<int>(tree_model.target_points.size());
+
+		results["problems"].append(problem_json);
 	}
 
 	struct Run {
