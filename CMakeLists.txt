@@ -339,6 +339,7 @@ if (ENABLE_EXPERIMENTS)
             src/benchmarks/tree_stats.cpp
             src/benchmarks/sampling_difficulty.cpp
             src/benchmarks/probing_motions.cpp
+            src/benchmarks/approach_planning.cpp
     )
 
     target_precompile_headers(experiment_utils REUSE_FROM planning)
