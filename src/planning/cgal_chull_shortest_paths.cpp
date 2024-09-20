@@ -7,6 +7,7 @@
 //
 
 #include <CGAL/convex_hull_3.h>
+#include <CGAL/Polygon_mesh_processing/compute_normal.h>
 #include "cgal_chull_shortest_paths.h"
 
 namespace mgodpl::cgal {
@@ -43,5 +44,19 @@ namespace mgodpl::cgal {
 			CGAL::convex_hull_3(cgal_points.begin(), cgal_points.end(), convex_hull);
 		}
 		return convex_hull;
+	}
+
+	Surface_mesh_shortest_path::Face_location locate_nearest(const math::Vec3d &pt, const CgalMeshData &data) {
+		return data.mesh_path.locate(to_cgal_point(pt), data.tree);
+	}
+
+	SurfacePointAndNormal from_face_location(const mgodpl::cgal::Surface_mesh_shortest_path::Face_location &fl, const CgalMeshData &data) {
+		auto pt = data.mesh_path.point(fl.first, fl.second);
+		auto normal = CGAL::Polygon_mesh_processing::compute_face_normal(fl.first, data.convex_hull);
+
+		return {
+				{pt.x(),pt.y(),pt.z()},
+				{normal.x(),normal.y(),normal.z()},
+		};
 	}
 }

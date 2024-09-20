@@ -108,6 +108,15 @@ namespace mgodpl::cgal {
 		explicit CgalMeshData(const Mesh &leaves_mesh);
 	};
 
+	Surface_mesh_shortest_path::Face_location locate_nearest(const math::Vec3d& pt, const CgalMeshData& data);
+
+	struct SurfacePointAndNormal {
+		math::Vec3d surface_point;
+		math::Vec3d normal;
+	};
+
+	SurfacePointAndNormal from_face_location(const Surface_mesh_shortest_path::Face_location& fl, const CgalMeshData& data);
+
 }
 
 #endif //MGODPL_CGAL_CHULL_SHORTEST_PATHS_H
