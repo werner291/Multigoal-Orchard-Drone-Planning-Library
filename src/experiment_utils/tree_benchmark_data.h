@@ -37,6 +37,7 @@ namespace mgodpl::experiments {
 		mgodpl::tree_meshes::TreeMeshes tree_mesh;
 		std::shared_ptr<fcl::CollisionObjectd> tree_collision_object;
 		std::shared_ptr<mgodpl::cgal::CgalMeshData> tree_convex_hull;
+		std::vector<math::Vec3d> target_points;
 	};
 
 	/**
