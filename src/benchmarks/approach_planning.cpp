@@ -117,24 +117,24 @@ ApproachPlanningMethodFn rrt_from_goal_samples() {
 
 			paths.push_back(
 					try_at_valid_goal_samples<RobotPath>(
-					state_collides,
-					sample_goal_state,
-					1000,
-					[&](const RobotState &goal_sample) {
-						assert(!state_collides(goal_sample));
-						return rrt_path_to_acceptable(
-								goal_sample,
-								sample_state,
-								state_collides,
-								motion_collides,
-								equal_weights_distance,
-								1000,
-								[&](const RobotState& state) {
-									// TODO: this is technically not 100% accurate but if we get to this point the planning problem is trivial.
-									return inside(cgal::to_cgal_point(state.base_tf.translation)) == CGAL::ON_UNBOUNDED_SIDE;
-								}
-						);
-					})
+							state_collides,
+							sample_goal_state,
+							1000,
+							[&](const RobotState &goal_sample) {
+								assert(!state_collides(goal_sample));
+								return rrt_path_to_acceptable(
+										goal_sample,
+										sample_state,
+										state_collides,
+										motion_collides,
+										equal_weights_distance,
+										1000,
+										[&](const RobotState& state) {
+											// TODO: this is technically not 100% accurate but if we get to this point the planning problem is trivial.
+											return inside(cgal::to_cgal_point(state.base_tf.translation)) == CGAL::ON_UNBOUNDED_SIDE;
+										}
+								);
+							})
 			);
 		}
 
