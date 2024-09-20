@@ -9,7 +9,7 @@ import matplotlib as mpl
 
 # Circumvent what appears to be a bug in Pycharm/CLion:
 # https://youtrack.jetbrains.com/issue/PY-75269/Error-after-updating-to-latest-PyCharm-2024.2-CE-Failed-to-enable-GUI-event-loop-integration-for-qt
-mpl.use("Qt5Agg")
+# mpl.use("Qt5Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -43,7 +43,8 @@ df['success_rate'] = df['targets_reached'] / df['n_targets']
 ##########################################
 
 plt.figure(figsize=(10, 6))
-sns.kdeplot(df, x='time_per_target', hue='method').set(xlim=0)
+# We exclude straight_in because it's pretty much O(1) time.
+sns.kdeplot(df[df['method'] != 'straight_in'], x='time_per_target', hue='method').set(xlim=0)
 plt.title('Plot of Time (ms) by Method')
 plt.grid()
 
@@ -56,10 +57,10 @@ plt.show()
 ############################################################
 
 plt.figure(figsize=(10, 6))
-box_plot = sns.boxplot(hue='method', y='time_per_target', x='problem', data=df)
+sns.barplot(hue='method', y='time_per_target', x='problem', data=df)
 
 plt.title('Box Plot of Time (ms) by Method Index Grouped by Tree')
-plt.xlabel('Method Index')
+plt.xlabel('Tree index')
 plt.ylabel('Time (ms)')
 plt.grid()
 
@@ -71,7 +72,7 @@ plt.show()
 #################################################################
 
 plt.figure(figsize=(10, 6))
-box_plot = sns.boxplot(hue='method', y='success_rate', x='problem', data=df)
+sns.barplot(hue='method', y='success_rate', x='problem', data=df)
 
 plt.title('Box Plot of % reached by Method Index Grouped by Tree')
 plt.xlabel('Method Index')
@@ -86,7 +87,7 @@ plt.show()
 ################################################################
 
 plt.figure(figsize=(10, 6))
-box_plot = sns.scatterplot(data=df, y='success_rate', x='time_per_target', hue='method')
+sns.scatterplot(data=df, y='success_rate', x='time_per_target', hue='method')
 
 plt.title('Plot of success rate vs time spent per target')
 plt.xlabel('Time (ms)')
