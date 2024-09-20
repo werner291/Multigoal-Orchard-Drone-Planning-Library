@@ -6,6 +6,7 @@ module;
 
 #include <cstddef>
 #include <vector>
+#include <optional>
 
 #include "RobotState.h"
 #include "RobotPath.h"
@@ -143,5 +144,47 @@ namespace mgodpl {
 		path_states.push_back(nodes[0].state);
 
 		return RobotPath{.states = path_states};
+	}
+
+	/**
+	 * Run RRT until finding an acceptable state (according to a std::function argument)
+	 * and then return a path from that state to the root.
+	 *
+	 * \param root 				The starting state of the robot.
+	 * \param sample_state 		A function that samples a random state.
+	 * \param collides 			A function that checks if a state is in collision.
+	 * \param motion_collides 	A function that checks if the motion between two states is in collision.
+	 * \param distance 			A function that computes the distance between two states.
+	 * \param max_iterations 	The maximum number of iterations to run the algorithm.
+	 * \param state_acceptable 	A function that checks if a state is acceptable as a stating point for the path.
+	 *
+	 * \returns A path from the accepted state to the root, or nullopt if such a state wasn't found.
+	 */
+	export std::optional<RobotPath> rrt_path_to_acceptable(const RobotState &root,
+														 const std::function<RobotState()> &sample_state,
+														 const std::function<bool(const RobotState &)> &collides,
+														 const std::function<bool(const RobotState &,
+																				 const RobotState &)> &motion_collides,
+														 const DistanceFn &distance,
+														 size_t max_iterations,
+														 const std::function<bool(const RobotState &)> &state_acceptable) {
+		std::optional<RobotPath> path;
+		rrt(
+				root,
+				sample_state,
+				collides,
+				motion_collides,
+				distance,
+				max_iterations,
+				[&](const std::vector<RRTNode> &nodes) {
+					if (state_acceptable(nodes.back().state)) {
+						path = retrace(nodes);
+						return true;
+					} else {
+						return false;
+					}
+				}
+		);
+		return path;
 	}
 }
