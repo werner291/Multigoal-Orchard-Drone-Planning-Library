@@ -28,30 +28,72 @@ save_to_dir = os.environ.get('FIGURES_DIR', 'generated_figures')
 os.makedirs(save_to_dir, exist_ok=True)
 
 df_problems = pd.json_normalize(results['problems'])
+methods = results['methods']
 
 df = pd.json_normalize(results['results'])
 df = df.join(df_problems, on='problem')
+df['method'] = df['method'].replace({i: method for i, method in enumerate(methods)})
 
 # Calculate time_per_target
 df['time_per_target'] = df['time_ms'] / df['n_targets']
+df['success_rate'] = df['targets_reached'] / df['n_targets']
 
 ##########################################
 # Distribution of timings of the methods #
 ##########################################
 
 plt.figure(figsize=(10, 6))
-sns.violinplot(x='method', y='time_per_target', data=df)
-plt.title('Violin Plot of Time (ms) by Method Index')
+sns.kdeplot(df, x='time_per_target', hue='method').set(xlim=0)
+plt.title('Plot of Time (ms) by Method')
+plt.grid()
+
+# Save the plot
+plt.savefig(os.path.join(save_to_dir, 'time_per_target_by_method.svg'))
+plt.show()
+
+############################################################
+# Distribution of timings of the methods (boxplot by tree) #
+############################################################
+
+plt.figure(figsize=(10, 6))
+box_plot = sns.boxplot(hue='method', y='time_per_target', x='problem', data=df)
+
+plt.title('Box Plot of Time (ms) by Method Index Grouped by Tree')
 plt.xlabel('Method Index')
 plt.ylabel('Time (ms)')
 plt.grid()
 
-# Use ScalarFormatter to write out the numbers on the y-axis
-formatter = ticker.ScalarFormatter(useMathText=False)
-formatter.set_scientific(False)
-plt.gca().yaxis.set_major_formatter(formatter)
-
-# Save the plot
-plt.savefig(os.path.join(save_to_dir, 'approach_planning_comparison_time_violin.svg'))
-
+plt.savefig(os.path.join(save_to_dir, 'approach_planning_avg_time_by_tree.svg'))
 plt.show()
+
+#################################################################
+# Distribution of success rate of the methods (boxplot by tree) #
+#################################################################
+
+plt.figure(figsize=(10, 6))
+box_plot = sns.boxplot(hue='method', y='success_rate', x='problem', data=df)
+
+plt.title('Box Plot of % reached by Method Index Grouped by Tree')
+plt.xlabel('Method Index')
+plt.ylabel('Time (ms)')
+plt.grid()
+
+plt.savefig(os.path.join(save_to_dir, 'approach_planning_success_rate_by_tree.svg'))
+plt.show()
+
+################################################################
+# A scatter plot of the success rate vs the average time taken #
+################################################################
+
+plt.figure(figsize=(10, 6))
+box_plot = sns.scatterplot(data=df, y='success_rate', x='time_per_target', hue='method')
+
+plt.title('Plot of success rate vs time spent per target')
+plt.xlabel('Time (ms)')
+plt.ylabel('Success rate')
+plt.grid()
+
+plt.savefig(os.path.join(save_to_dir, 'approach_planning_success_rate_by_time.svg'))
+plt.show()
+
+
