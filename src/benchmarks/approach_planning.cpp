@@ -13,9 +13,13 @@
 #include "../experiment_utils/procedural_robot_models.h"
 #include "../planning/RandomNumberGenerator.h"
 #include "../planning/state_tools.h"
+#include "../planning/goal_sampling.h"
+#include "../planning/collision_detection.h"
 
 import approach_by_pullout;
 import rrt;
+import goal_sampling;
+
 #include <CGAL/Side_of_triangle_mesh.h>
 
 using namespace mgodpl;
@@ -27,6 +31,7 @@ struct ApproachPlanningProblem {
 
 struct ApproachPlanningResults {
 	std::vector<std::optional<RobotPath>> paths;
+	Json::Value performance_annotations;
 };
 
 using ApproachPlanningMethodFn = std::function<ApproachPlanningResults(const ApproachPlanningProblem &,
@@ -66,6 +71,18 @@ ApproachPlanningMethodFn rrt_from_goal_samples() {
 	return [](const ApproachPlanningProblem &problem,
 			  random_numbers::RandomNumberGenerator &rng) -> ApproachPlanningResults {
 		std::vector<std::optional<RobotPath>> paths;
+		Json::Value performance_annotations;
+
+		// Get the AABB of the leaves:
+		math::AABBd leaves_aabb = mesh_aabb(problem.tree_model.tree_mesh.leaves_mesh);
+
+		const double ROBOT_SIZE = 2.0;
+
+		double h_radius = std::max({leaves_aabb._max.x(), leaves_aabb._max.y(),
+								   std::abs(leaves_aabb._min.x()),
+								   std::abs(leaves_aabb._min.y())}) + ROBOT_SIZE;
+
+		double v_radius = leaves_aabb._max.z() + ROBOT_SIZE;
 
 		for (const auto &target: problem.tree_model.target_points) {
 
@@ -75,65 +92,56 @@ ApproachPlanningMethodFn rrt_from_goal_samples() {
 			CGAL::Side_of_triangle_mesh<cgal::Surface_mesh, cgal::K> inside(
 					problem.tree_model.tree_convex_hull->convex_hull);
 
-			for (int sample_i = 0; sample_i < 1000; sample_i++) {
-				auto sample = mgodpl::genGoalStateUniform(
+			std::function sample_state = [&]() {
+				return generateUniformRandomState(robot_model, rng, h_radius, v_radius, M_PI_2);
+			};
+
+			std::function sample_goal_state = [&]() {
+				return genGoalStateUniform(
 						rng,
-						math::Vec3d(0, 0, 0),
+						target,
 						0.0,
-						problem.robot,
-						problem.robot.findLinkByName("flying_base"),
-						problem.robot.findLinkByName("end_effector")
+						robot_model,
+						robot_model.findLinkByName("flying_base"),
+						robot_model.findLinkByName("end_effector")
 				);
+			};
 
-				if (!check_robot_collision(problem.robot, *problem.tree_model.tree_collision_object, sample)) {
-					std::function sample_state = [&]() {
-						// Generate a state randomly:
-						return generateUniformRandomState(robot_model, rng, 5, 10, M_PI_2);
-					};
+			std::function state_collides = [&](const RobotState &from) {
+				return check_robot_collision(robot_model, tree_collision, from);
+			};
 
-					int checked_samples = 0;
+			std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
+				return check_motion_collides(robot_model, tree_collision, from, to);
+			};
 
-					std::function state_collides = [&](const RobotState &from) {
-						checked_samples += 1;
-						return check_robot_collision(robot_model, tree_collision, from);
-					};
-
-					int checked_motions = 0;
-
-					std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
-						checked_motions += 1;
-						return check_motion_collides(robot_model, tree_collision, from, to);
-					};
-
-					bool found_path = false;
-
-					rrt(
-							sample,
-							sample_state,
-							state_collides,
-							motion_collides,
-							equal_weights_distance,
-							1000,
-							[&](const std::vector<RRTNode> &nodes) {
-								math::Vec3d last_position = nodes.back().state.base_tf.translation;
-								auto side = inside(cgal::to_cgal_point(last_position));
-								bool has_escaped = side == CGAL::ON_UNBOUNDED_SIDE;
-
-
-								if (has_escaped) {
-									paths.emplace_back(retrace(nodes));
-									found_path = true;
-									return true;
-								} else {
-									return false;
+			paths.push_back(
+					try_at_valid_goal_samples<RobotPath>(
+					state_collides,
+					sample_goal_state,
+					1000,
+					[&](const RobotState &goal_sample) {
+						assert(!state_collides(goal_sample));
+						return rrt_path_to_acceptable(
+								goal_sample,
+								sample_state,
+								state_collides,
+								motion_collides,
+								equal_weights_distance,
+								1000,
+								[&](const RobotState& state) {
+									// TODO: this is technically not 100% accurate but if we get to this point the planning problem is trivial.
+									return inside(cgal::to_cgal_point(state.base_tf.translation)) == CGAL::ON_UNBOUNDED_SIDE;
 								}
-							}
-					);
-
-
-				}
-			}
+						);
+					})
+			);
 		}
+
+		return {
+				.paths = paths,
+				.performance_annotations = performance_annotations
+		};
 
 	};
 }
@@ -160,11 +168,21 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 		});
 	}
 
+	// If this is a debug build, drop all by the first three tree models:
+#ifndef NDEBUG
+	tree_models.erase(tree_models.begin() + 3, tree_models.end());
+#endif
+
 	const size_t REPETITIONS = 2;
 
-	const std::vector<ApproachPlanningMethodFn> methods{
-			probing_by_pullout()
+	std::vector<std::pair<std::string, ApproachPlanningMethodFn>> methods{
+		{"probing_by_pullout", probing_by_pullout()},
+		{"rrt_from_goal_samples", rrt_from_goal_samples()}
 	};
+
+	for (size_t i = 0; i < methods.size(); ++i) {
+		results["methods"].append(methods[i].first);
+	}
 
 	std::vector<ApproachPlanningProblem> problems;
 	problems.reserve(tree_models.size());
@@ -208,7 +226,7 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 				  << std::endl;
 		std::cout << "In flight: " << in_flight << std::endl;
 
-		const auto &method = methods[run.method_index];
+		const auto &[_name, method] = methods[run.method_index];
 		const auto &problem = problems[run.problem_index];
 
 		// Record start time:
@@ -229,8 +247,9 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 		result_json["targets_reached"] = std::count_if(result.paths.begin(), result.paths.end(),
 													   [](const auto &path) { return path.has_value(); });
 
-		{
+		result_json["annotations"] = result.performance_annotations;
 
+		{
 			std::lock_guard lock(results_mutex);
 			results["results"].append(result_json);
 
