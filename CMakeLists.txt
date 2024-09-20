@@ -256,6 +256,7 @@ target_sources(
         src/planning/approach_makeshift_prm.cppm
         src/planning/rrt.cppm
         #src/planning/combined_approach_planning.cppm
+        src/planning/goal_sampling.cppm
 )
 
 if (NOT NIXOS) # We get a weird error when trying to do precompiled headers on NixOS; turn it off for now.
