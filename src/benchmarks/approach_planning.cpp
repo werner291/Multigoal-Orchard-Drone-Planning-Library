@@ -19,6 +19,7 @@
 import approach_by_pullout;
 import rrt;
 import goal_sampling;
+import approach_makeshift_prm;
 
 #include <CGAL/Side_of_triangle_mesh.h>
 
@@ -79,8 +80,8 @@ ApproachPlanningMethodFn rrt_from_goal_samples() {
 		const double ROBOT_SIZE = 2.0;
 
 		double h_radius = std::max({leaves_aabb._max.x(), leaves_aabb._max.y(),
-								   std::abs(leaves_aabb._min.x()),
-								   std::abs(leaves_aabb._min.y())}) + ROBOT_SIZE;
+									std::abs(leaves_aabb._min.x()),
+									std::abs(leaves_aabb._min.y())}) + ROBOT_SIZE;
 
 		double v_radius = leaves_aabb._max.z() + ROBOT_SIZE;
 
@@ -146,6 +147,147 @@ ApproachPlanningMethodFn rrt_from_goal_samples() {
 	};
 }
 
+
+ApproachPlanningMethodFn rrt_from_goal_samples_with_bias() {
+	return [](const ApproachPlanningProblem &problem,
+			  random_numbers::RandomNumberGenerator &rng) -> ApproachPlanningResults {
+		std::vector<std::optional<RobotPath>> paths;
+		Json::Value performance_annotations;
+
+		// Get the AABB of the leaves:
+		math::AABBd leaves_aabb = mesh_aabb(problem.tree_model.tree_mesh.leaves_mesh);
+
+		const double ROBOT_SIZE = 2.0;
+
+		for (const auto &target: problem.tree_model.target_points) {
+
+			const mgodpl::robot_model::RobotModel &robot_model = problem.robot;
+			const auto &tree_collision = *problem.tree_model.tree_collision_object;
+
+			CGAL::Side_of_triangle_mesh<cgal::Surface_mesh, cgal::K> inside(
+					problem.tree_model.tree_convex_hull->convex_hull);
+
+			std::function sample_goal_state = [&]() {
+				return genGoalStateUniform(
+						rng,
+						target,
+						0.0,
+						robot_model,
+						robot_model.findLinkByName("flying_base"),
+						robot_model.findLinkByName("end_effector")
+				);
+			};
+
+			std::function state_collides = [&](const RobotState &from) {
+				return check_robot_collision(robot_model, tree_collision, from);
+			};
+
+			std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
+				return check_motion_collides(robot_model, tree_collision, from, to);
+			};
+
+			paths.push_back(
+					try_at_valid_goal_samples<RobotPath>(
+							state_collides,
+							sample_goal_state,
+							1000,
+							[&](const RobotState &goal_sample) {
+								assert(!state_collides(goal_sample));
+
+								const auto surface_pt = mgodpl::cgal::from_face_location(
+										mgodpl::cgal::locate_nearest(goal_sample.base_tf.translation, *problem.tree_model.tree_convex_hull)
+										, *problem.tree_model.tree_convex_hull);
+
+								RobotState ideal_shell_state = fromEndEffectorAndVector(robot_model, surface_pt.surface_point, surface_pt.normal);
+
+								assert(inside(cgal::to_cgal_point(ideal_shell_state.base_tf.translation)) == CGAL::ON_UNBOUNDED_SIDE);
+
+								std::function biased_sampler = [&]() {
+									return makeshift_exponential_sample_along_motion(
+											goal_sample,
+											ideal_shell_state,
+											rng,
+											1.0
+									);
+								};
+
+								return rrt_path_to_acceptable(
+										goal_sample,
+										biased_sampler,
+										state_collides,
+										motion_collides,
+										equal_weights_distance,
+										1000,
+										[&](const RobotState& state) {
+											// TODO: this is technically not 100% accurate but if we get to this point the planning problem is trivial.
+											return inside(cgal::to_cgal_point(state.base_tf.translation)) == CGAL::ON_UNBOUNDED_SIDE;
+										}
+								);
+							})
+			);
+		}
+
+		return {
+				.paths = paths,
+				.performance_annotations = performance_annotations
+		};
+
+	};
+}
+
+
+ApproachPlanningMethodFn straight_in() {
+	return [](const ApproachPlanningProblem &problem,
+			  random_numbers::RandomNumberGenerator &rng) -> ApproachPlanningResults {
+		std::vector<std::optional<RobotPath>> paths;
+		Json::Value performance_annotations;
+
+		// Get the AABB of the leaves:
+		math::AABBd leaves_aabb = mesh_aabb(problem.tree_model.tree_mesh.leaves_mesh);
+
+		const double ROBOT_SIZE = 2.0;
+
+		for (const auto &target: problem.tree_model.target_points) {
+
+			const mgodpl::robot_model::RobotModel &robot_model = problem.robot;
+			const auto &tree_collision = *problem.tree_model.tree_collision_object;
+
+			CGAL::Side_of_triangle_mesh<cgal::Surface_mesh, cgal::K> inside(
+					problem.tree_model.tree_convex_hull->convex_hull);
+
+			std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
+				return check_motion_collides(robot_model, tree_collision, from, to);
+			};
+
+			const auto surface_pt = mgodpl::cgal::from_face_location(
+					mgodpl::cgal::locate_nearest(target, *problem.tree_model.tree_convex_hull)
+					, *problem.tree_model.tree_convex_hull);
+
+			RobotState ideal_shell_state = fromEndEffectorAndVector(robot_model, surface_pt.surface_point, surface_pt.normal);
+
+			// Project it onto the goal:
+			RobotState goal_state = project_to_goal(
+					robot_model,
+					ideal_shell_state,
+					robot_model.findLinkByName("flying_base"),
+					robot_model.findLinkByName("end_effector"),
+					target);
+
+			if (!check_robot_collision(robot_model, tree_collision, goal_state)) {
+				paths.push_back(RobotPath{.states = {ideal_shell_state, goal_state}});
+			} else {
+				paths.push_back(std::nullopt);
+			}
+		}
+
+		return {
+				.paths = paths,
+				.performance_annotations = performance_annotations
+		};
+
+	};
+}
+
 REGISTER_BENCHMARK(approach_planning_comparison) {
 
 	robot_model::RobotModel robot_model = mgodpl::experiments::createProceduralRobotModel(
@@ -168,16 +310,18 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 		});
 	}
 
-	// If this is a debug build, drop all by the first three tree models:
+	// If this is a debug build, drop all by the first two tree models:
 #ifndef NDEBUG
-	tree_models.erase(tree_models.begin() + 3, tree_models.end());
+	tree_models.resize(2);
 #endif
 
 	const size_t REPETITIONS = 2;
 
 	std::vector<std::pair<std::string, ApproachPlanningMethodFn>> methods{
 		{"probing_by_pullout", probing_by_pullout()},
-		{"rrt_from_goal_samples", rrt_from_goal_samples()}
+		{"rrt_from_goal_samples", rrt_from_goal_samples()},
+		{"rrt_from_goal_samples_with_bias", rrt_from_goal_samples_with_bias()},
+		{"straight_in", straight_in()}
 	};
 
 	for (size_t i = 0; i < methods.size(); ++i) {
