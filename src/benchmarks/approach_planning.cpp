@@ -48,7 +48,7 @@ ApproachPlanningMethodFn probing_by_pullout() {
 					*problem.tree_model.tree_collision_object,
 					*problem.tree_model.tree_convex_hull,
 					target,
-					0.1,
+					0,
 					problem.robot,
 					rng,
 					1000
