@@ -9,6 +9,7 @@ module;
 
 #include <functional>
 #include <optional>
+#include "RobotModel.h"
 #include "RobotState.h"
 
 
@@ -47,5 +48,28 @@ namespace mgodpl {
 			}
 		}
 		return std::nullopt;
+	}
+
+	export RobotState project_to_goal(
+			const robot_model::RobotModel& robot,
+			RobotState to_project,
+			const robot_model::RobotModel::LinkId flying_base,
+			const robot_model::RobotModel::LinkId end_effector,
+			const math::Vec3d target
+			) {
+		const auto &fk = robot_model::forwardKinematics(
+				robot,
+				to_project.joint_values,
+				flying_base,
+				to_project.base_tf
+		);
+
+		const auto &ee_tf = fk.forLink(end_effector);
+
+		math::Vec3d target_delta = target - ee_tf.translation;
+
+		to_project.base_tf.translation = to_project.base_tf.translation + target_delta;
+
+		return to_project;
 	}
 }
