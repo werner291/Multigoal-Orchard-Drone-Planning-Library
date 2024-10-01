@@ -200,6 +200,8 @@ REGISTER_BENCHMARK(probing_motions) {
 
 				// Check collisions:
 				bool collides = check_path_collides(robot_model, *tree_collision, path.path);
+
+				// Note to future self: this number is not a fair comparison against rrt_checked_motions.
 				pullout_attempts += 1;
 
 				successful_pullouts += collides ? 0 : 1;
