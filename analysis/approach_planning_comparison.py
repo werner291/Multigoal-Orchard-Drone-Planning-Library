@@ -9,7 +9,7 @@ import matplotlib as mpl
 
 # Circumvent what appears to be a bug in Pycharm/CLion:
 # https://youtrack.jetbrains.com/issue/PY-75269/Error-after-updating-to-latest-PyCharm-2024.2-CE-Failed-to-enable-GUI-event-loop-integration-for-qt
-# mpl.use("Qt5Agg")
+mpl.use("Qt5Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -37,6 +37,12 @@ df['method'] = df['method'].replace({i: method for i, method in enumerate(method
 # Calculate time_per_target
 df['time_per_target'] = df['time_ms'] / df['n_targets']
 df['success_rate'] = df['targets_reached'] / df['n_targets']
+
+# Calculate the mean path length and mean path distance
+df['mean_path_n_waypt'] = df['path_lengths'] \
+    .apply(lambda x: np.mean([length for length in x if length is not None]))
+df['mean_path_distance'] = df['path_distances'] \
+    .apply(lambda x: np.mean([length for length in x if length is not None]))
 
 ##########################################
 # Distribution of timings of the methods #
@@ -67,6 +73,21 @@ plt.grid()
 plt.savefig(os.path.join(save_to_dir, 'approach_planning_avg_time_by_tree.svg'))
 plt.show()
 
+############################################################
+# Distribution of timings of the methods (median of means) #
+############################################################
+
+plt.figure(figsize=(10, 6))
+sns.barplot(y='time_per_target', x='method',
+            data=df.groupby(['method', 'problem'])['time_per_target'].mean().reset_index())
+# Rotate the x-axis labels
+plt.xticks(rotation=90)
+plt.tight_layout()
+plt.grid()
+
+plt.savefig(os.path.join(save_to_dir, 'approach_planning_avg_time_by_method.svg'))
+plt.show()
+
 #################################################################
 # Distribution of success rate of the methods (boxplot by tree) #
 #################################################################
@@ -80,6 +101,22 @@ plt.ylabel('Time (ms)')
 plt.grid()
 
 plt.savefig(os.path.join(save_to_dir, 'approach_planning_success_rate_by_tree.svg'))
+plt.show()
+
+#################################################################
+# Distribution of success rate of the methods (median of means) #
+#################################################################
+
+plt.figure(figsize=(10, 6))
+sns.barplot(y='success_rate', x='method',
+            data=df.groupby(['method', 'problem'])['success_rate'].mean().reset_index())
+# Rotate the x-axis labels
+plt.xticks(rotation=90)
+plt.tight_layout()
+plt.ylim(0.8, 1)
+plt.grid()
+
+plt.savefig(os.path.join(save_to_dir, 'approach_planning_success_rate_by_method.svg'))
 plt.show()
 
 ################################################################
@@ -97,4 +134,32 @@ plt.grid()
 plt.savefig(os.path.join(save_to_dir, 'approach_planning_success_rate_by_time.svg'))
 plt.show()
 
+###############################
+# Path lengths of the methods #
+###############################
 
+plt.figure(figsize=(10, 6))
+sns.barplot(y='mean_path_n_waypt', x='method',
+            data=df.groupby(['method', 'problem'])['mean_path_n_waypt'].mean().reset_index())
+plt.title('Mean number of waypoints in path by method')
+plt.xticks(rotation=90)
+plt.tight_layout()
+plt.grid()
+
+plt.savefig(os.path.join(save_to_dir, 'approach_planning_path_length_by_method.svg'))
+plt.show()
+
+##################################
+# Path distances of the methods #
+##################################
+
+plt.figure(figsize=(10, 6))
+sns.barplot(y='mean_path_distance', x='method',
+            data=df.groupby(['method', 'problem'])['mean_path_distance'].mean().reset_index())
+plt.title('Mean path distance by method')
+plt.xticks(rotation=90)
+plt.tight_layout()
+plt.grid()
+
+plt.savefig(os.path.join(save_to_dir, 'approach_planning_path_distance_by_method.svg'))
+plt.show()
