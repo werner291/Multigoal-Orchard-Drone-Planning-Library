@@ -30,6 +30,13 @@ os.makedirs(save_to_dir, exist_ok=True)
 df_problems = pd.json_normalize(results['problems'])
 methods = results['methods']
 
+# Flatten the "annotations" column:
+for r in results['results']:
+    if r['annotations'] is None:
+        continue
+    for i, annotation in r.pop('annotations').items():
+        r[i] = annotation
+
 df = pd.json_normalize(results['results'])
 df = df.join(df_problems, on='problem')
 df['method'] = df['method'].replace({i: method for i, method in enumerate(methods)})
@@ -37,6 +44,7 @@ df['method'] = df['method'].replace({i: method for i, method in enumerate(method
 # Calculate time_per_target
 df['time_per_target'] = df['time_ms'] / df['n_targets']
 df['success_rate'] = df['targets_reached'] / df['n_targets']
+df['motions_checked_per_target'] = df['motions_checked'] / df['n_targets']
 
 # Calculate the mean path length and mean path distance
 df['mean_path_n_waypt'] = df['path_lengths'] \
@@ -113,8 +121,8 @@ sns.barplot(y='success_rate', x='method',
 # Rotate the x-axis labels
 plt.xticks(rotation=90)
 plt.tight_layout()
-plt.ylim(0.8, 1)
 plt.grid()
+plt.title('Success rate by method')
 
 plt.savefig(os.path.join(save_to_dir, 'approach_planning_success_rate_by_method.svg'))
 plt.show()
@@ -162,4 +170,18 @@ plt.tight_layout()
 plt.grid()
 
 plt.savefig(os.path.join(save_to_dir, 'approach_planning_path_distance_by_method.svg'))
+plt.show()
+
+#####################################
+# Cost in terms of motions checked. #
+#####################################
+
+plt.figure(figsize=(10, 6))
+sns.boxplot(y='motions_checked_per_target', x='method', data=df)
+plt.title('Mean number of motions checked by method')
+plt.xticks(rotation=90)
+plt.tight_layout()
+plt.grid()
+
+plt.savefig(os.path.join(save_to_dir, 'approach_planning_motions_checked_by_method.svg'))
 plt.show()

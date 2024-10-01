@@ -50,12 +50,14 @@ ApproachPlanningMethodFn probing_by_pullout() {
 		Json::Value performance_annotations;
 
 		int goal_samples = 0;
+		int motions_checked = 0;
 
 		std::function state_collides = [&](const RobotState &from) {
 			return check_robot_collision(robot_model, tree_collision, from);
 		};
 
 		std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
+			motions_checked += 1;
 			return check_motion_collides(robot_model, tree_collision, from, to);
 		};
 
@@ -97,6 +99,9 @@ ApproachPlanningMethodFn probing_by_pullout() {
 			paths.push_back(ap);
 		}
 
+		performance_annotations["goal_samples"] = goal_samples;
+		performance_annotations["motions_checked"] = motions_checked;
+
 		return {
 				.paths = paths,
 				.performance_annotations = performance_annotations
@@ -124,6 +129,8 @@ ApproachPlanningMethodFn rrt_from_goal_samples(
 		double v_radius = leaves_aabb._max.z() + sampler_margin;
 
 		int goal_samples = 0;
+		int states_checked = 0;
+		int motions_checked = 0;
 
 		for (const auto &target: problem.tree_model.target_points) {
 
@@ -150,10 +157,12 @@ ApproachPlanningMethodFn rrt_from_goal_samples(
 			};
 
 			std::function state_collides = [&](const RobotState &from) {
+				states_checked += 1;
 				return check_robot_collision(robot_model, tree_collision, from);
 			};
 
 			std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
+				motions_checked += 1;
 				return check_motion_collides(robot_model, tree_collision, from, to);
 			};
 
@@ -182,6 +191,8 @@ ApproachPlanningMethodFn rrt_from_goal_samples(
 		}
 
 		performance_annotations["goal_samples"] = goal_samples;
+		performance_annotations["states_checked"] = states_checked;
+		performance_annotations["motions_checked"] = motions_checked;
 
 		return {
 				.paths = paths,
@@ -205,6 +216,8 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 		math::AABBd leaves_aabb = mesh_aabb(problem.tree_model.tree_mesh.leaves_mesh);
 
 		int goal_samples = 0;
+		int states_checked = 0;
+		int motions_checked = 0;
 
 		for (const auto &target: problem.tree_model.target_points) {
 
@@ -227,10 +240,12 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 			};
 
 			std::function state_collides = [&](const RobotState &from) {
+				states_checked += 1;
 				return check_robot_collision(robot_model, tree_collision, from);
 			};
 
 			std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
+				motions_checked += 1;
 				return check_motion_collides(robot_model, tree_collision, from, to);
 			};
 
@@ -280,6 +295,8 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 			);
 		}
 
+		performance_annotations["states_checked"] = states_checked;
+		performance_annotations["motions_checked"] = motions_checked;
 		performance_annotations["goal_samples"] = goal_samples;
 
 		return {
