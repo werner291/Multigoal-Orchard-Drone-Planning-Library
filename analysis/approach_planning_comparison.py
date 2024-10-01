@@ -177,9 +177,10 @@ plt.show()
 #####################################
 
 plt.figure(figsize=(10, 6))
-sns.boxplot(y='motions_checked_per_target', x='method', data=df)
+sns.boxplot(y='motions_checked_per_target', x='method', data=df[df['method'] != 'straight_in'])
 plt.title('Mean number of motions checked by method')
 plt.xticks(rotation=90)
+plt.ylim(0, 100)
 plt.tight_layout()
 plt.grid()
 
