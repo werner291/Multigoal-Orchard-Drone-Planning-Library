@@ -11,7 +11,8 @@ module;
 #include <optional>
 #include "RobotModel.h"
 #include "RobotState.h"
-
+#include "RandomNumberGenerator.h"
+#include "goal_sampling.h"
 
 export module goal_sampling;
 
@@ -71,5 +72,37 @@ namespace mgodpl {
 		to_project.base_tf.translation = to_project.base_tf.translation + target_delta;
 
 		return to_project;
+	}
+
+
+	/**
+	 * @brief Type alias for a function that generates a goal state for a robot given a target.
+	 *
+	 * This function takes a 3D vector representing the target and returns a RobotState object representing the goal state.
+	 */
+	export using GoalTargetSampleFunctionFn = std::function<RobotState(const math::Vec3d &target)>;
+
+	/**
+	 * @brief Creates a function that generates a goal state for a robot given a target.
+	 *
+	 * This function takes a RobotModel object and a RandomNumberGenerator object as input.
+	 * It returns a function that generates a goal state for the robot given a 3D vector representing the target.
+	 *
+	 * @param robot_model The robot model for which the goal state is to be generated.
+	 * @param rng The random number generator used to generate the goal state.
+	 * @return A function that generates a goal state for the robot given a target.
+	 */
+	export GoalTargetSampleFunctionFn goal_region_sampler(const robot_model::RobotModel &robot_model,
+												   random_numbers::RandomNumberGenerator &rng) {
+		return [&](const math::Vec3d &target) {
+			return genGoalStateUniform(
+					rng,
+					target,
+					0.0,
+					robot_model,
+					robot_model.findLinkByName("flying_base"),
+					robot_model.findLinkByName("end_effector")
+			);
+		};
 	}
 }

@@ -256,6 +256,7 @@ target_sources(
         src/planning/approach_makeshift_prm.cppm
         src/planning/rrt.cppm
         #src/planning/combined_approach_planning.cppm
+        src/planning/sampling.cppm
         src/planning/goal_sampling.cppm
         src/planning/collision_detection.cppm
         src/planning/functional_utils.cppm
