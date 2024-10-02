@@ -17,6 +17,7 @@
 #include "RobotPath.h"
 
 namespace mgodpl {
+
 	/**
 	 * Check for collisions of a single robot link with a given fcl collision object.
 	 *

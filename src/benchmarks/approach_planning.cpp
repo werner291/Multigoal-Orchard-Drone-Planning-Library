@@ -21,6 +21,8 @@ import approach_by_pullout;
 import rrt;
 import goal_sampling;
 import approach_makeshift_prm;
+import collision_detection;
+import functional_utils;
 
 #include <CGAL/Side_of_triangle_mesh.h>
 
@@ -37,10 +39,12 @@ struct ApproachPlanningResults {
 };
 
 using ApproachPlanningMethodFn = std::function<ApproachPlanningResults(const ApproachPlanningProblem &,
+																	   CollisionFunctions &,
 																	   random_numbers::RandomNumberGenerator &)>;
 
 ApproachPlanningMethodFn probing_by_pullout() {
 	return [](const ApproachPlanningProblem &problem,
+			  CollisionFunctions &collision_fns,
 			  random_numbers::RandomNumberGenerator &rng) -> ApproachPlanningResults {
 
 		const mgodpl::robot_model::RobotModel &robot_model = problem.robot;
@@ -50,16 +54,6 @@ ApproachPlanningMethodFn probing_by_pullout() {
 		Json::Value performance_annotations;
 
 		int goal_samples = 0;
-		int motions_checked = 0;
-
-		std::function state_collides = [&](const RobotState &from) {
-			return check_robot_collision(robot_model, tree_collision, from);
-		};
-
-		std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
-			motions_checked += 1;
-			return check_motion_collides(robot_model, tree_collision, from, to);
-		};
 
 		for (const auto &target: problem.tree_model.target_points) {
 
@@ -75,32 +69,38 @@ ApproachPlanningMethodFn probing_by_pullout() {
 				);
 			};
 
+			std::function pullout = [&](const RobotState &goal_sample) {
+				const auto &path = straightout(
+						robot_model,
+						goal_sample,
+						problem.tree_model.tree_convex_hull->tree,
+						problem.tree_model.tree_convex_hull->mesh_path
+				);
+
+				assert(path.path.states.size() == 2);
+
+				return path.path.start();
+			};
+
+			const int MAX_SAMPLES = 1000;
+
+			std::function try_pullout = [&](const RobotState &goal_sample) -> std::optional<RobotPath> {
+				const auto &outside_tree = pullout(goal_sample);
+				if (!collision_fns.motion_collides(goal_sample, outside_tree)) {
+					return std::make_optional(RobotPath{.states = {goal_sample, outside_tree}});
+				} else {
+					return std::nullopt;
+				}
+			};
+
 			auto ap = try_at_valid_goal_samples<RobotPath>(
-					state_collides,
+					collision_fns.state_collides,
 					sample_goal_state,
-					1000,
-					[&](const RobotState &goal_sample) -> std::optional<RobotPath> {
-						const auto &path = straightout(
-								robot_model,
-								goal_sample,
-								problem.tree_model.tree_convex_hull->tree,
-								problem.tree_model.tree_convex_hull->mesh_path
-						);
-
-						assert(path.path.states.size() == 2);
-
-						if (!motion_collides(path.path.states[0], path.path.states[1])) {
-							return std::make_optional(path.path);
-						} else {
-							return std::nullopt;
-						}
-					});
+					MAX_SAMPLES,
+					try_pullout);
 
 			paths.push_back(ap);
 		}
-
-		performance_annotations["goal_samples"] = goal_samples;
-		performance_annotations["motions_checked"] = motions_checked;
 
 		return {
 				.paths = paths,
@@ -115,6 +115,7 @@ ApproachPlanningMethodFn rrt_from_goal_samples(
 		const double sampler_margin = 2.0
 ) {
 	return [=](const ApproachPlanningProblem &problem,
+			   CollisionFunctions &collision_fns,
 			   random_numbers::RandomNumberGenerator &rng) -> ApproachPlanningResults {
 		std::vector<std::optional<RobotPath>> paths;
 		Json::Value performance_annotations;
@@ -129,8 +130,6 @@ ApproachPlanningMethodFn rrt_from_goal_samples(
 		double v_radius = leaves_aabb._max.z() + sampler_margin;
 
 		int goal_samples = 0;
-		int states_checked = 0;
-		int motions_checked = 0;
 
 		for (const auto &target: problem.tree_model.target_points) {
 
@@ -156,19 +155,9 @@ ApproachPlanningMethodFn rrt_from_goal_samples(
 				);
 			};
 
-			std::function state_collides = [&](const RobotState &from) {
-				states_checked += 1;
-				return check_robot_collision(robot_model, tree_collision, from);
-			};
-
-			std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
-				motions_checked += 1;
-				return check_motion_collides(robot_model, tree_collision, from, to);
-			};
-
 			paths.push_back(
 					try_at_valid_goal_samples<RobotPath>(
-							state_collides,
+							collision_fns.state_collides,
 							sample_goal_state,
 							max_goal_samples,
 							[&](const RobotState &goal_sample) {
@@ -176,8 +165,8 @@ ApproachPlanningMethodFn rrt_from_goal_samples(
 								return rrt_path_to_acceptable(
 										goal_sample,
 										sample_state,
-										state_collides,
-										motion_collides,
+										collision_fns.state_collides,
+										collision_fns.motion_collides,
 										equal_weights_distance,
 										max_rrt_iterations,
 										[&](const RobotState &state) {
@@ -191,8 +180,6 @@ ApproachPlanningMethodFn rrt_from_goal_samples(
 		}
 
 		performance_annotations["goal_samples"] = goal_samples;
-		performance_annotations["states_checked"] = states_checked;
-		performance_annotations["motions_checked"] = motions_checked;
 
 		return {
 				.paths = paths,
@@ -208,6 +195,7 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 		const double sampler_scale = 1.0
 ) {
 	return [=](const ApproachPlanningProblem &problem,
+			   CollisionFunctions &collision_fns,
 			   random_numbers::RandomNumberGenerator &rng) -> ApproachPlanningResults {
 		std::vector<std::optional<RobotPath>> paths;
 		Json::Value performance_annotations;
@@ -216,8 +204,6 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 		math::AABBd leaves_aabb = mesh_aabb(problem.tree_model.tree_mesh.leaves_mesh);
 
 		int goal_samples = 0;
-		int states_checked = 0;
-		int motions_checked = 0;
 
 		for (const auto &target: problem.tree_model.target_points) {
 
@@ -239,19 +225,9 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 				);
 			};
 
-			std::function state_collides = [&](const RobotState &from) {
-				states_checked += 1;
-				return check_robot_collision(robot_model, tree_collision, from);
-			};
-
-			std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
-				motions_checked += 1;
-				return check_motion_collides(robot_model, tree_collision, from, to);
-			};
-
 			paths.push_back(
 					try_at_valid_goal_samples<RobotPath>(
-							state_collides,
+							collision_fns.state_collides,
 							sample_goal_state,
 							max_goal_samples,
 							[&](const RobotState &goal_sample) {
@@ -281,8 +257,8 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 								return rrt_path_to_acceptable(
 										goal_sample,
 										biased_sampler,
-										state_collides,
-										motion_collides,
+										collision_fns.state_collides,
+										collision_fns.motion_collides,
 										equal_weights_distance,
 										max_rrt_iterations,
 										[&](const RobotState &state) {
@@ -295,8 +271,6 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 			);
 		}
 
-		performance_annotations["states_checked"] = states_checked;
-		performance_annotations["motions_checked"] = motions_checked;
 		performance_annotations["goal_samples"] = goal_samples;
 
 		return {
@@ -310,6 +284,7 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 
 ApproachPlanningMethodFn straight_in() {
 	return [](const ApproachPlanningProblem &problem,
+			  CollisionFunctions &collision_fns,
 			  random_numbers::RandomNumberGenerator &rng) -> ApproachPlanningResults {
 		std::vector<std::optional<RobotPath>> paths;
 		Json::Value performance_annotations;
@@ -327,10 +302,6 @@ ApproachPlanningMethodFn straight_in() {
 			CGAL::Side_of_triangle_mesh<cgal::Surface_mesh, cgal::K> inside(
 					problem.tree_model.tree_convex_hull->convex_hull);
 
-			std::function motion_collides = [&](const RobotState &from, const RobotState &to) {
-				return check_motion_collides(robot_model, tree_collision, from, to);
-			};
-
 			const auto surface_pt = mgodpl::cgal::from_face_location(
 					mgodpl::cgal::locate_nearest(target, *problem.tree_model.tree_convex_hull),
 					*problem.tree_model.tree_convex_hull);
@@ -347,7 +318,7 @@ ApproachPlanningMethodFn straight_in() {
 					robot_model.findLinkByName("end_effector"),
 					target);
 
-			if (!check_robot_collision(robot_model, tree_collision, goal_state)) {
+			if (!collision_fns.motion_collides(ideal_shell_state, goal_state)) {
 				paths.push_back(RobotPath{.states = {ideal_shell_state, goal_state}});
 			} else {
 				paths.push_back(std::nullopt);
@@ -453,9 +424,19 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 		const auto &[_name, method] = methods[run.method_index];
 		const auto &problem = problems[run.problem_index];
 
+		// Create the collision functions with counters.
+		// Note to future me: don't put this outside the loop, as we need to count invocations per run.
+		calls_t collision_check_invocations = 0;
+		calls_t motion_collision_check_invocations = 0;
+		CollisionFunctions collision_fns =
+				collision_functions_in_environment_counting(
+						collision_functions_in_environment({problem.robot, *problem.tree_model.tree_collision_object}),
+						{collision_check_invocations, motion_collision_check_invocations}
+				);
+
 		// Record start time:
 		auto start_time = std::chrono::high_resolution_clock::now();
-		const auto &result = method(problem, rng);
+		const auto &result = method(problem, collision_fns, rng);
 		// Record end time:
 		auto end_time = std::chrono::high_resolution_clock::now();
 
@@ -466,6 +447,8 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 		result_json["method"] = run.method_index;
 		result_json["problem"] = run.problem_index;
 		result_json["repetition"] = run.repetition_index;
+		result_json["motions_checked"] = motion_collision_check_invocations;
+		result_json["states_checked"] = collision_check_invocations;
 
 		result_json["time_ms"] = time_ms;
 		result_json["targets_reached"] = std::count_if(result.paths.begin(), result.paths.end(),
