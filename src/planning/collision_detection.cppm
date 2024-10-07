@@ -49,6 +49,32 @@ export namespace mgodpl {
 	}
 
 	/**
+	 * @brief Creates a motion collision function from a state collision function.
+	 *
+	 * This works by simply sampling at regular intervals along the path between the two states.
+	 */
+	template <typename StateCollisionFn>
+	MotionCollisionDetectionFn motion_collision_check_fn_from_state_collision(StateCollisionFn state_collision_fn) {
+		return [state_collision_fn](const RobotState &from, const RobotState &to) {
+			// Compute the distance between the two.
+			double distance = equal_weights_distance(from, to);
+			const double MAX_STEP = 0.1;
+
+			size_t n_steps = std::ceil(distance / MAX_STEP);
+
+			for (size_t step_i = 0; step_i <= n_steps; ++step_i) {
+				double t = (double) step_i / (double) n_steps;
+				auto interpolated_state = interpolate(from, to, t);
+
+				if (state_collision_fn(interpolated_state)) {
+					return true;
+				}
+			}
+			return false;
+		};
+	}
+
+	/**
 	 * @brief A structure that encapsulates two corresponding collision checking functions.
 	 *
 	 * Since these functions are so often used together, they are encapsulated in a single structure,

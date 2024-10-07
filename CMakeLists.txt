@@ -467,6 +467,7 @@ if (ENABLE_VISUALIZATION)
             src/visualizations/scanning_motions.cpp
             src/visualizations/approach_planning.cpp
             src/visualizations/arm_axis_motions.cpp
+            src/visualizations/rrt_for_approach_planning.cpp
     )
 
     target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
