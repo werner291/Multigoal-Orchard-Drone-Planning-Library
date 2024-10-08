@@ -96,14 +96,14 @@ export namespace mgodpl {
 	 * @param scale A scale factor for the Gaussian distribution used to generate the distance for sampling.
 	 * @return A function that generates biased samples along the motion path.
 	 */
-	SampleFn motionBiasedSampleFn(
+	SampleFn(
 			const RobotState &from,
 			const RobotState &to,
 			random_numbers::RandomNumberGenerator &rng,
 			double scale
 	) {
 		// Create a biased sampler that samples near the (ideal_shell_state -> goal_sample) motion.
-		std::function biased_sampler = [&]() {
+		std::function biased_sampler = [&, scale]() {
 			return makeshift_exponential_sample_along_motion(
 					from,
 					to,
@@ -111,5 +111,7 @@ export namespace mgodpl {
 					scale
 			);
 		};
+
+		return biased_sampler;
 	}
 }
