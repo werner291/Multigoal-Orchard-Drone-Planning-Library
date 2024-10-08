@@ -44,7 +44,6 @@ using ApproachPlanningMethodFn = std::function<ApproachPlanningResults(const App
 																	   random_numbers::RandomNumberGenerator &)>;
 
 
-
 /**
  * @brief Tries to pull out a robot from a given goal state.
  *
@@ -151,7 +150,7 @@ ApproachPlanningResults probing_by_pullout(
  * @param convex_hull 	The convex hull of the tree.
  * @return A function that returns true if the state is outside the tree, false otherwise.
  */
-std::function<bool(const RobotState&)> accept_outside_tree(const cgal::CgalMeshData &convex_hull) {
+std::function<bool(const RobotState &)> accept_outside_tree(const cgal::CgalMeshData &convex_hull) {
 	auto inside = std::make_shared<CGAL::Side_of_triangle_mesh<cgal::Surface_mesh, cgal::K>>(convex_hull.convex_hull);
 	return [inside = std::move(inside)](const RobotState &state) {
 		// TODO: this is technically not 100% accurate but if we get to this point the planning problem is trivial.
@@ -192,7 +191,10 @@ ApproachPlanningMethodFn rrt_from_goal_samples(
 		auto accept = accept_outside_tree(*problem.tree_model.tree_convex_hull);
 
 		// Create a uniform sampler function of the space around the tree.
-		auto sample_state = make_uniform_sampler_fn(problem.robot, rng, problem.tree_model.tree_mesh.leaves_mesh, sampler_margin);
+		auto sample_state = make_uniform_sampler_fn(problem.robot,
+													rng,
+													problem.tree_model.tree_mesh.leaves_mesh,
+													sampler_margin);
 
 		for (const auto &target: problem.tree_model.target_points) {
 
@@ -277,7 +279,7 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 			};
 
 			// The biased RRT sampler function that grows an RRT tree from the given goal sample.
-			 std::function plan_rrt_biased = [&](const RobotState &goal_sample) {
+			std::function plan_rrt_biased = [&](const RobotState &goal_sample) {
 
 				// Find the surface point on the tree closest to the goal:
 				const auto surface_pt = mgodpl::cgal::from_face_location(
@@ -291,14 +293,12 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 																		surface_pt.normal);
 
 				// Create a biased sampler that samples near the (ideal_shell_state -> goal_sample) motion.
-				std::function biased_sampler = [&]() {
-					return makeshift_exponential_sample_along_motion(
-							goal_sample,
-							ideal_shell_state,
-							rng,
-							sampler_scale
-					);
-				};
+				std::function biased_sampler = motionBiasedSampleFn(
+						ideal_shell_state,
+						goal_sample,
+						rng,
+						sampler_scale
+				);
 
 				// Run the RRT algorithm and try to find a path.
 				return rrt_path_to_acceptable(
@@ -328,8 +328,8 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 		performance_annotations["goal_samples"] = goal_samples;
 
 		return {
-			.paths = paths,
-			.performance_annotations = performance_annotations
+				.paths = paths,
+				.performance_annotations = performance_annotations
 		};
 	};
 }
@@ -343,8 +343,8 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
  * If not, it returns a path from the idealized state to the target point.
  */
 ApproachPlanningResults straight_in(const ApproachPlanningProblem &problem,
-			  CollisionFunctions &collision_fns,
-			  random_numbers::RandomNumberGenerator &rng) {
+									CollisionFunctions &collision_fns,
+									random_numbers::RandomNumberGenerator &rng) {
 
 	// Initialize the paths and performance annotations:
 	std::vector<std::optional<RobotPath>> paths;

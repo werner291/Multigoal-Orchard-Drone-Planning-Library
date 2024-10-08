@@ -82,7 +82,16 @@ REGISTER_VISUALIZATION(rrt_for_approach_planning) {
 				sample_goal,
 				1000,
 				[&](const RobotState &goal) -> std::optional<RobotPath> {
-					return std::nullopt;
+					// Run the RRT algorithm and try to find a path.
+					return rrt_path_to_acceptable(
+							goal,
+							biased_sampler,
+							collision_fns.state_collides,
+							collision_fns.motion_collides,
+							equal_weights_distance,
+							max_rrt_iterations,
+							accept_at
+					);
 				});
 	});
 
