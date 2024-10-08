@@ -6,10 +6,12 @@
 #include "../experiment_utils/tree_benchmark_data.h"
 #include "../planning/RandomNumberGenerator.h"
 #include "../planning/RobotModel.h"
+#include "../planning/RobotPath.h"
 #include "../visualization/RunQueue.h"
 #include "../visualization/Throttle.h"
 #include "../visualization/robot_state.h"
 #include "../visualization/visualization_function_macros.h"
+
 
 #include <functional>
 #include <memory>
@@ -22,6 +24,7 @@ using namespace visualization;
 using namespace vizualisation;
 
 import sampling;
+import goal_sampling;
 import collision_detection;
 import collision_visualization;
 
@@ -64,13 +67,23 @@ REGISTER_VISUALIZATION(rrt_for_approach_planning) {
 
 	viewer.addTree(tree.tree_mesh, true, true);
 
+	std::function sample_goal_t = goal_region_sampler(robot, rng);
+	std::function sample_goal = [&]() {
+		return sample_goal_t(tree.target_points[0]);
+	};
+
+	std::function check_goal_state = visualize_and_cleanup_state(base_collision_fn, run_queue, throttle, robot);
+
 	// We're going to be running the algorithm in a separate thread to keep the logic as clean as possible:
 	std::thread algorithm_thread([&]() {
-		while (true) {
-			auto state_1 = sample();
-			auto state_2 = sample();
-			motion_check_visualization_fn(state_1, state_2);
-		}
+		// Try the RRT operation at valid goal samples.
+		auto path = try_at_valid_goal_samples<RobotPath>(
+				check_goal_state,
+				sample_goal,
+				1000,
+				[&](const RobotState &goal) -> std::optional<RobotPath> {
+					return std::nullopt;
+				});
 	});
 
 	viewer.addTimerCallback([&]() {

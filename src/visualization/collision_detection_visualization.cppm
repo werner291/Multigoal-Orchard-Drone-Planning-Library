@@ -59,7 +59,7 @@ export namespace mgodpl::visualization {
 			});
 
 			// Wait for the throttle to allow the next step
-			throttle.wait_and_advance();
+			throttle.wait_and_advance(1);
 			return collides;
 		};
 	}
@@ -73,7 +73,7 @@ export namespace mgodpl::visualization {
 	 */
 	void pause_and_cleanup(Throttle &throttle, RunQueue &run_queue, std::vector<RobotActors> &actors) {
 		for (int i = 0; i < 10; ++i) {
-			throttle.wait_and_advance();
+			throttle.wait_and_advance(1);
 		}
 
 		run_queue.enqueue([&actors](SimpleVtkViewer &viewer) {
@@ -113,6 +113,56 @@ export namespace mgodpl::visualization {
 		return [&throttle, run_queue, actors, check_motion](const RobotState &from, const RobotState &to) {
 			bool collides = check_motion(from, to);
 			pause_and_cleanup(throttle, *run_queue, *actors);
+			return collides;
+		};
+	}
+
+	/**
+	 * @brief A single-sample collision visualization function.
+	 *
+	 * This creates a CollisionDetectionFn that wraps the given base collision checking function,
+	 * visualizing the state briefly and then cleaning up the visualization.
+	 *
+	 * @param base_collision_fn 	A function that checks for collisions in a given robot state.
+	 * @param run_queue 			A shared pointer to a queue managing visualization tasks.
+	 * @param throttle 				A throttle to control the rate of visualization updates.
+	 * @param actors 				A shared pointer to a vector storing the visualized robot actors.
+	 * @param robot 				The robot model used for visualization and collision checking.
+	 * @return A function that takes a RobotState and returns a boolean indicating if the state is in collision.
+	 */
+	CollisionDetectionFn visualize_and_cleanup_state(
+			const CollisionDetectionFn &base_collision_fn,
+			std::shared_ptr<RunQueue> run_queue,
+			Throttle &throttle,
+			const robot_model::RobotModel &robot) {
+
+		// Create a new collision detection function that visualizes the state and cleans up the visualization
+		return [base_collision_fn, run_queue, &throttle, &robot](const RobotState &goal) {
+
+			auto actors = std::make_shared<std::optional<RobotActors>>();
+
+			// run the base collision function
+			bool collides = base_collision_fn(goal);
+
+			// Visualize the robot state, color it red if it collides
+			run_queue->enqueue([actors, &robot, goal, collides](SimpleVtkViewer &viewer) {
+				*actors = (vizualize_robot_state(viewer, robot, forwardKinematics(robot, goal),
+												 collides ? math::Vec3d(1.0, 0.0, 0.0) : math::Vec3d(0.0,
+																									 1.0,
+																									 0.0)));
+			});
+
+			throttle.wait_and_advance(collides ? 5 : 20);
+
+			// Remove it again:
+			run_queue->enqueue([actors](SimpleVtkViewer &viewer) {
+				if (actors->has_value()) {
+					for (auto &a: actors->value().actors) {
+						viewer.removeActor(a);
+					}
+				}
+			});
+
 			return collides;
 		};
 	}

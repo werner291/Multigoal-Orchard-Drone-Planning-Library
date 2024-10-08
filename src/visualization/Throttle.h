@@ -30,7 +30,7 @@ namespace mgodpl::visualization {
 		 *
 		 * This method waits until the number of steps allowed is greater than zero, decrementing it when it's allowed to advance, then returns.
 		 */
-		void wait_and_advance();
+		void wait_and_advance(int wait_steps);
 
 		/**
 		 * @brief Allow the algorithm to advance.
