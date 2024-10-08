@@ -2,15 +2,20 @@
 //
 // All rights reserved.
 
-#include <thread>
-#include "../visualization/visualization_function_macros.h"
+#include "../experiment_utils/procedural_robot_models.h"
+#include "../experiment_utils/tree_benchmark_data.h"
+#include "../planning/RandomNumberGenerator.h"
+#include "../planning/RobotModel.h"
+#include "../visualization/RunQueue.h"
 #include "../visualization/Throttle.h"
 #include "../visualization/robot_state.h"
+#include "../visualization/visualization_function_macros.h"
 
-#include "../experiment_utils/procedural_robot_models.h"
-
-#include "../planning/RandomNumberGenerator.h"
-#include "../experiment_utils/tree_benchmark_data.h"
+#include <functional>
+#include <memory>
+#include <thread>
+#include <vector>
+#include <vtkActor.h>
 
 using namespace mgodpl;
 using namespace visualization;
@@ -18,47 +23,40 @@ using namespace vizualisation;
 
 import sampling;
 import collision_detection;
+import collision_visualization;
 
-struct CollisionCheckedState {
-	RobotState state;
-	bool collision;
-};
+using namespace mgodpl;
+using namespace visualization;
 
 REGISTER_VISUALIZATION(rrt_for_approach_planning) {
 
-	auto robot = experiments::createProceduralRobotModel({
-		.total_arm_length = 1.0,
-		.joint_types = {
-			experiments::JointType::HORIZONTAL
-		},
-		.add_spherical_wrist = false
-	});
+	auto robot = experiments::createProceduralRobotModel(
+			{
+					.total_arm_length = 1.0,
+					.joint_types = {
+							experiments::JointType::HORIZONTAL
+					},
+					.add_spherical_wrist = false
+			});
 
 	auto tree = experiments::loadBenchmarkTreemodelData("appletree");
 
-	std::mutex mutex;
-
 	Throttle throttle;
 
-	auto base_collision_fn = collision_check_fn_in_environment({
-		robot,
-		*tree.tree_collision_object
-	});
+	auto base_collision_fn =
+			collision_check_fn_in_environment(
+					{robot, *tree.tree_collision_object});
 
-	std::optional<CollisionCheckedState> state_to_visualize;
+	auto run_queue = std::make_shared<RunQueue>();
+	auto actors = std::make_shared<std::vector<RobotActors>>();
 
-	auto motion_check_fn = motion_collision_check_fn_from_state_collision([&](const RobotState &state) {
-
-		bool collides = base_collision_fn(state);
-
-		{
-			std::lock_guard lock(mutex);
-			state_to_visualize = CollisionCheckedState{state, collides};
-		}
-
-		throttle.wait_and_advance();
-		return collides;
-	});
+	auto motion_check_visualization_fn =
+			create_motion_check_visualization_fn(
+					base_collision_fn,
+					actors,
+					run_queue,
+					throttle,
+					robot);
 
 	random_numbers::RandomNumberGenerator rng;
 
@@ -71,27 +69,13 @@ REGISTER_VISUALIZATION(rrt_for_approach_planning) {
 		while (true) {
 			auto state_1 = sample();
 			auto state_2 = sample();
-			motion_check_fn(state_1, state_2);
+			motion_check_visualization_fn(state_1, state_2);
 		}
 	});
 
-	std::vector<RobotActors> actors;
-
 	viewer.addTimerCallback([&]() {
-
-		std::lock_guard lock(mutex);
-		if (state_to_visualize) {
-			actors.push_back(vizualize_robot_state(viewer, robot, forwardKinematics(robot, state_to_visualize->state),
-								  state_to_visualize->collision ? math::Vec3d(1.0, 0.0, 0.0) : math::Vec3d(0.0, 1.0, 0.0)
-								  ));
-			// Clear the state so we don't keep visualizing it:
-			state_to_visualize.reset();
-		}
-
-		w
-
+		run_queue->run_all(viewer);
 		throttle.allow_advance();
-
 	});
 
 	viewer.start();
