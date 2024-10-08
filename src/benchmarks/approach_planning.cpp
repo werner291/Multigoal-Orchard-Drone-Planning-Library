@@ -24,6 +24,7 @@ import goal_sampling;
 import approach_makeshift_prm;
 import collision_detection;
 import functional_utils;
+import shell_state_projection;
 
 #include <CGAL/Side_of_triangle_mesh.h>
 
@@ -146,21 +147,6 @@ ApproachPlanningResults probing_by_pullout(
 }
 
 /**
- * @brief Create an acceptance function for whether a given state is considered "outside" the tree.
- * @param convex_hull 	The convex hull of the tree.
- * @return A function that returns true if the state is outside the tree, false otherwise.
- */
-std::function<bool(const RobotState &)> accept_outside_tree(const cgal::CgalMeshData &convex_hull) {
-	auto inside = std::make_shared<CGAL::Side_of_triangle_mesh<cgal::Surface_mesh, cgal::K>>(convex_hull.convex_hull);
-	return [inside = std::move(inside)](const RobotState &state) {
-		// TODO: this is technically not 100% accurate but if we get to this point the planning problem is trivial.
-		// Also, for our analysis this doesn't matter: this only makes the problem easier for RRT, and harder for our method.
-		return (*inside)(cgal::to_cgal_point(state.base_tf.translation)) ==
-			   CGAL::ON_UNBOUNDED_SIDE;
-	};
-};
-
-/**
  * @brief Function that performs uses a rapidly-exploring random tree (RRT), rooted in valid goal samples,
  * to plan approach paths in and out of the tree.
  *
@@ -281,16 +267,9 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 			// The biased RRT sampler function that grows an RRT tree from the given goal sample.
 			std::function plan_rrt_biased = [&](const RobotState &goal_sample) {
 
-				// Find the surface point on the tree closest to the goal:
-				const auto surface_pt = mgodpl::cgal::from_face_location(
-						mgodpl::cgal::locate_nearest(goal_sample.base_tf.translation,
-													 *problem.tree_model.tree_convex_hull),
-						*problem.tree_model.tree_convex_hull);
-
-				// Compute an idealized shell state. (This is the same as the straight-in starting state.)
-				RobotState ideal_shell_state = fromEndEffectorAndVector(problem.robot,
-																		surface_pt.surface_point,
-																		surface_pt.normal);
+				auto ideal_shell_state = project_to_shell_state(goal_sample,
+																*problem.tree_model.tree_convex_hull,
+																problem.robot);
 
 				// Create a biased sampler that samples near the (ideal_shell_state -> goal_sample) motion.
 				std::function biased_sampler = motionBiasedSampleFn(

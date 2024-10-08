@@ -27,6 +27,9 @@ import sampling;
 import goal_sampling;
 import collision_detection;
 import collision_visualization;
+import shell_state_projection;
+import approach_makeshift_prm;
+import rrt;
 
 using namespace mgodpl;
 using namespace visualization;
@@ -68,31 +71,46 @@ REGISTER_VISUALIZATION(rrt_for_approach_planning) {
 	viewer.addTree(tree.tree_mesh, true, true);
 
 	std::function sample_goal_t = goal_region_sampler(robot, rng);
-	std::function sample_goal = [&]() {
-		return sample_goal_t(tree.target_points[0]);
-	};
+
 
 	std::function check_goal_state = visualize_and_cleanup_state(base_collision_fn, run_queue, throttle, robot);
 
+	auto accept_at = accept_outside_tree(*tree.tree_convex_hull);
+
 	// We're going to be running the algorithm in a separate thread to keep the logic as clean as possible:
 	std::thread algorithm_thread([&]() {
-		// Try the RRT operation at valid goal samples.
-		auto path = try_at_valid_goal_samples<RobotPath>(
-				check_goal_state,
-				sample_goal,
-				1000,
-				[&](const RobotState &goal) -> std::optional<RobotPath> {
-					// Run the RRT algorithm and try to find a path.
-					return rrt_path_to_acceptable(
-							goal,
-							biased_sampler,
-							collision_fns.state_collides,
-							collision_fns.motion_collides,
-							equal_weights_distance,
-							max_rrt_iterations,
-							accept_at
-					);
-				});
+
+		for (const auto &target: tree.target_points) {
+			std::function sample_goal = [&]() {
+				return sample_goal_t(target);
+			};
+
+			// Try the RRT operation at valid goal samples.
+			auto path = try_at_valid_goal_samples<RobotPath>(
+					check_goal_state,
+					sample_goal,
+					1000,
+					[&](const RobotState &goal) -> std::optional<RobotPath> {
+
+						auto shell_state = project_to_shell_state(goal, *tree.tree_convex_hull, robot);
+
+						auto biased_sampler = motionBiasedSampleFn(goal,
+																   shell_state,
+																   rng,
+																   1.0);
+
+						// Run the RRT algorithm and try to find a path.
+						return rrt_path_to_acceptable(
+								goal,
+								biased_sampler,
+								base_collision_fn,
+								motion_check_visualization_fn,
+								equal_weights_distance,
+								100,
+								accept_at
+						);
+					});
+		}
 	});
 
 	viewer.addTimerCallback([&]() {
