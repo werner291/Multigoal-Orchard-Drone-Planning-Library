@@ -260,10 +260,11 @@ target_sources(
         src/planning/goal_sampling.cppm
         src/planning/collision_detection.cppm
         src/planning/functional_utils.cppm
+        src/planning/shell_state_projection.cppm
 )
 
 if (NOT NIXOS) # We get a weird error when trying to do precompiled headers on NixOS; turn it off for now.
-target_precompile_headers(planning PUBLIC src/planning/fcl.pch src/planning/cgal_chull_shortest_paths.h)
+    target_precompile_headers(planning PUBLIC src/planning/fcl.pch src/planning/cgal_chull_shortest_paths.h)
 endif ()
 
 target_link_libraries(planning math_utils)
@@ -411,6 +412,7 @@ if (ENABLE_VISUALIZATION)
             FILE_SET CXX_MODULES
             FILES
             src/visualization/visualize_path.cppm
+            src/visualization/collision_detection_visualization.cppm
     )
 
     if (NOT NIXOS) # We get a weird error when trying to do precompiled headers on NixOS; turn it off for now.
@@ -418,7 +420,7 @@ if (ENABLE_VISUALIZATION)
     endif ()
 
     target_link_directories(${PROJECT_NAME}_visualisation PUBLIC ${VTK_LIBRARY_DIRS})
-    target_link_libraries(${PROJECT_NAME}_visualisation ${VTK_LIBRARIES} experiment_utils)
+    target_link_libraries(${PROJECT_NAME}_visualisation ${VTK_LIBRARIES} experiment_utils planning)
 
     add_executable(vizcube_lightweight src/experiments/cubeviz.cpp)
     target_link_libraries(vizcube_lightweight math_utils ${PROJECT_NAME}_visualisation experiment_utils)
@@ -467,6 +469,7 @@ if (ENABLE_VISUALIZATION)
             src/visualizations/scanning_motions.cpp
             src/visualizations/approach_planning.cpp
             src/visualizations/arm_axis_motions.cpp
+            src/visualizations/rrt_for_approach_planning.cpp
     )
 
     target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)

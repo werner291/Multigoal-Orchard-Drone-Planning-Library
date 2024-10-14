@@ -8,15 +8,15 @@
 
 #include "RunQueue.h"
 
-void mgodpl::visualization::RunQueue::enqueue(std::function<void()> f) {
+void mgodpl::visualization::RunQueue::enqueue(std::function<void(SimpleVtkViewer&)> f) {
 	std::lock_guard<std::mutex> lock(mutex); // Lock the mutex to ensure thread safety
 	queue.push_back(f); // Add the function to the queue
 }
 
-void mgodpl::visualization::RunQueue::run_all() {
+void mgodpl::visualization::RunQueue::run_all(SimpleVtkViewer& viewer) {
 	std::lock_guard<std::mutex> lock(mutex); // Lock the mutex to ensure thread safety
 	for (const auto &f: queue) { // For each function in the queue
-		f(); // Execute the function
+		f(viewer); // Execute the function
 	}
 	queue.clear(); // Clear the queue
 }

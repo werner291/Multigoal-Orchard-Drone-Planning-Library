@@ -13,6 +13,8 @@ module;
 
 export module approach_makeshift_prm;
 
+import sampling;
+
 export namespace mgodpl {
 
 	/**
@@ -28,8 +30,8 @@ export namespace mgodpl {
 
 		// Generate a random direction:
 		math::Vec3d translation_noise_vector(rng.gaussian01(),
-											  rng.gaussian01(),
-											  rng.gaussian01());
+											 rng.gaussian01(),
+											 rng.gaussian01());
 		translation_noise_vector.normalize();
 		// Scale it by the distance:
 		translation_noise_vector *= distance * rng.uniform01();
@@ -38,12 +40,13 @@ export namespace mgodpl {
 		state.base_tf.translation += translation_noise_vector;
 
 		// Convert the scalar rotation to a Quaternion rotation around the Z-axis:
-		math::Quaterniond orientation_noise = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), rng.uniformReal(-distance, distance));
+		math::Quaterniond orientation_noise = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(),
+																			   rng.uniformReal(-distance, distance));
 		// Apply the noise:
 		state.base_tf.orientation = state.base_tf.orientation * orientation_noise;
 
 		// Apply the joint nois:
-		for (double & joint_value : state.joint_values) {
+		for (double &joint_value: state.joint_values) {
 			joint_value += rng.uniformReal(-distance, distance);
 			// Apply limit:
 			joint_value = std::clamp(joint_value, -M_PI_2, M_PI_2);
@@ -78,5 +81,37 @@ export namespace mgodpl {
 
 		return sample_nearby_state(sample, rng, distance);
 
+	}
+
+	/**
+	 * @brief Creates a biased sampling function for generating robot states along a motion path.
+	 *
+	 * This function generates a sampling function that produces robot states biased along the motion
+	 * from a starting state to a goal state. The sampling function uses an exponential distribution
+	 * to sample states near the interpolated path between the start and goal states.
+	 *
+	 * @param from The starting RobotState.
+	 * @param to The goal RobotState.
+	 * @param rng A random number generator.
+	 * @param scale A scale factor for the Gaussian distribution used to generate the distance for sampling.
+	 * @return A function that generates biased samples along the motion path.
+	 */
+	SampleFn(
+			const RobotState &from,
+			const RobotState &to,
+			random_numbers::RandomNumberGenerator &rng,
+			double scale
+	) {
+		// Create a biased sampler that samples near the (ideal_shell_state -> goal_sample) motion.
+		std::function biased_sampler = [&, scale]() {
+			return makeshift_exponential_sample_along_motion(
+					from,
+					to,
+					rng,
+					scale
+			);
+		};
+
+		return biased_sampler;
 	}
 }

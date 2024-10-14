@@ -58,6 +58,8 @@ namespace mgodpl {
 		};
 	}
 
+	export using SampleFn = std::function<RobotState()>;
+
 	/**
 	 * @brief Creates a uniform sampler function for a given robot model, random number generator, mesh, and margin.
 	 *
@@ -70,10 +72,10 @@ namespace mgodpl {
 	 * @param margin 		The margin to be added to the calculated radii.
 	 * @return 				A function that generates a uniform random state for the robot model.
 	 */
-	export std::function<RobotState()> make_uniform_sampler_fn(const robot_model::RobotModel &robot_model,
-															   random_numbers::RandomNumberGenerator &rng,
-															   const Mesh &meshs,
-															   const double margin) {
+	export SampleFn make_uniform_sampler_fn(const robot_model::RobotModel &robot_model,
+											random_numbers::RandomNumberGenerator &rng,
+											const Mesh &meshs,
+											const double margin) {
 
 		auto [h_radius, v_radius] = sampling_radii_around_mesh(meshs, margin);
 

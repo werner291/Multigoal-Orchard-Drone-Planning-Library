@@ -8,15 +8,17 @@
 
 #include "Throttle.h"
 
-void mgodpl::visualization::Throttle::wait_and_advance() {
+void mgodpl::visualization::Throttle::wait_and_advance(int wait_steps) {
 	// Lock the mutex.
 	std::unique_lock<std::mutex> lock(cv_mutex);
 
-	// Wait until we're allowed to advance.
-	cv.wait(lock, [&]() { return steps_allowed > 0; });
+	while (wait_steps-- > 0) {
+		// Wait until we're allowed to advance.
+		cv.wait(lock, [&]() { return steps_allowed > 0; });
 
-	// Decrement the steps allowed.
-	--steps_allowed;
+		// Decrement the steps allowed.
+		--steps_allowed;
+	}
 }
 
 void mgodpl::visualization::Throttle::allow_advance() {

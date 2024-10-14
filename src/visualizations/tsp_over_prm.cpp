@@ -124,7 +124,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 			std::lock_guard lock(data_transfer_mutex);
 			recent_samples.emplace_back(state, added);
 		}
-		throttle.wait_and_advance();
+		throttle.wait_and_advance(1);
 	};
 
 	// A callback for visualizing a single edge.
@@ -141,7 +141,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 						target.first.base_tf.translation
 				);
 			}
-			throttle.wait_and_advance();
+			throttle.wait_and_advance(1);
 		}
 	};
 
@@ -157,7 +157,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 						target.first.base_tf.translation
 				);
 			}
-			throttle.wait_and_advance();
+			throttle.wait_and_advance(1);
 		}
 	};
 
