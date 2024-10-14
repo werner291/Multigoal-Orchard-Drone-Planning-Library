@@ -12,6 +12,8 @@
 #include <random>
 #include <cassert>
 
+#include "../math/Vec3.h"
+
 namespace random_numbers {
 	/**
 	 * Facade to the <random> library.
@@ -64,6 +66,14 @@ namespace random_numbers {
 		inline double uniformReal(double min, double max) {
 			std::uniform_real_distribution<double> distribution(min, max);
 			return distribution(generator);
+		}
+
+		mgodpl::math::Vec3d random_unit_vector() {
+			return mgodpl::math::Vec3d(
+				gaussian01(),
+				gaussian01(),
+				gaussian01()
+			).normalized();
 		}
 
 		/**

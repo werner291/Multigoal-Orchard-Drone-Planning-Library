@@ -27,6 +27,8 @@ import functional_utils;
 
 #include <CGAL/Side_of_triangle_mesh.h>
 
+#include "../planning/collision_detection.h"
+
 using namespace mgodpl;
 
 struct ApproachPlanningProblem {
@@ -35,14 +37,13 @@ struct ApproachPlanningProblem {
 };
 
 struct ApproachPlanningResults {
-	std::vector<std::optional<RobotPath>> paths;
+	std::vector<std::optional<RobotPath> > paths;
 	Json::Value performance_annotations;
 };
 
 using ApproachPlanningMethodFn = std::function<ApproachPlanningResults(const ApproachPlanningProblem &,
-																	   CollisionFunctions &,
-																	   random_numbers::RandomNumberGenerator &)>;
-
+                                                                       CollisionFunctions &,
+                                                                       random_numbers::RandomNumberGenerator &)>;
 
 
 /**
@@ -61,17 +62,16 @@ using ApproachPlanningMethodFn = std::function<ApproachPlanningResults(const App
  * @return A RobotPath if the motion does not collide, otherwise an empty optional.
  */
 std::optional<RobotPath> try_pullout(
-		const robot_model::RobotModel &robot_model,
-		const cgal::CgalMeshData &chull,
-		CollisionFunctions &collision_fns,
-		const RobotState &goal_sample) {
-
+	const robot_model::RobotModel &robot_model,
+	const cgal::CgalMeshData &chull,
+	CollisionFunctions &collision_fns,
+	const RobotState &goal_sample) {
 	// Generate the motion without collision checking:
 	const auto &path = straightout(
-			robot_model,
-			goal_sample,
-			chull.tree,
-			chull.mesh_path
+		robot_model,
+		goal_sample,
+		chull.tree,
+		chull.mesh_path
 	);
 
 	// This should be a two-state path:
@@ -102,14 +102,13 @@ std::optional<RobotPath> try_pullout(
  * @return 	An ApproachPlanningResults object containing the generated paths and performance annotations.
  */
 ApproachPlanningResults probing_by_pullout(
-		const ApproachPlanningProblem &problem,
-		CollisionFunctions &collision_fns,
-		random_numbers::RandomNumberGenerator &rng) {
-
+	const ApproachPlanningProblem &problem,
+	CollisionFunctions &collision_fns,
+	random_numbers::RandomNumberGenerator &rng) {
 	const int MAX_SAMPLES = 1000;
 
 	// Initialize the paths and performance annotations:
-	std::vector<std::optional<RobotPath>> paths;
+	std::vector<std::optional<RobotPath> > paths;
 	Json::Value performance_annotations;
 
 	// Create a goal sample function that counts its invocations.
@@ -118,7 +117,6 @@ ApproachPlanningResults probing_by_pullout(
 
 	// For each target point...
 	for (const auto &target: problem.tree_model.target_points) {
-
 		// Create a sampler function that generates a random goal state.
 		std::function sample_goal_state = [&]() {
 			return sample_goal(target);
@@ -131,18 +129,18 @@ ApproachPlanningResults probing_by_pullout(
 
 		// Try the pullout operation at valid goal samples.
 		auto ap = try_at_valid_goal_samples<RobotPath>(
-				collision_fns.state_collides,
-				sample_goal_state,
-				MAX_SAMPLES,
-				try_pullout_sample);
+			collision_fns.state_collides,
+			sample_goal_state,
+			MAX_SAMPLES,
+			try_pullout_sample);
 
 		// Add the path to the list of paths. (It's an optional, so that if it fails, it lines up with the target index.)
 		paths.push_back(ap);
 	}
 
 	return {
-			.paths = paths,
-			.performance_annotations = performance_annotations
+		.paths = paths,
+		.performance_annotations = performance_annotations
 	};
 }
 
@@ -151,13 +149,13 @@ ApproachPlanningResults probing_by_pullout(
  * @param convex_hull 	The convex hull of the tree.
  * @return A function that returns true if the state is outside the tree, false otherwise.
  */
-std::function<bool(const RobotState&)> accept_outside_tree(const cgal::CgalMeshData &convex_hull) {
-	auto inside = std::make_shared<CGAL::Side_of_triangle_mesh<cgal::Surface_mesh, cgal::K>>(convex_hull.convex_hull);
+std::function<bool(const RobotState &)> accept_outside_tree(const cgal::CgalMeshData &convex_hull) {
+	auto inside = std::make_shared<CGAL::Side_of_triangle_mesh<cgal::Surface_mesh, cgal::K> >(convex_hull.convex_hull);
 	return [inside = std::move(inside)](const RobotState &state) {
 		// TODO: this is technically not 100% accurate but if we get to this point the planning problem is trivial.
 		// Also, for our analysis this doesn't matter: this only makes the problem easier for RRT, and harder for our method.
 		return (*inside)(cgal::to_cgal_point(state.base_tf.translation)) ==
-			   CGAL::ON_UNBOUNDED_SIDE;
+		       CGAL::ON_UNBOUNDED_SIDE;
 	};
 };
 
@@ -171,17 +169,16 @@ std::function<bool(const RobotState&)> accept_outside_tree(const cgal::CgalMeshD
  * @return The benchmark solver function.
  */
 ApproachPlanningMethodFn rrt_from_goal_samples(
-		const int max_goal_samples = 1000,
-		const int max_rrt_iterations = 1000,
-		const double sampler_margin = 2.0
+	const int max_goal_samples = 1000,
+	const int max_rrt_iterations = 1000,
+	const double sampler_margin = 2.0
 ) {
 	// Return the benchmark solver function; lambda that captures the algorithm parameters.
 	return [=](const ApproachPlanningProblem &problem,
-			   CollisionFunctions &collision_fns,
-			   random_numbers::RandomNumberGenerator &rng) -> ApproachPlanningResults {
-
+	           CollisionFunctions &collision_fns,
+	           random_numbers::RandomNumberGenerator &rng) -> ApproachPlanningResults {
 		// Allocate result vector and JSON annotations.
-		std::vector<std::optional<RobotPath>> paths;
+		std::vector<std::optional<RobotPath> > paths;
 		Json::Value performance_annotations;
 
 		// Create an invocation-counting goal sampler.
@@ -192,10 +189,12 @@ ApproachPlanningMethodFn rrt_from_goal_samples(
 		auto accept = accept_outside_tree(*problem.tree_model.tree_convex_hull);
 
 		// Create a uniform sampler function of the space around the tree.
-		auto sample_state = make_uniform_sampler_fn(problem.robot, rng, problem.tree_model.tree_mesh.leaves_mesh, sampler_margin);
+		auto sample_state = make_uniform_sampler_fn(problem.robot,
+		                                            rng,
+		                                            problem.tree_model.tree_mesh.leaves_mesh,
+		                                            sampler_margin);
 
 		for (const auto &target: problem.tree_model.target_points) {
-
 			// Create a sampler function that generates a random goal state.
 			std::function sample_goal_state = [&]() {
 				return sample_goal(target);
@@ -204,22 +203,22 @@ ApproachPlanningMethodFn rrt_from_goal_samples(
 			// Define an operation function that attempts to plan an approach path using RRT, with the RRT rooted in the goal state.
 			auto try_rrt = [&](const RobotState &goal_sample) {
 				return rrt_path_to_acceptable(
-						goal_sample,
-						sample_state,
-						collision_fns.state_collides,
-						collision_fns.motion_collides,
-						equal_weights_distance,
-						max_rrt_iterations,
-						accept
+					goal_sample,
+					sample_state,
+					collision_fns.state_collides,
+					collision_fns.motion_collides,
+					equal_weights_distance,
+					max_rrt_iterations,
+					accept
 				);
 			};
 
 			// Try the RRT operation at valid goal samples.
 			auto result = try_at_valid_goal_samples<RobotPath>(
-					collision_fns.state_collides,
-					sample_goal_state,
-					max_goal_samples,
-					try_rrt);
+				collision_fns.state_collides,
+				sample_goal_state,
+				max_goal_samples,
+				try_rrt);
 
 			// Store the result in the paths vector (nullopt if no path was found, so we line up with the target index).
 			paths.push_back(result);
@@ -230,8 +229,8 @@ ApproachPlanningMethodFn rrt_from_goal_samples(
 
 		// Return the results.
 		return {
-				.paths = paths,
-				.performance_annotations = performance_annotations
+			.paths = paths,
+			.performance_annotations = performance_annotations
 		};
 	};
 }
@@ -249,16 +248,15 @@ ApproachPlanningMethodFn rrt_from_goal_samples(
  * @return The benchmark solver function.
  */
 ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
-		const int max_goal_samples = 1000,
-		const int max_rrt_iterations = 1000,
-		const double sampler_scale = 1.0
+	const int max_goal_samples = 1000,
+	const int max_rrt_iterations = 1000,
+	const double sampler_scale = 1.0
 ) {
 	return [=](const ApproachPlanningProblem &problem,
-			   CollisionFunctions &collision_fns,
-			   random_numbers::RandomNumberGenerator &rng) -> ApproachPlanningResults {
-
+	           CollisionFunctions &collision_fns,
+	           random_numbers::RandomNumberGenerator &rng) -> ApproachPlanningResults {
 		// Allocate result vector and JSON annotations.
-		std::vector<std::optional<RobotPath>> paths;
+		std::vector<std::optional<RobotPath> > paths;
 		Json::Value performance_annotations;
 
 		// Create a sample-counting goal sampler.
@@ -270,54 +268,52 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 
 		// For every target...
 		for (const auto &target: problem.tree_model.target_points) {
-
 			// Create a sampler function for this specific target.
 			std::function sample_goal_state = [&]() {
 				return sample_goal(target);
 			};
 
 			// The biased RRT sampler function that grows an RRT tree from the given goal sample.
-			 std::function plan_rrt_biased = [&](const RobotState &goal_sample) {
-
+			std::function plan_rrt_biased = [&](const RobotState &goal_sample) {
 				// Find the surface point on the tree closest to the goal:
 				const auto surface_pt = mgodpl::cgal::from_face_location(
-						mgodpl::cgal::locate_nearest(goal_sample.base_tf.translation,
-													 *problem.tree_model.tree_convex_hull),
-						*problem.tree_model.tree_convex_hull);
+					mgodpl::cgal::locate_nearest(goal_sample.base_tf.translation,
+					                             *problem.tree_model.tree_convex_hull),
+					*problem.tree_model.tree_convex_hull);
 
 				// Compute an idealized shell state. (This is the same as the straight-in starting state.)
 				RobotState ideal_shell_state = fromEndEffectorAndVector(problem.robot,
-																		surface_pt.surface_point,
-																		surface_pt.normal);
+				                                                        surface_pt.surface_point,
+				                                                        surface_pt.normal);
 
 				// Create a biased sampler that samples near the (ideal_shell_state -> goal_sample) motion.
 				std::function biased_sampler = [&]() {
 					return makeshift_exponential_sample_along_motion(
-							goal_sample,
-							ideal_shell_state,
-							rng,
-							sampler_scale
+						goal_sample,
+						ideal_shell_state,
+						rng,
+						sampler_scale
 					);
 				};
 
 				// Run the RRT algorithm and try to find a path.
 				return rrt_path_to_acceptable(
-						goal_sample,
-						biased_sampler,
-						collision_fns.state_collides,
-						collision_fns.motion_collides,
-						equal_weights_distance,
-						max_rrt_iterations,
-						accept_at
+					goal_sample,
+					biased_sampler,
+					collision_fns.state_collides,
+					collision_fns.motion_collides,
+					equal_weights_distance,
+					max_rrt_iterations,
+					accept_at
 				);
 			};
 
 			// Try the RRT operation at valid goal samples.
 			auto path = try_at_valid_goal_samples<RobotPath>(
-					collision_fns.state_collides,
-					sample_goal_state,
-					max_goal_samples,
-					plan_rrt_biased
+				collision_fns.state_collides,
+				sample_goal_state,
+				max_goal_samples,
+				plan_rrt_biased
 			);
 
 			// Store the result in the paths vector (nullopt if no path was found, so we line up with the target index).
@@ -343,33 +339,31 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
  * If not, it returns a path from the idealized state to the target point.
  */
 ApproachPlanningResults straight_in(const ApproachPlanningProblem &problem,
-			  CollisionFunctions &collision_fns,
-			  random_numbers::RandomNumberGenerator &rng) {
-
+                                    CollisionFunctions &collision_fns,
+                                    random_numbers::RandomNumberGenerator &rng) {
 	// Initialize the paths and performance annotations:
-	std::vector<std::optional<RobotPath>> paths;
+	std::vector<std::optional<RobotPath> > paths;
 	Json::Value performance_annotations;
 
 	// For every target point...
 	for (const auto &target: problem.tree_model.target_points) {
-
 		// Create a side-of-triangle-mesh function for the tree convex hull.
 		const auto surface_pt = mgodpl::cgal::from_face_location(
-				mgodpl::cgal::locate_nearest(target, *problem.tree_model.tree_convex_hull),
-				*problem.tree_model.tree_convex_hull);
+			mgodpl::cgal::locate_nearest(target, *problem.tree_model.tree_convex_hull),
+			*problem.tree_model.tree_convex_hull);
 
 		// Compute an idealized shell state.
 		RobotState ideal_shell_state = fromEndEffectorAndVector(problem.robot,
-																surface_pt.surface_point,
-																surface_pt.normal);
+		                                                        surface_pt.surface_point,
+		                                                        surface_pt.normal);
 
 		// Project it onto the goal:
 		RobotState goal_state = project_to_goal(
-				problem.robot,
-				ideal_shell_state,
-				problem.robot.findLinkByName("flying_base"),
-				problem.robot.findLinkByName("end_effector"),
-				target);
+			problem.robot,
+			ideal_shell_state,
+			problem.robot.findLinkByName("flying_base"),
+			problem.robot.findLinkByName("end_effector"),
+			target);
 
 		// Check if the motion collides:
 		if (!collision_fns.motion_collides(ideal_shell_state, goal_state)) {
@@ -381,20 +375,19 @@ ApproachPlanningResults straight_in(const ApproachPlanningProblem &problem,
 
 	// Return the results.
 	return {
-			.paths = paths,
-			.performance_annotations = performance_annotations
+		.paths = paths,
+		.performance_annotations = performance_annotations
 	};
 }
 
 REGISTER_BENCHMARK(approach_planning_comparison) {
-
 	// Create a robot model.
 	robot_model::RobotModel robot_model = mgodpl::experiments::createProceduralRobotModel(
-			{
-					.total_arm_length = 1.0, // TODO: Might we want to vary this?
-					.joint_types = {experiments::JointType::HORIZONTAL},
-					.add_spherical_wrist = false
-			});
+		{
+			.total_arm_length = 1.0, // TODO: Might we want to vary this?
+			.joint_types = {experiments::JointType::HORIZONTAL},
+			.add_spherical_wrist = false
+		});
 
 	// Grab a list of all tree models:
 	auto tree_models = experiments::loadAllTreeBenchmarkData(results);
@@ -402,11 +395,12 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 	// Drop all targets already outside the tree:
 	for (auto &tree_model: tree_models) {
 		CGAL::Side_of_triangle_mesh<cgal::Surface_mesh, cgal::K> inside_outside_check(
-				tree_model.tree_convex_hull->convex_hull);
+			tree_model.tree_convex_hull->convex_hull);
 
-		erase_if(tree_model.target_points, [&](const math::Vec3d &target) {
-			return inside_outside_check(cgal::to_cgal_point(target)) == CGAL::ON_UNBOUNDED_SIDE;
-		});
+		erase_if(tree_model.target_points,
+		         [&](const math::Vec3d &target) {
+			         return inside_outside_check(cgal::to_cgal_point(target)) == CGAL::ON_UNBOUNDED_SIDE;
+		         });
 	}
 
 	// If this is a debug build, drop all by the first two tree models:
@@ -415,20 +409,28 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 #endif
 
 	// How many times to repeat each method:
-	const size_t REPETITIONS = 2;
+	const size_t REPETITIONS = 1;
 
 	// A list of methods associated with a name.
-	std::vector<std::pair<std::string, ApproachPlanningMethodFn>> methods{
-			{"pullout",          probing_by_pullout},
-			{"rrt_1000",         rrt_from_goal_samples(1000, 1000, 2.0)},
-			{"rrt_100",          rrt_from_goal_samples(1000, 100, 2.0)},
-			{"rrt_bias_1000",    rrt_from_goal_samples_with_bias(1000, 1000, 2.0)},
-			{"rrt_bias_100",     rrt_from_goal_samples_with_bias(1000, 100, 2.0)},
-			{"rrt_1000_bm",      rrt_from_goal_samples(1000, 1000, 4.0)},
-			{"rrt_100_bm",       rrt_from_goal_samples(1000, 100, 4.0)},
-			{"rrt_bias_1000_bm", rrt_from_goal_samples_with_bias(1000, 1000, 4.0)},
-			{"rrt_bias_100_bm",  rrt_from_goal_samples_with_bias(1000, 100, 4.0)},
-			{"straight_in",      straight_in}
+	std::vector<std::pair<std::string, ApproachPlanningMethodFn> > methods{
+		{"pullout", probing_by_pullout},
+		{"rrt_1", rrt_from_goal_samples(1000, 1, 2.0)},
+		{"rrt_10", rrt_from_goal_samples(1000, 10, 2.0)},
+		{"rrt_100", rrt_from_goal_samples(1000, 100, 2.0)},
+		{"rrt_1000", rrt_from_goal_samples(1000, 1000, 2.0)},
+		{"rrt_1000_bm", rrt_from_goal_samples(1000, 1000, 4.0)},
+		{"rrt_100_bm", rrt_from_goal_samples(1000, 100, 4.0)},
+		{"rrt_10_bm", rrt_from_goal_samples(1000, 10, 4.0)},
+		{"rrt_1_bm", rrt_from_goal_samples(1000, 1, 4.0)},
+		{"rrt_bias_1", rrt_from_goal_samples_with_bias(1000, 1, 2.0)},
+		{"rrt_bias_10", rrt_from_goal_samples_with_bias(1000, 10, 2.0)},
+		{"rrt_bias_100", rrt_from_goal_samples_with_bias(1000, 100, 2.0)},
+		{"rrt_bias_1000", rrt_from_goal_samples_with_bias(1000, 1000, 2.0)},
+		{"rrt_bias_1000_bm", rrt_from_goal_samples_with_bias(1000, 1000, 4.0)},
+		{"rrt_bias_100_bm", rrt_from_goal_samples_with_bias(1000, 100, 4.0)},
+		{"rrt_bias_10_bm", rrt_from_goal_samples_with_bias(1000, 10, 4.0)},
+		{"rrt_bias_1_bm", rrt_from_goal_samples_with_bias(1000, 1, 4.0)},
+		{"straight_in", straight_in}
 	};
 
 	// Record the list of names, split out from the pairs.
@@ -474,86 +476,200 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 	std::atomic_int in_flight = 0; // Track how many experiments are running in parallel at any time.
 
 	// Run the experiments in parallel:
-	std::for_each(std::execution::par, runs.begin(), runs.end(), [&](const Run &run) {
+	std::for_each(std::execution::par,
+	              runs.begin(),
+	              runs.end(),
+	              [&](const Run &run) {
+		              // Count up:
+		              in_flight += 1;
 
-		// Count up:
-		in_flight += 1;
+		              // Grab the RNG, seed it with the repetition index:
+		              random_numbers::RandomNumberGenerator rng(run.repetition_index);
 
-		// Grab the RNG, seed it with the repetition index:
-		random_numbers::RandomNumberGenerator rng(run.repetition_index);
+		              // Print some information about the run:
+		              std::cout << "Starting run " << run.method_index << " " << run.problem_index << " " << run.
+				              repetition_index
+				              << std::endl;
+		              std::cout << "In flight: " << in_flight << std::endl;
 
-		// Print some information about the run:
-		std::cout << "Starting run " << run.method_index << " " << run.problem_index << " " << run.repetition_index
-				  << std::endl;
-		std::cout << "In flight: " << in_flight << std::endl;
+		              // Look up the method and problem:
+		              const auto &[_name, method] = methods[run.method_index];
+		              const auto &problem = problems[run.problem_index];
 
-		// Look up the method and problem:
-		const auto &[_name, method] = methods[run.method_index];
-		const auto &problem = problems[run.problem_index];
+		              // Create the collision functions with counters.
+		              // We add counters here to give us an alternative measurement of computational cost, to compare against CPU time.
+		              // The advantage of using this count is that it is deterministic, and independent of the CPU load or slow algorithm implementation.
+		              //
+		              // Note to future me: don't put this outside the loop, as we need to count invocations per run.
+		              calls_t collision_check_invocations = 0;
+		              calls_t motion_collision_check_invocations = 0;
+		              CollisionFunctions collision_fns =
+				              collision_functions_in_environment_counting(
+					              collision_functions_in_environment({
+						              problem.robot, *problem.tree_model.tree_collision_object
+					              }),
+					              {collision_check_invocations, motion_collision_check_invocations}
+				              );
 
-		// Create the collision functions with counters.
-		// We add counters here to give us an alternative measurement of computational cost, to compare against CPU time.
-		// The advantage of using this count is that it is deterministic, and independent of the CPU load or slow algorithm implementation.
-		//
-		// Note to future me: don't put this outside the loop, as we need to count invocations per run.
-		calls_t collision_check_invocations = 0;
-		calls_t motion_collision_check_invocations = 0;
-		CollisionFunctions collision_fns =
-				collision_functions_in_environment_counting(
-						collision_functions_in_environment({problem.robot, *problem.tree_model.tree_collision_object}),
-						{collision_check_invocations, motion_collision_check_invocations}
-				);
+		              // Record start time:
+		              auto start_time = std::chrono::high_resolution_clock::now();
+		              const auto &result = method(problem, collision_fns, rng);
+		              // Record end time:
+		              auto end_time = std::chrono::high_resolution_clock::now();
 
-		// Record start time:
-		auto start_time = std::chrono::high_resolution_clock::now();
-		const auto &result = method(problem, collision_fns, rng);
-		// Record end time:
-		auto end_time = std::chrono::high_resolution_clock::now();
+		              // Time elapsed in milliseconds: (Longer is more expensive)
+		              auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).
+				              count();
 
-		// Time elapsed in milliseconds: (Longer is more expensive)
-		auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+		              // Record the results in a JSON object:
+		              Json::Value result_json;
+		              result_json["method"] = run.method_index;
+		              result_json["problem"] = run.problem_index;
+		              result_json["repetition"] = run.repetition_index;
+		              result_json["motions_checked"] = motion_collision_check_invocations;
+		              result_json["states_checked"] = collision_check_invocations;
 
-		// Record the results in a JSON object:
-		Json::Value result_json;
-		result_json["method"] = run.method_index;
-		result_json["problem"] = run.problem_index;
-		result_json["repetition"] = run.repetition_index;
-		result_json["motions_checked"] = motion_collision_check_invocations;
-		result_json["states_checked"] = collision_check_invocations;
+		              result_json["time_ms"] = time_ms;
 
-		result_json["time_ms"] = time_ms;
+		              // Number of targets reached is the number of paths that are not nullopt:
+		              result_json["targets_reached"] = std::count_if(result.paths.begin(),
+		                                                             result.paths.end(),
+		                                                             [](const auto &path) { return path.has_value(); });
 
-		// Number of targets reached is the number of paths that are not nullopt:
-		result_json["targets_reached"] = std::count_if(result.paths.begin(), result.paths.end(),
-													   [](const auto &path) { return path.has_value(); });
+		              // Record any method-specific annotations.
+		              result_json["annotations"] = result.performance_annotations;
 
-		// Record any method-specific annotations.
-		result_json["annotations"] = result.performance_annotations;
+		              // Record the lengths and number of waypoints of each path:
+		              for (const auto &path: result.paths) {
+			              if (path.has_value()) {
+				              const auto &p = path.value();
+				              result_json["path_lengths"].append(p.states.size());
+				              result_json["path_distances"].append(pathLength(p));
+			              } else {
+				              result_json["path_lengths"].append(Json::Value::null);
+				              result_json["path_distances"].append(Json::Value::null);
+			              }
+		              }
 
-		// Record the lengths and number of waypoints of each path:
-		for (const auto &path: result.paths) {
-			if (path.has_value()) {
-				const auto &p = path.value();
-				result_json["path_lengths"].append(p.states.size());
-				result_json["path_distances"].append(pathLength(p));
-			} else {
-				result_json["path_lengths"].append(Json::Value::null);
-				result_json["path_distances"].append(Json::Value::null);
-			}
-		}
+		              // Store the results.
+		              {
+			              // Gotta lock the mutex to prevent threads from clobbering the results.
+			              std::lock_guard lock(results_mutex);
+			              results["results"].append(result_json);
 
-		// Store the results.
+			              // Print our progress.
+			              std::cout << "Finished run " << run.method_index << " " << run.problem_index << " " << run.
+					              repetition_index
+					              << ", completed " << results["results"].size() << " of " << runs.size() << std::endl;
+		              }
+
+		              // Count down:
+		              in_flight -= 1;
+	              });
+}
+
+/**
+ * This becnhmark is meant to esablish the correlation between the dot product with the arm vector of a translational
+ * movement, and the chance that the robot successfully escapes along that vector.
+ */
+REGISTER_BENCHMARK(success_by_vector) {
+	// Load all the necessary data:
+	// Create a robot model.
+	robot_model::RobotModel robot_model = mgodpl::experiments::createProceduralRobotModel(
 		{
-			// Gotta lock the mutex to prevent threads from clobbering the results.
-			std::lock_guard lock(results_mutex);
-			results["results"].append(result_json);
+			.total_arm_length = 1.0, // TODO: Might we want to vary this?
+			.joint_types = {experiments::JointType::HORIZONTAL},
+			.add_spherical_wrist = false
+		});
 
-			// Print our progress.
-			std::cout << "Finished run " << run.method_index << " " << run.problem_index << " " << run.repetition_index
-					  << ", completed " << results["results"].size() << " of " << runs.size() << std::endl;
-		}
+	// Grab a list of all tree models:
+	auto tree_models = experiments::loadAllTreeBenchmarkData(results);
 
-		// Count down:
-		in_flight -= 1;
-	});
+	// Drop all targets already outside the tree:
+	for (auto &tree_model: tree_models) {
+		CGAL::Side_of_triangle_mesh<cgal::Surface_mesh, cgal::K> inside_outside_check(
+			tree_model.tree_convex_hull->convex_hull);
+
+		erase_if(tree_model.target_points,
+		         [&](const math::Vec3d &target) {
+			         return inside_outside_check(cgal::to_cgal_point(target)) == CGAL::ON_UNBOUNDED_SIDE;
+		         });
+	}
+
+	// We're going to run experiments in parallel, so we need a mutex to protect the results:
+	std::mutex results_mutex;
+	std::atomic_int in_flight = 0; // Track how many experiments are running in parallel at any time.
+
+	// Count the total number of targets:
+	size_t total = std::accumulate(tree_models.begin(),
+	                               tree_models.end(),
+	                               0,
+	                               [](size_t sum, const experiments::TreeModelBenchmarkData &tree_model) {
+		                               return sum + tree_model.target_points.size();
+	                               });
+
+
+	// Nested parallel for-loop over the trees and the targets within each:
+	// Run the experiments in parallel:
+	std::for_each(
+		std::execution::par,
+		tree_models.begin(),
+		tree_models.end(),
+		[&](const experiments::TreeModelBenchmarkData &tree) {
+			auto targets = tree.target_points;
+			if (targets.size() > 1000) {
+				std::shuffle(targets.begin(), targets.end(), std::mt19937(42));
+				targets.resize(1000);
+			}
+
+			std::for_each(
+				std::execution::par,
+				tree.target_points.begin(),
+				tree.target_points.end(),
+				[&](const math::Vec3d &target) {
+					random_numbers::RandomNumberGenerator rng(42);
+
+					Json::Value tree_json;
+
+					for (int i = 0; i < 100; ++i) {
+						// Sample a goal state:
+						RobotState goal_state = genGoalStateUniform(rng,
+						                                            target,
+						                                            0.0,
+						                                            robot_model,
+						                                            robot_model.findLinkByName("flying_base"),
+						                                            robot_model.findLinkByName("end_effector"));
+
+						bool collides = check_robot_collision(robot_model, *tree.tree_collision_object, goal_state);
+
+
+						math::Vec3d arm_vector = arm_vector_from_state(robot_model, goal_state);
+
+						math::Vec3d random_vector = rng.random_unit_vector();
+
+						RobotState escaped = goal_state;
+						goal_state.base_tf.translation += random_vector * 10.0;
+
+						bool motion_collides = collides || check_motion_collides(
+							                       robot_model,
+							                       *tree.tree_collision_object,
+							                       goal_state,
+							                       escaped);
+
+						// Record the results in a JSON object:
+						Json::Value result_json;
+						result_json["tree"] = tree.tree_model_name;
+						result_json["dot"] = arm_vector.dot(random_vector);
+						result_json["collides"] = collides;
+						result_json["motion_collides"] = motion_collides;
+
+						tree_json.append(result_json);
+					} {
+						std::lock_guard lock(results_mutex);
+						results["results"].append(tree_json);
+
+						std::cout << "Completed " << results["results"].size() << " of " << total << std::endl;
+					}
+				});
+		});
 }
