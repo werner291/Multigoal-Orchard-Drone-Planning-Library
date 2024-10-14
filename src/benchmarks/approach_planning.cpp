@@ -17,6 +17,10 @@
 #include "../planning/probing_motions.h"
 #include "../planning/cgal_chull_shortest_paths.h"
 
+#include <CGAL/Side_of_triangle_mesh.h>
+
+#include "../planning/collision_detection.h"
+
 import approach_by_pullout;
 import rrt;
 import sampling;
@@ -26,9 +30,6 @@ import collision_detection;
 import functional_utils;
 import shell_state_projection;
 
-#include <CGAL/Side_of_triangle_mesh.h>
-
-#include "../planning/collision_detection.h"
 
 using namespace mgodpl;
 
@@ -262,17 +263,17 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 			// The biased RRT sampler function that grows an RRT tree from the given goal sample.
 			std::function plan_rrt_biased = [&](const RobotState &goal_sample) {
 				auto ideal_shell_state = project_to_shell_state(goal_sample,
-					*problem.tree_model.tree_convex_hull,
-																problem.robot);
+				                                                *problem.tree_model.tree_convex_hull,
+				                                                problem.robot);
 
 				// Create a biased sampler that samples near the (ideal_shell_state -> goal_sample) motion.
-				std::function biased_sampler = motionBiasedSampleFn(
-						ideal_shell_state,
-						goal_sample,
+				std::function biased_sampler = make_biased_sample_fn(
+					ideal_shell_state,
+					goal_sample,
 
-						rng,
-						sampler_scale
-					);
+					rng,
+					sampler_scale
+				);
 
 
 				// Run the RRT algorithm and try to find a path.
@@ -303,8 +304,8 @@ ApproachPlanningMethodFn rrt_from_goal_samples_with_bias(
 		performance_annotations["goal_samples"] = goal_samples;
 
 		return {
-				.paths = paths,
-				.performance_annotations = performance_annotations
+			.paths = paths,
+			.performance_annotations = performance_annotations
 		};
 	};
 }

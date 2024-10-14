@@ -22,7 +22,7 @@ namespace mgodpl::visualization {
 		/// The mutex used to lock the condition variable.
 		std::mutex cv_mutex;
 		/// The number of steps allowed to advance.
-		std::atomic_int64_t steps_allowed = 0;
+		std::atomic_int32_t steps_allowed = 0;
 
 	public:
 		/**

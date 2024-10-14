@@ -341,23 +341,9 @@ if (ENABLE_EXPERIMENTS)
 
     add_compile_definitions(GIT_HASH="${GIT_HASH}")
 
-    add_executable(benchmarks
-            src/benchmarks/main.cpp
-            src/benchmarks/goal_sample_success_rate.cpp
-            src/benchmarks/tree_stats.cpp
-            src/benchmarks/sampling_difficulty.cpp
-            src/benchmarks/probing_motions.cpp
-            src/benchmarks/approach_planning.cpp
-    )
-
     if (NOT NIXOS) # We get a weird error when trying to do precompiled headers on NixOS; turn it off for now.
         target_precompile_headers(experiment_utils REUSE_FROM planning)
     endif ()
-
-    target_link_libraries(benchmarks math_utils visibility experiment_utils planning)
-endif ()
-
-if (ENABLE_VISUALIZATION)
 
     message(STATUS "Building with visualization")
 
@@ -451,32 +437,32 @@ if (ENABLE_VISUALIZATION)
     add_executable(point_scanning src/experiments/point_scanning.cpp)
     target_link_libraries(point_scanning math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
 
-    add_executable(visualizations
-            src/visualizations/viz_main.cpp
-            src/visualizations/creases.cpp
-            src/visualizations/fruit_scan_fullpath.cpp
-            src/visualizations/fruit_scan_points.cpp
-            src/visualizations/tree_variations.cpp
-            src/visualizations/probing.cpp
-            src/visualizations/swept_volume.cpp
-            src/visualizations/robot_variations.cpp
-            src/visualizations/declarative.cpp
-            # src/visualizations/swapper.cpp
-            src/visualizations/reacharound_motions.cpp
-            src/visualizations/tsp_over_prm.cpp
-            src/visualizations/shortcutting.cpp
-            src/visualizations/goal_samples.cpp
-            src/visualizations/scanning_motions.cpp
-            src/visualizations/approach_planning.cpp
-            src/visualizations/arm_axis_motions.cpp
-            src/visualizations/rrt_for_approach_planning.cpp
+    add_executable(experiments
+            src/benchmarks/main.cpp
+            src/benchmarks/fruit_scan_fullpath.cpp
+            src/benchmarks/fruit_scan_points.cpp
+            src/benchmarks/tree_variations.cpp
+            src/benchmarks/probing.cpp
+            src/benchmarks/swept_volume.cpp
+            src/benchmarks/robot_variations.cpp
+            src/benchmarks/declarative.cpp
+            # src/benchmarks/swapper.cpp
+            src/benchmarks/reacharound_motions.cpp
+            src/benchmarks/tsp_over_prm.cpp
+            src/benchmarks/shortcutting.cpp
+            src/benchmarks/goal_samples.cpp
+            src/benchmarks/scanning_motions.cpp
+            src/benchmarks/approach_planning_viz.cpp
+            src/benchmarks/arm_axis_motions.cpp
+            src/benchmarks/rrt_for_approach_planning.cpp
+            src/benchmarks/goal_sample_success_rate.cpp
+            src/benchmarks/tree_stats.cpp
+            src/benchmarks/sampling_difficulty.cpp
+            src/benchmarks/probing_motions.cpp
+            src/benchmarks/approach_planning.cpp
     )
 
-    target_link_libraries(visualizations math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
-
-    if (NOT NIXOS) # We get a weird error when trying to do precompiled headers on NixOS; turn it off for now.
-        target_precompile_headers(visualizations REUSE_FROM planning)
-    endif ()
+    target_link_libraries(experiments math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
 
 endif ()
 
@@ -507,22 +493,3 @@ if (ENABLE_TESTS)
     endif ()
 
 endif () # ENABLE_TESTS
-
-if (ENABLE_PYTHON_BINDINGS)
-    message(STATUS "Building with Python bindings")
-    pybind11_add_module(pymgodpl src/python_bindings.cpp)
-    target_link_libraries(pymgodpl PRIVATE math_utils visibility planning experiment_utils ${PROJECT_NAME}_visualisation ${VTK_LIBRARIES})
-    ament_target_dependencies(pymgodpl PUBLIC ${AMENT_DEPS})
-endif ()
-
-add_custom_target(benchmarks_and_visualizations)
-add_dependencies(benchmarks_and_visualizations benchmarks visualizations)
-
-# Test target trying out C++20 modules:
-
-
-add_executable(modules_test)
-target_sources(modules_test
-        PRIVATE src/modules_test/main.cpp
-        PUBLIC FILE_SET CXX_MODULES FILES src/modules_test/module.cppm
-)

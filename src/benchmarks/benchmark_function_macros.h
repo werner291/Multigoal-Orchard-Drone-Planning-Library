@@ -6,8 +6,8 @@
 // Created by werner on 7-2-24.
 //
 
-#ifndef VISUALIZATION_FUNCTION_MACROS_H
-#define VISUALIZATION_FUNCTION_MACROS_H
+#ifndef BENCHMARK_FUNCTION_MACROS_H
+#define BENCHMARK_FUNCTION_MACROS_H
 
 #include <functional>
 #include <map>
@@ -29,4 +29,4 @@ extern std::map<std::string, BenchmarkFn> benchmarks;
     }(); \
     void name(Json::Value& results)
 
-#endif //VISUALIZATION_FUNCTION_MACROS_H
+#endif //BENCHMARK_FUNCTION_MACROS_H

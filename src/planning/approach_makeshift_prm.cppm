@@ -8,6 +8,8 @@
 
 module;
 
+#include <functional>
+
 #include "RobotState.h"
 #include "RandomNumberGenerator.h"
 
@@ -16,7 +18,6 @@ export module approach_makeshift_prm;
 import sampling;
 
 export namespace mgodpl {
-
 	/**
 	 * Sample a RobotState nearby the original state.
 	 *
@@ -25,13 +26,12 @@ export namespace mgodpl {
 	 * @param noise_scale 	The scale of the noise.
 	 */
 	RobotState sample_nearby_state(RobotState state,
-								   random_numbers::RandomNumberGenerator &rng,
-								   double distance) {
-
+	                               random_numbers::RandomNumberGenerator &rng,
+	                               double distance) {
 		// Generate a random direction:
 		math::Vec3d translation_noise_vector(rng.gaussian01(),
-											 rng.gaussian01(),
-											 rng.gaussian01());
+		                                     rng.gaussian01(),
+		                                     rng.gaussian01());
 		translation_noise_vector.normalize();
 		// Scale it by the distance:
 		translation_noise_vector *= distance * rng.uniform01();
@@ -41,7 +41,7 @@ export namespace mgodpl {
 
 		// Convert the scalar rotation to a Quaternion rotation around the Z-axis:
 		math::Quaterniond orientation_noise = math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(),
-																			   rng.uniformReal(-distance, distance));
+		                                                                       rng.uniformReal(-distance, distance));
 		// Apply the noise:
 		state.base_tf.orientation = state.base_tf.orientation * orientation_noise;
 
@@ -53,7 +53,6 @@ export namespace mgodpl {
 		}
 
 		return state;
-
 	}
 
 	/**
@@ -69,10 +68,9 @@ export namespace mgodpl {
 	 * @return A RobotState that is a random sample along the motion from the start state to the goal state.
 	 */
 	RobotState makeshift_exponential_sample_along_motion(const RobotState &start,
-														 const RobotState &goal,
-														 random_numbers::RandomNumberGenerator &rng,
-														 double gaussian_scale) {
-
+	                                                     const RobotState &goal,
+	                                                     random_numbers::RandomNumberGenerator &rng,
+	                                                     double gaussian_scale) {
 		// Step 1: grab a state randomly interpolated between start and goal.
 		RobotState sample = interpolate(start, goal, rng.uniform01());
 
@@ -80,7 +78,6 @@ export namespace mgodpl {
 		double distance = std::abs(rng.gaussian01()) * gaussian_scale;
 
 		return sample_nearby_state(sample, rng, distance);
-
 	}
 
 	/**
@@ -96,19 +93,19 @@ export namespace mgodpl {
 	 * @param scale A scale factor for the Gaussian distribution used to generate the distance for sampling.
 	 * @return A function that generates biased samples along the motion path.
 	 */
-	SampleFn(
-			const RobotState &from,
-			const RobotState &to,
-			random_numbers::RandomNumberGenerator &rng,
-			double scale
+	SampleFn make_biased_sample_fn(
+		const RobotState &from,
+		const RobotState &to,
+		random_numbers::RandomNumberGenerator &rng,
+		double scale
 	) {
 		// Create a biased sampler that samples near the (ideal_shell_state -> goal_sample) motion.
 		std::function biased_sampler = [&, scale]() {
 			return makeshift_exponential_sample_along_motion(
-					from,
-					to,
-					rng,
-					scale
+				from,
+				to,
+				rng,
+				scale
 			);
 		};
 

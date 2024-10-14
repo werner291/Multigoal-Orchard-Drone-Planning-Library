@@ -16,7 +16,7 @@
 
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
 
-      packages.x86_64-linux.default = pkgs.llvmPackages_17.stdenv.mkDerivation {
+      packages.x86_64-linux.default = pkgs.llvmPackages_18.stdenv.mkDerivation {
         name = "visualizations";
         src = ./.;
         nativeBuildInputs = with pkgs; [
@@ -26,7 +26,7 @@
           abseil-cpp
           llvmPackages_17.clang-tools
         ];
-        buildInputs = with pkgs; [
+        buildIAnputs = with pkgs; [
           boost # A set of common tools for C++ development, like an unofficial standard library
           eigen # Useful tools for linear algebra; pretty heavy package, prefer to use our own math library when possible.
           fcl # A library for collision detection; it's the same one MoveIt uses internally.
