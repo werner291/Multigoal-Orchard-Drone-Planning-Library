@@ -52,6 +52,9 @@ df['mean_path_n_waypt'] = df['path_lengths'] \
 df['mean_path_distance'] = df['path_distances'] \
     .apply(lambda x: np.mean([length for length in x if length is not None]))
 
+# There are so many rrt variants that we'd like to group them together
+df['method_category'] = df['method'].apply(lambda x: 'rrt' if 'rrt' in x.lower() else x)
+
 ##########################################
 # Distribution of timings of the methods #
 ##########################################
@@ -185,4 +188,116 @@ plt.tight_layout()
 plt.grid()
 
 plt.savefig(os.path.join(save_to_dir, 'approach_planning_motions_checked_by_method.svg'))
+plt.show()
+
+#############################################################################
+# Cost in terms of motions checked per time, by method, by tree complexity. #
+#############################################################################
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 12))
+
+# First subplot: Time per target by method and tree complexity
+sns.lineplot(ax=axes[0], x='n_targets', y='time_per_target', hue='method', style='method_category', data=df)
+axes[0].set_xscale('log')
+axes[0].set_ylim(0, 20)
+axes[0].set_title('Time per target by method and tree complexity')
+axes[0].grid()
+axes[0].set_ylabel('Time per target (ms)')
+axes[0].set_xlabel('Number of targets')
+
+# Second subplot: Time per target by method and triangle count
+sns.lineplot(ax=axes[1], x='n_trunk_triangles', y='time_per_target', hue='method', style='method_category', data=df)
+axes[1].set_xscale('log')
+axes[1].set_ylim(0, 20)
+axes[1].set_title('Time per target by method and triangle count')
+axes[1].grid()
+axes[1].set_ylabel('Time per target (ms)')
+axes[1].set_xlabel('Triangle count')
+
+plt.tight_layout()
+plt.savefig(os.path.join(save_to_dir, 'approach_planning_time_per_target_by_tree_complexity.svg'))
+plt.show()
+
+#####################################################################################
+# Success rate in terms of motions checked per time, by method, by tree complexity. #
+####################################################################################
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 12))
+
+# First subplot: Time per target by method and tree complexity
+sns.lineplot(ax=axes[0], x='n_targets', y='success_rate', hue='method', style='method_category', data=df)
+axes[0].set_xscale('log')
+axes[0].set_title('Success rate by method and tree complexity')
+axes[0].grid()
+axes[0].set_ylabel('Success rate')
+axes[0].set_xlabel('Number of targets')
+
+# Second subplot: Time per target by method and triangle count
+sns.lineplot(ax=axes[1], x='n_trunk_triangles', y='success_rate', hue='method', style='method_category', data=df)
+axes[1].set_xscale('log')
+axes[1].set_title('Success rate by method and triangle count')
+axes[1].grid()
+axes[1].set_ylabel('Success rate')
+axes[1].set_xlabel('Triangle count')
+
+plt.tight_layout()
+plt.savefig(os.path.join(save_to_dir, 'approach_planning_success_rate_by_tree_complexity.svg'))
+plt.show()
+
+#############################################################################
+# Cost in terms of motions checked per time, by method, by tree complexity. #
+#############################################################################
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 18))
+
+# First subplot: Time per target by method and tree complexity
+sns.lineplot(ax=axes[0], x='n_targets', y='time_per_target', hue='method', style='method_category', data=df)
+axes[0].set_xscale('log')
+axes[0].set_ylim(0, 20)
+axes[0].set_title('Time per target by method and tree complexity')
+axes[0].grid()
+axes[0].set_ylabel('Time per target (ms)')
+axes[0].set_xlabel('Number of targets')
+
+# Second subplot: Time per target by method and triangle count
+sns.lineplot(ax=axes[1], x='n_trunk_triangles', y='time_per_target', hue='method', style='method_category', data=df)
+axes[1].set_xscale('log')
+axes[1].set_ylim(0, 20)
+axes[1].set_title('Time per target by method and triangle count')
+axes[1].grid()
+axes[1].set_ylabel('Time per target (ms)')
+axes[1].set_xlabel('Triangle count')
+
+plt.tight_layout()
+plt.savefig(
+    os.path.join(save_to_dir, 'approach_planning_time_vs_tree_complexity.svg'))
+plt.show()
+
+#####################################################################################
+# Success rate in terms of motions checked per time, by method, by tree complexity. #
+#####################################################################################
+
+# Create the figure and subplots
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 12))
+
+# Plot the number of targets
+sns.barplot(data=df_problems, x=df_problems.index, y='n_targets', ax=ax1, color='tab:blue')
+ax1.set_xlabel('Tree Model')
+ax1.set_ylabel('Number of Targets')
+ax1.set_title('Number of Targets per Tree Model')
+ax1.grid()
+
+# Plot the number of triangles
+sns.barplot(data=df_problems, x=df_problems.index, y='n_trunk_triangles', ax=ax2, color='tab:orange')
+ax2.set_xlabel('Tree Model')
+ax2.set_ylabel('Number of Triangles')
+ax2.set_title('Number of Triangles per Tree Model')
+ax2.grid()
+
+# Set the title for the entire figure
+fig.suptitle('Number of Targets and Triangles per Tree Model', fontsize=16)
+
+# Save and show the plot
+fig.tight_layout(rect=[0, 0, 1, 0.96])
+plt.savefig(os.path.join(save_to_dir, 'targets_and_triangles_per_tree_model.svg'))
 plt.show()
