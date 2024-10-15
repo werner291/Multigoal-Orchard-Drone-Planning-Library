@@ -108,10 +108,27 @@ sns.barplot(hue='method', y='success_rate', x='problem', data=df)
 
 plt.title('Box Plot of % reached by Method Index Grouped by Tree')
 plt.xlabel('Method Index')
-plt.ylabel('Time (ms)')
+plt.ylabel('Success rate (0 to 1)')
+plt.ylim(0, 1)
 plt.grid()
 
 plt.savefig(os.path.join(save_to_dir, 'approach_planning_success_rate_by_tree.svg'))
+plt.show()
+
+##########################################################
+# Distribution of success rate of the straight_in method #
+##########################################################
+
+plt.figure(figsize=(10, 6))
+sns.barplot(hue='method', y='success_rate', x='problem', data=df[df['method'] == 'straight_in'])
+
+plt.title('Box Plot of % reached by straight_in Method Grouped by Tree')
+plt.xlabel('Method Index')
+plt.ylabel('Success rate (0 to 1)')
+plt.ylim(0, 1)
+plt.grid()
+
+plt.savefig(os.path.join(save_to_dir, 'approach_planning_success_rate_straight_in_by_tree.svg'))
 plt.show()
 
 #################################################################
