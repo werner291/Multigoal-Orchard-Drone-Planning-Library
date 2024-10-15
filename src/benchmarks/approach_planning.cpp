@@ -418,18 +418,37 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 		results["methods"].append(methods[i].first);
 	}
 
+	random_numbers::RandomNumberGenerator rng(42);
+
 	// Create a list of problems: one for each tree model.
 	std::vector<ApproachPlanningProblem> problems;
 	problems.reserve(tree_models.size());
 	for (const auto &tree_model: tree_models) {
-		problems.emplace_back(ApproachPlanningProblem{robot_model, tree_model});
-
 		// Record the problem in the results struct so we can do some analysis later.
 		Json::Value problem_json;
 		problem_json["name"] = tree_model.tree_model_name;
 		problem_json["n_targets"] = static_cast<int>(tree_model.target_points.size());
 		problem_json["n_trunk_triangles"] = static_cast<int>(tree_model.tree_mesh.trunk_mesh.triangles.size());
+
+		std::cout << "Checking goal reachability for " << tree_model.tree_model_name << std::endl;
+
+		auto sampler = goal_region_sampler(robot_model, rng);
+
+		// For up to 1000 samples, check if the goal can even be sampled:
+		for (const auto &tgt: tree_model.target_points) {
+			int successful_samples = 0;
+			for (int attempt = 0; attempt < 1000; ++attempt) {
+				auto sample = sampler(tgt);
+				if (check_robot_collision(robot_model, *tree_model.tree_collision_object, sample)) {
+					successful_samples += 1;
+				}
+			}
+			problem_json["successful_samples"].append(successful_samples);
+		}
+
 		results["problems"].append(problem_json);
+
+		problems.emplace_back(ApproachPlanningProblem{robot_model, tree_model});
 	}
 
 	// A "run" is a combination of a method, a problem, and a repetition.
@@ -476,6 +495,7 @@ REGISTER_BENCHMARK(approach_planning_comparison) {
 		              // Look up the method and problem:
 		              const auto &[_name, method] = methods[run.method_index];
 		              const auto &problem = problems[run.problem_index];
+
 
 		              // Create the collision functions with counters.
 		              // We add counters here to give us an alternative measurement of computational cost, to compare against CPU time.
