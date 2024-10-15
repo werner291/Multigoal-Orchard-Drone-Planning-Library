@@ -26,7 +26,7 @@
           abseil-cpp
           llvmPackages_17.clang-tools
         ];
-        buildIAnputs = with pkgs; [
+        buildInputs = with pkgs; [
           boost # A set of common tools for C++ development, like an unofficial standard library
           eigen # Useful tools for linear algebra; pretty heavy package, prefer to use our own math library when possible.
           fcl # A library for collision detection; it's the same one MoveIt uses internally.
