@@ -95,6 +95,17 @@ namespace mgodpl::experiments {
 	 * @return A default procedural robot model.
 	 */
 	robot_model::RobotModel createProceduralRobotModel();
+
+	/**
+	 * @brief Creates a procedural robot model with a straight arm of the specified length.
+	 *
+	 * This function creates a procedural robot model where the arm is straight and is attached to the main
+	 * flying base through a single horizontal joint, letting it move up-and-down only.
+	 *
+	 * @param length The total length of the straight arm.
+	 * @return A procedural robot model with a straight arm.
+	 */
+	robot_model::RobotModel createStraightArmRobotModel(double length);
 }
 
 #endif //MGODPL_PROCEDURAL_ROBOT_MODELS_H

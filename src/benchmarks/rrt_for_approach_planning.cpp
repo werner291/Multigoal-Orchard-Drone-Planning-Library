@@ -34,6 +34,7 @@ import rrt;
 using namespace mgodpl;
 using namespace visualization;
 
+
 REGISTER_VISUALIZATION(rrt_for_approach_planning) {
 	auto robot = experiments::createProceduralRobotModel(
 		{
@@ -114,6 +115,54 @@ REGISTER_VISUALIZATION(rrt_for_approach_planning) {
 		run_queue->run_all(viewer);
 		throttle.allow_advance();
 	});
+
+	viewer.start();
+}
+
+/**
+ * Visualization of the straight-in approach planning method. That is, a method that
+ * just tries to go straight to the goal from the nearest shell configuration.
+ */
+REGISTER_VISUALIZATION(straight_in) {
+	auto robot = experiments::createStraightArmRobotModel(1.0);
+	auto tree = experiments::loadBenchmarkTreemodelData("appletree");
+
+	//
+	// Throttle throttle;
+	//
+	// auto base_collision_fn =
+	// 		collision_check_fn_in_environment(
+	// 			{robot, *tree.tree_collision_object});
+
+
+	// std::thread algorithm_thread([&]() {
+	// 	for (const auto &target: tree.target_points) {
+	// 		// Find a nearby shell state:
+	// 		const auto surface_pt = mgodpl::cgal::from_face_location(
+	// 			mgodpl::cgal::locate_nearest(target, *tree_model.tree_convex_hull),
+	// 			*tree_model.tree_convex_hull);
+	//
+	// 		// Compute an idealized shell state.
+	// 		RobotState ideal_shell_state = fromEndEffectorAndVector(problem.robot,
+	// 		                                                        surface_pt.surface_point,
+	// 		                                                        surface_pt.normal);
+	//
+	// 		// Project it onto the goal:
+	// 		RobotState goal_state = project_to_goal(
+	// 			problem.robot,
+	// 			ideal_shell_state,
+	// 			problem.robot.findLinkByName("flying_base"),
+	// 			problem.robot.findLinkByName("end_effector"),
+	// 			target);
+	//
+	// 		// Check if the motion collides:
+	// 		if (!collision_fns.motion_collides(ideal_shell_state, goal_state)) {
+	// 			paths.push_back(RobotPath{.states = {ideal_shell_state, goal_state}});
+	// 		} else {
+	// 			paths.push_back(std::nullopt); // No path found; keep a nullopt to align with the index.
+	// 		}
+	// 	}
+	// });
 
 	viewer.start();
 }

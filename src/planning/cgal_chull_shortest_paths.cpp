@@ -59,4 +59,40 @@ namespace mgodpl::cgal {
 				{normal.x(),normal.y(),normal.z()},
 		};
 	}
+
+	Mesh cgalMeshToMesh(const cgal::Surface_mesh &cgal_mesh) {
+		Mesh mesh;
+
+		// Convert the CGAL mesh to a Mesh:
+		mesh.vertices.reserve(cgal_mesh.number_of_vertices());
+
+		// First, convert the vertices:
+		for (const auto &vertex: cgal_mesh.vertices()) {
+			mesh.vertices.emplace_back(
+				cgal_mesh.point(vertex).x(),
+				cgal_mesh.point(vertex).y(),
+				cgal_mesh.point(vertex).z()
+			);
+		}
+
+		mesh.triangles.reserve(cgal_mesh.number_of_faces());
+
+		// Then the triangles:
+		for (const auto &f: cgal_mesh.faces()) {
+			auto around_face = cgal_mesh.vertices_around_face(cgal_mesh.halfedge(f));
+
+			// Make sure it's exactly 3 long:
+			assert(around_face.size() == 3);
+
+			auto iter = around_face.begin();
+
+			auto v1 = *iter++;
+			auto v2 = *iter++;
+			auto v3 = *iter;
+
+			mesh.triangles.push_back({v1, v2, v3});
+		}
+
+		return mesh;
+	}
 }

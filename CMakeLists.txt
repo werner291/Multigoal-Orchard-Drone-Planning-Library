@@ -399,6 +399,7 @@ if (ENABLE_EXPERIMENTS)
             FILES
             src/visualization/visualize_path.cppm
             src/visualization/collision_detection_visualization.cppm
+            src/visualization/ThrottledRunQueue.cppm
     )
 
     if (NOT NIXOS) # We get a weird error when trying to do precompiled headers on NixOS; turn it off for now.
@@ -460,6 +461,7 @@ if (ENABLE_EXPERIMENTS)
             src/benchmarks/sampling_difficulty.cpp
             src/benchmarks/probing_motions.cpp
             src/benchmarks/approach_planning.cpp
+            src/benchmarks/from_end_effector_and_vector.cpp
     )
 
     target_link_libraries(experiments math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)

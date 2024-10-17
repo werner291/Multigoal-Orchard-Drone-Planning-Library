@@ -21,7 +21,6 @@
 #include "Mesh.h"
 
 namespace mgodpl::cgal {
-
 	// Make a CGAL convex hull.
 	using K = CGAL::Exact_predicates_inexact_constructions_kernel;
 	using Point_3 = K::Point_3;
@@ -46,7 +45,6 @@ namespace mgodpl::cgal {
 	 * @brief Visitor for Surface_mesh_shortest_path::shortest_path_sequence_to_source_points to build a robot path.
 	 */
 	struct PathVisitor {
-
 		const Surface_mesh &mesh; ///< Reference to the triangle mesh
 		Surface_mesh_shortest_path &path_algo; ///< Shortest path algorithm struct (for point lookups and such)
 		std::vector<Surface_mesh_shortest_path::Face_location> &states; ///< The path being built.
@@ -70,7 +68,7 @@ namespace mgodpl::cgal {
 		 * @param location The location of the point on the face (in barycentric coordinates)
 		 */
 		void operator()(Surface_mesh_shortest_path::face_descriptor f,
-						Surface_mesh_shortest_path::Barycentric_coordinates location);
+		                Surface_mesh_shortest_path::Barycentric_coordinates location);
 	};
 
 	/**
@@ -94,7 +92,8 @@ namespace mgodpl::cgal {
 	 */
 	struct CgalMeshData {
 		mgodpl::cgal::Surface_mesh convex_hull; ///< The convex hull around the leaves of the tree.
-		mgodpl::cgal::Surface_mesh_shortest_path mesh_path; ///< The shortest path algorithm on the surface mesh of the convex hull.
+		mgodpl::cgal::Surface_mesh_shortest_path mesh_path;
+		///< The shortest path algorithm on the surface mesh of the convex hull.
 		CGAL::AABB_tree<AABBTraits> tree; ///< The AABB tree built from the surface mesh.
 
 		/**
@@ -108,15 +107,23 @@ namespace mgodpl::cgal {
 		explicit CgalMeshData(const Mesh &leaves_mesh);
 	};
 
-	Surface_mesh_shortest_path::Face_location locate_nearest(const math::Vec3d& pt, const CgalMeshData& data);
+	Surface_mesh_shortest_path::Face_location locate_nearest(const math::Vec3d &pt, const CgalMeshData &data);
 
 	struct SurfacePointAndNormal {
 		math::Vec3d surface_point;
 		math::Vec3d normal;
 	};
 
-	SurfacePointAndNormal from_face_location(const Surface_mesh_shortest_path::Face_location& fl, const CgalMeshData& data);
+	SurfacePointAndNormal from_face_location(const Surface_mesh_shortest_path::Face_location &fl,
+	                                         const CgalMeshData &data);
 
+	/**
+	 * @brief Converts a CGAL Surface_mesh to a Mesh.
+	 *
+	 * @param cgal_mesh The CGAL Surface_mesh to be converted.
+	 * @return The converted Mesh object.
+	 */
+	Mesh cgalMeshToMesh(const cgal::Surface_mesh &cgal_mesh);
 }
 
 #endif //MGODPL_CGAL_CHULL_SHORTEST_PATHS_H
