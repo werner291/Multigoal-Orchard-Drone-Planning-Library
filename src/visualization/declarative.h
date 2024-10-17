@@ -15,16 +15,23 @@
 #include "../experiment_utils/parametric_paths.h"
 #include "VtkPolyLineVisualization.h"
 
-namespace mgodpl::visualization {
+namespace mgodpl::cgal {
+	struct CgalMeshData;
+}
 
+namespace mgodpl::visualization {
 	void visualize(mgodpl::SimpleVtkViewer &viewer, const mgodpl::declarative::FruitModels &fruitModels);
 
 	void visualize(mgodpl::SimpleVtkViewer &viewer, const mgodpl::declarative::FullTreeModel &model);
 
-	void visualize(mgodpl::SimpleVtkViewer &viewer, const std::vector<std::vector<SurfacePoint>> &scannablePoints);
+	void visualize(mgodpl::SimpleVtkViewer &viewer, const std::vector<std::vector<SurfacePoint> > &scannablePoints);
 
-	void visualize(mgodpl::SimpleVtkViewer &viewer, const ParametricPath &path, int n_points = 100, const math::Vec3d& color = {1,0,1});
+	void visualize(mgodpl::SimpleVtkViewer &viewer,
+	               const ParametricPath &path,
+	               int n_points = 100,
+	               const math::Vec3d &color = {1, 0, 1});
 
+	vtkSmartPointer<vtkActor> visualize(SimpleVtkViewer &viewer, const cgal::CgalMeshData &tree_convex_hull);
 }
 
 #endif //MGODPL_DECLARATIVE_H

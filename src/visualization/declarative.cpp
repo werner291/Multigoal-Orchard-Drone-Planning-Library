@@ -12,17 +12,17 @@
 #include "VtkLineSegmentVizualization.h"
 #include "scannable_points.h"
 #include "../experiment_utils/scan_paths.h"
+#include "../planning/cgal_chull_shortest_paths.h"
 
 using namespace mgodpl;
 
 void mgodpl::visualization::visualize(mgodpl::SimpleVtkViewer &viewer,
-									  const declarative::FruitModels &fruitModels) {
-
-	if (auto spheres = std::get_if<std::vector<declarative::SphericalFruit>>(&fruitModels)) {
+                                      const declarative::FruitModels &fruitModels) {
+	if (auto spheres = std::get_if<std::vector<declarative::SphericalFruit> >(&fruitModels)) {
 		for (const auto &sphere: *spheres) {
 			viewer.addSphere(sphere.radius, sphere.center, FRUIT_COLOR);
 		}
-	} else if (auto meshes = std::get_if<std::vector<declarative::MeshFruit>>(&fruitModels)) {
+	} else if (auto meshes = std::get_if<std::vector<declarative::MeshFruit> >(&fruitModels)) {
 		for (const auto &mesh: *meshes) {
 			viewer.addMesh(mesh.mesh, FRUIT_COLOR);
 		}
@@ -30,15 +30,14 @@ void mgodpl::visualization::visualize(mgodpl::SimpleVtkViewer &viewer,
 }
 
 void mgodpl::visualization::visualize(mgodpl::SimpleVtkViewer &viewer,
-									  const mgodpl::declarative::FullTreeModel &model) {
+                                      const mgodpl::declarative::FullTreeModel &model) {
 	viewer.addMesh(model.tree_model->meshes.trunk_mesh, WOOD_COLOR);
 	viewer.addMesh(model.scaled_leaves, LEAF_COLOR);
 	visualize(viewer, model.fruit_models);
 }
 
 void mgodpl::visualization::visualize(mgodpl::SimpleVtkViewer &viewer,
-									  const std::vector<std::vector<SurfacePoint>> &scannablePoints) {
-
+                                      const std::vector<std::vector<SurfacePoint> > &scannablePoints) {
 	// Create the fruit points visualization
 	std::vector<VtkLineSegmentsVisualization> fruit_points_visualizations;
 	for (const auto &scannable_points: scannablePoints) {
@@ -48,10 +47,9 @@ void mgodpl::visualization::visualize(mgodpl::SimpleVtkViewer &viewer,
 }
 
 void visualization::visualize(SimpleVtkViewer &viewer,
-							  const mgodpl::ParametricPath &path,
-							  int n_points,
-							  const math::Vec3d &color) {
-
+                              const mgodpl::ParametricPath &path,
+                              int n_points,
+                              const math::Vec3d &color) {
 	VtkPolyLineVisualization path_viz(color[0], color[1], color[2]);
 
 	std::vector<math::Vec3d> points;
@@ -61,4 +59,10 @@ void visualization::visualize(SimpleVtkViewer &viewer,
 	}
 	path_viz.updateLine(points);
 	viewer.addActor(path_viz.getActor());
+}
+
+vtkSmartPointer<vtkActor> visualization::
+visualize(SimpleVtkViewer &viewer, const cgal::CgalMeshData &tree_convex_hull) {
+	Mesh mesh = mgodpl::cgal::cgalMeshToMesh(tree_convex_hull.convex_hull);
+	return viewer.addMesh(mesh, {0.5, 0.5, 0.5}, 0.5);
 }

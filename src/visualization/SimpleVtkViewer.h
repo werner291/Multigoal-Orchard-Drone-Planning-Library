@@ -40,15 +40,15 @@ namespace mgodpl {
 	namespace tree_meshes {
 		struct TreeMeshes;
 	}
+
 	struct SimplifiedOrchard;
 
 	class SimpleVtkViewer {
-
 	public:
 		// Create the VTK rendering objects.
-		vtkNew <vtkRenderer> viewerRenderer;
-		vtkNew <vtkRenderWindow> visualizerWindow;
-		vtkNew <vtkRenderWindowInteractor> renderWindowInteractor;
+		vtkNew<vtkRenderer> viewerRenderer;
+		vtkNew<vtkRenderWindow> visualizerWindow;
+		vtkNew<vtkRenderWindowInteractor> renderWindowInteractor;
 
 		// Optionally, a video recorder to record a video of the simulation.
 		std::optional<VideoRecorder> videoRecorder;
@@ -104,9 +104,9 @@ namespace mgodpl {
 		 * @param color 		The color of the mesh.
 		 */
 		vtkSmartPointer<vtkActor> addMesh(const Mesh &mesh,
-										  const math::Vec3d &color,
-										  double opacity = 1.0,
-										  const math::Vec3d &position = math::Vec3d::Zero());
+		                                  const math::Vec3d &color,
+		                                  double opacity = 1.0,
+		                                  const math::Vec3d &position = math::Vec3d::Zero());
 
 		/**
 		 * Add a mesh to the scene, with a given transform.
@@ -117,18 +117,18 @@ namespace mgodpl {
 		 * @param opacity		The opacity of the mesh.
 		 */
 		vtkSmartPointer<vtkActor> addMesh(
-				const mgodpl::Mesh &mesh,
-				const math::Transformd &transform,
-				const math::Vec3d &color,
-				double opacity = 1.0);
+			const mgodpl::Mesh &mesh,
+			const math::Transformd &transform,
+			const math::Vec3d &color,
+			double opacity = 1.0);
 
-		void addTree(const tree_meshes::TreeMeshes &tree, bool show_leaves, bool show_fruit);
+		void addTree(const tree_meshes::TreeMeshes &tree, bool show_leaves = true, bool show_fruit = true);
 
 		static void set_transform(const math::Transformd &transform, vtkActor *actor);
 
 		vtkSmartPointer<vtkActor> addPositionedShape(const PositionedShape &shape,
-													 const math::Vec3d &color,
-													 double opacity = 1.0);
+		                                             const math::Vec3d &color,
+		                                             double opacity = 1.0);
 
 		/**
 		 * Add a box to the scene with a given size, transform and color.
@@ -192,7 +192,6 @@ namespace mgodpl {
 
 		bool isRecording();
 	};
-
 }
 
 #endif //NEW_PLANNERS_SIMPLEVTKVIEWER_H

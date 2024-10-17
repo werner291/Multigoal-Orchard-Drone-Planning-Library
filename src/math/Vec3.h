@@ -165,6 +165,14 @@ namespace mgodpl::math {
 			return components < other.components;
 		}
 
+		Vec3 withZ(Scalar new_z) const {
+			return {
+				x(),
+				y(),
+				new_z
+			};
+		}
+
 		static Vec3 UnitX() {
 			return {1, 0, 0};
 		}
@@ -275,9 +283,9 @@ namespace mgodpl::math {
 
 		[[nodiscard]] Vec3 cross(Vec3 other) const {
 			return {
-					y() * other.z() - z() * other.y(),
-					z() * other.x() - x() * other.z(),
-					x() * other.y() - y() * other.x()
+				y() * other.z() - z() * other.y(),
+				z() * other.x() - x() * other.z(),
+				x() * other.y() - y() * other.x()
 			};
 		}
 

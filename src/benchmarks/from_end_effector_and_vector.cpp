@@ -14,6 +14,7 @@
 #include "../visualization/robot_state.h"
 #include "../visualization/RunQueue.h"
 #include "../visualization/Throttle.h"
+#include "../visualization/declarative.h"
 
 #include <vtkActor.h>
 #include <vtkProperty.h>
@@ -25,13 +26,6 @@
 using namespace mgodpl;
 
 import visualization.ThrottledRunQueue;
-
-vtkSmartPointer<vtkActor> visualize(SimpleVtkViewer &viewer, const cgal::CgalMeshData &tree_convex_hull) {
-	Mesh mesh = cgal::cgalMeshToMesh(tree_convex_hull.convex_hull);
-
-	return viewer.addMesh(mesh, {0.5, 0.5, 0.5}, 0.5);
-}
-
 
 /**
  * \brief Picks a random surface point on the given convex hull.
@@ -68,7 +62,7 @@ REGISTER_VISUALIZATION(from_end_effector_and_vector) {
 	viewer.addTree(tree.tree_mesh, true, true);
 
 	// Visualize the convex hull:
-	visualize(viewer, *tree.tree_convex_hull);
+	mgodpl::visualization::visualize(viewer, *tree.tree_convex_hull);
 
 	random_numbers::RandomNumberGenerator rng(42);
 
@@ -107,7 +101,6 @@ REGISTER_VISUALIZATION(from_end_effector_and_vector) {
 					mapper->SetInputConnection(arrow->GetOutputPort());
 					vtkNew<vtkActor> actor;
 					actor->SetMapper(mapper);
-
 
 					// Build a 3x3 rotation matrix, with the normal as the first row.
 					math::Vec3d x_axis = surface_data.normal.cross(math::Vec3d::UnitX()).normalized();

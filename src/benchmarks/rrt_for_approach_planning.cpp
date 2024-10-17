@@ -11,13 +11,15 @@
 #include "../visualization/Throttle.h"
 #include "../visualization/robot_state.h"
 #include "../visualization/visualization_function_macros.h"
-
+#include "../visualization/declarative.h"
 
 #include <functional>
 #include <memory>
 #include <thread>
 #include <vector>
 #include <vtkActor.h>
+
+#include "../planning/state_tools.h"
 
 using namespace mgodpl;
 using namespace visualization;
@@ -30,6 +32,7 @@ import collision_visualization;
 import shell_state_projection;
 import approach_makeshift_prm;
 import rrt;
+import visualization.ThrottledRunQueue;
 
 using namespace mgodpl;
 using namespace visualization;
@@ -127,42 +130,108 @@ REGISTER_VISUALIZATION(straight_in) {
 	auto robot = experiments::createStraightArmRobotModel(1.0);
 	auto tree = experiments::loadBenchmarkTreemodelData("appletree");
 
-	//
-	// Throttle throttle;
-	//
-	// auto base_collision_fn =
-	// 		collision_check_fn_in_environment(
-	// 			{robot, *tree.tree_collision_object});
+	viewer.addTree(tree.tree_mesh);
+	visualization::visualize(viewer, *tree.tree_convex_hull);
+
+	ThrottledRunQueue rq;
+
+	auto base_collision_fn =
+			collision_check_fn_in_environment(
+				{robot, *tree.tree_collision_object});
+
+	auto motion_check_fn =
+			create_motion_check_visualization_fn(
+				base_collision_fn,
+				rq,
+				robot);
+
+	std::thread algorithm_thread([&]() {
+		while (true) {
+			for (const auto &target: tree.target_points) {
+				rq.run_main_void([&](SimpleVtkViewer &viewer) {
+					math::Vec3d camera_position =
+							math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), M_PI * 0.2).rotate(
+								target.withZ(0).normalized() * 10.0).withZ(5.0) + target;
+					viewer.setCameraTransform(camera_position, target);
+				});
+				rq.throttle.wait_and_advance(30);
+
+				// Find a nearby shell state:
+				const auto surface_pt = mgodpl::cgal::from_face_location(
+					mgodpl::cgal::locate_nearest(target, *tree.tree_convex_hull),
+					*tree.tree_convex_hull);
+
+				// Compute an idealized shell state.
+				RobotState ideal_shell_state = fromEndEffectorAndVector(robot,
+				                                                        surface_pt.surface_point,
+				                                                        surface_pt.normal);
+
+				auto actor = rq.run_main<RobotActors>([&](SimpleVtkViewer &viewer) {
+					return vizualize_robot_state(viewer, robot, ideal_shell_state, {1.0, 1.0, 1.0});
+				});
+				rq.throttle.wait_and_advance(30);
+				rq.run_main_void([&](SimpleVtkViewer &viewer) {
+					for (auto &a: actor.actors) {
+						viewer.removeActor(a);
+					}
+				});
 
 
-	// std::thread algorithm_thread([&]() {
-	// 	for (const auto &target: tree.target_points) {
-	// 		// Find a nearby shell state:
-	// 		const auto surface_pt = mgodpl::cgal::from_face_location(
-	// 			mgodpl::cgal::locate_nearest(target, *tree_model.tree_convex_hull),
-	// 			*tree_model.tree_convex_hull);
-	//
-	// 		// Compute an idealized shell state.
-	// 		RobotState ideal_shell_state = fromEndEffectorAndVector(problem.robot,
-	// 		                                                        surface_pt.surface_point,
-	// 		                                                        surface_pt.normal);
-	//
-	// 		// Project it onto the goal:
-	// 		RobotState goal_state = project_to_goal(
-	// 			problem.robot,
-	// 			ideal_shell_state,
-	// 			problem.robot.findLinkByName("flying_base"),
-	// 			problem.robot.findLinkByName("end_effector"),
-	// 			target);
-	//
-	// 		// Check if the motion collides:
-	// 		if (!collision_fns.motion_collides(ideal_shell_state, goal_state)) {
-	// 			paths.push_back(RobotPath{.states = {ideal_shell_state, goal_state}});
-	// 		} else {
-	// 			paths.push_back(std::nullopt); // No path found; keep a nullopt to align with the index.
-	// 		}
-	// 	}
-	// });
+				// Project it onto the goal:
+				RobotState goal_state = project_to_goal(
+					robot,
+					ideal_shell_state,
+					robot.findLinkByName("flying_base"),
+					robot.findLinkByName("end_effector"),
+					target);
+
+				// Check if the motion collides:
+				if (!motion_check_fn(ideal_shell_state, goal_state)) {
+					std::vector<RobotActors> actors;
+					rq.run_main_void([&](SimpleVtkViewer &viewer) {
+						for (int i = 0; i <= 10; ++i) {
+							double t = i / 10.0;
+							RobotState intermediate = interpolate(ideal_shell_state, goal_state, t);
+							actors.push_back(vizualize_robot_state(viewer, robot, intermediate, {1.0, 1.0, 0.0}));
+						}
+					});
+					rq.throttle.wait_and_advance(30);
+					rq.run_main_void([&](SimpleVtkViewer &viewer) {
+						for (auto &actor: actors) {
+							for (auto &a: actor.actors) {
+								viewer.removeActor(a);
+							}
+						}
+					});
+				} else {
+					std::vector<RobotActors> actors;
+					rq.run_main_void([&](SimpleVtkViewer &viewer) {
+						for (int i = 0; i <= 10; ++i) {
+							double t = i / 10.0;
+							RobotState intermediate = interpolate(ideal_shell_state, goal_state, t);
+							actors.push_back(vizualize_robot_state(viewer, robot, intermediate, {1.0, 0.0, 0.0}));
+						}
+					});
+					rq.throttle.wait_and_advance(30);
+					rq.run_main_void([&](SimpleVtkViewer &viewer) {
+						for (auto &actor: actors) {
+							for (auto &a: actor.actors) {
+								viewer.removeActor(a);
+							}
+						}
+					});
+				}
+			}
+		}
+	});
+
+	viewer.addTimerCallback([&]() {
+		rq.run_queue.run_all(viewer);
+		rq.throttle.allow_advance();
+	});
+
+	viewer.lockCameraUp();
 
 	viewer.start();
 }
+
