@@ -462,6 +462,7 @@ if (ENABLE_EXPERIMENTS)
             src/benchmarks/probing_motions.cpp
             src/benchmarks/approach_planning.cpp
             src/benchmarks/from_end_effector_and_vector.cpp
+            src/benchmarks/tree_complexity_metrics.cpp
     )
 
     target_link_libraries(experiments math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)

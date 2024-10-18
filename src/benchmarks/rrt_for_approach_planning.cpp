@@ -136,6 +136,34 @@ math::Vec3d camera_position_for_point(const math::Vec3d &target) {
 }
 
 /**
+ * Finds the nearest point and normal on a convex hull shell of a tree model.
+ *
+ * @param target The target point to which the nearest shell point and normal are computed.
+ * @param tree The tree model data containing the shell mesh.
+ * @return A structure containing the nearest surface point and its normal.
+ */
+cgal::SurfacePointAndNormal nearest_shell_point_and_normal(
+	const math::Vec3d &target,
+	const cgal::CgalMeshData &tree) {
+	return from_face_location(locate_nearest(target, tree), tree);
+}
+
+/**
+ * Finds the nearest shell configuration/state to a target point.
+ *
+ * @param target The target point to which the nearest shell state is computed.
+ * @param tree The tree model data containing the shell mesh.
+ * @param robot The robot model used for computing the shell state.
+ * @return The computed ideal shell state.
+ */
+RobotState compute_ideal_shell_state(const math::Vec3d &target,
+                                     const cgal::CgalMeshData &tree,
+                                     const robot_model::RobotModel &robot) {
+	const auto surface_pt = nearest_shell_point_and_normal(target, tree);
+	return fromEndEffectorAndVector(robot, surface_pt.surface_point, surface_pt.normal);
+}
+
+/**
  * Visualization of the straight-in approach planning method. That is, a method that
  * just tries to go straight to the goal from the nearest shell configuration.
  */
@@ -169,14 +197,7 @@ REGISTER_VISUALIZATION(straight_in) {
 				rq.throttle.wait_and_advance(30);
 
 				// Find a nearby shell state:
-				const auto surface_pt = mgodpl::cgal::from_face_location(
-					mgodpl::cgal::locate_nearest(target, *tree.tree_convex_hull),
-					*tree.tree_convex_hull);
-
-				// Compute an idealized shell state.
-				RobotState ideal_shell_state = fromEndEffectorAndVector(robot,
-				                                                        surface_pt.surface_point,
-				                                                        surface_pt.normal);
+				RobotState ideal_shell_state = compute_ideal_shell_state(target, *tree.tree_convex_hull, robot);
 
 				auto actor = rq.run_main<RobotActors>([&](SimpleVtkViewer &viewer) {
 					return vizualize_robot_state(viewer, robot, ideal_shell_state, {1.0, 1.0, 1.0});
@@ -187,7 +208,6 @@ REGISTER_VISUALIZATION(straight_in) {
 						viewer.removeActor(a);
 					}
 				});
-
 
 				// Project it onto the goal:
 				RobotState goal_state = project_to_goal(
