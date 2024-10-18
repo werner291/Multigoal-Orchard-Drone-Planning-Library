@@ -40,7 +40,7 @@ fig, ax = plt.subplots(figsize=(10, 6))
 plt.yscale('log')
 
 for key, df in dataframes.items():
-    df.plot(x='cum_volume', y='cell_radius', ax=ax)
+    df.plot(x='cum_volume', y='cell_radius', ax=ax, legend=False)
 
 ax.set_xlabel('Cumulative Volume')
 ax.set_ylabel('Cell Radius')
