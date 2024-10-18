@@ -123,6 +123,19 @@ REGISTER_VISUALIZATION(rrt_for_approach_planning) {
 }
 
 /**
+ * Computes the camera position for a given target point.
+ * The camera is positioned at a fixed distance and height from the target,
+ * with a rotation around the Z-axis.
+ *
+ * @param target The target point to focus the camera on.
+ * @return The computed camera position.
+ */
+math::Vec3d camera_position_for_point(const math::Vec3d &target) {
+	return math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), M_PI * 0.2).rotate(
+		       target.withZ(0).normalized() * 10.0).withZ(5.0) + target;
+}
+
+/**
  * Visualization of the straight-in approach planning method. That is, a method that
  * just tries to go straight to the goal from the nearest shell configuration.
  */
@@ -145,14 +158,13 @@ REGISTER_VISUALIZATION(straight_in) {
 				rq,
 				robot);
 
+	auto start_time = std::chrono::high_resolution_clock::now();
+
 	std::thread algorithm_thread([&]() {
 		while (true) {
 			for (const auto &target: tree.target_points) {
 				rq.run_main_void([&](SimpleVtkViewer &viewer) {
-					math::Vec3d camera_position =
-							math::Quaterniond::fromAxisAngle(math::Vec3d::UnitZ(), M_PI * 0.2).rotate(
-								target.withZ(0).normalized() * 10.0).withZ(5.0) + target;
-					viewer.setCameraTransform(camera_position, target);
+					viewer.setCameraTransform(camera_position_for_point(target), target);
 				});
 				rq.throttle.wait_and_advance(30);
 
@@ -221,6 +233,14 @@ REGISTER_VISUALIZATION(straight_in) {
 						}
 					});
 				}
+
+				rq.run_main_void([&](SimpleVtkViewer &viewer) {
+					// If we've been recording for 1 minute, stop here.
+					if (viewer.isRecording() && std::chrono::high_resolution_clock::now() - start_time >
+					    std::chrono::minutes(1)) {
+						viewer.stop();
+					}
+				});
 			}
 		}
 	});
