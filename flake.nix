@@ -17,7 +17,7 @@
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
 
       packages.x86_64-linux.default = pkgs.llvmPackages_18.stdenv.mkDerivation {
-        name = "visualizations";
+        name = "experiments";
         src = ./.;
         nativeBuildInputs = with pkgs; [
           cmake
@@ -56,14 +56,13 @@
         '';
 
         buildPhase = ''
-          ninja benchmarks_and_visualizations
+          ninja experiments
         '';
 
         installPhase = ''
           ls
           mkdir -p $out/bin
-          cp -r visualizations $out/bin
-          cp -r benchmarks $out/bin
+          cp -r experiments $out/bin
           cp -r test_robots $out
         '';
       };
