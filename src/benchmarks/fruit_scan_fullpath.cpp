@@ -75,9 +75,12 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath) {
 	for (const auto &fruit_mesh: tree_model.fruit_meshes) {
 		// Create the scannable points
 		ScannablePoints scannable_points = createScannablePoints(
-				rng,
-				fruit_mesh, NUM_POINTS, MAX_DISTANCE, MIN_DISTANCE,
-				MAX_ANGLE);
+			rng,
+			fruit_mesh,
+			NUM_POINTS,
+			MAX_DISTANCE,
+			MIN_DISTANCE,
+			MAX_ANGLE);
 
 		// Create the fruit points visualization
 		VtkLineSegmentsVisualization fruit_points_visualization = createFruitLinesVisualization(scannable_points);
@@ -92,7 +95,6 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath) {
 
 		// Add the created scannable points to the vector
 		all_scannable_points.push_back(std::move(scannable_points));
-
 	}
 
 	// Set the camera transform for the viewer
@@ -115,10 +117,10 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath) {
 	ShellPathPlanningMethod shell_path_planner;
 
 	RobotPath final_path = shell_path_planner.plan_static(robot,
-														  tree_model.trunk_mesh,
-														  tree_model.leaves_mesh,
-														  computeFruitPositions(tree_model),
-														  initial_state);
+	                                                      tree_model.trunk_mesh,
+	                                                      tree_model.leaves_mesh,
+	                                                      computeFruitPositions(tree_model),
+	                                                      initial_state);
 
 	PathPoint path_point = {0, 0.0};
 
@@ -131,10 +133,13 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath) {
 	// Declare a vector to store the end-effector positions
 	std::vector<mgodpl::math::Vec3d> end_effector_positions;
 
-	auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot,
-																  robot_model::forwardKinematics(
-																		  robot, initial_state.joint_values,
-																		  flying_base, initial_state.base_tf));
+	auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer,
+	                                                              robot,
+	                                                              robot_model::forwardKinematics(
+		                                                              robot,
+		                                                              initial_state.joint_values,
+		                                                              flying_base,
+		                                                              initial_state.base_tf));
 
 	auto timerCallback = [&]() {
 		const auto &start_state = final_path.states[path_point.segment_i];
@@ -148,8 +153,10 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath) {
 
 		auto interpolated_state = interpolate(start_state, end_state, path_point.segment_t);
 
-		auto fk = robot_model::forwardKinematics(robot, interpolated_state.joint_values,
-												 robot.findLinkByName("flying_base"), interpolated_state.base_tf);
+		auto fk = robot_model::forwardKinematics(robot,
+		                                         interpolated_state.joint_values,
+		                                         robot.findLinkByName("flying_base"),
+		                                         interpolated_state.base_tf);
 		const math::Vec3d ee_pos = fk.forLink(robot.findLinkByName("end_effector")).translation;
 
 		// Add the new end-effector position to the vector
@@ -208,9 +215,12 @@ REGISTER_VISUALIZATION(right_left_scanning_motion) {
 
 	// Create the scannable points
 	ScannablePoints scannable_points = createScannablePoints(
-			rng,
-			fruit_mesh, NUM_POINTS, MAX_DISTANCE, MIN_DISTANCE,
-			MAX_ANGLE);
+		rng,
+		fruit_mesh,
+		NUM_POINTS,
+		MAX_DISTANCE,
+		MIN_DISTANCE,
+		MAX_ANGLE);
 
 	// Create a robot model
 	const auto &robot = experiments::createProceduralRobotModel();
@@ -229,12 +239,12 @@ REGISTER_VISUALIZATION(right_left_scanning_motion) {
 	const double EE_SCAN_DISTANCE = 0.1;
 
 	std::optional<RobotState> sample = generateUniformRandomArmVectorState(
-			robot,
-			tree_trunk_object,
-			fruit_center,
-			rng,
-			1000,
-			EE_SCAN_DISTANCE
+		robot,
+		tree_trunk_object,
+		fruit_center,
+		rng,
+		1000,
+		EE_SCAN_DISTANCE
 	);
 
 	if (!sample.has_value()) {
@@ -260,17 +270,17 @@ REGISTER_VISUALIZATION(right_left_scanning_motion) {
 	RobotPath path = approach_path.path;
 
 	RobotPath sideways_scan = createLeftRightScanningMotion(
-			robot,
-			tree_trunk_object,
-			fruit_center,
-			long_angle,
-			lat_angle,
-			EE_SCAN_DISTANCE
+		robot,
+		tree_trunk_object,
+		fruit_center,
+		long_angle,
+		lat_angle,
+		EE_SCAN_DISTANCE
 	);
 
 	path.states.insert(path.states.end(),
-					   sideways_scan.states.begin(),
-					   sideways_scan.states.end());
+	                   sideways_scan.states.begin(),
+	                   sideways_scan.states.end());
 
 	// Define the current position on the path
 	PathPoint path_point = {0, 0.0};
@@ -296,10 +306,13 @@ REGISTER_VISUALIZATION(right_left_scanning_motion) {
 	viewer.setCameraTransform({2.0, 1.0, 1.0}, {0.0, 0.0, 0.0});
 
 	// Visualize the robot state
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer, robot,
-														  forwardKinematics(
-																  robot, initial_state.joint_values,
-																  flying_base, initial_state.base_tf));
+	auto robot_viz = vizualisation::vizualize_robot_state(viewer,
+	                                                      robot,
+	                                                      forwardKinematics(
+		                                                      robot,
+		                                                      initial_state.joint_values,
+		                                                      flying_base,
+		                                                      initial_state.base_tf));
 
 	// Initialize a vector to keep track of which points have been seen
 	SeenPoints points_seen = SeenPoints::create_all_unseen(scannable_points);
@@ -315,8 +328,10 @@ REGISTER_VISUALIZATION(right_left_scanning_motion) {
 		auto interpolated_state = interpolate(path_point, path);
 
 		// Update the robot's state in the visualization
-		const auto fk = forwardKinematics(robot, interpolated_state.joint_values,
-										  robot.findLinkByName("flying_base"), interpolated_state.base_tf);
+		const auto fk = forwardKinematics(robot,
+		                                  interpolated_state.joint_values,
+		                                  robot.findLinkByName("flying_base"),
+		                                  interpolated_state.base_tf);
 
 		update_robot_state(robot, fk, robot_viz);
 
@@ -354,9 +369,12 @@ REGISTER_VISUALIZATION(local_scangraph) {
 
 	// Create the scannable points
 	ScannablePoints scannable_points = createScannablePoints(
-			rng,
-			fruit_mesh, NUM_POINTS, MAX_DISTANCE, MIN_DISTANCE,
-			MAX_ANGLE);
+		rng,
+		fruit_mesh,
+		NUM_POINTS,
+		MAX_DISTANCE,
+		MIN_DISTANCE,
+		MAX_ANGLE);
 
 	// Create a robot model
 	const auto &robot = experiments::createProceduralRobotModel();
@@ -375,12 +393,12 @@ REGISTER_VISUALIZATION(local_scangraph) {
 	const double EE_SCAN_DISTANCE = 0.1;
 
 	std::optional<RobotState> sample = generateUniformRandomArmVectorState(
-			robot,
-			tree_trunk_object,
-			fruit_center,
-			rng,
-			1000,
-			EE_SCAN_DISTANCE
+		robot,
+		tree_trunk_object,
+		fruit_center,
+		rng,
+		1000,
+		EE_SCAN_DISTANCE
 	);
 
 	if (!sample.has_value()) {
@@ -420,17 +438,16 @@ REGISTER_VISUALIZATION(local_scangraph) {
 
 	graph.push_back({*sample, {}}); // Add the initial sample to the graph.
 
-// Generate 100 samples and add them to the graph.
+	// Generate 100 samples and add them to the graph.
 	for (size_t sample_i = 0; sample_i < 100; ++sample_i) {
-
 		// Generate a random spherical vector.
 		auto sample = generateUniformRandomArmVectorState(
-				robot,
-				tree_trunk_object,
-				fruit_center,
-				rng,
-				1000,
-				EE_SCAN_DISTANCE
+			robot,
+			tree_trunk_object,
+			fruit_center,
+			rng,
+			1000,
+			EE_SCAN_DISTANCE
 		);
 
 		// If the sample is not collision-free, skip it.
@@ -443,7 +460,6 @@ REGISTER_VISUALIZATION(local_scangraph) {
 
 		// Check if the motion to the other samples is collision-free; if so, add it to the graph.
 		for (size_t other_i = 0; other_i < graph.size(); ++other_i) {
-
 			double toi = 0.0;
 
 			// Check if the motion is collision-free.
@@ -461,12 +477,14 @@ REGISTER_VISUALIZATION(local_scangraph) {
 
 	std::cout << "Graph has " << graph.size() << " nodes" << std::endl;
 
-// Sort the neighbor lists of all graph nodes by distance and truncate to the nearest 10.
+	// Sort the neighbor lists of all graph nodes by distance and truncate to the nearest 10.
 	for (auto &node: graph) {
 		// Sort by distance key.
-		std::sort(node.accessible_neighbors.begin(), node.accessible_neighbors.end(), [](const auto &a, const auto &b) {
-			return a.distance < b.distance;
-		});
+		std::sort(node.accessible_neighbors.begin(),
+		          node.accessible_neighbors.end(),
+		          [](const auto &a, const auto &b) {
+			          return a.distance < b.distance;
+		          });
 
 		// Truncate to 10.
 		if (node.accessible_neighbors.size() > 10) {
@@ -478,18 +496,18 @@ REGISTER_VISUALIZATION(local_scangraph) {
 	viewer.addActor(graph_visualization.getActor());
 
 	// Make an edge between the end-effector position of linked samples:
-	std::vector<std::pair<math::Vec3d, math::Vec3d>> edges;
+	std::vector<std::pair<math::Vec3d, math::Vec3d> > edges;
 
 	for (size_t sample_i = 0; sample_i < graph.size(); ++sample_i) {
 		auto fk_i = forwardKinematics(robot,
-									  graph[sample_i].state.joint_values,
-									  flying_base,
-									  graph[sample_i].state.base_tf);
+		                              graph[sample_i].state.joint_values,
+		                              flying_base,
+		                              graph[sample_i].state.base_tf);
 		for (const auto neighbor_i: graph[sample_i].accessible_neighbors) {
 			auto fk_j = forwardKinematics(robot,
-										  graph[neighbor_i.neighbor_i].state.joint_values,
-										  flying_base,
-										  graph[neighbor_i.neighbor_i].state.base_tf);
+			                              graph[neighbor_i.neighbor_i].state.joint_values,
+			                              flying_base,
+			                              graph[neighbor_i.neighbor_i].state.base_tf);
 			edges.push_back({fk_i.forLink(end_effector).translation, fk_j.forLink(end_effector).translation});
 		}
 	}
@@ -521,10 +539,13 @@ REGISTER_VISUALIZATION(local_scangraph) {
 	viewer.setCameraTransform({2.0, 1.0, 1.0}, {0.0, 0.0, 0.0});
 
 	// Visualize the robot state
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer, robot,
-														  forwardKinematics(
-																  robot, initial_state.joint_values,
-																  flying_base, initial_state.base_tf));
+	auto robot_viz = vizualisation::vizualize_robot_state(viewer,
+	                                                      robot,
+	                                                      forwardKinematics(
+		                                                      robot,
+		                                                      initial_state.joint_values,
+		                                                      flying_base,
+		                                                      initial_state.base_tf));
 
 	// Initialize a vector to keep track of which points have been seen
 	SeenPoints points_seen = SeenPoints::create_all_unseen(scannable_points);
@@ -533,12 +554,11 @@ REGISTER_VISUALIZATION(local_scangraph) {
 
 	// Register the timer callback function to be called at regular intervals
 	viewer.addTimerCallback([&]() {
-
 		if (advancePathPointClamp(path, path_point, interpolation_speed, equal_weights_max_distance)) {
 			// Extend the path with a random motion to a neighbor.
 			size_t next_node = graph[last_node].accessible_neighbors[rng.uniformInteger(0,
-																						graph[last_node].accessible_neighbors.size() -
-																						1)].neighbor_i;
+				graph[last_node].accessible_neighbors.size() -
+				1)].neighbor_i;
 
 			path.append(graph[next_node].state);
 
@@ -548,11 +568,12 @@ REGISTER_VISUALIZATION(local_scangraph) {
 		// Update visuals:
 		auto interpolated_state = interpolate(path_point, path);
 
-		const auto fk = forwardKinematics(robot, interpolated_state.joint_values,
-										  robot.findLinkByName("flying_base"), interpolated_state.base_tf);
+		const auto fk = forwardKinematics(robot,
+		                                  interpolated_state.joint_values,
+		                                  robot.findLinkByName("flying_base"),
+		                                  interpolated_state.base_tf);
 
 		update_robot_state(robot, fk, robot_viz);
-
 	});
 
 	viewer.setCameraTransform(fruit_center + math::Vec3d{2.5, 0.0, -1.5}, fruit_center);
@@ -571,11 +592,13 @@ REGISTER_VISUALIZATION(local_scangraph) {
  * @return math::Vec3d The vector from the fruit to the end effector.
  */
 math::Vec3d calculateFruitToEEVector(const robot_model::RobotModel &robot,
-									 const math::Vec3d &fruit_center,
-									 const RobotState &last_approach_state) {
+                                     const math::Vec3d &fruit_center,
+                                     const RobotState &last_approach_state) {
 	const auto flying_base = robot.findLinkByName("flying_base");
-	const auto fk = forwardKinematics(robot, last_approach_state.joint_values, flying_base,
-									  last_approach_state.base_tf);
+	const auto fk = forwardKinematics(robot,
+	                                  last_approach_state.joint_values,
+	                                  flying_base,
+	                                  last_approach_state.base_tf);
 	const math::Vec3d ee_pos = fk.forLink(robot.findLinkByName("end_effector")).translation;
 	const math::Vec3d fruit_to_ee = ee_pos - fruit_center;
 	return fruit_to_ee;
@@ -599,9 +622,12 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples) {
 
 	for (const auto &fruit_mesh: tree_model.fruit_meshes) {
 		all_scannable_points.push_back(createScannablePoints(
-				rng,
-				fruit_mesh, NUM_POINTS, MAX_DISTANCE, MIN_DISTANCE,
-				MAX_ANGLE));
+			rng,
+			fruit_mesh,
+			NUM_POINTS,
+			MAX_DISTANCE,
+			MIN_DISTANCE,
+			MAX_ANGLE));
 	}
 
 	// Create a robot model
@@ -619,13 +645,17 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples) {
 
 	// First, create the initial approach path:
 	ApproachPath initial_approach_path = approach_planning::plan_initial_approach_path(robot,
-																					   fromEndEffectorAndVector(robot,
-																												{0, 5,
-																												 5},
-																												{0, 1,
-																												 1}),
-																					   flying_base,
-																					   mesh_data);
+		fromEndEffectorAndVector(robot,
+		                         {
+			                         0, 5,
+			                         5
+		                         },
+		                         {
+			                         0, 1,
+			                         1
+		                         }),
+		flying_base,
+		mesh_data);
 
 	// Try to plan an approach path for all the fruit meshes:
 	std::vector<ApproachPath> approach_paths;
@@ -633,8 +663,13 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples) {
 
 	size_t targets_planned_to = 0;
 	for (const auto &tgt: computeFruitPositions(tree_model)) {
-		auto straightout = uniform_straightout_approach(tgt, experiments::createProceduralRobotModel(),
-														tree_trunk_object, mesh_data, rng, 1000, EE_SCAN_DISTANCE);
+		auto straightout = uniform_straightout_approach(tgt,
+		                                                experiments::createProceduralRobotModel(),
+		                                                tree_trunk_object,
+		                                                mesh_data,
+		                                                rng,
+		                                                1000,
+		                                                EE_SCAN_DISTANCE);
 
 		if (straightout.has_value()) {
 			approach_paths.push_back(*straightout);
@@ -644,15 +679,15 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples) {
 		targets_planned_to++;
 
 		std::cout << "Seen " << targets_planned_to << " out of " << tree_model.fruit_meshes.size() << " targets" <<
-				  std::endl;
+				std::endl;
 	}
 
 	RobotState initial_state = fromEndEffectorAndVector(robot, {0, 5, 5}, {0, 1, 1});
 
 	// compute the shell distances:
 	const auto &initial_state_distances = shell_distances(initial_approach_path.shell_point,
-														  approach_paths,
-														  mesh_data.convex_hull);
+	                                                      approach_paths,
+	                                                      mesh_data.convex_hull);
 	const auto &target_to_target_distances = shell_distances(approach_paths, mesh_data);
 
 	const std::vector<size_t> &order = visitation_order_greedy(target_to_target_distances, initial_state_distances);
@@ -660,40 +695,43 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples) {
 	RobotPath final_path;
 
 	// Append the probe-retreat-move to the first goal.
-	final_path.append(shell_path_planning::retreat_move_probe(robot, mesh_data.convex_hull,
-															  initial_approach_path,
-															  approach_paths[order[0]]));
+	final_path.append(shell_path_planning::retreat_move_probe(robot,
+	                                                          mesh_data.convex_hull,
+	                                                          initial_approach_path,
+	                                                          approach_paths[order[0]]));
 
 	const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot, reachable_fruit_positions[order[0]], initial_state);
 
 	// Then, the scanning motion:
 	final_path.append(createLeftRightScanningMotion(
-			robot,
-			tree_trunk_object,
-			reachable_fruit_positions[order[0]],
-			spherical_geometry::longitude(fruit_to_ee),
-			spherical_geometry::latitude(fruit_to_ee),
-			EE_SCAN_DISTANCE
+		robot,
+		tree_trunk_object,
+		reachable_fruit_positions[order[0]],
+		spherical_geometry::longitude(fruit_to_ee),
+		spherical_geometry::latitude(fruit_to_ee),
+		EE_SCAN_DISTANCE
 	));
 
 	for (size_t i = 1; i < approach_paths.size(); ++i) {
 		// Use retreat_move_probe to replace the selected code:
 
-		final_path.append(shell_path_planning::retreat_move_probe(robot, mesh_data.convex_hull,
-																  approach_paths[order[i - 1]],
-																  approach_paths[order[i]]));
+		final_path.append(shell_path_planning::retreat_move_probe(robot,
+		                                                          mesh_data.convex_hull,
+		                                                          approach_paths[order[i - 1]],
+		                                                          approach_paths[order[i]]));
 
-		const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot, reachable_fruit_positions[order[i]],
-																 initial_state);
+		const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot,
+		                                                         reachable_fruit_positions[order[i]],
+		                                                         initial_state);
 
 		// Then, the scanning motion:
 		final_path.append(createLeftRightScanningMotion(
-				robot,
-				tree_trunk_object,
-				reachable_fruit_positions[order[i]],
-				spherical_geometry::longitude(fruit_to_ee),
-				spherical_geometry::latitude(fruit_to_ee),
-				EE_SCAN_DISTANCE
+			robot,
+			tree_trunk_object,
+			reachable_fruit_positions[order[i]],
+			spherical_geometry::longitude(fruit_to_ee),
+			spherical_geometry::latitude(fruit_to_ee),
+			EE_SCAN_DISTANCE
 		));
 	}
 
@@ -723,10 +761,13 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples) {
 	viewer.setCameraTransform({2.0, 1.0, 1.0}, {0.0, 0.0, 0.0});
 
 	// Visualize the robot state
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer, robot,
-														  forwardKinematics(
-																  robot, initial_state.joint_values,
-																  flying_base, initial_state.base_tf));
+	auto robot_viz = vizualisation::vizualize_robot_state(viewer,
+	                                                      robot,
+	                                                      forwardKinematics(
+		                                                      robot,
+		                                                      initial_state.joint_values,
+		                                                      flying_base,
+		                                                      initial_state.base_tf));
 
 	std::vector<SeenPoints> ever_seen;
 	ever_seen.reserve(all_scannable_points.size());
@@ -748,8 +789,10 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples) {
 		auto interpolated_state = interpolate(path_point, final_path);
 
 		// Update the robot's state in the visualization
-		const auto fk = forwardKinematics(robot, interpolated_state.joint_values,
-										  robot.findLinkByName("flying_base"), interpolated_state.base_tf);
+		const auto fk = forwardKinematics(robot,
+		                                  interpolated_state.joint_values,
+		                                  robot.findLinkByName("flying_base"),
+		                                  interpolated_state.base_tf);
 
 		update_robot_state(robot, fk, robot_viz);
 
@@ -797,7 +840,7 @@ REGISTER_VISUALIZATION(orbit_tree) {
 	RobotPath path;
 
 	// Define the number of steps to discretize the path
-	size_t num_steps = 100;  // Adjust as needed
+	size_t num_steps = 100; // Adjust as needed
 
 	// Generate a sequence of time values between 0 and 1
 	for (size_t i = 0; i <= num_steps; ++i) {
@@ -815,13 +858,14 @@ REGISTER_VISUALIZATION(orbit_tree) {
 
 	// Visualize the robot's path
 	auto robot_viz = vizualisation::vizualize_robot_state(
-			viewer,
+		viewer,
+		robot,
+		forwardKinematics(
 			robot,
-			forwardKinematics(
-					robot, path.states[0].joint_values,
-					flying_base,
-					path.states[0].base_tf
-			)
+			path.states[0].joint_values,
+			flying_base,
+			path.states[0].base_tf
+		)
 	);
 
 	// Define the current position on the path
@@ -851,13 +895,13 @@ REGISTER_VISUALIZATION(orbit_tree) {
 	std::vector<ScannablePoints> all_scannable_points;
 	for (const auto &fruit_mesh: tree_model.fruit_meshes) {
 		all_scannable_points.push_back(createScannablePoints(
-				rng,
-				fruit_mesh,
-				NUM_POINTS,
-				MAX_DISTANCE,
-				MIN_DISTANCE,
-				MAX_ANGLE,
-				mesh_occlusion_model
+			rng,
+			fruit_mesh,
+			NUM_POINTS,
+			MAX_DISTANCE,
+			MIN_DISTANCE,
+			MAX_ANGLE,
+			mesh_occlusion_model
 		));
 	}
 
@@ -890,7 +934,6 @@ REGISTER_VISUALIZATION(orbit_tree) {
 
 	// Register the timer callback function to be called at regular intervals
 	viewer.addTimerCallback([&]() {
-
 		// Advance the path point along the path
 		if (advancePathPointClamp(path, path_point, interpolation_speed, equal_weights_max_distance)) {
 			viewer.stop();
@@ -900,26 +943,30 @@ REGISTER_VISUALIZATION(orbit_tree) {
 		auto interpolated_state = interpolate(path_point, path);
 
 		// Update the robot's state in the visualization
-		const auto fk = forwardKinematics(robot, interpolated_state.joint_values,
-										  robot.findLinkByName("flying_base"), interpolated_state.base_tf);
+		const auto fk = forwardKinematics(robot,
+		                                  interpolated_state.joint_values,
+		                                  robot.findLinkByName("flying_base"),
+		                                  interpolated_state.base_tf);
 
 		update_robot_state(robot, fk, robot_viz);
 
 		// Get the position of the robot's end effector
 		const auto &end_effector_position = fk.forLink(robot.findLinkByName("end_effector")).translation;
 
-		std::vector<std::pair<math::Vec3d, math::Vec3d>> sightlines_data;
+		std::vector<std::pair<math::Vec3d, math::Vec3d> > sightlines_data;
 
 		// Update the visibility of the scannable points
 		for (size_t fruit_i = 0; fruit_i < all_scannable_points.size(); ++fruit_i) {
 			for (size_t i = 0; i < all_scannable_points[fruit_i].surface_points.size(); ++i) {
 				if (!ever_seen[fruit_i].ever_seen[i] &&
-					is_visible(all_scannable_points[fruit_i], i, end_effector_position)) {
+				    is_visible(all_scannable_points[fruit_i], i, end_effector_position)) {
 					ever_seen[fruit_i].ever_seen[i] = true;
 
 					// Add the sightline to the sightlines_data vector
-					sightlines_data.push_back({end_effector_position,
-											   all_scannable_points[fruit_i].surface_points[i].position});
+					sightlines_data.push_back({
+						end_effector_position,
+						all_scannable_points[fruit_i].surface_points[i].position
+					});
 				}
 			}
 			fruit_points_visualizations[fruit_i].setColors(generateVisualizationColors(ever_seen[fruit_i]));
@@ -931,8 +978,8 @@ REGISTER_VISUALIZATION(orbit_tree) {
 		for (size_t fruit_i = 0; fruit_i < all_scannable_points.size(); ++fruit_i) {
 			seen_total += std::count(ever_seen[fruit_i].ever_seen.begin(), ever_seen[fruit_i].ever_seen.end(), true);
 			unique_total += std::any_of(ever_seen[fruit_i].ever_seen.begin(),
-										ever_seen[fruit_i].ever_seen.end(),
-										[](bool b) { return b; });
+			                            ever_seen[fruit_i].ever_seen.end(),
+			                            [](bool b) { return b; });
 		}
 
 		// Calculate metrics
@@ -949,7 +996,6 @@ REGISTER_VISUALIZATION(orbit_tree) {
 
 		// Update the sightlines visualization
 		sightlines.updateLine(sightlines_data);
-
 	});
 
 
@@ -971,14 +1017,13 @@ REGISTER_VISUALIZATION(orbit_tree) {
  * @param sensorForward The forward direction of the sensor.
  * @return A vector of pairs of Vec3d. Each pair contains the position of the sensor and the position of a visible point.
  */
-std::vector<std::pair<math::Vec3d, math::Vec3d>> computeVisibleSightlines(
-		const std::vector<std::vector<SurfacePoint>> &allFruitPoints,
-		const declarative::SensorScalarParameters &sensorParams,
-		const std::shared_ptr<MeshOcclusionModel> &occlusionModel,
-		const math::Vec3d &sensorPosition,
-		const math::Vec3d &sensorForward) {
-
-	std::vector<std::pair<math::Vec3d, math::Vec3d>> sightlinesData;
+std::vector<std::pair<math::Vec3d, math::Vec3d> > computeVisibleSightlines(
+	const std::vector<std::vector<SurfacePoint> > &allFruitPoints,
+	const declarative::SensorScalarParameters &sensorParams,
+	const std::shared_ptr<MeshOcclusionModel> &occlusionModel,
+	const math::Vec3d &sensorPosition,
+	const math::Vec3d &sensorForward) {
+	std::vector<std::pair<math::Vec3d, math::Vec3d> > sightlinesData;
 
 	// Iterate over all fruits
 	for (auto &fruitPoints: allFruitPoints) {
@@ -986,10 +1031,13 @@ std::vector<std::pair<math::Vec3d, math::Vec3d>> computeVisibleSightlines(
 		for (const auto &point: fruitPoints) {
 			// Check if the point is visible from the sensor
 			if (is_visible(point,
-						   sensorPosition, sensorForward,
-						   sensorParams.maxViewDistance, sensorParams.minViewDistance,
-						   sensorParams.maxScanAngle, sensorParams.fieldOfViewAngle,
-						   *occlusionModel)) {
+			               sensorPosition,
+			               sensorForward,
+			               sensorParams.maxViewDistance,
+			               sensorParams.minViewDistance,
+			               sensorParams.maxScanAngle,
+			               sensorParams.fieldOfViewAngle,
+			               *occlusionModel)) {
 				// If the point is visible, add a sightline from the sensor to the point
 				sightlinesData.push_back({sensorPosition, point.position});
 			}
@@ -1002,20 +1050,19 @@ std::vector<std::pair<math::Vec3d, math::Vec3d>> computeVisibleSightlines(
 mgodpl::Mesh ground_plane(double size) {
 	mgodpl::Mesh ground;
 	ground.vertices = {
-			{-size, -size, 0},
-			{size,  -size, 0},
-			{size,  size,  0},
-			{-size, size,  0}
+		{-size, -size, 0},
+		{size, -size, 0},
+		{size, size, 0},
+		{-size, size, 0}
 	};
 	ground.triangles = {
-			{0, 1, 2},
-			{0, 2, 3}
+		{0, 1, 2},
+		{0, 2, 3}
 	};
 	return ground;
 }
 
 REGISTER_VISUALIZATION(sensor_model_demonstration) {
-
 	viewer.addMesh(ground_plane(10), {0.5, 0.8, 0.5}, 1.0);
 
 	// Initialize a random number generator
@@ -1036,25 +1083,26 @@ REGISTER_VISUALIZATION(sensor_model_demonstration) {
 
 	// Create a RobotPath that approaches the tree center.
 	RobotPath path{
-			.states = {
-					fromEndEffectorAndVector(robot,
-											 tree_center + approach_direction * tree_radius * 3.0,
-											 approach_direction),
-					fromEndEffectorAndVector(robot,
-											 tree_center + approach_direction * tree_radius,
-											 approach_direction)
-			}
+		.states = {
+			fromEndEffectorAndVector(robot,
+			                         tree_center + approach_direction * tree_radius * 3.0,
+			                         approach_direction),
+			fromEndEffectorAndVector(robot,
+			                         tree_center + approach_direction * tree_radius,
+			                         approach_direction)
+		}
 	};
 
 	// Visualize the robot's path
 	auto robot_viz = vizualisation::vizualize_robot_state(
-			viewer,
+		viewer,
+		robot,
+		forwardKinematics(
 			robot,
-			forwardKinematics(
-					robot, path.states[0].joint_values,
-					robot.findLinkByName("flying_base"),
-					path.states[0].base_tf
-			)
+			path.states[0].joint_values,
+			robot.findLinkByName("flying_base"),
+			path.states[0].base_tf
+		)
 	);
 
 	// Define the current position on the path
@@ -1073,7 +1121,7 @@ REGISTER_VISUALIZATION(sensor_model_demonstration) {
 	const double MAX_ANGLE = M_PI;
 
 	// Create the scannable points
-	std::vector<std::vector<SurfacePoint>> all_scannable_points;
+	std::vector<std::vector<SurfacePoint> > all_scannable_points;
 	for (const auto &fruit_mesh: tree_model.fruit_meshes) {
 		all_scannable_points.push_back(sample_points_on_mesh(rng, fruit_mesh, NUM_POINTS));
 	}
@@ -1109,10 +1157,10 @@ REGISTER_VISUALIZATION(sensor_model_demonstration) {
 	slider_y += 0.15;
 
 	declarative::SensorScalarParameters sensorParams = {
-			.maxViewDistance = MAX_DISTANCE,
-			.minViewDistance = MIN_DISTANCE,
-			.fieldOfViewAngle = M_PI / 2,
-			.maxScanAngle = M_PI / 4
+		.maxViewDistance = MAX_DISTANCE,
+		.minViewDistance = MIN_DISTANCE,
+		.fieldOfViewAngle = M_PI / 2,
+		.maxScanAngle = M_PI / 4
 	};
 
 	VtkLineSegmentsVisualization sightlines(1, 0, 1);
@@ -1130,7 +1178,7 @@ REGISTER_VISUALIZATION(sensor_model_demonstration) {
 
 	VtkTriangleSetVisualization leaves_visualization(LEAF_COLOR[0], LEAF_COLOR[1], LEAF_COLOR[2], 1);
 
-	std::vector<std::array<math::Vec3d, 3>> leaf_triangles;
+	std::vector<std::array<math::Vec3d, 3> > leaf_triangles;
 	viewer.addActor(leaves_visualization.getActor());
 
 	double last_leaf_scale = 1.0;
@@ -1138,7 +1186,6 @@ REGISTER_VISUALIZATION(sensor_model_demonstration) {
 
 	// Register the timer callback function to be called at regular intervals
 	viewer.addTimerCallback([&]() {
-
 		// Get the max distance from the slider
 		double max_distance = radius_rep->GetValue();
 		view_distance_source->SetRadius(max_distance);
@@ -1149,8 +1196,10 @@ REGISTER_VISUALIZATION(sensor_model_demonstration) {
 		auto interpolated_state = interpolate(path_point, path);
 
 		// Update the robot's state in the visualization
-		const auto fk = forwardKinematics(robot, interpolated_state.joint_values,
-										  robot.findLinkByName("flying_base"), interpolated_state.base_tf);
+		const auto fk = forwardKinematics(robot,
+		                                  interpolated_state.joint_values,
+		                                  robot.findLinkByName("flying_base"),
+		                                  interpolated_state.base_tf);
 
 		update_robot_state(robot, fk, robot_viz);
 
@@ -1178,17 +1227,17 @@ REGISTER_VISUALIZATION(sensor_model_demonstration) {
 
 		// Update the sightlines visualization
 		sightlines.updateLine(computeVisibleSightlines(
-				all_scannable_points,
-				sensorParams,
-				mesh_occlusion_model,
-				ee_pos,
-				ee_fwd));
+			all_scannable_points,
+			sensorParams,
+			mesh_occlusion_model,
+			ee_pos,
+			ee_fwd));
 
 		// Set the view distance actor to the end-effector position
 		view_distance_actor->SetPosition(ee_pos[0], ee_pos[1], ee_pos[2]);
 	});
 
-	viewer.setCameraTransform({4.0, 4.0, 3.5}, {2.0, 0.0, 2.5});
+	viewer.setCameraTransform({8.0, 8.0, 8}, {2.0, 0.0, 7});
 
 	viewer.lockCameraUp();
 
@@ -1214,9 +1263,12 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples_replan_interactive)
 
 	for (const auto &fruit_mesh: tree_model.fruit_meshes) {
 		all_scannable_points.push_back(createScannablePoints(
-				rng,
-				fruit_mesh, NUM_POINTS, MAX_DISTANCE, MIN_DISTANCE,
-				MAX_ANGLE));
+			rng,
+			fruit_mesh,
+			NUM_POINTS,
+			MAX_DISTANCE,
+			MIN_DISTANCE,
+			MAX_ANGLE));
 	}
 
 	// Create a robot model
@@ -1234,13 +1286,17 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples_replan_interactive)
 
 	// First, create the initial approach path:
 	ApproachPath initial_approach_path = approach_planning::plan_initial_approach_path(robot,
-																					   fromEndEffectorAndVector(robot,
-																												{0, 5,
-																												 5},
-																												{0, 1,
-																												 1}),
-																					   flying_base,
-																					   mesh_data);
+		fromEndEffectorAndVector(robot,
+		                         {
+			                         0, 5,
+			                         5
+		                         },
+		                         {
+			                         0, 1,
+			                         1
+		                         }),
+		flying_base,
+		mesh_data);
 
 	// Try to plan an approach path for all the fruit meshes:
 	std::vector<ApproachPath> approach_paths;
@@ -1248,8 +1304,13 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples_replan_interactive)
 
 	size_t targets_planned_to = 0;
 	for (const auto &tgt: computeFruitPositions(tree_model)) {
-		auto straightout = uniform_straightout_approach(tgt, experiments::createProceduralRobotModel(),
-														tree_trunk_object, mesh_data, rng, 1000, EE_SCAN_DISTANCE);
+		auto straightout = uniform_straightout_approach(tgt,
+		                                                experiments::createProceduralRobotModel(),
+		                                                tree_trunk_object,
+		                                                mesh_data,
+		                                                rng,
+		                                                1000,
+		                                                EE_SCAN_DISTANCE);
 
 		if (straightout.has_value()) {
 			approach_paths.push_back(*straightout);
@@ -1259,15 +1320,15 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples_replan_interactive)
 		targets_planned_to++;
 
 		std::cout << "Seen " << targets_planned_to << " out of " << tree_model.fruit_meshes.size() << " targets" <<
-				  std::endl;
+				std::endl;
 	}
 
 	RobotState initial_state = fromEndEffectorAndVector(robot, {0, 5, 5}, {0, 1, 1});
 
 	// compute the shell distances:
 	const auto &initial_state_distances = shell_distances(initial_approach_path.shell_point,
-														  approach_paths,
-														  mesh_data.convex_hull);
+	                                                      approach_paths,
+	                                                      mesh_data.convex_hull);
 	const auto &target_to_target_distances = shell_distances(approach_paths, mesh_data);
 
 	std::vector<size_t> order = visitation_order_greedy(target_to_target_distances, initial_state_distances);
@@ -1278,40 +1339,43 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples_replan_interactive)
 	RobotPath final_path;
 
 	// Append the probe-retreat-move to the first goal.
-	final_path.append(shell_path_planning::retreat_move_probe(robot, mesh_data.convex_hull,
-															  initial_approach_path,
-															  approach_paths[order[0]]));
+	final_path.append(shell_path_planning::retreat_move_probe(robot,
+	                                                          mesh_data.convex_hull,
+	                                                          initial_approach_path,
+	                                                          approach_paths[order[0]]));
 
 	const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot, reachable_fruit_positions[order[0]], initial_state);
 
 	// Then, the scanning motion:
 	final_path.append(createLeftRightScanningMotion(
-			robot,
-			tree_trunk_object,
-			reachable_fruit_positions[order[0]],
-			spherical_geometry::longitude(fruit_to_ee),
-			spherical_geometry::latitude(fruit_to_ee),
-			EE_SCAN_DISTANCE
+		robot,
+		tree_trunk_object,
+		reachable_fruit_positions[order[0]],
+		spherical_geometry::longitude(fruit_to_ee),
+		spherical_geometry::latitude(fruit_to_ee),
+		EE_SCAN_DISTANCE
 	));
 
 	for (size_t i = 1; i < order.size(); ++i) {
-		final_path.append(shell_path_planning::retreat_move_probe(robot, mesh_data.convex_hull,
-																  approach_paths[order[i - 1]],
-																  approach_paths[order[i]]));
+		final_path.append(shell_path_planning::retreat_move_probe(robot,
+		                                                          mesh_data.convex_hull,
+		                                                          approach_paths[order[i - 1]],
+		                                                          approach_paths[order[i]]));
 
-		const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot, reachable_fruit_positions[order[i]],
-																 initial_state);
+		const math::Vec3d fruit_to_ee = calculateFruitToEEVector(robot,
+		                                                         reachable_fruit_positions[order[i]],
+		                                                         initial_state);
 
 		// TODO: Idea: create a kind of "tiny, local roadmap".
 
 		// Then, the scanning motion:
 		final_path.append(createLeftRightScanningMotion(
-				robot,
-				tree_trunk_object,
-				reachable_fruit_positions[order[i]],
-				spherical_geometry::longitude(fruit_to_ee),
-				spherical_geometry::latitude(fruit_to_ee),
-				EE_SCAN_DISTANCE
+			robot,
+			tree_trunk_object,
+			reachable_fruit_positions[order[i]],
+			spherical_geometry::longitude(fruit_to_ee),
+			spherical_geometry::latitude(fruit_to_ee),
+			EE_SCAN_DISTANCE
 		));
 	}
 
@@ -1341,10 +1405,13 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples_replan_interactive)
 	viewer.setCameraTransform({2.0, 1.0, 1.0}, {0.0, 0.0, 0.0});
 
 	// Visualize the robot state
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer, robot,
-														  forwardKinematics(
-																  robot, initial_state.joint_values,
-																  flying_base, initial_state.base_tf));
+	auto robot_viz = vizualisation::vizualize_robot_state(viewer,
+	                                                      robot,
+	                                                      forwardKinematics(
+		                                                      robot,
+		                                                      initial_state.joint_values,
+		                                                      flying_base,
+		                                                      initial_state.base_tf));
 
 	std::vector<SeenPoints> ever_seen;
 	ever_seen.reserve(all_scannable_points.size());
@@ -1370,14 +1437,14 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples_replan_interactive)
 
 	// Register the timer callback function to be called at regular intervals
 	viewer.addTimerCallback([&]() {
-
 		// Binary search in the cumsum to find the path point:
 		size_t path_index = std::distance(path_lengths_cumsum.begin(),
-										  std::lower_bound(path_lengths_cumsum.begin(), path_lengths_cumsum.end(),
-														   path_t_rep->GetValue()));
+		                                  std::lower_bound(path_lengths_cumsum.begin(),
+		                                                   path_lengths_cumsum.end(),
+		                                                   path_t_rep->GetValue()));
 
 		double t_in_segment = (path_lengths_cumsum[path_index] - path_t_rep->GetValue()) /
-							  (path_lengths_cumsum[path_index] - path_lengths_cumsum[path_index - 1]);
+		                      (path_lengths_cumsum[path_index] - path_lengths_cumsum[path_index - 1]);
 
 		path_point = PathPoint{path_index, t_in_segment};
 
@@ -1385,8 +1452,10 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples_replan_interactive)
 		auto interpolated_state = interpolate(path_point, final_path);
 
 		// Update the robot's state in the visualization
-		const auto fk = forwardKinematics(robot, interpolated_state.joint_values,
-										  robot.findLinkByName("flying_base"), interpolated_state.base_tf);
+		const auto fk = forwardKinematics(robot,
+		                                  interpolated_state.joint_values,
+		                                  robot.findLinkByName("flying_base"),
+		                                  interpolated_state.base_tf);
 
 		update_robot_state(robot, fk, robot_viz);
 	});

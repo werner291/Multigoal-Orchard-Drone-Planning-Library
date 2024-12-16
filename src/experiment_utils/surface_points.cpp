@@ -10,13 +10,11 @@
 #include "../math/Triangle.h"
 
 namespace mgodpl {
-
 	size_t SeenPoints::count_seen() const {
 		return std::count(ever_seen.begin(), ever_seen.end(), true);
 	}
 
 	math::Vec3d random_barycentric(random_numbers::RandomNumberGenerator &rng) {
-
 		double r1 = rng.uniform01();
 		double r2 = rng.uniform01();
 
@@ -30,8 +28,8 @@ namespace mgodpl {
 	}
 
 	std::vector<SurfacePoint> sample_points_on_mesh(random_numbers::RandomNumberGenerator &rng,
-													const Mesh &mesh,
-													size_t num_points) {
+	                                                const Mesh &mesh,
+	                                                size_t num_points) {
 		// Mesh must be non-empty:
 		assert(!mesh.vertices.empty());
 		assert(!mesh.triangles.empty());
@@ -45,7 +43,6 @@ namespace mgodpl {
 
 		// Sample points on the mesh
 		for (size_t i = 0; i < num_points; ++i) {
-
 			// Store the position and normal in the points vector
 			points.push_back(sample_point_on_mesh(rng, mesh, cumulative_areas));
 		}
@@ -85,9 +82,8 @@ namespace mgodpl {
 	}
 
 	SurfacePoint sample_point_on_mesh(random_numbers::RandomNumberGenerator &rng,
-									  const Mesh &mesh,
-									  const std::vector<double> &cumulative_areas) {
-
+	                                  const Mesh &mesh,
+	                                  const std::vector<double> &cumulative_areas) {
 		assert(!cumulative_areas.empty());
 
 		double total_area = cumulative_areas.back();
@@ -121,12 +117,12 @@ namespace mgodpl {
 	}
 
 	ScannablePoints createScannablePoints(random_numbers::RandomNumberGenerator &rng,
-										  const Mesh &mesh,
-										  size_t num_points,
-										  double max_distance,
-										  double min_distance,
-										  double max_angle,
-										  std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model) {
+	                                      const Mesh &mesh,
+	                                      size_t num_points,
+	                                      double max_distance,
+	                                      double min_distance,
+	                                      double max_angle,
+	                                      std::optional<std::shared_ptr<MeshOcclusionModel> > occlusion_model) {
 		return {max_distance, min_distance, max_angle, occlusion_model, sample_points_on_mesh(rng, mesh, num_points)};
 	}
 
@@ -168,8 +164,9 @@ namespace mgodpl {
 		return true;
 	}
 
-	size_t update_visibility(const ScannablePoints &scannable_points, const math::Vec3d &eye_position,
-							 SeenPoints &seen_points) {
+	size_t update_visibility(const ScannablePoints &scannable_points,
+	                         const math::Vec3d &eye_position,
+	                         SeenPoints &seen_points) {
 		size_t n_seen = 0;
 		for (size_t i = 0; i < scannable_points.surface_points.size(); ++i) {
 			if (!seen_points.ever_seen[i] && is_visible(scannable_points, i, eye_position)) {
@@ -195,13 +192,13 @@ namespace mgodpl {
 	}
 
 	bool is_visible(const SurfacePoint &point,
-					const math::Vec3d &eye_pos,
-					const math::Vec3d &eye_forward,
-					double max_distance,
-					double min_distance,
-					double max_scan_angle,
-					double fov_angle,
-					const MeshOcclusionModel &mesh_occlusion_model) {
+	                const math::Vec3d &eye_pos,
+	                const math::Vec3d &eye_forward,
+	                double max_distance,
+	                double min_distance,
+	                double max_scan_angle,
+	                double fov_angle,
+	                const MeshOcclusionModel &mesh_occlusion_model) {
 		// Calculate the vector from the point to the eye position
 		auto delta = eye_pos - point.position;
 
@@ -214,31 +211,32 @@ namespace mgodpl {
 		// 3. The angle between the eye forward direction and the vector from the point to the eye position is less than or equal to the field of view angle.
 		// 4. The point is not occluded according to the mesh occlusion model. (most expensive, so last)
 		return distance <= max_distance &&
-			   distance >= min_distance &&
-			   std::acos(point.normal.dot(delta) / distance) <= max_scan_angle &&
-			   std::acos(eye_forward.dot(-delta) / distance) <= fov_angle &&
-			   !mesh_occlusion_model.checkOcclusion(point.position, eye_pos);
+		       distance >= min_distance &&
+		       std::acos(point.normal.dot(delta) / distance) <= max_scan_angle &&
+		       std::acos(eye_forward.dot(-delta) / distance) <= fov_angle &&
+		       !mesh_occlusion_model.checkOcclusion(point.position, eye_pos);
 	}
 
 	std::vector<ScannablePoints> createAllScannablePoints(const tree_meshes::TreeMeshes &tree_model,
-														  random_numbers::RandomNumberGenerator &rng,
-														  size_t num_points,
-														  double max_distance,
-														  double min_distance,
-														  double max_angle) {
-
+	                                                      random_numbers::RandomNumberGenerator &rng,
+	                                                      size_t num_points,
+	                                                      double max_distance,
+	                                                      double min_distance,
+	                                                      double max_angle) {
 		std::vector<ScannablePoints> all_scannable_points; // Vector to store all ScannablePoints
 
 		// Iterate over each fruit mesh in the tree model
 		for (const auto &fruit_mesh: tree_model.fruit_meshes) {
 			// Create ScannablePoints for the current fruit mesh and add to the vector
 			all_scannable_points.push_back(createScannablePoints(
-					rng,
-					fruit_mesh, num_points, max_distance, min_distance,
-					max_angle));
+				rng,
+				fruit_mesh,
+				num_points,
+				max_distance,
+				min_distance,
+				max_angle));
 		}
 
 		return all_scannable_points; // Return the vector of ScannablePoints
 	}
-
 }

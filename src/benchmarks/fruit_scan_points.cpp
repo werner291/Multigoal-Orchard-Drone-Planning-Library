@@ -15,8 +15,7 @@
 
 using namespace mgodpl;
 
-REGISTER_VISUALIZATION(visualize_several_orbits_simultaneously)
-{
+REGISTER_VISUALIZATION(visualize_several_orbits_simultaneously) {
     // Load the tree meshes
     auto tree_model = tree_meshes::loadTreeMeshes("appletree");
 
@@ -36,7 +35,11 @@ REGISTER_VISUALIZATION(visualize_several_orbits_simultaneously)
     const double MAX_ANGLE = M_PI / 3.0;
 
     // Create the scannable points
-    ScannablePoints scannable_points = createScannablePoints(rng, fruit_mesh, NUM_POINTS, MAX_DISTANCE, MIN_DISTANCE,
+    ScannablePoints scannable_points = createScannablePoints(rng,
+                                                             fruit_mesh,
+                                                             NUM_POINTS,
+                                                             MAX_DISTANCE,
+                                                             MIN_DISTANCE,
                                                              MAX_ANGLE);
 
     // Add the fruit mesh to the viewer
@@ -48,32 +51,28 @@ REGISTER_VISUALIZATION(visualize_several_orbits_simultaneously)
     // Create several orbit functions
     std::vector<ParametricPath> orbits;
     orbits.reserve(20);
-    for (int i = 0; i < 20; ++i)
-    {
+    for (int i = 0; i < 20; ++i) {
         // Create an orbit function for each radius and add it to the orbits vector
         orbits.push_back(fixed_radius_equatorial_orbit(fruit_center, EYE_ORBIT_RADIUS + i * 0.1));
     }
 
     // Declare a vector to store the eye positions for each orbit
-    std::vector<std::vector<mgodpl::math::Vec3d>> eye_positions(orbits.size());
+    std::vector<std::vector<mgodpl::math::Vec3d> > eye_positions(orbits.size());
 
     // Create several instances of VtkPolyLineVisualization
     std::vector<VtkPolyLineVisualization> eye_positions_visualizations;
-    for (int i = 0; i < orbits.size(); ++i)
-    {
+    for (int i = 0; i < orbits.size(); ++i) {
         // Create a VtkPolyLineVisualization for each orbit and add it to the viewer
         eye_positions_visualizations.emplace_back(1, 0, 0); // Red color
         viewer.addActor(eye_positions_visualizations.back().getActor());
     }
 
     // Add a timer callback to the viewer
-    viewer.addTimerCallback([&]()
-    {
+    viewer.addTimerCallback([&]() {
         static double t = 0.0;
         t += 0.01;
 
-        for (int i = 0; i < orbits.size(); ++i)
-        {
+        for (int i = 0; i < orbits.size(); ++i) {
             // Use the orbit function to set the eye_position
             math::Vec3d eye_position = orbits[i](t);
 
@@ -85,8 +84,7 @@ REGISTER_VISUALIZATION(visualize_several_orbits_simultaneously)
         }
 
         // Stop the viewer when the timer exceeds 1.0
-        if (t > 1.0)
-        {
+        if (t > 1.0) {
             viewer.stop();
         }
     });
@@ -98,8 +96,7 @@ REGISTER_VISUALIZATION(visualize_several_orbits_simultaneously)
     viewer.start();
 }
 
-REGISTER_VISUALIZATION(scan_progressive_orbit)
-{
+REGISTER_VISUALIZATION(scan_progressive_orbit) {
     // Load the tree meshes
     auto tree_model = tree_meshes::loadTreeMeshes("appletree");
 
@@ -125,7 +122,7 @@ REGISTER_VISUALIZATION(scan_progressive_orbit)
     viewer.addActor(fruit_points_visualization.getActor());
 
     // Add the fruit mesh to the viewer
-    viewer.addMesh(tree_model.fruit_meshes[0], {0.8,0.8,0.8}, 1.0);
+    viewer.addMesh(tree_model.fruit_meshes[0], {0.8, 0.8, 0.8}, 1.0);
 
     // Define the initial orbit radius
     double EYE_ORBIT_RADIUS = 0.1;
@@ -139,13 +136,12 @@ REGISTER_VISUALIZATION(scan_progressive_orbit)
     // Add the polyline visualization to the viewer
     viewer.addActor(eye_positions_visualization.getActor());
 
-    std::vector<JsonMeta<ParametricPath>> orbits = getOrbits(fruit_center, EYE_ORBIT_RADIUS);
+    std::vector<JsonMeta<ParametricPath> > orbits = getOrbits(fruit_center, EYE_ORBIT_RADIUS);
 
     const bool LOOP_ANIMATION = false;
 
     // Add a timer callback to the viewer
-    viewer.addTimerCallback([&]()
-    {
+    viewer.addTimerCallback([&]() {
         // Define a static variable for the timer
         static double t = 0.0;
         // Define a static variable for the current orbit index
@@ -154,14 +150,12 @@ REGISTER_VISUALIZATION(scan_progressive_orbit)
         t += 0.01;
 
         // If the timer exceeds 1.0, reset it and move to the next orbit
-        if (t > 1.0)
-        {
+        if (t > 1.0) {
             t = 0.0;
             // Increment the current orbit index, modulo the number of orbits
             current_orbit_index = (current_orbit_index + 1) % orbits.size();
 
-            if (current_orbit_index == 0 && !LOOP_ANIMATION)
-            {
+            if (current_orbit_index == 0 && !LOOP_ANIMATION) {
                 viewer.stop();
             }
 

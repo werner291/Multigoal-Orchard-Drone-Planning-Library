@@ -16,7 +16,6 @@
 #include "TreeMeshes.h"
 
 namespace mgodpl {
-
 	/**
 	 * Generate a random barycentric coordinate uniformly distributed over the triangle.
 	 *
@@ -41,8 +40,8 @@ namespace mgodpl {
 	 * @return 						A point on the mesh including position and normal
 	 */
 	SurfacePoint sample_point_on_mesh(random_numbers::RandomNumberGenerator &rng,
-									  const Mesh &mesh,
-									  const std::vector<double> &cumulative_areas);
+	                                  const Mesh &mesh,
+	                                  const std::vector<double> &cumulative_areas);
 
 	/**
 	 * This function samples points on a mesh surface. It first calculates the cumulative areas of all triangles in the mesh.
@@ -103,12 +102,13 @@ namespace mgodpl {
 	 * @return A ScannablePoints object.
 	 */
 	ScannablePoints createScannablePoints(random_numbers::RandomNumberGenerator &rng,
-										  const Mesh &mesh,
-										  size_t num_points,
-										  double max_distance,
-										  double min_distance,
-										  double max_angle,
-										  std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model = std::nullopt);
+	                                      const Mesh &mesh,
+	                                      size_t num_points,
+	                                      double max_distance,
+	                                      double min_distance,
+	                                      double max_angle,
+	                                      std::optional<std::shared_ptr<MeshOcclusionModel> > occlusion_model =
+			                                      std::nullopt);
 
 	/**
 	 * @brief Creates a vector of ScannablePoints for all fruit meshes in the tree model.
@@ -125,12 +125,12 @@ namespace mgodpl {
 	 * @return A vector of ScannablePoints for all fruit meshes in the tree model.
 	 */
 	std::vector<ScannablePoints> createAllScannablePoints(
-			const tree_meshes::TreeMeshes &tree_model,
-			random_numbers::RandomNumberGenerator &rng,
-			size_t num_points,
-			double max_distance,
-			double min_distance,
-			double max_angle);
+		const tree_meshes::TreeMeshes &tree_model,
+		random_numbers::RandomNumberGenerator &rng,
+		size_t num_points,
+		double max_distance,
+		double min_distance,
+		double max_angle);
 
 	/**
 	 * @brief Checks if a point is visible from a given position.
@@ -150,8 +150,8 @@ namespace mgodpl {
 	 * @return                 A boolean value. If true, the point is visible from the eye position. If false, the point is not visible.
 	 */
 	bool is_visible(const ScannablePoints &scannable_points,
-					ScannablePoints::PointId point_index,
-					const math::Vec3d &eye_position);
+	                ScannablePoints::PointId point_index,
+	                const math::Vec3d &eye_position);
 
 	/**
 	 * @brief Checks if a point is visible from a given position and direction.
@@ -171,13 +171,13 @@ namespace mgodpl {
 	 * @return true if the point is visible, false otherwise.
 	 */
 	bool is_visible(const SurfacePoint &point,
-					const math::Vec3d &eye_pos,
-					const math::Vec3d &eye_forward,
-					double max_distance,
-					double min_distance,
-					double max_scan_angle,
-					double fov_angle,
-					const MeshOcclusionModel &mesh_occlusion_model);
+	                const math::Vec3d &eye_pos,
+	                const math::Vec3d &eye_forward,
+	                double max_distance,
+	                double min_distance,
+	                double max_scan_angle,
+	                double fov_angle,
+	                const MeshOcclusionModel &mesh_occlusion_model);
 
 	/**
 	 * @brief Updates the visibility status of a set of points from a given eye position.
@@ -196,8 +196,8 @@ namespace mgodpl {
 	 *                         If the value is true, the point has ever been seen from the eye position. If the value is false, the point has never been seen.
 	 */
 	size_t update_visibility(const ScannablePoints &scannable_points,
-							 const math::Vec3d &eye_position,
-							 SeenPoints &seen_points);
+	                         const math::Vec3d &eye_position,
+	                         SeenPoints &seen_points);
 }
 
 #endif //MGODPL_SURFACE_POINTS_H

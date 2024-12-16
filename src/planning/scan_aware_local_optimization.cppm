@@ -123,8 +123,8 @@ export namespace mgodpl {
 	}
 
 	bool is_any_new_point_visible(const std::vector<ScannablePoints> &scan_points,
-								  const math::Vec3d &ee_pos,
-								  std::vector<SeenPoints> &ever_seen) {
+	                              const math::Vec3d &ee_pos,
+	                              std::vector<SeenPoints> &ever_seen) {
 		size_t newly_seen = 0;
 		for (size_t i = 0; i < scan_points.size(); i++) {
 			const auto &scannable_points = scan_points[i];
@@ -134,11 +134,10 @@ export namespace mgodpl {
 	}
 
 	RobotPath optimize_scanpath(RobotPath path,
-								const std::vector<ScannablePoints> &scan_points,
-								const fcl::CollisionObjectd &tree_collision,
-								const robot_model::RobotModel &robot_model,
-								const std::optional<OptimizeScanpathHooks> &hooks) {
-
+	                            const std::vector<ScannablePoints> &scan_points,
+	                            const fcl::CollisionObjectd &tree_collision,
+	                            const robot_model::RobotModel &robot_model,
+	                            const std::optional<OptimizeScanpathHooks> &hooks) {
 		// The path is trivial and cannot be optimized:
 		if (path.n_waypoints() < 3) {
 			return path;
@@ -164,7 +163,6 @@ export namespace mgodpl {
 
 		// Step two: for every waypoint in the path, check if it is associated with any point in the scan points:
 		for (size_t i = 0; i < path.n_waypoints(); i++) {
-
 			const auto &state = path.waypoint(i);
 			const auto &fk = forwardKinematics(robot_model, state);
 			const auto &ee_pos = fk.forLink(robot_model.findLinkByName("end_effector")).translation;
@@ -186,14 +184,12 @@ export namespace mgodpl {
 		// Step 3: for every waypoint that doesn't scan a point, try to delete it:
 		for (size_t wp_i = 1; wp_i + 1 < path.n_waypoints(); wp_i++) {
 			if (!scans_point[wp_i]) {
-
 				// Get the three states affected:
 				const auto &prev = path.states[wp_i - 1];
 				const auto &current = path.states[wp_i];
 				const auto &next = path.states[wp_i + 1];
 
 				if (!motion_collides(prev, next)) {
-
 					if (hooks) hooks->will_delete_waypoint(wp_i, prev, current, next);
 
 					// If the motion is collision-free, remove the waypoint:
@@ -208,19 +204,17 @@ export namespace mgodpl {
 
 		if (hooks) hooks->end_deleting_unassociated_waypoints(path);
 
-		// Step 4: for every waypoint that doesn't scan a new point, try to delete it:
+		// Step 4: for every waypint that doesn't scan a new point, try to delete it:
 		if (hooks) hooks->begin_deleting_associated_waypoints();
 
 		for (size_t wp_i = 1; wp_i + 1 < path.n_waypoints(); wp_i++) {
 			if (!scans_new_point[wp_i]) {
-
 				// Get the three states affected:
 				const auto &prev = path.states[wp_i - 1];
 				const auto &current = path.states[wp_i];
 				const auto &next = path.states[wp_i + 1];
 
 				if (!motion_collides(prev, next)) {
-
 					if (hooks) hooks->will_delete_waypoint(wp_i, prev, current, next);
 
 					// If the motion is collision-free, remove the waypoint:
@@ -247,10 +241,10 @@ export namespace mgodpl {
 			}
 
 			tryShortcutBetweenPathPoints(
-					path,
-					{.segment_i=wp_i - 1, .segment_t=0.5},
-					{.segment_i=wp_i, .segment_t=0.5},
-					motion_collides
+				path,
+				{.segment_i = wp_i - 1, .segment_t = 0.5},
+				{.segment_i = wp_i, .segment_t = 0.5},
+				motion_collides
 			);
 		}
 
@@ -258,5 +252,4 @@ export namespace mgodpl {
 
 		return path;
 	}
-
 }
