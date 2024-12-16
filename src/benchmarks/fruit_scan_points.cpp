@@ -188,3 +188,31 @@ REGISTER_VISUALIZATION(scan_progressive_orbit) {
     // Start the viewer
     viewer.start();
 }
+
+REGISTER_VISUALIZATION(visualize_sphere_samples) {
+    // Initialize the random number generator
+    random_numbers::RandomNumberGenerator rng(42);
+
+    const bool USE_QUASI_RANDOM = false;
+
+    // Define the radius of the sphere
+    const double radius = 0.05;
+
+    // Number of points to sample
+    size_t num_points = 1024;
+
+    const auto points = USE_QUASI_RANDOM
+                            ? sample_points_on_sphere_quasi_random(rng, num_points, radius)
+                            : sample_points_on_sphere(rng, num_points, radius);
+
+    const SeenPoints ever_seen = SeenPoints::create_all_unseen(points);
+
+    visualize(viewer, points, ever_seen);
+
+    // Add a sphere with radius 1.0 at the origin
+    viewer.addSphere(radius, {0.0, 0.0, 0.0}, {0.8, 0.8, 0.5}, 1.0, 32);
+
+    // Start the viewer
+    viewer.start();
+}
+
