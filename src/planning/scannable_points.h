@@ -33,8 +33,10 @@ namespace mgodpl {
 		double max_distance; ///< The maximum distance for scanning checks.
 		double min_distance; ///< The minimum distance for scanning checks.
 		double max_angle; ///< The maximum angle for scanning checks.
-		std::optional<std::shared_ptr<MeshOcclusionModel>> occlusion_model; ///< The occlusion mesh to use for visibility checks.
-		std::vector<SurfacePoint> surface_points; ///< The vector of SurfacePoint objects for which scanning is to be performed.
+		std::optional<std::shared_ptr<MeshOcclusionModel> > occlusion_model;
+		///< The occlusion mesh to use for visibility checks.
+		std::vector<SurfacePoint> surface_points;
+		///< The vector of SurfacePoint objects for which scanning is to be performed.
 
 		using PointId = size_t; ///< An identifier for a point in ScannablePoints.
 	};
@@ -82,6 +84,21 @@ namespace mgodpl {
 		static SeenPoints create_all_unseen(const ScannablePoints &scannable_points) {
 			SeenPoints seen_points;
 			seen_points.ever_seen.resize(scannable_points.surface_points.size(), false);
+			return seen_points;
+		}
+
+		/**
+		 * @brief Creates a SeenPoints object with all points initially set to unseen.
+		 *
+		 * This static function creates a SeenPoints object with all points initially set to unseen (false).
+		 * It initializes the ever_seen vector with a size equal to the number of points in the ScannablePoints object.
+	 	 *
+	  	 * @param scannable_points A vector of SurfacePoint.
+		 * @return A SeenPoints object with all points initially set to unseen.
+		 */
+		static SeenPoints create_all_unseen(const std::vector<SurfacePoint> &scannable_points) {
+			SeenPoints seen_points;
+			seen_points.ever_seen.resize(scannable_points.size(), false);
 			return seen_points;
 		}
 
