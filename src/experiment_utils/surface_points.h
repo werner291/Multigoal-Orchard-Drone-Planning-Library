@@ -86,6 +86,21 @@ namespace mgodpl {
 	                                                  double radius);
 
 	/**
+	 * @brief Samples points quasi-randomly on the surface of a sphere.
+	 *
+	 * This function generates a specified number of points quasi-randomly distributed on the surface of a sphere
+	 * with a given radius. The number of points must be a square number. The points are generated using a Gall-Peters projection.
+	 *
+	 * @param rng        A reference to a random number generator.
+	 * @param num_points The number of points to sample on the sphere. Must be a square number.
+	 * @param radius     The radius of the sphere.
+	 * @return           A vector of SurfacePoint structures. Each SurfacePoint contains a position and a normal vector.
+	 */
+	std::vector<SurfacePoint> sample_points_on_sphere_quasi_random(random_numbers::RandomNumberGenerator &rng,
+	                                                               size_t num_points,
+	                                                               double radius);
+
+	/**
 	 * @brief Creates a ScannablePoints object.
 	 *
 	 * This function encapsulates the `sample_points_on_mesh` function and returns a `ScannablePoints` object.

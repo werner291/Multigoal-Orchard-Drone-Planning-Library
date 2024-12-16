@@ -81,6 +81,38 @@ namespace mgodpl {
 		return points;
 	}
 
+	std::vector<SurfacePoint> sample_points_on_sphere_quasi_random(random_numbers::RandomNumberGenerator &rng,
+	                                                               size_t num_points,
+	                                                               double radius) {
+		// Number of points must be a square number
+		size_t n = static_cast<size_t>(std::sqrt(num_points));
+		assert(n * n == num_points);
+
+		// In a n x n grid, generate a point in each cell, and apply a Gall-Peters projection:
+		std::vector<SurfacePoint> points;
+		points.reserve(num_points);
+
+		for (size_t i = 0; i < n; ++i) {
+			for (size_t j = 0; j < n; ++j) {
+				double x = (i + rng.uniform01()) / static_cast<double>(n);
+				double y = (j + rng.uniform01()) / static_cast<double>(n);
+
+				// Gall-Peters projection
+				double theta = 2 * M_PI * x;
+				double phi = M_PI * (y - 0.5);
+
+				double x_proj = std::cos(theta) * std::cos(phi);
+				double y_proj = std::sin(theta) * std::cos(phi);
+				double z_proj = std::sin(phi);
+
+
+				points.push_back({{radius * x_proj, radius * y_proj, radius * z_proj}, {x_proj, y_proj, z_proj}});
+			}
+		}
+
+		return points;
+	}
+
 	SurfacePoint sample_point_on_mesh(random_numbers::RandomNumberGenerator &rng,
 	                                  const Mesh &mesh,
 	                                  const std::vector<double> &cumulative_areas) {
