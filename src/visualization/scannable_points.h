@@ -86,6 +86,6 @@ VtkLineSegmentsVisualization visualize(mgodpl::SimpleVtkViewer &viewer,
  * \param fruit_points_visualization The visualization object for the fruit points.
  */
 void update_visualization(const mgodpl::SeenPoints &ever_seen,
-						  VtkLineSegmentsVisualization &fruit_points_visualization);
+                          VtkLineSegmentsVisualization &fruit_points_visualization);
 
 #endif //MGODPL_VISUALIZATION_SCANNABLE_POINTS_H
