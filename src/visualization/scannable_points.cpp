@@ -13,7 +13,7 @@ using namespace mgodpl;
 VtkLineSegmentsVisualization createFruitLinesVisualization(const mgodpl::ScannablePoints &scannable_points) {
 	VtkLineSegmentsVisualization fruit_points_visualization(1, 1, 1);
 
-	std::vector<std::pair<math::Vec3d, math::Vec3d>> fruit_lines;
+	std::vector<std::pair<math::Vec3d, math::Vec3d> > fruit_lines;
 	fruit_lines.reserve(scannable_points.surface_points.size());
 	for (const auto &[position, normal]: scannable_points.surface_points) {
 		fruit_lines.emplace_back(position + normal * 0.01, position + normal * 0.02);
@@ -38,7 +38,7 @@ std::vector<mgodpl::math::Vec3d> generateVisualizationColors(const SeenPoints &e
 VtkLineSegmentsVisualization createFruitLinesVisualization(const std::vector<mgodpl::SurfacePoint> &scannable_points) {
 	VtkLineSegmentsVisualization fruit_points_visualization(1, 1, 1);
 
-	std::vector<std::pair<math::Vec3d, math::Vec3d>> fruit_lines;
+	std::vector<std::pair<math::Vec3d, math::Vec3d> > fruit_lines;
 	fruit_lines.reserve(scannable_points.size());
 	for (const auto &[position, normal]: scannable_points) {
 		fruit_lines.emplace_back(position, position + normal * 0.01);
@@ -49,8 +49,14 @@ VtkLineSegmentsVisualization createFruitLinesVisualization(const std::vector<mgo
 }
 
 VtkLineSegmentsVisualization visualize(mgodpl::SimpleVtkViewer &viewer,
-									   const ScannablePoints &scannable_points,
-									   const SeenPoints &initial_seen_status) {
+                                       const ScannablePoints &scannable_points,
+                                       const SeenPoints &initial_seen_status) {
+	return visualize(viewer, scannable_points.surface_points, initial_seen_status);
+}
+
+VtkLineSegmentsVisualization visualize(mgodpl::SimpleVtkViewer &viewer,
+                                       const std::vector<mgodpl::SurfacePoint> &scannable_points,
+                                       const SeenPoints &initial_seen_status) {
 	// Create the fruit points visualization
 	VtkLineSegmentsVisualization fruit_points_visualization = createFruitLinesVisualization(scannable_points);
 	viewer.addActor(fruit_points_visualization.getActor());
