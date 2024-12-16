@@ -54,6 +54,36 @@ namespace mgodpl {
 		return points;
 	}
 
+	math::Vec3d marsaglia_point(random_numbers::RandomNumberGenerator &rng, double radius) {
+		double u, v, s;
+		do {
+			u = rng.uniformReal(-1.0, 1.0);
+			v = rng.uniformReal(-1.0, 1.0);
+			s = u * u + v * v;
+		} while (s >= 1.0);
+
+		double x = 2 * u * std::sqrt(1 - s);
+		double y = 2 * v * std::sqrt(1 - s);
+		double z = 1 - 2 * s;
+
+		return math::Vec3d(radius * x, radius * y, radius * z);
+	}
+
+	std::vector<SurfacePoint> sample_points_on_sphere(random_numbers::RandomNumberGenerator &rng,
+	                                                  size_t num_points,
+	                                                  double radius) {
+		std::vector<SurfacePoint> points;
+		points.reserve(num_points);
+
+		for (size_t i = 0; i < num_points; ++i) {
+			math::Vec3d position = marsaglia_point(rng, radius);
+			math::Vec3d normal = position.normalized();
+			points.push_back({position, normal});
+		}
+
+		return points;
+	}
+
 	SurfacePoint sample_point_on_mesh(random_numbers::RandomNumberGenerator &rng,
 									  const Mesh &mesh,
 									  const std::vector<double> &cumulative_areas) {

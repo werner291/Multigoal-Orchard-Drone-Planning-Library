@@ -56,8 +56,35 @@ namespace mgodpl {
 	 * @return A vector of SurfacePoint structures. Each SurfacePoint contains a position and a normal vector.
 	 */
 	std::vector<SurfacePoint> sample_points_on_mesh(random_numbers::RandomNumberGenerator &rng,
-													const Mesh &mesh,
-													size_t num_points);
+	                                                const Mesh &mesh,
+	                                                size_t num_points);
+
+	/**
+	 * @brief Generates a random point on the surface of a sphere using the Marsaglia method.
+	 *
+	 * This function generates a random point uniformly distributed on the surface of a sphere
+	 * with a given radius using the Marsaglia method.
+	 *
+	 * @param rng    A reference to a random number generator.
+	 * @param radius The radius of the sphere.
+	 * @return       A Vec3d representing the position of the random point on the sphere.
+	 */
+	math::Vec3d marsaglia_point(random_numbers::RandomNumberGenerator &rng, double radius);
+
+	/**
+	 * @brief Samples points uniformly on the surface of a sphere.
+	 *
+	 * This function generates a specified number of points uniformly distributed on the surface of a sphere
+	 * with a given radius, using the Marsaglia method.
+	 *
+	 * @param rng        A reference to a random number generator.
+	 * @param num_points The number of points to sample on the sphere.
+	 * @param radius     The radius of the sphere.
+	 * @return           A vector of SurfacePoint structures. Each SurfacePoint contains a position and a normal vector.
+	 */
+	std::vector<SurfacePoint> sample_points_on_sphere(random_numbers::RandomNumberGenerator &rng,
+	                                                  size_t num_points,
+	                                                  double radius);
 
 	/**
 	 * @brief Creates a ScannablePoints object.
