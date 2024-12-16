@@ -150,10 +150,16 @@ namespace mgodpl {
 		 * \param center The center position of the sphere.
 		 * \param color The color of the sphere.
 		 * \param opacity The opacity of the sphere.
+		 * \param resolution The resolution of the sphere in the latitude; longitude is 2x this value.
+		 *
 		 * \return A vtkSmartPointer to the created sphere actor.
 		 */
 		vtkSmartPointer<vtkActor>
-		addSphere(double radius, const math::Vec3d &center, const math::Vec3d &color, double opacity = 1.0);
+		addSphere(double radius,
+		          const math::Vec3d &center,
+		          const math::Vec3d &color,
+		          double opacity = 1.0,
+		          int resolution = 8);
 
 		/**
 		 * Add a box to the scene with a given size, transform and color.

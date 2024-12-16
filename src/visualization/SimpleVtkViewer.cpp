@@ -24,11 +24,9 @@
 #include "../experiment_utils/shapes.h"
 
 namespace mgodpl {
-
 	using namespace math;
 
 	SimpleVtkViewer::SimpleVtkViewer(bool offscreen) {
-
 		// Set up the render window.
 		visualizerWindow->SetSize(800, 600);
 		visualizerWindow->SetWindowName("Robot Path Planning");
@@ -51,7 +49,6 @@ namespace mgodpl {
 				videoRecorder->exportFrame();
 			}
 		});
-
 	}
 
 	void SimpleVtkViewer::lockCameraUp() {
@@ -91,7 +88,6 @@ namespace mgodpl {
 	}
 
 	void SimpleVtkViewer::stop() {
-
 		renderWindowInteractor->TerminateApp();
 
 		if (videoRecorder.has_value()) {
@@ -104,10 +100,9 @@ namespace mgodpl {
 	}
 
 	vtkSmartPointer<vtkActor> SimpleVtkViewer::addMesh(const Mesh &mesh,
-													   const Vec3d &color,
-													   double opacity,
-													   const Vec3d &position) {
-
+	                                                   const Vec3d &color,
+	                                                   double opacity,
+	                                                   const Vec3d &position) {
 		Vec3d origin = position;
 
 		auto actor = createActorFromMesh(mesh);
@@ -123,12 +118,12 @@ namespace mgodpl {
 		addActor(actor);
 
 		return actor;
-
 	}
 
-	vtkSmartPointer<vtkActor> SimpleVtkViewer::addMesh(const mgodpl::Mesh &mesh, const math::Transformd &transform,
-													   const math::Vec3d &color, double opacity) {
-
+	vtkSmartPointer<vtkActor> SimpleVtkViewer::addMesh(const mgodpl::Mesh &mesh,
+	                                                   const math::Transformd &transform,
+	                                                   const math::Vec3d &color,
+	                                                   double opacity) {
 		// Make the vtkPoints for the mesh.
 		vtkNew<vtkPoints> points;
 		for (const auto &vertex: mesh.vertices) {
@@ -139,10 +134,10 @@ namespace mgodpl {
 		vtkNew<vtkCellArray> cells;
 		for (const auto &triangle: mesh.triangles) {
 			cells->InsertNextCell({
-										  static_cast<vtkIdType>(triangle[0]),
-										  static_cast<vtkIdType>(triangle[1]),
-										  static_cast<vtkIdType>(triangle[2])
-								  });
+				static_cast<vtkIdType>(triangle[0]),
+				static_cast<vtkIdType>(triangle[1]),
+				static_cast<vtkIdType>(triangle[2])
+			});
 		}
 
 		// PolyData.
@@ -164,7 +159,6 @@ namespace mgodpl {
 		this->addActor(actor);
 
 		return actor;
-
 	}
 
 	void SimpleVtkViewer::set_transform(const math::Transformd &transform, vtkActor *actor) {
@@ -174,14 +168,14 @@ namespace mgodpl {
 
 		actor->SetOrientation(0, 0, 0);
 		actor->RotateWXYZ(axisangle.angle / M_PI * 180.0,
-						  axisangle.axis.x(),
-						  axisangle.axis.y(),
-						  axisangle.axis.z());
+		                  axisangle.axis.x(),
+		                  axisangle.axis.y(),
+		                  axisangle.axis.z());
 	}
 
 	vtkSmartPointer<vtkActor> SimpleVtkViewer::addPositionedShape(const PositionedShape &shape,
-																  const math::Vec3d &color, double opacity) {
-
+	                                                              const math::Vec3d &color,
+	                                                              double opacity) {
 		if (const auto &box = std::get_if<Box>(&shape.shape)) {
 			return addBox(box->size, shape.transform, color, opacity);
 		} else if (const auto &mesh = std::get_if<Mesh>(&shape.shape)) {
@@ -189,14 +183,12 @@ namespace mgodpl {
 		} else {
 			throw std::runtime_error("Unknown shape type");
 		}
-
 	}
 
 	vtkSmartPointer<vtkActor> SimpleVtkViewer::addBox(const math::Vec3d &size,
-													  const math::Transformd &transform,
-													  const math::Vec3d &color,
-													  double d) {
-
+	                                                  const math::Transformd &transform,
+	                                                  const math::Vec3d &color,
+	                                                  double d) {
 		vtkNew<vtkCubeSource> cubeSource;
 		cubeSource->SetXLength(size.x());
 		cubeSource->SetYLength(size.y());
@@ -216,11 +208,9 @@ namespace mgodpl {
 		this->addActor(actor);
 
 		return actor;
-
 	}
 
 	void SimpleVtkViewer::captureScreenshot(const std::string &filename, bool render) {
-
 		assert(boost::algorithm::ends_with(filename, ".png"));
 
 		if (render) {
@@ -237,11 +227,9 @@ namespace mgodpl {
 		writer->SetFileName(filename.c_str());
 		writer->SetInputConnection(windowToImageFilter->GetOutputPort());
 		writer->Write();
-
 	}
 
 	vtkSmartPointer<vtkImageData> SimpleVtkViewer::currentImage() {
-
 		visualizerWindow->Render();
 
 		vtkNew<vtkWindowToImageFilter> windowToImageFilter;
@@ -255,27 +243,27 @@ namespace mgodpl {
 
 
 	//	void SimpleVtkViewer::addStaticPolyline(const std::vector<Vec3d> &points, const Vec3d &color) {
-//		VtkPolyLineVisualization ee_trace_viz(color.x(), color.y(), color.z());
-//		ee_trace_viz.updateLine(points);
-//		addActor(ee_trace_viz.getActor());
-//	}
-//
-//	void SimpleVtkViewer::addStaticLines(const std::vector<std::pair<Vec3d, Vec3d>> &lines,
-//										 const Vec3d &color) {
-//		VtkLineSegmentsVisualization path_viz(color.x(), color.y(), color.z());
-//		path_viz.updateLine(lines);
-//		addActor(path_viz.getActor());
-//	}
-//
-//
-//	std::vector<std::pair<Vec3d, Vec3d>>
-//	zipTraces(const std::vector<Vec3d> &ee_trace, const std::vector<Vec3d> &base_trace) {
-//		std::vector<std::pair<Vec3d, Vec3d>> path_segments;
-//		for (size_t i = 0; i < ee_trace.size(); ++i) {
-//			path_segments.emplace_back(ee_trace[i], base_trace[i]);
-//		}
-//		return path_segments;
-//	}
+	//		VtkPolyLineVisualization ee_trace_viz(color.x(), color.y(), color.z());
+	//		ee_trace_viz.updateLine(points);
+	//		addActor(ee_trace_viz.getActor());
+	//	}
+	//
+	//	void SimpleVtkViewer::addStaticLines(const std::vector<std::pair<Vec3d, Vec3d>> &lines,
+	//										 const Vec3d &color) {
+	//		VtkLineSegmentsVisualization path_viz(color.x(), color.y(), color.z());
+	//		path_viz.updateLine(lines);
+	//		addActor(path_viz.getActor());
+	//	}
+	//
+	//
+	//	std::vector<std::pair<Vec3d, Vec3d>>
+	//	zipTraces(const std::vector<Vec3d> &ee_trace, const std::vector<Vec3d> &base_trace) {
+	//		std::vector<std::pair<Vec3d, Vec3d>> path_segments;
+	//		for (size_t i = 0; i < ee_trace.size(); ++i) {
+	//			path_segments.emplace_back(ee_trace[i], base_trace[i]);
+	//		}
+	//		return path_segments;
+	//	}
 
 	//void visualizeBaseEndEffectorLadderTrace(SimpleVtkViewer &viewer, const RobotPath &rpath_moveit) {
 	//	auto ee_trace = computeLinkTrace(rpath_moveit, "end_effector");
@@ -295,9 +283,7 @@ namespace mgodpl {
 	}
 
 	void addSimplifiedOrchardToViewer(SimpleVtkViewer &viewer, const tree_meshes::SimplifiedOrchard &orchard) {
-
 		for (const auto &[pos, tree]: orchard.trees) {
-
 			auto tree_actor = createColoredMeshActor(tree.trunk_mesh, {0.5, 0.3, 0.1, 1.0}, true);
 			tree_actor->SetPosition(pos.x(), pos.y(), 0.0);
 			viewer.addActor(tree_actor);
@@ -311,19 +297,22 @@ namespace mgodpl {
 				fruit_actor->SetPosition(pos.x(), pos.y(), 0.0);
 				viewer.addActor(fruit_actor);
 			}
-
 		}
-
 	}
 
 	mgodpl::SimpleVtkViewer::~SimpleVtkViewer() {
 	}
 
 	vtkSmartPointer<vtkActor>
-	SimpleVtkViewer::addSphere(double radius, const math::Vec3d &center, const math::Vec3d &color, double opacity) {
-
+	SimpleVtkViewer::addSphere(double radius,
+	                           const math::Vec3d &center,
+	                           const math::Vec3d &color,
+	                           double opacity,
+	                           int resolution) {
 		vtkNew<vtkSphereSource> sphereSource;
 		sphereSource->SetRadius(radius);
+		sphereSource->SetThetaResolution(resolution * 2);
+		sphereSource->SetPhiResolution(resolution);
 		sphereSource->Update();
 
 		vtkNew<vtkPolyDataMapper> mapper;
@@ -338,19 +327,17 @@ namespace mgodpl {
 		this->addActor(actor);
 
 		return actor;
-
 	}
 
 	void SimpleVtkViewer::addTree(const tree_meshes::TreeMeshes &tree, bool show_leaves, bool show_fruit) {
-
 		addActor(createColoredMeshActor(tree.trunk_mesh, {0.5, 0.3, 0.1, 1.0}, true));
 		if (show_leaves) {
 			addActor(createColoredMeshActor(tree.leaves_mesh, {0.0, 0.5, 0.0, 1.0}, true));
 		}
 		if (show_fruit) {
-//			for (const auto &fruit: computeFruitPositions(tree)) {
-//				addSphere(0.05, fruit, {0.8, 0.0, 0.0}, 1.0);
-//			}
+			//			for (const auto &fruit: computeFruitPositions(tree)) {
+			//				addSphere(0.05, fruit, {0.8, 0.0, 0.0}, 1.0);
+			//			}
 			for (const auto &fruit: tree.fruit_meshes) {
 				addActor(createColoredMeshActor(fruit, {0.8, 0.0, 0.0, 1.0}, true));
 			}
@@ -383,6 +370,5 @@ namespace mgodpl {
 		this->addActor(actor);
 
 		return actor;
-
 	}
 }
