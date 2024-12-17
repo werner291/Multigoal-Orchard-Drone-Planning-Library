@@ -3,6 +3,8 @@
 // All rights reserved.
 
 #include <map>
+
+#include "benchmark_function_macros.h"
 #include "../visualization/SimpleVtkViewer.h"
 #include "../visualization/VtkLineSegmentVizualization.h"
 #include "../experiment_utils/TreeMeshes.h"
@@ -193,7 +195,7 @@ REGISTER_VISUALIZATION(visualize_sphere_samples) {
     // Initialize the random number generator
     random_numbers::RandomNumberGenerator rng(42);
 
-    const bool USE_QUASI_RANDOM = false;
+    const bool USE_QUASI_RANDOM = true;
 
     // Define the radius of the sphere
     const double radius = 0.05;
@@ -216,3 +218,124 @@ REGISTER_VISUALIZATION(visualize_sphere_samples) {
     viewer.start();
 }
 
+/**
+ * A sensor model `SensorModelParameters` is defined by a tuple of real-valued parameters `(min_distance, max_distance, fov_angle, surface_max_angle)`, where:
+ *
+ * Given sensor model parameters `SensorModelParameters` and inputs:
+ *
+ * - `(eye_pos, eye_forward)`: Sensor position and direction, derived from a configuration by forward kinematics.
+ * - `(point.position, point.normal)`: Surface point and normal vector.
+ *
+ * TODO: This is redundant with ScalarModelParameters, consider merging them.
+ */
+struct SensorModelParameters {
+    double min_distance = 0.0;
+    double max_distance = INFINITY;
+    double surface_max_angle = M_PI / 2.0;
+    double fov_angle = M_PI / 2.0;
+
+    /**
+     * Checks if a given surface point is visible from a specified eye position and direction.
+     *
+     * @param eye_pos The position of the eye (sensor).
+     * @param eye_forward The forward direction vector of the eye (sensor).
+     * @param point The surface point to check visibility for.
+     * @return True if the point is visible, false otherwise.
+     */
+    [[nodiscard]] bool is_visible(
+        math::Vec3d eye_pos,
+        math::Vec3d eye_forward,
+        const SurfacePoint &point) const {
+        math::Vec3d delta = eye_pos - point.position;
+        double distance = delta.norm();
+
+        return distance <= max_distance &&
+               distance >= min_distance &&
+               std::acos(point.normal.dot(delta) / distance) <= surface_max_angle &&
+               std::acos(eye_forward.dot(-delta) / distance) <= fov_angle;
+    }
+
+    [[nodiscard]] Json::Value toJson() const {
+        Json::Value json;
+        json["min_distance"] = min_distance;
+        json["max_distance"] = max_distance;
+        json["surface_max_angle"] = surface_max_angle;
+        json["fov_angle"] = fov_angle;
+        return json;
+    }
+};
+
+REGISTER_BENCHMARK(sphere_sampling) {
+    // Initialize the random number generator
+    random_numbers::RandomNumberGenerator rng(42);
+
+    const double target_radius = 0.05;
+
+    const bool USE_QUASI_RANDOM = true;
+
+    // Number of points to sample
+    size_t num_points = 1024;
+
+    const auto points = USE_QUASI_RANDOM
+                            ? sample_points_on_sphere_quasi_random(rng, num_points, target_radius)
+                            : sample_points_on_sphere(rng, num_points, target_radius);
+
+    // Keep it simple: infinite distance, 180 degree field of view, 90 degree surface angle
+    const SensorModelParameters sensor_model{
+        .min_distance = 0.0,
+        .max_distance = INFINITY,
+        .surface_max_angle = M_PI / 2.0,
+        .fov_angle = M_PI
+    };
+
+    // Record some metadata:
+    results["num_points"] = num_points;
+    results["sensor_model"] = sensor_model.toJson();
+    results["target_radius"] = target_radius;
+
+    // Iterate over different radii, starting at the target radius, and ending at 50 times the target radius
+    for (int radius_index = 1; radius_index <= 50; ++radius_index) {
+        Json::Value radius_results;
+
+        radius_results["radius"] = target_radius * static_cast<double>(radius_index);
+
+        SeenPoints ever_seen = SeenPoints::create_all_unseen(points);
+
+        const double radius = target_radius * static_cast<double>(radius_index);
+
+        // For 1000 iterations, check the visibility of each point:
+        for (int sample_index = 0; sample_index <= 1000; ++sample_index) {
+            const double t = static_cast<double>(sample_index) / 1000.0;
+
+            math::Vec3d eye_position = {radius * std::cos(2 * M_PI * t), radius * std::sin(2 * M_PI * t), 0.0};
+            math::Vec3d eye_forward = -eye_position.normalized(); // Looking towards the origin (target center)
+
+            // Update the visibility of the scannable points
+            for (size_t i = 0; i < points.size(); ++i) {
+                if (!ever_seen.ever_seen[i] && sensor_model.is_visible(eye_position, eye_forward, points[i])) {
+                    ever_seen.ever_seen[i] = true;
+                }
+            }
+
+            if (sample_index % 100 == 0) {
+                Json::Value sample_results;
+
+                double distance_traveled = radius * 2 * M_PI * t;
+                sample_results["distance_traveled"] = distance_traveled;
+
+                // Count the number of points that have been seen
+                size_t n_seen = 0;
+                for (const auto &seen: ever_seen.ever_seen) {
+                    if (seen) {
+                        ++n_seen;
+                    }
+                }
+
+                sample_results["n_seen"] = n_seen;
+                radius_results["samples"].append(sample_results);
+            }
+        }
+
+        results["per_radius"].append(radius_results);
+    }
+}
