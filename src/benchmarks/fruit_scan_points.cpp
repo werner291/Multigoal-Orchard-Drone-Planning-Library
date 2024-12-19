@@ -339,3 +339,112 @@ REGISTER_BENCHMARK(sphere_sampling) {
         results["per_radius"].append(radius_results);
     }
 }
+
+REGISTER_VISUALIZATION(scan_progressive_orbit_sphere) {
+    // Initialize the random number generator
+    random_numbers::RandomNumberGenerator rng(42);
+
+    // Define the radius of the sphere
+    const double radius = 0.05;
+
+    // Number of points to sample
+    size_t num_points = 1024;
+
+    // Keep it simple: infinite distance, 180 degree field of view, 90 degree surface angle
+    const SensorModelParameters sensor_model{
+        .min_distance = 0.0,
+        .max_distance = INFINITY,
+        .surface_max_angle = M_PI / 2.0,
+        .fov_angle = M_PI
+    };
+
+    // Sample points on the sphere
+    const auto points = sample_points_on_sphere_quasi_random(rng, num_points, radius);
+
+    // Create the scannable points
+    auto scannable_points = sample_points_on_sphere_quasi_random(rng, num_points, radius);
+
+    // Initialize all points as unseen
+    SeenPoints ever_seen = SeenPoints::create_all_unseen(scannable_points);
+
+    // Create the sphere points visualization
+    VtkLineSegmentsVisualization sphere_points_visualization = createFruitLinesVisualization(scannable_points);
+
+    // Add the sphere points visualization to the viewer
+    viewer.addActor(sphere_points_visualization.getActor());
+
+    // Add a sphere with the specified radius at the origin
+    viewer.addSphere(radius, {0.0, 0.0, 0.0}, {0.8, 0.8, 0.8}, 1.0, 32);
+
+    // Declare a vector to store the eye positions
+    std::vector<mgodpl::math::Vec3d> eye_positions;
+
+    // Create an instance of VtkPolyLineVisualization
+    VtkPolyLineVisualization eye_positions_visualization(1, 0, 0); // Red color
+
+    // Add the polyline visualization to the viewer
+    viewer.addActor(eye_positions_visualization.getActor());
+
+    // Loop the animation unless we're recording.
+    bool loop_animation = !viewer.isRecording();
+
+    double current_radius = radius;
+    auto orbit = fixed_radius_equatorial_orbit({0.0, 0.0, 0.0}, current_radius);
+
+    // Add a timer callback to the viewer
+    viewer.addTimerCallback([&]() {
+        // Define a static variable for the timer
+        static double t = 0.0;
+        // Define a static variable for the current orbit index
+        static size_t current_orbit_index = 0;
+        const size_t num_orbits = 10;
+
+        t += 0.005 / current_radius; // Slow down the animation for larger radii to match the same speed
+
+        // If the timer exceeds 1.0, reset it and move to the next orbit
+        if (t > 1.0) {
+            t = 0.0;
+            // Increment the current orbit index, modulo the number of orbits
+            current_orbit_index = (current_orbit_index + 1) % num_orbits;
+
+            if (current_orbit_index == 0 && !loop_animation) {
+                viewer.stop();
+            } else {
+                // Clear the eye positions vector
+                eye_positions.clear();
+
+                // Reset the scanned points
+                ever_seen = SeenPoints::create_all_unseen(scannable_points);
+
+                current_radius = radius * static_cast<double>(current_orbit_index + 1);
+                orbit = fixed_radius_equatorial_orbit({0.0, 0.0, 0.0}, current_radius);
+            }
+        }
+
+        // Use the orbit function to set the eye_position
+        math::Vec3d eye_position = orbit(t);
+
+        // Update the vector with the new eye position
+        eye_positions.push_back(eye_position);
+
+        // Update the polyline with the new set of eye positions
+        eye_positions_visualization.updateLine(eye_positions);
+
+        // Update the visibility of the scannable points
+        for (size_t i = 0; i < points.size(); ++i) {
+            if (!ever_seen.ever_seen[i] && sensor_model.
+                is_visible(eye_position, -eye_position.normalized(), points[i])) {
+                ever_seen.ever_seen[i] = true;
+            }
+        }
+
+        // Set the colors of the sphere points visualization
+        sphere_points_visualization.setColors(generateVisualizationColors(ever_seen));
+    });
+
+    // Set the camera transform for the viewer
+    viewer.setCameraTransform({1.5, 0.0, 1.0}, {0.0, 0.0, 0.0});
+
+    // Start the viewer
+    viewer.start();
+}
