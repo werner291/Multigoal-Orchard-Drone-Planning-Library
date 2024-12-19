@@ -63,7 +63,7 @@ REGISTER_VISUALIZATION(visualize_several_orbits_simultaneously) {
 
     // Create several instances of VtkPolyLineVisualization
     std::vector<VtkPolyLineVisualization> eye_positions_visualizations;
-    for (int i = 0; i < orbits.size(); ++i) {
+    for (size_t i = 0; i < orbits.size(); ++i) {
         // Create a VtkPolyLineVisualization for each orbit and add it to the viewer
         eye_positions_visualizations.emplace_back(1, 0, 0); // Red color
         viewer.addActor(eye_positions_visualizations.back().getActor());
