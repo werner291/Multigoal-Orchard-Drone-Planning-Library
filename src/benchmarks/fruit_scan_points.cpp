@@ -265,7 +265,7 @@ struct SensorModelParameters {
     }
 };
 
-REGISTER_BENCHMARK(sphere_sampling) {
+REGISTER_BENCHMARK(sphere_sampling_orbit_radii) {
     // Initialize the random number generator
     random_numbers::RandomNumberGenerator rng(42);
 
