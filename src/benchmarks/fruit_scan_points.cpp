@@ -265,11 +265,111 @@ struct SensorModelParameters {
     }
 };
 
+/**
+ * @struct ParametricPathEval
+ * @brief Structure to hold the evaluation results of a parametric path.
+ */
+struct ParametricPathEval {
+    /**
+     * @struct EvalPoint
+     * @brief Structure to hold the evaluation data for a single point in time.
+     */
+    struct EvalPoint {
+        double distance_traveled; ///< Distance traveled along the path.
+        size_t n_seen; ///< Number of unique points seen so far.
+        size_t n_visible; ///< Number of points visible at the current position.
+    };
+
+    std::vector<EvalPoint> samples; ///< Vector of evaluation points.
+
+    /**
+     * @brief Converts the evaluation results to a JSON object.
+     *
+     * @param skip The number of samples to skip in the output to reduce the size of the JSON object.
+     *
+     * @return JSON representation of the evaluation results.
+     */
+    [[nodiscard]] Json::Value toJson(const size_t skip = 1) {
+        Json::Value json;
+        Json::Value samplesJson;
+
+        for (size_t i = 0; i < samples.size(); i += skip) {
+            Json::Value sampleJson;
+            sampleJson["distance_traveled"] = samples[i].distance_traveled;
+            sampleJson["n_seen"] = samples[i].n_seen;
+            sampleJson["n_visible"] = samples[i].n_visible;
+            samplesJson.append(sampleJson);
+        }
+
+        json["samples"] = samplesJson;
+        return json;
+    }
+};
+
+/**
+ * @brief Evaluates the visibility of points along a parametric path.
+ *
+ * @param path The parametric path to evaluate.
+ * @param points The surface points to check visibility against.
+ * @param sensor_model The sensor model parameters.
+ * @param num_samples The number of samples to take along the path.
+ * @return ParametricPathEval containing the evaluation results.
+ */
+ParametricPathEval evaluate_path(
+    const ParametricPath &path,
+    const std::vector<SurfacePoint> &points,
+    const SensorModelParameters &sensor_model,
+    size_t num_samples) {
+    const math::Vec3d LOOK_AT{0.0, 0.0, 0.0}; ///< The point to look at (origin).
+
+    ParametricPathEval eval; ///< The evaluation results.
+
+    SeenPoints ever_seen = SeenPoints::create_all_unseen(points); ///< Initialize all points as unseen.
+
+    std::optional<math::Vec3d> previous_eye_position; ///< Previous eye position.
+
+    size_t n_seen = 0; ///< Number of unique points seen so far.
+
+    // For each sample, evaluate the visibility of each point
+    for (size_t sample_index = 0; sample_index <= num_samples; ++sample_index) {
+        const double t = static_cast<double>(sample_index) / num_samples;
+
+        const math::Vec3d eye_position = path(t); ///< Current eye position.
+        const math::Vec3d eye_forward = (LOOK_AT - eye_position).normalized(); ///< Direction the eye is looking.
+
+        size_t n_visible = 0; ///< Number of points visible at the current position.
+
+        // Iterate over all points to check their visibility
+        for (size_t i = 0; i < points.size(); ++i) {
+            // Check if the point is visible from the current eye position and direction
+            if (sensor_model.is_visible(eye_position, eye_forward, points[i])) {
+                // If the point has not been seen before, mark it as seen and increment the seen count
+                if (!ever_seen.ever_seen[i]) {
+                    ever_seen.ever_seen[i] = true;
+                    ++n_seen;
+                }
+                // Increment the visible count for the current position
+                ++n_visible;
+            }
+        }
+
+        eval.samples.emplace_back(
+            (previous_eye_position ? (eye_position - *previous_eye_position).norm() : 0.0),
+            n_seen,
+            n_visible
+        );
+        previous_eye_position = eye_position;
+    }
+
+    return eval;
+}
+
+// Define the radius of the sphere
+const double TARGET_RADIUS = 0.05;
+
 REGISTER_BENCHMARK(sphere_sampling_orbit_radii) {
     // Initialize the random number generator
     random_numbers::RandomNumberGenerator rng(42);
-
-    const double target_radius = 0.05;
 
     const bool USE_QUASI_RANDOM = true;
 
@@ -277,8 +377,8 @@ REGISTER_BENCHMARK(sphere_sampling_orbit_radii) {
     size_t num_points = 1024;
 
     const auto points = USE_QUASI_RANDOM
-                            ? sample_points_on_sphere_quasi_random(rng, num_points, target_radius)
-                            : sample_points_on_sphere(rng, num_points, target_radius);
+                            ? sample_points_on_sphere_quasi_random(rng, num_points, TARGET_RADIUS)
+                            : sample_points_on_sphere(rng, num_points, TARGET_RADIUS);
 
     // Keep it simple: infinite distance, 180 degree field of view, 90 degree surface angle
     const SensorModelParameters sensor_model{
@@ -291,57 +391,27 @@ REGISTER_BENCHMARK(sphere_sampling_orbit_radii) {
     // Record some metadata:
     results["num_points"] = num_points;
     results["sensor_model"] = sensor_model.toJson();
-    results["target_radius"] = target_radius;
+    results["target_radius"] = TARGET_RADIUS;
 
     // Iterate over different radii, starting at the target radius, and ending at 50 times the target radius
     for (int radius_index = 1; radius_index <= 50; ++radius_index) {
         Json::Value radius_results;
 
-        radius_results["radius"] = target_radius * static_cast<double>(radius_index);
+        radius_results["radius"] = TARGET_RADIUS * static_cast<double>(radius_index);
 
-        SeenPoints ever_seen = SeenPoints::create_all_unseen(points);
+        ParametricPathEval path_eval = evaluate_path(
+            fixed_radius_equatorial_orbit({0.0, 0.0, 0.0}, TARGET_RADIUS * static_cast<double>(radius_index)),
+            points,
+            sensor_model,
+            1000
+        );
 
-        const double radius = target_radius * static_cast<double>(radius_index);
+        radius_results["eval"] = path_eval.toJson(10);
 
-        // For 1000 iterations, check the visibility of each point:
-        for (int sample_index = 0; sample_index <= 1000; ++sample_index) {
-            const double t = static_cast<double>(sample_index) / 1000.0;
-
-            math::Vec3d eye_position = {radius * std::cos(2 * M_PI * t), radius * std::sin(2 * M_PI * t), 0.0};
-            math::Vec3d eye_forward = -eye_position.normalized(); // Looking towards the origin (target center)
-
-            // Update the visibility of the scannable points
-            for (size_t i = 0; i < points.size(); ++i) {
-                if (!ever_seen.ever_seen[i] && sensor_model.is_visible(eye_position, eye_forward, points[i])) {
-                    ever_seen.ever_seen[i] = true;
-                }
-            }
-
-            if (sample_index % 100 == 0) {
-                Json::Value sample_results;
-
-                double distance_traveled = radius * 2 * M_PI * t;
-                sample_results["distance_traveled"] = distance_traveled;
-
-                // Count the number of points that have been seen
-                size_t n_seen = 0;
-                for (const auto &seen: ever_seen.ever_seen) {
-                    if (seen) {
-                        ++n_seen;
-                    }
-                }
-
-                sample_results["n_seen"] = n_seen;
-                radius_results["samples"].append(sample_results);
-            }
-        }
-
-        results["per_radius"].append(radius_results);
+        results["by_radius"].append(radius_results);
     }
 }
 
-// Define the radius of the sphere
-const double TARGET_RADIUS = 0.05;
 
 void visualize_paths(
     const std::vector<mgodpl::ParametricPath> &path,
@@ -526,6 +596,89 @@ ParametricPath spiral(const double radius, const int cycles = 4) {
         };
     };
 }
+
+REGISTER_BENCHMARK(sphere_scan_euclidean_paths) {
+    const std::array<double, 5> amplitudes = {0.1, 0.2, 0.3, 0.4, 0.5};
+    const std::array<int, 5> cycles = {1, 2, 3, 4, 5};
+    const std::array<double, 5> radii_factors = {1.0, 2.0, 3.0, 4.0, 5.0};
+
+    // Keep it simple: infinite distance, 180 degree field of view, 90-degree surface angle
+    const SensorModelParameters sensor_model{
+        .min_distance = 0.0,
+        .max_distance = INFINITY,
+        .surface_max_angle = 0.5 * M_PI / 2.0,
+        .fov_angle = M_PI
+    };
+
+    random_numbers::RandomNumberGenerator rng(42);
+
+    const auto points = sample_points_on_sphere_quasi_random(rng, 1024, TARGET_RADIUS);
+
+    for (const double amplitude: amplitudes) {
+        for (const int cycle: cycles) {
+            for (const double radius_factor: radii_factors) {
+                const double radius = TARGET_RADIUS * radius_factor;
+
+                ParametricPath path = latitude_oscillation_path({0.0, 0.0, 0.0}, radius, amplitude, cycle);
+
+                ParametricPathEval eval = evaluate_path(path,
+                                                        points,
+                                                        sensor_model,
+                                                        1000);
+
+                Json::Value json;
+                json["amplitude"] = amplitude;
+                json["cycles"] = cycle;
+                json["radius_factor"] = radius_factor;
+                json["eval"] = eval.toJson(10);
+
+                results["oscillating"].append(json);
+            }
+        }
+    }
+
+    // Equatorial circular orbits:
+    for (const double radius_factor: radii_factors) {
+        const double radius = TARGET_RADIUS * radius_factor;
+
+        ParametricPath path = fixed_radius_equatorial_orbit({0.0, 0.0, 0.0}, radius);
+
+        ParametricPathEval eval = evaluate_path(path,
+                                                points,
+                                                sensor_model,
+                                                1000);
+
+        Json::Value json;
+        json["radius_factor"] = radius_factor;
+        json["eval"] = eval.toJson(10);
+
+        results["equatorial"].append(json);
+    }
+
+    const std::array<double, 6> spiral_turns = {0.5, 1.0, 1.5, 2.0, 2.5, 3.0};
+
+    // Spiral paths:
+    for (const double radius_factor: radii_factors) {
+        for (const double turns: spiral_turns) {
+            const double radius = TARGET_RADIUS * radius_factor;
+
+            ParametricPath path = spiral(radius, turns);
+
+            ParametricPathEval eval = evaluate_path(path,
+                                                    points,
+                                                    sensor_model,
+                                                    1000);
+
+            Json::Value json;
+            json["radius_factor"] = radius_factor;
+            json["turns"] = turns;
+            json["eval"] = eval.toJson(10);
+
+            results["spiral"].append(json);
+        }
+    }
+}
+
 
 REGISTER_VISUALIZATION(scan_spiral_sphere) {
     // Keep it simple: infinite distance, 180 degree field of view, 90 degree surface angle
