@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
 
         // Format the filename with the ISO 8601 timestamp, benchmark name and DEBUG flag:
         std::stringstream filename;
-        filename << "benchmark_" << benchmark_name << "_" << current_time_iso;
+        filename << "analysis/data/benchmark_" << benchmark_name << "_" << current_time_iso;
 
 #ifndef NDEBUG
         filename << "_DEBUG";
