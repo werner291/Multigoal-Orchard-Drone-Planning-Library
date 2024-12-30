@@ -36,7 +36,7 @@ export namespace mgodpl::visualization {
 			// Compute the forward kinematics for the interpolated state
 			auto fk = robot_model::forwardKinematics(robot, st);
 			// Visualize the robot state
-			vizualisation::vizualize_robot_state(viewer, robot, fk, {1, 0, 1});
+			visualization::vizualize_robot_state(viewer, robot, fk, {1, 0, 1});
 
 			// Advance the path point by a fixed interval, quitting if we reach the end of the path
 		} while (!advancePathPointClamp(*path, pt, 0.1, equal_weights_distance));

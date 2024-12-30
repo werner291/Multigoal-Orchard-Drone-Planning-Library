@@ -44,7 +44,7 @@ REGISTER_VISUALIZATION(sensor_cone) {
 	// compute FK.
 	auto fk1 = forwardKinematics(robot, state1.joint_values, 0, state1.base_tf);
 
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer, robot, fk1);
+	auto robot_viz = visualization::vizualize_robot_state(viewer, robot, fk1);
 
 	size_t max_repeats = 20;
 
@@ -80,7 +80,7 @@ REGISTER_VISUALIZATION(sensor_cone) {
 		auto fk = forwardKinematics(robot, st.joint_values, 0, st.base_tf);
 
 		// update.
-		vizualisation::update_robot_state(robot, fk, robot_viz);
+		visualization::update_robot_state(robot, fk, robot_viz);
 
 		// Get the end-effector position and orientation.
 		auto ee_tf = fk.forLink(robot.findLinkByName("end_effector"));
@@ -153,13 +153,13 @@ REGISTER_VISUALIZATION(procedural_robot_models) {
     // Create a random number generator.
     random_numbers::RandomNumberGenerator rng;
 
-	mgodpl::vizualisation::RobotActors robot_actors;
+	mgodpl::visualization::RobotActors robot_actors;
 
 	robot_model::RobotModel robot = mgodpl::experiments::createProceduralRobotModel(generateRandomRobotArmParameters(rng));
 
 	{
 		RobotState state = randomState(robot, rng);
-		robot_actors = vizualisation::vizualize_robot_state(viewer, robot, forwardKinematics(robot, state.joint_values, 0, state.base_tf));
+		robot_actors = visualization::vizualize_robot_state(viewer, robot, forwardKinematics(robot, state.joint_values, 0, state.base_tf));
 	}
 
 	int max_repeats = 10;
@@ -186,7 +186,7 @@ REGISTER_VISUALIZATION(procedural_robot_models) {
 			}
 
 			RobotState state = randomState(robot, rng);
-			robot_actors = vizualisation::vizualize_robot_state(viewer, robot, forwardKinematics(robot, state.joint_values, 0, state.base_tf));
+			robot_actors = visualization::vizualize_robot_state(viewer, robot, forwardKinematics(robot, state.joint_values, 0, state.base_tf));
 
         } else {
 
@@ -197,7 +197,7 @@ REGISTER_VISUALIZATION(procedural_robot_models) {
 				state.joint_values[joint_id] = 0.5 * M_PI * sin(t * 2.0 * M_PI + joint_id * M_PI / 4.0) / (double) robot.count_joint_variables();
 			}
 
-			vizualisation::update_robot_state(
+			visualization::update_robot_state(
 				robot,
 				forwardKinematics(robot, state.joint_values, 0, state.base_tf),
 				robot_actors

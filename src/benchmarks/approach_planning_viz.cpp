@@ -46,7 +46,7 @@ REGISTER_VISUALIZATION(nearby_sampling) {
 
 	auto initial_fk = robot_model::forwardKinematics(robot, start_state);
 
-	mgodpl::vizualisation::vizualize_robot_state(viewer, robot, initial_fk, {1, 0, 1});
+	mgodpl::visualization::vizualize_robot_state(viewer, robot, initial_fk, {1, 0, 1});
 
 	random_numbers::RandomNumberGenerator rng(42);
 
@@ -54,7 +54,7 @@ REGISTER_VISUALIZATION(nearby_sampling) {
 
 	int samples = 0;
 
-	std::vector<vizualisation::RobotActors> last_actors;
+	std::vector<visualization::RobotActors> last_actors;
 	const size_t KEEP = 10;
 
 	viewer.addTimerCallback([&]() {
@@ -71,7 +71,7 @@ REGISTER_VISUALIZATION(nearby_sampling) {
 		}
 
 		// Draw the nearby state:
-		last_actors.push_back(mgodpl::vizualisation::vizualize_robot_state(viewer, robot, fk, {0, 1, 0}));
+		last_actors.push_back(mgodpl::visualization::vizualize_robot_state(viewer, robot, fk, {0, 1, 0}));
 
 	});
 
@@ -112,7 +112,7 @@ REGISTER_VISUALIZATION(makeshift_exponential_sampling) {
 		// Interpolate between the start and end state:
 		RobotState interpolated_state = interpolate(start_state, end_state, t);
 		auto fk = robot_model::forwardKinematics(robot, interpolated_state);
-		mgodpl::vizualisation::vizualize_robot_state(viewer, robot, fk, {1, 0, 1});
+		mgodpl::visualization::vizualize_robot_state(viewer, robot, fk, {1, 0, 1});
 	}
 
 	random_numbers::RandomNumberGenerator rng(42);
@@ -121,7 +121,7 @@ REGISTER_VISUALIZATION(makeshift_exponential_sampling) {
 
 	int samples = 0;
 
-	std::vector<vizualisation::RobotActors> last_actors;
+	std::vector<visualization::RobotActors> last_actors;
 	const size_t KEEP = 10;
 
 	viewer.addTimerCallback([&]() {
@@ -138,7 +138,7 @@ REGISTER_VISUALIZATION(makeshift_exponential_sampling) {
 		}
 
 		// Draw the nearby state:
-		last_actors.push_back(mgodpl::vizualisation::vizualize_robot_state(viewer, robot, fk, {0, 1, 0}));
+		last_actors.push_back(mgodpl::visualization::vizualize_robot_state(viewer, robot, fk, {0, 1, 0}));
 
 	});
 

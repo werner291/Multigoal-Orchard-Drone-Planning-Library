@@ -275,7 +275,7 @@ struct ParametricPathEval {
      * @brief Structure to hold the evaluation data for a single point in time.
      */
     struct EvalPoint {
-        double distance_traveled; ///< Distance traveled along the path.
+        double distance_traveled; ///< Distance traveled along the path, total.
         size_t n_seen; ///< Number of unique points seen so far.
         size_t n_visible; ///< Number of points visible at the current position.
     };
@@ -353,8 +353,11 @@ ParametricPathEval evaluate_path(
             }
         }
 
+        double step_size = (previous_eye_position ? (eye_position - *previous_eye_position).norm() : 0.0);
+        double distance_traveled = (previous_eye_position ? eval.samples.back().distance_traveled : 0.0) + step_size;
+
         eval.samples.emplace_back(
-            (previous_eye_position ? (eye_position - *previous_eye_position).norm() : 0.0),
+            distance_traveled,
             n_seen,
             n_visible
         );
@@ -597,10 +600,10 @@ ParametricPath spiral(const double radius, const int cycles = 4) {
     };
 }
 
-REGISTER_BENCHMARK(sphere_scan_euclidean_paths) {
-    const std::array<double, 5> amplitudes = {0.1, 0.2, 0.3, 0.4, 0.5};
-    const std::array<int, 5> cycles = {1, 2, 3, 4, 5};
-    const std::array<double, 5> radii_factors = {1.0, 2.0, 3.0, 4.0, 5.0};
+REGISTER_BENCHMARK(sphere_scan_euclidean_paths_limited_angle) {
+    const std::array amplitudes = {0.1, 0.2, 0.3, 0.4, 0.5};
+    const std::array cycles = {1, 2, 3, 4, 5};
+    const std::array radii_factors = {1.5, 2.0, 3.0, 4.0, 5.0, 10.0, 20.0};
 
     // Keep it simple: infinite distance, 180 degree field of view, 90-degree surface angle
     const SensorModelParameters sensor_model{
@@ -610,9 +613,13 @@ REGISTER_BENCHMARK(sphere_scan_euclidean_paths) {
         .fov_angle = M_PI
     };
 
+    results["sensor_model"] = sensor_model.toJson();
+
     random_numbers::RandomNumberGenerator rng(42);
 
     const auto points = sample_points_on_sphere_quasi_random(rng, 1024, TARGET_RADIUS);
+
+    results["num_points"] = 1024;
 
     for (const double amplitude: amplitudes) {
         for (const int cycle: cycles) {
@@ -629,7 +636,9 @@ REGISTER_BENCHMARK(sphere_scan_euclidean_paths) {
                 Json::Value json;
                 json["amplitude"] = amplitude;
                 json["cycles"] = cycle;
+                json["radius"] = radius;
                 json["radius_factor"] = radius_factor;
+
                 json["eval"] = eval.toJson(10);
 
                 results["oscillating"].append(json);
@@ -638,7 +647,8 @@ REGISTER_BENCHMARK(sphere_scan_euclidean_paths) {
     }
 
     // Equatorial circular orbits:
-    for (const double radius_factor: radii_factors) {
+    for (int radius_index = 1; radius_index <= 40; ++radius_index) {
+        double radius_factor = std::pow(1.1, radius_index);
         const double radius = TARGET_RADIUS * radius_factor;
 
         ParametricPath path = fixed_radius_equatorial_orbit({0.0, 0.0, 0.0}, radius);
@@ -650,6 +660,8 @@ REGISTER_BENCHMARK(sphere_scan_euclidean_paths) {
 
         Json::Value json;
         json["radius_factor"] = radius_factor;
+        json["radius"] = radius;
+
         json["eval"] = eval.toJson(10);
 
         results["equatorial"].append(json);
@@ -671,6 +683,7 @@ REGISTER_BENCHMARK(sphere_scan_euclidean_paths) {
 
             Json::Value json;
             json["radius_factor"] = radius_factor;
+            json["radius"] = radius;
             json["turns"] = turns;
             json["eval"] = eval.toJson(10);
 

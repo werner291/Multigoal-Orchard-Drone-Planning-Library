@@ -133,7 +133,7 @@ REGISTER_VISUALIZATION(fruit_scan_fullpath) {
 	// Declare a vector to store the end-effector positions
 	std::vector<mgodpl::math::Vec3d> end_effector_positions;
 
-	auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer,
+	auto robot_viz = mgodpl::visualization::vizualize_robot_state(viewer,
 	                                                              robot,
 	                                                              robot_model::forwardKinematics(
 		                                                              robot,
@@ -306,7 +306,7 @@ REGISTER_VISUALIZATION(right_left_scanning_motion) {
 	viewer.setCameraTransform({2.0, 1.0, 1.0}, {0.0, 0.0, 0.0});
 
 	// Visualize the robot state
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer,
+	auto robot_viz = visualization::vizualize_robot_state(viewer,
 	                                                      robot,
 	                                                      forwardKinematics(
 		                                                      robot,
@@ -539,7 +539,7 @@ REGISTER_VISUALIZATION(local_scangraph) {
 	viewer.setCameraTransform({2.0, 1.0, 1.0}, {0.0, 0.0, 0.0});
 
 	// Visualize the robot state
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer,
+	auto robot_viz = visualization::vizualize_robot_state(viewer,
 	                                                      robot,
 	                                                      forwardKinematics(
 		                                                      robot,
@@ -761,7 +761,7 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples) {
 	viewer.setCameraTransform({2.0, 1.0, 1.0}, {0.0, 0.0, 0.0});
 
 	// Visualize the robot state
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer,
+	auto robot_viz = visualization::vizualize_robot_state(viewer,
 	                                                      robot,
 	                                                      forwardKinematics(
 		                                                      robot,
@@ -857,7 +857,7 @@ REGISTER_VISUALIZATION(orbit_tree) {
 	}
 
 	// Visualize the robot's path
-	auto robot_viz = vizualisation::vizualize_robot_state(
+	auto robot_viz = visualization::vizualize_robot_state(
 		viewer,
 		robot,
 		forwardKinematics(
@@ -1094,7 +1094,7 @@ REGISTER_VISUALIZATION(sensor_model_demonstration) {
 	};
 
 	// Visualize the robot's path
-	auto robot_viz = vizualisation::vizualize_robot_state(
+	auto robot_viz = visualization::vizualize_robot_state(
 		viewer,
 		robot,
 		forwardKinematics(
@@ -1405,7 +1405,7 @@ REGISTER_VISUALIZATION(right_left_scanning_motion_all_apples_replan_interactive)
 	viewer.setCameraTransform({2.0, 1.0, 1.0}, {0.0, 0.0, 0.0});
 
 	// Visualize the robot state
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer,
+	auto robot_viz = visualization::vizualize_robot_state(viewer,
 	                                                      robot,
 	                                                      forwardKinematics(
 		                                                      robot,

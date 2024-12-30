@@ -24,7 +24,7 @@ import visualization.ThrottledRunQueue;
 
 using namespace mgodpl;
 using namespace visualization;
-using namespace vizualisation;
+using namespace visualization;
 using namespace robot_model;
 
 export namespace mgodpl::visualization {

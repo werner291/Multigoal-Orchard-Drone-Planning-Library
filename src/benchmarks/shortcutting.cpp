@@ -64,7 +64,7 @@ REGISTER_VISUALIZATION(shortcutting) {
 	// compute FK.
 	auto fk1 = forwardKinematics(robot, path.states[0].joint_values, 0, path.states[0].base_tf);
 
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer, robot, fk1);
+	auto robot_viz = visualization::vizualize_robot_state(viewer, robot, fk1);
 
 	size_t max_repeats = 1;
 
@@ -88,7 +88,7 @@ REGISTER_VISUALIZATION(shortcutting) {
 		auto fk = forwardKinematics(robot, st.joint_values, 0, st.base_tf);
 
 		// update.
-		vizualisation::update_robot_state(robot, fk, robot_viz);
+		visualization::update_robot_state(robot, fk, robot_viz);
 	});
 
 	viewer.setCameraTransform({0.0, 20.0, 20.0}, {0.0, 0.0, 5.0});

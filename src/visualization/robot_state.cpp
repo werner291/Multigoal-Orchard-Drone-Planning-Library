@@ -9,7 +9,7 @@
 #include "robot_state.h"
 #include <vtkActor.h>
 
-mgodpl::vizualisation::RobotActors mgodpl::vizualisation::vizualize_robot_state(mgodpl::SimpleVtkViewer &viewer,
+mgodpl::visualization::RobotActors mgodpl::visualization::vizualize_robot_state(mgodpl::SimpleVtkViewer &viewer,
 	const mgodpl::robot_model::RobotModel &robot,
 	const mgodpl::robot_model::ForwardKinematicsResult &fk,
 	const mgodpl::math::Vec3d &color,
@@ -44,9 +44,9 @@ mgodpl::vizualisation::RobotActors mgodpl::vizualisation::vizualize_robot_state(
 	return RobotActors{.actors = actors};
 }
 
-void mgodpl::vizualisation::update_robot_state(const mgodpl::robot_model::RobotModel &robot,
+void mgodpl::visualization::update_robot_state(const mgodpl::robot_model::RobotModel &robot,
                                                const mgodpl::robot_model::ForwardKinematicsResult &fk,
-                                               mgodpl::vizualisation::RobotActors &actors) {
+                                               mgodpl::visualization::RobotActors &actors) {
 	auto actor_it = actors.actors.begin();
 
 	for (size_t link_id = 0; link_id < robot.getLinks().size(); ++link_id) {
@@ -76,7 +76,7 @@ void mgodpl::vizualisation::update_robot_state(const mgodpl::robot_model::RobotM
 	}
 }
 
-mgodpl::vizualisation::RobotActors mgodpl::vizualisation::vizualize_robot_state(SimpleVtkViewer &viewer,
+mgodpl::visualization::RobotActors mgodpl::visualization::vizualize_robot_state(SimpleVtkViewer &viewer,
 	const robot_model::RobotModel &robot,
 	const RobotState &state,
 	const math::Vec3d &color,
@@ -84,7 +84,7 @@ mgodpl::vizualisation::RobotActors mgodpl::vizualisation::vizualize_robot_state(
 	return vizualize_robot_state(viewer, robot, forwardKinematics(robot, state), color, collision_only);
 }
 
-void mgodpl::vizualisation::update_robot_state(const robot_model::RobotModel &robot,
+void mgodpl::visualization::update_robot_state(const robot_model::RobotModel &robot,
                                                const RobotState &state,
                                                RobotActors &actors) {
 	return update_robot_state(robot, forwardKinematics(robot, state), actors);

@@ -50,7 +50,7 @@ REGISTER_VISUALIZATION(goal_samples) {
         auto fk = forwardKinematics(robot, goal_state.joint_values, 0, goal_state.base_tf);
 
         // Visualize the goal state
-        vizualisation::vizualize_robot_state(viewer, robot, fk, {0.5, 0.5, 0.5});
+        visualization::vizualize_robot_state(viewer, robot, fk, {0.5, 0.5, 0.5});
     }
 
 	viewer.lockCameraUp();

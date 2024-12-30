@@ -70,7 +70,7 @@ REGISTER_VISUALIZATION(reach_through_motions) {
 
 	viewer.setCameraTransform({0.0, 8.0, 4.0}, {0.0, 0.0, 0.0});
 
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer,
+	auto robot_viz = visualization::vizualize_robot_state(viewer,
 	                                                      robot,
 	                                                      forwardKinematics(robot,
 	                                                                        state.joint_values,
@@ -206,7 +206,7 @@ REGISTER_VISUALIZATION(near_goal_samples) {
 
 		moveEndEffectorToGoal(robot, state, target_end_effector_position);
 
-		auto robot_viz = vizualisation::vizualize_robot_state(viewer,
+		auto robot_viz = visualization::vizualize_robot_state(viewer,
 		                                                      robot,
 		                                                      forwardKinematics(robot,
 			                                                      state.joint_values,
@@ -315,7 +315,7 @@ void animateRobotPath(SimpleVtkViewer &viewer,
                       double interpolation_speed = 0.1) {
 	PathPoint path_point = {0, 0.0};
 
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer,
+	auto robot_viz = visualization::vizualize_robot_state(viewer,
 	                                                      robot,
 	                                                      forwardKinematics(robot,
 	                                                                        path.states[0].joint_values,
@@ -450,7 +450,7 @@ REGISTER_VISUALIZATION(coverage_rrt) {
 	const double interpolation_speed = 0.1;
 	const RobotPath &final_path = in_order_walk;
 
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer,
+	auto robot_viz = visualization::vizualize_robot_state(viewer,
 	                                                      robot,
 	                                                      forwardKinematics(robot,
 	                                                                        final_path.states[0].joint_values,

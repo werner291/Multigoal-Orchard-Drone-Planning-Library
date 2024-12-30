@@ -63,8 +63,10 @@ def lookup_latest_benchmark_file(benchmark_name):
     Raises:
         FileNotFoundError: If no benchmark files are found.
     """
-    list_of_files = glob.glob(f'./{benchmark_name}*.json')
+    list_of_files = glob.glob(f'./{benchmark_name}*.json') + glob.glob(f'./data/{benchmark_name}*.json') + glob.glob(
+        f'./analysis/data/{benchmark_name}/*.json')
     if not list_of_files:
-        raise FileNotFoundError(f"No {benchmark_name} files found in the current working directory.")
+        raise FileNotFoundError(
+            f"No {benchmark_name} files found in the current working directory or in the data directory.")
     latest_file = max(list_of_files, key=os.path.getctime)
     return latest_file

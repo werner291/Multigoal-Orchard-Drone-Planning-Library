@@ -127,12 +127,12 @@ REGISTER_VISUALIZATION(from_end_effector_and_vector) {
 
 			run_queue_throttled.throttle.wait_and_advance(30);
 
-			auto actors = run_queue_throttled.run_main<vizualisation::RobotActors>(
+			auto actors = run_queue_throttled.run_main<visualization::RobotActors>(
 				[&](SimpleVtkViewer &viewer) {
 					const RobotState st = fromEndEffectorAndVector(robot,
 					                                               surface_data.surface_point,
 					                                               surface_data.normal);
-					auto actors = vizualisation::vizualize_robot_state(viewer, robot, st);
+					auto actors = visualization::vizualize_robot_state(viewer, robot, st);
 					for (auto &a: actors.actors) {
 						a->GetProperty()->SetOpacity(0.5);
 					}

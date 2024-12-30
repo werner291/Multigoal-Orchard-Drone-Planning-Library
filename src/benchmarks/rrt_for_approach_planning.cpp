@@ -23,7 +23,7 @@
 
 using namespace mgodpl;
 using namespace visualization;
-using namespace vizualisation;
+using namespace visualization;
 
 import sampling;
 import goal_sampling;

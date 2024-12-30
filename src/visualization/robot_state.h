@@ -13,7 +13,7 @@
 #include "SimpleVtkViewer.h"
 #include "../planning/RobotModel.h"
 
-namespace mgodpl::vizualisation {
+namespace mgodpl::visualization {
 	struct RobotActors {
 		std::vector<vtkSmartPointer<vtkActor> > actors;
 	};

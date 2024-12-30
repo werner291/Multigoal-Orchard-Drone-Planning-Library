@@ -26,14 +26,14 @@ REGISTER_VISUALIZATION(arm_axis_motions) {
 		double t = i / 100.0;
 		auto state1 = fromEndEffectorAndVector(robot, {1.0, 0, t-0.5}, {1, 0, 0});
 		auto fk1 = forwardKinematics(robot, state1.joint_values, 0, state1.base_tf);
-		auto robot_viz = vizualisation::vizualize_robot_state(viewer, robot, fk1);
+		auto robot_viz = visualization::vizualize_robot_state(viewer, robot, fk1);
 	}
 
 	for (int i = 0; i <= 100; ++i) {
 		double t = i / 100.0;
 		auto state1 = fromEndEffectorAndVector(robot, {-1.0 - t, 0.0, 0.0}, {1, 0, 0});
 		auto fk1 = forwardKinematics(robot, state1.joint_values, 0, state1.base_tf);
-		auto robot_viz = vizualisation::vizualize_robot_state(viewer, robot, fk1);
+		auto robot_viz = visualization::vizualize_robot_state(viewer, robot, fk1);
 	}
 
 

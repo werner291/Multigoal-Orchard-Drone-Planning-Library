@@ -36,7 +36,7 @@
 #include <fcl/narrowphase/collision_object.h>
 #include <fcl/geometry/bvh/BVH_model.h>
 using namespace mgodpl;
-using namespace mgodpl::vizualisation;
+using namespace mgodpl::visualization;
 
 /**
  * Creates a path that orbits around the fruit, keeping the end-effector at a fixed distance from the fruit,

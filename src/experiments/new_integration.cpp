@@ -206,7 +206,7 @@ int main() {
 		viewer.addActor(chull_viz.getActor());
 
 		// Visualize the initial state:
-		auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer,
+		auto robot_viz = mgodpl::visualization::vizualize_robot_state(viewer,
 																	  robot,
 																	  robot_model::forwardKinematics(robot,
 																									 initial_state.joint_values,

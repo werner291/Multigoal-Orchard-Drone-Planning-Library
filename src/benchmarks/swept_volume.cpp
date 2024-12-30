@@ -48,7 +48,7 @@ REGISTER_VISUALIZATION(swept_volume) {
 
 	visualization.updateTriangles(swept_volume_triangles(robot, state1, state2, 5));
 
-	auto robot_viz = vizualisation::vizualize_robot_state(viewer, robot, fk1);
+	auto robot_viz = visualization::vizualize_robot_state(viewer, robot, fk1);
 
 	size_t max_repeats = 20;
 
@@ -84,7 +84,7 @@ REGISTER_VISUALIZATION(swept_volume) {
 		auto fk = forwardKinematics(robot, st.joint_values, 0, st.base_tf);
 
 		// update.
-		vizualisation::update_robot_state(robot, fk, robot_viz);
+		visualization::update_robot_state(robot, fk, robot_viz);
 	});
 
 	viewer.addActor(visualization.getActor());

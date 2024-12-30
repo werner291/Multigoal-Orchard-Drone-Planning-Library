@@ -153,7 +153,7 @@ REGISTER_VISUALIZATION(probing_fullpath) {
 	viewer.addActor(chull_viz.getActor());
 
 	// Visualize the initial state of the robot
-	auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot,
+	auto robot_viz = mgodpl::visualization::vizualize_robot_state(viewer, robot,
 																  robot_model::forwardKinematics(
 																		  robot, initial_state.joint_values,
 																		  flying_base, initial_state.base_tf));
@@ -215,7 +215,7 @@ REGISTER_VISUALIZATION(probing_fullpath) {
 
 using namespace mgodpl;
 using namespace visualization;
-using namespace vizualisation; // Grr, need to check spelling.
+using namespace visualization; // Grr, need to check spelling.
 
 REGISTER_VISUALIZATION(probing_isolated) {
 
@@ -441,7 +441,7 @@ REGISTER_VISUALIZATION(static_goals_and_motions) {
 			// Visualize the goal state; change the color to highlight ones that don't have a probing motion:
 			math::Vec3d robot_color = goalAndMotions[i].probingMotion.has_value() ? math::Vec3d{0.5, 0.5, 0.5}
 																				  : math::Vec3d{1, 0, 0};
-			auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot, fk, robot_color);
+			auto robot_viz = mgodpl::visualization::vizualize_robot_state(viewer, robot, fk, robot_color);
 
 			if (goalAndMotions[i].probingMotion.has_value()) {
 				const auto &motion = goalAndMotions[i].probingMotion.value();
@@ -449,7 +449,7 @@ REGISTER_VISUALIZATION(static_goals_and_motions) {
 				// Visualize the probing motion
 				auto fk = robot_model::forwardKinematics(robot, motion.end());
 
-				auto robot_viz = mgodpl::vizualisation::vizualize_robot_state(viewer, robot, fk, {0, 1, 0});
+				auto robot_viz = mgodpl::visualization::vizualize_robot_state(viewer, robot, fk, {0, 1, 0});
 
 				auto volume = swept_volume_triangles(robot, motion.states.front(), motion.states.back(), 1);
 

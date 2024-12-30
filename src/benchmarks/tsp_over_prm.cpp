@@ -61,7 +61,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	std::vector<std::pair<RobotState, bool> > recent_samples;
 	std::optional<RobotPath> final_path;
 	PathPoint final_path_point = {0, 0};
-	std::optional<vizualisation::RobotActors> final_path_follower;
+	std::optional<visualization::RobotActors> final_path_follower;
 
 	// Create a tree model.
 	experiments::TreeModelCache cache;
@@ -110,7 +110,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 	fcl::CollisionObjectd tree_collision(fcl_utils::meshToFclBVH(tree.tree_model->meshes.trunk_mesh));
 
 	// The actors for the last-vizualized robot configuration sample(s), so we can remove them later.
-	std::vector<vizualisation::RobotActors> sample_viz;
+	std::vector<visualization::RobotActors> sample_viz;
 
 	// Look up the link IDs for the base and end effector.
 	robot_model::RobotModel::LinkId base_link = robot.findLinkByName("flying_base");
@@ -237,7 +237,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 										auto fk = forwardKinematics(robot, state.joint_values, 0, state.base_tf);
 
 										// Visualize the robot state.
-										sample_viz.push_back(vizualisation::vizualize_robot_state(viewer, robot, fk, color));
+										sample_viz.push_back(visualization::vizualize_robot_state(viewer, robot, fk, color));
 									}
 
 									// update the edges:
@@ -250,7 +250,7 @@ REGISTER_VISUALIZATION(tsp_over_prm) {
 											visualize_ladder_trace(robot, *final_path, viewer);
 
 											// Set up the final path follower.
-											final_path_follower = vizualisation::vizualize_robot_state(
+											final_path_follower = visualization::vizualize_robot_state(
 													viewer,
 													robot,
 													robot_model::forwardKinematics(robot, start_state.joint_values, 0, start_state.base_tf),
