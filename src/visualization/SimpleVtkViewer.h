@@ -9,6 +9,7 @@
 #include <vtkNew.h>
 #include <functional>
 #include <optional>
+#include <thread>
 
 #include "../math/Vec3.h"
 
@@ -39,6 +40,10 @@ namespace mgodpl {
 
 	namespace tree_meshes {
 		struct TreeMeshes;
+	}
+
+	namespace visualization {
+		class ThrottledRunQueue;
 	}
 
 	struct SimplifiedOrchard;
@@ -175,6 +180,22 @@ namespace mgodpl {
 		 * @param callback 		The callback to add.
 		 */
 		void addTimerCallback(std::function<void()> callback);
+
+		/**
+		 * Runs a "puppeteer" thread that can control the viewer, auto-stopping it when done.
+		 *
+		 * Sometimes, it is nicer to control the viewer from a separate thread, creating, destroying and modifying actors
+		 * in a step-by-step manner, rather than from a timer callback whereby the state must be tracked manually
+		 * through a series of variables.
+		 *
+		 * Note: the puppeteer thread is a separate thread from the main thread; the viewer should not be accessed
+		 * except through the provided ThrottledRunQueue.
+		 *
+		 * Once the thread is done, the viewer will be stopped.
+		 *
+		 * @param f The callback function to run in the puppeteer thread.
+		 */
+		void run_puppeteer_thread(const std::function<void(visualization::ThrottledRunQueue &)> &f);
 
 		/**
 		 * Start rendering the scene; won't return until the user closes the window,

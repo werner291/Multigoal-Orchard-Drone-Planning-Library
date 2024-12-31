@@ -23,6 +23,8 @@
 #include "../math/Transform.h"
 #include "../experiment_utils/shapes.h"
 
+import visualization.ThrottledRunQueue;
+
 namespace mgodpl {
 	using namespace math;
 
@@ -71,6 +73,26 @@ namespace mgodpl {
 		cb->setEventId(vtkCommand::TimerEvent);
 		cb->setCallback(callback);
 		renderWindowInteractor->AddObserver(vtkCommand::TimerEvent, cb);
+	}
+
+	void SimpleVtkViewer::run_puppeteer_thread(const std::function<void(visualization::ThrottledRunQueue &)> &f) {
+		visualization::ThrottledRunQueue queue;
+
+		std::thread update_thread([&]() {
+			f(queue);
+			queue.run_main_void([](SimpleVtkViewer &viewer) {
+				viewer.stop();
+			});
+		});
+
+		addTimerCallback([&] {
+			queue.run_queue.run_all(*this);
+			queue.throttle.allow_advance();
+		});
+
+		start();
+
+		update_thread.join();
 	}
 
 	void SimpleVtkViewer::start() {
