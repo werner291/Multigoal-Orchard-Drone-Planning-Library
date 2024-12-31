@@ -14,6 +14,7 @@
 #include "../visualization/visualization_function_macros.h"
 #include "../experiment_utils/scan_path_generators.h"
 #include "../visualization/scannable_points.h"
+#include "../experiment_utils/SensorModel.h"
 
 using namespace mgodpl;
 
@@ -219,53 +220,6 @@ REGISTER_VISUALIZATION(visualize_sphere_samples) {
 }
 
 /**
- * A sensor model `SensorModelParameters` is defined by a tuple of real-valued parameters `(min_distance, max_distance, fov_angle, surface_max_angle)`, where:
- *
- * Given sensor model parameters `SensorModelParameters` and inputs:
- *
- * - `(eye_pos, eye_forward)`: Sensor position and direction, derived from a configuration by forward kinematics.
- * - `(point.position, point.normal)`: Surface point and normal vector.
- *
- * TODO: This is redundant with ScalarModelParameters, consider merging them.
- */
-struct SensorModelParameters {
-    double min_distance = 0.0;
-    double max_distance = INFINITY;
-    double surface_max_angle = M_PI / 2.0;
-    double fov_angle = M_PI / 2.0;
-
-    /**
-     * Checks if a given surface point is visible from a specified eye position and direction.
-     *
-     * @param eye_pos The position of the eye (sensor).
-     * @param eye_forward The forward direction vector of the eye (sensor).
-     * @param point The surface point to check visibility for.
-     * @return True if the point is visible, false otherwise.
-     */
-    [[nodiscard]] bool is_visible(
-        math::Vec3d eye_pos,
-        math::Vec3d eye_forward,
-        const SurfacePoint &point) const {
-        math::Vec3d delta = eye_pos - point.position;
-        double distance = delta.norm();
-
-        return distance <= max_distance &&
-               distance >= min_distance &&
-               std::acos(point.normal.dot(delta) / distance) <= surface_max_angle &&
-               std::acos(eye_forward.dot(-delta) / distance) <= fov_angle;
-    }
-
-    [[nodiscard]] Json::Value toJson() const {
-        Json::Value json;
-        json["min_distance"] = min_distance;
-        json["max_distance"] = max_distance;
-        json["surface_max_angle"] = surface_max_angle;
-        json["fov_angle"] = fov_angle;
-        return json;
-    }
-};
-
-/**
  * @struct ParametricPathEval
  * @brief Structure to hold the evaluation results of a parametric path.
  */
@@ -318,7 +272,7 @@ struct ParametricPathEval {
 ParametricPathEval evaluate_path(
     const ParametricPath &path,
     const std::vector<SurfacePoint> &points,
-    const SensorModelParameters &sensor_model,
+    const experiments::SensorModelParameters &sensor_model,
     size_t num_samples) {
     const math::Vec3d LOOK_AT{0.0, 0.0, 0.0}; ///< The point to look at (origin).
 
@@ -384,7 +338,7 @@ REGISTER_BENCHMARK(sphere_sampling_orbit_radii) {
                             : sample_points_on_sphere(rng, num_points, TARGET_RADIUS);
 
     // Keep it simple: infinite distance, 180 degree field of view, 90 degree surface angle
-    const SensorModelParameters sensor_model{
+    const experiments::SensorModelParameters sensor_model{
         .min_distance = 0.0,
         .max_distance = INFINITY,
         .surface_max_angle = M_PI / 2.0,
@@ -418,7 +372,7 @@ REGISTER_BENCHMARK(sphere_sampling_orbit_radii) {
 
 void visualize_paths(
     const std::vector<mgodpl::ParametricPath> &path,
-    const SensorModelParameters &sensor_model,
+    const experiments::SensorModelParameters &sensor_model,
     SimpleVtkViewer &viewer) {
     // Initialize the random number generator
     random_numbers::RandomNumberGenerator rng(42);
@@ -539,7 +493,7 @@ REGISTER_VISUALIZATION(scan_latitude_oscillation_sphere) {
     }
 
     // Keep it simple: infinite distance, 180 degree field of view, 90 degree surface angle
-    const SensorModelParameters sensor_model{
+    const experiments::SensorModelParameters sensor_model{
         .min_distance = 0.0,
         .max_distance = INFINITY,
         .surface_max_angle = M_PI / 2.0,
@@ -565,7 +519,7 @@ REGISTER_VISUALIZATION(scan_latitude_oscillation_sphere_limited_angle) {
     }
 
     // Keep it simple: infinite distance, 180 degree field of view, 90 degree surface angle
-    const SensorModelParameters sensor_model{
+    const experiments::SensorModelParameters sensor_model{
         .min_distance = 0.0,
         .max_distance = INFINITY,
         .surface_max_angle = 0.5 * M_PI / 2.0,
@@ -606,7 +560,7 @@ REGISTER_BENCHMARK(sphere_scan_euclidean_paths_limited_angle) {
     const std::array radii_factors = {1.5, 2.0, 3.0, 4.0, 5.0, 10.0, 20.0};
 
     // Keep it simple: infinite distance, 180 degree field of view, 90-degree surface angle
-    const SensorModelParameters sensor_model{
+    const experiments::SensorModelParameters sensor_model{
         .min_distance = 0.0,
         .max_distance = INFINITY,
         .surface_max_angle = 0.5 * M_PI / 2.0,
@@ -695,7 +649,7 @@ REGISTER_BENCHMARK(sphere_scan_euclidean_paths_limited_angle) {
 
 REGISTER_VISUALIZATION(scan_spiral_sphere) {
     // Keep it simple: infinite distance, 180 degree field of view, 90 degree surface angle
-    const SensorModelParameters sensor_model{
+    const experiments::SensorModelParameters sensor_model{
         .min_distance = 0.0,
         .max_distance = INFINITY,
         .surface_max_angle = M_PI / 2.0,

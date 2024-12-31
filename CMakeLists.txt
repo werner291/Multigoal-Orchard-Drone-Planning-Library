@@ -325,6 +325,8 @@ if (ENABLE_EXPERIMENTS)
             src/experiment_utils/declarative/local_optimization.h
             src/experiment_utils/tree_benchmark_data.cpp
             src/experiment_utils/tree_benchmark_data.h
+            src/experiment_utils/SensorModel.cpp
+            src/experiment_utils/SensorModel.h
     )
 
     target_compile_definitions(experiment_utils PRIVATE MYSOURCE_ROOT="${CMAKE_SOURCE_DIR}")
