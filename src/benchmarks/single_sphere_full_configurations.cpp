@@ -152,8 +152,8 @@ using ScanEmbedFn = std::function<RobotState(const ViewPoint &)>;
 void visualize_embed_fn(SimpleVtkViewer &viewer, const ScanEmbedFn &embed, const robot_model::RobotModel &robot) {
 	const math::Vec3d target_position = {0.0, 0.0, 0.0};
 
-	// Create a grey sphere with radius 0.05 at the origin.
-	viewer.addSphere(0.05, target_position, {0.8, 0.8, 0.8}, 1.0, 32);
+	// Create a grey sphere with radius TARGET_RADIUS at the origin.
+	viewer.addSphere(TARGET_RADIUS, target_position, {0.8, 0.8, 0.8}, 1.0, 32);
 
 	const RobotState initial_state = embed({target_position, {-1.0, 0.0, 0.0}});
 	auto robot_actors = visualization::vizualize_robot_state(viewer, robot, initial_state);
@@ -161,7 +161,7 @@ void visualize_embed_fn(SimpleVtkViewer &viewer, const ScanEmbedFn &embed, const
 	VtkPolyLineVisualization eye_positions_visualization(1, 0, 0);
 	viewer.addActor(eye_positions_visualization.getActor());
 
-	constexpr double SCAN_DISTANCE = 0.5;
+	constexpr double SCAN_DISTANCE = TARGET_RADIUS * 3.0;
 
 	const std::array<ParametricPath, 3> PATHS = {
 		// Equatorial orbit:
