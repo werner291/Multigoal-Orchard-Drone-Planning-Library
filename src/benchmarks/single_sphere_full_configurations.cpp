@@ -22,7 +22,7 @@ import visualization.ThrottledRunQueue;
 
 using namespace mgodpl;
 
-const double TARGET_RADIUS = 0.05;
+constexpr double TARGET_RADIUS = 0.1;
 
 REGISTER_VISUALIZATION(single_start_straight_arm_single_target) {
 	// Create a random number generator.
