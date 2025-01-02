@@ -198,9 +198,11 @@ void visualize_embed_fn(SimpleVtkViewer &viewer, const ScanEmbedFn &embed, const
 				eye_positions_visualization.updateLine(path_points);
 			});
 
+			const size_t num_points = 200;
+
 			// Then, animate the robot along the path:
-			for (size_t i = 0; i < 100; ++i) {
-				const double t = static_cast<double>(i) / 100.0;
+			for (size_t i = 0; i < num_points; ++i) {
+				const double t = static_cast<double>(i) / static_cast<double>(num_points - 1);
 
 				math::Vec3d position = path(t);
 				math::Vec3d view_direction = target_position - position;
