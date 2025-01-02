@@ -233,3 +233,49 @@ REGISTER_VISUALIZATION(embed_facing_straightarm) {
 
 	visualize_embed_fn(viewer, embed, robot);
 }
+
+REGISTER_VISUALIZATION(embed_straightarm_alwaysforward) {
+	// Create a random number generator.
+	random_numbers::RandomNumberGenerator rng(42);
+
+	robot_model::RobotModel robot = experiments::createProceduralRobotModel({
+		.total_arm_length = 1.0,
+		.joint_types = {
+			experiments::JointType::HORIZONTAL,
+		},
+		.add_spherical_wrist = false
+	});
+
+	const ScanEmbedFn embed = [&](const ViewPoint &vp) {
+		// We have two cases: one case where the point is behind the sphere, and one where it is not.
+
+		constexpr double EFFECTIVE_TARGET_RADIUS = TARGET_RADIUS + 0.05; // Account for the thickness of the arm.
+
+		// The object is considered "behind" the sphere if its distance from the negative X axis (starting from the sphere's center) is greater than the radius of the sphere.
+		const bool behind = vp.position[0] < 0.0;
+		const bool near_axis = (std::pow(vp.position.y(), 2.0) + std::pow(vp.position.z(), 2.0)) < pow(
+			                       EFFECTIVE_TARGET_RADIUS,
+			                       2.0);
+
+		if (behind && near_axis) {
+			// If the object is behind the sphere, we want to set the direction so that the robot doesn't collide with the sphere.
+
+			math::Vec3d ref_point = vp.position;
+			// Cancel out the X component of the reference point.
+			ref_point[0] = 0.0;
+			// Normalize the reference point
+			ref_point.normalize();
+			// Rescale the reference point to the sphere's radius.
+			ref_point *= EFFECTIVE_TARGET_RADIUS;
+			// The arm facing direction is from the vp.position to the reference point.
+			math::Vec3d arm_direction = ref_point - vp.position;
+
+			return fromEndEffectorAndVector(robot, vp.position, arm_direction);
+		} else {
+			// If the object is not behind the sphere, we want to face forward.
+			return fromEndEffectorAndVector(robot, vp.position, {1.0, 0.0, 0.0});
+		}
+	};
+
+	visualize_embed_fn(viewer, embed, robot);
+}
