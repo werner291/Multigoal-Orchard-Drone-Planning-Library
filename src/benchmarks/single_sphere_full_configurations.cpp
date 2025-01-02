@@ -185,7 +185,7 @@ void visualize_embed_fn(SimpleVtkViewer &viewer, const ScanEmbedFn &embed, const
 	};
 
 	viewer.run_puppeteer_thread([&](visualization::ThrottledRunQueue &queue) {
-		viewer.setCameraTransform({0.0, 8.0, 4.0}, {0.0, 0.0, 0.0});
+		viewer.setCameraTransform({0.0, 6.0, 3.0}, {0.0, 0.0, 0.0});
 
 		for (const ParametricPath &path: PATHS) {
 			// First, visualise a trace of the path we'll follow:
