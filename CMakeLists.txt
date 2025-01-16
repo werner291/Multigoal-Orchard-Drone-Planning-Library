@@ -466,6 +466,7 @@ if (ENABLE_EXPERIMENTS)
             src/benchmarks/from_end_effector_and_vector.cpp
             src/benchmarks/tree_complexity_metrics.cpp
             src/benchmarks/single_sphere_full_configurations.cpp
+            src/experiments/swaying_tree_branches.cpp
     )
 
     target_link_libraries(experiments math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
