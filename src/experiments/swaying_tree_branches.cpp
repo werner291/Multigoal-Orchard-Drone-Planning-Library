@@ -70,10 +70,34 @@ void close_holes(CMesh &polyhedron) {
 	}
 }
 
+#include <CGAL/Polygon_mesh_processing/orientation.h>
+
+void separate_and_union_components(CMesh &polyhedron) {
+	if (!PMP::is_outward_oriented(polyhedron)) {
+		PMP::reverse_face_orientations(polyhedron);
+	}
+
+	// Separate connected components
+	std::vector<CMesh> components;
+
+	PMP::split_connected_components(polyhedron, components);
+
+	// Compute the union of all components
+	CMesh &union_mesh = components[0];
+	for (std::size_t i = 1; i < components.size(); ++i) {
+		// Docs: "If tm_out is one of the input surface meshes, it will be updated to contain the output (in-place operation)[...]"
+		bool success = PMP::corefine_and_compute_union(union_mesh, components[i], union_mesh);
+		if (!success) {
+			std::cerr << "Union of components " << i << " and " << i + 1 << " failed." << std::endl;
+		}
+	}
+
+	polyhedron = union_mesh;
+}
 
 REGISTER_VISUALIZATION(tree_skeletonization) {
 	// Load the apple tree trunk model:
-	auto trunk = tree_meshes::loadTreeMeshes("appletree").trunk_mesh;
+	auto trunk = tree_meshes::loadTreeMeshes("appletree1").trunk_mesh;
 
 	// Convert the tree trunk mesh to a CGAL surface mesh:
 	SMesh cgal_mesh = convert_to_cgal_surface_mesh(trunk);
@@ -86,15 +110,16 @@ REGISTER_VISUALIZATION(tree_skeletonization) {
 	// collect one halfedge per boundary cycle
 	close_holes(polyhedron);
 
+	separate_and_union_components(polyhedron);
 
-	Skeleton skeleton;
 	Skeletonization mcs(polyhedron);
 
 	// Iteratively apply step 1 to 3 until convergence.
 	mcs.contract_until_convergence();
 
-
 	// Convert the contracted mesh into a curve skeleton and
+	Skeleton skeleton;
+
 	// get the correspondent surface points
 	mcs.convert_to_skeleton(skeleton);
 
@@ -117,7 +142,7 @@ REGISTER_VISUALIZATION(tree_skeletonization) {
 
 	Mesh trunk_mesh = convert_from_cgal_surface_mesh(cgal_mesh_back);
 
-	viewer.addMesh(trunk_mesh, {0.5, 0.5, 0.5}, 0.1);
+	viewer.addMesh(trunk_mesh, {0.5, 0.5, 0.5}, 0.5);
 
 	viewer.start();
 }
