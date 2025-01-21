@@ -293,10 +293,32 @@ mgodpl::Mesh ground_plane_2(double size) {
 	return ground;
 }
 
+std::vector<Skeleton::vertex_descriptor> find_closest_skeleton_vertices(
+	const Mesh &trunk_mesh,
+	const Skeleton &skeleton) {
+	std::vector<Skeleton::vertex_descriptor> skeleton_attachment;
+	skeleton_attachment.reserve(trunk_mesh.vertices.size());
+	for (const auto &vertex: trunk_mesh.vertices) {
+		math::Vec3d trunk_vertex(vertex.x(), vertex.y(), vertex.z());
+		double min_distance = std::numeric_limits<double>::max();
+		Skeleton::vertex_descriptor closest_vertex;
+		for (std::size_t i = 0; i < num_vertices(skeleton); ++i) {
+			math::Vec3d skeleton_vertex(skeleton[i].point.x(), skeleton[i].point.y(), skeleton[i].point.z());
+			double distance = (trunk_vertex - skeleton_vertex).norm();
+			if (distance < min_distance) {
+				min_distance = distance;
+				closest_vertex = i;
+			}
+		}
+		skeleton_attachment.push_back(closest_vertex);
+	}
+	return skeleton_attachment;
+}
 
 REGISTER_VISUALIZATION(tree_skeleton_animation) {
+	const auto meshes = tree_meshes::loadTreeMeshes("appletree1");
 	// Load the apple tree trunk model:
-	auto trunk = tree_meshes::loadTreeMeshes("appletree1").trunk_mesh;
+	const auto trunk = meshes.trunk_mesh;
 
 	// Convert the tree trunk mesh to a CGAL surface mesh:
 	SMesh cgal_mesh = convert_to_cgal_surface_mesh(trunk);
@@ -346,23 +368,8 @@ REGISTER_VISUALIZATION(tree_skeleton_animation) {
 
 	Mesh trunk_mesh = convert_from_cgal_surface_mesh(cgal_mesh_back);
 
-	std::vector<Skeleton::vertex_descriptor> skeleton_attachment;
-	skeleton_attachment.reserve(trunk_mesh.vertices.size());
-	// For each trunk vertex, find the closest skeleton vertex:
-	for (const auto &vertex: trunk_mesh.vertices) {
-		math::Vec3d trunk_vertex(vertex.x(), vertex.y(), vertex.z());
-		double min_distance = std::numeric_limits<double>::max();
-		Skeleton::vertex_descriptor closest_vertex;
-		for (std::size_t i = 0; i < num_vertices(skeleton); ++i) {
-			math::Vec3d skeleton_vertex(skeleton[i].point.x(), skeleton[i].point.y(), skeleton[i].point.z());
-			double distance = (trunk_vertex - skeleton_vertex).norm();
-			if (distance < min_distance) {
-				min_distance = distance;
-				closest_vertex = i;
-			}
-		}
-		skeleton_attachment.push_back(closest_vertex);
-	}
+	auto skeleton_attachment = find_closest_skeleton_vertices(trunk_mesh, skeleton);
+	auto leaves_skeleton_attachment = find_closest_skeleton_vertices(meshes.leaves_mesh, skeleton);
 
 	viewer.lockCameraUp();
 
@@ -371,6 +378,7 @@ REGISTER_VISUALIZATION(tree_skeleton_animation) {
 	viewer.setCameraTransform({3.0, 4.0, 2.0}, {0.0, 0.0, 1.5});
 
 	std::optional<vtkActor *> deformed_trunk_mesh_actor;
+	std::optional<vtkActor *> deformed_leaves_mesh_actor;
 
 	double t = 0.0;
 	viewer.addTimerCallback([&] {
@@ -398,21 +406,35 @@ REGISTER_VISUALIZATION(tree_skeleton_animation) {
 			lines.push_back(std::make_pair(v1, v2));
 		}
 
-		skeleton_viz.updateLine(lines);
+		skeleton_viz.updateLine(lines); {
+			Mesh trunk_mesh_deformed = trunk_mesh;
+			for (std::size_t i = 0; i < trunk_mesh.vertices.size(); ++i) {
+				math::Vec3d trunk_vertex = trunk_mesh.vertices[i];
+				math::Vec3d skeleton_vertex = toVec3d(skeleton[skeleton_attachment[i]].point);
 
-		Mesh trunk_mesh_deformed = trunk_mesh;
-		for (std::size_t i = 0; i < trunk_mesh.vertices.size(); ++i) {
-			math::Vec3d trunk_vertex = trunk_mesh.vertices[i];
-			math::Vec3d skeleton_vertex = toVec3d(skeleton[skeleton_attachment[i]].point);
+				math::Vec3d delta = skeleton_vertex - trunk_vertex;
+				trunk_mesh_deformed.vertices[i] = new_points[skeleton_attachment[i]] - delta;
+			}
 
-			math::Vec3d delta = skeleton_vertex - trunk_vertex;
-			trunk_mesh_deformed.vertices[i] = new_points[skeleton_attachment[i]] - delta;
+			if (deformed_trunk_mesh_actor) {
+				viewer.removeActor(*deformed_trunk_mesh_actor);
+			}
+			deformed_trunk_mesh_actor = viewer.addMesh(trunk_mesh_deformed, WOOD_COLOR, 1.0);
+		} {
+			Mesh trunk_mesh_deformed = meshes.leaves_mesh;
+			for (std::size_t i = 0; i < meshes.leaves_mesh.vertices.size(); ++i) {
+				math::Vec3d trunk_vertex = meshes.leaves_mesh.vertices[i];
+				math::Vec3d skeleton_vertex = toVec3d(skeleton[leaves_skeleton_attachment[i]].point);
+
+				math::Vec3d delta = skeleton_vertex - trunk_vertex;
+				trunk_mesh_deformed.vertices[i] = new_points[leaves_skeleton_attachment[i]] - delta;
+			}
+
+			if (deformed_leaves_mesh_actor) {
+				viewer.removeActor(*deformed_leaves_mesh_actor);
+			}
+			deformed_leaves_mesh_actor = viewer.addMesh(trunk_mesh_deformed, LEAF_COLOR, 1.0);
 		}
-
-		if (deformed_trunk_mesh_actor) {
-			viewer.removeActor(*deformed_trunk_mesh_actor);
-		}
-		deformed_trunk_mesh_actor = viewer.addMesh(trunk_mesh_deformed, WOOD_COLOR, 0.5);
 
 		if (t > 30 && viewer.isRecording()) {
 			viewer.stop();
