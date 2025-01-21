@@ -14,6 +14,9 @@
 #include <CGAL/Polygon_mesh_processing/connected_components.h>
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 
+#include "../experiment_utils/default_colors.h"
+#include "../math/Quaternion.h"
+
 namespace PMP = CGAL::Polygon_mesh_processing;
 #include "../visualization/visualization_function_macros.h"
 #include "../experiment_utils/TreeMeshes.h"
@@ -291,7 +294,7 @@ mgodpl::Mesh ground_plane_2(double size) {
 }
 
 
-REGISTER_VISUALIZATION(tree_skeletonization) {
+REGISTER_VISUALIZATION(tree_skeleton_animation) {
 	// Load the apple tree trunk model:
 	auto trunk = tree_meshes::loadTreeMeshes("appletree1").trunk_mesh;
 
@@ -320,10 +323,10 @@ REGISTER_VISUALIZATION(tree_skeletonization) {
 	mcs.convert_to_skeleton(skeleton);
 
 	// Find the point closest to 0:
-	Skeleton_vertex closest_vertex = find_lowest_point(skeleton);
+	Skeleton_vertex skeleton_root = find_lowest_point(skeleton);
 
 	// Perform Dijkstra's algorithm on the skeleton to find the shortest paths from the closest vertex
-	const auto &[distances, predecessors] = dijkstra_skeleton(skeleton, closest_vertex);
+	const auto &[distances, predecessors] = dijkstra_skeleton(skeleton, skeleton_root);
 
 	// Find the maximum Dijkstra distance
 	double max_dijkstra_distance = *std::ranges::max_element(distances);
@@ -334,77 +337,59 @@ REGISTER_VISUALIZATION(tree_skeletonization) {
 	// Compute the deltas between each vertex and its predecessor in the shortest path tree
 	auto rest_deltas = compute_deltas(skeleton, predecessors);
 
-
 	VtkLineSegmentsVisualization skeleton_viz(1, 0, 0);
-	viewer.addActor(skeleton_viz.getActor());
+	// viewer.addActor(skeleton_viz.getActor());
 
+	// Convert it back from the polyhedron:
+	SMesh cgal_mesh_back;
+	CGAL::copy_face_graph(polyhedron, cgal_mesh_back);
 
-	// // Convert it back from the polyhedron:
-	// SMesh cgal_mesh_back;
-	// CGAL::copy_face_graph(polyhedron, cgal_mesh_back);
-	//
-	// Mesh trunk_mesh = convert_from_cgal_surface_mesh(cgal_mesh_back);
-	//
-	// // For each vertex in the mesh, find the Dijkstra distance to the lowest point:
-	// std::vector<double> dijkstra_distances;
-	// dijkstra_distances.reserve(trunk_mesh.vertices.size());
-	// for (const auto &vertex: trunk_mesh.vertices) {
-	// 	double dijkstra_distance = find_dijkstra_distance(skeleton, vertex, distances);
-	// 	dijkstra_distances.push_back(dijkstra_distance);
-	// }
-	// double max_dijkstra_distance = *std::ranges::max_element(dijkstra_distances);
+	Mesh trunk_mesh = convert_from_cgal_surface_mesh(cgal_mesh_back);
 
-	// // At every vertex, add a sphere with radius proportional to dijkstra_distance / max_dijkstra_distance:
-	// for (std::size_t i = 0; i < trunk_mesh.vertices.size(); ++i) {
-	// 	viewer.addSphere(0.1 * dijkstra_distances[i] / max_dijkstra_distance, trunk_mesh.vertices[i], {0, 1, 0}, 4);
-	// }
-
-	// Mesh trunk_mesh_deformed = trunk_mesh;
-	// for (std::size_t i = 0; i < trunk_mesh.vertices.size(); ++i) {
-	// 	trunk_mesh_deformed.vertices[i] = trunk_mesh.vertices[i] + math::Vec3d(
-	// 		                                  0,
-	// 		                                  0,
-	// 		                                  dijkstra_distances[i] / max_dijkstra_distance);
-	// }
-
-	// viewer.addMesh(trunk_mesh, {0.5, 0.5, 0.5}, 0.5);
-	// viewer.addMesh(trunk_mesh_deformed, {1.0, 0.0, 1.0}, 0.5);
+	std::vector<Skeleton::vertex_descriptor> skeleton_attachment;
+	skeleton_attachment.reserve(trunk_mesh.vertices.size());
+	// For each trunk vertex, find the closest skeleton vertex:
+	for (const auto &vertex: trunk_mesh.vertices) {
+		math::Vec3d trunk_vertex(vertex.x(), vertex.y(), vertex.z());
+		double min_distance = std::numeric_limits<double>::max();
+		Skeleton::vertex_descriptor closest_vertex;
+		for (std::size_t i = 0; i < num_vertices(skeleton); ++i) {
+			math::Vec3d skeleton_vertex(skeleton[i].point.x(), skeleton[i].point.y(), skeleton[i].point.z());
+			double distance = (trunk_vertex - skeleton_vertex).norm();
+			if (distance < min_distance) {
+				min_distance = distance;
+				closest_vertex = i;
+			}
+		}
+		skeleton_attachment.push_back(closest_vertex);
+	}
 
 	viewer.lockCameraUp();
 
-	viewer.addMesh(ground_plane_2(10), {0.8, 0.8, 0.8}, 1.0);
+	viewer.addMesh(ground_plane_2(10), {0.4, 0.8, 0.4}, 1.0);
 
-	viewer.setCameraTransform({1.0, 5.0, 2.5}, {0.0, 0.0, 1.5});
+	viewer.setCameraTransform({3.0, 4.0, 2.0}, {0.0, 0.0, 1.5});
+
+	std::optional<vtkActor *> deformed_trunk_mesh_actor;
 
 	double t = 0.0;
 	viewer.addTimerCallback([&] {
 		t += 0.1;
-		math::Vec3d wind_direction(sin(t) * sin(t * 0.74) * (0.5 * 0.5 * sin(t * 0.1)), 0, 0);
-
-		std::vector<math::Vec3d> new_deltas;
-		new_deltas.reserve(num_vertices(skeleton));
-		// Ajust the deltas:
-		for (std::size_t i = 0; i < num_vertices(skeleton); ++i) {
-			double delta_length = rest_deltas[i].norm();
-			math::Vec3d delta = rest_deltas[i];
-			math::Vec3d new_delta = delta + wind_direction * delta_length * (distances[i] / max_dijkstra_distance);
-			// adjust the length:
-			new_delta = new_delta / new_delta.norm() * delta_length;
-			new_deltas.push_back(new_delta);
-		}
 
 		std::vector<math::Vec3d> new_points(num_vertices(skeleton));
 		new_points[hierarchical_order[0]] = toVec3d(skeleton.m_vertices[hierarchical_order[0]].m_property.point);
-		for (std::size_t i: std::ranges::subrange(hierarchical_order.begin() + 1, hierarchical_order.end())) {
-			new_points[i] = new_points[predecessors[i]] + new_deltas[i];
+		std::vector<math::Quaterniond> rotations(num_vertices(skeleton));
+		rotations[0] = math::Quaterniond::fromAxisAngle({1, 0, 0}, 0);
+		for (const std::size_t i: std::ranges::subrange(hierarchical_order.begin() + 1, hierarchical_order.end())) {
+			double r = sin(t) * sin(t * 0.74) * (0.5 * 0.5 * sin(t * 0.1));
+			r *= distances[i] / max_dijkstra_distance;
+			rotations[i] = math::Quaterniond::fromAxisAngle({1, 0, 0}, r);
 		}
 
-		// // At every skeleton vertex, put a sphere of radius proportional to the distance to the lowest point:
-		// auto [start, end] = vertices(skeleton);
-		// for (auto vertex = start; vertex != end; ++vertex) {
-		// 	math::Vec3d point(skeleton[*vertex].point.x(), skeleton[*vertex].point.y(), skeleton[*vertex].point.z());
-		// 	viewer.addSphere(0.1 * distances[*vertex] / max_dijkstra_distance, point, {0, 1, 0}, 4);
-		// }
+		new_points[hierarchical_order[0]] = toVec3d(skeleton.m_vertices[hierarchical_order[0]].m_property.point);
+		for (std::size_t i: std::ranges::subrange(hierarchical_order.begin() + 1, hierarchical_order.end())) {
+			new_points[i] = new_points[predecessors[i]] + rotations[i].rotate(rest_deltas[i]);
+		}
 
 		std::vector<std::pair<math::Vec3d, math::Vec3d> > lines;
 		for (const auto &edge: skeleton.m_edges) {
@@ -415,7 +400,21 @@ REGISTER_VISUALIZATION(tree_skeletonization) {
 
 		skeleton_viz.updateLine(lines);
 
-		if (t > 10 && viewer.isRecording()) {
+		Mesh trunk_mesh_deformed = trunk_mesh;
+		for (std::size_t i = 0; i < trunk_mesh.vertices.size(); ++i) {
+			math::Vec3d trunk_vertex = trunk_mesh.vertices[i];
+			math::Vec3d skeleton_vertex = toVec3d(skeleton[skeleton_attachment[i]].point);
+
+			math::Vec3d delta = skeleton_vertex - trunk_vertex;
+			trunk_mesh_deformed.vertices[i] = new_points[skeleton_attachment[i]] - delta;
+		}
+
+		if (deformed_trunk_mesh_actor) {
+			viewer.removeActor(*deformed_trunk_mesh_actor);
+		}
+		deformed_trunk_mesh_actor = viewer.addMesh(trunk_mesh_deformed, WOOD_COLOR, 0.5);
+
+		if (t > 30 && viewer.isRecording()) {
 			viewer.stop();
 		}
 	});
