@@ -51,41 +51,6 @@ SMesh convert_to_cgal_surface_mesh(const Mesh &mesh) {
 	return cgal_mesh;
 }
 
-/**
- * Converts a CGAL Surface_mesh to a custom Mesh object.
- *
- * @param cgal_mesh The CGAL Surface_mesh object.
- * @return A custom Mesh object representing the trunk.
- */
-Mesh convert_from_cgal_surface_mesh(const SMesh &cgal_mesh) {
-	// Allocate a new Mesh object:
-	Mesh trunk_mesh;
-
-	// Copy the vertices 1-to-1, converting them to our custom Vec3d type:
-	trunk_mesh.vertices.reserve(cgal_mesh.number_of_vertices());
-	for (const auto &vertex: cgal_mesh.vertices()) {
-		trunk_mesh.vertices.push_back({
-			cgal_mesh.point(vertex).x(), cgal_mesh.point(vertex).y(), cgal_mesh.point(vertex).z()
-		});
-	}
-
-	// Also copy trinagles 1-to-1:
-	trunk_mesh.triangles.reserve(cgal_mesh.number_of_faces());
-	for (const auto &face: cgal_mesh.faces()) {
-		// We need to follow the halfedges around the face to get the vertices. We assume all faces are triangles.
-		auto [vitr,vend] = cgal_mesh.vertices_around_face(cgal_mesh.halfedge(face));
-		auto v1 = *vitr++;
-		auto v2 = *vitr++;
-		auto v3 = *vitr;
-
-		// Add the face:
-		trunk_mesh.triangles.push_back({v1.idx(), v2.idx(), v3.idx()});
-	}
-
-	// Return the new Mesh object:
-	return trunk_mesh;
-}
-
 using vertex_descriptor = boost::graph_traits<CMesh>::vertex_descriptor;
 using halfedge_descriptor = boost::graph_traits<CMesh>::halfedge_descriptor;
 using face_descriptor = boost::graph_traits<CMesh>::face_descriptor;
@@ -387,16 +352,9 @@ REGISTER_VISUALIZATION(tree_skeleton_animation) {
 	// Create a hierarchical order of the skeleton vertices based on the Dijkstra distances
 	auto hierarchical_order = create_hierarchical_order(skeleton, distances);
 
-	VtkLineSegmentsVisualization skeleton_viz(1, 0, 0);
-	// viewer.addActor(skeleton_viz.getActor());
+	// VtkLineSegmentsVisualization skeleton_viz(1, 0, 0);
 
-	// Convert it back from the polyhedron:
-	SMesh cgal_mesh_back;
-	CGAL::copy_face_graph(polyhedron, cgal_mesh_back);
-
-	Mesh trunk_mesh = convert_from_cgal_surface_mesh(cgal_mesh_back);
-
-	auto skeleton_attachment = find_closest_skeleton_vertices(trunk_mesh, skeleton);
+	auto skeleton_attachment = find_closest_skeleton_vertices(meshes.trunk_mesh, skeleton);
 	auto leaves_skeleton_attachment = find_closest_skeleton_vertices(meshes.leaves_mesh, skeleton);
 
 	viewer.lockCameraUp();
@@ -412,52 +370,55 @@ REGISTER_VISUALIZATION(tree_skeleton_animation) {
 	viewer.addTimerCallback([&] {
 		t += 0.1;
 
-		std::vector<math::Vec3d> new_points(num_vertices(skeleton));
-		new_points[hierarchical_order[0]] = toVec3d(skeleton.m_vertices[hierarchical_order[0]].m_property.point);
+		// Compute the "amount of deformation" based on the time;
+		// it's not any particularly physical model, just a combination of a few sines.
+		double r = sin(t) * sin(t * 0.74) * (0.5 * 0.5 * sin(t * 0.1));
+
+		// Compute the rotation applied at every skeleton point.
 		std::vector<math::Quaterniond> rotations(num_vertices(skeleton));
 		rotations[0] = math::Quaterniond::fromAxisAngle({1, 0, 0}, 0);
 		for (const std::size_t i: std::ranges::subrange(hierarchical_order.begin() + 1, hierarchical_order.end())) {
-			double r = sin(t) * sin(t * 0.74) * (0.5 * 0.5 * sin(t * 0.1));
+			// Adjust the amount of deformation based on the distance from the root:
 			r *= distances[i] / max_dijkstra_distance;
 			rotations[i] = math::Quaterniond::fromAxisAngle({1, 0, 0}, r);
 		}
 
+		// Compute the new points based on the rotations, which will have cascading effects,
+		// so we must process in hierarchical order:
+		std::vector<math::Vec3d> new_points(num_vertices(skeleton));
 		new_points[hierarchical_order[0]] = toVec3d(skeleton.m_vertices[hierarchical_order[0]].m_property.point);
 		for (std::size_t i: std::ranges::subrange(hierarchical_order.begin() + 1, hierarchical_order.end())) {
 			new_points[i] = new_points[predecessors[i]] + rotations[i].rotate(
 				                toVec3d(skeleton[i].point) - toVec3d(skeleton[predecessors[i]].point));
 		}
 
-		std::vector<std::pair<math::Vec3d, math::Vec3d> > lines;
-		for (const auto &edge: skeleton.m_edges) {
-			auto v1 = new_points[source(edge, skeleton)];
-			auto v2 = new_points[target(edge, skeleton)];
-			lines.push_back(std::make_pair(v1, v2));
+		// std::vector<std::pair<math::Vec3d, math::Vec3d> > lines;
+		// for (const auto &edge: skeleton.m_edges) {
+		// 	auto v1 = new_points[source(edge, skeleton)];
+		// 	auto v2 = new_points[target(edge, skeleton)];
+		// 	lines.push_back(std::make_pair(v1, v2));
+		// }
+		// skeleton_viz.updateLine(lines);
+
+		// Deform the trunk mesh based on the new points, and replace the actors:
+		if (deformed_trunk_mesh_actor) {
+			viewer.removeActor(*deformed_trunk_mesh_actor);
 		}
+		deformed_trunk_mesh_actor = viewer.addMesh(
+			deform_mesh(meshes.trunk_mesh, skeleton, skeleton_attachment, new_points),
+			WOOD_COLOR,
+			1.0);
 
-		skeleton_viz.updateLine(lines); {
-			Mesh trunk_mesh_deformed = deform_mesh(trunk_mesh, skeleton, skeleton_attachment, new_points);
-
-			if (deformed_trunk_mesh_actor) {
-				viewer.removeActor(*deformed_trunk_mesh_actor);
-			}
-			deformed_trunk_mesh_actor = viewer.addMesh(trunk_mesh_deformed, WOOD_COLOR, 1.0);
-		} {
-			Mesh trunk_mesh_deformed = meshes.leaves_mesh;
-			for (std::size_t i = 0; i < meshes.leaves_mesh.vertices.size(); ++i) {
-				math::Vec3d trunk_vertex = meshes.leaves_mesh.vertices[i];
-				math::Vec3d skeleton_vertex = toVec3d(skeleton[leaves_skeleton_attachment[i]].point);
-
-				math::Vec3d delta = skeleton_vertex - trunk_vertex;
-				trunk_mesh_deformed.vertices[i] = new_points[leaves_skeleton_attachment[i]] - delta;
-			}
-
-			if (deformed_leaves_mesh_actor) {
-				viewer.removeActor(*deformed_leaves_mesh_actor);
-			}
-			deformed_leaves_mesh_actor = viewer.addMesh(trunk_mesh_deformed, LEAF_COLOR, 1.0);
+		// Deform the leaves mesh based on the new points, and replace the actors:
+		if (deformed_leaves_mesh_actor) {
+			viewer.removeActor(*deformed_leaves_mesh_actor);
 		}
+		deformed_leaves_mesh_actor = viewer.addMesh(
+			deform_mesh(meshes.leaves_mesh, skeleton, leaves_skeleton_attachment, new_points),
+			LEAF_COLOR,
+			1.0);
 
+		// Auto-stop if we're recording and enough time has passed:
 		if (t > 30 && viewer.isRecording()) {
 			viewer.stop();
 		}
