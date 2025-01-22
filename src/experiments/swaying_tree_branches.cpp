@@ -370,17 +370,21 @@ REGISTER_VISUALIZATION(tree_skeleton_animation) {
 	viewer.addTimerCallback([&] {
 		t += 0.1;
 
-		// Compute the "amount of deformation" based on the time;
-		// it's not any particularly physical model, just a combination of a few sines.
-		double r = sin(t) * sin(t * 0.74) * (0.5 * 0.5 * sin(t * 0.1));
 
 		// Compute the rotation applied at every skeleton point.
 		std::vector<math::Quaterniond> rotations(num_vertices(skeleton));
 		rotations[0] = math::Quaterniond::fromAxisAngle({1, 0, 0}, 0);
 		for (const std::size_t i: std::ranges::subrange(hierarchical_order.begin() + 1, hierarchical_order.end())) {
+			double lt = skeleton[predecessors[i]].point.x() + t;
+
+			// Compute the "amount of deformation" based on the time;
+			// it's not any particularly physical model, just a combination of a few sines.
+			const double r = sin(lt) * sin(lt * 0.74) * (0.5 * 0.5 * sin(lt * 0.1)) * cos(
+				                 distances[i] / max_dijkstra_distance);
+
 			// Adjust the amount of deformation based on the distance from the root:
-			r *= distances[i] / max_dijkstra_distance;
-			rotations[i] = math::Quaterniond::fromAxisAngle({1, 0, 0}, r);
+			double r_local = r * pow(distances[i] / max_dijkstra_distance, 2);
+			rotations[i] = math::Quaterniond::fromAxisAngle({1, 0, 0}, r_local);
 		}
 
 		// Compute the new points based on the rotations, which will have cascading effects,
@@ -416,7 +420,7 @@ REGISTER_VISUALIZATION(tree_skeleton_animation) {
 		deformed_leaves_mesh_actor = viewer.addMesh(
 			deform_mesh(meshes.leaves_mesh, skeleton, leaves_skeleton_attachment, new_points),
 			LEAF_COLOR,
-			1.0);
+			0.5);
 
 		// Auto-stop if we're recording and enough time has passed:
 		if (t > 30 && viewer.isRecording()) {
