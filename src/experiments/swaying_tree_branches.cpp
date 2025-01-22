@@ -366,10 +366,22 @@ REGISTER_VISUALIZATION(tree_skeleton_animation) {
 	std::optional<vtkActor *> deformed_trunk_mesh_actor;
 	std::optional<vtkActor *> deformed_leaves_mesh_actor;
 
+	const auto fruit_centers = computeFruitPositions(meshes);
+
+	std::vector<vtkActor *> fruit_actors;
+	for (const auto &fruit_center: fruit_centers) {
+		fruit_actors.push_back(viewer.addSphere(0.05, fruit_center, {1.0, 0.0, 0.0}, 1.0));
+	}
+
+	std::vector<Skeleton::vertex_descriptor> fruit_skeleton_attachment;
+	fruit_skeleton_attachment.reserve(fruit_centers.size());
+	for (const auto &fruit_center: fruit_centers) {
+		fruit_skeleton_attachment.push_back(find_closest_vertex(fruit_center, skeleton));
+	}
+
 	double t = 0.0;
 	viewer.addTimerCallback([&] {
 		t += 0.1;
-
 
 		// Compute the rotation applied at every skeleton point.
 		std::vector<math::Quaterniond> rotations(num_vertices(skeleton));
@@ -420,7 +432,14 @@ REGISTER_VISUALIZATION(tree_skeleton_animation) {
 		deformed_leaves_mesh_actor = viewer.addMesh(
 			deform_mesh(meshes.leaves_mesh, skeleton, leaves_skeleton_attachment, new_points),
 			LEAF_COLOR,
-			0.5);
+			1.0);
+
+		for (std::size_t i = 0; i < fruit_centers.size(); ++i) {
+			math::Vec3d deformation_delta = new_points[fruit_skeleton_attachment[i]] - toVec3d(
+				                                skeleton[fruit_skeleton_attachment[i]].point);
+			math::Vec3d new_fruit_center = fruit_centers[i] + deformation_delta;
+			fruit_actors[i]->SetPosition(new_fruit_center.x(), new_fruit_center.y(), new_fruit_center.z());
+		}
 
 		// Auto-stop if we're recording and enough time has passed:
 		if (t > 30 && viewer.isRecording()) {
