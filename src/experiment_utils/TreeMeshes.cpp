@@ -51,7 +51,7 @@ namespace mgodpl::tree_meshes {
 				.erase(std::remove_if(meshes.fruit_meshes.begin(),
 				                      meshes.fruit_meshes.end(),
 				                      [](const auto &mesh) {
-					                      return mesh.vertices.size() <= 5;
+					                      return mesh.vertices.size() <= 20;
 				                      }),
 				       meshes.fruit_meshes.end());
 
