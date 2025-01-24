@@ -467,6 +467,7 @@ if (ENABLE_EXPERIMENTS)
             src/benchmarks/tree_complexity_metrics.cpp
             src/benchmarks/single_sphere_full_configurations.cpp
             src/experiments/swaying_tree_branches.cpp
+            src/experiments/scan_fullpath.cpp
     )
 
     target_link_libraries(experiments math_utils ${PROJECT_NAME}_visualisation experiment_utils planning)
