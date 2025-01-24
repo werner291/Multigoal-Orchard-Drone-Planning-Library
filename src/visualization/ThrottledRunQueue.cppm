@@ -47,6 +47,10 @@ export namespace mgodpl::visualization {
 				throttle.wait_and_advance(1);
 			}
 		}
+
+		void wait(int n) {
+			throttle.wait_and_advance(n);
+		}
 	};
 }
 
